@@ -648,7 +648,9 @@ namespace bts { namespace cli {
                     *_out << fc::json::to_pretty_string(result) << "\n";
                   }
               }
-             
+
+              if( !_out ) return;
+
               if (method_name == "help")
               {
                 string help_string = result.as<string>();
@@ -656,17 +658,8 @@ namespace bts { namespace cli {
               }
               else if( method_name == "wallet_account_vote_summary" )
               {
-                  if( !_out ) return;
-
-                     (*_out) << std::setw(25) << std::left << "Delegate"
-                            << std::setw(15) << "Votes\n";
-                     (*_out) <<"--------------------------------------------------------------\n";
-                  auto votes = result.as<bts::wallet::wallet::account_vote_summary_type>();
-                  for( const auto& vote : votes )
-                  {
-                     (*_out) << std::setw(25) << vote.first 
-                            << std::setw(15) << vote.second.votes_for <<"\n";
-                  }
+                  const auto& votes = result.as<account_vote_summary_type>();
+                  *_out << pretty_vote_summary( votes );
               }
               else if (method_name == "list_errors")
               {
@@ -683,8 +676,8 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_account_transaction_history")
               {
-                  auto tx_history_summary = result.as<vector<pretty_transaction>>();
-                  print_transaction_history(tx_history_summary);
+                  const auto& transactions  = result.as<vector<pretty_transaction>>();
+                  *_out << pretty_transaction_list( transactions, _client );
               }
               else if( method_name == "wallet_market_order_list" )
               {
@@ -725,8 +718,12 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_transfer")
               {
-                  auto trx = result.as<signed_transaction>();
-                  print_transfer_summary( trx );
+                  const auto& transaction = result.as<signed_transaction>();
+                  const auto& transaction_record = _client->get_wallet()->lookup_transaction( transaction.id() );
+                  FC_ASSERT( transaction_record.valid() );
+                  const auto& pretty = _client->get_wallet()->to_pretty_trx( *transaction_record );
+                  const std::vector<pretty_transaction> transactions = { pretty };
+                  *_out << pretty_transaction_list( transactions, _client );
               }
               else if (method_name == "wallet_list")
               {
@@ -750,21 +747,12 @@ namespace bts { namespace cli {
                        || method_name == "blockchain_list_active_delegates" )
               {
                   const auto& delegate_records = result.as<vector<account_record>>();
-                  const auto& asset_record = _client->get_chain()->get_asset_record( asset_id_type() );
-                  FC_ASSERT( asset_record.valid() );
-                  *_out << pretty_delegate_list( delegate_records, asset_record->current_share_supply );
+                  *_out << pretty_delegate_list( delegate_records, _client );
               }
               else if (method_name == "blockchain_list_blocks")
               {
-                  const auto& block_records = result.as<vector<bts::blockchain::block_record>>();
-                  vector<std::pair<block_record, std::string>> items;
-                  items.reserve( block_records.size() );
-                  for( const auto& block_record : block_records )
-                  {
-                      const auto& delegate_name = _client->blockchain_get_signing_delegate( block_record.block_num );
-                      items.push_back( std::make_pair( block_record, delegate_name ) );
-                  }
-                  *_out << pretty_block_list( items );
+                  const auto& block_records = result.as<vector<block_record>>();
+                  *_out << pretty_block_list( block_records, _client );
               }
               else if (method_name == "blockchain_list_registered_accounts")
               {
@@ -1094,14 +1082,6 @@ namespace bts { namespace cli {
               *_out << std::right; /* Ensure default alignment is restored */
             }
 
-            void print_transfer_summary( const signed_transaction& trx )
-            {
-                auto trx_rec = _client->get_wallet()->lookup_transaction(trx.id());
-                auto pretty = _client->get_wallet()->to_pretty_trx( *trx_rec );
-                std::vector<pretty_transaction> list = { pretty };
-                print_transaction_history(list);
-            }
-
             void print_unspent_balances( const vector<wallet_balance_record>& balance_recs )
             {
                 *_out << std::right;
@@ -1331,109 +1311,6 @@ namespace bts { namespace cli {
                    out << "\n";
                 }
                 out << "\n";
-            }
-
-            void print_transaction_history( const vector<bts::wallet::pretty_transaction>& txs )
-            {
-                /* Print header */
-                if( !_out ) return;
-
-                (*_out) << std::setw(  7 ) << "BLK" << ".";
-                (*_out) << std::setw(  5 ) << std::left << "TRX";
-                (*_out) << std::setw( 20 ) << "TIMESTAMP";
-                (*_out) << std::setw( 20 ) << "FROM";
-                (*_out) << std::setw( 20 ) << "TO";
-                (*_out) << std::setw( 35 ) << "MEMO";
-                (*_out) << std::setw( 20 ) << std::right << "AMOUNT";
-                (*_out) << std::setw( 20 ) << "FEE    ";
-                (*_out) << std::setw( 12 ) << "ID";
-                (*_out) << "\n---------------------------------------------------------------------------------------------------";
-                (*_out) <<   "-------------------------------------------------------------------------\n";
-                (*_out) << std::right; 
-                
-                int count = 1;
-                for( const auto& tx : txs )
-                {
-                    count++;
-
-                    /* Print block and transaction numbers */
-                    if (tx.block_num == -1)
-                    {
-                        (*_out) << std::setw( 13 ) << std::left << "   pending";
-                    }
-                    else
-                    {
-                        (*_out) << std::setw( 7 ) << tx.block_num << ".";
-                        (*_out) << std::setw( 5 ) << std::left << tx.trx_num;
-                    }
-
-                    /* Print timestamp */
-                     (*_out) << std::setw( 20 ) << pretty_timestamp(fc::time_point_sec(tx.received_time));
-
-                    // Print "from" account
-                     (*_out) << std::setw( 20 ) << pretty_shorten(tx.from_account, 19);
-                    
-                    // Print "to" account
-                     (*_out) << std::setw( 20 ) << pretty_shorten(tx.to_account, 19);
-
-                    // Print "memo" on transaction
-                     (*_out) << std::setw( 35 ) << pretty_shorten(tx.memo_message, 34);
-
-                    /* Print amount */
-                    {
-                        (*_out) << std::right;
-                        std::stringstream ss;
-                        ss << _client->get_chain()->to_pretty_asset(tx.amount);
-                        (*_out) << std::setw( 20 ) << ss.str();
-                    }
-
-                    /* Print fee */
-                    {
-                        (*_out) << std::right;
-                        std::stringstream ss;
-                        ss << _client->get_chain()->to_pretty_asset( asset(tx.fees,0 ));
-                        (*_out) << std::setw( 20 ) << ss.str();
-                    }
-
-                    *_out << std::right;
-                    /* Print delegate vote */
-                    /*
-                    bool has_deposit = false;
-                    std::stringstream ss;
-                    for( auto op : tx.operations )
-                    {
-                        if (op.get_object()["op_name"].as<string>() == "deposit")
-                        {
-                            has_deposit = true;
-                            auto vote = op.as<pretty_deposit_op>().vote;
-                            if( vote.first > 0 )
-                                ss << "+";
-                            else if (vote.first < 0)
-                                ss << "-";
-                            else
-                                ss << " ";
-                            ss << vote.second;
-                            break;
-                        }
-                    }
-                    if (has_deposit)
-                    {
-                        (*_out) << std::setw(14) << ss.str();
-                    }
-                    else
-                    {
-                    }
-                    */
-
-                    (*_out) << std::right;
-                    /* Print transaction ID */
-                    if (FILTER_OUTPUT_FOR_TESTS)
-                      (*_out) << std::setw( 16 ) << "[redacted]";
-                    else
-                      (*_out) << std::setw( 16 ) << string(tx.trx_id).substr(0, 8);// << "  " << string(tx.trx_id);
-
-                    (*_out) << std::right << "\n";
-                }
             }
 
             void print_network_usage_graph( const std::vector<uint32_t>& usage_data )

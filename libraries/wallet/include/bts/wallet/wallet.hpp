@@ -14,13 +14,8 @@ namespace bts { namespace wallet {
    /** args: current_block, last_block */
    typedef function<void(uint32_t,uint32_t)> scan_progress_callback;
 
-   struct vote_status
-   {
-      vote_status():votes_for(0),votes_against(0){}
-
-      int64_t votes_for;
-      int64_t votes_against;
-   };
+   typedef map<string, int64_t> account_vote_summary_type;
+   typedef map<string, map<string, share_type>> account_balance_summary_type;
 
    enum delegate_status_flags
    {
@@ -356,10 +351,8 @@ namespace bts { namespace wallet {
          unordered_map<address,string>    get_send_addresses()const;
          */
          
-         typedef map<string, vote_status > account_vote_summary_type;
          account_vote_summary_type get_account_vote_summary( const string& account_name )const;
 
-         typedef map<string, map<string, share_type>> account_balance_summary_type;
          account_balance_summary_type get_account_balances()const;
 
          //vector<asset>                         get_balances( const string& symbol = string("*"),
@@ -397,5 +390,3 @@ namespace bts { namespace wallet {
    typedef shared_ptr<wallet> wallet_ptr;
 
 } } // bts::wallet
-
-FC_REFLECT( bts::wallet::vote_status, (votes_for)(votes_against) )
