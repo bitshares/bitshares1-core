@@ -1,10 +1,9 @@
-#define DEFAULT_LOGGER "p2p"
-
 #include <sstream>
 #include <iomanip>
 #include <deque>
 #include <unordered_set>
 #include <list>
+#include <forward_list>
 #include <iostream>
 #include <algorithm>
 #include <boost/tuple/tuple.hpp>
@@ -41,6 +40,11 @@
 #include <fc/git_revision.hpp>
 
 #include <bts/net/peer_connection.hpp>
+
+#ifdef DEFAULT_LOGGER
+# undef DEFAULT_LOGGER
+#endif
+#define DEFAULT_LOGGER "p2p"
 
 namespace bts { namespace net { 
   namespace detail 
@@ -695,6 +699,7 @@ namespace bts { namespace net { namespace detail {
         _items_to_fetch_updated = false;
         dlog( "beginning an iteration of fetch items (${count} items to fetch )", ("count", _items_to_fetch.size() ) );
 
+        std::forward_list< std::pair<peer_connection_ptr, item_id> > fetch_messages_to_send;
         std::vector< fc::future<void> >  write_ops;
         for( auto iter = _items_to_fetch.begin(); iter != _items_to_fetch.end();  )
         {
@@ -709,11 +714,7 @@ namespace bts { namespace net { namespace detail {
               item_id item_id_to_fetch = iter->item;
               iter = _items_to_fetch.erase( iter );
               item_fetched = true;
-              write_ops.push_back( 
-                    fc::async( [item_id_to_fetch,peer](){
-                      peer->send_message( fetch_items_message(item_id_to_fetch.item_type, 
-                      std::vector<item_hash_t>{item_id_to_fetch.item_hash} ) );
-              }) );
+              fetch_messages_to_send.emplace_front(std::make_pair(peer, item_id_to_fetch));
               break;
             }
           }
@@ -721,8 +722,9 @@ namespace bts { namespace net { namespace detail {
             ++iter;
         }
 
-        for( auto& item : write_ops )
-           item.wait();
+        for( const auto& peer_and_item : fetch_messages_to_send )
+          peer_and_item.first->send_message(fetch_items_message(peer_and_item.second.item_type, 
+                                                                std::vector<item_hash_t>{peer_and_item.second.item_hash}));
 
         if( !_items_to_fetch_updated )
         {
