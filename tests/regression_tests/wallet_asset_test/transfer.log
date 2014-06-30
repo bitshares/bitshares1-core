@@ -11,13 +11,8 @@ OK
 default (unlocked) >>> wallet_account_balance test
 test:
     100.00000 XTS
-default (unlocked) >>>  enable_output false
->>> wallet_account_register test test
+default (unlocked) >>> enable_output false
+>>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" 999 100
 >>> wait_block_interval 1
->>> wallet_account_update_registration test test {} true
->>> enable_output true
-OK
-default (unlocked) >>> blockchain_list_registered_accounts "test" 10
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      TRUST LEVEL    
-test                               XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]       N/A            N/A            0              
-default (unlocked) >>> quit
+>>> wallet_asset_issue 10 XMO test "Sending some assets"
+>>> quit

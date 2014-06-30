@@ -81,7 +81,7 @@ namespace bts { namespace wallet {
    struct account : public bts::blockchain::account_record
    {
        account()
-       :trusted(false)
+       :approved(false)
        ,block_production_enabled(false)
        ,is_my_account(false),is_favorite(false)
        {}
@@ -93,14 +93,14 @@ namespace bts { namespace wallet {
        variant           private_data;
 
        /** 
-        * If registered account id is a delegate ID then 
-        * this trust level indicates whether the user wants to
-        * vote for, against, or neutral for a given delegate.
+        * If registered account ID is a delegate ID then
+        * approval indicates whether the user wants to
+        * vote for the delegate or not.
         *
         * The assumption is that if the delegate is in the
-        * users wallet then they are a potential canidate.
+        * user's wallet then they are a potential candidate.
         */
-       bool              trusted;
+       bool              approved;
 
        bool              block_production_enabled;
        bool              is_my_account;
@@ -251,7 +251,7 @@ FC_REFLECT( bts::wallet::transaction_data,
             (received_time)
             (block_num)
             (transmit_count) )
-FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(trusted)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
+FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 FC_REFLECT( bts::wallet::setting, (name)(value) )

@@ -158,7 +158,7 @@ class WalletAPI
 
   # Unlock the private keys in the wallet to enable spending operations
   # parameters: 
-  #   time_interval_in_seconds `timeout` - the number of seconds to keep the wallet unlocked
+  #   uint32_t `timeout` - the number of seconds to keep the wallet unlocked
   #   passphrase `passphrase` - the passphrase for encrypting the wallet
   # return_type: `void`
   unlock: (timeout, passphrase) ->
@@ -198,13 +198,13 @@ class WalletAPI
     @rpc.request('wallet_account_set_favorite', [account_name, is_favorite]).then (response) ->
       response.result
 
-  # Updates the trust placed in a given delegate
+  # Updates your approval of the specified delegate
   # parameters: 
-  #   account_name `delegate_name` - the name of the delegate to set trust on
-  #   bool `trusted` - true for trusted and false for neutral
+  #   account_name `delegate_name` - the name of the delegate to set approval for
+  #   bool `approved` - true to approve and false for neutral
   # return_type: `void`
-  set_delegate_trust: (delegate_name, trusted) ->
-    @rpc.request('wallet_set_delegate_trust', [delegate_name, trusted]).then (response) ->
+  approve_delegate: (delegate_name, approved) ->
+    @rpc.request('wallet_approve_delegate', [delegate_name, approved]).then (response) ->
       response.result
 
   # Add new account for sending payments
@@ -262,7 +262,7 @@ class WalletAPI
   #   account_name `account_name` - the account that will be updated
   #   account_name `pay_from_account` - the account from which fees will be paid
   #   json_variant `public_data` - public data about the account
-  #   uint32_t `delegate_pay_rate` - A value between 0 and 100 delegates, 255 for non delegates
+  #   uint32_t `delegate_pay_rate` - A value between 0 and 100 for delegates, 255 for non delegates
   # return_type: `transaction_record`
   account_register: (account_name, pay_from_account, public_data, delegate_pay_rate) ->
     @rpc.request('wallet_account_register', [account_name, pay_from_account, public_data, delegate_pay_rate]).then (response) ->
@@ -400,7 +400,7 @@ class WalletAPI
   # Lists the total balances of all accounts sorted by account and asset
   # parameters: 
   #   account_name `account_name` - the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned
-  # return_type: `map< account_name, map< asset_symbol, share_type> >`
+  # return_type: `map<account_name, map<asset_symbol, share_type>>`
   account_balance: (account_name) ->
     @rpc.request('wallet_account_balance', [account_name]).then (response) ->
       response.result
@@ -426,8 +426,8 @@ class WalletAPI
 
   # Used to set the priority fee for new transactions. Return current fee if no parameter is provided.
   # parameters: 
-  #   amount `fee` - the priority fee to be set.
-  # return_type: `void`
+  #   real_amount `fee` - the wallet priority fee to be set
+  # return_type: `real_amount`
   set_priority_fee: (fee) ->
     @rpc.request('wallet_set_priority_fee', [fee]).then (response) ->
       response.result

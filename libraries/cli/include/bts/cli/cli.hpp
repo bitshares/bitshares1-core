@@ -1,12 +1,12 @@
 #pragma once
+
+#include <bts/api/api_metadata.hpp>
 #include <bts/client/client.hpp>
 #include <bts/rpc/rpc_server.hpp>
+
 #include <fc/variant.hpp>
-#include <fc/io/buffered_iostream.hpp>
-#include <bts/api/api_metadata.hpp>
+
 #include <boost/optional.hpp>
-#include "boost/iostreams/stream.hpp"
-#include "boost/iostreams/device/null.hpp"
 
 namespace bts { namespace rpc {
   class rpc_server;
@@ -23,10 +23,12 @@ namespace bts { namespace cli {
 
    namespace detail {  class cli_impl; }
 
+   extern bool FILTER_OUTPUT_FOR_TESTS;
+
    class cli
    {
       public:
-          cli( const client_ptr& client,
+          cli( bts::client::client* client,
                std::istream* command_script = nullptr, 
                std::ostream* output_stream = nullptr );
 

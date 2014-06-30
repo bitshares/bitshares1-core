@@ -53,11 +53,13 @@ namespace bts { namespace network {
             if( next_message.size > BTS_NETWORK_MAX_MESSAGE_SIZE )
             {
                send_message( goodbye_message( message_too_large() ) ); 
+               _socket.close();
                FC_CAPTURE_AND_THROW( message_too_large, (next_message.size) );
             }
 
             _socket.read( (char*)&next_message.type, sizeof(next_message.type) );
             _socket.read( next_message.data.data(), next_message.size );
+            ilog( "read message of size ${s}   type ${t}", ("s", next_message.size)("t",int(next_message.type)) );
 
             received_message( shared_from_this(), next_message );
          }
@@ -79,7 +81,7 @@ namespace bts { namespace network {
    { 
       try {
          { synchronized( _write_mutex )
-
+            ilog( "sending message of size ${s}", ("s",m.size) );
             _socket.write( (char*)&m.size, sizeof(m.size) );
             _socket.write( (char*)&m.type, sizeof(m.type) );
 
@@ -92,6 +94,7 @@ namespace bts { namespace network {
       catch ( const fc::exception& e )
       {
           wlog( "error sending message ${e}", ("e",e.to_detail_string() ) );
+          _socket.close();
       }
    }
 

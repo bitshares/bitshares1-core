@@ -59,7 +59,8 @@ template<typename T>
 void produce_block( T my_client )
 {
       auto head_num = my_client->get_chain()->get_head_block_num();
-      auto next_block_time = my_client->get_next_producible_block_timestamp();
+      const auto& delegates = my_client->get_wallet()->get_my_delegates( enabled_delegate_status | active_delegate_status );
+      auto next_block_time = my_client->get_wallet()->get_next_producible_block_timestamp( delegates );
       FC_ASSERT( next_block_time.valid() );
       bts::blockchain::advance_time( (int32_t)((*next_block_time - bts::blockchain::now()).count()/1000000) );
       auto b = my_client->get_chain()->generate_block(*next_block_time);
@@ -490,8 +491,8 @@ void run_regression_test(fc::path test_dir, bool with_network)
     auto sim_network = std::make_shared<bts::net::simulated_network>();
     vector<test_file> tests;
     string line = " --min-delegate-connection-count=0 ";
-    fc::future<void> client_done;
-    while (std::getline(test_config_file,line))
+    std::vector<bts::client::client_ptr> clients;
+    while (std::getline(test_config_file, line))
     {
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
       line += " --genesis-config " + genesis_json_file.string();
@@ -541,6 +542,8 @@ void run_regression_test(fc::path test_dir, bool with_network)
       }
       expected_output_stream.close();
 
+      fc::future<void> client_done;
+
       //run client with cmdline options
       if (with_network)
       {
@@ -549,7 +552,8 @@ void run_regression_test(fc::path test_dir, bool with_network)
       else
       {
         bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
-        client->configure_from_command_line(argc,argv);
+        clients.push_back(client);
+        client->configure_from_command_line(argc, argv);
         client_done = client->start();
       }
 
@@ -575,7 +579,6 @@ void run_regression_test(fc::path test_dir, bool with_network)
   } 
   catch ( const fc::exception& e )
   {
-    elog( "${e}", ("e",e.to_detail_string() ) );
     BOOST_FAIL("Caught unexpected exception:" << e.to_detail_string() );
   }
 

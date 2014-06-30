@@ -16,8 +16,8 @@ namespace bts { namespace blockchain {
       :votes_for(0),
        blocks_produced(0),
        blocks_missed(0),
-       last_block_num_produced(-1),
-       delegate_pay_rate(100),
+       last_block_num_produced(0),
+       pay_rate(100),
        pay_balance(0){}
 
       share_type                     votes_for;
@@ -25,7 +25,7 @@ namespace bts { namespace blockchain {
       uint32_t                       blocks_missed;
       secret_hash_type               next_secret_hash;
       uint32_t                       last_block_num_produced;
-      uint8_t                        delegate_pay_rate;
+      uint8_t                        pay_rate;
 
       /**
        *  Delegate pay is held in escrow and may be siezed 
@@ -38,6 +38,9 @@ namespace bts { namespace blockchain {
 
    struct delegate_block_stats
    {
+      delegate_block_stats( bool m, const block_id_type& b )
+      :missed(m),id(b){}
+
       delegate_block_stats()
       :missed(true){}
 
@@ -85,5 +88,5 @@ FC_REFLECT( bts::blockchain::account_record,
           )
 FC_REFLECT( bts::blockchain::delegate_stats, 
             (votes_for)(blocks_produced)
-            (blocks_missed)(delegate_pay_rate)(pay_balance)(next_secret_hash)(last_block_num_produced) )
+            (blocks_missed)(pay_rate)(pay_balance)(next_secret_hash)(last_block_num_produced) )
 FC_REFLECT( bts::blockchain::delegate_block_stats, (missed)(id) )

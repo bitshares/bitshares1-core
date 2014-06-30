@@ -42,16 +42,16 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
-             wallet*                self;
-             wallet_db              _wallet_db;
-             chain_database_ptr     _blockchain;
-             path                   _data_directory;
-             path                   _current_wallet_path;
-             fc::time_point_sec     _scheduled_lock_time;
-             fc::promise<void>::ptr _wallet_shutting_down_promise;
-             fc::future<void>       _wallet_relocker_done;
-             fc::sha512             _wallet_password;
-             bool                   _use_deterministic_one_time_keys;
+             wallet*                            self;
+             wallet_db                          _wallet_db;
+             chain_database_ptr                 _blockchain;
+             path                               _data_directory;
+             path                               _current_wallet_path;
+             fc::sha512                         _wallet_password;
+             fc::optional<fc::time_point_sec>   _scheduled_lock_time;
+             fc::future<void>                   _wallet_relocker_done;
+             fc::promise<void>::ptr             _wallet_shutting_down_promise;
+             bool                               _use_deterministic_one_time_keys;
 
              fc::ecc::private_key create_one_time_key()
              {
@@ -601,7 +601,7 @@ namespace bts { namespace wallet {
           close();
           create_file( wallet_file_path, password, brainkey );
           open( wallet_name );
-          unlock( password, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
+          unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
       }
       catch( ... )
       {
@@ -650,7 +650,7 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
-          unlock( password, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
+          unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
 
           FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
       }
@@ -718,7 +718,7 @@ namespace bts { namespace wallet {
         my->_wallet_relocker_done.wait();
       }
 
-      my->_scheduled_lock_time = fc::time_point_sec();
+      my->_scheduled_lock_time = fc::optional<fc::time_point_sec>();
       my->_wallet_password = fc::sha512();
       my->_use_deterministic_one_time_keys = false;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -756,7 +756,7 @@ namespace bts { namespace wallet {
       {
           create( wallet_name, passphrase );
           my->_wallet_db.import_from_json( filename );
-          unlock( passphrase, fc::seconds(BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC) );
+          unlock( passphrase, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
       }
       catch( ... )
       {
@@ -767,10 +767,12 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
 
-   void wallet::unlock( const string& password, const fc::microseconds& timeout )
+   void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
+      auto now = blockchain::now();
+      FC_ASSERT( is_open() );
       FC_ASSERT( password.size() >= BTS_WALLET_MIN_PASSWORD_LENGTH ) 
-      FC_ASSERT( timeout >= fc::seconds(1) );
+      FC_ASSERT( timeout_seconds >= 1 );
 
       my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
       if( !my->_wallet_db.validate_password( my->_wallet_password ) )
@@ -778,65 +780,57 @@ namespace bts { namespace wallet {
          lock();
          FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
       }
-      wallet_lock_state_changed( false );
 
-      if( timeout == microseconds::maximum() )
+      wallet_lock_state_changed( false );
+      my->_scheduled_lock_time = now + timeout_seconds;
+
+      ilog("Checking wallet relocker task");
+      if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
       {
-         my->_scheduled_lock_time = fc::time_point_sec::maximum();
-      }
-      else
-      {
-        // the API lets users specify a 64-bit time offset that can't be represented in our 32-bit time_point_sec class,
-        // so safely convert it to 32-bit here.
-        uint64_t relock_seconds_in_the_future = timeout.count() / fc::seconds(1).count();
-        uint64_t relock_seconds_since_epoch = bts::blockchain::now().sec_since_epoch() + relock_seconds_in_the_future;
-        uint32_t relock_seconds_since_epoch_32 = (int32_t)std::min<uint64_t>(relock_seconds_since_epoch, 
-                                                                             std::numeric_limits<uint32_t>::max());        
-        my->_scheduled_lock_time = fc::time_point_sec(relock_seconds_since_epoch_32);
-        ilog("Checking wallet relocker task");
-        if( !my->_wallet_relocker_done.valid() || my->_wallet_relocker_done.ready() )
-        {
           ilog("Wallet relocker task not running");
           my->_wallet_shutting_down_promise = fc::promise<void>::ptr(new fc::promise<void>());
           my->_wallet_relocker_done = fc::async([this](){
-            ilog("Starting wallet relocker task");
-            struct s { ~s() { ilog("Leaving wallet relocker task"); } } ss;
-            for( ; ; )
+          ilog("Starting wallet relocker task");
+          struct s { ~s() { ilog("Leaving wallet relocker task"); } } ss;
+          for( ; ; )
+          {
+            if( !my->_scheduled_lock_time.valid() || (blockchain::now() > *my->_scheduled_lock_time) )
             {
-              if (bts::blockchain::now() > my->_scheduled_lock_time)
-              {
-                lock();
-                ilog("leaving relocker after relock");
-                return;
-              }
-              // if the promise is set, the wallet is shutting down and we need to exit the relocker
-              if (my->_wallet_shutting_down_promise->ready())
-              {
-                ilog("leaving relocker task because promise is ready");
-                return;
-              }
-              try
-              {
-                my->_wallet_shutting_down_promise->wait(fc::milliseconds(200));
-                ilog("leaving relocker task because promise waited");
-                return;
-              }
-              catch (const fc::timeout_exception&)
-              {
-              }
+              lock();
+              ilog("Leaving relocker after relock");
+              return;
             }
-          });
-          ilog("Wallet relocker task launched");
-        }
+
+            // if the promise is set, the wallet is shutting down and we need to exit the relocker
+            if( my->_wallet_shutting_down_promise->ready() )
+            {
+              ilog("Leaving relocker task because promise is ready");
+              return;
+            }
+            try
+            {
+              my->_wallet_shutting_down_promise->wait( fc::milliseconds( 200 ) );
+              ilog("Leaving relocker task because promise waited");
+              return;
+            }
+            catch (const fc::timeout_exception&)
+            {
+            }
+          }
+        });
+        ilog("Wallet relocker task launched");
       }
+
+      /* Scan blocks we have missed while locked */
       scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>(), 
                                                my->_blockchain->get_head_block_num() );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_sec", timeout.count()/1000000 ) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
 
    void wallet::lock()
    {
+      FC_ASSERT( is_open() );
       my->_wallet_password     = fc::sha512();
-      my->_scheduled_lock_time = fc::time_point();
+      my->_scheduled_lock_time = fc::optional<fc::time_point_sec>();
       wallet_lock_state_changed( true );
    }
 
@@ -854,16 +848,19 @@ namespace bts { namespace wallet {
 
    bool wallet::is_unlocked()const
    {
+      FC_ASSERT( is_open() );
       return !wallet::is_locked();
    }   
 
    bool wallet::is_locked()const
    {
+      FC_ASSERT( is_open() );
       return my->_wallet_password == fc::sha512();
    }
 
-   fc::time_point wallet::unlocked_until()const
+   fc::optional<fc::time_point_sec> wallet::unlocked_until()const
    {
+      FC_ASSERT( is_open() );
       return my->_scheduled_lock_time;
    }
 
@@ -1181,7 +1178,7 @@ namespace bts { namespace wallet {
 
       if( !get_my_delegates( enabled_delegate_status ).empty() )
       {
-         ulog( "Wallet blockchain scanning disabled because there are enabled delegates!\n" );
+         ulog( "\nWallet blockchain scanning disabled because there are enabled delegates!\n" );
          return;
       }
 
@@ -1274,31 +1271,6 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const
-   {
-      vector<wallet_account_record> delegate_records;
-      const auto& account_records = list_my_accounts();
-      for( const auto& account_record : account_records )
-      {
-          if( !account_record.is_delegate() ) continue;
-          if( delegates_to_retrieve & enabled_delegate_status && !account_record.block_production_enabled ) continue;
-          if( delegates_to_retrieve & disabled_delegate_status && account_record.block_production_enabled ) continue;
-          if( delegates_to_retrieve & active_delegate_status && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
-          if( delegates_to_retrieve & inactive_delegate_status && my->_blockchain->is_active_delegate( account_record.id ) ) continue;
-          delegate_records.push_back( account_record );
-      }
-      return delegate_records;
-   }
-
-   vector<private_key_type> wallet::get_my_delegate_private_keys(int delegates_to_retrieve )const
-   {
-       vector<private_key_type> private_keys;
-       const auto& delegate_records = get_my_delegates( delegates_to_retrieve );
-       for( const auto& delegate_record : delegate_records )
-          private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
-       return private_keys;
-   }
-
    void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
    {
       std::vector<wallet_account_record> delegate_records;
@@ -1326,30 +1298,62 @@ namespace bts { namespace wallet {
       }
    }
 
+   vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const
+   {
+      FC_ASSERT( is_open() );
+      vector<wallet_account_record> delegate_records;
+      const auto& account_records = list_my_accounts();
+      for( const auto& account_record : account_records )
+      {
+          if( !account_record.is_delegate() ) continue;
+          if( delegates_to_retrieve & enabled_delegate_status && !account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve & disabled_delegate_status && account_record.block_production_enabled ) continue;
+          if( delegates_to_retrieve & active_delegate_status && !my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          if( delegates_to_retrieve & inactive_delegate_status && my->_blockchain->is_active_delegate( account_record.id ) ) continue;
+          delegate_records.push_back( account_record );
+      }
+      return delegate_records;
+   }
+
+   vector<private_key_type> wallet::get_my_delegate_private_keys(int delegates_to_retrieve )const
+   {
+       vector<private_key_type> private_keys;
+       const auto& delegate_records = get_my_delegates( delegates_to_retrieve );
+       for( const auto& delegate_record : delegate_records )
+          private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
+       return private_keys;
+   }
+
+   optional<time_point_sec> wallet::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
+   {
+      if( !is_open() || is_locked() ) return optional<time_point_sec>();
+
+      vector<account_id_type> delegate_ids;
+      delegate_ids.reserve( delegate_records.size() );
+      for( const auto& delegate_record : delegate_records )
+          delegate_ids.push_back( delegate_record.id );
+
+      return my->_blockchain->get_next_producible_block_timestamp( delegate_ids );
+   }
+
    void wallet::sign_block( signed_block_header& header )const
    { try {
       FC_ASSERT( is_unlocked() );
       if( header.timestamp == fc::time_point_sec() )
           FC_THROW_EXCEPTION( invalid_timestamp, "Invalid block timestamp! Block production may be disabled" );
 
-      auto signing_delegate_id = my->_blockchain->get_signing_delegate_id( header.timestamp );
-      auto delegate_record = my->_blockchain->get_account_record( signing_delegate_id );
-      FC_ASSERT( delegate_record.valid() && delegate_record->delegate_info.valid() );
-
-      auto delegate_pub_key = my->_blockchain->get_signing_delegate_key( header.timestamp );
+      auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
+      auto delegate_pub_key = delegate_record.active_key();
       auto delegate_key = get_private_key( address(delegate_pub_key) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
-      header.previous_secret = my->get_secret( 
-                                      delegate_record->delegate_info->last_block_num_produced,
-                                      delegate_key );
-
+      header.previous_secret = my->get_secret( delegate_record.delegate_info->last_block_num_produced,
+                                               delegate_key );
       auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
-      header.sign(delegate_key);
+      header.sign( delegate_key );
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
-
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
    /**
@@ -2447,6 +2451,7 @@ namespace bts { namespace wallet {
 
    asset wallet::get_priority_fee( const string& symbol )const
    {
+      FC_ASSERT( is_open () );
       // TODO: support price conversion using price from blockchain
       auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
       if ( priority_fee.is_null() )
@@ -2461,6 +2466,7 @@ namespace bts { namespace wallet {
    
    void wallet::set_priority_fee( uint64_t fee )
    {
+      FC_ASSERT( is_open () );
       my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(fee) );
    }
 
@@ -2511,11 +2517,6 @@ namespace bts { namespace wallet {
           pretty_trx.block_num = loc->chain_location.block_num;
           pretty_trx.trx_num = loc->chain_location.trx_num;
       } 
-      else /* to_pretty_trx will often be called for transactions that are not in the chain yet */ 
-      { 
-          pretty_trx.block_num = -1;
-          pretty_trx.trx_num = -1;
-      }
 
       pretty_trx.trx_id = trx.id();
       pretty_trx.received_time = trx_rec.received_time.sec_since_epoch();
@@ -2523,10 +2524,6 @@ namespace bts { namespace wallet {
       pretty_trx.amount = trx_rec.amount;
       pretty_trx.fees = trx_rec.fees;
       pretty_trx.memo_message = trx_rec.memo_message;
-
-      pretty_trx.to_me = false;
-      pretty_trx.from_me = false;
-
 
       pretty_trx.from_account = "";
       if( trx_rec.from_account )
@@ -3034,7 +3031,7 @@ namespace bts { namespace wallet {
 
       for( const auto& acct_rec : my->_wallet_db.get_accounts() )
       {
-         if( acct_rec.second.trusted )
+         if( acct_rec.second.approved )
              for_candidates.push_back( acct_rec.second.id );
       }
       std::sort( for_candidates.begin(), for_candidates.end() );
@@ -3056,13 +3053,13 @@ namespace bts { namespace wallet {
       return result;
    }
 
-   void wallet::set_delegate_trust( const string& delegate_name, bool trusted )
+   void wallet::set_delegate_approval( const string& delegate_name, bool approved )
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );
       if( war.valid() )
       {
-         war->trusted = trusted;
+         war->approved = approved;
          my->_wallet_db.cache_account( *war );
       }
       else
@@ -3073,16 +3070,16 @@ namespace bts { namespace wallet {
             FC_ASSERT( !"Not a Registered Account" );
          }
          add_contact_account( delegate_name, reg_account->active_key() );
-         set_delegate_trust( delegate_name, trusted );
+         set_delegate_approval( delegate_name, approved );
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("trusted", trusted) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved", approved) ) }
 
-   bool wallet::get_delegate_trust( const string& delegate_name )const
+   bool wallet::get_delegate_approval( const string& delegate_name )const
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );
       FC_ASSERT( war.valid() );
-      return war->trusted;
+      return war->approved;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
 
    vector<wallet_balance_record>  wallet::get_unspent_balances( const string& account_name,
@@ -3110,15 +3107,14 @@ namespace bts { namespace wallet {
       return my->_wallet_db.lookup_account( addr );
    }
 
-   wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
+   account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    {
-      unordered_map<account_id_type, vote_status> raw_votes;
+      unordered_map<account_id_type, int64_t> raw_votes;
       for( const auto& b : my->_wallet_db.get_balances() )
       {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
           if( okey_rec && okey_rec->has_private_key() )
           {
-
              auto oacct_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
              if ( !(account_name == "" || (oacct_rec.valid() && oacct_rec->name == account_name)) )
                  continue;
@@ -3132,7 +3128,10 @@ namespace bts { namespace wallet {
                     FC_ASSERT( slate.valid() );
                     for( const auto& delegate_id : slate->supported_delegates )
                     {
-                       raw_votes[ delegate_id ].votes_for += bal.amount;
+                        if( raw_votes.count( delegate_id ) <= 0 )
+                            raw_votes[ delegate_id ] = bal.amount;
+                        else
+                            raw_votes[ delegate_id ] += bal.amount;
                     }
                 }
              }
@@ -3147,12 +3146,12 @@ namespace bts { namespace wallet {
       return result;
    }
 
-   wallet::account_balance_summary_type    wallet::get_account_balances()const
+   account_balance_summary_type wallet::get_account_balances()const
    { try {
-
+      FC_ASSERT( is_open() );
       auto pending_state = my->_blockchain->get_pending_state();
       account_balance_summary_type result;
-      unordered_map< address, unordered_map< asset_id_type, share_type> > raw_results;
+      map< address, map< asset_id_type, share_type> > raw_results;
       for( const auto& b : my->_wallet_db.get_balances() )
       {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );

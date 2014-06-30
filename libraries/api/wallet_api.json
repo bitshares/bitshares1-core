@@ -320,7 +320,7 @@
           [
             { 
               "name" : "timeout", 
-              "type" : "time_interval_in_seconds", 
+              "type" : "uint32_t",
               "description" : "the number of seconds to keep the wallet unlocked"
             },
             { 
@@ -400,25 +400,25 @@
         "aliases" : [ "favor" ]
       },
       {
-        "method_name": "wallet_set_delegate_trust",
-        "description": "Updates the trust placed in a given delegate",
+        "method_name": "wallet_approve_delegate",
+        "description": "Updates your approval of the specified delegate",
         "return_type": "void",
         "parameters" : 
           [
             { 
               "name" : "delegate_name", 
               "type" : "account_name", 
-              "description" : "the name of the delegate to set trust on"
+              "description" : "the name of the delegate to set approval for"
             },
             { 
-              "name" : "trusted",
+              "name" : "approved",
               "type" : "bool",
-              "description" : "true for trusted and false for neutral",
+              "description" : "true to approve and false for neutral",
               "default_value" : false
             }
           ],
         "prerequisites" : ["wallet_open"],
-        "aliases" : [ "trust", "set_trust" ]
+        "aliases" : [ "approve", "set_approval" ]
       },
       {
         "method_name": "wallet_add_contact_account",
@@ -573,7 +573,7 @@
                {
                   "name" : "delegate_pay_rate",
                   "type" : "uint32_t",
-                  "description" : "A value between 0 and 100 delegates, 255 for non delegates",
+                  "description" : "A value between 0 and 100 for delegates, 255 for non delegates",
                   "default_value" : 255
                }
             ],
@@ -864,7 +864,7 @@
       {
          "method_name"    : "wallet_account_balance",
          "description"    : "Lists the total balances of all accounts sorted by account and asset",
-         "return_type"    : "map< account_name, map< asset_symbol, share_type> >",
+         "return_type"    : "map<account_name, map<asset_symbol, share_type>>",
          "parameters"     : [
          {
             "name" : "account_name",
@@ -924,12 +924,13 @@
       {
          "method_name"  : "wallet_set_priority_fee",
          "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
-         "return_type"  : "void",
+         "return_type"  : "real_amount",
          "parameters"   : [
          {
             "name" : "fee",
-            "type" : "amount",
-            "description" : "the priority fee to be set."
+            "type" : "real_amount",
+            "description" : "the wallet priority fee to be set",
+            "default_value" : "0"
          }
          ],
          "prerequisites" : ["wallet_open"],

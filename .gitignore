@@ -21,6 +21,8 @@ libraries/rpc_stubs
 libraries/utilities/git_revision.cpp
 
 programs/client/bitshares_client
+
+programs/utils/btc_wallet_dump
 programs/utils/bts_create_genesis
 programs/utils/bts_create_key
 programs/utils/bts_genesis_to_bin

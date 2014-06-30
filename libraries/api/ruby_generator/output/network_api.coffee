@@ -97,6 +97,13 @@ class NetworkAPI
     @rpc.request('network_get_upnp_info').then (response) ->
       response.result
 
+  # Get bandwidth usage stats
+  # parameters: 
+  # return_type: `json_object`
+  get_usage_stats:  ->
+    @rpc.request('network_get_usage_stats').then (response) ->
+      response.result
+
 
 
 angular.module("app").service("NetworkAPI", ["$q", "$log", "RpcService", NetworkAPI])

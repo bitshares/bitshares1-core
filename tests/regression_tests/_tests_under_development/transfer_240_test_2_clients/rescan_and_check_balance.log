@@ -1,0 +1,8 @@
+default (unlocked) >>> wallet_rescan_blockchain
+Rescanning blockchain...
+Scan complete.
+OK
+default (unlocked) >>> wallet_account_balance test
+test:
+    100.00000 XTS
+default (unlocked) >>> blockchain_list_blocks

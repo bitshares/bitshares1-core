@@ -37,10 +37,14 @@ namespace bts { namespace network {
 
          void set_desired_connections( int32_t count );
 
+         void broadcast_block( const full_block& block_to_broadcast );
+
       private:
          void attempt_new_connection();
 
          void accept_loop();
+         void broadcast_keep_alive();
+
          void on_connect( const shared_ptr<peer_connection>& con  );
          void on_disconnect( const shared_ptr<peer_connection>& con, 
                              const optional<fc::exception>& err );
@@ -60,10 +64,15 @@ namespace bts { namespace network {
          void on_peer_response( const shared_ptr<peer_connection>& con, 
                                 const peer_request_message& request );
 
+         void on_block_message( const shared_ptr<peer_connection>& con, 
+                                const block_message& request );
+
          map<fc::ip::endpoint, peer_status>    _potential_peers;
          
-         int32_t                               _desired_peer_count;
+         uint32_t                              _desired_peer_count;
          fc::future<void>                      _accept_loop;
+         fc::future<void>                      _keep_alive_task;
+         fc::future<void>                      _attempt_new_connections_task;
          client_ptr                            _client;
          fc::udt_server                        _server;
          unordered_set< peer_connection_ptr >  _peers;

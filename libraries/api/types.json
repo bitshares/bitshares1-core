@@ -283,8 +283,8 @@
         "default_example" : "TODO"
       },
       {
-         "type_name" : "map< account_name, map< asset_symbol, share_type> >",
-         "cpp_return_type" : "std::unordered_map< std::string, std::map<std::string, bts::blockchain::share_type> >"
+         "type_name" : "map<account_name, map<asset_symbol, share_type>>",
+         "cpp_return_type" : "std::map<std::string, std::map<std::string, bts::blockchain::share_type>>"
       },
       {
          "type_name" : "market_order",
@@ -461,7 +461,7 @@
       },
       {
          "type_name" : "account_vote_summary",
-         "cpp_return_type" : "bts::wallet::wallet::account_vote_summary_type"
+         "cpp_return_type" : "bts::wallet::account_vote_summary_type"
       },
       {
          "type_name" : "timestamp",

@@ -229,7 +229,8 @@ struct chain_fixture
 
 
       auto head_num = my_client->get_chain()->get_head_block_num();
-      auto next_block_time = my_client->get_next_producible_block_timestamp();
+      const auto& delegates = my_client->get_wallet()->get_my_delegates( enabled_delegate_status | active_delegate_status );
+      auto next_block_time = my_client->get_wallet()->get_next_producible_block_timestamp( delegates );
       FC_ASSERT( next_block_time.valid() );
       bts::blockchain::advance_time( (int32_t)((*next_block_time - bts::blockchain::now()).count()/1000000) );
       auto b = my_client->get_chain()->generate_block(*next_block_time);
