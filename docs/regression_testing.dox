@@ -31,9 +31,9 @@ client2 --input-log=client2.log --upnp=false
 @endcode
 
 The --input-log says to create one client named client1 and send it CLI input
-commands from clien1.log and create a second client named client2 and send
+commands from client1.log and create a second client named client2 and send
 it CLI input commands from client2.log. Each client can also be configured
-with other bitshares_command line arguments as desired (e.g. --unpn=false).
+with other bitshares command line arguments as desired (e.g. --unpn=false).
 Multiple --input-logs args can be passed to a client.
 
 Regression Test Results Directories
@@ -70,7 +70,7 @@ To run the tests, run:
 
 @code
 cd bitshares_toolkit\tests
-wallet_tests  -t regression_tests_without_network
+./wallet_tests -t regression_tests_without_network
 @endcode
 
 Developing and Testing a Single Test
