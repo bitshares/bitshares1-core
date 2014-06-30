@@ -33,7 +33,9 @@ programs/utils/map_bts_network
 tests/bitcoin/wallet_import_tests
 tests/bitshares_client_tests
 tests/chain_database_tests
+tests/client_node
 tests/client_rpc_tests/client_rpc_tests
 tests/deterministic_signature_test
 tests/dev_tests
+tests/server_node
 tests/wallet_tests
