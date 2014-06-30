@@ -503,12 +503,18 @@ namespace bts { namespace blockchain {
                //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
                // TODO:  capture the evaluation state with a callback for wallets...
                // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
+               
 
                transaction_location trx_loc( block.block_num, trx_num );
                //ilog( "store trx location: ${loc}", ("loc",trx_loc) );
                transaction_record record( trx_loc, *trx_eval_state);
                pending_state->store_transaction( trx.id(), record );
                ++trx_num;
+
+               // TODO: remove this once performance picks up, but for now
+               // we don't want to block very long, so we yield a bit
+               if( trx_num % 20 == 19 ) 
+                  fc::usleep( fc::microseconds( 2000 ) );
 
                /* Collect fees in block record */
                auto block_id = block.id();

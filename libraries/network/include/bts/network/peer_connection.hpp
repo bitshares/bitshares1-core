@@ -5,6 +5,8 @@
 #include <fc/signals.hpp>
 #include <fc/optional.hpp>
 
+#include <deque>
+
 namespace bts { namespace network {
 
    using namespace std;
@@ -36,15 +38,20 @@ namespace bts { namespace network {
 
          fc::signal<void( const shared_ptr<peer_connection>&,  
                           const message& )>                  received_message;
+
+         fc::ip::endpoint remote_endpoint();
       private:
          friend class node;
          void read_loop();
          bool is_logged_in()const;
+         void process_send_queue();
 
-         fc::sha512         _shared_secret;
-         fc::mutex          _write_mutex;
-         fc::future<void>   _read_loop;
-         fc::udt_socket     _socket;
+         fc::sha512                       _shared_secret;
+         fc::future<void>                 _read_loop;
+         fc::udt_socket                   _socket;
+         optional<fc::ip::endpoint>       _remote_endpoint;
+         fc::future<void>                 _send_queue_complete;
+         std::deque<message>              _send_queue;
    };
 
    typedef shared_ptr<peer_connection> peer_connection_ptr;
