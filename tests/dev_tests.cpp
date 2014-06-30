@@ -105,7 +105,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_list_delegates" );
    exec( clientb, "wallet_asset_create USD Dollar b-account \"paper bucks\" null 1000000000 1000" );
    produce_block( clientb );
-   exec( clientb, "blockchain_list_registered_assets" );
+   exec( clientb, "blockchain_list_assets" );
    exec( clientb, "wallet_asset_issue 1000 USD c-account \"iou\"" );
    exec( clientb, "wallet_account_transaction_history b-account" );
    exec( clientb, "wallet_account_transaction_history c-account" );
@@ -162,7 +162,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 //      exec( clientb, "wallet_transfer 10 XTS delegate32 delegate32 " );
       produce_block( clientb );
    }
-   exec( clientb, "blockchain_get_account_record delegate32" );
+   exec( clientb, "blockchain_get_account delegate32" );
    exec( clientb, "wallet_withdraw_delegate_pay delegate32 c-account .01234" );
    produce_block( clientb );
    exec( clientb, "wallet_account_transaction_history delegate32" );

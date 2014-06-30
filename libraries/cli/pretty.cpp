@@ -113,7 +113,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         out << std::setw(  8 ) << block_record.block_num;
         out << std::setw( 20 ) << pretty_timestamp( block_record.timestamp );
 
-        const auto& delegate_name = client->blockchain_get_signing_delegate( block_record.block_num );
+        const auto& delegate_name = client->blockchain_get_block_signee( block_record.block_num );
         out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
 
         out << std::setw(  8 ) << block_record.user_transaction_ids.size();

@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "blockchain_list_delegates" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_asset_create USD Dollar b-account \"paper bucks\" null 1000000000 1000" ) << "\n";
    produce_block( clientb );
-   std::cerr << clientb->execute_command_line( "blockchain_list_registered_assets" ) << "\n";
+   std::cerr << clientb->execute_command_line( "blockchain_list_assets" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_asset_issue 1000 USD c-account \"iou\"" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";

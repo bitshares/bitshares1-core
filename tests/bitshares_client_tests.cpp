@@ -994,7 +994,7 @@ BOOST_AUTO_TEST_CASE(transfer_test)
     for (;;)
     {
       fc::usleep(fc::milliseconds(500));
-      int64_t precision = client_processes[next_client_index].rpc_client->blockchain_get_asset_record("XTS")->precision;
+      int64_t precision = client_processes[next_client_index].rpc_client->blockchain_get_asset("XTS")->precision;
       bts::blockchain::share_type new_account_balance = client_processes[next_client_index].rpc_client->wallet_account_balance()["circletest"]["XTS"];
       if (new_account_balance == destination_initial_balance + amount_to_transfer * precision)
       {

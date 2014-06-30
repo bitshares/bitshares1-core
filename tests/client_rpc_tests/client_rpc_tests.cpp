@@ -227,7 +227,7 @@ BOOST_FIXTURE_TEST_CASE( wallet_account_name_test, WFixture )
    produce_block( clienta );
 
    // should return null
-   run_cmd(clientb, "blockchain_get_account_record b-account");
+   run_cmd(clientb, "blockchain_get_account b-account");
 
    run_cmd(clientb, "wallet_list_receive_accounts");
 
@@ -235,16 +235,16 @@ BOOST_FIXTURE_TEST_CASE( wallet_account_name_test, WFixture )
 
    produce_block(clientb);
 
-   run_cmd(clientb, "blockchain_get_account_record b-new-account");
+   run_cmd(clientb, "blockchain_get_account b-new-account");
 
    // should not allowed rename, because this account name has already been registered on chain.
    run_cmd(clientb, "wallet_account_rename b-new-account another-account");
 
-   run_cmd(clientb, "blockchain_get_account_record b-new-account");
+   run_cmd(clientb, "blockchain_get_account b-new-account");
 
-   run_cmd(clientb, "blockchain_get_account_record another-account");
+   run_cmd(clientb, "blockchain_get_account another-account");
 
-   run_cmd(clientb, "blockchain_get_account_record b-account");
+   run_cmd(clientb, "blockchain_get_account b-account");
 
    run_cmd(clientb, "wallet_list_receive_accounts");
 
@@ -262,5 +262,5 @@ BOOST_FIXTURE_TEST_CASE( wallet_account_name_test, WFixture )
 
    run_cmd(clientb, "wallet_get_account x-account");
    run_cmd(clienta, "wallet_get_account x-account");
-   run_cmd(clientb, "blockchain_get_account_record x-account");
+   run_cmd(clientb, "blockchain_get_account x-account");
 } FC_LOG_AND_RETHROW() }

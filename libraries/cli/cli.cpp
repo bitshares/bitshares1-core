@@ -751,7 +751,7 @@ namespace bts { namespace cli {
                   const auto& block_records = result.as<vector<block_record>>();
                   *_out << pretty_block_list( block_records, _client );
               }
-              else if (method_name == "blockchain_list_registered_accounts")
+              else if (method_name == "blockchain_list_accounts")
               {
                   string start = "";
                   int32_t count = 25; // In CLI this is a more sane default
@@ -761,7 +761,7 @@ namespace bts { namespace cli {
                       count = arguments[1].as<int32_t>();
                   print_registered_account_list( result.as<vector<account_record>>(), count );
               }
-              else if (method_name == "blockchain_list_registered_assets")
+              else if (method_name == "blockchain_list_assets")
               {
                   auto records = result.as<vector<asset_record>>();
                   *_out << std::setw(6) << "ID";
@@ -819,7 +819,7 @@ namespace bts { namespace cli {
                   }
                   *_out << "\n";
               }
-              else if( method_name == "blockchain_get_account_record" )
+              else if( method_name == "blockchain_get_account" )
               {
                   const auto& account = result.as<oaccount_record>();
                   *_out << pretty_account( account, _client );
@@ -1215,7 +1215,7 @@ namespace bts { namespace cli {
                     /* Count is positive b/c CLI overrides default -1 arg */
                     if (counter >= count)
                     {
-                        *_out << "... Use \"blockchain_list_registered_accounts <start_name> <count>\" to see more.\n";
+                        *_out << "... Use \"blockchain_list_accounts <start_name> <count>\" to see more.\n";
                         return;
                     }
                     counter++;

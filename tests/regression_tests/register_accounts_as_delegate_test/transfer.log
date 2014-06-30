@@ -17,7 +17,7 @@ default (unlocked) >>>  enable_output false
 >>> wallet_account_update_registration test test {} true
 >>> enable_output true
 OK
-default (unlocked) >>> blockchain_list_registered_accounts "test" 10
+default (unlocked) >>> blockchain_list_accounts "test" 10
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      TRUST LEVEL    
 test                               XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]       N/A            N/A            0              
 default (unlocked) >>> quit

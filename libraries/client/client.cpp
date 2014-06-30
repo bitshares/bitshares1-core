@@ -1501,7 +1501,7 @@ config load_config( const fc::path& datadir )
       return _wallet->get_pretty_transaction_history(account);
     }
 
-    oaccount_record detail::client_impl::blockchain_get_account_record( const string& account )const
+    oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
       try
       {
@@ -1516,7 +1516,7 @@ config load_config( const fc::path& datadir )
       }
     }
 
-    oasset_record detail::client_impl::blockchain_get_asset_record(const string& symbol) const
+    oasset_record detail::client_impl::blockchain_get_asset(const string& symbol) const
     {
       return _chain_db->get_asset_record(symbol);
     }
@@ -1630,12 +1630,12 @@ config load_config( const fc::path& datadir )
          }
     } FC_CAPTURE_AND_RETHROW( (address_or_public_key) ) }
 
-    vector<account_record> detail::client_impl::blockchain_list_registered_accounts( const string& first, int32_t count) const
+    vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t count) const
     {
       return _chain_db->get_accounts(first, count);
     }
 
-    vector<asset_record> detail::client_impl::blockchain_list_registered_assets( const string& first, int32_t count) const
+    vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t count) const
     {
       return _chain_db->get_assets(first, count);
     }
@@ -2741,7 +2741,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_delegate_block_stats( delegate_record->id );
    }
 
-   string client_impl::blockchain_get_signing_delegate( uint32_t block_number )const
+   string client_impl::blockchain_get_block_signee( uint32_t block_number )const
    {
       return _chain_db->get_block_signee( block_number ).name;
    }

@@ -38,7 +38,7 @@
         "aliases" : ["alert_state", "security_state"]
       },
       {
-        "method_name": "blockchain_list_registered_accounts",
+        "method_name": "blockchain_list_accounts",
         "description": "Returns registered accounts starting with a given name upto a the limit provided",
         "return_type": "account_record_array",
         "parameters" : [
@@ -59,7 +59,7 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
-        "method_name": "blockchain_list_registered_assets",
+        "method_name": "blockchain_list_assets",
         "description": "Returns registered assets starting with a given name upto a the limit provided",
         "return_type": "asset_record_array",
         "parameters" : [
@@ -150,7 +150,7 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "blockchain_get_account_record",
+        "method_name": "blockchain_get_account",
         "description": "Retrieves the record for the given account name or ID",
         "return_type": "optional_account_record",
         "parameters" : [
@@ -165,7 +165,7 @@
         "aliases" : ["get_account"]
       },
       {
-        "method_name": "blockchain_get_asset_record",
+        "method_name": "blockchain_get_asset",
         "description": "Retrieves the asset record by the ticker symbol",
         "return_type": "optional_asset_record",
         "parameters" : [
@@ -177,7 +177,7 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
-        "aliases" : ["blockchain_get_asset"]
+        "aliases" : ["get_asset"]
       },
       {
         "method_name": "blockchain_get_asset_record_by_id",
@@ -373,7 +373,7 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "blockchain_get_signing_delegate",
+        "method_name": "blockchain_get_block_signee",
         "description": "Get the delegate that signed a given block",
         "return_type": "string",
         "parameters" : [
