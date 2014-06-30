@@ -86,36 +86,36 @@ namespace bts { namespace blockchain {
             void                       initialize_genesis(fc::optional<fc::path> genesis_file);
 
 
-            block_fork_data            store_and_index( const block_id_type& id, const full_block& blk );
-            void                       clear_pending(  const full_block& blk );
-            void                       switch_to_fork( const block_id_type& block_id );
-            void                       extend_chain( const full_block& blk );
-            vector<block_id_type>      get_fork_history( const block_id_type& id );
-            void                       pop_block();
-            void                       mark_invalid( const block_id_type& id, const fc::exception& reason );
-            void                       mark_included( const block_id_type& id, bool state );
-            void                       verify_header( const full_block& );
-            void                       apply_transactions( const signed_block_header& block,
-                                                           const std::vector<signed_transaction>&,
-                                                           const pending_chain_state_ptr& );
-            void                       pay_delegate( fc::time_point_sec time_slot, share_type amount,
-                                                           const pending_chain_state_ptr& );
-            void                       save_undo_state( const block_id_type& id,
-                                                           const pending_chain_state_ptr& );
-            void                       update_head_block( const full_block& blk );
+            std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
+            void                                        clear_pending(  const full_block& blk );
+            void                                        switch_to_fork( const block_id_type& block_id );
+            void                                        extend_chain( const full_block& blk );
+            vector<block_id_type>                       get_fork_history( const block_id_type& id );
+            void                                        pop_block();
+            void                                        mark_invalid( const block_id_type& id, const fc::exception& reason );
+            void                                        mark_included( const block_id_type& id, bool state );
+            void                                        verify_header( const full_block& );
+            void                                        apply_transactions( const signed_block_header& block,
+                                                                            const std::vector<signed_transaction>&,
+                                                                            const pending_chain_state_ptr& );
+            void                                        pay_delegate( fc::time_point_sec time_slot, share_type amount,
+                                                                            const pending_chain_state_ptr& );
+            void                                        save_undo_state( const block_id_type& id,
+                                                                            const pending_chain_state_ptr& );
+            void                                        update_head_block( const full_block& blk );
             std::vector<block_id_type> fetch_blocks_at_number( uint32_t block_num );
-            block_fork_data recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
-            void                       recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
+            std::pair<block_id_type, block_fork_data>   recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
+            void                                        recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
-            void                       update_random_seed( secret_hash_type new_secret, 
-                                                          const pending_chain_state_ptr& pending_state );
+            void                                        update_random_seed( secret_hash_type new_secret,
+                                                                           const pending_chain_state_ptr& pending_state );
 
-            void                       update_active_delegate_list(const full_block& block_data, 
-                                                                   const pending_chain_state_ptr& pending_state );
+            void                                        update_active_delegate_list(const full_block& block_data,
+                                                                                    const pending_chain_state_ptr& pending_state );
 
 
-            void                       update_delegate_production_info( const full_block& block_data, 
-                                                                        const pending_chain_state_ptr& pending_state );
+            void                                        update_delegate_production_info( const full_block& block_data,
+                                                                                         const pending_chain_state_ptr& pending_state );
       
             /**
              *  Used to track the cumulative effect of all pending transactions that are known,
@@ -292,10 +292,11 @@ namespace bts { namespace blockchain {
             _pending_transaction_db.remove( item );
       }
 
-      block_fork_data chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
+      std::pair<block_id_type, block_fork_data> chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
       {
          block_fork_data longest_fork;
          uint32_t highest_block_num = 0;
+         block_id_type last_block_id;
 
          std::unordered_set<block_id_type> next_ids = ids;
          while( next_ids.size() )
@@ -310,16 +311,17 @@ namespace bts { namespace blockchain {
                 _fork_db.store( item, record );
 
                 auto block_record = _block_id_to_block_record_db.fetch(item);
-                if( block_record.block_num > highest_block_num && record.next_blocks.size() > 0 )
+                if( block_record.block_num > highest_block_num )
                 {
                     highest_block_num = block_record.block_num;
+                    last_block_id = item;
                     longest_fork = record;
                 }
             }
             next_ids = pending;
          }
 
-         return longest_fork;
+         return std::make_pair(last_block_id, longest_fork);
       }
       void chain_database_impl::recursive_mark_as_invalid(const std::unordered_set<block_id_type>& ids , const fc::exception& reason)
       {
@@ -357,8 +359,12 @@ namespace bts { namespace blockchain {
        *      - mark both as unlinked
        *  3) It provides the missing link between the genesis block and an existing chain
        *      - all next blocks need to be updated to change state to 'linked'
+       *
+       *  Returns the pair of the block id and block_fork_data of the block with the highest block number
+       *  in the fork which contains the new block, in all of the above cases where the new block is linked;
+       *  otherwise, returns the block id and fork data of the new block
        */
-      block_fork_data chain_database_impl::store_and_index( const block_id_type& block_id,
+      std::pair<block_id_type, block_fork_data> chain_database_impl::store_and_index( const block_id_type& block_id,
                                                             const full_block& block_data )
       { try {
           auto now = blockchain::now();
@@ -421,7 +427,7 @@ namespace bts { namespace blockchain {
              {
                 // we found the missing link
                 current_fork.is_linked = true;
-                block_fork_data longest_fork = recursive_mark_as_linked( current_fork.next_blocks );
+                auto longest_fork = recursive_mark_as_linked( current_fork.next_blocks );
                 _fork_db.store( block_id, current_fork );
                 return longest_fork;
              }
@@ -432,7 +438,7 @@ namespace bts { namespace blockchain {
              //ilog( "          current_fork: ${id} = ${fork}", ("id",block_id)("fork",current_fork) );
           }
           _fork_db.store( block_id, current_fork );
-          return current_fork;
+          return std::make_pair(block_id, current_fork);
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
       void chain_database_impl::mark_invalid(const block_id_type& block_id , const fc::exception& reason)
@@ -1167,31 +1173,32 @@ namespace bts { namespace blockchain {
    /**
     *  Adds the block to the database and manages any reorganizations as a result.
     *
+    *  Returns the block_fork_data of the new block, not necessarily the head block
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
       auto block_id        = block_data.id();
       auto current_head_id = my->_head_block_id;
 
-      block_fork_data fork = my->store_and_index( block_id, block_data );
+      std::pair<block_id_type, block_fork_data> longest_fork = my->store_and_index( block_id, block_data );
+      optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
+      FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
 
       //ilog( "previous ${p} ==? current ${c}", ("p",block_data.previous)("c",current_head_id) );
       if( block_data.previous == current_head_id )
       {
          // attempt to extend chain
          my->extend_chain( block_data );
-         optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
+         new_fork_data = get_block_fork_data(block_id);
          FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
-         fork = *new_fork_data;
       }
-      else if( fork.can_link() && my->_block_id_to_block_record_db.fetch(*fork.next_blocks.begin()).block_num > my->_head_block_header.block_num )
+      else if( longest_fork.second.can_link() &&
+               my->_block_id_to_block_record_db.fetch(longest_fork.first).block_num > my->_head_block_header.block_num )
       {
          try {
-            my->switch_to_fork( *fork.next_blocks.begin() );
-            optional<block_fork_data> new_fork_data = get_block_fork_data(block_id);
+            my->switch_to_fork( longest_fork.first );
+            new_fork_data = get_block_fork_data(block_id);
             FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
-            fork = *new_fork_data;
-            return fork;
          }
          catch ( const fc::exception& e )
          {
@@ -1199,7 +1206,7 @@ namespace bts { namespace blockchain {
             my->switch_to_fork( current_head_id );
          }
       }
-      return fork;
+      return *new_fork_data;
    } FC_CAPTURE_AND_RETHROW( (block_data) )  }
 
 
