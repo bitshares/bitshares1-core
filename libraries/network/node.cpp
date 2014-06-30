@@ -21,12 +21,16 @@ namespace bts { namespace network {
          {
             peer->_socket.close();
          }
+         ilog( "." );
          _accept_loop.cancel();
          _attempt_new_connections_task.cancel();
          _keep_alive_task.cancel();
-         try { _accept_loop.wait(); } catch ( ... ){}
+         ilog( "attempt new loop" );
          try { _attempt_new_connections_task.wait(); } catch ( ... ) {}
+         ilog( "keep alive loop" );
          try { _keep_alive_task.wait(); } catch ( ... ) {}
+         ilog( "accept loop" );
+         try { _accept_loop.wait(); } catch ( ... ){}
       }
       catch ( const fc::exception& e )
       {
@@ -41,15 +45,16 @@ namespace bts { namespace network {
 
    void node::listen( const fc::ip::endpoint& ep )
    { try {
-      _accept_loop = fc::async( [this](){ accept_loop(); } );
-      _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(2) );
-       ulog( "delegate node listening on ${ep}", ("ep",ep) );
        try {
          _server.listen( ep );
        } catch ( const fc::exception& e )
        {
-          ulog( "${e}", ("e",e.to_detail_string() ) );
+          ilog( "${e}", ("e",e.to_detail_string() ) );
+          throw;
        }
+      _accept_loop = fc::async( [this](){ accept_loop(); } );
+      _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(1) );
+       ilog( "delegate node listening on ${ep}", ("ep",ep) );
    } FC_CAPTURE_AND_RETHROW( (ep) ) }
 
    vector<peer_info> node::get_peers()const
@@ -94,11 +99,11 @@ namespace bts { namespace network {
             case peer_response:
                break;
             case message_type::block:
-               ulog( "on block message  ${block}", ("block",msg.as<block_message>().block) );
+               ilog( "on block message  ${block}", ("block",msg.as<block_message>().block) );
                on_block_message( con, msg.as<block_message>() );
                break;
             case keep_alive:
-               ilog( "keep alive ${peer}", ("peer",con->_socket.remote_endpoint()) );
+               ilog( "keep alive ${peer}", ("peer",con->remote_endpoint()) );
                break;
             default:
                FC_ASSERT( !"unknown message type", "",("type",msg.type) );
@@ -106,7 +111,7 @@ namespace bts { namespace network {
       } 
       catch ( const fc::exception& e )
       {
-         ulog( "exception processing message ${m}", ("m",e.to_detail_string() ) );
+         ilog( "exception processing message ${m}", ("m",e.to_detail_string() ) );
          con->send_message( goodbye_message(e) ); 
          con->_socket.close();
       }
@@ -127,7 +132,7 @@ namespace bts { namespace network {
    void node::on_block_message( const shared_ptr<peer_connection>& con, 
                                 const block_message& msg )
    {
-       ulog( "received block ${block_num}", ("block_num",msg.block.block_num) );
+       ilog( "received block ${block_num}", ("block_num",msg.block.block_num) );
        // copy this..
        vector<peer_connection_ptr> broadcast_list( _peers.begin(), _peers.end() );
        for( auto peer : broadcast_list )
@@ -137,7 +142,13 @@ namespace bts { namespace network {
               fc::async( [peer, msg](){ peer->send_message(msg); } );
           }
        }
-       _client->get_chain()->push_block( msg.block );
+       try {
+          _client->get_chain()->push_block( msg.block );
+       } 
+       catch ( const fc::exception& e )
+       {
+          wlog( "${e}", ("e",e.to_detail_string() ) );
+       }
    }
 
    void node::broadcast_keep_alive()
@@ -148,7 +159,7 @@ namespace bts { namespace network {
        {
            fc::async( [peer]() { peer->send_message( keep_alive_message( fc::time_point::now() )  ); } );
        }
-       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(30) );
+       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(1) );
    }
 
    void node::on_signin_request( const shared_ptr<peer_connection>& con, 
@@ -179,19 +190,19 @@ namespace bts { namespace network {
       if( msg.reason )
       {
          elog( "Peer ${ep} disconnected us:\n${reason}",
-               ("ep",con->_socket.remote_endpoint())("e",msg.reason->to_detail_string() ) );
+               ("ep",con->remote_endpoint())("e",msg.reason->to_detail_string() ) );
       }
       con->_socket.close();
    }
 
    void node::connect_to( const fc::ip::endpoint& remote_peer )
    { try {
-      ulog( "attempting to connect to ${peer}", ("peer",remote_peer) );
+      ilog( "attempting to connect to ${peer}", ("peer",remote_peer) );
       _potential_peers[remote_peer].peer_endpoint = remote_peer;
 
       for( auto con : _peers )
       {
-         if( con->_socket.remote_endpoint() == remote_peer )
+         if( con->remote_endpoint() == remote_peer )
             return; // already connected
       }
 
@@ -204,8 +215,8 @@ namespace bts { namespace network {
    void node::on_connect( const shared_ptr<peer_connection>& con )
    { try {
       _peers.insert(con);
-      auto remote_ep = con->_socket.remote_endpoint();
-      ulog( "node connected ${e}", ("e", remote_ep ) );
+      auto remote_ep = con->remote_endpoint();
+      ilog( "node connected ${e}", ("e", remote_ep ) );
 
       _potential_peers[remote_ep].peer_endpoint = remote_ep;
       _potential_peers[remote_ep].is_connected    = true;
@@ -214,6 +225,7 @@ namespace bts { namespace network {
               [this]( const shared_ptr<peer_connection>& con, 
                       const optional<fc::exception>& err )
               {
+                 ilog( "connection closed.." );
                  on_disconnect( con, err );
               } );
       con->received_message.connect( 
@@ -228,17 +240,25 @@ namespace bts { namespace network {
    void node::on_disconnect( const shared_ptr<peer_connection>& con, 
                              const optional<fc::exception>& err )
    {
-      auto remote_ep = con->_socket.remote_endpoint();
-      ulog( "node disconnected ${e}", ("e", remote_ep ) );
-      _potential_peers[remote_ep].peer_endpoint = remote_ep;
-      _potential_peers[remote_ep].is_connected    = false;
-      _potential_peers[remote_ep].failed_attempts++;
+      ilog( "node disconnected" );
+      try {
+         _peers.erase( con );
 
-      if( err )
+         auto remote_ep = con->remote_endpoint();
+         ilog( "node disconnected ${e}", ("e", remote_ep ) );
+         _potential_peers[remote_ep].peer_endpoint = remote_ep;
+         _potential_peers[remote_ep].is_connected    = false;
+         _potential_peers[remote_ep].failed_attempts++;
+
+         if( err )
+         {
+             wlog( "disconnecting peer because: ${reason}", ("reason", err->to_detail_string() ) );
+         }
+      } 
+      catch ( const fc::exception& e )
       {
-          wlog( "disconnecting peer ${reason}", ("reason", err->to_detail_string() ) );
+         elog( "${e}", ("e",e.to_detail_string() ) );
       }
-      _peers.erase( con );
    }
 
    void node::signin( const vector<fc::ecc::private_key>& keys )
@@ -281,17 +301,17 @@ namespace bts { namespace network {
       }
       if( _peers.size() < _desired_peer_count )
       {
-         ulog( "attempting new connections to peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
+         ilog( "attempting new connections to peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
          _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(60) );
       }
       else {
-         ulog( "we have the desired number of peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
+         ilog( "we have the desired number of peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
       }
    }
 
    void node::broadcast_block( const full_block& block_to_broadcast )
    {
-       ulog( "broadcasting block ${b}", ("b",block_to_broadcast.block_num) );
+       ilog( "broadcasting block ${b}", ("b",block_to_broadcast.block_num) );
        vector<peer_connection_ptr> broadcast_list( _peers.begin(), _peers.end() );
        for( auto peer : broadcast_list )
        {

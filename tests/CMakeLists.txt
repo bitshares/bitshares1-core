@@ -12,6 +12,12 @@ add_executable( dev_tests dev_tests.cpp )
 target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )
 
 
+add_executable( server_node server_node.cpp )
+target_link_libraries( server_node bts_client bts_network bts_net fc bts_cli )
+
+add_executable( client_node client_node.cpp )
+target_link_libraries( client_node bts_client bts_network bts_net fc bts_cli )
+
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/client/include )
 
 if( WIN32 )
