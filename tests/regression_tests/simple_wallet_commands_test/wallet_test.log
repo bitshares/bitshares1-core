@@ -6,7 +6,7 @@ wallet1 (unlocked) >>> wallet_account_balance testaccount
 testaccount:
     0.00000 XTS
 wallet1 (unlocked) >>> wallet_list_my_accounts 
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        BLOCK PRODUCTION ENABLED 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
 testaccount                        XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0              N/A                      
 wallet1 (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
@@ -33,14 +33,13 @@ wallet1 (unlocked) >>> wallet_account_list_public_keys myaccount
   }
 ]
 wallet1 (unlocked) >>> wallet_list_my_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        BLOCK PRODUCTION ENABLED 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
 myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0              N/A                      
 wallet1 (unlocked) >>> wallet_list_my_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        BLOCK PRODUCTION ENABLED 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
 myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0              N/A                      
 wallet1 (unlocked) >>> wallet_account_transaction_history myaccount
-    BLK.TRX  TIMESTAMP           FROM                TO                  MEMO                                             AMOUNT             FEE              ID
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+No transactions found.
 wallet1 (unlocked) >>> wallet_account_update_private_data myaccount "1234 test private data"
 OK
 wallet1 (unlocked) >>> wallet_dump_private_key XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
@@ -53,34 +52,34 @@ wallet1 (unlocked) >>> wallet_export_to_json wallet1.json
 OK
 wallet1 (unlocked) >>> wallet_get_name 
 "wallet1"
-wallet1 (unlocked) >>> wallet_set_priority_fee 0
-OK
+wallet1 (unlocked) >>> wallet_set_priority_fee
+0.10000000000000001
 wallet1 (unlocked) >>> wallet_set_priority_fee 99999
-OK
+99999
 wallet1 (unlocked) >>> wallet_account_set_favorite myaccount
 OK
 wallet1 (unlocked) >>> wallet_list_favorite_accounts 
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    YES            0         
 wallet1 (unlocked) >>> wallet_account_set_favorite myaccount
 OK
 wallet1 (unlocked) >>> wallet_list_favorite_accounts 
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    YES            0         
 wallet1 (unlocked) >>> wallet_account_set_favorite myaccount false
 OK
 wallet1 (unlocked) >>> wallet_list_favorite_accounts 
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 wallet1 (unlocked) >>> wallet_add_contact_account test XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc
 OK
 wallet1 (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0         
 test                               XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc           NO                    NO             0         
 wallet1 (unlocked) >>> wallet_remove_contact_account test
 OK
 wallet1 (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       TRUSTED        
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0         
 wallet1 (unlocked) >>> wallet_set_setting t1 123456
 OK
