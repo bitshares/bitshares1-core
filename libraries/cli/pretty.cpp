@@ -71,9 +71,9 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         const auto num_missed = delegate_record.delegate_info->blocks_missed;
         out << std::setw(  9 ) << num_produced;
         out << std::setw(  9 ) << num_missed;
-        out << std::setw( 14 ) << pretty_percent( num_produced, num_produced + num_missed );
+        out << std::setw( 14 ) << pretty_percent( num_produced, num_produced + num_missed, 2 );
 
-        out << std::setw(  9 ) << uint32_t( delegate_record.delegate_info->pay_rate );
+        out << std::setw(  9 ) << pretty_percent( delegate_record.delegate_info->pay_rate, 100, 0 );
         const auto& pay_balance = asset( delegate_record.delegate_info->pay_balance );
         out << std::setw( 16 ) << client->get_chain()->to_pretty_asset( pay_balance );
 
@@ -95,10 +95,10 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     out << std::setw( 20 ) << "TIMESTAMP";
     out << std::setw( 32 ) << "SIGNING DELEGATE";
     out << std::setw(  8 ) << "# TXS";
-    out << std::setw(  8 )  << "SIZE";
+    out << std::setw(  8 ) << "SIZE";
     out << std::setw( 16 ) << "TOTAL FEES";
-    out << std::setw(  8 )  << "LATENCY";
-    out << std::setw( 15 )  << "PROCESSING TIME";
+    out << std::setw(  8 ) << "LATENCY";
+    out << std::setw( 15 ) << "PROCESSING TIME";
 
     out << pretty_line( 115 );
 
