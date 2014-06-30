@@ -2517,11 +2517,6 @@ namespace bts { namespace wallet {
           pretty_trx.block_num = loc->chain_location.block_num;
           pretty_trx.trx_num = loc->chain_location.trx_num;
       } 
-      else /* to_pretty_trx will often be called for transactions that are not in the chain yet */ 
-      { 
-          pretty_trx.block_num = -1;
-          pretty_trx.trx_num = -1;
-      }
 
       pretty_trx.trx_id = trx.id();
       pretty_trx.received_time = trx_rec.received_time.sec_since_epoch();
@@ -2529,10 +2524,6 @@ namespace bts { namespace wallet {
       pretty_trx.amount = trx_rec.amount;
       pretty_trx.fees = trx_rec.fees;
       pretty_trx.memo_message = trx_rec.memo_message;
-
-      pretty_trx.to_me = false;
-      pretty_trx.from_me = false;
-
 
       pretty_trx.from_account = "";
       if( trx_rec.from_account )
@@ -3116,15 +3107,14 @@ namespace bts { namespace wallet {
       return my->_wallet_db.lookup_account( addr );
    }
 
-   wallet::account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
+   account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    {
-      unordered_map<account_id_type, vote_status> raw_votes;
+      unordered_map<account_id_type, int64_t> raw_votes;
       for( const auto& b : my->_wallet_db.get_balances() )
       {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
           if( okey_rec && okey_rec->has_private_key() )
           {
-
              auto oacct_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
              if ( !(account_name == "" || (oacct_rec.valid() && oacct_rec->name == account_name)) )
                  continue;
@@ -3138,7 +3128,10 @@ namespace bts { namespace wallet {
                     FC_ASSERT( slate.valid() );
                     for( const auto& delegate_id : slate->supported_delegates )
                     {
-                       raw_votes[ delegate_id ].votes_for += bal.amount;
+                        if( raw_votes.count( delegate_id ) <= 0 )
+                            raw_votes[ delegate_id ] = bal.amount;
+                        else
+                            raw_votes[ delegate_id ] += bal.amount;
                     }
                 }
              }
@@ -3153,7 +3146,7 @@ namespace bts { namespace wallet {
       return result;
    }
 
-   wallet::account_balance_summary_type wallet::get_account_balances()const
+   account_balance_summary_type wallet::get_account_balances()const
    { try {
       FC_ASSERT( is_open() );
       auto pending_state = my->_blockchain->get_pending_state();

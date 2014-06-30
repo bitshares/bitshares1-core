@@ -26,6 +26,9 @@ struct public_key_summary
 
 struct pretty_transaction
 {
+    pretty_transaction()
+    :block_num(0),trx_num(0),created_time(0),received_time(0),fees(0),to_me(false),from_me(false){}
+
     int32_t                                     block_num;
     int32_t                                     trx_num;
     transaction_id_type                         trx_id;

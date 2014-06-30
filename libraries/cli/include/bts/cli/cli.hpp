@@ -1,13 +1,12 @@
 #pragma once
 
+#include <bts/api/api_metadata.hpp>
 #include <bts/client/client.hpp>
 #include <bts/rpc/rpc_server.hpp>
+
 #include <fc/variant.hpp>
-#include <fc/io/buffered_iostream.hpp>
-#include <bts/api/api_metadata.hpp>
+
 #include <boost/optional.hpp>
-#include "boost/iostreams/stream.hpp"
-#include "boost/iostreams/device/null.hpp"
 
 namespace bts { namespace rpc {
   class rpc_server;
