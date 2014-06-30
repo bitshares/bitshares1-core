@@ -42,6 +42,7 @@ string pretty_percent( double part, double whole, int precision )
 
 string pretty_delegate_list( const vector<account_record>& delegate_records, cptr client )
 {
+    FC_ASSERT( client != nullptr );
     std::stringstream out;
     out << std::left;
 
@@ -88,6 +89,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
 string pretty_block_list( const vector<block_record>& block_records, cptr client )
 {
+    FC_ASSERT( client != nullptr );
     std::stringstream out;
     out << std::left;
 
@@ -133,6 +135,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
 string pretty_transaction_list( const vector<pretty_transaction>& transactions, cptr client )
 {
+    FC_ASSERT( client != nullptr );
     std::stringstream out;
 
     out << std::setw(  7 ) << std::right << "BLK" << ".";
@@ -195,6 +198,49 @@ string pretty_vote_summary( const account_vote_summary_type& votes )
         out << std::setw( 16 ) << votes_for;
 
         out << "\n";
+    }
+
+    return out.str();
+}
+
+string pretty_account( const account_record& account, cptr client )
+{
+    FC_ASSERT( client != nullptr );
+    std::stringstream out;
+    out << std::left;
+
+    out << "Name: " << account.name << "\n";
+    out << "Registered: " << pretty_timestamp( account.registration_date ) << "\n";
+    out << "Last Updated: " << fc::get_approximate_relative_time_string( account.last_update ) << "\n";
+    out << "Owner Key: " << std::string( account.owner_key ) << "\n";
+
+    /* Only print active key history if there are keys in the history which are not the owner key */
+    if( account.active_key_history.size() > 1
+        || account.active_key_history.begin()->second != account.owner_key )
+    {
+      out << "Active Key History:\n";
+
+      for( const auto& key : account.active_key_history )
+      {
+          out << "  Key: " << std::string( key.second )
+              << ", last used " << fc::get_approximate_relative_time_string( key.first ) << "\n";
+      }
+    }
+
+    if( account.is_delegate() )
+    {
+      const vector<account_record> delegate_records = { account };
+      out << "\n" << pretty_delegate_list( delegate_records, client ) << "\n";
+    }
+    else
+    {
+      out << "Not a delegate.\n";
+    }
+
+    if( !account.public_data.is_null() )
+    {
+      out << "Public Data:\n";
+      out << fc::json::to_pretty_string( account.public_data ) << "\n";
     }
 
     return out.str();

@@ -821,68 +821,8 @@ namespace bts { namespace cli {
               }
               else if (method_name.find("blockchain_get_account_record") != std::string::npos)
               {
-                  // Pretty print of blockchain_get_account_record{,_by_id}
-                  bts::blockchain::account_record record;
-                  try
-                  {
-                      record = result.as<bts::blockchain::account_record>();
-                  }
-                  catch (...)
-                  {
-                      *_out << "No record found.\n";
-                      return;
-                  }
-                  *_out << "Record for '" << record.name << "' -- Registered on ";
-                  *_out << pretty_timestamp( record.registration_date );
-                  *_out << ", last update was " << fc::get_approximate_relative_time_string(record.last_update) << "\n";
-                  *_out << "Owner's key: " << std::string(record.owner_key) << "\n";
-
-                  //Only print active key history if there are keys in the history which are not the owner's key above.
-                  if (record.active_key_history.size() > 1 || record.active_key_history.begin()->second != record.owner_key)
-                  {
-                      *_out << "History of active keys:\n";
-
-                      for( const auto& key : record.active_key_history )
-                          *_out << "  Key " << std::string(key.second) << " last used " << fc::get_approximate_relative_time_string(key.first) << "\n";
-                  }
-
-                  if (record.is_delegate())
-                  {
-                      *_out << std::left;
-                      *_out << std::setw(20) << "NET VOTES";
-                      *_out << std::setw(16) << "BLOCKS PRODUCED";
-                      *_out << std::setw(16) << "BLOCKS MISSED";
-                      *_out << std::setw(20) << "PRODUCTION RATIO";
-                      *_out << std::setw(16) << "LAST BLOCK #";
-                      *_out << std::setw(20) << "TOTAL PAY";
-                      _out->put('\n');
-                      for( int i=0; i < 148; ++i )
-                          _out->put('-');
-                      _out->put('\n');
-
-                      auto supply = _client->get_chain()->get_asset_record(bts::blockchain::asset_id_type(0))->current_share_supply;
-                      auto last_block_produced = record.delegate_info->last_block_num_produced;
-                                                //Horribly painful way to print a % after a double with precision of 8. Better solutions welcome.
-                      *_out << std::setw(20) << (fc::variant(double(record.net_votes())*100.0 / supply).as_string().substr(0,10) + '%')
-                            << std::setw(16) << record.delegate_info->blocks_produced
-                            << std::setw(16) << record.delegate_info->blocks_missed
-                            << std::setw(20) << std::setprecision(4) << (double(record.delegate_info->blocks_produced) / (record.delegate_info->blocks_produced + record.delegate_info->blocks_missed));
-
-                            if( last_block_produced != uint32_t( -1 ) )
-                                *_out << std::setw(16) << last_block_produced;
-                            else
-                                *_out << std::setw(16) << "N/A";
-
-                      *_out << _client->get_chain()->to_pretty_asset(asset(record.delegate_pay_balance()))
-                            << "\n";
-                  }
-                  else
-                  {
-                      *_out << "This account is not a delegate.\n";
-                  }
-
-                  if(!record.public_data.is_null())
-                      *_out << "Public data:\n" << fc::json::to_pretty_string(record.public_data) << "\n";
+                  const auto& account = result.as<account_record>();
+                  *_out << pretty_account( account, _client );
               }
               else if (method_name == "blockchain_list_forks")
               {

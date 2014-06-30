@@ -31,4 +31,6 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
 string pretty_vote_summary( const account_vote_summary_type& votes );
 
+string pretty_account( const account_record& account, cptr client );
+
 } } // bts::cli
