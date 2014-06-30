@@ -822,8 +822,13 @@ namespace bts { namespace wallet {
       }
 
       /* Scan blocks we have missed while locked */
-      scan_chain( my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>(), 
-                                               my->_blockchain->get_head_block_num() );
+      uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>() / 2;
+      scan_chain( first,
+                  my->_blockchain->get_head_block_num(),
+                  [first](uint32_t current, uint32_t end){
+          std::cout << " Scanning for new transactions... [" << current-first << '/' << end-first << "]\r" << std::flush;
+      });
+      std::cout << "Finished scanning for new transactions.                                " << std::endl;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
 
    void wallet::lock()
