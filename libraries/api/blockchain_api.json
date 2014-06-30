@@ -166,33 +166,18 @@
       },
       {
         "method_name": "blockchain_get_asset",
-        "description": "Retrieves the asset record by the ticker symbol",
+        "description": "Retrieves the record for the given asset by ticker symbol or ID",
         "return_type": "optional_asset_record",
         "parameters" : [
             {
-              "name" : "symbol", 
-              "type" : "asset_symbol", 
-              "description" : "the ticker symbol to retrieve"
+              "name" : "asset",
+              "type" : "string",
+              "description" : "asset ticker symbol or ID to retrieve"
             }
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
         "aliases" : ["get_asset"]
-      },
-      {
-        "method_name": "blockchain_get_asset_record_by_id",
-        "description": "Retrieves the asset record by the id",
-        "return_type": "optional_asset_record",
-        "parameters" : [
-            {
-              "name" : "asset_id", 
-              "type" : "asset_id_type", 
-              "description" : "the id of the asset to retrieve"
-            }
-        ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
-        "aliases" : ["blockchain_get_asset_by_id"]
       },
       {
         "method_name": "blockchain_list_proposals",

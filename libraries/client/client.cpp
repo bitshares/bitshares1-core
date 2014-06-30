@@ -1512,18 +1512,23 @@ config load_config( const fc::path& datadir )
       }
       catch( ... )
       {
-          return oaccount_record();
       }
+      return oaccount_record();
     }
 
-    oasset_record detail::client_impl::blockchain_get_asset(const string& symbol) const
+    oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
     {
-      return _chain_db->get_asset_record(symbol);
-    }
-
-    oasset_record detail::client_impl::blockchain_get_asset_record_by_id(const asset_id_type& asset_id) const
-    {
-      return _chain_db->get_asset_record(asset_id);
+      try
+      {
+          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+              return _chain_db->get_asset_record( asset );
+          else
+              return _chain_db->get_asset_record( std::stoi( asset ) );
+      }
+      catch( ... )
+      {
+      }
+      return oasset_record();
     }
 
     void detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
