@@ -88,9 +88,8 @@
  */
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                  (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
-/** defines the maximum block size allowed, 24 MB per hour */
-//#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   (24 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
-#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   (30*64*1024)  // 2 min blocks, this is 64K max block size
+/** defines the maximum block size allowed, 2 MB per hour */
+#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   ( 2 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
 
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
