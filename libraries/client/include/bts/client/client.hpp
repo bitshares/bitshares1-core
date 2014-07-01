@@ -62,7 +62,7 @@ namespace bts { namespace client {
           {
              default_peers[0]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT );
              default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+1 );
-             default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+2 );
+             default_peers[2]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+2 );
              logging = fc::logging_config::default_config();
           }
 
