@@ -282,9 +282,10 @@ class WalletAPI
   #   account_name `account_name` - the account that will be updated
   #   account_name `pay_from_account` - the account from which fees will be paid
   #   json_variant `public_data` - public data about the account
+  #   uint32_t `delegate_pay_rate` - percent to pay delegate, 0 to 100 or 255 if not a delegate
   # return_type: `transaction_record`
-  account_update_registration: (account_name, pay_from_account, public_data) ->
-    @rpc.request('wallet_account_update_registration', [account_name, pay_from_account, public_data]).then (response) ->
+  account_update_registration: (account_name, pay_from_account, public_data, delegate_pay_rate) ->
+    @rpc.request('wallet_account_update_registration', [account_name, pay_from_account, public_data, delegate_pay_rate]).then (response) ->
       response.result
 
   # Lists all accounts associated with this wallet
@@ -506,10 +507,10 @@ class WalletAPI
   # Enable or disable block production for a particular delegate account
   # parameters: 
   #   string `delegate_name` - The delegate to enable/disable block production for; ALL for all delegate accounts
-  #   bool `enable` - true to enable block production, false otherwise
+  #   bool `enabled` - true to enable block production, false otherwise
   # return_type: `void`
-  enable_delegate_block_production: (delegate_name, enable) ->
-    @rpc.request('wallet_enable_delegate_block_production', [delegate_name, enable]).then (response) ->
+  delegate_set_block_production: (delegate_name, enabled) ->
+    @rpc.request('wallet_delegate_set_block_production', [delegate_name, enabled]).then (response) ->
       response.result
 
 

@@ -1084,7 +1084,7 @@
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_enable_delegate_block_production",
+         "method_name" : "wallet_delegate_set_block_production",
          "description" : "Enable or disable block production for a particular delegate account",
          "return_type" : "void",
          "parameters"  : [
@@ -1094,7 +1094,7 @@
                 "description" : "The delegate to enable/disable block production for; ALL for all delegate accounts"
             },
             {
-                "name" : "enable",
+                "name" : "enabled",
                 "type" : "bool",
                 "description" : "true to enable block production, false otherwise"
             }

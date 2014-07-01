@@ -2808,9 +2808,9 @@ config load_config( const fc::path& datadir )
       _chain_db->remove_observer(&block_waiter);
    }
 
-   void client_impl::wallet_enable_delegate_block_production( const string& delegate_name, bool enable )
+   void client_impl::wallet_delegate_set_block_production( const string& delegate_name, bool enabled )
    {
-      _wallet->enable_delegate_block_production( delegate_name, enable );
+      _wallet->set_delegate_block_production( delegate_name, enabled );
       reschedule_delegate_loop();
    }
 
