@@ -53,7 +53,7 @@ namespace bts { namespace client {
     struct config
     {
        config( ) : 
-          default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:"}), 
+          default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}), 
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
@@ -62,6 +62,7 @@ namespace bts { namespace client {
           {
              default_peers[0]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT );
              default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+1 );
+             default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+2 );
              logging = fc::logging_config::default_config();
           }
 
