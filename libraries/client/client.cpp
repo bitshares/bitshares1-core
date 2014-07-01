@@ -667,26 +667,18 @@ config load_config( const fc::path& datadir )
           }
 
           const auto slot_number = blockchain::get_slot_number( now );
-          auto next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
+          time_point next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
           ilog( "Rescheduling delegate loop for time: ${t}", ("t",next_slot_time) );
 
           if (ntp_time().valid())
           {
-            double offset = bts::blockchain::ntp_error();
-            if( offset < 0 )
-            {
-                offset = floor( offset );
-                next_slot_time += uint32_t( -offset );
-            }
-            else
-            {
-                offset = ceil( offset );
-                next_slot_time -= uint32_t( offset );
-            }
+            fc::microseconds offset = bts::blockchain::ntp_error();
+            next_slot_time -= offset ;
           }
 
           /* Don't reschedule immediately in case we are in simulation */
-          if( next_slot_time == time_point::now() ) next_slot_time += 1;
+          if (next_slot_time <= time_point::now()) 
+            next_slot_time = time_point::now() + fc::seconds(1);
 
           _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, next_slot_time );
        }
@@ -2386,7 +2378,7 @@ config load_config( const fc::path& datadir )
       if( blockchain::ntp_time().valid() )
       {
         info["ntp_time"]                                        = now;
-        info["ntp_error"]                                       = blockchain::ntp_error();
+        info["ntp_error"]                                       = static_cast<double>(blockchain::ntp_error().count()) / fc::seconds(1).count();
       }
 
       /* Wallet */
