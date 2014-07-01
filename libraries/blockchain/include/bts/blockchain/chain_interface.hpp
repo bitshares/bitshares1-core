@@ -103,6 +103,8 @@ namespace bts { namespace blockchain {
          virtual oaccount_record            get_account_record( account_id_type id )const           = 0;
          virtual oaccount_record            get_account_record( const address& owner )const         = 0;
 
+         virtual bool                       is_known_transaction( const transaction_id_type& trx_id ) = 0;
+
          virtual otransaction_record        get_transaction( const transaction_id_type& trx_id, 
                                                              bool exact = true )const               = 0;
 

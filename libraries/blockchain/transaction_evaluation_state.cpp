@@ -128,9 +128,8 @@ namespace bts { namespace blockchain {
         ilog( "id: ${id}", ("id",trx_id) );
 
 
-        otransaction_record known_transaction= _current_state->get_transaction( trx_id );
-        if( known_transaction )
-           FC_CAPTURE_AND_THROW( duplicate_transaction, (known_transaction) );
+        if( _current_state->is_known_transaction( trx_id ) )
+           FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
        
         trx = trx_arg;
         auto digest = trx_arg.digest( _chain_id );

@@ -28,6 +28,7 @@ namespace bts { namespace blockchain {
          virtual void                 store_delegate_slate( slate_id_type id, 
                                                             const delegate_slate& slate ) override;
 
+         virtual bool                 is_known_transaction( const transaction_id_type& trx_id ) override;
          virtual otransaction_record  get_transaction( const transaction_id_type& trx_id, 
                                                        bool exact = true )const override;
 
