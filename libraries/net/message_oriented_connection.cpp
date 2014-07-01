@@ -127,7 +127,7 @@ namespace bts { namespace net {
           /// Dedicated catches needed to distinguish from general fc::exception
           catch ( fc::canceled_exception& e ) { throw e; }
           catch ( fc::eof_exception& e ) { throw e; }
-          catch ( fc::exception& e ) 
+          catch ( fc::exception& ) 
           { 
             /// Here loop should be continued so exception should be just caught locally.
             //wlog( "message transmission failed ${er}", ("er", e.to_detail_string() ) );

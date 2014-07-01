@@ -824,7 +824,7 @@ namespace bts { namespace wallet {
       }
 
       /* Scan blocks we have missed while locked */
-      uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>() / 2;
+      uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
       scan_chain( first,
                   my->_blockchain->get_head_block_num(),
                   [first](uint32_t current, uint32_t end){
@@ -2486,7 +2486,7 @@ namespace bts { namespace wallet {
       const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
       idump( (priority_fee) );
       if( priority_fee.is_null() ) return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE );
-      return priority_fee.as<asset>(); //asset(priority_fee.as<share_type>());
+      return priority_fee.as<asset>(); 
    } FC_CAPTURE_AND_RETHROW() }
    
    string wallet::get_key_label( const public_key_type& key )const

@@ -427,7 +427,7 @@ class WalletAPI
   # Used to set the priority fee for new transactions. Return current fee if no parameter is provided.
   # parameters: 
   #   real_amount `fee` - the wallet priority fee to be set
-  # return_type: `real_amount`
+  # return_type: `asset`
   set_priority_fee: (fee) ->
     @rpc.request('wallet_set_priority_fee', [fee]).then (response) ->
       response.result
