@@ -53,9 +53,9 @@ OK
 wallet1 (unlocked) >>> wallet_get_name 
 "wallet1"
 wallet1 (unlocked) >>> wallet_set_priority_fee
-0.10000000000000001
+0.10000 XTS
 wallet1 (unlocked) >>> wallet_set_priority_fee 99999
-99999
+99,999.00000 XTS
 wallet1 (unlocked) >>> wallet_account_set_favorite myaccount
 OK
 wallet1 (unlocked) >>> wallet_list_favorite_accounts 

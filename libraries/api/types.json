@@ -261,7 +261,7 @@
       },
       {
         "type_name" : "asset",
-        "cpp_return_type" : "std::pair<bts::blockchain::share_type,std::string>",
+        "cpp_return_type" : "bts::blockchain::asset",
         "default_example" : "TODO"        
       },
       {

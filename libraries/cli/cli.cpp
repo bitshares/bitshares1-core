@@ -979,6 +979,11 @@ namespace bts { namespace cli {
                       *_out << "\n";
                   }
               }
+              else if( method_name == "wallet_set_priority_fee" )
+              {
+                  const auto fee = result.as<asset>();
+                  *_out << _client->get_chain()->to_pretty_asset( fee ) << "\n";
+              }
               else
               {
                 // there was no custom handler for this particular command, see if the return type

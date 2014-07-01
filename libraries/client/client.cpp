@@ -1881,7 +1881,7 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::bitcoin_settrxfee(int64_t amount)
     {
-       _wallet->set_priority_fee( amount );
+       _wallet->set_priority_fee( asset( amount ) );
     }
 
     string detail::client_impl::bitcoin_signmessage(const address& address_to_sign_with, const string& message)
@@ -2604,15 +2604,16 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
-   double client_impl::wallet_set_priority_fee( double fee )
+   asset client_impl::wallet_set_priority_fee( double fee )
    { try {
       FC_ASSERT( fee >= 0, "Priority fee should be non-negative." );
       if( fee > 0 )
       {
-          auto converted_fee = uint64_t( fee * BTS_BLOCKCHAIN_PRECISION );
-          _wallet->set_priority_fee( converted_fee );
+          const auto asset_record = _chain_db->get_asset_record( asset_id_type() );
+          FC_ASSERT( asset_record.valid() );
+          _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
       }
-      return _wallet->get_priority_fee().amount / double ( BTS_BLOCKCHAIN_PRECISION );
+      return _wallet->get_priority_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const

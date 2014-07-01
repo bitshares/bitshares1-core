@@ -64,7 +64,8 @@
               "default_value" : ""
             }
           ],
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["create"]
       },
       {
         "method_name": "wallet_get_name",
@@ -924,7 +925,7 @@
       {
          "method_name"  : "wallet_set_priority_fee",
          "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
-         "return_type"  : "real_amount",
+         "return_type"  : "asset",
          "parameters"   : [
          {
             "name" : "fee",

@@ -108,15 +108,8 @@ namespace bts { namespace wallet {
          public_key_summary get_public_key_summary( const public_key_type& pubkey ) const;
          vector<public_key_type> get_public_keys_in_account( const string& account_name )const;
          
-         /**
-          *  @returns the priority fee paid denominated in the given asset symbol.
-          */
-         asset   get_priority_fee( const string& symbol = BTS_ADDRESS_PREFIX )const;
-      
-         /**
-          *  Set the default priority fee added to new transactions for this wallet.
-          */
-         void    set_priority_fee( uint64_t fee );
+         void    set_priority_fee( const asset& fee );
+         asset   get_priority_fee()const;
          ///@}
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;

@@ -645,8 +645,8 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.set_master_key( epk, my->_wallet_password);
 
-          my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(my->_blockchain->get_head_block_num()) );
-          my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(BTS_WALLET_DEFAULT_PRIORITY_FEE) );
+          my->_wallet_db.set_property( last_unlocked_scanned_block_number, variant( my->_blockchain->get_head_block_num() ) );
+          my->_wallet_db.set_property( default_transaction_priority_fee, variant( asset( BTS_WALLET_DEFAULT_PRIORITY_FEE ) ) );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
@@ -1393,7 +1393,7 @@ namespace bts { namespace wallet {
        asset asset_to_transfer( amount_to_transfer, asset_id );
 
        FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
-       FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ).amount );
+       //FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ).amount );
 
        /**
         *  TODO: until we support paying fees in other assets, this will not function
@@ -1411,7 +1411,7 @@ namespace bts { namespace wallet {
        public_key_type  sender_public_key   = sender_private_key.get_public_key();
        address          sender_account_address( sender_private_key.get_public_key() );
        
-       asset total_fee = get_priority_fee( amount_to_transfer_symbol );
+       asset total_fee = get_priority_fee();
 
        asset amount_collected( 0, asset_id );
        for( auto balance_item : my->_wallet_db.get_balances() )
@@ -1562,7 +1562,7 @@ namespace bts { namespace wallet {
        FC_ASSERT( delegate_account_record.valid() );
        FC_ASSERT( delegate_account_record->is_delegate() );
 
-       auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+       auto required_fees = get_priority_fee();
        FC_ASSERT( delegate_account_record->delegate_info->pay_balance >= (amount_to_withdraw + required_fees.amount), "",
                   ("delegate_account_record",delegate_account_record));
 
@@ -1643,7 +1643,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
         
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto required_fees = get_priority_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
@@ -1725,7 +1725,7 @@ namespace bts { namespace wallet {
          unordered_set<address> required_signatures;
          
          asset total_asset_to_transfer( 0, asset_id );
-         auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+         auto required_fees = get_priority_fee();
          
          vector<address> to_addresses;
          for( const auto& address_amount : to_address_amounts )
@@ -1803,7 +1803,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
         
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto required_fees = get_priority_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
@@ -1907,7 +1907,7 @@ namespace bts { namespace wallet {
       }
 
 
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto required_fees = get_priority_fee();
 
       bool as_delegate = false;
       if( delegate_pay_rate <= 100  )
@@ -1969,8 +1969,8 @@ namespace bts { namespace wallet {
 
 
       // TODO: adjust fee based upon blockchain price per byte and
-      // the size of trx... 'recursivey'
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      // the size of trx... 'recursively'
+      auto required_fees = get_priority_fee();
 
       auto size_fee = fc::raw::pack_size( data );
       required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
@@ -2016,7 +2016,7 @@ namespace bts { namespace wallet {
       signed_transaction         trx;
       unordered_set<address>     required_signatures;
       
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto required_fees = get_priority_fee();
 
       auto asset_record = my->_blockchain->get_asset_record( symbol );
       FC_ASSERT(asset_record.valid(), "no such asset record");
@@ -2088,7 +2088,7 @@ namespace bts { namespace wallet {
       auto account = my->_blockchain->get_account_record( account_to_update );
       FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_to_update));
       
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto required_fees = get_priority_fee();
 
 
       auto size_fee = fc::raw::pack_size( public_data );
@@ -2144,7 +2144,7 @@ namespace bts { namespace wallet {
       auto delegate_account = my->_blockchain->get_account_record( delegate_account_name );
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account_name));
       
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto required_fees = get_priority_fee();
 
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
       required_fees += asset( my->_blockchain->calculate_data_fee( fc::raw::pack_size(trx) ), 0 );
@@ -2203,7 +2203,7 @@ namespace bts { namespace wallet {
       FC_ASSERT(message.size() < BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE );
       trx.vote_proposal( proposal_id, delegate_account->id, vote, message );
 
-      auto required_fees = get_priority_fee( BTS_ADDRESS_PREFIX );
+      auto required_fees = get_priority_fee();
       required_fees += asset( my->_blockchain->calculate_data_fee(fc::raw::pack_size(trx)), 0 );
       
       /*
@@ -2276,7 +2276,7 @@ namespace bts { namespace wallet {
         const market_order_status& order = order_itr->second;
         asset balance = order.get_balance();
 
-        auto required_fees = get_priority_fee(BTS_BLOCKCHAIN_SYMBOL);
+        auto required_fees = get_priority_fee();
 
         if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
 
@@ -2390,7 +2390,7 @@ namespace bts { namespace wallet {
        private_key_type from_private_key  = get_account_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
-       auto required_fees = get_priority_fee(BTS_BLOCKCHAIN_SYMBOL);
+       auto required_fees = get_priority_fee();
 
        if( cost_shares.asset_id == 0 )
        {
@@ -2454,27 +2454,21 @@ namespace bts { namespace wallet {
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
 
-   asset wallet::get_priority_fee( const string& symbol )const
+   void wallet::set_priority_fee( const asset& fee )
+   {
+      FC_ASSERT( is_open () );
+      my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
+   }
+
+   asset wallet::get_priority_fee()const
    {
       FC_ASSERT( is_open () );
       // TODO: support price conversion using price from blockchain
-      auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
-      if ( priority_fee.is_null() )
-      {
-         return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE, 0 );
-      }
-      else
-      {
-         return asset( priority_fee.as<uint64_t>(), 0 );
-      }
+      const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
+      if( priority_fee.is_null() ) return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE );
+      return priority_fee.as<asset>();
    }
    
-   void wallet::set_priority_fee( uint64_t fee )
-   {
-      FC_ASSERT( is_open () );
-      my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant(fee) );
-   }
-
    string wallet::get_key_label( const public_key_type& key )const
    { try {
        auto acct_record = my->_wallet_db.lookup_account( key );
