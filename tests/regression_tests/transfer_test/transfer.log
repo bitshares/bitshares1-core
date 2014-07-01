@@ -19,4 +19,4 @@ delegate0:
     19,801,880.09801 XTS
 default (unlocked) >>> wallet_account_balance test
 test:
-    100.00000 XTS
+    0.00000 XTS
