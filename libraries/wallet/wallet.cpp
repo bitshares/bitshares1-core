@@ -688,7 +688,6 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
-          unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
 
           FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
       }
@@ -744,9 +743,15 @@ namespace bts { namespace wallet {
 
    void wallet::close()
    { try {
+      try
+      {
+          my->cancel_relocker();
+      }
+      catch( ... )
+      {
+      }
       my->_wallet_password = fc::sha512();
       my->_scheduled_lock_time = fc::optional<fc::time_point_sec>();
-      my->cancel_relocker();
 
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
@@ -2479,7 +2484,6 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open () );
       // TODO: support price conversion using price from blockchain
       const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
-      idump( (priority_fee) );
       if( priority_fee.is_null() ) return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE );
       return priority_fee.as<asset>(); 
    } FC_CAPTURE_AND_RETHROW() }
