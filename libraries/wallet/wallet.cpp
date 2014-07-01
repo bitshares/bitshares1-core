@@ -52,6 +52,7 @@ namespace bts { namespace wallet {
              fc::future<void>                   _wallet_relocker_done;
              fc::promise<void>::ptr             _wallet_shutting_down_promise;
              bool                               _use_deterministic_one_time_keys;
+             bool                               _delegate_scanning_enabled;
 
              fc::ecc::private_key create_one_time_key()
              {
@@ -80,7 +81,7 @@ namespace bts { namespace wallet {
              */
             virtual void block_applied( const block_summary& summary )override
             {
-               if( self->is_open() && self->is_unlocked() && self->get_my_delegates( enabled_delegate_status ).empty() )
+               if( self->is_open() && self->is_unlocked() && (_delegate_scanning_enabled || self->get_my_delegates( enabled_delegate_status ).empty() ) )
                {
                   auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
                   scan_block( summary.block_data.block_num, account_priv_keys );
@@ -557,6 +558,7 @@ namespace bts { namespace wallet {
    :my( new detail::wallet_impl() )
    {
       my->self = this;
+      my->_delegate_scanning_enabled = false;
       my->_use_deterministic_one_time_keys = false;
       my->_blockchain = blockchain;
       my->_blockchain->add_observer( my.get() );
@@ -1168,6 +1170,10 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
+   void  wallet::enable_delegate_wallet_scanning( bool s )
+   {
+      my->_delegate_scanning_enabled = s;
+   }
    void  wallet::scan_chain( uint32_t start, uint32_t end, 
                              const scan_progress_callback& progress_callback )
    { try {
@@ -1181,7 +1187,7 @@ namespace bts { namespace wallet {
          ++start;
       }
 
-      if( !get_my_delegates( enabled_delegate_status ).empty() )
+      if( !my->_delegate_scanning_enabled && !get_my_delegates( enabled_delegate_status ).empty() )
       {
          ulog( "\nWallet blockchain scanning disabled because there are enabled delegates!\n" );
          return;
@@ -1214,6 +1220,7 @@ namespace bts { namespace wallet {
 
    void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
+      trx.expiration = bts::blockchain::now() + BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC;
       for( const auto& addr : req_sigs )
       {
          trx.sign( get_private_key( addr ), my->_blockchain->chain_id()  );
@@ -2461,13 +2468,14 @@ namespace bts { namespace wallet {
    }
 
    asset wallet::get_priority_fee()const
-   {
+   { try {
       FC_ASSERT( is_open () );
       // TODO: support price conversion using price from blockchain
       const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
+      idump( (priority_fee) );
       if( priority_fee.is_null() ) return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE );
-      return asset(priority_fee.as<share_type>());
-   }
+      return priority_fee.as<asset>(); //asset(priority_fee.as<share_type>());
+   } FC_CAPTURE_AND_RETHROW() }
    
    string wallet::get_key_label( const public_key_type& key )const
    { try {
