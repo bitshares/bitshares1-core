@@ -822,7 +822,7 @@ namespace bts { namespace wallet {
       }
 
       /* Scan blocks we have missed while locked */
-      uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>() / 2;
+      uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
       scan_chain( first,
                   my->_blockchain->get_head_block_num(),
                   [first](uint32_t current, uint32_t end){
