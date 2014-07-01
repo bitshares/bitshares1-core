@@ -71,6 +71,7 @@ namespace bts { namespace net
           enqueue_time(enqueue_time)
         {}
       };
+      size_t _total_queued_messages_size;
       std::queue<queued_message> _queued_messages;
       fc::future<void> _send_queued_messages_done;
     public:
@@ -136,6 +137,7 @@ namespace bts { namespace net
       peer_connection(peer_connection_delegate* delegate) : 
         _node(delegate),
         _message_connection(this),
+        _total_queued_messages_size(0),
         direction(peer_connection_direction::unknown),
         is_firewalled(firewalled_state::unknown),
         our_state(our_connection_state::disconnected),

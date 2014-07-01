@@ -37,10 +37,10 @@ fc::time_point_sec now()
       return fc::time_point::now() + fc::seconds( adjusted_time_sec );
 }
 
-double ntp_error()
+fc::microseconds ntp_error()
 {
    FC_ASSERT( ntp_time().valid(), "We don't have NTP time!" );
-   return ( *ntp_time() - fc::time_point::now() ).count() / double( 1000000 );
+   return *ntp_time() - fc::time_point::now();
 }
 
 fc::time_point_sec ntp_to_system( const fc::time_point_sec& time )

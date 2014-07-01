@@ -11,7 +11,7 @@ namespace bts { namespace blockchain {
 
    fc::optional<fc::time_point> ntp_time();
    fc::time_point_sec           now();
-   double                       ntp_error();
+   fc::microseconds             ntp_error();
    fc::time_point_sec           ntp_to_system( const fc::time_point_sec& time );
 
    void                         start_simulated_time( const fc::time_point& sim_time );
