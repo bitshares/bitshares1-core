@@ -617,12 +617,12 @@ config load_config( const fc::path& datadir )
 
        void client_impl::delegate_loop()
        {
-          auto now = bts::blockchain::now();
+          const auto now = blockchain::now();
 
           if( !_wallet->is_open() || _wallet->is_locked() ) return;
           const auto& enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
           if( enabled_delegates.empty() ) return;
-          auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
+          const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
 
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
           if( next_block_time.valid() )
@@ -666,7 +666,7 @@ config load_config( const fc::path& datadir )
               }
           }
 
-          auto slot_number = blockchain::get_slot_number( now );
+          const auto slot_number = blockchain::get_slot_number( now );
           auto next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
           ilog( "Rescheduling delegate loop for time: ${t}", ("t",next_slot_time) );
 
@@ -685,8 +685,10 @@ config load_config( const fc::path& datadir )
             }
           }
 
-          if (next_slot_time > fc::time_point::now())
-            _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, next_slot_time );
+          /* Don't reschedule immediately in case we are in simulation */
+          if( next_slot_time == time_point::now() ) next_slot_time += 1;
+
+          _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, next_slot_time );
        }
 
        vector<account_record> client_impl::blockchain_list_active_delegates( uint32_t first, uint32_t count )const
