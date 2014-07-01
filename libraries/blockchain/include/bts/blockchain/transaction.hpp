@@ -28,9 +28,9 @@ namespace bts { namespace blockchain {
    {
       transaction(){}
 
-      digest_type                      digest( const digest_type& chain_id )const;
+      digest_type                 digest( const digest_type& chain_id )const;
 
-      optional<fc::time_point_sec> expiration;
+      fc::time_point_sec          expiration;
       /**
        *  Some transactions such as bids/asks/options require a payout
        *  as a condition of claiming the funds.  Ie: to claim a bid, you 

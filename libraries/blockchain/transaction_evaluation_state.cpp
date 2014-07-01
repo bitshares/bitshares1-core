@@ -116,11 +116,18 @@ namespace bts { namespace blockchain {
    { try {
       reset();
       try {
-        if( trx_arg.expiration && *trx_arg.expiration < _current_state->now() )
-           FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now()) );
+        if( trx_arg.expiration < _current_state->now() )
+        {
+           auto expired_by_sec = (trx_arg.expiration - _current_state->now()).to_seconds();
+           FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
+        }
+        if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )
+           FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
        
         auto trx_id = trx_arg.id();
         ilog( "id: ${id}", ("id",trx_id) );
+
+
         otransaction_record known_transaction= _current_state->get_transaction( trx_id );
         if( known_transaction )
            FC_CAPTURE_AND_THROW( duplicate_transaction, (known_transaction) );
