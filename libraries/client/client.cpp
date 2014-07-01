@@ -313,7 +313,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
 
 config load_config( const fc::path& datadir )
 { try {
-      auto config_file = datadir/"config.json";
+      fc::path config_file = datadir/"config.json";
       config cfg;
       if( fc::exists( config_file ) )
       {
@@ -385,7 +385,7 @@ config load_config( const fc::path& datadir )
 
                   virtual void log( const fc::log_message& m ) override
                   {
-                     auto format = m.get_format();
+                     string format = m.get_format();
                      // lookup translation on format here
 
                      // perform variable substitution;
@@ -620,7 +620,7 @@ config load_config( const fc::path& datadir )
           const auto now = blockchain::now();
 
           if( !_wallet->is_open() || _wallet->is_locked() ) return;
-          const auto& enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
+          vector<wallet_account_record> enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
           if( enabled_delegates.empty() ) return;
           const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
 
@@ -666,7 +666,7 @@ config load_config( const fc::path& datadir )
               }
           }
 
-          const auto slot_number = blockchain::get_slot_number( now );
+          uint32_t slot_number = blockchain::get_slot_number( now );
           time_point next_slot_time = blockchain::get_slot_start_time( slot_number + 1 );
           ilog( "Rescheduling delegate loop for time: ${t}", ("t",next_slot_time) );
 
@@ -688,9 +688,9 @@ config load_config( const fc::path& datadir )
           if( first > 0 ) --first;
           FC_ASSERT( first < BTS_BLOCKCHAIN_NUM_DELEGATES );
           FC_ASSERT( first + count <= BTS_BLOCKCHAIN_NUM_DELEGATES );
-          const auto& all_delegate_ids = _chain_db->get_active_delegates();
+          vector<account_id_type> all_delegate_ids = _chain_db->get_active_delegates();
           FC_ASSERT( all_delegate_ids.size() == BTS_BLOCKCHAIN_NUM_DELEGATES );
-          auto delegate_ids = vector<account_id_type>( all_delegate_ids.begin() + first, all_delegate_ids.begin() + first + count );
+          vector<account_id_type> delegate_ids( all_delegate_ids.begin() + first, all_delegate_ids.begin() + first + count );
 
           vector<account_record> delegate_records;
           delegate_records.reserve( count );
@@ -706,7 +706,7 @@ config load_config( const fc::path& datadir )
        vector<account_record> client_impl::blockchain_list_delegates( uint32_t first, uint32_t count )const
        {
           if( first > 0 ) --first;
-          const auto& delegate_ids = _chain_db->get_delegates_by_vote( first, count );
+          vector<account_id_type> delegate_ids = _chain_db->get_delegates_by_vote( first, count );
 
           vector<account_record> delegate_records;
           delegate_records.reserve( count );
@@ -726,7 +726,7 @@ config load_config( const fc::path& datadir )
           vector<block_record> result;
           if (count == 0) return result;
 
-          auto total_blocks = _chain_db->get_head_block_num();
+          uint32_t total_blocks = _chain_db->get_head_block_num();
           FC_ASSERT( first <= total_blocks );
 
           int32_t increment = 1;
@@ -762,7 +762,7 @@ config load_config( const fc::path& datadir )
        signed_transactions client_impl::blockchain_get_pending_transactions() const
        {
          signed_transactions trxs;
-         auto pending = _chain_db->get_pending_transactions();
+         vector<transaction_evaluation_state_ptr> pending = _chain_db->get_pending_transactions();
          trxs.reserve(pending.size());
          for (auto trx_eval_ptr : pending)
          {
@@ -1734,7 +1734,7 @@ config load_config( const fc::path& datadir )
     int64_t detail::client_impl::bitcoin_getbalance(const string& account_name)
     { try {
 
-       auto balances = _wallet->get_account_balances();
+       account_balance_summary_type balances = _wallet->get_account_balances();
        auto itr = balances.find( account_name );
        if( itr != balances.end() )
        {
@@ -1800,7 +1800,7 @@ config load_config( const fc::path& datadir )
 
     std::unordered_map< string, bts::blockchain::share_type > detail::client_impl::bitcoin_listaccounts()
     {
-       auto account_blances = _wallet->get_account_balances();
+       account_balance_summary_type account_blances = _wallet->get_account_balances();
 
        std::unordered_map< string, bts::blockchain::share_type > account_bts_balances;
        for ( auto account_blance : account_blances )
@@ -2344,13 +2344,13 @@ config load_config( const fc::path& datadir )
 
     variant_object client_impl::get_info()const
     {
-      auto now = blockchain::now();
+      fc::time_point_sec now = blockchain::now();
       fc::mutable_variant_object info;
 
       /* Blockchain */
-      auto head_block_num                                       = _chain_db->get_head_block_num();
+      uint32_t head_block_num                                   = _chain_db->get_head_block_num();
       info["blockchain_head_block_num"]                         = head_block_num;
-      auto head_block_timestamp                                 = _chain_db->now();
+      fc::time_point_sec head_block_timestamp                   = _chain_db->now();
       info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
       info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
 
@@ -2358,8 +2358,8 @@ config load_config( const fc::path& datadir )
       info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
-      auto share_record                                         = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
-      auto share_supply                                         = share_record.valid() ? share_record->current_share_supply : 0;
+      oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
+      share_type share_supply                                   = share_record ? share_record->current_share_supply : 0;
       info["blockchain_share_supply"]                           = share_supply;
       info["blockchain_random_seed"]                            = _chain_db->get_current_random_seed();
 
@@ -2368,7 +2368,7 @@ config load_config( const fc::path& datadir )
 
       /* Network */
       info["network_num_connections"]                           = network_get_connection_count();
-      auto advanced_params                                      = network_get_advanced_node_parameters();
+      fc::variant_object advanced_params                        = network_get_advanced_node_parameters();
       info["network_num_connections_max"]                       = advanced_params["maximum_number_of_connections"];
       info["network_protocol_version"]                          = BTS_NET_PROTOCOL_VERSION;
 
@@ -2382,7 +2382,7 @@ config load_config( const fc::path& datadir )
       }
 
       /* Wallet */
-      auto is_open                                              = _wallet->is_open();
+      bool is_open                                              = _wallet->is_open();
       info["wallet_open"]                                       = is_open;
 
       info["wallet_unlocked"]                                   = variant();
@@ -2397,20 +2397,20 @@ config load_config( const fc::path& datadir )
       {
         info["wallet_unlocked"]                                 = _wallet->is_unlocked();
 
-        auto unlocked_until                                     = _wallet->unlocked_until();
-        if( unlocked_until.valid() )
+        optional<time_point_sec> unlocked_until                 = _wallet->unlocked_until();
+        if( unlocked_until )
         {
           info["wallet_unlocked_until"]                         = fc::get_approximate_relative_time_string( *unlocked_until, now );
           info["wallet_unlocked_until_timestamp"]               = *unlocked_until;
 
-          const auto& enabled_delegates                         = _wallet->get_my_delegates( enabled_delegate_status );
-          auto block_production_enabled                         = !enabled_delegates.empty();
+          vector<wallet_account_record> enabled_delegates       = _wallet->get_my_delegates( enabled_delegate_status );
+          bool block_production_enabled                         = !enabled_delegates.empty();
           info["wallet_block_production_enabled"]               = block_production_enabled;
 
           if( block_production_enabled )
           {
-            auto next_block_time                                = _wallet->get_next_producible_block_timestamp( enabled_delegates );
-            if( next_block_time.valid() )
+            optional<time_point_sec> next_block_time            = _wallet->get_next_producible_block_timestamp( enabled_delegates );
+            if( next_block_time )
             {
               info["wallet_next_block_production_time"]         = fc::get_approximate_relative_time_string( *next_block_time, now );
               info["wallet_next_block_production_timestamp"]    = *next_block_time;
@@ -2435,9 +2435,9 @@ config load_config( const fc::path& datadir )
 
     bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
     {
-        auto state = blockchain_security_state();
+        blockchain_security_state state;
         int64_t required_confirmations = _chain_db->get_required_confirmations();
-        auto participation_rate = _chain_db->get_average_delegate_participation();
+        double participation_rate = _chain_db->get_average_delegate_participation();
         state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
         if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
@@ -2544,8 +2544,8 @@ config load_config( const fc::path& datadir )
 
     vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
     {
-        auto summaries = vector<public_key_summary>();
-        auto keys = _wallet->get_public_keys_in_account( account_name );
+        vector<public_key_summary> summaries;
+        vector<public_key_type> keys = _wallet->get_public_keys_in_account( account_name );
         summaries.reserve( keys.size() );
         for (auto key : keys)
         {
@@ -2603,8 +2603,8 @@ config load_config( const fc::path& datadir )
       FC_ASSERT( fee >= 0, "Priority fee should be non-negative." );
       if( fee > 0 )
       {
-          const auto asset_record = _chain_db->get_asset_record( asset_id_type() );
-          FC_ASSERT( asset_record.valid() );
+          oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
+          FC_ASSERT( asset_record );
           _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
       }
       return _wallet->get_priority_fee();
@@ -2674,7 +2674,7 @@ config load_config( const fc::path& datadir )
 
       if( filename != "" )
       {
-          auto file_path = fc::path( filename );
+          fc::path file_path( filename );
           FC_ASSERT( !fc::exists( file_path ) );
           std::ofstream out( filename.c_str() );
           for( auto item : result )

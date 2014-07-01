@@ -40,6 +40,7 @@
 #include <fc/git_revision.hpp>
 
 #include <bts/net/peer_connection.hpp>
+#include <bts/net/exceptions.hpp>
 
 #ifdef DEFAULT_LOGGER
 # undef DEFAULT_LOGGER
@@ -47,6 +48,10 @@
 #define DEFAULT_LOGGER "p2p"
 
 namespace bts { namespace net { 
+
+  FC_REGISTER_EXCEPTIONS( (net_exception)
+                          (send_queue_overflow) )
+
   namespace detail 
   {
     namespace bmi = boost::multi_index;
@@ -2012,7 +2017,6 @@ namespace bts { namespace net { namespace detail {
             fc::oexception handle_message_exception;
 
             bool client_accepted_block = false;
-            bool block_caused_fork_switch = false;
             try
             {
               dlog( "sync: this block is a potential first block, passing it to the client" );
@@ -2026,7 +2030,7 @@ namespace bts { namespace net { namespace detail {
               if( std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
                             block_message_to_process.block_id ) == _most_recent_blocks_accepted.end() )
               {
-                block_caused_fork_switch = _delegate->handle_message( block_message_to_process, true );
+                _delegate->handle_message( block_message_to_process, true );
                 _most_recent_blocks_accepted.push_back( block_message_to_process.block_id );
               }
               else
@@ -2159,16 +2163,15 @@ namespace bts { namespace net { namespace detail {
         // we don't know they're the same ( for the peer in normal operation, it has only told us the
         // message id, for the peer in the sync case we only known the block_id ).
         fc::time_point message_validated_time;
-        bool block_caused_fork_switch = false;
         if( std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
                       block_message_to_process.block_id ) == _most_recent_blocks_accepted.end() )
         {
-          block_caused_fork_switch = _delegate->handle_message( block_message_to_process, false );
+          _delegate->handle_message( block_message_to_process, false );
           message_validated_time = fc::time_point::now();
           _most_recent_blocks_accepted.push_back( block_message_to_process.block_id );
         }
         else
-          dlog( "Already received and accepted this block (presumably through sync mechanism ), treating it as accepted" );
+          dlog( "Already received and accepted this block (presumably through sync mechanism), treating it as accepted" );
 
         dlog( "client validated the block, advertising it to other peers" );
 

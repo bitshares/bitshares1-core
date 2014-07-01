@@ -1,4 +1,5 @@
 #include <bts/net/peer_connection.hpp>
+#include <bts/net/exceptions.hpp>
 
 #ifdef DEFAULT_LOGGER
 # undef DEFAULT_LOGGER
@@ -124,11 +125,12 @@ namespace bts { namespace net
           }
           catch (const fc::exception& close_error)
           {
-            elog("Caught error while closing connection.", ("exception", close_error));
+            elog("Caught error while closing connection: ${exception}", ("exception", close_error));
           }
           return;
         }
         _queued_messages.front().transmission_finish_time = fc::time_point::now();
+        _total_queued_messages_size -= _queued_messages.front().message_to_send.size;
         _queued_messages.pop();
       }
     }
@@ -136,6 +138,22 @@ namespace bts { namespace net
     void peer_connection::send_message( const message& message_to_send )
     {
       _queued_messages.emplace(queued_message(message_to_send));
+      _total_queued_messages_size += message_to_send.size;
+      if (_total_queued_messages_size > BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES)
+      {
+        elog("send queue exceeded maximum size of ${max} bytes (current size ${current} bytes)",
+             ("max", BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES)("current", _total_queued_messages_size));
+        try
+        {
+          close_connection();
+        }
+        catch (const fc::exception& e)
+        {
+          elog("Caught error while closing connection: ${exception}", ("exception", e));
+        }
+        return;
+      }
+
       if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
         _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
     }
