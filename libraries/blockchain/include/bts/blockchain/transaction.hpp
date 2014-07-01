@@ -28,9 +28,9 @@ namespace bts { namespace blockchain {
    {
       transaction(){}
 
-      digest_type                      digest( const digest_type& chain_id )const;
+      digest_type                 digest( const digest_type& chain_id )const;
 
-      optional<fc::time_point_sec> expiration;
+      fc::time_point_sec          expiration;
       /**
        *  Some transactions such as bids/asks/options require a payout
        *  as a condition of claiming the funds.  Ie: to claim a bid, you 
@@ -71,6 +71,7 @@ namespace bts { namespace blockchain {
                          uint8_t pro_fee = 255 );
 
       void update_account( account_id_type name_id, 
+                        uint8_t delegate_pay_rate,
                         const optional<variant>& public_data, 
                         const optional<public_key_type>& active );
 

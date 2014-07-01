@@ -50,6 +50,12 @@ namespace bts { namespace blockchain {
       fc::optional<fc::variant>         public_data;
       fc::optional<public_key_type>     active_key;
 
+      // 0-100% of the transaction fees to be paid to delegate
+      // this value can only be reduced, never increased from
+      // the prior value.
+      uint8_t                           delegate_pay_rate; 
+
+      bool is_delegate()const { return delegate_pay_rate <= 100; }
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
@@ -71,5 +77,5 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(delegate_pay_rate)(meta_data) )
-FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key) )
+FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key)(delegate_pay_rate) )
 FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )

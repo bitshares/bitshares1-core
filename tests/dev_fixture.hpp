@@ -178,6 +178,7 @@ struct chain_fixture
       clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
       clienta->configure_from_command_line( 0, nullptr );
       clienta->set_daemon_mode(true);
+      clienta->get_wallet()->enable_delegate_wallet_scanning(true);
       clienta->start();
       ilog( "... " );
 
@@ -185,6 +186,7 @@ struct chain_fixture
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
       clientb->set_daemon_mode(true);
+      clientb->get_wallet()->enable_delegate_wallet_scanning(true);
       clientb->start();
       ilog( "... " );
 

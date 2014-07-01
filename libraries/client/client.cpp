@@ -2487,11 +2487,14 @@ config load_config( const fc::path& datadir )
 
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
-                                                                        const variant& public_data )
+                                                                        const variant& public_data,
+                                                                        uint32_t delegate_pay_rate )
     {
+       FC_ASSERT( delegate_pay_rate <= 255 );
        auto trx = _wallet->update_registered_account( account_to_update,
                                                            pay_from_account,
                                                            public_data,
+                                                           delegate_pay_rate,
                                                            optional<public_key_type>(), true );
 
        network_broadcast_transaction( trx.trx );

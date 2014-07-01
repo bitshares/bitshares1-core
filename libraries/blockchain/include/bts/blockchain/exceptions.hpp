@@ -40,6 +40,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( negative_withdraw, bts::blockchain::evaluation_error, 31009, "negative withdraw" );
    FC_DECLARE_DERIVED_EXCEPTION( not_an_active_delegate, bts::blockchain::evaluation_error, 31010, "not an active delegate" );
    FC_DECLARE_DERIVED_EXCEPTION( expired_transaction, bts::blockchain::evaluation_error, 31011, "expired transaction" );
+   FC_DECLARE_DERIVED_EXCEPTION( invalid_transaction_expiration, bts::blockchain::evaluation_error, 31012, "invalid transaction expiration" );
 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_account_name, bts::blockchain::evaluation_error, 32001, "invalid account name" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_account_id, bts::blockchain::evaluation_error, 32002, "unknown account id" );

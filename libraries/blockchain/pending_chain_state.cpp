@@ -74,6 +74,14 @@ namespace bts { namespace blockchain {
       return prev_state->get_transaction( trx_id, exact );
    }
 
+   bool pending_chain_state::is_known_transaction( const transaction_id_type& id )
+   { try {
+      auto itr = transactions.find( id );
+      if( itr != transactions.end() ) return true;
+      chain_interface_ptr prev_state = _prev_state.lock();
+      return prev_state->is_known_transaction( id );
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
+
    void pending_chain_state::store_transaction( const transaction_id_type& id,
                                                 const transaction_record& rec )
    {

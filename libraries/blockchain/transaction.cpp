@@ -119,6 +119,7 @@ namespace bts { namespace blockchain {
       operations.push_back( register_account_operation( name, public_data, master, active, pro_fee ) );
    }
    void transaction::update_account( account_id_type account_id, 
+                                  uint8_t delegate_pay_rate,
                                   const fc::optional<fc::variant>& public_data, 
                                   const fc::optional<public_key_type>& active   )
    {
@@ -126,6 +127,7 @@ namespace bts { namespace blockchain {
       op.account_id = account_id;
       op.public_data = public_data;
       op.active_key = active;
+      op.delegate_pay_rate = delegate_pay_rate;
       operations.push_back( op );
    }
 

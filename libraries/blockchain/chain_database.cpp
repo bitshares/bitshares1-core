@@ -145,6 +145,8 @@ namespace bts { namespace blockchain {
             //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
             bts::db::level_map<block_id_type,block_record>                      _block_id_to_block_record_db;
             bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_data_db;
+
+            std::unordered_set<transaction_id_type>                             _known_transactions;
             bts::db::level_map<transaction_id_type,transaction_record>          _id_to_transaction_record_db;
 
             // used to revert block state in the event of a fork
@@ -221,6 +223,9 @@ namespace bts { namespace blockchain {
           _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
           _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
+
+          for( auto itr = _id_to_transaction_record_db.begin(); itr.valid(); ++itr )
+             _known_transactions.insert( itr.key() );
 
           _pending_transaction_db.open( data_dir / "index/pending_transaction_db" );
 
@@ -1384,11 +1389,15 @@ namespace bts { namespace blockchain {
                                            const transaction_record& record_to_store ) 
    { try {
       if( record_to_store.trx.operations.size() == 0 )
+      {
         my->_id_to_transaction_record_db.remove( record_id );
+        my->_known_transactions.erase( record_id );
+      }
       else
       {
         FC_ASSERT( record_id == record_to_store.trx.id() );
         my->_id_to_transaction_record_db.store( record_id, record_to_store );
+        my->_known_transactions.insert( record_id );
       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
@@ -1446,10 +1455,6 @@ namespace bts { namespace blockchain {
           trxs.push_back( item.second );
       }
       return trxs;
-   }
-   bool chain_database::is_known_transaction( const transaction_id_type& trx_id )
-   {
-      return my->_id_to_transaction_record_db.find( trx_id ).valid();
    }
 
    full_block chain_database::generate_block( const time_point_sec& timestamp )
@@ -2126,4 +2131,9 @@ namespace bts { namespace blockchain {
       return my->_delegate_block_stats_db.fetch_optional( std::make_pair( delegate_id, block_num ) );
    }
 
+
+   bool chain_database::is_known_transaction( const transaction_id_type& id )
+   {
+      return my->_known_transactions.find( id ) != my->_known_transactions.end();
+   }
 } } // namespace bts::blockchain

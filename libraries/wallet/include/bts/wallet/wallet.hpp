@@ -32,6 +32,8 @@ namespace bts { namespace wallet {
          wallet( chain_database_ptr chain );
          virtual ~wallet();
 
+         void enable_delegate_wallet_scanning( bool s );
+
          //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
          fc::signal<void( bool )>  wallet_lock_state_changed;
 
@@ -302,10 +304,11 @@ namespace bts { namespace wallet {
                                            const variant& private_data );
 
          wallet_transaction_record update_registered_account( const string& account_name,
-                                                       const string& pay_from_account,
-                                                       optional<variant> json_data,
-                                                       optional<public_key_type> active = optional<public_key_type>(),
-                                                       bool sign = true );
+                                      const string& pay_from_account,
+                                      optional<variant> public_data,
+                                      uint8_t delegate_pay_rate = 255,
+                                      optional<public_key_type> active = optional<public_key_type>(),
+                                      bool sign = true );
 
          signed_transaction create_proposal( const string& delegate_account_name,
                                              const string& subject,

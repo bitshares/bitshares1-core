@@ -15,11 +15,13 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                              "XTS"
-#define BTS_BLOCKCHAIN_SYMBOL                           "XTS"
-#define BTS_BLOCKCHAIN_NAME                             "BitShares XTS"
-#define BTS_BLOCKCHAIN_DESCRIPTION                      "Stake in future BitShares X chains"
-#define BTS_BLOCKCHAIN_PRECISION                        (100000)
+#define BTS_ADDRESS_PREFIX                                 "XTS"
+#define BTS_BLOCKCHAIN_SYMBOL                              "XTS"
+#define BTS_BLOCKCHAIN_NAME                                "BitShares XTS"
+#define BTS_BLOCKCHAIN_DESCRIPTION                         "Stake in future BitShares X chains"
+#define BTS_BLOCKCHAIN_PRECISION                           (100000)
+#define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC      (60*60*24*2)
+#define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC  (60*60*2)
 
 /**
  * The number of delegates that the blockchain is designed to support
@@ -37,7 +39,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(120)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(15)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
@@ -86,9 +88,8 @@
  */
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                  (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
-/** defines the maximum block size allowed, 24 MB per hour */
-//#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   (24 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
-#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   (30*64*1024)  // 2 min blocks, this is 64K max block size
+/** defines the maximum block size allowed, 2 MB per hour */
+#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   ( 2 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
 
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
