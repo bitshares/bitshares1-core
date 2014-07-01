@@ -580,7 +580,8 @@ namespace bts { namespace wallet {
           }
           else
           {
-              const auto scheduled_time = blockchain::ntp_to_system( *_scheduled_lock_time );
+              time_point scheduled_time = *_scheduled_lock_time;
+              if( blockchain::ntp_time().valid() ) scheduled_time -= blockchain::ntp_error();
               ilog( "Scheduling wallet relocker thread for time: ${t}", ("t",scheduled_time) );
               _relocker_thread = fc::schedule( [&](){ relocker(); }, scheduled_time );
           }

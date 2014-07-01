@@ -43,21 +43,6 @@ fc::microseconds ntp_error()
    return *ntp_time() - fc::time_point::now();
 }
 
-fc::time_point_sec ntp_to_system( const fc::time_point_sec& time )
-{
-   double offset = ntp_error();
-   if( offset < 0 )
-   {
-       offset = floor( offset );
-       return time + uint32_t( -offset );
-   }
-   else
-   {
-       offset = ceil( offset );
-       return time - uint32_t( offset );
-   }
-}
-
 void start_simulated_time( const fc::time_point& sim_time )
 {
    simulated_time = sim_time.sec_since_epoch();
