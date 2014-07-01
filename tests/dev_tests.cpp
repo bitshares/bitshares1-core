@@ -59,7 +59,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "wallet_list_my_accounts" );
-   exec( clientb, "wallet_account_update_registration b-account delegate30 { \"ip\":\"localhost\"} true" );
+   exec( clientb, "wallet_account_update_registration b-account delegate30 { \"ip\":\"localhost\"} 75" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    produce_block( clienta );
    wlog( "------------------  CLIENT B  -----------------------------------" );
@@ -272,6 +272,12 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "info" );
 
+   exec( clientb, "wallet_account_update_registration b-account delegate30 { \"ip\":\"localhost\"} 85" );
+   exec( clientb, "wallet_account_update_registration b-account delegate30 { \"ip\":\"localhost\"} 65" );
+   wlog( "------------------  CLIENT A  -----------------------------------" );
+   produce_block( clienta );
+   wlog( "------------------  CLIENT B  -----------------------------------" );
+   exec( clientb, "wallet_list_my_accounts" );
 //   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
 
 

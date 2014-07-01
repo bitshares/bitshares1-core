@@ -71,6 +71,7 @@ namespace bts { namespace blockchain {
                          uint8_t pro_fee = 255 );
 
       void update_account( account_id_type name_id, 
+                        uint8_t delegate_pay_rate,
                         const optional<variant>& public_data, 
                         const optional<public_key_type>& active );
 

@@ -621,6 +621,12 @@
                   "type" : "json_variant",
                   "description" : "public data about the account",
                   "default_value" : null
+               },
+               {
+                  "name" : "delegate_pay_rate",
+                  "type" : "uint32_t",
+                  "description" : "percent to pay delegate, 0 to 100 or 255 if not a delegate",
+                  "default_value" : 255
                }
             ],
          "prerequisites" : ["wallet_unlocked"],

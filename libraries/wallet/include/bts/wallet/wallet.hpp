@@ -304,10 +304,11 @@ namespace bts { namespace wallet {
                                            const variant& private_data );
 
          wallet_transaction_record update_registered_account( const string& account_name,
-                                                       const string& pay_from_account,
-                                                       optional<variant> json_data,
-                                                       optional<public_key_type> active = optional<public_key_type>(),
-                                                       bool sign = true );
+                                      const string& pay_from_account,
+                                      optional<variant> public_data,
+                                      uint8_t delegate_pay_rate = 255,
+                                      optional<public_key_type> active = optional<public_key_type>(),
+                                      bool sign = true );
 
          signed_transaction create_proposal( const string& delegate_account_name,
                                              const string& subject,

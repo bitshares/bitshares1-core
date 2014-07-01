@@ -2077,6 +2077,7 @@ namespace bts { namespace wallet {
    wallet_transaction_record wallet::update_registered_account( const string& account_to_update,
                                                                 const string& pay_from_account,
                                                                 optional<variant> public_data,
+                                                                uint8_t delegate_pay_rate,
                                                                 optional<public_key_type> new_active_key,
                                                                 bool sign )
    { try {
@@ -2094,9 +2095,20 @@ namespace bts { namespace wallet {
 
       auto account = my->_blockchain->get_account_record( account_to_update );
       FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_to_update));
-      
+
       auto required_fees = get_priority_fee();
 
+      if( account->is_delegate() )
+      {
+         FC_ASSERT( delegate_pay_rate <= account->delegate_info->pay_rate );
+      }
+      else
+      {
+         if( delegate_pay_rate <= 100  )
+         {
+           required_fees += asset(my->_blockchain->get_delegate_registration_fee(),0);
+         }
+      }
 
       auto size_fee = fc::raw::pack_size( public_data );
       required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
@@ -2108,7 +2120,7 @@ namespace bts { namespace wallet {
      
       required_signatures.insert( account->active_key() ); 
     
-      trx.update_account( account->id, public_data, new_active_key );
+      trx.update_account( account->id, delegate_pay_rate, public_data, new_active_key );
        
       if (sign)
       {
