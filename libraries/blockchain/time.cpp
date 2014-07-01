@@ -1,7 +1,7 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
-#include <fc/network/ntp.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/network/ntp.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -41,6 +41,21 @@ double ntp_error()
 {
    FC_ASSERT( ntp_time().valid(), "We don't have NTP time!" );
    return ( *ntp_time() - fc::time_point::now() ).count() / double( 1000000 );
+}
+
+fc::time_point_sec ntp_to_system( const fc::time_point_sec& time )
+{
+   double offset = ntp_error();
+   if( offset < 0 )
+   {
+       offset = floor( offset );
+       return time + uint32_t( -offset );
+   }
+   else
+   {
+       offset = ceil( offset );
+       return time - uint32_t( offset );
+   }
 }
 
 void start_simulated_time( const fc::time_point& sim_time )
