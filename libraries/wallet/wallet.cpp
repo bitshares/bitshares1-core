@@ -2466,7 +2466,7 @@ namespace bts { namespace wallet {
       // TODO: support price conversion using price from blockchain
       const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
       if( priority_fee.is_null() ) return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE );
-      return asset(priority_fee.as<share_type>());
+      return priority_fee.as<asset>();
    }
    
    string wallet::get_key_label( const public_key_type& key )const
