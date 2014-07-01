@@ -1,7 +1,8 @@
 #pragma once
-#include <fc/time.hpp>
+
 #include <fc/optional.hpp>
 #include <fc/signals.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 
