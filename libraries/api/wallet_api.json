@@ -899,7 +899,7 @@
          "aliases": ["public_keys"]
       },
       {
-         "method_name"  : "wallet_withdraw_delegate_pay",
+         "method_name"  : "wallet_delegate_withdraw_pay",
          "description"  : "Used to transfer some of the delegate's pay from their balance",
          "return_type"  : "signed_transaction",
          "parameters"   : [
@@ -1084,7 +1084,7 @@
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_enable_delegate_block_production",
+         "method_name" : "wallet_delegate_set_block_production",
          "description" : "Enable or disable block production for a particular delegate account",
          "return_type" : "void",
          "parameters"  : [
@@ -1094,9 +1094,22 @@
                 "description" : "The delegate to enable/disable block production for; ALL for all delegate accounts"
             },
             {
-                "name" : "enable",
+                "name" : "enabled",
                 "type" : "bool",
                 "description" : "true to enable block production, false otherwise"
+            }
+          ],
+         "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_delegate_set_transaction_scanning",
+         "description" : "Enable or disable wallet transaction scanning",
+         "return_type" : "void",
+         "parameters"  : [
+            {
+                "name" : "enabled",
+                "type" : "bool",
+                "description" : "true to enable transaction scanning, false otherwise"
             }
           ],
          "prerequisites" : ["wallet_open"]

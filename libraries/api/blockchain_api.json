@@ -237,13 +237,13 @@
                "name" : "first",
                "type" : "uint32_t",
                "description" : "",
-               "default_value" : 1
+               "default_value" : 0
              },
              {
                "name" : "count",
                "type" : "uint32_t",
                "description" : "",
-               "default_value" : 51
+               "default_value" : 20
              }
          ],
          "is_const" : true,
@@ -259,13 +259,13 @@
               "name" : "first",
               "type" : "uint32_t",
               "description" : "",
-              "default_value" : 1
+              "default_value" : 0
             },
             {
               "name" : "count",
               "type" : "uint32_t",
               "description" : "",
-              "default_value" : 51
+              "default_value" : 20
             }
         ],
         "is_const" : true,
@@ -281,13 +281,13 @@
                "name" : "first_block_number",
                "type" : "uint32_t",
                "description" : "the first block to list. If limit is negative, a first_block_number of 0 indicates the head block; otherwise, 0 indicates the first block",
-               "default_value" : 1
+               "default_value" : 0
             },
             {
                "name" : "limit",
                "type" : "int32_t",
                "description" : "the maximum number of blocks to return. A negative value means to start at the head block and work backwards; a positive value means to start at the first block",
-               "default_value" : 20 
+               "default_value" : -20
             }
          ], 
          "aliases" : ["list_blocks"],

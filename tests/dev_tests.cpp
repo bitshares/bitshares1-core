@@ -24,8 +24,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "unlock 99999999 masterpassword" );
    exec( clienta, "wallet_account_balance" );
    exec( clienta, "wallet_account_balance delegate31" );
-   exec( clienta, "wallet_enable_delegate_block_production delegate31 true" );
-   exec( clienta, "wallet_enable_delegate_block_production delegate33 true" );
+   exec( clienta, "wallet_delegate_set_block_production delegate31 true" );
+   exec( clienta, "wallet_delegate_set_block_production delegate33 true" );
    exec( clienta, "wallet_set_delegate_trust delegate33 true" );
    exec( clienta, "wallet_set_delegate_trust delegate34 true" );
    exec( clienta, "wallet_set_delegate_trust delegate35 true" );
@@ -48,8 +48,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_account_balance" );
    exec( clientb, "wallet_account_balance delegate30" );
    exec( clientb, "unlock 999999999 masterpassword" );
-   exec( clientb, "wallet_enable_delegate_block_production delegate30 true" );
-   exec( clientb, "wallet_enable_delegate_block_production delegate32 true" );
+   exec( clientb, "wallet_delegate_set_block_production delegate30 true" );
+   exec( clientb, "wallet_delegate_set_block_production delegate32 true" );
 
    exec( clientb, "wallet_account_create b-account" );
    exec( clientb, "wallet_account_balance b-account" );
@@ -163,7 +163,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
       produce_block( clientb );
    }
    exec( clientb, "blockchain_get_account delegate32" );
-   exec( clientb, "wallet_withdraw_delegate_pay delegate32 c-account .01234" );
+   exec( clientb, "wallet_delegate_withdraw_pay delegate32 c-account .01234" );
    produce_block( clientb );
    exec( clientb, "wallet_account_transaction_history delegate32" );
    exec( clientb, "blockchain_list_delegates" );

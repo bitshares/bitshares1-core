@@ -591,7 +591,7 @@ void bts_client_launcher_fixture::register_delegates()
     client_processes[client_for_this_delegate].rpc_client->wallet_import_private_key(key_to_wif(delegate_keys[i]));
     client_processes[client_for_this_delegate].rpc_client->wallet_rescan_blockchain();
 
-    client_processes[client_for_this_delegate].rpc_client->wallet_enable_delegate_block_production(delegate_name.str(), true);
+    client_processes[client_for_this_delegate].rpc_client->wallet_delegate_set_block_production(delegate_name.str(), true);
   }
 }
 

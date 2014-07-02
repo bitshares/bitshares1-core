@@ -27,7 +27,8 @@ namespace bts { namespace rpc {
        rpc_server(bts::client::client* client);
        virtual ~rpc_server();
 
-       bool        configure( const bts::client::rpc_server_config& cfg );
+       bool        configure_rpc( const bts::client::rpc_server_config& cfg );
+       bool        configure_http(const bts::client::rpc_server_config& cfg);
 
        /// used to invoke json methods from the cli without going over the network
        fc::variant direct_invoke_method(const std::string& method_name, const fc::variants& arguments);

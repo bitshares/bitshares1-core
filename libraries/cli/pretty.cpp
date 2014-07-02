@@ -1,3 +1,4 @@
+#include <bts/blockchain/time.hpp>
 #include <bts/cli/pretty.hpp>
 
 #include <iomanip>
@@ -49,7 +50,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
     out << std::left;
 
     out << std::setw(  6 ) << "ID";
-    out << std::setw( 32 ) << "NAME";
+    out << std::setw( 32 ) << "NAME (* next)";
     out << std::setw( 15 ) << "APPROVAL";
     out << std::setw(  9 ) << "PRODUCED";
     out << std::setw(  9 ) << "MISSED";
@@ -60,14 +61,27 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
     out << pretty_line( 120 );
 
-    const auto& asset_record = client->get_chain()->get_asset_record( asset_id_type() );
+    const auto current_slot_timestamp = blockchain::get_slot_start_time( blockchain::now() );
+    const auto head_block_timestamp = client->get_chain()->get_head_block().timestamp;
+    const auto next_slot_time = std::max( current_slot_timestamp, head_block_timestamp );
+    const auto& active_delegates = client->get_chain()->get_active_delegates();
+    const auto next_slot_signee = client->get_chain()->get_slot_signee( next_slot_time, active_delegates );
+    const auto next_signee_name = next_slot_signee.name;
+
+    const auto asset_record = client->get_chain()->get_asset_record( asset_id_type() );
     FC_ASSERT( asset_record.valid() );
     const auto share_supply = asset_record->current_share_supply;
 
     for( const auto& delegate_record : delegate_records )
     {
         out << std::setw(  6 ) << delegate_record.id;
-        out << std::setw( 32 ) << pretty_shorten( delegate_record.name, 31 );
+
+        const auto delegate_name = delegate_record.name;
+        if( delegate_name != next_signee_name )
+            out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
+        else
+            out << std::setw( 32 ) << pretty_shorten( delegate_name, 29 ) + " *";
+
         out << std::setw( 15 ) << pretty_percent( delegate_record.net_votes(), share_supply, 10 );
 
         const auto num_produced = delegate_record.delegate_info->blocks_produced;
@@ -77,7 +91,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         out << std::setw( 14 ) << pretty_percent( num_produced, num_produced + num_missed, 2 );
 
         out << std::setw(  9 ) << pretty_percent( delegate_record.delegate_info->pay_rate, 100, 0 );
-        const auto& pay_balance = asset( delegate_record.delegate_info->pay_balance );
+        const auto pay_balance = asset( delegate_record.delegate_info->pay_balance );
         out << std::setw( 16 ) << client->get_chain()->to_pretty_asset( pay_balance );
 
         const auto last_block = delegate_record.delegate_info->last_block_num_produced;
