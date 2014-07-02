@@ -948,6 +948,7 @@ namespace bts { namespace blockchain {
              const char spinner[] = "-\\|/";
              int blocks_indexed = 0;
 
+             auto start_time = blockchain::now();
              auto block_itr = my->_block_id_to_block_data_db.begin();
              while( block_itr.valid() )
              {
@@ -959,7 +960,7 @@ namespace bts { namespace blockchain {
 
                  push_block(block);
              }
-             std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks.\n" << std::flush;
+             std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in " << (blockchain::now() - start_time).to_seconds() << " seconds.\n" << std::flush;
           }
           my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
 
