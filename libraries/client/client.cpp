@@ -629,6 +629,8 @@ config load_config( const fc::path& datadir )
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
           if( next_block_time.valid() )
           {
+              // delegates don't get to skip this check, they must check up on everyone else
+              _chain_db->skip_signature_verification( false );
               ilog( "Producing block at time: ${t}", ("t",*next_block_time) );
 
 #ifndef DISABLE_DELEGATE_NETWORK
@@ -1875,6 +1877,7 @@ config load_config( const fc::path& datadir )
     void detail::client_impl::bitcoin_settrxfee(int64_t amount)
     {
        _wallet->set_priority_fee( asset( amount ) );
+       _chain_db->set_priority_fee( amount );
     }
 
     string detail::client_impl::bitcoin_signmessage(const address& address_to_sign_with, const string& message)

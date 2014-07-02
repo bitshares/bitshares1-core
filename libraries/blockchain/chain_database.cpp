@@ -10,6 +10,7 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
+#include <bts/db/cached_level_map.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
 
@@ -128,22 +129,25 @@ namespace bts { namespace blockchain {
             chain_database*                                                     self;
             unordered_set<chain_observer*>                                      _observers;
             digest_type                                                         _chain_id;
+            bool                                                                _skip_signature_verification;
+            share_type                                                          _priority_fee;
 
             bts::db::level_map<slate_id_type, delegate_slate >                  _slate_db;
-            bts::db::level_map<uint32_t, std::vector<block_id_type> >           _fork_number_db;
-            bts::db::level_map<block_id_type,block_fork_data>                   _fork_db;
-            bts::db::level_map<uint32_t, fc::variant >                          _property_db;
-            bts::db::level_map<proposal_id_type, proposal_record >              _proposal_db;
-            bts::db::level_map<proposal_vote_id_type, proposal_vote >           _proposal_vote_db;
+            bts::db::cached_level_map<uint32_t, std::vector<block_id_type> >    _fork_number_db;
+            bts::db::cached_level_map<block_id_type,block_fork_data, unordered_map<block_id_type,block_fork_data> > _fork_db;
+            bts::db::cached_level_map<uint32_t, fc::variant >                   _property_db;
+            bts::db::cached_level_map<proposal_id_type, proposal_record >       _proposal_db;
+            bts::db::cached_level_map<proposal_vote_id_type, proposal_vote >    _proposal_vote_db;
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>               _undo_state_db;
 
             // blocks in the current 'official' chain.
-            bts::db::level_map<uint32_t,block_id_type>                          _block_num_to_id_db;
+            bts::db::cached_level_map<uint32_t,block_id_type, unordered_map<uint32_t,block_id_type> >                   _block_num_to_id_db;
             // all blocks from any fork..
             //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
-            bts::db::level_map<block_id_type,block_record>                      _block_id_to_block_record_db;
+            bts::db::cached_level_map<block_id_type,block_record, unordered_map<block_id_type,block_record> >           _block_id_to_block_record_db;
+
             bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_data_db;
 
             std::unordered_set<transaction_id_type>                             _known_transactions;
@@ -158,14 +162,14 @@ namespace bts { namespace blockchain {
             bts::db::level_map< transaction_id_type, signed_transaction>        _pending_transaction_db;
             std::map< fee_index, transaction_evaluation_state_ptr >             _pending_fee_index;
 
-            bts::db::level_map< asset_id_type, asset_record >                   _asset_db;
-            bts::db::level_map< balance_id_type, balance_record >               _balance_db;
-            bts::db::level_map< account_id_type, account_record >               _account_db;
-            bts::db::level_map< address, account_id_type >                      _address_to_account_db;
+            bts::db::cached_level_map< asset_id_type, asset_record >            _asset_db;
+            bts::db::cached_level_map< balance_id_type, balance_record, unordered_map<balance_id_type, balance_record>  >      _balance_db;
+            bts::db::cached_level_map< account_id_type, account_record, unordered_map<account_id_type, account_record> >       _account_db;
+            bts::db::cached_level_map< address, account_id_type >               _address_to_account_db;
 
-            bts::db::level_map< string, account_id_type >                       _account_index_db;
-            bts::db::level_map< string, asset_id_type >                         _symbol_index_db;
-            bts::db::level_pod_map< vote_del, int >                             _delegate_vote_index_db;
+            bts::db::cached_level_map< string, account_id_type >                _account_index_db;
+            bts::db::cached_level_map< string, asset_id_type >                  _symbol_index_db;
+            bts::db::cached_level_map< vote_del, int >                          _delegate_vote_index_db;
 
             bts::db::level_map< std::pair< account_id_type, uint32_t >, delegate_block_stats >
                                                                                 _delegate_block_stats_db;
@@ -504,7 +508,7 @@ namespace bts { namespace blockchain {
                //ilog( "applying   ${trx}", ("trx",trx) );
                transaction_evaluation_state_ptr trx_eval_state =
                       std::make_shared<transaction_evaluation_state>(pending_state,_chain_id);
-               trx_eval_state->evaluate( trx );
+               trx_eval_state->evaluate( trx, _skip_signature_verification );
                //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
                // TODO:  capture the evaluation state with a callback for wallets...
                // summary.transaction_states.emplace_back( std::move(trx_eval_state) );
@@ -848,6 +852,8 @@ namespace bts { namespace blockchain {
    :my( new detail::chain_database_impl() )
    {
       my->self = this;
+      my->_skip_signature_verification = true;
+      my->_priority_fee = BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE;
    }
 
    chain_database::~chain_database()
@@ -1440,6 +1446,10 @@ namespace bts { namespace blockchain {
 
       auto eval_state = evaluate_transaction( trx );
       share_type fees = eval_state->get_fees();
+
+      if( fees < my->_priority_fee ) 
+         FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(my->_priority_fee) );
+
       my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
       my->_pending_transaction_db.store( trx_id, trx );
 
@@ -2136,4 +2146,15 @@ namespace bts { namespace blockchain {
    {
       return my->_known_transactions.find( id ) != my->_known_transactions.end();
    }
+   void chain_database::skip_signature_verification( bool state )
+   {
+      my->_skip_signature_verification = state;
+   }
+
+   void chain_database::set_priority_fee( int64_t shares )
+   {
+      my->_priority_fee = shares;
+   }
+    
+
 } } // namespace bts::blockchain

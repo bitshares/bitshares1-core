@@ -5,7 +5,7 @@
 namespace bts { namespace blockchain { 
 
    transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state, digest_type chain_id )
-   :_current_state( current_state ),_chain_id(chain_id)
+   :_current_state( current_state ),_chain_id(chain_id),_skip_signature_check(false)
    {
    }
 
@@ -25,7 +25,7 @@ namespace bts { namespace blockchain {
 
    bool transaction_evaluation_state::check_signature( const address& a )const
    {
-      return  signed_keys.find( a ) != signed_keys.end();
+      return  _skip_signature_check || signed_keys.find( a ) != signed_keys.end();
    }
 
    void transaction_evaluation_state::verify_delegate_id( account_id_type id )const
@@ -112,9 +112,10 @@ namespace bts { namespace blockchain {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg )
+   void transaction_evaluation_state::evaluate( const signed_transaction& trx_arg, bool skip_signature_check )
    { try {
       reset();
+      _skip_signature_check = skip_signature_check;
       try {
         if( trx_arg.expiration < _current_state->now() )
         {
@@ -130,15 +131,18 @@ namespace bts { namespace blockchain {
            FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
        
         trx = trx_arg;
-        auto digest = trx_arg.digest( _chain_id );
-        for( auto sig : trx.signatures )
+        if( !_skip_signature_check )
         {
-           auto key = fc::ecc::public_key( sig, digest ).serialize();
-           signed_keys.insert( address(key) );
-           signed_keys.insert( address(pts_address(key,false,56) ) );
-           signed_keys.insert( address(pts_address(key,true,56) )  );
-           signed_keys.insert( address(pts_address(key,false,0) )  );
-           signed_keys.insert( address(pts_address(key,true,0) )   );
+           auto digest = trx_arg.digest( _chain_id );
+           for( auto sig : trx.signatures )
+           {
+              auto key = fc::ecc::public_key( sig, digest ).serialize();
+              signed_keys.insert( address(key) );
+              signed_keys.insert( address(pts_address(key,false,56) ) );
+              signed_keys.insert( address(pts_address(key,true,56) )  );
+              signed_keys.insert( address(pts_address(key,false,0) )  );
+              signed_keys.insert( address(pts_address(key,true,0) )   );
+           }
         }
         for( auto op : trx.operations )
         {

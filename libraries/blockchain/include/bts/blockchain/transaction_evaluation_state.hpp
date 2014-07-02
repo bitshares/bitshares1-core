@@ -31,7 +31,7 @@ namespace bts { namespace blockchain {
 
          virtual void reset();
          
-         virtual void evaluate( const signed_transaction& trx );
+         virtual void evaluate( const signed_transaction& trx, bool skip_signature_check = false );
          virtual void evaluate_operation( const operation& op );
 
          /** perform any final operations based upon the current state of 
@@ -119,6 +119,7 @@ namespace bts { namespace blockchain {
       // not serialized
          chain_interface_ptr                              _current_state;
          digest_type                                      _chain_id;
+         bool                                             _skip_signature_check;
    };
 
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;

@@ -684,10 +684,11 @@ namespace bts { namespace wallet {
           my->_wallet_db.set_master_key( epk, my->_wallet_password);
 
           my->_wallet_db.set_property( last_unlocked_scanned_block_number, variant( my->_blockchain->get_head_block_num() ) );
-          my->_wallet_db.set_property( default_transaction_priority_fee, variant( asset( BTS_WALLET_DEFAULT_PRIORITY_FEE ) ) );
+          my->_wallet_db.set_property( default_transaction_priority_fee, variant( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) ) );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
+
 
           FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
       }
@@ -733,6 +734,8 @@ namespace bts { namespace wallet {
           auto tmp_balances = my->_wallet_db.get_balances();
           for( const auto& item : tmp_balances )
               my->sync_balance_with_blockchain( item.first );
+
+          my->_blockchain->set_priority_fee( get_priority_fee().amount );
       }
       catch( ... )
       {
@@ -2487,7 +2490,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open () );
       // TODO: support price conversion using price from blockchain
       const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
-      if( priority_fee.is_null() ) return asset( BTS_WALLET_DEFAULT_PRIORITY_FEE );
+      if( priority_fee.is_null() ) return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
       return priority_fee.as<asset>(); 
    } FC_CAPTURE_AND_RETHROW() }
    
