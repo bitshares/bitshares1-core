@@ -1240,7 +1240,7 @@ config load_config( const fc::path& datadir )
 
     bts::blockchain::transaction_id_type detail::client_impl::network_broadcast_transaction(const bts::blockchain::signed_transaction& transaction_to_broadcast)
     {
-      ilog("broadcasting transaction: ${id} ", ("id", transaction_to_broadcast.id()));
+      // ilog("broadcasting transaction: ${id} ", ("id", transaction_to_broadcast.id()));
 
       // p2p doesn't send messages back to the originator
       on_new_transaction(transaction_to_broadcast);

@@ -5,7 +5,7 @@ import time
 
 
 def main() :
-    url = "http://localhost:7789/rpc"
+    url = "http://localhost:8899/rpc"
     headers = {'content-type': 'application/json'}
     payload2 = {
         "method": "get_info",
@@ -20,7 +20,7 @@ def main() :
         for j in range(2):
             payload = {
                 "method": "wallet_transfer",
-                "params": [0.1, "XTS", "founders2", "founders2"],
+                "params": [0.1, "XTS", "founders", "founders"],
                 "jsonrpc": "2.0",
                 "id": i
             }

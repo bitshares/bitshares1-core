@@ -283,11 +283,11 @@ namespace bts { namespace blockchain {
                _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                _pending_transaction_db.store( trx_id, trx );
             } 
-            catch ( const fc::exception& )
+            catch ( const fc::exception& e )
             {
                trx_to_discard.push_back(trx_id);
-               wlog( "discarding invalid transaction: ${id} =>  ${trx}",
-                     ("id",trx_id)("trx",trx) );
+               wlog( "discarding invalid transaction: ${id} ${e}",
+                     ("id",trx_id)("e",e.to_detail_string()) );
             }
             ++itr;
          }
