@@ -158,34 +158,46 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     fc::logging_config cfg;
 
     fc::file_appender::config ac;
-    ac.filename = data_dir / "default.log";
-    ac.truncate = false;
-    ac.flush    = true;
+    ac.filename          = data_dir / "default.log";
+    ac.truncate          = false;
+    ac.flush             = true;
+    ac.rotate            = true;
+    ac.rotation_interval = fc::hours( 1 );
+    ac.rotation_limit    = fc::days( 1 );
 
     std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
 
     fc::file_appender::config ac_rpc;
-    ac_rpc.filename = data_dir / "rpc.log";
-    ac_rpc.truncate = false;
-    ac_rpc.flush    = true;
+    ac_rpc.filename          = data_dir / "rpc.log";
+    ac_rpc.truncate          = false;
+    ac_rpc.flush             = true;
+    ac_rpc.rotate            = true;
+    ac_rpc.rotation_interval = fc::hours( 1 );
+    ac_rpc.rotation_limit    = fc::days( 1 );
 
     std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
 
     fc::file_appender::config ac_blockchain;
-    ac_blockchain.filename = data_dir / "blockchain.log";
-    ac_blockchain.truncate = false;
-    ac_blockchain.flush    = true;
+    ac_blockchain.filename          = data_dir / "blockchain.log";
+    ac_blockchain.truncate          = false;
+    ac_blockchain.flush             = true;
+    ac_blockchain.rotate            = true;
+    ac_blockchain.rotation_interval = fc::hours( 1 );
+    ac_blockchain.rotation_limit    = fc::days( 1 );
 
     std::cout << "Logging blockchain to file \"" << ac_blockchain.filename.generic_string() << "\"\n";
 
     fc::file_appender::config ac_p2p;
-    ac_p2p.filename = data_dir / "p2p.log";
-    ac_p2p.truncate = false;
+    ac_p2p.filename          = data_dir / "p2p.log";
+    ac_p2p.truncate          = false;
 #ifdef NDEBUG
-    ac_p2p.flush    = false;
+    ac_p2p.flush             = false;
 #else // NDEBUG
-    ac_p2p.flush    = true;
+    ac_p2p.flush             = true;
 #endif // NDEBUG
+    ac_p2p.rotate            = true;
+    ac_p2p.rotation_interval = fc::hours( 1 );
+    ac_p2p.rotation_limit    = fc::days( 1 );
 
     std::cout << "Logging P2P to file \"" << ac_p2p.filename.generic_string() << "\"\n";
 
