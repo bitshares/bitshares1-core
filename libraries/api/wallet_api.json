@@ -1100,6 +1100,19 @@
             }
           ],
          "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_delegate_set_transaction_scanning",
+         "description" : "Enable or disable wallet transaction scanning",
+         "return_type" : "void",
+         "parameters"  : [
+            {
+                "name" : "enabled",
+                "type" : "bool",
+                "description" : "true to enable transaction scanning, false otherwise"
+            }
+          ],
+         "prerequisites" : ["wallet_open"]
       }
     ]
 }

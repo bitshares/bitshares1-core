@@ -513,6 +513,14 @@ class WalletAPI
     @rpc.request('wallet_delegate_set_block_production', [delegate_name, enabled]).then (response) ->
       response.result
 
+  # Enable or disable wallet transaction scanning
+  # parameters: 
+  #   bool `enabled` - true to enable transaction scanning, false otherwise
+  # return_type: `void`
+  delegate_set_transaction_scanning: (enabled) ->
+    @rpc.request('wallet_delegate_set_transaction_scanning', [enabled]).then (response) ->
+      response.result
+
 
 
 angular.module("app").service("WalletAPI", ["$q", "$log", "RpcService", "$interval", WalletAPI])

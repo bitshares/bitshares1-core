@@ -153,7 +153,7 @@ namespace bts { namespace wallet {
           */
          ///@{
          void set_delegate_block_production( const string& delegate_id, bool enabled = true );
-         void set_delegate_wallet_scanning( bool enabled = false );
+         void set_delegate_transaction_scanning( bool enabled = false );
 
          ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
          vector<wallet_account_record> get_my_delegates( int delegates_to_retrieve = any_delegate_status )const;

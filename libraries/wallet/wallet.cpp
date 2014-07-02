@@ -1281,6 +1281,7 @@ namespace bts { namespace wallet {
 
    void wallet::set_delegate_block_production( const string& delegate_name, bool enabled )
    {
+      FC_ASSERT( is_open() );
       std::vector<wallet_account_record> delegate_records;
 
       if( delegate_name != "ALL" )
@@ -1306,8 +1307,9 @@ namespace bts { namespace wallet {
       }
    }
 
-   void wallet::set_delegate_wallet_scanning( bool enabled )
+   void wallet::set_delegate_transaction_scanning( bool enabled )
    {
+      FC_ASSERT( is_open() );
       my->_delegate_scanning_enabled = enabled;
    }
 

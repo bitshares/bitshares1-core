@@ -2531,7 +2531,6 @@ config load_config( const fc::path& datadir )
       fc::usleep(fc::seconds(wait_time));
     }
 
-
     void client_impl::wait_block_interval(uint32_t wait_time) const
     {
       fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
@@ -2812,6 +2811,11 @@ config load_config( const fc::path& datadir )
    {
       _wallet->set_delegate_block_production( delegate_name, enabled );
       reschedule_delegate_loop();
+   }
+
+   void client_impl::wallet_delegate_set_transaction_scanning( bool enabled )
+   {
+      _wallet->set_delegate_transaction_scanning( enabled );
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
