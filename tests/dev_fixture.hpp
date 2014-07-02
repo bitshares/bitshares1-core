@@ -178,7 +178,6 @@ struct chain_fixture
       clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
       clienta->configure_from_command_line( 0, nullptr );
       clienta->set_daemon_mode(true);
-      clienta->get_wallet()->enable_delegate_wallet_scanning(true);
       clienta->start();
       ilog( "... " );
 
@@ -186,14 +185,16 @@ struct chain_fixture
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
       clientb->set_daemon_mode(true);
-      clientb->get_wallet()->enable_delegate_wallet_scanning(true);
       clientb->start();
       ilog( "... " );
 
-      exec(clientb, "wallet_create walletb masterpassword 123456a123456789012345678901234567890");
       exec(clienta, "wallet_create walleta masterpassword 123456ddddaxxx123456789012345678901234567890");
-      exec(clientb, "wallet_unlock 99999999999 masterpassword");
+      exec(clienta, "wallet_delegate_set_transaction_scanning true");
       exec(clienta, "wallet_unlock 99999999999 masterpassword");
+
+      exec(clientb, "wallet_create walletb masterpassword 123456a123456789012345678901234567890");
+      exec(clientb, "wallet_delegate_set_transaction_scanning true");
+      exec(clientb, "wallet_unlock 99999999999 masterpassword");
 
       int even = 0;
       for( auto key : delegate_private_keys )

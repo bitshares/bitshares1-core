@@ -1170,10 +1170,6 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-   void  wallet::enable_delegate_wallet_scanning( bool s )
-   {
-      my->_delegate_scanning_enabled = s;
-   }
    void  wallet::scan_chain( uint32_t start, uint32_t end, 
                              const scan_progress_callback& progress_callback )
    { try {
@@ -1283,8 +1279,9 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::enable_delegate_block_production( const string& delegate_name, bool enable )
+   void wallet::set_delegate_block_production( const string& delegate_name, bool enabled )
    {
+      FC_ASSERT( is_open() );
       std::vector<wallet_account_record> delegate_records;
 
       if( delegate_name != "ALL" )
@@ -1305,9 +1302,15 @@ namespace bts { namespace wallet {
 
       for( auto& delegate_record : delegate_records )
       {
-          delegate_record.block_production_enabled = enable;
+          delegate_record.block_production_enabled = enabled;
           my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
       }
+   }
+
+   void wallet::set_delegate_transaction_scanning( bool enabled )
+   {
+      FC_ASSERT( is_open() );
+      my->_delegate_scanning_enabled = enabled;
    }
 
    vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const

@@ -237,13 +237,13 @@
                "name" : "first",
                "type" : "uint32_t",
                "description" : "",
-               "default_value" : 1
+               "default_value" : 0
              },
              {
                "name" : "count",
                "type" : "uint32_t",
                "description" : "",
-               "default_value" : 51
+               "default_value" : 20
              }
          ],
          "is_const" : true,
@@ -259,13 +259,13 @@
               "name" : "first",
               "type" : "uint32_t",
               "description" : "",
-              "default_value" : 1
+              "default_value" : 0
             },
             {
               "name" : "count",
               "type" : "uint32_t",
               "description" : "",
-              "default_value" : 51
+              "default_value" : 20
             }
         ],
         "is_const" : true,

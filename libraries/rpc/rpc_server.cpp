@@ -601,7 +601,7 @@ namespace bts { namespace rpc {
     }
   }
 
-  bool rpc_server::configure( const rpc_server_config& cfg )
+  bool rpc_server::configure_rpc( const rpc_server_config& cfg )
   {
     if (!cfg.is_valid())
       return false;
@@ -638,6 +638,17 @@ namespace bts { namespace rpc {
 
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
 
+      return true;
+    } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
+  }
+
+  bool rpc_server::configure_http(const rpc_server_config& cfg)
+  {
+    if(!cfg.is_valid())
+      return false;
+    try
+    {
+      my->_config = cfg;
 
       auto m = my.get();
       my->_httpd = std::make_shared<fc::http::server>();
@@ -645,9 +656,9 @@ namespace bts { namespace rpc {
       {
         my->_httpd->listen(cfg.httpd_endpoint);
       }
-      catch (fc::exception& e)
+      catch(fc::exception& e)
       {
-        if (cfg.httpd_endpoint.port() != 0)
+        if(cfg.httpd_endpoint.port() != 0)
         {
           wlog("unable to listen on endpoint ${endpoint}", ("endpoint", cfg.httpd_endpoint));
           fc::ip::endpoint any_port_endpoint = cfg.httpd_endpoint;
@@ -656,20 +667,20 @@ namespace bts { namespace rpc {
           {
             my->_httpd->listen(any_port_endpoint);
           }
-          catch (fc::exception& e)
+          catch(fc::exception& e)
           {
             wlog("unable to listen on endpoint ${endpoint}", ("endpoint", any_port_endpoint));
-            FC_RETHROW_EXCEPTION(e, error, "unable to listen for HTTP JSON RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}", 
-                                 ("firstchoice", cfg.httpd_endpoint)("secondchoice", any_port_endpoint));
+            FC_RETHROW_EXCEPTION(e, error, "unable to listen for HTTP JSON RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}",
+              ("firstchoice", cfg.httpd_endpoint)("secondchoice", any_port_endpoint));
           }
         }
         else
           FC_RETHROW_EXCEPTION(e, error, "unable to listen for HTTP JSON RPC connections on endpoint ${endpoint}", ("endpoint", cfg.httpd_endpoint));
       }
-      my->_httpd->on_request( [m]( const fc::http::request& r, const fc::http::server::response& s ){ m->handle_request( r, s ); } );
+      my->_httpd->on_request([m](const fc::http::request& r, const fc::http::server::response& s){ m->handle_request(r, s); });
 
       return true;
-    } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );
+    } FC_RETHROW_EXCEPTIONS(warn, "attempting to configure rpc server ${port}", ("port", cfg.rpc_endpoint)("config", cfg));
   }
 
   fc::variant rpc_server::direct_invoke_method(const std::string& method_name, const fc::variants& arguments)
