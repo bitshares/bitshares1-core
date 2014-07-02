@@ -899,7 +899,7 @@
          "aliases": ["public_keys"]
       },
       {
-         "method_name"  : "wallet_withdraw_delegate_pay",
+         "method_name"  : "wallet_delegate_withdraw_pay",
          "description"  : "Used to transfer some of the delegate's pay from their balance",
          "return_type"  : "signed_transaction",
          "parameters"   : [

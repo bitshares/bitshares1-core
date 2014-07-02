@@ -421,8 +421,8 @@ class WalletAPI
   #   real_amount `amount_to_withdraw` - the amount to withdraw
   #   string `memo` - memo to add to transaction
   # return_type: `signed_transaction`
-  withdraw_delegate_pay: (delegate_name, to_account_name, amount_to_withdraw, memo) ->
-    @rpc.request('wallet_withdraw_delegate_pay', [delegate_name, to_account_name, amount_to_withdraw, memo]).then (response) ->
+  delegate_withdraw_pay: (delegate_name, to_account_name, amount_to_withdraw, memo) ->
+    @rpc.request('wallet_delegate_withdraw_pay', [delegate_name, to_account_name, amount_to_withdraw, memo]).then (response) ->
       response.result
 
   # Used to set the priority fee for new transactions. Return current fee if no parameter is provided.

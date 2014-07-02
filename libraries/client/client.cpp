@@ -2585,7 +2585,7 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
-   signed_transaction client_impl::wallet_withdraw_delegate_pay( const string& delegate_name,
+   signed_transaction client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                  const string& to_account_name,
                                                                  double amount_to_withdraw,
                                                                  const string& memo_message )
