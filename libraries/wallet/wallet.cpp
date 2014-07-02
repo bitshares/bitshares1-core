@@ -2942,6 +2942,9 @@ namespace bts { namespace wallet {
    void wallet::clear_pending_transactions()
    {
       my->clear_pending_transactions();
+      auto tmp_balances = my->_wallet_db.get_balances();
+      for( const auto& item : tmp_balances )
+         my->sync_balance_with_blockchain( item.first );
    }
 
    void  wallet::scan_state()
