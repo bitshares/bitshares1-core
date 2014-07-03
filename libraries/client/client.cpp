@@ -854,8 +854,8 @@ config load_config( const fc::path& datadir )
        bool client_impl::on_new_transaction(const signed_transaction& trx)
        {
           try {
-              // throws exception if invalid trx.
-              return !!_chain_db->store_pending_transaction(trx);
+              // throws exception if invalid trx, don't override limits
+              return !!_chain_db->store_pending_transaction(trx, false);
           }
           catch ( const fc::exception& e )
           {

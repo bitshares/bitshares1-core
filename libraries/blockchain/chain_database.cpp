@@ -1454,7 +1454,7 @@ namespace bts { namespace blockchain {
          if( my->_pending_fee_index.size() > BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
          {
              auto overage = my->_pending_fee_index.size() - BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
-             priority_fee = my->_priority_fee * overage; 
+             priority_fee = my->_priority_fee * overage * overage; 
          }
       }
 
@@ -2071,7 +2071,7 @@ namespace bts { namespace blockchain {
       int32_t head_num = get_head_block_num();
       if( head_num < 1 ) return 0;
       auto now         = bts::blockchain::now();
-      if( head_num < 10 * BTS_BLOCKCHAIN_NUM_DELEGATES )
+      if( head_num <  BTS_BLOCKCHAIN_NUM_DELEGATES )
       {
          // what percent of the maximum total blocks that could have been produced 
          // have been produced.
@@ -2082,9 +2082,9 @@ namespace bts { namespace blockchain {
       {
          // if 10*N blocks ago is longer than 10*N*INTERVAL_SEC ago then we missed blocks, calculate
          // in terms of percentage time rather than percentage blocks.
-         auto starting_time =  get_block_header( head_num - 10*BTS_BLOCKCHAIN_NUM_DELEGATES ).timestamp;
+         auto starting_time =  get_block_header( head_num - BTS_BLOCKCHAIN_NUM_DELEGATES ).timestamp;
          auto expected_production = (now - starting_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; 
-         return  100*double(10*BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
+         return  100*double(BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
       }
    }
 

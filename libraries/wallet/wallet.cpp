@@ -1614,6 +1614,7 @@ namespace bts { namespace wallet {
           delegate_account_record->delegate_info->pay_balance -= amount_to_withdraw;
           // my->_wallet_db.cache_account( *delegate_account_record );
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
 
           my->_wallet_db.cache_transaction( trx, asset(amount_to_withdraw,0),
                                            required_fees.amount,
@@ -1694,6 +1695,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
          my->_wallet_db.cache_transaction( trx, asset_to_transfer,
                                           required_fees.amount,
                                           memo_message,
@@ -1767,6 +1769,7 @@ namespace bts { namespace wallet {
          if( sign )
          {
             sign_transaction( trx, required_signatures );
+            my->_blockchain->store_pending_transaction( trx, true );
             my->_wallet_db.cache_transaction( trx, total_asset_to_transfer,
                                              required_fees.amount,
                                              memo_message,
@@ -1862,6 +1865,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
          my->_wallet_db.cache_transaction( trx, asset_to_transfer,
                                           required_fees.amount,
                                           memo_message,
@@ -1943,6 +1947,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
          return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
@@ -2005,7 +2010,10 @@ namespace bts { namespace wallet {
                         oname_rec->id, max_share_supply, precision );
 
       if( sign )
+      {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)
@@ -2063,7 +2071,10 @@ namespace bts { namespace wallet {
                               );
 
       if( sign )
+      {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
+      }
 
       return trx;
    }
@@ -2131,6 +2142,7 @@ namespace bts { namespace wallet {
       if (sign)
       {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
           return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
@@ -2186,7 +2198,10 @@ namespace bts { namespace wallet {
 
        
       if (sign)
+      {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
+      }
 
       return trx;
    }
@@ -2244,6 +2259,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
            // TODO: cache transaction
       }
 
@@ -2355,7 +2371,7 @@ namespace bts { namespace wallet {
                                           owner_key_record->public_key
                                         );
 
-        my->_blockchain->store_pending_transaction( trx );
+        my->_blockchain->store_pending_transaction( trx, true );
 
         return trx;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
@@ -2452,6 +2468,7 @@ namespace bts { namespace wallet {
        if( sign )
        {
            sign_transaction( trx, required_signatures );
+           my->_blockchain->store_pending_transaction( trx, true );
 
            std::stringstream memoss;
            memoss << "buy " << real_quantity << " " << base_asset_record->symbol << " @ ";
@@ -2471,7 +2488,6 @@ namespace bts { namespace wallet {
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
-           my->_blockchain->store_pending_transaction( trx );
        }
 
        return trx;
