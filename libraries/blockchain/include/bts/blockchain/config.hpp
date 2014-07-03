@@ -93,6 +93,7 @@
 
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   ( 2 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
+#define BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE             ( BTS_BLOCKCHAIN_MAX_BLOCK_SIZE / 2 )
 
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
