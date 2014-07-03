@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import requests
 import json
 from pprint import pprint
@@ -20,7 +22,7 @@ def main() :
         for j in range(2):
             payload = {
                 "method": "wallet_transfer",
-                "params": [0.1, "XTS", "founders", "founders"],
+                "params": [0.1, "XTS", "founders", "founders", "id:%d.%d"%(i,j)],
                 "jsonrpc": "2.0",
                 "id": i
             }
@@ -29,7 +31,7 @@ def main() :
             response = requests.post(url, data=json.dumps(payload), headers=headers, auth=auth)
             pprint(vars(response))
         time.sleep(1)
-        ++i
+        i = i + 1
 
 
 if __name__ == "__main__":
