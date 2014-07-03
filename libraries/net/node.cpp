@@ -50,7 +50,8 @@
 namespace bts { namespace net { 
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
-                          (send_queue_overflow) )
+                          (send_queue_overflow)
+                          (insufficient_priority_fee) )
 
   namespace detail 
   {
@@ -712,7 +713,8 @@ namespace bts { namespace net { namespace detail {
           for( const peer_connection_ptr& peer : _active_connections )
           {
             if( peer->idle() &&
-                peer->inventory_peer_advertised_to_us.find(iter->item) != peer->inventory_peer_advertised_to_us.end() )
+                peer->inventory_peer_advertised_to_us.find(iter->item) != peer->inventory_peer_advertised_to_us.end() &&
+                (iter->item.item_type != trx_message_type || !peer->is_transaction_fetching_inhibited()) )
             {
               dlog( "requesting item ${hash} from peer ${endpoint}", ("hash", iter->item.item_hash )("endpoint", peer->get_remote_endpoint() ) );
               peer->items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(iter->item, fc::time_point::now() ) );
@@ -2341,10 +2343,18 @@ namespace bts { namespace net { namespace detail {
           // for now, we assume an "ordinary" message won't cause us to switch forks ( which
           // is currently the case.  if this changes, add some logic to handle it here )
           //assert( !message_caused_fork_switch );
-          _delegate->handle_message(message_to_process, false );
+          _delegate->handle_message(message_to_process, false);
           message_validated_time = fc::time_point::now();
         }
-        catch ( fc::exception& e )
+        catch ( const insufficient_priority_fee& )
+        {
+          // flooding control.  The message was valid but we can't handle it now.  
+          assert(message_to_process.msg_type == trx_message_type); // we only support throttling transactions.
+          if (message_to_process.msg_type == trx_message_type)
+            originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC);
+          return;
+        }
+        catch ( const fc::exception& e )
         {
           wlog( "client rejected block sent by peer ${peer}, ${e}", ("peer", originating_peer->get_remote_endpoint() )("e", e.to_string() ) );
           return;
