@@ -1594,6 +1594,7 @@ namespace bts { namespace net { namespace detail {
       {
         peer->last_block_delegate_has_seen = item_hash_t();
         peer->last_block_number_delegate_has_seen = 0;
+        peer->last_block_time_delegate_has_seen = _delegate->get_block_time(item_hash_t());
       }
 
       std::vector<item_hash_t> blockchain_synopsis = create_blockchain_synopsis_for_peer( peer );
@@ -1609,8 +1610,8 @@ namespace bts { namespace net { namespace detail {
       peer->send_message( fetch_blockchain_item_ids_message(_sync_item_type, blockchain_synopsis ) );
     }
 
-    void node_impl::on_blockchain_item_ids_inventory_message( peer_connection* originating_peer,
-                                                            const blockchain_item_ids_inventory_message& blockchain_item_ids_inventory_message_received )
+    void node_impl::on_blockchain_item_ids_inventory_message(peer_connection* originating_peer,
+                                                             const blockchain_item_ids_inventory_message& blockchain_item_ids_inventory_message_received )
     {
       // ignore unless we asked for the data
       if( originating_peer->item_ids_requested_from_peer )
@@ -1679,6 +1680,7 @@ namespace bts { namespace net { namespace detail {
               assert( item_hashes_received.front() != item_hash_t() );
               originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
               ++originating_peer->last_block_number_delegate_has_seen;
+              originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time(item_hashes_received.front());
               dlog( "popping item because delegate has already seen it.  peer's last block the delegate has seen is now ${block_id} (${block_num} )", ("block_id", originating_peer->last_block_delegate_has_seen )("block_num", originating_peer->last_block_number_delegate_has_seen ) );
               item_hashes_received.pop_front();
             }
@@ -1715,6 +1717,7 @@ namespace bts { namespace net { namespace detail {
             assert( _delegate->has_item(item_id(_sync_item_type, item_hashes_received.front() ) ) );
             originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
             originating_peer->last_block_number_delegate_has_seen = _delegate->get_block_number( item_hashes_received.front() );
+            originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time( item_hashes_received.front() );
             item_hashes_received.pop_front();
           }
           else
@@ -1731,6 +1734,27 @@ namespace bts { namespace net { namespace detail {
         boost::push_back( originating_peer->ids_of_items_to_get, item_hashes_received );
 
         originating_peer->number_of_unfetched_item_ids = blockchain_item_ids_inventory_message_received.total_remaining_item_count;
+
+        // at any given time, there's a maximum number of blocks that can possibly be out there 
+        // [(now - genesis time) / block interval].  If they offer us more blocks than that,
+        // they must be an attacker or have a buggy client.
+        fc::time_point_sec minimum_time_of_last_offered_block = 
+            originating_peer->last_block_time_delegate_has_seen + // timestamp of the block immediately before the first unfetched block
+            originating_peer->number_of_unfetched_item_ids * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        if (minimum_time_of_last_offered_block > _delegate->get_blockchain_now() + BTS_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC)
+        {
+          wlog("Disconnecting from peer ${peer} who offered us an implausible number of blocks, their last block would be in the future (${timestamp})",
+               ("peer", originating_peer->get_remote_endpoint())
+               ("timestamp", minimum_time_of_last_offered_block));
+          fc::exception error_for_peer(FC_LOG_MESSAGE(error, "You offered me a list of more sync blocks than could possibly exist.  Total blocks offered: ${blocks}, Minimum time of the last block you offered: ${minimum_time_of_last_offered_block}, Now: ${now}",
+                                                      ("blocks", originating_peer->number_of_unfetched_item_ids)
+                                                      ("minimum_time_of_last_offered_block", minimum_time_of_last_offered_block)
+                                                      ("now", _delegate->get_blockchain_now())));
+          disconnect_from_peer(originating_peer, 
+                               "You offered me a list of more sync blocks than could possibly exist",
+                               true, error_for_peer);
+          return;
+        }
 
         uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
         if( new_number_of_unfetched_items != _total_number_of_unfetched_items )
@@ -2077,6 +2101,7 @@ namespace bts { namespace net { namespace detail {
                   {
                     peer->last_block_delegate_has_seen = block_message_to_process.block_id;
                     ++peer->last_block_number_delegate_has_seen;
+                    peer->last_block_time_delegate_has_seen = block_message_to_process.block.timestamp;
 
                     peer->ids_of_items_to_get.pop_front();
                     dlog( "Popped item from front of ${endpoint}'s sync list, new list length is ${len}", 
@@ -2336,6 +2361,7 @@ namespace bts { namespace net { namespace detail {
       peer->we_need_sync_items_from_peer = true;
       peer->last_block_delegate_has_seen = item_hash_t();
       peer->last_block_number_delegate_has_seen = 0;
+      peer->last_block_time_delegate_has_seen = _delegate->get_block_time(item_hash_t());
       fetch_next_batch_of_item_ids_from_peer( peer.get() );
     }
 

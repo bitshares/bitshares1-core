@@ -124,6 +124,7 @@ namespace bts { namespace net
       uint32_t initial_block_number; /// the block number they were on when we first connected to the peer
       uint32_t last_block_number_delegate_has_seen; /// the number of the last block this peer has told us about that the delegate knows (ids_of_items_to_get[0] should be the id of block [this value + 1])
       item_hash_t last_block_delegate_has_seen; /// the hash of the last block  this peer has told us about that the peer knows 
+      fc::time_point_sec last_block_time_delegate_has_seen;
       /// @}
 
       /// non-synchronization state data
