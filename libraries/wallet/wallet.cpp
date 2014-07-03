@@ -2491,7 +2491,15 @@ namespace bts { namespace wallet {
       // TODO: support price conversion using price from blockchain
       const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
       if( priority_fee.is_null() ) return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
-      return priority_fee.as<asset>(); 
+      try {
+         return priority_fee.as<asset>(); 
+      } 
+      catch ( const fc::exception& e )
+      {
+         wlog( "priority fee setting appears corrupted, resetting to default" );
+         my->_wallet_db.set_property( default_transaction_priority_fee, asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE) );
+         return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
+      }
    } FC_CAPTURE_AND_RETHROW() }
    
    string wallet::get_key_label( const public_key_type& key )const
