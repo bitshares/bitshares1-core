@@ -825,7 +825,11 @@ namespace bts { namespace blockchain {
 
       void  chain_database_impl::pop_block()
       { try {
-         FC_ASSERT( _head_block_header.block_num > 0 );
+         if( _head_block_header.block_num == 0 )
+         {
+            wlog( "attempting to pop block 0" );
+            return;
+         }
 
            // update the is_included flag on the fork data
          mark_included( _head_block_id, false );
