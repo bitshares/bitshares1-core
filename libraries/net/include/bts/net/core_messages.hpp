@@ -38,8 +38,6 @@ namespace bts { namespace net {
 
   enum core_message_type_enum
   {
-    block_message_type = 1000,//bts::client::block_message_type,
-    trx_message_type   = 1001,//bts::client::trx_message_type,
     item_ids_inventory_message_type            = 5001,
     blockchain_item_ids_inventory_message_type = 5002,
     fetch_blockchain_item_ids_message_type     = 5003,
@@ -313,8 +311,6 @@ namespace bts { namespace net {
 } } // bts::client
 
 FC_REFLECT_ENUM( bts::net::core_message_type_enum, 
-                 (block_message_type)
-                 (trx_message_type)
                  (item_ids_inventory_message_type)
                  (blockchain_item_ids_inventory_message_type)
                  (fetch_blockchain_item_ids_message_type)

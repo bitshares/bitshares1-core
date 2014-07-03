@@ -190,10 +190,10 @@ namespace bts { namespace net { namespace detail {
       {}
       bool operator<(const prioritized_item_id& rhs) const
       {
-        static_assert(block_message_type < trx_message_type, 
-                      "block_message_type must be less than trx_message_type for prioritized_item_ids to sort correctly");
+        static_assert(bts::client::block_message_type > bts::client::trx_message_type, 
+                      "block_message_type must be greater than trx_message_type for prioritized_item_ids to sort correctly");
         if (item.item_type != rhs.item.item_type)
-          return item.item_type < rhs.item.item_type;
+          return item.item_type > rhs.item.item_type;
         return (signed)(rhs.sequence_number - sequence_number) > 0;
       }
     };
@@ -714,7 +714,7 @@ namespace bts { namespace net { namespace detail {
           {
             if( peer->idle() &&
                 peer->inventory_peer_advertised_to_us.find(iter->item) != peer->inventory_peer_advertised_to_us.end() &&
-                (iter->item.item_type != trx_message_type || !peer->is_transaction_fetching_inhibited()) )
+                (iter->item.item_type != bts::client::trx_message_type || !peer->is_transaction_fetching_inhibited()) )
             {
               dlog( "requesting item ${hash} from peer ${endpoint}", ("hash", iter->item.item_hash )("endpoint", peer->get_remote_endpoint() ) );
               peer->items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(iter->item, fc::time_point::now() ) );
@@ -1757,6 +1757,18 @@ namespace bts { namespace net { namespace detail {
                                true, error_for_peer);
           return;
         }
+#ifndef NDEBUG
+        else if (originating_peer->number_of_unfetched_item_ids > 100000)
+        {
+          wlog("Just received a chunk of blocks from peer ${peer} and number_of_unfetched_item_ids = ${unfetched}. "
+               "Our last_block_time_delegate_has_seen is ${last_block_time_delegate_has_seen}, " 
+               "which means the last block they're offering is at ${minimum_time_of_last_offered_block}", 
+               ("peer", originating_peer->get_remote_endpoint())
+               ("unfetched", originating_peer->number_of_unfetched_item_ids)
+               ("last_block_time_delegate_has_seen", originating_peer->last_block_time_delegate_has_seen)
+               ("minimum_time_of_last_offered_block", minimum_time_of_last_offered_block));
+        }
+#endif
 
         uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
         if( new_number_of_unfetched_items != _total_number_of_unfetched_items )
@@ -2349,8 +2361,8 @@ namespace bts { namespace net { namespace detail {
         catch ( const insufficient_priority_fee& )
         {
           // flooding control.  The message was valid but we can't handle it now.  
-          assert(message_to_process.msg_type == trx_message_type); // we only support throttling transactions.
-          if (message_to_process.msg_type == trx_message_type)
+          assert(message_to_process.msg_type == bts::client::trx_message_type); // we only support throttling transactions.
+          if (message_to_process.msg_type == bts::client::trx_message_type)
             originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC);
           return;
         }
