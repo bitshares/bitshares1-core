@@ -103,10 +103,18 @@ namespace bts { namespace blockchain {
 
          void add_observer( chain_observer* observer );
          void remove_observer( chain_observer* observer );
+         void set_priority_fee( int64_t shares );
 
          void sanity_check()const;
 
          double get_average_delegate_participation()const;
+
+         /**
+          *  When evaluating blocks, you only need to validate the delegate signature assuming you
+          *  trust the other delegates to check up on eachother (which everyone should).  This
+          *  should greatly reduce processing time for non-delegate nodes.
+          */
+         void skip_signature_verification( bool state );
 
          /**
           * The state of the blockchain after applying all pending transactions.

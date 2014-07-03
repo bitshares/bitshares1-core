@@ -79,6 +79,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_fee,  bts::blockchain::evaluation_error, 36002, "insufficient fee" );
    FC_DECLARE_DERIVED_EXCEPTION( negative_fee,  bts::blockchain::evaluation_error, 36003, "negative fee" );
    FC_DECLARE_DERIVED_EXCEPTION( missing_deposit,  bts::blockchain::evaluation_error, 36004, "missing deposit" );
+   FC_DECLARE_DERIVED_EXCEPTION( insufficient_priority_fee,  bts::blockchain::evaluation_error, 36005, "insufficient priority fee" );
 
 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_market,  bts::blockchain::evaluation_error, 37001, "invalid market" );
