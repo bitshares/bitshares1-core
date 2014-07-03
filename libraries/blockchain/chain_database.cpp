@@ -163,8 +163,8 @@ namespace bts { namespace blockchain {
             std::map< fee_index, transaction_evaluation_state_ptr >             _pending_fee_index;
 
             bts::db::level_map< asset_id_type, asset_record >            _asset_db;
-            bts::db::level_map< balance_id_type, balance_record>      _balance_db;
-            bts::db::level_map< account_id_type, account_record>       _account_db;
+            bts::db::level_map< balance_id_type, balance_record>         _balance_db;
+            bts::db::level_map< account_id_type, account_record>         _account_db;
             bts::db::level_map< address, account_id_type >               _address_to_account_db;
 
             bts::db::level_map< string, account_id_type >                _account_index_db;
@@ -282,7 +282,7 @@ namespace bts { namespace blockchain {
             auto trx = itr.value();
             auto trx_id = trx.id();
             try {
-               auto eval_state = self->evaluate_transaction( trx );
+               auto eval_state = self->evaluate_transaction( trx, _priority_fee );
                share_type fees = eval_state->get_fees();
                _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                _pending_transaction_db.store( trx_id, trx );
@@ -974,7 +974,7 @@ namespace bts { namespace blockchain {
                 auto trx = pending_itr.value();
                 wlog( " laoding pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
-                auto eval_state = evaluate_transaction( trx );
+                auto eval_state = evaluate_transaction( trx, my->_priority_fee );
                 share_type fees = eval_state->get_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                 my->_pending_transaction_db.store( trx_id, trx );
@@ -1074,7 +1074,7 @@ namespace bts { namespace blockchain {
       return optional<time_point_sec>();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
+   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx, share_type required_fees )
    { try {
       if( !my->_pending_trx_state )
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
@@ -1083,6 +1083,9 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
 
       trx_eval_state->evaluate( trx );
+      auto fees = trx_eval_state->get_fees();
+      if( fees < required_fees )
+         FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(required_fees) );
 
       // apply changes from this transaction to _pending_trx_state
       pend_state->apply_changes();
@@ -1438,18 +1441,28 @@ namespace bts { namespace blockchain {
    }
 
    /** this should throw if the trx is invalid */
-   transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx )
+   transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )
    { try {
 
       auto trx_id = trx.id();
       auto current_itr = my->_pending_transaction_db.find( trx_id );
       if( current_itr.valid() ) return nullptr;
 
-      auto eval_state = evaluate_transaction( trx );
+      share_type priority_fee = my->_priority_fee;
+      if( !override_limits )
+      {
+         if( my->_pending_fee_index.size() > BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
+         {
+             auto overage = my->_pending_fee_index.size() - BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
+             priority_fee = my->_priority_fee * overage; 
+         }
+      }
+
+      auto eval_state = evaluate_transaction( trx, priority_fee );
       share_type fees = eval_state->get_fees();
 
-      if( fees < my->_priority_fee ) 
-         FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(my->_priority_fee) );
+      //if( fees < my->_priority_fee ) 
+      //   FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(my->_priority_fee) );
 
       my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
       my->_pending_transaction_db.store( trx_id, trx );

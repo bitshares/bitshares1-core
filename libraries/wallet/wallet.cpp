@@ -2497,7 +2497,7 @@ namespace bts { namespace wallet {
       catch ( const fc::exception& e )
       {
          wlog( "priority fee setting appears corrupted, resetting to default" );
-         my->_wallet_db.set_property( default_transaction_priority_fee, asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE) );
+         my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE) ) );
          return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
       }
    } FC_CAPTURE_AND_RETHROW() }
