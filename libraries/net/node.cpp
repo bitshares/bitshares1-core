@@ -190,10 +190,10 @@ namespace bts { namespace net { namespace detail {
       {}
       bool operator<(const prioritized_item_id& rhs) const
       {
-        static_assert(block_message_type < trx_message_type, 
-                      "block_message_type must be less than trx_message_type for prioritized_item_ids to sort correctly");
+        static_assert(bts::client::block_message_type > bts::client::trx_message_type, 
+                      "block_message_type must be greater than trx_message_type for prioritized_item_ids to sort correctly");
         if (item.item_type != rhs.item.item_type)
-          return item.item_type < rhs.item.item_type;
+          return item.item_type > rhs.item.item_type;
         return (signed)(rhs.sequence_number - sequence_number) > 0;
       }
     };
@@ -714,7 +714,7 @@ namespace bts { namespace net { namespace detail {
           {
             if( peer->idle() &&
                 peer->inventory_peer_advertised_to_us.find(iter->item) != peer->inventory_peer_advertised_to_us.end() &&
-                (iter->item.item_type != trx_message_type || !peer->is_transaction_fetching_inhibited()) )
+                (iter->item.item_type != bts::client::trx_message_type || !peer->is_transaction_fetching_inhibited()) )
             {
               dlog( "requesting item ${hash} from peer ${endpoint}", ("hash", iter->item.item_hash )("endpoint", peer->get_remote_endpoint() ) );
               peer->items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(iter->item, fc::time_point::now() ) );
@@ -2349,8 +2349,8 @@ namespace bts { namespace net { namespace detail {
         catch ( const insufficient_priority_fee& )
         {
           // flooding control.  The message was valid but we can't handle it now.  
-          assert(message_to_process.msg_type == trx_message_type); // we only support throttling transactions.
-          if (message_to_process.msg_type == trx_message_type)
+          assert(message_to_process.msg_type == bts::client::trx_message_type); // we only support throttling transactions.
+          if (message_to_process.msg_type == bts::client::trx_message_type)
             originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC);
           return;
         }
