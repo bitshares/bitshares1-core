@@ -40,3 +40,5 @@
  * our clock is a bit off.
  */
 #define BTS_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC  (60 * 60)
+
+#define BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC 15

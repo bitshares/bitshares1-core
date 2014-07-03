@@ -42,6 +42,13 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
+             wallet_impl()
+             :_wallet_scan_thread( "wallet_scan" )
+             {
+                _wallet_thread = &fc::thread::current();
+             }
+             fc::thread*                        _wallet_thread;
+
              wallet*                            self;
              wallet_db                          _wallet_db;
              chain_database_ptr                 _blockchain;
@@ -52,6 +59,8 @@ namespace bts { namespace wallet {
              fc::future<void>                   _relocker_thread;
              bool                               _use_deterministic_one_time_keys;
              bool                               _delegate_scanning_enabled;
+
+             fc::thread                         _wallet_scan_thread;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -278,7 +287,7 @@ namespace bts { namespace wallet {
                      cache_trx |= scan_withdraw( op.as<withdraw_operation>() );
                      break;
                   case deposit_op_type:
-                     cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys );
+                     cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys ); 
                      break;
 
                   case register_account_op_type:
@@ -464,33 +473,35 @@ namespace bts { namespace wallet {
                 }
                 else if( deposit.memo )
                 {
-                   for( const auto& key : keys )
-                   {
-                      omemo_status status = deposit.decrypt_memo_data( key );
-                      if( status.valid() )
+                   _wallet_scan_thread.async( [&]() {
+                      for( const auto& key : keys )
                       {
-                         _wallet_db.cache_memo( *status, key, _wallet_password );
-                         if( status->memo_flags == from_memo )
+                         omemo_status status = deposit.decrypt_memo_data( key );
+                         if( status.valid() )
                          {
-                            trx_rec.memo_message = status->get_message();
-                            trx_rec.amount       = asset( op.amount, op.condition.asset_id );
-                            trx_rec.from_account = status->from;
-                            trx_rec.to_account   = key.get_public_key();
-                            //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                            _wallet_db.cache_memo( *status, key, _wallet_password );
+                            if( status->memo_flags == from_memo )
+                            {
+                               trx_rec.memo_message = status->get_message();
+                               trx_rec.amount       = asset( op.amount, op.condition.asset_id );
+                               trx_rec.from_account = status->from;
+                               trx_rec.to_account   = key.get_public_key();
+                               //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                            }
+                            else
+                            {
+                               //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                               //ilog( "op: ${op}", ("op",op) );
+                               trx_rec.memo_message = status->get_message();
+                               trx_rec.from_account = key.get_public_key();
+                               trx_rec.to_account   = status->from;
+                               //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                            }
+                            cache_deposit = true;
+                            break;
                          }
-                         else
-                         {
-                            //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                            //ilog( "op: ${op}", ("op",op) );
-                            trx_rec.memo_message = status->get_message();
-                            trx_rec.from_account = key.get_public_key();
-                            trx_rec.to_account   = status->from;
-                            //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
-                         }
-                         cache_deposit = true;
-                         break;
                       }
-                   }
+                   } ).wait();
                    break;
                 }
                 break;

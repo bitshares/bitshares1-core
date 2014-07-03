@@ -93,6 +93,7 @@
 
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   ( 2 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
+#define BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE             ( BTS_BLOCKCHAIN_MAX_BLOCK_SIZE / 2 )
 
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
@@ -102,7 +103,7 @@
 
 #define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                 (512) // just a random assumption used to calibrate TRX per SEC
 #define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND               (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE / BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
-#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE           (BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND)
+#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE           20
 
 /**
  *  defines the min fee in milli-shares per byte

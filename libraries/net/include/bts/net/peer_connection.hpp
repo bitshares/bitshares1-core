@@ -134,6 +134,10 @@ namespace bts { namespace net
 
       item_to_time_map_type items_requested_from_peer;  /// items we've requested from this peer during normal operation.  fetch from another peer if this peer disconnects
       /// @}
+
+      // if they're flooding us with transactions, we set this to avoid fetching for a few seconds to let the
+      // blockchain catch up
+      fc::time_point transaction_fetching_inhibited_until;
     public:
       peer_connection(peer_connection_delegate* delegate) : 
         _node(delegate),
@@ -149,7 +153,8 @@ namespace bts { namespace net
         number_of_unfetched_item_ids(0),
         peer_needs_sync_items_from_us(true),
         we_need_sync_items_from_peer(true),
-        last_block_number_delegate_has_seen(0)
+        last_block_number_delegate_has_seen(0),
+        transaction_fetching_inhibited_until(fc::time_point::min())
       {}
       ~peer_connection();
 
@@ -175,6 +180,8 @@ namespace bts { namespace net
 
       bool busy();
       bool idle();
+
+      bool is_transaction_fetching_inhibited() const;
     private:
       void send_queued_messages_task();
       void accept_connection_task();

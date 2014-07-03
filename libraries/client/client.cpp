@@ -4,6 +4,7 @@
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
+#include <bts/net/exceptions.hpp>
 #include <bts/net/upnp.hpp>
 #include <bts/net/peer_database.hpp>
 #include <bts/blockchain/chain_database.hpp>
@@ -883,10 +884,12 @@ config load_config( const fc::path& datadir )
          return false;
        }
 
-       bool client_impl::handle_message(const bts::net::message& message_to_handle, bool sync_mode)
-       {
-         switch (message_to_handle.msg_type)
-         {
+      bool client_impl::handle_message(const bts::net::message& message_to_handle, bool sync_mode)
+      {
+        try
+        {
+          switch (message_to_handle.msg_type)
+          {
             case block_message_type:
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
@@ -901,9 +904,17 @@ config load_config( const fc::path& datadir )
                 ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
                 return on_new_transaction(trx_message_to_handle.trx);
             }
-         }
-         return false;
-       }
+          }
+          return false;
+        }
+        catch (const bts::blockchain::insufficient_priority_fee& original_exception)
+        {
+          // was just going to FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, (original_exception));
+          // but I get errors with reflection?
+          FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, "Insufficient priority fee, do not propagate.", 
+                             ("original_exception", original_exception.to_detail_string()));
+        }
+      }
 
       /**
       *  Get the hash of all blocks after from_id
@@ -2417,6 +2428,8 @@ config load_config( const fc::path& datadir )
        info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
        info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
+       info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
+       info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
        return info;
 
