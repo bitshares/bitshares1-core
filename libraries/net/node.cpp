@@ -847,8 +847,8 @@ namespace bts { namespace net { namespace detail {
           }
 
         // timeout for any active peers is two block intervals
-        uint32_t active_disconnect_timeout = 5 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2;
-        uint32_t active_send_keepalive_timeount = active_disconnect_timeout / 2;
+        uint32_t active_disconnect_timeout = std::max<uint32_t>(5 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2, 30);
+        uint32_t active_send_keepalive_timeount = std::max<uint32_t>(active_disconnect_timeout / 2, 11);
         uint32_t active_ignored_request_timeount = std::max<uint32_t>(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 4, 10);
         fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_disconnect_timeout);
         fc::time_point active_send_keepalive_threshold = fc::time_point::now() - fc::seconds(active_send_keepalive_timeount);
