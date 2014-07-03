@@ -1054,9 +1054,10 @@ namespace bts { namespace blockchain {
       FC_ASSERT( delegate_pos < ordered_delegates.size() );
       auto delegate_id = ordered_delegates[ delegate_pos ];
       auto delegate_record = get_account_record( delegate_id );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() );
+      FC_ASSERT( delegate_record->is_delegate() );
       return *delegate_record;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("timestamp",timestamp) ) }
+   } FC_CAPTURE_AND_RETHROW( (timestamp)(ordered_delegates) ) }
 
    optional<time_point_sec> chain_database::get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const
    { try {
@@ -1067,12 +1068,16 @@ namespace bts { namespace blockchain {
       auto active_delegates = get_active_delegates();
       for( ; next_block_time < last_block_time; next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
       {
-          auto delegate_id = get_slot_signee( next_block_time, active_delegates ).id;
+          auto slot_number = blockchain::get_slot_number( next_block_time );
+          auto delegate_pos = slot_number % BTS_BLOCKCHAIN_NUM_DELEGATES;
+          FC_ASSERT( delegate_pos < active_delegates.size() );
+          auto delegate_id = active_delegates[ delegate_pos ];
+
           if( std::find( delegate_ids.begin(), delegate_ids.end(), delegate_id ) != delegate_ids.end() )
               return next_block_time;
       }
       return optional<time_point_sec>();
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW( (delegate_ids) ) }
 
    transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx, share_type required_fees )
    { try {

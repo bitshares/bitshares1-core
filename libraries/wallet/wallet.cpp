@@ -1343,7 +1343,7 @@ namespace bts { namespace wallet {
    }
 
    optional<time_point_sec> wallet::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
-   {
+   { try {
       if( !is_open() || is_locked() ) return optional<time_point_sec>();
 
       vector<account_id_type> delegate_ids;
@@ -1352,7 +1352,7 @@ namespace bts { namespace wallet {
           delegate_ids.push_back( delegate_record.id );
 
       return my->_blockchain->get_next_producible_block_timestamp( delegate_ids );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::sign_block( signed_block_header& header )const
    { try {
