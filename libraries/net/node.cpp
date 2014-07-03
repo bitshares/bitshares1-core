@@ -72,7 +72,7 @@ namespace bts { namespace net {
 
         // for network performance stats
         message_propagation_data propagation_data;
-        fc::uint160_t     message_contents_hash; // hash of whatever the message contains ( if it's a transaction, this is the transaction id, if it's a block, it's the block_id )
+        fc::uint160_t     message_contents_hash; // hash of whatever the message contains (if it's a transaction, this is the transaction id, if it's a block, it's the block_id)
 
         message_info( const message_hash_type& message_hash,
                       const message&           message_body,
@@ -277,14 +277,14 @@ namespace bts { namespace net { namespace detail {
       fc::future<void>     _accept_loop_complete;
 
       /** Stores all connections which have not yet finished key exchange or are still sending initial handshaking messages
-       * back and forth ( not yet ready to initiate syncing ) */
+       * back and forth (not yet ready to initiate syncing) */
       std::unordered_set<peer_connection_ptr>                     _handshaking_connections;
       /** stores fully established connections we're either syncing with or in normal operation with */
       std::unordered_set<peer_connection_ptr>                     _active_connections;
       /** stores connections we've closed, but are still waiting for the remote end to close before we delete them */
       std::unordered_set<peer_connection_ptr>                     _closing_connections;
       
-      boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted ( currently tuned to the max number of connections )
+      boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted (currently tuned to the max number of connections)
 
       uint32_t _sync_item_type;
       uint32_t _total_number_of_unfetched_items; /// the number of items we still need to fetch while syncing
@@ -293,7 +293,7 @@ namespace bts { namespace net { namespace detail {
 
       fc::rate_limiting_group _rate_limiter;
 
-      uint32_t _last_reported_number_of_connections; // number of connections last reported to the client ( to avoid sending duplicate messages )
+      uint32_t _last_reported_number_of_connections; // number of connections last reported to the client (to avoid sending duplicate messages)
 
       bool _peer_advertising_disabled;
 
@@ -536,7 +536,7 @@ namespace bts { namespace net { namespace detail {
           dlog( "Starting an iteration of p2p_network_connect_loop()." );
           display_current_connections();
          
-          // add-once peers bypass our checks on the maximum/desired number of connections ( but they will still be counted against the totals once they're connected )
+          // add-once peers bypass our checks on the maximum/desired number of connections (but they will still be counted against the totals once they're connected)
           if( !_add_once_node_list.empty() )
           {
             std::list<potential_peer_record> add_once_node_list;
@@ -703,7 +703,7 @@ namespace bts { namespace net { namespace detail {
       while( !_fetch_item_loop_done.canceled() )
       {
         _items_to_fetch_updated = false;
-        dlog( "beginning an iteration of fetch items (${count} items to fetch )", ("count", _items_to_fetch.size() ) );
+        dlog( "beginning an iteration of fetch items (${count} items to fetch)", ("count", _items_to_fetch.size() ) );
 
         std::forward_list< std::pair<peer_connection_ptr, item_id> > fetch_messages_to_send;
         std::vector< fc::future<void> >  write_ops;
@@ -759,8 +759,8 @@ namespace bts { namespace net { namespace detail {
         inventory_to_advertise.swap( _new_inventory );
 
         // process all inventory to advertise and construct the inventory messages we'll send
-        // first, then send them all in a batch ( to avoid any fiber interruption points while
-        // we're computing the messages )
+        // first, then send them all in a batch (to avoid any fiber interruption points while
+        // we're computing the messages)
         std::list<std::pair<peer_connection_ptr, item_ids_inventory_message> > inventory_messages_to_send;
 
         for( const peer_connection_ptr& peer : _active_connections )
@@ -820,7 +820,7 @@ namespace bts { namespace net { namespace detail {
         // If we and our peers get disconnected from the rest of the network, we will not 
         // receive any blocks or transactions from the rest of the world, and that will 
         // probably make us disconnect from our peers even though we have working connections to
-        // them ( but they won't have sent us anything since they aren't getting blocks either ).
+        // them (but they won't have sent us anything since they aren't getting blocks either).
         // This might not be so bad because it could make us initiate more connections and
         // reconnect with the rest of the network, or it might just futher isolate us.
       
@@ -838,7 +838,7 @@ namespace bts { namespace net { namespace detail {
                  ("sent", handshaking_peer->get_total_bytes_sent())
                  ("received", handshaking_peer->get_total_bytes_received()));
             handshaking_peer->connection_closed_error = fc::exception(FC_LOG_MESSAGE(warn, "Terminating handshaking connection due to inactivity of ${timeout} seconds.  Negotiating status: ${status}, bytes sent: ${sent}, bytes received: ${received}",
-                                                                                     ( "peer", handshaking_peer->get_remote_endpoint() )
+                                                                                     ("peer", handshaking_peer->get_remote_endpoint())
                                                                                      ("timeout", handshaking_timeout)
                                                                                      ("status", handshaking_peer->negotiation_status)
                                                                                      ("sent", handshaking_peer->get_total_bytes_sent())
@@ -1188,8 +1188,8 @@ namespace bts { namespace net { namespace detail {
           originating_peer->their_state = peer_connection::their_connection_state::connection_rejected;
           originating_peer->send_message( message(connection_rejected ) );
           // for this type of message, we're immediately disconnecting this peer, instead of trying to
-          // allowing her to ask us for peers ( any of our peers will be on the same chain as us, so there's no
-          // benefit of sharing them )
+          // allowing her to ask us for peers (any of our peers will be on the same chain as us, so there's no
+          // benefit of sharing them)
           disconnect_from_peer( originating_peer, "You are on a different chain from me" );
           return;
         }
@@ -1316,7 +1316,7 @@ namespace bts { namespace net { namespace detail {
             originating_peer->outbound_port == hello_reply_message_received.remote_endpoint.port() )
           dlog( "peer ${peer} does not think we're behind a firewall", ("peer", originating_peer->get_remote_endpoint() ) );
         else
-          dlog( "peer ${peer} thinks we're firewalled (we think we were connecting from ${we_saw}, they saw ${they_saw} )",
+          dlog( "peer ${peer} thinks we're firewalled (we think we were connecting from ${we_saw}, they saw ${they_saw})",
                ( "peer", originating_peer->get_remote_endpoint() )
                ( "we_saw", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port ) )
                ( "they_saw", hello_reply_message_received.remote_endpoint ) );
@@ -1467,7 +1467,7 @@ namespace bts { namespace net { namespace detail {
       if( !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() )
         peers_last_item_seen = item_id( fetch_blockchain_item_ids_message_received.item_type,
                                        fetch_blockchain_item_ids_message_received.blockchain_synopsis.back() );
-      dlog( "sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint} (full request: ${synopsis} )", 
+      dlog( "sync: received a request for item ids after ${last_item_seen} from peer ${peer_endpoint} (full request: ${synopsis})", 
            ( "last_item_seen", peers_last_item_seen )
            ( "peer_endpoint", originating_peer->get_remote_endpoint() )
            ( "synopsis", fetch_blockchain_item_ids_message_received.blockchain_synopsis ) );
@@ -1601,7 +1601,7 @@ namespace bts { namespace net { namespace detail {
 
       std::vector<item_hash_t> blockchain_synopsis = create_blockchain_synopsis_for_peer( peer );
       item_hash_t last_item_seen = blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back();
-      dlog( "sync: sending a request for the next items after ${last_item_seen} to peer ${peer}, (full request is ${blockchain_synopsis} )", 
+      dlog( "sync: sending a request for the next items after ${last_item_seen} to peer ${peer}, (full request is ${blockchain_synopsis})", 
            ( "last_item_seen", last_item_seen )
            ( "peer", peer->get_remote_endpoint() )
            ( "blockchain_synopsis", blockchain_synopsis ) );
@@ -1683,7 +1683,7 @@ namespace bts { namespace net { namespace detail {
               originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
               ++originating_peer->last_block_number_delegate_has_seen;
               originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time(item_hashes_received.front());
-              dlog( "popping item because delegate has already seen it.  peer's last block the delegate has seen is now ${block_id} (${block_num} )", ("block_id", originating_peer->last_block_delegate_has_seen )("block_num", originating_peer->last_block_number_delegate_has_seen ) );
+              dlog( "popping item because delegate has already seen it.  peer's last block the delegate has seen is now ${block_id} (${block_num})", ("block_id", originating_peer->last_block_delegate_has_seen )("block_num", originating_peer->last_block_number_delegate_has_seen ) );
               item_hashes_received.pop_front();
             }
             dlog( "after removing all items we have already seen, item_hashes_received.size() = ${size}", ("size", item_hashes_received.size() ) );
@@ -1778,9 +1778,9 @@ namespace bts { namespace net { namespace detail {
             // already.
             // Most likely, that means that some of the next blocks in sequence will be ones we have 
             // already, but we still need to ask the client for them in order.
-            // ( If we didn't have to handle forks, we could just jump to our last seen block,
+            // (If we didn't have to handle forks, we could just jump to our last seen block,
             // but in the case where the client is telling us about a fork, we need to keep asking them
-            // for sequential blocks )
+            // for sequential blocks)
             fetch_next_batch_of_item_ids_from_peer( originating_peer );
           }
         }
@@ -2051,8 +2051,8 @@ namespace bts { namespace net { namespace detail {
               // sync with one peer who is sending us the last block on the chain via a regular inventory
               // message, while at the same time still be synchronizing with a peer who is sending us the
               // block through the sync mechanism.  Further, we must request both blocks because 
-              // we don't know they're the same ( for the peer in normal operation, it has only told us the
-              // message id, for the peer in the sync case we only known the block_id ).
+              // we don't know they're the same (for the peer in normal operation, it has only told us the
+              // message id, for the peer in the sync case we only known the block_id).
               if( std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
                             block_message_to_process.block_id ) == _most_recent_blocks_accepted.end() )
               {
@@ -2111,7 +2111,7 @@ namespace bts { namespace net { namespace detail {
 
                     // if we just received the last item in our list from this peer, we will want to 
                     // send another request to find out if we are in sync, but we can't do this yet
-                    // ( we don't want to allow a fiber swap in the middle of popping items off the list )
+                    // (we don't want to allow a fiber swap in the middle of popping items off the list)
                     if( peer->ids_of_items_to_get.empty() && peer->number_of_unfetched_item_ids == 0 )
                       peers_with_newly_empty_item_lists.insert( peer );
 
@@ -2187,8 +2187,8 @@ namespace bts { namespace net { namespace detail {
         // sync with one peer who is sending us the last block on the chain via a regular inventory
         // message, while at the same time still be synchronizing with a peer who is sending us the
         // block through the sync mechanism.  Further, we must request both blocks because 
-        // we don't know they're the same ( for the peer in normal operation, it has only told us the
-        // message id, for the peer in the sync case we only known the block_id ).
+        // we don't know they're the same (for the peer in normal operation, it has only told us the
+        // message id, for the peer in the sync case we only known the block_id).
         fc::time_point message_validated_time;
         if( std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(), 
                       block_message_to_process.block_id ) == _most_recent_blocks_accepted.end() )
@@ -2210,7 +2210,7 @@ namespace bts { namespace net { namespace detail {
           {
             // this peer offered us the item; remove it from the list of items they offered us, and 
             // add it to the list of items we've offered them.  That will prevent us from offering them
-            // the same item back ( no reason to do that; we already know they have it )
+            // the same item back (no reason to do that; we already know they have it)
             peer->inventory_peer_advertised_to_us.erase( iter );
             peer->inventory_advertised_to_peer.insert( block_message_item_id );
           }
@@ -2240,9 +2240,9 @@ namespace bts { namespace net { namespace detail {
                                            const message_hash_type& message_hash )
     {
       // find out whether we requested this item while we were synchronizing or during normal operation
-      // ( it's possible that we request an item during normal operation and then get kicked into sync
+      // (it's possible that we request an item during normal operation and then get kicked into sync
       // mode before we receive and process the item.  In that case, we should process the item as a normal
-      // item to avoid confusing the sync code )
+      // item to avoid confusing the sync code)
       bts::client::block_message block_message_to_process( message_to_process.as<bts::client::block_message>() );
       auto item_iter = originating_peer->items_requested_from_peer.find( item_id(bts::client::block_message_type, message_hash ) );
       if( item_iter != originating_peer->items_requested_from_peer.end() )
@@ -2311,7 +2311,7 @@ namespace bts { namespace net { namespace detail {
 
     // this handles any message we get that doesn't require any special processing.
     // currently, this is any message other than block messages and p2p-specific
-    // messages.  ( transaction messages would be handled here, for example )
+    // messages.  (transaction messages would be handled here, for example)
     // this just passes the message to the client, and does the bookkeeping 
     // related to requesting and rebroadcasting the message.
     void node_impl::process_ordinary_message( peer_connection* originating_peer, 
@@ -2340,8 +2340,8 @@ namespace bts { namespace net { namespace detail {
         try
         {
           //bool message_caused_fork_switch = _delegate->handle_message( message_to_process, false );
-          // for now, we assume an "ordinary" message won't cause us to switch forks ( which
-          // is currently the case.  if this changes, add some logic to handle it here )
+          // for now, we assume an "ordinary" message won't cause us to switch forks (which
+          // is currently the case.  if this changes, add some logic to handle it here)
           //assert( !message_caused_fork_switch );
           _delegate->handle_message(message_to_process, false);
           message_validated_time = fc::time_point::now();
@@ -2462,7 +2462,7 @@ namespace bts { namespace net { namespace detail {
                           _chain_id, 
                           generate_hello_user_data() );
 
-      peer->send_message( message(hello ) );
+      peer->send_message( message(hello) );
     }
 
     void node_impl::connect_to_task( peer_connection_ptr new_peer, 
@@ -2638,7 +2638,7 @@ namespace bts { namespace net { namespace detail {
       else // port is 0
       {
         // if they requested a random port, we'll just assume it's available
-        // ( it may not be due to ip address, but we'll detect that in the next step )
+        // (it may not be due to ip address, but we'll detect that in the next step)
       }
 
       _tcp_server.set_reuse_address();
@@ -2649,7 +2649,7 @@ namespace bts { namespace net { namespace detail {
         else
           _tcp_server.listen( listen_endpoint.port() );
         _actual_listening_endpoint = _tcp_server.get_local_endpoint();
-        ilog( "listening for connections on endpoint ${endpoint} (our first choice )", 
+        ilog( "listening for connections on endpoint ${endpoint} (our first choice)", 
               ( "endpoint", _actual_listening_endpoint ) );
       }
       catch ( fc::exception& e )
@@ -2692,7 +2692,7 @@ namespace bts { namespace net { namespace detail {
       if( is_connection_to_endpoint_in_progress(remote_endpoint ) )
         FC_THROW( "already connected to requested endpoint ${endpoint}", ("endpoint", remote_endpoint ) );
 
-      dlog( "node_impl::connect_to(${endpoint} )", ("endpoint", remote_endpoint ) );
+      dlog( "node_impl::connect_to(${endpoint})", ("endpoint", remote_endpoint ) );
       peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
@@ -2741,12 +2741,12 @@ namespace bts { namespace net { namespace detail {
       }
       for( const peer_connection_ptr& peer : _handshaking_connections )
       {
-        dlog( "  handshaking peer ${endpoint} in state ours(${our_state} ) theirs(${their_state} )", 
+        dlog( "  handshaking peer ${endpoint} in state ours(${our_state}) theirs(${their_state})", 
              ( "endpoint", peer->get_remote_endpoint() )("our_state", peer->our_state )("their_state", peer->their_state ) );
       }
 
       dlog( "--------- MEMORY USAGE ------------" );
-      dlog( "node._active_sync_requests size: ${size} (this is known to be broken )", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
+      dlog( "node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
       dlog( "node._received_sync_items size: ${size}", ("size", _received_sync_items.size() ) );
       dlog( "node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size() ) );
       dlog( "node._new_inventory size: ${size}", ("size", _new_inventory.size() ) );
@@ -2860,9 +2860,9 @@ namespace bts { namespace net { namespace detail {
         {
           std::string revision_string = *peer->bitshares_git_revision_sha;
           if( *peer->bitshares_git_revision_sha == bts::utilities::git_revision_sha )
-            revision_string += " ( same as ours )";
+            revision_string += " (same as ours)";
           else
-            revision_string += " ( different from ours )";
+            revision_string += " (different from ours)";
           peer_details["bitshares_git_revision_sha"] = revision_string;
 
         }
@@ -2871,11 +2871,11 @@ namespace bts { namespace net { namespace detail {
           peer_details["bitshares_git_revision_unix_timestamp"] = *peer->bitshares_git_revision_unix_timestamp;
           std::string age_string = fc::get_approximate_relative_time_string( *peer->bitshares_git_revision_unix_timestamp );
           if( *peer->bitshares_git_revision_unix_timestamp == fc::time_point_sec(bts::utilities::git_revision_unix_timestamp ) )
-            age_string += " ( same as ours )";
+            age_string += " (same as ours)";
           else if( *peer->bitshares_git_revision_unix_timestamp > fc::time_point_sec(bts::utilities::git_revision_unix_timestamp ) )
-            age_string += " ( newer than ours )";
+            age_string += " (newer than ours)";
           else
-            age_string += " ( older than ours )";
+            age_string += " (older than ours)";
           peer_details["bitshares_git_revision_age"] = age_string;
         }
         
@@ -2883,9 +2883,9 @@ namespace bts { namespace net { namespace detail {
         {
           std::string revision_string = *peer->fc_git_revision_sha;
           if( *peer->fc_git_revision_sha == fc::git_revision_sha )
-            revision_string += " ( same as ours )";
+            revision_string += " (same as ours)";
           else
-            revision_string += " ( different from ours )";
+            revision_string += " (different from ours)";
           peer_details["fc_git_revision_sha"] = revision_string;
 
         }
@@ -2894,11 +2894,11 @@ namespace bts { namespace net { namespace detail {
           peer_details["fc_git_revision_unix_timestamp"] = *peer->fc_git_revision_unix_timestamp;
           std::string age_string = fc::get_approximate_relative_time_string( *peer->fc_git_revision_unix_timestamp );
           if( *peer->fc_git_revision_unix_timestamp == fc::time_point_sec(fc::git_revision_unix_timestamp ) )
-            age_string += " ( same as ours )";
+            age_string += " (same as ours)";
           else if( *peer->fc_git_revision_unix_timestamp > fc::time_point_sec(fc::git_revision_unix_timestamp ) )
-            age_string += " ( newer than ours )";
+            age_string += " (newer than ours)";
           else
-            age_string += " ( older than ours )";
+            age_string += " (older than ours)";
           peer_details["fc_git_revision_age"] = age_string;
         }
 
