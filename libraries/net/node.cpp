@@ -1757,6 +1757,18 @@ namespace bts { namespace net { namespace detail {
                                true, error_for_peer);
           return;
         }
+#ifndef NDEBUG
+        else if (originating_peer->number_of_unfetched_item_ids > 100000)
+        {
+          wlog("Just received a chunk of blocks from peer ${peer} and number_of_unfetched_item_ids = ${unfetched}. "
+               "Our last_block_time_delegate_has_seen is ${last_block_time_delegate_has_seen}, " 
+               "which means the last block they're offering is at ${minimum_time_of_last_offered_block}", 
+               ("peer", originating_peer->get_remote_endpoint())
+               ("unfetched", originating_peer->number_of_unfetched_item_ids)
+               ("last_block_time_delegate_has_seen", originating_peer->last_block_time_delegate_has_seen)
+               ("minimum_time_of_last_offered_block", minimum_time_of_last_offered_block));
+        }
+#endif
 
         uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
         if( new_number_of_unfetched_items != _total_number_of_unfetched_items )
