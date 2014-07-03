@@ -243,7 +243,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::warn;
+    dlc_p2p.level = fc::log_level::info;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
