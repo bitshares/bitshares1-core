@@ -10,7 +10,7 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
-#include <bts/db/cached_level_map.hpp>
+#include <bts/db/level_map.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
 
@@ -133,20 +133,20 @@ namespace bts { namespace blockchain {
             share_type                                                          _priority_fee;
 
             bts::db::level_map<slate_id_type, delegate_slate >                  _slate_db;
-            bts::db::cached_level_map<uint32_t, std::vector<block_id_type> >    _fork_number_db;
-            bts::db::cached_level_map<block_id_type,block_fork_data, unordered_map<block_id_type,block_fork_data> > _fork_db;
-            bts::db::cached_level_map<uint32_t, fc::variant >                   _property_db;
-            bts::db::cached_level_map<proposal_id_type, proposal_record >       _proposal_db;
-            bts::db::cached_level_map<proposal_vote_id_type, proposal_vote >    _proposal_vote_db;
+            bts::db::level_map<uint32_t, std::vector<block_id_type> >    _fork_number_db;
+            bts::db::level_map<block_id_type,block_fork_data>            _fork_db;
+            bts::db::level_map<uint32_t, fc::variant >                   _property_db;
+            bts::db::level_map<proposal_id_type, proposal_record >       _proposal_db;
+            bts::db::level_map<proposal_vote_id_type, proposal_vote >    _proposal_vote_db;
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>               _undo_state_db;
 
             // blocks in the current 'official' chain.
-            bts::db::cached_level_map<uint32_t,block_id_type, unordered_map<uint32_t,block_id_type> >                   _block_num_to_id_db;
+            bts::db::level_map<uint32_t,block_id_type >                         _block_num_to_id_db;
             // all blocks from any fork..
             //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
-            bts::db::cached_level_map<block_id_type,block_record, unordered_map<block_id_type,block_record> >           _block_id_to_block_record_db;
+            bts::db::level_map<block_id_type,block_record >                     _block_id_to_block_record_db;
 
             bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_data_db;
 
@@ -162,14 +162,14 @@ namespace bts { namespace blockchain {
             bts::db::level_map< transaction_id_type, signed_transaction>        _pending_transaction_db;
             std::map< fee_index, transaction_evaluation_state_ptr >             _pending_fee_index;
 
-            bts::db::cached_level_map< asset_id_type, asset_record >            _asset_db;
-            bts::db::cached_level_map< balance_id_type, balance_record, unordered_map<balance_id_type, balance_record>  >      _balance_db;
-            bts::db::cached_level_map< account_id_type, account_record, unordered_map<account_id_type, account_record> >       _account_db;
-            bts::db::cached_level_map< address, account_id_type >               _address_to_account_db;
+            bts::db::level_map< asset_id_type, asset_record >            _asset_db;
+            bts::db::level_map< balance_id_type, balance_record>      _balance_db;
+            bts::db::level_map< account_id_type, account_record>       _account_db;
+            bts::db::level_map< address, account_id_type >               _address_to_account_db;
 
-            bts::db::cached_level_map< string, account_id_type >                _account_index_db;
-            bts::db::cached_level_map< string, asset_id_type >                  _symbol_index_db;
-            bts::db::cached_level_map< vote_del, int >                          _delegate_vote_index_db;
+            bts::db::level_map< string, account_id_type >                _account_index_db;
+            bts::db::level_map< string, asset_id_type >                  _symbol_index_db;
+            bts::db::level_map< vote_del, int >                          _delegate_vote_index_db;
 
             bts::db::level_map< std::pair< account_id_type, uint32_t >, delegate_block_stats >
                                                                                 _delegate_block_stats_db;
