@@ -426,17 +426,7 @@ namespace bts { namespace wallet {
                                           const issue_asset_operation& op  )
       {
          wlog( "${op}", ("op",op) );
-         /*
-         auto oissuer =  _blockchain->get_account_record( op.issuer_account_id );
-         FC_ASSERT( oissuer.valid() );
-         auto opt_key_rec = _wallet_db.lookup_key( oissuer->owner_key );
-         if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
-         {
-            trx_rec.to_account = oissuer->owner_key;
-            trx_rec.from_account = oissuer->owner_key;
-            trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
-         }
-         */
+         trx_rec.memo_message = "issue " + _blockchain->to_pretty_asset(op.amount);
          return false;
       }
 
@@ -2013,6 +2003,16 @@ namespace bts { namespace wallet {
       {
          sign_transaction( trx, required_signatures );
          my->_blockchain->store_pending_transaction( trx, true );
+         my->_wallet_db.cache_transaction( trx,
+                                  asset(),
+                                  required_fees.amount,
+                                  "create " + symbol + " (" + asset_name + ")",
+                                  from_account_address,
+                                  bts::blockchain::now(),
+                                  bts::blockchain::now(),
+                                  from_account_address
+                                );
+
       }
 
       return trx;
@@ -2074,6 +2074,15 @@ namespace bts { namespace wallet {
       {
           sign_transaction( trx, required_signatures );
           my->_blockchain->store_pending_transaction( trx, true );
+          my->_wallet_db.cache_transaction( trx,
+                                            shares_to_issue,
+                                            required_fees.amount,
+                                            "issue " + my->_blockchain->to_pretty_asset(shares_to_issue),
+                                            receiver_public_key,
+                                            bts::blockchain::now(),
+                                            bts::blockchain::now(),
+                                            issuer->active_key()
+                                          );
       }
 
       return trx;
