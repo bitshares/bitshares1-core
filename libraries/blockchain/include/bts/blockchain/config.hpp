@@ -15,10 +15,10 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                 "XTS"
-#define BTS_BLOCKCHAIN_SYMBOL                              "XTS"
-#define BTS_BLOCKCHAIN_NAME                                "BitShares XTS"
-#define BTS_BLOCKCHAIN_DESCRIPTION                         "Stake in future BitShares X chains"
+#define BTS_ADDRESS_PREFIX                                 "BTSX"
+#define BTS_BLOCKCHAIN_SYMBOL                              "BTSX"
+#define BTS_BLOCKCHAIN_NAME                                "BitShares X"
+#define BTS_BLOCKCHAIN_DESCRIPTION                         "Decentralized Autonomous Exchange"
 #define BTS_BLOCKCHAIN_PRECISION                           (100000)
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC      (60*60*24*2)
 #define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC  (60*60*2)
@@ -37,12 +37,12 @@
  * we check the connection count.  This means no blocks get produced
  * until at least a minimum number of clients are on line.
  */
-#define BTS_MIN_DELEGATE_CONNECTION_COUNT               (5)
+#define BTS_MIN_DELEGATE_CONNECTION_COUNT               (1)
 
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(15)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(30)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
