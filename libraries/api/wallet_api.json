@@ -767,7 +767,7 @@
                },
                {
                   "name" : "maximum_share_supply",
-                  "type" : "int64_t",
+                  "type" : "real_amount",
                   "description" : "the maximum number of shares of the asset",
                   "default_value" : 1000000000000000
                },

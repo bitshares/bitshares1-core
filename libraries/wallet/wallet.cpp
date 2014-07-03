@@ -2021,7 +2021,7 @@ namespace bts { namespace wallet {
                                              const string& description,
                                              const variant& data,
                                              const string& issuer_account_name,
-                                             share_type max_share_supply, 
+                                             double max_share_supply, 
                                              int64_t precision,
                                              bool is_market_issued,
                                              bool sign  )
@@ -2056,6 +2056,9 @@ namespace bts { namespace wallet {
                                    from_account_address,
                                    trx, required_signatures );
     
+      //check this way to avoid overflow
+      FC_ASSERT(BTS_BLOCKCHAIN_MAX_SHARES / precision > max_share_supply);      
+      share_type max_share_supply_in_internal_units = max_share_supply * precision;
       if( NOT is_market_issued )
       {
          required_signatures.insert( address( from_account_address ) );
@@ -2067,7 +2070,7 @@ namespace bts { namespace wallet {
       {
          trx.create_asset( symbol, asset_name,
                            description, data,
-                           asset_record::market_issued_asset, max_share_supply, precision );
+                           asset_record::market_issued_asset, max_share_supply_in_internal_units, precision );
       }
 
       if( sign )
