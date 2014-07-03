@@ -481,7 +481,7 @@ config load_config( const fc::path& datadir )
                                          const block_id_type& block_id, 
                                          bool sync_mode);
 
-            void on_new_transaction(const signed_transaction& trx);
+            bool on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
             // @{
@@ -851,11 +851,11 @@ config load_config( const fc::path& datadir )
          }
        }
 
-       void client_impl::on_new_transaction(const signed_transaction& trx)
+       bool client_impl::on_new_transaction(const signed_transaction& trx)
        {
           try {
               // throws exception if invalid trx.
-              _chain_db->store_pending_transaction(trx);
+              return !!_chain_db->store_pending_transaction(trx);
           }
           catch ( const fc::exception& e )
           {
@@ -894,12 +894,11 @@ config load_config( const fc::path& datadir )
                 return fork_data.is_included ^ (block_message_to_handle.block.previous == old_head_block);  // TODO is this right?
               }
             case trx_message_type:
-              {
+            {
                 trx_message trx_message_to_handle(message_to_handle.as<trx_message>());
                 ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
-                on_new_transaction(trx_message_to_handle.trx);
-                return false;
-              }
+                return on_new_transaction(trx_message_to_handle.trx);
+            }
          }
          return false;
        }
