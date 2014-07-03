@@ -121,7 +121,11 @@ namespace bts { namespace blockchain {
           */
          pending_chain_state_ptr                  get_pending_state()const;
 
-         transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx );
+         /**
+          *  @param override_limits - stores the transaction even if the pending queue is full, if false then it will require exponential fee increases
+          *                           as the queue fills. 
+          */
+         transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx, bool override_limits = true );
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                     is_known_transaction( const transaction_id_type& trx_id );
 
@@ -201,7 +205,7 @@ namespace bts { namespace blockchain {
          /**
           *  Evaluate the transaction and return the results.
           */
-         virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx );
+         virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, share_type min_fee = 0 );
 
 
          /** return the timestamp from the head block */

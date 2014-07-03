@@ -10,7 +10,7 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
-#include <bts/db/cached_level_map.hpp>
+#include <bts/db/level_map.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
 
@@ -133,20 +133,20 @@ namespace bts { namespace blockchain {
             share_type                                                          _priority_fee;
 
             bts::db::level_map<slate_id_type, delegate_slate >                  _slate_db;
-            bts::db::cached_level_map<uint32_t, std::vector<block_id_type> >    _fork_number_db;
-            bts::db::cached_level_map<block_id_type,block_fork_data, unordered_map<block_id_type,block_fork_data> > _fork_db;
-            bts::db::cached_level_map<uint32_t, fc::variant >                   _property_db;
-            bts::db::cached_level_map<proposal_id_type, proposal_record >       _proposal_db;
-            bts::db::cached_level_map<proposal_vote_id_type, proposal_vote >    _proposal_vote_db;
+            bts::db::level_map<uint32_t, std::vector<block_id_type> >    _fork_number_db;
+            bts::db::level_map<block_id_type,block_fork_data>            _fork_db;
+            bts::db::level_map<uint32_t, fc::variant >                   _property_db;
+            bts::db::level_map<proposal_id_type, proposal_record >       _proposal_db;
+            bts::db::level_map<proposal_vote_id_type, proposal_vote >    _proposal_vote_db;
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>               _undo_state_db;
 
             // blocks in the current 'official' chain.
-            bts::db::cached_level_map<uint32_t,block_id_type, unordered_map<uint32_t,block_id_type> >                   _block_num_to_id_db;
+            bts::db::level_map<uint32_t,block_id_type >                         _block_num_to_id_db;
             // all blocks from any fork..
             //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
-            bts::db::cached_level_map<block_id_type,block_record, unordered_map<block_id_type,block_record> >           _block_id_to_block_record_db;
+            bts::db::level_map<block_id_type,block_record >                     _block_id_to_block_record_db;
 
             bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_data_db;
 
@@ -162,14 +162,14 @@ namespace bts { namespace blockchain {
             bts::db::level_map< transaction_id_type, signed_transaction>        _pending_transaction_db;
             std::map< fee_index, transaction_evaluation_state_ptr >             _pending_fee_index;
 
-            bts::db::cached_level_map< asset_id_type, asset_record >            _asset_db;
-            bts::db::cached_level_map< balance_id_type, balance_record, unordered_map<balance_id_type, balance_record>  >      _balance_db;
-            bts::db::cached_level_map< account_id_type, account_record, unordered_map<account_id_type, account_record> >       _account_db;
-            bts::db::cached_level_map< address, account_id_type >               _address_to_account_db;
+            bts::db::level_map< asset_id_type, asset_record >            _asset_db;
+            bts::db::level_map< balance_id_type, balance_record>         _balance_db;
+            bts::db::level_map< account_id_type, account_record>         _account_db;
+            bts::db::level_map< address, account_id_type >               _address_to_account_db;
 
-            bts::db::cached_level_map< string, account_id_type >                _account_index_db;
-            bts::db::cached_level_map< string, asset_id_type >                  _symbol_index_db;
-            bts::db::cached_level_map< vote_del, int >                          _delegate_vote_index_db;
+            bts::db::level_map< string, account_id_type >                _account_index_db;
+            bts::db::level_map< string, asset_id_type >                  _symbol_index_db;
+            bts::db::level_map< vote_del, int >                          _delegate_vote_index_db;
 
             bts::db::level_map< std::pair< account_id_type, uint32_t >, delegate_block_stats >
                                                                                 _delegate_block_stats_db;
@@ -282,7 +282,7 @@ namespace bts { namespace blockchain {
             auto trx = itr.value();
             auto trx_id = trx.id();
             try {
-               auto eval_state = self->evaluate_transaction( trx );
+               auto eval_state = self->evaluate_transaction( trx, _priority_fee );
                share_type fees = eval_state->get_fees();
                _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                _pending_transaction_db.store( trx_id, trx );
@@ -825,7 +825,11 @@ namespace bts { namespace blockchain {
 
       void  chain_database_impl::pop_block()
       { try {
-         FC_ASSERT( _head_block_header.block_num > 0 );
+         if( _head_block_header.block_num == 0 )
+         {
+            wlog( "attempting to pop block 0" );
+            return;
+         }
 
            // update the is_included flag on the fork data
          mark_included( _head_block_id, false );
@@ -974,7 +978,7 @@ namespace bts { namespace blockchain {
                 auto trx = pending_itr.value();
                 wlog( " laoding pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
-                auto eval_state = evaluate_transaction( trx );
+                auto eval_state = evaluate_transaction( trx, my->_priority_fee );
                 share_type fees = eval_state->get_fees();
                 my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                 my->_pending_transaction_db.store( trx_id, trx );
@@ -1054,9 +1058,10 @@ namespace bts { namespace blockchain {
       FC_ASSERT( delegate_pos < ordered_delegates.size() );
       auto delegate_id = ordered_delegates[ delegate_pos ];
       auto delegate_record = get_account_record( delegate_id );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() );
+      FC_ASSERT( delegate_record->is_delegate() );
       return *delegate_record;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("timestamp",timestamp) ) }
+   } FC_CAPTURE_AND_RETHROW( (timestamp)(ordered_delegates) ) }
 
    optional<time_point_sec> chain_database::get_next_producible_block_timestamp( const vector<account_id_type>& delegate_ids )const
    { try {
@@ -1067,14 +1072,18 @@ namespace bts { namespace blockchain {
       auto active_delegates = get_active_delegates();
       for( ; next_block_time < last_block_time; next_block_time += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
       {
-          auto delegate_id = get_slot_signee( next_block_time, active_delegates ).id;
+          auto slot_number = blockchain::get_slot_number( next_block_time );
+          auto delegate_pos = slot_number % BTS_BLOCKCHAIN_NUM_DELEGATES;
+          FC_ASSERT( delegate_pos < active_delegates.size() );
+          auto delegate_id = active_delegates[ delegate_pos ];
+
           if( std::find( delegate_ids.begin(), delegate_ids.end(), delegate_id ) != delegate_ids.end() )
               return next_block_time;
       }
       return optional<time_point_sec>();
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW( (delegate_ids) ) }
 
-   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx )
+   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx, share_type required_fees )
    { try {
       if( !my->_pending_trx_state )
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
@@ -1083,6 +1092,9 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
 
       trx_eval_state->evaluate( trx );
+      auto fees = trx_eval_state->get_fees();
+      if( fees < required_fees )
+         FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(required_fees) );
 
       // apply changes from this transaction to _pending_trx_state
       pend_state->apply_changes();
@@ -1438,18 +1450,28 @@ namespace bts { namespace blockchain {
    }
 
    /** this should throw if the trx is invalid */
-   transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx )
+   transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )
    { try {
 
       auto trx_id = trx.id();
       auto current_itr = my->_pending_transaction_db.find( trx_id );
       if( current_itr.valid() ) return nullptr;
 
-      auto eval_state = evaluate_transaction( trx );
+      share_type priority_fee = my->_priority_fee;
+      if( !override_limits )
+      {
+         if( my->_pending_fee_index.size() > BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
+         {
+             auto overage = my->_pending_fee_index.size() - BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
+             priority_fee = my->_priority_fee * overage * overage; 
+         }
+      }
+
+      auto eval_state = evaluate_transaction( trx, priority_fee );
       share_type fees = eval_state->get_fees();
 
-      if( fees < my->_priority_fee ) 
-         FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(my->_priority_fee) );
+      //if( fees < my->_priority_fee ) 
+      //   FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(my->_priority_fee) );
 
       my->_pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
       my->_pending_transaction_db.store( trx_id, trx );
@@ -2058,7 +2080,7 @@ namespace bts { namespace blockchain {
       int32_t head_num = get_head_block_num();
       if( head_num < 1 ) return 0;
       auto now         = bts::blockchain::now();
-      if( head_num < 10 * BTS_BLOCKCHAIN_NUM_DELEGATES )
+      if( head_num <  BTS_BLOCKCHAIN_NUM_DELEGATES )
       {
          // what percent of the maximum total blocks that could have been produced 
          // have been produced.
@@ -2069,9 +2091,9 @@ namespace bts { namespace blockchain {
       {
          // if 10*N blocks ago is longer than 10*N*INTERVAL_SEC ago then we missed blocks, calculate
          // in terms of percentage time rather than percentage blocks.
-         auto starting_time =  get_block_header( head_num - 10*BTS_BLOCKCHAIN_NUM_DELEGATES ).timestamp;
+         auto starting_time =  get_block_header( head_num - BTS_BLOCKCHAIN_NUM_DELEGATES ).timestamp;
          auto expected_production = (now - starting_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; 
-         return  100*double(10*BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
+         return  100*double(BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
       }
    }
 

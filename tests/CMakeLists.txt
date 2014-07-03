@@ -29,6 +29,10 @@ file(GLOB regression_tests_two_client_test_files "${CMAKE_CURRENT_SOURCE_DIR}/re
                                                  "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/two_client_test/*.log")
 source_group("Regression Tests\\Two Client Test" FILES ${regression_tests_two_client_test_files})
 
+file(GLOB regression_tests_dev_test_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/_tests_under_development/dev_test/test.config"
+                                          "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/_tests_under_development/dev_test/*.log")
+source_group("Regression Tests\\Dev Test" FILES ${regression_tests_dev_test_files})
+
 file(GLOB regression_tests_wallet_asset_test_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/wallet_asset_test/test.config"
                                                    "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/wallet_asset_test/*.log")
 source_group("Regression Tests\\Wallet Asset Test" FILES ${regression_tests_wallet_asset_test_files})
@@ -39,7 +43,8 @@ set(regression_test_files ${regression_tests_common_logs_files}
                           ${regression_tests_simple_test_files}
                           ${regression_tests_transfer_test_files}
                           ${regression_tests_two_client_test_files}
-                          ${regression_tests_wallet_asset_test_files})
+                          ${regression_tests_wallet_asset_test_files}
+                          ${regression_tests_dev_test_files})
 
 add_executable( wallet_tests wallet_tests.cpp ${regression_test_files})
 target_link_libraries( wallet_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )

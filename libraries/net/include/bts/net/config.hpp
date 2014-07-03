@@ -31,3 +31,14 @@
 #define BTS_NET_DEFAULT_MAX_CONNECTIONS       200
 
 #define BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES (1024 * 1024)
+
+/** 
+ * We prevent a peer from offering us a list of blocks which, if we fetched them
+ * all, would result in a blockchain that extended into the future.
+ * This parameter gives us some wiggle room, allowing a peer to give us blocks
+ * that would put our blockchain up to an hour in the future, just in case
+ * our clock is a bit off.
+ */
+#define BTS_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC  (60 * 60)
+
+#define BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC 15

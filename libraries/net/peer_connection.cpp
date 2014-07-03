@@ -208,4 +208,9 @@ namespace bts { namespace net
       return !busy();
     }
 
+    bool peer_connection::is_transaction_fetching_inhibited() const
+    {
+      return transaction_fetching_inhibited_until > fc::time_point::now();
+    }
+
 } } // end namespace bts::net

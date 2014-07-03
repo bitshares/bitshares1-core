@@ -31,6 +31,7 @@
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                    (101)
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                   (BTS_BLOCKCHAIN_NUM_DELEGATES)
 
+
 /**
  * To prevent a delegate from producing blocks on split network,
  * we check the connection count.  This means no blocks get produced
@@ -98,6 +99,10 @@
 
 #define BTS_BLOCKCHAIN_BLOCK_REWARD                     (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE) //10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
 #define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                 (10)  // 10% per year
+
+#define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                 (512) // just a random assumption used to calibrate TRX per SEC
+#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND               (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE / BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
+#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE           20
 
 /**
  *  defines the min fee in milli-shares per byte

@@ -4,6 +4,7 @@
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/net/node.hpp>
+#include <bts/net/exceptions.hpp>
 #include <bts/net/upnp.hpp>
 #include <bts/net/peer_database.hpp>
 #include <bts/blockchain/chain_database.hpp>
@@ -247,7 +248,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::debug;
+    dlc_p2p.level = fc::log_level::info;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -485,7 +486,7 @@ config load_config( const fc::path& datadir )
                                          const block_id_type& block_id, 
                                          bool sync_mode);
 
-            void on_new_transaction(const signed_transaction& trx);
+            bool on_new_transaction(const signed_transaction& trx);
 
             /* Implement node_delegate */
             // @{
@@ -502,11 +503,13 @@ config load_config( const fc::path& datadir )
                 return _chain_db->chain_id();
             }
             virtual std::vector<bts::net::item_hash_t> get_blockchain_synopsis(uint32_t item_type,
-                                                                               bts::net::item_hash_t reference_point = bts::net::item_hash_t(),
+                                                                               const bts::net::item_hash_t& reference_point = bts::net::item_hash_t(),
                                                                                uint32_t number_of_blocks_after_reference_point = 0) override;
             virtual void sync_status(uint32_t item_type, uint32_t item_count) override;
             virtual void connection_count_changed(uint32_t c) override;
-            virtual uint32_t get_block_number(bts::net::item_hash_t block_id) override;
+            virtual uint32_t get_block_number(const bts::net::item_hash_t& block_id) override;
+            virtual fc::time_point_sec get_block_time(const bts::net::item_hash_t& block_id) override;
+            virtual fc::time_point_sec get_blockchain_now() override;
             virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
             bts::client::client*                                        _self;
@@ -855,11 +858,11 @@ config load_config( const fc::path& datadir )
          }
        }
 
-       void client_impl::on_new_transaction(const signed_transaction& trx)
+       bool client_impl::on_new_transaction(const signed_transaction& trx)
        {
           try {
-              // throws exception if invalid trx.
-              _chain_db->store_pending_transaction(trx);
+              // throws exception if invalid trx, don't override limits
+              return !!_chain_db->store_pending_transaction(trx, false);
           }
           catch ( const fc::exception& e )
           {
@@ -885,10 +888,12 @@ config load_config( const fc::path& datadir )
          return false;
        }
 
-       bool client_impl::handle_message(const bts::net::message& message_to_handle, bool sync_mode)
-       {
-         switch (message_to_handle.msg_type)
-         {
+      bool client_impl::handle_message(const bts::net::message& message_to_handle, bool sync_mode)
+      {
+        try
+        {
+          switch (message_to_handle.msg_type)
+          {
             case block_message_type:
               {
                 block_message block_message_to_handle(message_to_handle.as<block_message>());
@@ -898,15 +903,22 @@ config load_config( const fc::path& datadir )
                 return fork_data.is_included ^ (block_message_to_handle.block.previous == old_head_block);  // TODO is this right?
               }
             case trx_message_type:
-              {
+            {
                 trx_message trx_message_to_handle(message_to_handle.as<trx_message>());
                 ilog("CLIENT: just received transaction ${id}", ("id", trx_message_to_handle.trx.id()));
-                on_new_transaction(trx_message_to_handle.trx);
-                return false;
-              }
-         }
-         return false;
-       }
+                return on_new_transaction(trx_message_to_handle.trx);
+            }
+          }
+          return false;
+        }
+        catch (const bts::blockchain::insufficient_priority_fee& original_exception)
+        {
+          // was just going to FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, (original_exception));
+          // but I get errors with reflection?
+          FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, "Insufficient priority fee, do not propagate.", 
+                             ("original_exception", original_exception.to_detail_string()));
+        }
+      }
 
       /**
       *  Get the hash of all blocks after from_id
@@ -988,7 +1000,7 @@ config load_config( const fc::path& datadir )
       }
 
       std::vector<bts::net::item_hash_t> client_impl::get_blockchain_synopsis(uint32_t item_type,
-                                                                              bts::net::item_hash_t reference_point /* = bts::net::item_hash_t() */,
+                                                                              const bts::net::item_hash_t& reference_point /* = bts::net::item_hash_t() */,
                                                                               uint32_t number_of_blocks_after_reference_point /* = 0 */)
       {
         FC_ASSERT(item_type == bts::client::block_message_type);
@@ -1145,9 +1157,37 @@ config load_config( const fc::path& datadir )
          ulog( message.str() );
        }
 
-       uint32_t client_impl::get_block_number(bts::net::item_hash_t block_id)
+       uint32_t client_impl::get_block_number(const bts::net::item_hash_t& block_id)
        {
          return _chain_db->get_block_num(block_id);
+       }
+
+       fc::time_point_sec client_impl::get_block_time(const bts::net::item_hash_t& block_id)
+       {
+         if (block_id == bts::net::item_hash_t())
+         {
+           // then the question the net is really asking is, what is the timestamp of the
+           // genesis block?  That's not stored off directly anywhere I can find, but it
+           // does wind its way into the the registration date of the base asset.
+           oasset_record base_asset_record = _chain_db->get_asset_record(BTS_BLOCKCHAIN_SYMBOL);
+           assert(base_asset_record);
+           if (!base_asset_record)
+             return fc::time_point_sec::min();
+           return base_asset_record->registration_date;
+         }
+         // else they're asking about a specific block
+         try
+         {
+           return _chain_db->get_block_header(block_id).timestamp;
+         }
+         catch (const fc::exception&)
+         {
+           return fc::time_point_sec::min();
+         }
+       }
+       fc::time_point_sec client_impl::get_blockchain_now()
+       {
+         return bts::blockchain::now();
        }
 
       void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
@@ -2392,6 +2432,8 @@ config load_config( const fc::path& datadir )
        info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
        info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
+       info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
+       info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
        return info;
 

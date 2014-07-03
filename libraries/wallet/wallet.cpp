@@ -42,6 +42,13 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
+             wallet_impl()
+             :_wallet_scan_thread( "wallet_scan" )
+             {
+                _wallet_thread = &fc::thread::current();
+             }
+             fc::thread*                        _wallet_thread;
+
              wallet*                            self;
              wallet_db                          _wallet_db;
              chain_database_ptr                 _blockchain;
@@ -52,6 +59,8 @@ namespace bts { namespace wallet {
              fc::future<void>                   _relocker_thread;
              bool                               _use_deterministic_one_time_keys;
              bool                               _delegate_scanning_enabled;
+
+             fc::thread                         _wallet_scan_thread;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -278,7 +287,7 @@ namespace bts { namespace wallet {
                      cache_trx |= scan_withdraw( op.as<withdraw_operation>() );
                      break;
                   case deposit_op_type:
-                     cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys );
+                     cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys ); 
                      break;
 
                   case register_account_op_type:
@@ -474,33 +483,35 @@ namespace bts { namespace wallet {
                 }
                 else if( deposit.memo )
                 {
-                   for( const auto& key : keys )
-                   {
-                      omemo_status status = deposit.decrypt_memo_data( key );
-                      if( status.valid() )
+                   _wallet_scan_thread.async( [&]() {
+                      for( const auto& key : keys )
                       {
-                         _wallet_db.cache_memo( *status, key, _wallet_password );
-                         if( status->memo_flags == from_memo )
+                         omemo_status status = deposit.decrypt_memo_data( key );
+                         if( status.valid() )
                          {
-                            trx_rec.memo_message = status->get_message();
-                            trx_rec.amount       = asset( op.amount, op.condition.asset_id );
-                            trx_rec.from_account = status->from;
-                            trx_rec.to_account   = key.get_public_key();
-                            //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                            _wallet_db.cache_memo( *status, key, _wallet_password );
+                            if( status->memo_flags == from_memo )
+                            {
+                               trx_rec.memo_message = status->get_message();
+                               trx_rec.amount       = asset( op.amount, op.condition.asset_id );
+                               trx_rec.from_account = status->from;
+                               trx_rec.to_account   = key.get_public_key();
+                               //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                            }
+                            else
+                            {
+                               //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                               //ilog( "op: ${op}", ("op",op) );
+                               trx_rec.memo_message = status->get_message();
+                               trx_rec.from_account = key.get_public_key();
+                               trx_rec.to_account   = status->from;
+                               //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                            }
+                            cache_deposit = true;
+                            break;
                          }
-                         else
-                         {
-                            //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                            //ilog( "op: ${op}", ("op",op) );
-                            trx_rec.memo_message = status->get_message();
-                            trx_rec.from_account = key.get_public_key();
-                            trx_rec.to_account   = status->from;
-                            //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
-                         }
-                         cache_deposit = true;
-                         break;
                       }
-                   }
+                   } ).wait();
                    break;
                 }
                 break;
@@ -1343,7 +1354,7 @@ namespace bts { namespace wallet {
    }
 
    optional<time_point_sec> wallet::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
-   {
+   { try {
       if( !is_open() || is_locked() ) return optional<time_point_sec>();
 
       vector<account_id_type> delegate_ids;
@@ -1352,7 +1363,7 @@ namespace bts { namespace wallet {
           delegate_ids.push_back( delegate_record.id );
 
       return my->_blockchain->get_next_producible_block_timestamp( delegate_ids );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::sign_block( signed_block_header& header )const
    { try {
@@ -1614,6 +1625,7 @@ namespace bts { namespace wallet {
           delegate_account_record->delegate_info->pay_balance -= amount_to_withdraw;
           // my->_wallet_db.cache_account( *delegate_account_record );
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
 
           my->_wallet_db.cache_transaction( trx, asset(amount_to_withdraw,0),
                                            required_fees.amount,
@@ -1694,6 +1706,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
          my->_wallet_db.cache_transaction( trx, asset_to_transfer,
                                           required_fees.amount,
                                           memo_message,
@@ -1767,6 +1780,7 @@ namespace bts { namespace wallet {
          if( sign )
          {
             sign_transaction( trx, required_signatures );
+            my->_blockchain->store_pending_transaction( trx, true );
             my->_wallet_db.cache_transaction( trx, total_asset_to_transfer,
                                              required_fees.amount,
                                              memo_message,
@@ -1862,6 +1876,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
          my->_wallet_db.cache_transaction( trx, asset_to_transfer,
                                           required_fees.amount,
                                           memo_message,
@@ -1943,6 +1958,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
          return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
@@ -2005,7 +2021,10 @@ namespace bts { namespace wallet {
                         oname_rec->id, max_share_supply, precision );
 
       if( sign )
+      {
          sign_transaction( trx, required_signatures );
+         my->_blockchain->store_pending_transaction( trx, true );
+      }
 
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)
@@ -2063,7 +2082,10 @@ namespace bts { namespace wallet {
                               );
 
       if( sign )
+      {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
+      }
 
       return trx;
    }
@@ -2131,6 +2153,7 @@ namespace bts { namespace wallet {
       if (sign)
       {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
           return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
@@ -2186,7 +2209,10 @@ namespace bts { namespace wallet {
 
        
       if (sign)
+      {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
+      }
 
       return trx;
    }
@@ -2244,6 +2270,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
           sign_transaction( trx, required_signatures );
+          my->_blockchain->store_pending_transaction( trx, true );
            // TODO: cache transaction
       }
 
@@ -2355,7 +2382,7 @@ namespace bts { namespace wallet {
                                           owner_key_record->public_key
                                         );
 
-        my->_blockchain->store_pending_transaction( trx );
+        my->_blockchain->store_pending_transaction( trx, true );
 
         return trx;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
@@ -2452,6 +2479,7 @@ namespace bts { namespace wallet {
        if( sign )
        {
            sign_transaction( trx, required_signatures );
+           my->_blockchain->store_pending_transaction( trx, true );
 
            std::stringstream memoss;
            memoss << "buy " << real_quantity << " " << base_asset_record->symbol << " @ ";
@@ -2471,7 +2499,6 @@ namespace bts { namespace wallet {
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
-           my->_blockchain->store_pending_transaction( trx );
        }
 
        return trx;
@@ -2491,7 +2518,15 @@ namespace bts { namespace wallet {
       // TODO: support price conversion using price from blockchain
       const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
       if( priority_fee.is_null() ) return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
-      return priority_fee.as<asset>(); 
+      try {
+         return priority_fee.as<asset>(); 
+      } 
+      catch ( const fc::exception& e )
+      {
+         wlog( "priority fee setting appears corrupted, resetting to default" );
+         my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE) ) );
+         return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
+      }
    } FC_CAPTURE_AND_RETHROW() }
    
    string wallet::get_key_label( const public_key_type& key )const
