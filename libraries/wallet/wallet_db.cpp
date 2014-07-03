@@ -646,6 +646,7 @@ namespace bts{ namespace wallet {
       for( const auto& time_key_pair : acct.active_key_history )
           address_to_account_wallet_record_index[address(time_key_pair.second)] = acct.wallet_record_index;
 
+      store_record( acct );
    }
 
    void wallet_db::store_transaction( wallet_transaction_record& trx_to_store )
