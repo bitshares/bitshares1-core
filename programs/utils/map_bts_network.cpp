@@ -37,7 +37,17 @@ public:
              const fc::ecc::public_key& my_node_id,
              const bts::blockchain::digest_type& chain_id)
   {
-    _connection->connect_to(endpoint_to_probe);
+    fc::future<void> connect_task = fc::async([=](){ _connection->connect_to(endpoint_to_probe); });
+    try
+    {
+      connect_task.wait(fc::seconds(10));
+    }
+    catch (const fc::timeout_exception&)
+    {
+      ilog("timeout connecting to node ${endpoint}", ("endpoint", endpoint_to_probe));
+      connect_task.cancel();
+      throw;
+    }
     bts::net::hello_message hello("map_bts_network", 
                                   BTS_NET_PROTOCOL_VERSION,
                                   fc::ip::address(), 0, 0,
