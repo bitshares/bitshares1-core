@@ -42,6 +42,13 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
+             wallet_impl()
+             :_wallet_scan_thread( "wallet_scan" )
+             {
+                _wallet_thread = &fc::thread::current();
+             }
+             fc::thread*                        _wallet_thread;
+
              wallet*                            self;
              wallet_db                          _wallet_db;
              chain_database_ptr                 _blockchain;
@@ -52,6 +59,8 @@ namespace bts { namespace wallet {
              fc::future<void>                   _relocker_thread;
              bool                               _use_deterministic_one_time_keys;
              bool                               _delegate_scanning_enabled;
+
+             fc::thread                         _wallet_scan_thread;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -278,7 +287,7 @@ namespace bts { namespace wallet {
                      cache_trx |= scan_withdraw( op.as<withdraw_operation>() );
                      break;
                   case deposit_op_type:
-                     cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys );
+                     cache_trx |= _wallet_scan_thread.async( [&]() { return scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys ); } ).wait();
                      break;
 
                   case register_account_op_type:
