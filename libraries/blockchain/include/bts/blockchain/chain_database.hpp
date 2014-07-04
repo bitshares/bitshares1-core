@@ -230,6 +230,11 @@ namespace bts { namespace blockchain {
                                                              const string& base_symbol, 
                                                              uint32_t limit = uint32_t(-1) );
 
+         optional<market_order>             get_market_ask( const market_index_key& )const;
+         vector<market_order>               get_market_asks( const string& quote_symbol, 
+                                                             const string& base_symbol, 
+                                                             uint32_t limit = uint32_t(-1) );
+
          void                               scan_assets( function<void( const asset_record& )> callback );
          void                               scan_balances( function<void( const balance_record& )> callback );
          void                               scan_accounts( function<void( const account_record& )> callback );

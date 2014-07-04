@@ -116,6 +116,7 @@ namespace bts { namespace wallet {
              bool scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op );
              bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
              bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
+             bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
 
              bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
@@ -331,7 +332,7 @@ namespace bts { namespace wallet {
                      cache_trx |= scan_bid( *current_trx_record, op.as<bid_operation>() );
                      break;
                   case ask_op_type:
-                     // TODO: FC_THROW( "ask_op_type not implemented!" );
+                     cache_trx |= scan_ask( *current_trx_record, op.as<ask_operation>() );
                      break;
                   case short_op_type:
                      // TODO: FC_THROW( "short_op_type not implemented!" );
@@ -457,6 +458,18 @@ namespace bts { namespace wallet {
           }
           return false;
       } FC_CAPTURE_AND_RETHROW( (bid_op) ) } 
+
+      bool wallet_impl::scan_ask( wallet_transaction_record& trx_rec, const ask_operation& ask_op )
+      { try {
+          auto okey_rec = _wallet_db.lookup_key( ask_op.ask_index.owner ); 
+          if( okey_rec && okey_rec->has_private_key() )
+          {
+             auto order = _blockchain->get_market_ask( ask_op.ask_index );
+             _wallet_db.update_market_order( ask_op.ask_index.owner, order, trx_rec.trx.id() );
+             return true;
+          }
+          return false;
+      } FC_CAPTURE_AND_RETHROW( (ask_op) ) } 
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
                                       const deposit_operation& op, 
@@ -2538,6 +2551,143 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
+
+
+
+
+
+
+
+   signed_transaction  wallet::submit_ask( const string& from_account_name,
+                                           double real_quantity, 
+                                           const string& quantity_symbol,
+                                           double quote_price,
+                                           const string& quote_symbol,
+                                           bool sign )
+   { try {
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+       if( NOT is_receive_account(from_account_name) )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
+       if( real_quantity <= 0 )
+          FC_CAPTURE_AND_THROW( negative_bid, (real_quantity) );
+       if( quote_price <= 0 )
+          FC_CAPTURE_AND_THROW( invalid_price, (quote_price) );
+       if( quote_symbol == quantity_symbol )
+          FC_CAPTURE_AND_THROW( invalid_price, (quote_price)(quantity_symbol)(quote_symbol) );
+       
+       auto quote_asset_record = my->_blockchain->get_asset_record( quote_symbol );
+       auto base_asset_record  = my->_blockchain->get_asset_record( quantity_symbol );
+
+       if( NOT quote_asset_record ) 
+          FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quote_symbol) );
+       if( NOT base_asset_record ) 
+          FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quantity_symbol) );
+
+       auto from_account_key = get_account_public_key( from_account_name );
+       //auto& to_account_key = from_account_key;
+
+       if( quote_asset_record->id < base_asset_record->id )
+       {
+          // force user to submit an bid rather than a ask
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_symbol)(quantity_symbol) );
+       }
+
+       double cost = real_quantity; 
+
+       asset cost_shares( cost *  base_asset_record->get_precision(), base_asset_record->id );
+       asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
+       asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
+
+       auto quote_price_shares = price_shares / base_one_quantity;
+       ilog( "quote price float: ${p}", ("p",quote_price) );
+       ilog( "quote price shares: ${p}", ("p",quote_price_shares) );
+
+       auto order_key = get_new_public_key( from_account_name );
+       auto order_address = order_key;
+
+       signed_transaction trx;
+       unordered_set<address>     required_signatures;
+       required_signatures.insert(order_address);
+
+       private_key_type from_private_key  = get_account_private_key( from_account_name );
+       address          from_address( from_private_key.get_public_key() );
+
+       auto required_fees = get_priority_fee();
+
+       if( cost_shares.asset_id == 0 )
+       {
+          my->withdraw_to_transaction( cost_shares.amount + required_fees.amount, 
+                                       0, 
+                                       from_address, 
+                                       trx, 
+                                       required_signatures );
+       }
+       else
+       {
+          /// TODO: determine if we can pay our fees in cost.asset_id
+          ///        quote_asset_record->symbol );
+
+          my->withdraw_to_transaction( cost_shares.amount,
+                                       cost_shares.asset_id,
+                                       from_address, 
+                                       trx, 
+                                       required_signatures );
+          // pay our fees in XTS
+          my->withdraw_to_transaction( required_fees.amount,
+                                       0,
+                                       from_address, 
+                                       trx, 
+                                       required_signatures );
+       }
+
+       // withdraw to transaction cost_share_quantity + fee
+       if( cost_shares.asset_id == 0 )
+          trx.ask( cost_shares, quote_price_shares, order_address );
+       else
+          trx.ask( cost_shares, quote_price_shares, order_address );
+
+       if( sign )
+       {
+           sign_transaction( trx, required_signatures );
+           my->_blockchain->store_pending_transaction( trx, true );
+
+           std::stringstream memoss;
+           memoss << "sell " << real_quantity << " " << base_asset_record->symbol << " @ ";
+           memoss << quote_price << " " << quote_asset_record->symbol;
+
+           auto memo_message = memoss.str();
+
+           my->_wallet_db.cache_transaction( trx, cost_shares,
+                                             required_fees.amount,
+                                             memo_message, 
+                                             order_key,
+                                             bts::blockchain::now(),
+                                             bts::blockchain::now(),
+                                             from_account_key
+                                           );
+
+           auto key_rec = my->_wallet_db.lookup_key( order_key );
+           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           my->_wallet_db.store_key(*key_rec);
+       }
+
+       return trx;
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)
+                             (real_quantity)(quantity_symbol)
+                             (quote_price)(quote_symbol)(sign) ) }
+
+
+
+
+
+
+
+
+
+
+
+
 
    void wallet::set_priority_fee( const asset& fee )
    {

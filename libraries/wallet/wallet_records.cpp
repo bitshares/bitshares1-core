@@ -67,6 +67,9 @@ namespace bts { namespace wallet {
             return get_balance() * get_price();
          }
          case ask_order:
+         { // balance is in USD  divide by price
+            return get_balance();
+         }
          default:
             FC_ASSERT( !"Not Implemented" );
       }

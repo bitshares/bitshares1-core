@@ -1240,6 +1240,7 @@ namespace bts { namespace cli {
                 out << std::setw( 10 )  << "TYPE";
                 out << std::setw( 20 ) << "QUANTITY";
                 out << std::setw( 20 ) << "PRICE";
+                out << std::setw( 20 ) << "BALANCE";
                 out << std::setw( 20 ) << "COST";
                 out << "\n";
                 out <<"-----------------------------------------------------------------------------------------------------------\n";
@@ -1251,6 +1252,7 @@ namespace bts { namespace cli {
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() );
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_price( order.get_price() ); //order.market_index.order_price );
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_balance() );
+                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
                    out << "\n";
                 }
                 out << "\n";
