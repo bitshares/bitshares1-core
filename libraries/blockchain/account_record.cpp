@@ -24,11 +24,13 @@ namespace bts { namespace blockchain {
     { 
         return !!delegate_info; 
     }
+
     int64_t account_record::net_votes()const 
     {
         FC_ASSERT( is_delegate() );
         return delegate_info->votes_for;
     }
+
     void account_record::adjust_votes_for( share_type delta )
     {
         FC_ASSERT( is_delegate() );
@@ -39,10 +41,12 @@ namespace bts { namespace blockchain {
     { 
         return active_key() == public_key_type();
     }
+
     address account_record::active_address()const
     { 
         return address(active_key());
     }
+
     void account_record::set_active_key( time_point_sec now, const public_key_type& new_key )
     { try {
         FC_ASSERT( now != fc::time_point_sec() );

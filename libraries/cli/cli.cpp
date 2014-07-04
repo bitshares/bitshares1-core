@@ -763,29 +763,8 @@ namespace bts { namespace cli {
               }
               else if (method_name == "blockchain_list_assets")
               {
-                  auto records = result.as<vector<asset_record>>();
-                  *_out << std::setw(6) << "ID";
-                  *_out << std::setw(7) << "SYMBOL";
-                  *_out << std::setw(15) << "NAME";
-                  *_out << std::setw(35) << "DESCRIPTION";
-                  *_out << std::setw(16) << "CURRENT_SUPPLY";
-                  *_out << std::setw(16) << "MAX_SUPPLY";
-                  *_out << std::setw(16) << "FEES COLLECTED";
-                  *_out << std::setw(16) << "REGISTERED";
-                  *_out << "\n";
-                  for( const auto& asset : records )
-                  {
-                      *_out << std::setprecision(15);
-                      *_out << std::setw(6) << asset.id;
-                      *_out << std::setw(7) << asset.symbol;
-                      *_out << std::setw(15) << pretty_shorten(asset.name, 14);
-                      *_out << std::setw(35) << pretty_shorten(asset.description, 33);
-                      *_out << std::setw(16) << double(asset.current_share_supply) / asset.precision;
-                      *_out << std::setw(16) << double(asset.maximum_share_supply) / asset.precision;
-                      *_out << std::setw(16) << double(asset.collected_fees) / asset.precision;
-                      *_out << std::setw(16) << pretty_timestamp(asset.registration_date);
-                      *_out << "\n";
-                  }
+                  const auto& asset_records = result.as<vector<asset_record>>();
+                  *_out << pretty_asset_list( asset_records, _client );
               }
               else if (method_name == "blockchain_get_proposal_votes")
               {

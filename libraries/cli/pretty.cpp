@@ -1,11 +1,11 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/cli/pretty.hpp>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace bts { namespace cli {
 
@@ -25,6 +25,23 @@ string pretty_shorten( const string& str, size_t max_size )
     if( str.size() > max_size ) return str.substr( 0, max_size - 3 ) + "...";
     return str;
 }
+
+/*
+#include <codecvt>
+string pretty_align_utf8( const string& str, int width )
+{
+    std::stringstream ss;
+    ss << std::left;
+
+    auto str_size = str.size();
+    auto str_wsize = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>().from_bytes( str ).size();
+
+    if( str_size > str_wsize ) width += str_wsize;
+    ss << std::setw( width ) << pretty_shorten( str, width - 1 );
+
+    return ss.str();
+}
+*/
 
 string pretty_timestamp( const time_point_sec& timestamp )
 {
@@ -219,6 +236,63 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         out << std::setw( 8 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
         else out << string( transaction.trx_id ).substr( 0, 8 );
+
+        out << "\n";
+    }
+
+    return out.str();
+}
+
+string pretty_asset_list( const vector<asset_record>& asset_records, cptr client )
+{
+    if( asset_records.empty() ) return "No assets found.\n";
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    out << std::setw(  6 ) << "ID";
+    out << std::setw(  7 ) << "SYMBOL";
+    out << std::setw( 24 ) << "NAME";
+    out << std::setw( 48 ) << "DESCRIPTION";
+    out << std::setw( 32 ) << "ISSUER";
+    out << std::setw( 10 ) << "ISSUED";
+    out << std::setw( 28 ) << "SUPPLY";
+
+    out << pretty_line( 155 );
+
+    for( const auto& asset_record : asset_records )
+    {
+        const auto asset_id = asset_record.id;
+        out << std::setw(  6 ) << asset_id;
+
+        out << std::setw(  7 ) << asset_record.symbol;
+        out << std::setw( 24 ) << pretty_shorten( asset_record.name, 23 );
+        out << std::setw( 48 ) << pretty_shorten( asset_record.description, 47 );
+
+        const auto issuer_id = asset_record.issuer_account_id;
+        const auto supply = asset( asset_record.current_share_supply, asset_id );
+        if( issuer_id == 0 )
+        {
+            out << std::setw( 32 ) << "GENESIS";
+            out << std::setw( 10 ) << "N/A";
+        }
+        else if( issuer_id == asset_record::market_issued_asset )
+        {
+            out << std::setw( 32 ) << "MARKET";
+            out << std::setw( 10 ) << "N/A";
+        }
+        else
+        {
+            const auto account_record = client->get_chain()->get_account_record( issuer_id );
+            FC_ASSERT( account_record.valid() );
+            out << std::setw( 32 ) << pretty_shorten( account_record->name, 31 );
+
+            const auto max_supply = asset( asset_record.maximum_share_supply, asset_id );
+            out << std::setw( 10 ) << pretty_percent( supply.amount, max_supply.amount);
+        }
+
+        out << std::setw( 28 ) << client->get_chain()->to_pretty_asset( supply );
 
         out << "\n";
     }
