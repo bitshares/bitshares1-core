@@ -176,6 +176,8 @@ namespace bts{ namespace wallet {
              try 
              {
                 my->load_generic_record( record );
+                // prevent hanging on large wallets
+                fc::usleep( fc::microseconds(1000) ); 
              } 
              catch ( const fc::exception& e )
              {

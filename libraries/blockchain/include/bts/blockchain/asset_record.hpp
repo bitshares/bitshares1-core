@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
          if( amount <= 0 ) return false;
          auto new_share_supply = current_share_supply + amount;
          // catch overflow conditions
-         return (new_share_supply > current_share_supply) && (new_share_supply < maximum_share_supply);
+         return (new_share_supply > current_share_supply) && (new_share_supply <= maximum_share_supply);
       }
 
       bool is_null()const            { return issuer_account_id == -1; }

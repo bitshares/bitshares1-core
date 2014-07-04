@@ -2457,6 +2457,7 @@ config load_config( const fc::path& datadir )
       info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
 
       info["blockchain_average_delegate_participation"]         = _chain_db->get_average_delegate_participation();
+      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
       info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
