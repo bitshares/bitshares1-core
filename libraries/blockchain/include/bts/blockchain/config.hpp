@@ -111,13 +111,29 @@
 #define BTS_BLOCKCHAIN_MIN_FEE                          (1000)
 
 /**
- *  Defined so that a delegate must produce 100 blocks to break even.
+    This constant defines the number of blocks a delegate must produce before
+    they are expected to break even on registration costs with their earned income.
+
+ *   Currently set to 2 weeks of active block production to break even.
  */
+#if BTS_BLOCKCHAIN_VERSION > 104
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+#else
 #define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCK_REWARD)
+#endif
+
 
 /**
- *  Defines the fee required to register a asset, this fee is set to discourage anyone from
- *  registering all of the symbols.  If the asset is not worth at least 100 blocks worth
- *  of mining fees then it really isn't worth the networks time.
+    If you are going to create an asset, you expect that it will be used in transactions.  We would
+    like to limit the issuance of assets that have no demand for transactions, so we charge a fee
+    proportional to average transaction fees included in a block (AKA delegate pay).  This constant
+    defines the number of blocks worth of transactions that justify the creation of a new asset.
+
+    The fee is set such that the transactions of this asset alone could justify filling up 2 full weeks of
+    block production.
  */
+#if BTS_BLOCKCHAIN_VERSION > 104
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+#else
 #define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD)
+#endif

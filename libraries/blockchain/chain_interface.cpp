@@ -30,15 +30,20 @@ namespace bts{ namespace blockchain {
    share_type     chain_interface::get_delegate_registration_fee()const
    {
 #if BTS_BLOCKCHAIN_VERSION > 104
-      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)/BTS_BLOCKCHAIN_NUM_DELEGATES;
-#warning Remove below deprecated fee rate calculation
+      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/BTS_BLOCKCHAIN_NUM_DELEGATES;
+#warning Remove below deprecated delegate registration fee calculation
 #else
       return (get_fee_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/1000;
 #endif
    }
    share_type    chain_interface::get_asset_registration_fee()const
    {
+#if BTS_BLOCKCHAIN_VERSION > 104
+      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
+#warning Remove below deprecated asset registration fee calculation
+#else
       return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
+#endif
    }
    
    share_type    chain_interface::calculate_data_fee(size_t bytes) const
