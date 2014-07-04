@@ -134,12 +134,14 @@ class WalletAPI
     @rpc.request('wallet_create_from_json', [json_filename, wallet_name, imported_wallet_passphrase]).then (response) ->
       response.result
 
-  # Lists all transactions for the specified account
+  # Lists transaction history for the specified account
   # parameters: 
-  #   account_name `account_name` - the name of the account for which the transaction history will be returned, example: alice
+  #   string `account_name` - the name of the account for which the transaction history will be returned, example: alice
+  #   uint32_t `start_block_num` - the earliest block number to list transactions from; -1 to include all transactions starting from genesis
+  #   uint32_t `end_block_num` - the latest block to list transaction from; -1 to include all transactions ending at the head block
   # return_type: `pretty_transactions`
-  account_transaction_history: (account_name) ->
-    @rpc.request('wallet_account_transaction_history', [account_name]).then (response) ->
+  account_transaction_history: (account_name, start_block_num, end_block_num) ->
+    @rpc.request('wallet_account_transaction_history', [account_name, start_block_num, end_block_num]).then (response) ->
       response.result
 
   # Clear "stuck" pending transactions from the wallet.
@@ -147,6 +149,13 @@ class WalletAPI
   # return_type: `void`
   clear_pending_transactions:  ->
     @rpc.request('wallet_clear_pending_transactions').then (response) ->
+      response.result
+
+  # Return any errors for your currently pending transactions
+  # parameters: 
+  # return_type: `map<transaction_id_type, fc::exception>`
+  get_pending_transaction_errors:  ->
+    @rpc.request('wallet_get_pending_transaction_errors').then (response) ->
       response.result
 
   # Lock the private keys in wallet, disables spending commands until unlocked
@@ -350,9 +359,10 @@ class WalletAPI
   #   json_variant `data` - arbitrary data attached to the asset
   #   int64_t `maximum_share_supply` - the maximum number of shares of the asset
   #   int64_t `precision` - defines where the decimal should be displayed, must be a power of 10
+  #   bool `is_market_issued` - creation of a new BitAsset that is created by shorting
   # return_type: `signed_transaction`
-  asset_create: (symbol, asset_name, issuer_name, description, data, maximum_share_supply, precision) ->
-    @rpc.request('wallet_asset_create', [symbol, asset_name, issuer_name, description, data, maximum_share_supply, precision]).then (response) ->
+  asset_create: (symbol, asset_name, issuer_name, description, data, maximum_share_supply, precision, is_market_issued) ->
+    @rpc.request('wallet_asset_create', [symbol, asset_name, issuer_name, description, data, maximum_share_supply, precision, is_market_issued]).then (response) ->
       response.result
 
   # Issues new shares of a given asset type
@@ -443,6 +453,18 @@ class WalletAPI
   # return_type: `signed_transaction`
   market_submit_bid: (from_account_name, quantity, quantity_symbol, quote_price, quote_symbol) ->
     @rpc.request('wallet_market_submit_bid', [from_account_name, quantity, quantity_symbol, quote_price, quote_symbol]).then (response) ->
+      response.result
+
+  # Used to place a request to sell a quantity of assets at a price specified in another asset
+  # parameters: 
+  #   account_name `from_account_name` - the account that will provide funds for the ask
+  #   real_amount `quantity` - the quantity of items you would like to sell
+  #   asset_symbol `quantity_symbol` - the type of items you would like to sell
+  #   real_amount `quote_price` - the price you would like to sell
+  #   asset_symbol `quote_symbol` - the type of asset you would like to be paid
+  # return_type: `signed_transaction`
+  market_submit_ask: (from_account_name, quantity, quantity_symbol, quote_price, quote_symbol) ->
+    @rpc.request('wallet_market_submit_ask', [from_account_name, quantity, quantity_symbol, quote_price, quote_symbol]).then (response) ->
       response.result
 
   # List an order list of a specific market

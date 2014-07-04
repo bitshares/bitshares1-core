@@ -809,7 +809,8 @@
                {
                   "name" : "memo_message",
                   "type" : "string",
-                  "description" : "the memo to send to the receiver"
+                  "description" : "the memo to send to the receiver",
+                  "default_value": ""
                }
             ],
          "detailed_description" : "The asset being issued must have been created via wallet_asset_create in a previous block.",
