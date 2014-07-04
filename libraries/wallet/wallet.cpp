@@ -998,7 +998,7 @@ namespace bts { namespace wallet {
       auto current_registered_account = my->_blockchain->get_account_record( account_name );
 
       if( current_registered_account.valid() && current_registered_account->active_key() != key )
-         FC_ASSERT( !"Account name is already registered under a different key" );
+         FC_ASSERT( false, "Account name is already registered under a different key" );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
@@ -1006,7 +1006,8 @@ namespace bts { namespace wallet {
          wlog( "current account is valid... ${name}", ("name", *current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
-         current_account->private_data = private_data;
+         if( !private_data.is_null() )
+            current_account->private_data = private_data;
          idump( (*current_account) );
          my->_wallet_db.cache_account( *current_account );
          return;
@@ -1014,7 +1015,7 @@ namespace bts { namespace wallet {
       else
       {
          auto account_key = my->_wallet_db.lookup_key( address(key) );
-         FC_ASSERT( !account_key.valid() );
+         FC_ASSERT( !account_key.valid(), "Provided key belongs to another account." );
          if( current_registered_account.valid() )
          {
             my->_wallet_db.add_account( *current_registered_account, private_data );
@@ -1973,7 +1974,7 @@ namespace bts { namespace wallet {
                                                   payer_public_key, 
                                                   bts::blockchain::now(),
                                                   bts::blockchain::now(),
-                                                  payer_public_key
+                                                  account_public_key
                                                 );
       }
       return wallet_transaction_record(transaction_data(trx));
