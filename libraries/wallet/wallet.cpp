@@ -425,7 +425,8 @@ namespace bts { namespace wallet {
          {
             trx_rec.to_account = oissuer->owner_key;
             trx_rec.from_account = oissuer->owner_key;
-            trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
+            if( !trx_rec.memo_message.empty() )
+              trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
             return true;
          }
          return false;
@@ -435,7 +436,15 @@ namespace bts { namespace wallet {
                                           const issue_asset_operation& op  )
       {
          wlog( "${op}", ("op",op) );
-         trx_rec.memo_message = "issue " + _blockchain->to_pretty_asset(op.amount);
+         auto asset_rec = _blockchain->get_asset_record(op.amount.asset_id);
+         if( asset_rec.valid() )
+         {
+           auto issuer = _blockchain->get_account_record(asset_rec ->issuer_account_id);
+           if( issuer.valid() )
+             trx_rec.from_account = issuer->active_key();
+         }
+         if( !trx_rec.memo_message.empty() )
+           trx_rec.memo_message = "issue " + _blockchain->to_pretty_asset(op.amount);
          return false;
       }
 
