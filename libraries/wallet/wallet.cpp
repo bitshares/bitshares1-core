@@ -854,7 +854,7 @@ namespace bts { namespace wallet {
       scan_chain( first,
                   my->_blockchain->get_head_block_num(),
                   [first](uint32_t current, uint32_t end){
-          std::cout << " Scanning for new transactions... [" << current-first << '/' << end-first << "]\r" << std::flush;
+          std::cout << " Scanning for new transactions in block: " << current-first << '/' << end-first << "\r" << std::flush;
       });
       std::cout << "Finished scanning for new transactions.                                " << std::endl;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
@@ -1197,8 +1197,8 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-   void  wallet::scan_chain( uint32_t start, uint32_t end, 
-                             const scan_progress_callback& progress_callback )
+   void wallet::scan_chain( uint32_t start, uint32_t end,
+                            const scan_progress_callback& progress_callback )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );

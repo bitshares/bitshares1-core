@@ -956,8 +956,7 @@ namespace bts { namespace blockchain {
              auto block_itr = my->_block_id_to_block_data_db.begin();
              while( block_itr.valid() )
              {
-                 if( ++blocks_indexed % 50 == 0 )
-                     std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed/50 % 4] << "]" << std::flush;
+                 std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed++ % 4] << "]" << std::flush;
 
                  auto block = block_itr.value();
                  ++block_itr;
