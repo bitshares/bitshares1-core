@@ -2382,7 +2382,15 @@ namespace bts { namespace wallet {
         unordered_set<address>     required_signatures;
         required_signatures.insert( owner_address );
 
-        trx.bid( -balance, order.order.market_index.order_price, owner_address );
+        switch( order.get_type() )
+        {
+           case ask_order:
+              trx.ask( -balance, order.order.market_index.order_price, owner_address );
+              break;
+           case bid_order:
+              trx.bid( -balance, order.order.market_index.order_price, owner_address );
+              break;
+        }
 
         if( balance.asset_id == 0 )
         {
@@ -2391,7 +2399,7 @@ namespace bts { namespace wallet {
            if( required_fees.amount < balance.amount )
            {
               deposit_amount -= required_fees;
-              trx.deposit( owner_address, balance, 0 );
+              trx.deposit( owner_address, deposit_amount, 0 );
            }
            else
            {
@@ -2419,6 +2427,8 @@ namespace bts { namespace wallet {
 
         auto memo_message = memoss.str();
 
+        my->_blockchain->store_pending_transaction( trx, true );
+
         my->_wallet_db.cache_transaction( trx, balance,
                                           required_fees.amount,
                                           memo_message, 
@@ -2428,7 +2438,6 @@ namespace bts { namespace wallet {
                                           owner_key_record->public_key
                                         );
 
-        my->_blockchain->store_pending_transaction( trx, true );
 
         return trx;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
