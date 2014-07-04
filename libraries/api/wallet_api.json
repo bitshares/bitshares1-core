@@ -283,18 +283,32 @@
       },
       {
         "method_name": "wallet_account_transaction_history",
-        "description": "Lists all transactions for the specified account",
+        "description": "Lists transaction history for the specified account",
         "return_type": "pretty_transactions",
         "parameters" : 
           [
             { 
-              "name" : "account_name", 
-              "type" : "account_name", 
+              "name" : "account_name",
+              "type" : "string",
               "description" : "the name of the account for which the transaction history will be returned",
               "example" : "alice",
               "default_value" : ""
-            }          ],
+            },
+            {
+               "name" : "start_block_num",
+               "type" : "uint32_t",
+               "description" : "the earliest block number to list transactions from; -1 to include all transactions starting from genesis",
+               "default_value" : -1
+            },
+            {
+               "name" : "end_block_num",
+               "type" : "uint32_t",
+               "description" : "the latest block to list transaction from; -1 to include all transactions ending at the head block",
+               "default_value" : -1
+            }
+        ],
         "prerequisites" : ["wallet_open"],
+        "is_const": true,
         "aliases" : ["history"]
       },
       {

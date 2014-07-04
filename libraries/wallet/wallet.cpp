@@ -1248,22 +1248,16 @@ namespace bts { namespace wallet {
       return key->decrypt_private_key( my->_wallet_password );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
 
-   vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name ) const
-   {
-       auto history = get_transaction_history( account_name );
-       vector<pretty_transaction> pretties;
-       pretties.reserve( history.size() );
-       for( const auto& item : history )
-           pretties.push_back( to_pretty_trx( item ) );
-       return pretties;
-   }
-
    /** 
     * @return the list of all transactions related to this wallet
     */
-   vector<wallet_transaction_record> wallet::get_transaction_history( const string& account_name )const
+   vector<wallet_transaction_record> wallet::get_transaction_history( const string& account_name,
+                                                                      uint32_t start_block_num,
+                                                                      uint32_t end_block_num )const
    { try {
       FC_ASSERT( is_open() );
+      if( start_block_num != -1 && end_block_num != -1 )
+          FC_ASSERT( start_block_num <= end_block_num );
 
       std::vector<wallet_transaction_record> recs;
       auto my_trxs = my->_wallet_db.get_transactions();
@@ -1273,14 +1267,19 @@ namespace bts { namespace wallet {
       if( account_name != string() )
          account_pub = get_account_public_key( account_name );
 
-      for( const auto& iter : my_trxs)
+      for( const auto& iter : my_trxs )
       {
-         if( account_name == string() || account_name == "*" ||
-             (iter.second.to_account && *iter.second.to_account == account_pub) ||
-             (iter.second.from_account && *iter.second.from_account == account_pub)  )
-         {
-            recs.push_back(iter.second);
-         }
+          const auto& tx_record = iter.second;
+
+          if( account_name == string()
+              || account_name == "*"
+              || (tx_record.to_account && *tx_record.to_account == account_pub)
+              || (tx_record.from_account && *tx_record.from_account == account_pub) )
+          {
+              if( start_block_num != -1 && tx_record.block_num < start_block_num ) continue;
+              if( end_block_num != -1 && tx_record.block_num > end_block_num ) continue;
+              recs.push_back( tx_record );
+          }
       }
     
       std::sort(recs.begin(), recs.end(), [](const wallet_transaction_record& a,
@@ -1289,8 +1288,21 @@ namespace bts { namespace wallet {
                {
                    return a.received_time < b.received_time;
                });
+
       return recs;
 
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name,
+                                                                      uint32_t start_block_num,
+                                                                      uint32_t end_block_num )const
+   { try {
+       auto history = get_transaction_history( account_name, start_block_num, end_block_num );
+       vector<pretty_transaction> pretties;
+       pretties.reserve( history.size() );
+       for( const auto& item : history )
+           pretties.push_back( to_pretty_trx( item ) );
+       return pretties;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::set_delegate_block_production( const string& delegate_name, bool enabled )

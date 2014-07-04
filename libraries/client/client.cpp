@@ -1553,9 +1553,11 @@ config load_config( const fc::path& datadir )
       FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-    vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history(const string& account)
+    vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
+                                                                                        uint32_t start_block_num,
+                                                                                        uint32_t end_block_num )const
     {
-      return _wallet->get_pretty_transaction_history(account);
+      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num );
     }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
