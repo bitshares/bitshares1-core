@@ -268,7 +268,8 @@ namespace bts { namespace wallet {
                                            const variant& data,
                                            const string& issuer_name,
                                            share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
-                                           int64_t  precision = 0,
+                                           int64_t  precision = 1,
+                                           bool is_market_issued = false,
                                            bool sign = true );
 
          signed_transaction  issue_asset( double amount, 
@@ -279,8 +280,22 @@ namespace bts { namespace wallet {
 
          /**
           *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
+          *
+          *  Requires the user have 6003.4 USD
           */
          signed_transaction  submit_bid( const string& from_account_name,
+                                         double real_quantity, 
+                                         const string& quantity_symbol,
+                                         double price_per_unit,
+                                         const string& quote_symbol,
+                                         bool sign = true );
+
+         /**
+          *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
+          *
+          *  Requires the user have 10 BTC
+          */
+         signed_transaction  submit_ask( const string& from_account_name,
                                          double real_quantity, 
                                          const string& quantity_symbol,
                                          double price_per_unit,

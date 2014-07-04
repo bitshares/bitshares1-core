@@ -2131,6 +2131,51 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
+
+   optional<market_order> chain_database::get_market_ask( const market_index_key& key )const
+   { try {
+       auto market_itr  = my->_ask_db.find(key);
+       if( market_itr.valid() )
+          return market_order { ask_order, market_itr.key(), market_itr.value() };
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
+
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, 
+                                                          const string& base_symbol, 
+                                                          uint32_t limit  )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = get_asset_id( base_symbol );
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+       //auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       auto market_itr  = my->_ask_db.begin();
+       while( market_itr.valid() )
+       {
+          results.push_back( {ask_order, market_itr.key(), market_itr.value()} );
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       ilog( "end of db" );
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
+
+
+
+
+
+
+
+
+
+
+
    pending_chain_state_ptr chain_database::get_pending_state()const
    {
       return my->_pending_trx_state;

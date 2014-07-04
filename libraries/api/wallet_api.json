@@ -776,6 +776,12 @@
                   "type" : "int64_t",
                   "description" : "defines where the decimal should be displayed, must be a power of 10",
                   "default_value" : 1000000
+               },
+               {
+                  "name" : "is_market_issued",
+                  "type" : "bool",
+                  "description" : "creation of a new BitAsset that is created by shorting",
+                  "default_value": false
                }
             ],
          "prerequisites" : ["wallet_unlocked"]
@@ -999,6 +1005,40 @@
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "bid" ]
+      },
+      {
+         "method_name" : "wallet_market_submit_ask",
+         "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to sell"
+            },
+            {
+               "name" : "quote_price",
+               "type" : "real_amount",
+               "description" : "the price you would like to sell"
+            },
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "ask" ]
       },
       {
          "method_name" : "wallet_market_order_list",
