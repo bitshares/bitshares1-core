@@ -157,9 +157,10 @@ void print_banner()
 fc::logging_config create_default_logging_config(const fc::path& data_dir)
 {
     fc::logging_config cfg;
+    fc::path log_dir = data_dir / "logs";
 
     fc::file_appender::config ac;
-    ac.filename             = data_dir / "default.log";
+    ac.filename             = log_dir / "default" / "default.log";
     ac.truncate             = false;
     ac.flush                = true;
     ac.rotate               = true;
@@ -170,7 +171,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
 
     fc::file_appender::config ac_rpc;
-    ac_rpc.filename             = data_dir / "rpc.log";
+    ac_rpc.filename             = log_dir / "rpc" / "rpc.log";
     ac_rpc.truncate             = false;
     ac_rpc.flush                = true;
     ac_rpc.rotate               = true;
@@ -181,7 +182,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
 
     fc::file_appender::config ac_blockchain;
-    ac_blockchain.filename             = data_dir / "blockchain.log";
+    ac_blockchain.filename             = log_dir / "blockchain" / "blockchain.log";
     ac_blockchain.truncate             = false;
     ac_blockchain.flush                = true;
     ac_blockchain.rotate               = true;
@@ -192,7 +193,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     std::cout << "Logging blockchain to file \"" << ac_blockchain.filename.generic_string() << "\"\n";
 
     fc::file_appender::config ac_p2p;
-    ac_p2p.filename             = data_dir / "p2p.log";
+    ac_p2p.filename             = log_dir / "p2p" / "p2p.log";
     ac_p2p.truncate             = false;
 #ifdef NDEBUG
     ac_p2p.flush                = false;
@@ -1553,9 +1554,11 @@ config load_config( const fc::path& datadir )
       FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-    vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history(const string& account)
+    vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
+                                                                                        uint32_t start_block_num,
+                                                                                        uint32_t end_block_num )const
     {
-      return _wallet->get_pretty_transaction_history(account);
+      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num );
     }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const

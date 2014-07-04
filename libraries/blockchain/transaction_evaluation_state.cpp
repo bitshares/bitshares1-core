@@ -163,11 +163,11 @@ namespace bts { namespace blockchain {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx_arg) ) }
 
-
    void transaction_evaluation_state::evaluate_operation( const operation& op )
    {
       operation_factory::instance().evaluate( *this, op );
    }
+
    void transaction_evaluation_state::adjust_vote( slate_id_type slate_id, share_type amount )
    {
       if( slate_id )

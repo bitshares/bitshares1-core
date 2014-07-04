@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/account_record.hpp>
+#include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/types.hpp>
 #include <bts/client/client.hpp>
@@ -28,6 +29,8 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 string pretty_block_list( const vector<block_record>& block_records, cptr client );
 
 string pretty_transaction_list( const vector<pretty_transaction>& transactions, cptr client );
+
+string pretty_asset_list( const vector<asset_record>& asset_records, cptr client );
 
 string pretty_vote_summary( const account_vote_summary_type& votes );
 
