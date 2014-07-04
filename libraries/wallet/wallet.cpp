@@ -716,9 +716,7 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
-      if( my->_current_wallet_path == wallet_file_path )
-          //Well that was easy
-          return;
+      if( is_open() ) return;
 
       try
       {
@@ -736,9 +734,7 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
-      if( my->_current_wallet_path == wallet_file_path )
-          //Well that was easy
-          return;
+      if( is_open() ) return;
 
       try
       {
@@ -3017,11 +3013,11 @@ namespace bts { namespace wallet {
    { try {
        map<transaction_id_type, fc::exception> transaction_errors;
        const auto transaction_records = get_pending_transactions();
+       const auto priority_fee = my->_blockchain->get_priority_fee();
        for( const auto& transaction_record : transaction_records )
        {
            try
            {
-               const auto priority_fee = my->_blockchain->get_priority_fee();
                my->_blockchain->evaluate_transaction( transaction_record.trx, priority_fee );
            }
            catch( fc::exception& e )
