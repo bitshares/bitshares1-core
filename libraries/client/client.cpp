@@ -1446,12 +1446,13 @@ config load_config( const fc::path& datadir )
                                                                     const string& description /* = fc::variant("").as<string>() */,
                                                                     const variant& data /* = fc::variant("").as<fc::variant_object>() */,
                                                                     int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */,
-                                                                    int64_t precision /* = 0 */)
+                                                                    int64_t precision /* = 1 */,
+                                                                    bool    is_market_issued /* = false */)
     {
       generate_transaction_flag flag = sign_and_broadcast;
       bool sign = flag != do_not_sign;
       auto create_asset_trx =
-        _wallet->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, precision, sign);
+        _wallet->create_asset(symbol, asset_name, description, data, issuer_name, maximum_share_supply, precision, is_market_issued, sign);
       if (flag == sign_and_broadcast)
           network_broadcast_transaction(create_asset_trx);
       return create_asset_trx;

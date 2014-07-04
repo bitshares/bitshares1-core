@@ -1987,10 +1987,9 @@ namespace bts { namespace wallet {
                                              const string& issuer_account_name,
                                              share_type max_share_supply, 
                                              int64_t precision,
+                                             bool is_market_issued,
                                              bool sign  )
    { try {
-      if( !is_valid_account_name( issuer_account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("issuer_account_name",issuer_account_name) );
 
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -2009,20 +2008,31 @@ namespace bts { namespace wallet {
       required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
       required_fees += asset(my->_blockchain->get_asset_registration_fee(),0);
 
+      if( !is_valid_account_name( issuer_account_name ) )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("issuer_account_name",issuer_account_name) );
       auto from_account_address = get_account_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
       FC_ASSERT( oname_rec.valid() );
 
-      required_signatures.insert( address( from_account_address ) );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
                                    from_account_address,
                                    trx, required_signatures );
     
-      trx.create_asset( symbol, asset_name,
-                        description, data,
-                        oname_rec->id, max_share_supply, precision );
+      if( NOT is_market_issued )
+      {
+         required_signatures.insert( address( from_account_address ) );
+         trx.create_asset( symbol, asset_name,
+                           description, data,
+                           oname_rec->id, max_share_supply, precision );
+      }
+      else
+      {
+         trx.create_asset( symbol, asset_name,
+                           description, data,
+                           asset_record::market_issued_asset, max_share_supply, precision );
+      }
 
       if( sign )
       {

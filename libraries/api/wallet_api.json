@@ -762,6 +762,12 @@
                   "type" : "int64_t",
                   "description" : "defines where the decimal should be displayed, must be a power of 10",
                   "default_value" : 1000000
+               },
+               {
+                  "name" : "is_market_issued",
+                  "type" : "bool",
+                  "description" : "creation of a new BitAsset that is created by shorting",
+                  "default_value": false
                }
             ],
          "prerequisites" : ["wallet_unlocked"]
