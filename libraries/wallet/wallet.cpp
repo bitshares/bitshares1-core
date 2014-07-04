@@ -710,6 +710,10 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
+      if( my->_current_wallet_path == wallet_file_path )
+          //Well that was easy
+          return;
+
       try
       {
           open_file( wallet_file_path );
@@ -725,6 +729,10 @@ namespace bts { namespace wallet {
    { try {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
+
+      if( my->_current_wallet_path == wallet_file_path )
+          //Well that was easy
+          return;
 
       try
       {
