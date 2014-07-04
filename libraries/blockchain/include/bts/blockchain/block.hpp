@@ -10,12 +10,12 @@ namespace bts { namespace blockchain {
 
        block_header():block_num(0),fee_rate(0),delegate_pay_rate(0){}
 
-       int64_t      next_fee( int64_t prev_fee_rate, size_t block_size )const;
+       share_type   next_fee( share_type prev_fee_rate, size_t block_size )const;
        share_type   next_delegate_pay( share_type prev_fee_rate, share_type block_fees )const;
 
        block_id_type        previous;
        uint32_t             block_num;
-       int64_t              fee_rate;
+       share_type           fee_rate;
        share_type           delegate_pay_rate;
        fc::time_point_sec   timestamp;
        digest_type          transaction_digest;

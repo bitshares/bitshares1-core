@@ -533,6 +533,10 @@
           "type_name" : "map<uint32_t, vector<fork_record>>",
           "cpp_return_type" : "std::map<uint32_t, std::vector<bts::blockchain::fork_record>>",
           "cpp_include_file" : "bts/blockchain/chain_database.hpp"
+      },
+      {
+          "type_name" : "map<transaction_id_type, fc::exception>",
+          "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, fc::exception>"
       }
     ]
 }

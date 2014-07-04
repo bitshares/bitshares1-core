@@ -103,7 +103,9 @@ namespace bts { namespace blockchain {
 
          void add_observer( chain_observer* observer );
          void remove_observer( chain_observer* observer );
-         void set_priority_fee( int64_t shares );
+
+         void set_priority_fee( share_type shares );
+         share_type get_priority_fee();
 
          void sanity_check()const;
 
@@ -212,8 +214,8 @@ namespace bts { namespace blockchain {
          virtual time_point_sec         now()const override;
 
          /** return the current fee rate in millishares */
-         virtual int64_t                    get_fee_rate()const override;
-         virtual int64_t                    get_delegate_pay_rate()const override;
+         virtual share_type                 get_fee_rate()const override;
+         virtual share_type                 get_delegate_pay_rate()const override;
 
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;

@@ -306,6 +306,15 @@
         "aliases" : []
       },
       {
+        "method_name": "wallet_get_pending_transaction_errors",
+        "description": "Return any errors for your currently pending transactions",
+        "return_type": "map<transaction_id_type, fc::exception>",
+        "parameters" : [],
+        "prerequisites" : ["wallet_open"],
+        "is_const": true,
+        "aliases" : []
+      },
+      {
         "method_name": "wallet_lock",
         "description": "Lock the private keys in wallet, disables spending commands until unlocked",
         "return_type": "void",

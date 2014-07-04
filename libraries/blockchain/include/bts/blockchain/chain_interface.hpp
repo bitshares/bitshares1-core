@@ -65,8 +65,8 @@ namespace bts { namespace blockchain {
          virtual fc::ripemd160              get_current_random_seed()const                          = 0;
 
          /** return the current fee rate in millishares */
-         virtual int64_t                    get_fee_rate()const                                     = 0;
-         virtual int64_t                    get_delegate_pay_rate()const                            = 0;
+         virtual share_type                 get_fee_rate()const                                     = 0;
+         virtual share_type                 get_delegate_pay_rate()const                            = 0;
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const             = 0;
          virtual void                       store_delegate_slate( slate_id_type id, 
                                                                   const delegate_slate& slate )     = 0;

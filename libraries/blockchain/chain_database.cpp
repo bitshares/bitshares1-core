@@ -1232,12 +1232,12 @@ namespace bts { namespace blockchain {
    }
 
    /** return the current fee rate in millishares */
-   int64_t chain_database::get_fee_rate()const
+   share_type chain_database::get_fee_rate()const
    {
       return my->_head_block_header.fee_rate;
    }
 
-   int64_t chain_database::get_delegate_pay_rate()const
+   share_type chain_database::get_delegate_pay_rate()const
    {
       return my->_head_block_header.delegate_pay_rate;
    }
@@ -2174,10 +2174,14 @@ namespace bts { namespace blockchain {
       my->_skip_signature_verification = state;
    }
 
-   void chain_database::set_priority_fee( int64_t shares )
+   void chain_database::set_priority_fee( share_type shares )
    {
       my->_priority_fee = shares;
    }
-    
 
-} } // namespace bts::blockchain
+   share_type chain_database::get_priority_fee()
+   {
+      return my->_priority_fee;
+   }
+
+} } // bts::blockchain

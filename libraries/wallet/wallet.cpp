@@ -119,6 +119,7 @@ namespace bts { namespace wallet {
 
              bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
+             vector<wallet_transaction_record> get_pending_transactions()const;
              void clear_pending_transactions();
 
              void scan_balances();
@@ -135,6 +136,11 @@ namespace bts { namespace wallet {
              owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
       };
      
+      vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
+      {
+          return _wallet_db.get_pending_transactions();
+      }
+
       void wallet_impl::clear_pending_transactions()
       {
           _wallet_db.clear_pending_transactions();
@@ -2986,6 +2992,11 @@ namespace bts { namespace wallet {
        return my->_wallet_db.lookup_transaction(trx_id);
    }
 
+   vector<wallet_transaction_record> wallet::get_pending_transactions()const
+   {
+       return my->get_pending_transactions();
+   }
+
    void wallet::clear_pending_transactions()
    {
       my->clear_pending_transactions();
@@ -2993,6 +3004,25 @@ namespace bts { namespace wallet {
       for( const auto& item : tmp_balances )
          my->sync_balance_with_blockchain( item.first );
    }
+
+   map<transaction_id_type, fc::exception> wallet::get_pending_transaction_errors()const
+   { try {
+       map<transaction_id_type, fc::exception> transaction_errors;
+       const auto transaction_records = get_pending_transactions();
+       for( const auto& transaction_record : transaction_records )
+       {
+           try
+           {
+               const auto priority_fee = my->_blockchain->get_priority_fee();
+               my->_blockchain->evaluate_transaction( transaction_record.trx, priority_fee );
+           }
+           catch( fc::exception& e )
+           {
+               transaction_errors[transaction_record.transaction_id] = e;
+           }
+       }
+       return transaction_errors;
+   } FC_CAPTURE_AND_RETHROW() }
 
    void  wallet::scan_state()
    { try {

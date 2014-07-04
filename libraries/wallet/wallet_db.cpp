@@ -383,18 +383,26 @@ namespace bts{ namespace wallet {
       }
    }
 
+   vector<wallet_transaction_record> wallet_db::get_pending_transactions()const
+   {
+       vector<wallet_transaction_record> transaction_records;
+       for( const auto& item : transactions )
+       {
+           const auto& transaction_record = item.second;
+           if( transaction_record.block_num <= 0 )
+               transaction_records.push_back( transaction_record );
+       }
+       return transaction_records;
+   }
+
    void wallet_db::clear_pending_transactions()
    {
-       vector<transaction_id_type> clear_list;
-       for( const auto& id_trx_pair : transactions )
+       const auto transaction_records = get_pending_transactions();
+       for( const auto& transaction_record : transaction_records )
        {
-           if (id_trx_pair.second.block_num == 0)
-           {
-               clear_list.push_back( id_trx_pair.first );
-               my->_records.remove( id_trx_pair.second.wallet_record_index );
-           }
+           my->_records.remove( transaction_record.wallet_record_index );
+           transactions.erase( transaction_record.transaction_id );
        }
-       for( const auto& id : clear_list ) transactions.erase(id);
    }
 
    void wallet_db::export_to_json( const path& filename )const

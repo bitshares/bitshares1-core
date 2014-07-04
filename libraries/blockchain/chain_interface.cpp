@@ -27,16 +27,16 @@ namespace bts{ namespace blockchain {
       return address();
    }
 
-   share_type     chain_interface::get_delegate_registration_fee()const
+   share_type chain_interface::get_delegate_registration_fee()const
    {
       return (get_fee_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/1000;
    }
-   share_type    chain_interface::get_asset_registration_fee()const
+   share_type chain_interface::get_asset_registration_fee()const
    {
       return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
    }
    
-   share_type    chain_interface::calculate_data_fee(size_t bytes) const
+   share_type chain_interface::calculate_data_fee(size_t bytes) const
    {
       return (get_fee_rate() * bytes)/1000;
    }

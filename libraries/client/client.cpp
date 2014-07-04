@@ -1396,6 +1396,11 @@ config load_config( const fc::path& datadir )
       _wallet->clear_pending_transactions();
     }
 
+    map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors()const
+    {
+      return _wallet->get_pending_transaction_errors();
+    }
+
     vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer,
                                                        const string& asset_symbol,
                                                        const string& from_account_name,

@@ -113,7 +113,10 @@ namespace bts { namespace wallet {
          ///@}
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
-         void      clear_pending_transactions();
+
+         vector<wallet_transaction_record>          get_pending_transactions()const;
+         void                                       clear_pending_transactions();
+         map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
          void      scan_state();
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
