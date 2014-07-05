@@ -374,8 +374,12 @@ namespace bts { namespace wallet {
 
          vector<market_order_status>           get_market_orders( const string& quote, const string& base )const;
 
-         vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string() )const;
-         vector<pretty_transaction>            get_pretty_transaction_history( const string& account_name = string() )const;
+         vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string(),
+                                                                        uint32_t start_block_num = -1,
+                                                                        uint32_t end_block_num = -1 )const;
+         vector<pretty_transaction>            get_pretty_transaction_history( const string& account_name = string(),
+                                                                               uint32_t start_block_num = -1,
+                                                                               uint32_t end_block_num = -1 )const;
 
          vector<wallet_balance_record>         get_unspent_balances( const string& account_name,
                                                                      const string& sybmol ) const;

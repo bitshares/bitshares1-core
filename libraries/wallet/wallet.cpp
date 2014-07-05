@@ -732,9 +732,7 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
-      if( my->_current_wallet_path == wallet_file_path )
-          //Well that was easy
-          return;
+      if( is_open() ) return;
 
       try
       {
@@ -752,9 +750,7 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
-      if( my->_current_wallet_path == wallet_file_path )
-          //Well that was easy
-          return;
+      if( is_open() ) return;
 
       try
       {
@@ -861,7 +857,7 @@ namespace bts { namespace wallet {
       scan_chain( first,
                   my->_blockchain->get_head_block_num(),
                   [first](uint32_t current, uint32_t end){
-          std::cout << " Scanning for new transactions... [" << current-first << '/' << end-first << "]\r" << std::flush;
+          std::cout << " Scanning for new transactions in block: " << current-first << '/' << end-first << "\r" << std::flush;
       });
       std::cout << "Finished scanning for new transactions.                                " << std::endl;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
@@ -1204,8 +1200,8 @@ namespace bts { namespace wallet {
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-   void  wallet::scan_chain( uint32_t start, uint32_t end, 
-                             const scan_progress_callback& progress_callback )
+   void wallet::scan_chain( uint32_t start, uint32_t end,
+                            const scan_progress_callback& progress_callback )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -1268,22 +1264,16 @@ namespace bts { namespace wallet {
       return key->decrypt_private_key( my->_wallet_password );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
 
-   vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name ) const
-   {
-       auto history = get_transaction_history( account_name );
-       vector<pretty_transaction> pretties;
-       pretties.reserve( history.size() );
-       for( const auto& item : history )
-           pretties.push_back( to_pretty_trx( item ) );
-       return pretties;
-   }
-
    /** 
     * @return the list of all transactions related to this wallet
     */
-   vector<wallet_transaction_record> wallet::get_transaction_history( const string& account_name )const
+   vector<wallet_transaction_record> wallet::get_transaction_history( const string& account_name,
+                                                                      uint32_t start_block_num,
+                                                                      uint32_t end_block_num )const
    { try {
       FC_ASSERT( is_open() );
+      if( start_block_num != -1 && end_block_num != -1 )
+          FC_ASSERT( start_block_num <= end_block_num );
 
       std::vector<wallet_transaction_record> recs;
       auto my_trxs = my->_wallet_db.get_transactions();
@@ -1293,14 +1283,19 @@ namespace bts { namespace wallet {
       if( account_name != string() )
          account_pub = get_account_public_key( account_name );
 
-      for( const auto& iter : my_trxs)
+      for( const auto& iter : my_trxs )
       {
-         if( account_name == string() || account_name == "*" ||
-             (iter.second.to_account && *iter.second.to_account == account_pub) ||
-             (iter.second.from_account && *iter.second.from_account == account_pub)  )
-         {
-            recs.push_back(iter.second);
-         }
+          const auto& tx_record = iter.second;
+
+          if( account_name == string()
+              || account_name == "*"
+              || (tx_record.to_account && *tx_record.to_account == account_pub)
+              || (tx_record.from_account && *tx_record.from_account == account_pub) )
+          {
+              if( start_block_num != -1 && tx_record.block_num < start_block_num ) continue;
+              if( end_block_num != -1 && tx_record.block_num > end_block_num ) continue;
+              recs.push_back( tx_record );
+          }
       }
     
       std::sort(recs.begin(), recs.end(), [](const wallet_transaction_record& a,
@@ -1309,8 +1304,21 @@ namespace bts { namespace wallet {
                {
                    return a.received_time < b.received_time;
                });
+
       return recs;
 
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name,
+                                                                      uint32_t start_block_num,
+                                                                      uint32_t end_block_num )const
+   { try {
+       auto history = get_transaction_history( account_name, start_block_num, end_block_num );
+       vector<pretty_transaction> pretties;
+       pretties.reserve( history.size() );
+       for( const auto& item : history )
+           pretties.push_back( to_pretty_trx( item ) );
+       return pretties;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::set_delegate_block_production( const string& delegate_name, bool enabled )
@@ -2385,7 +2393,15 @@ namespace bts { namespace wallet {
         unordered_set<address>     required_signatures;
         required_signatures.insert( owner_address );
 
-        trx.bid( -balance, order.order.market_index.order_price, owner_address );
+        switch( order.get_type() )
+        {
+           case ask_order:
+              trx.ask( -balance, order.order.market_index.order_price, owner_address );
+              break;
+           case bid_order:
+              trx.bid( -balance, order.order.market_index.order_price, owner_address );
+              break;
+        }
 
         if( balance.asset_id == 0 )
         {
@@ -2394,7 +2410,7 @@ namespace bts { namespace wallet {
            if( required_fees.amount < balance.amount )
            {
               deposit_amount -= required_fees;
-              trx.deposit( owner_address, balance, 0 );
+              trx.deposit( owner_address, deposit_amount, 0 );
            }
            else
            {
@@ -2422,6 +2438,8 @@ namespace bts { namespace wallet {
 
         auto memo_message = memoss.str();
 
+        my->_blockchain->store_pending_transaction( trx, true );
+
         my->_wallet_db.cache_transaction( trx, balance,
                                           required_fees.amount,
                                           memo_message, 
@@ -2431,7 +2449,6 @@ namespace bts { namespace wallet {
                                           owner_key_record->public_key
                                         );
 
-        my->_blockchain->store_pending_transaction( trx, true );
 
         return trx;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
@@ -3180,11 +3197,11 @@ namespace bts { namespace wallet {
    { try {
        map<transaction_id_type, fc::exception> transaction_errors;
        const auto transaction_records = get_pending_transactions();
+       const auto priority_fee = my->_blockchain->get_priority_fee();
        for( const auto& transaction_record : transaction_records )
        {
            try
            {
-               const auto priority_fee = my->_blockchain->get_priority_fee();
                my->_blockchain->evaluate_transaction( transaction_record.trx, priority_fee );
            }
            catch( fc::exception& e )

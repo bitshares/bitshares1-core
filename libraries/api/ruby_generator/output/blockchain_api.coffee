@@ -121,6 +121,16 @@ class BlockchainAPI
     @rpc.request('blockchain_market_list_bids', [quote_symbol, base_symbol, limit]).then (response) ->
       response.result
 
+  # Returns the ask side of the order book for a given market
+  # parameters: 
+  #   asset_symbol `quote_symbol` - the symbol name the market is quoted in
+  #   asset_symbol `base_symbol` - the item being bought in this market
+  #   uint32_t `limit` - the maximum number of items to return, -1 for all
+  # return_type: `market_order_array`
+  market_list_asks: (quote_symbol, base_symbol, limit) ->
+    @rpc.request('blockchain_market_list_asks', [quote_symbol, base_symbol, limit]).then (response) ->
+      response.result
+
   # Returns a list of the current round's active delegates in signing order
   # parameters: 
   #   uint32_t `first` - 
