@@ -5,9 +5,9 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                          (104)
-#define BTS_WALLET_VERSION                              (101)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                 (109)
+#define BTS_BLOCKCHAIN_VERSION                          (2104)
+#define BTS_WALLET_VERSION                              (2101)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                 (2109)
 
 /**
  *  The address prepended to string representation of
@@ -15,20 +15,20 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                 "XTS"
-#define BTS_BLOCKCHAIN_SYMBOL                              "XTS"
-#define BTS_BLOCKCHAIN_NAME                                "BitShares XTS"
-#define BTS_BLOCKCHAIN_DESCRIPTION                         "Stake in future BitShares X chains"
+#define BTS_ADDRESS_PREFIX                                 "P2P"
+#define BTS_BLOCKCHAIN_SYMBOL                              "P2P"
+#define BTS_BLOCKCHAIN_NAME                                ".p2p"
+#define BTS_BLOCKCHAIN_DESCRIPTION                         "The .p2p decentralized top-level domain."
 #define BTS_BLOCKCHAIN_PRECISION                           (100000)
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC      (60*60*24*2)
 #define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC  (60*60*2)
 
-#define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE    (10000) // XTS
+#define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE    (10000) // P2P
 
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (101)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (5)
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                   (BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 
@@ -37,12 +37,12 @@
  * we check the connection count.  This means no blocks get produced
  * until at least a minimum number of clients are on line.
  */
-#define BTS_MIN_DELEGATE_CONNECTION_COUNT               (5)
+#define BTS_MIN_DELEGATE_CONNECTION_COUNT               (0)
 
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(15)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(10)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
