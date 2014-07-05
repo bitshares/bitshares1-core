@@ -19,7 +19,6 @@ namespace bts { namespace blockchain {
         string                                        domain_name;
         address                                       owner;
         variant                                       value;
-        uint32_t                                      first_bid_time;
         uint32_t                                      last_update;
         fc::enum_type<uint8_t,domain_update_type>     update_type;
         share_type                                    last_bid;
@@ -35,7 +34,7 @@ namespace bts { namespace blockchain {
     {
         string        domain_name;
         share_type    last_bid;
-        uint32_t      first_bid_time;
+        uint32_t      last_bid_time;
 
         friend bool operator == (const auction_index_key& a, const auction_index_key& b)
         {
@@ -47,7 +46,7 @@ namespace bts { namespace blockchain {
                 return true;
             if (a.last_bid > b.last_bid)
                 return false;
-            return a.first_bid_time < b.first_bid_time;
+            return a.last_bid_time < b.last_bid_time;
         }
     };
 
