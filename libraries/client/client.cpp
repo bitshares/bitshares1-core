@@ -1591,11 +1591,12 @@ config load_config( const fc::path& datadir )
       return oasset_record();
     }
 
-    void detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
+    bool detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
     { try {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
       _wallet->set_delegate_approval( delegate_name, approved );
+      return _wallet->get_delegate_approval( delegate_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved",approved) ) }
 
     otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
@@ -2868,11 +2869,11 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_forks_list();
    }
 
-   std::map<uint32_t, delegate_block_stats> client_impl::blockchain_get_delegate_block_stats( const string& delegate_name )const
+   vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name )const
    {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-      return _chain_db->get_delegate_block_stats( delegate_record->id );
+      return _chain_db->get_delegate_slot_records( delegate_record->id );
    }
 
    string client_impl::blockchain_get_block_signee( uint32_t block_number )const

@@ -62,7 +62,6 @@ namespace bts { namespace blockchain {
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
       for( const auto& item : transactions )    prev_state->store_transaction( item.first, item.second );
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
-      for( const auto& item : _block_stats )    prev_state->store_delegate_block_stats( item.first.first, item.first.second, item.second );
       
       for( const auto& item : domains )         prev_state->store_domain_record( item.second );
    }
@@ -166,24 +165,27 @@ namespace bts { namespace blockchain {
          if( prev_value.valid() ) undo_state->store_collateral_record( item.first, *prev_value );
          else  undo_state->store_collateral_record( item.first, collateral_record() );
       }
+      for( const auto& item : slots )
+      {
+         auto prev_value = prev_state->get_slot_record( item.first );
+         if( prev_value ) undo_state->store_slot_record( *prev_value );
+         else
+         {
+             slot_record invalid_slot_record;
+             invalid_slot_record.start_time = item.first;
+             invalid_slot_record.block_produced = true;
+             invalid_slot_record.block_id = block_id_type();
+             undo_state->store_slot_record( invalid_slot_record );
+         }
+      }
+
       for( const auto& item : domains )
       {
          auto prev_value = prev_state->get_domain_record( item.first );
          if( prev_value.valid() ) undo_state->store_domain_record( *prev_value );
          else  undo_state->store_domain_record( domain_record() );
       }
-      for( const auto& item : _block_stats )
-      {
-         auto prev_value = prev_state->get_delegate_block_stats( item.first.first, item.first.second );
-         if( prev_value ) undo_state->store_delegate_block_stats( item.first.first, item.first.second, *prev_value );
-         else
-         {
-             delegate_block_stats invalid_block_stats;
-             invalid_block_stats.missed = false;
-             invalid_block_stats.id = block_id_type();
-             undo_state->store_delegate_block_stats( item.first.first, item.first.second, invalid_block_stats );
-         }
-      }
+
    }
 
    /** load the state from a variant */
@@ -454,21 +456,18 @@ namespace bts { namespace blockchain {
       collateral[key] = rec;
    }
 
-   void pending_chain_state::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
-                                                         const delegate_block_stats& block_stats )
+   void pending_chain_state::store_slot_record( const slot_record& r )
    {
-       _block_stats[ std::make_pair( delegate_id, block_num ) ] = block_stats;
+      slots[ r.start_time ] = r;
    }
 
-   odelegate_block_stats pending_chain_state::get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                        uint32_t block_num )const
+   oslot_record pending_chain_state::get_slot_record( const time_point_sec& start_time )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
-      auto key = std::make_pair( delegate_id, block_num );
-      auto itr = _block_stats.find(key);
-      if( itr != _block_stats.end() ) return itr->second;
-      if( prev_state ) return prev_state->get_delegate_block_stats( key.first, key.second );
-      return odelegate_block_stats();
+      auto itr = slots.find( start_time );
+      if( itr != slots.end() ) return itr->second;
+      if( prev_state ) return prev_state->get_slot_record( start_time );
+      return oslot_record();
    }
 
 } } // bts::blockchain

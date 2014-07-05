@@ -154,13 +154,8 @@ namespace bts { namespace blockchain {
 
          virtual uint32_t                   get_head_block_num()const                               = 0;
 
-         virtual void                       store_delegate_block_stats( const account_id_type& delegate_id,
-                                                                        uint32_t block_num,
-                                                                        const delegate_block_stats& block_stats )
-                                                                                                    = 0;
-         virtual odelegate_block_stats      get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                      uint32_t block_num )const
-                                                                                                    = 0;
+         virtual void                       store_slot_record( const slot_record& r )               = 0;
+         virtual oslot_record               get_slot_record( const time_point_sec& start_time )const= 0;
    };
 
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;

@@ -175,12 +175,12 @@ class BlockchainAPI
     @rpc.request('blockchain_list_forks').then (response) ->
       response.result
 
-  # Query the block production stats for a particular delegate
+  # Query the block production slot records for a particular delegate
   # parameters: 
-  #   string `delegate_name` - Delegate whose block stats to query
-  # return_type: `delegate_block_stats_map`
-  get_delegate_block_stats: (delegate_name) ->
-    @rpc.request('blockchain_get_delegate_block_stats', [delegate_name]).then (response) ->
+  #   string `delegate_name` - Delegate whose block production slot records to query
+  # return_type: `slot_records_list`
+  get_delegate_slot_records: (delegate_name) ->
+    @rpc.request('blockchain_get_delegate_slot_records', [delegate_name]).then (response) ->
       response.result
 
   # Get the delegate that signed a given block

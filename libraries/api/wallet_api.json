@@ -425,8 +425,8 @@
       },
       {
         "method_name": "wallet_approve_delegate",
-        "description": "Updates your approval of the specified delegate",
-        "return_type": "void",
+        "description": "Updates your approval for the specified delegate",
+        "return_type": "bool",
         "parameters" : 
           [
             { 
@@ -437,8 +437,8 @@
             { 
               "name" : "approved",
               "type" : "bool",
-              "description" : "true to approve and false for neutral",
-              "default_value" : false
+              "description" : "true to approve and false otherwise",
+              "default_value" : true
             }
           ],
         "prerequisites" : ["wallet_open"],

@@ -736,6 +736,12 @@ namespace bts { namespace cli {
                   auto balance_recs = result.as<vector<wallet_balance_record>>();
                   print_unspent_balances(balance_recs);
               }
+              else if (method_name == "wallet_approve_delegate" )
+              {
+                  auto approved = result.as<bool>();
+                  if( approved ) *_out << "Delegate approved.\n";
+                  else *_out << "Delegate not approved.\n";
+              }
               else if (method_name == "network_get_usage_stats" )
               {
                   print_network_usage_stats(result.get_object());

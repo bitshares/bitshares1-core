@@ -356,14 +356,14 @@
          "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "blockchain_get_delegate_block_stats",
-        "description": "Query the block production stats for a particular delegate",
-        "return_type": "delegate_block_stats_map",
+        "method_name": "blockchain_get_delegate_slot_records",
+        "description": "Query the block production slot records for a particular delegate",
+        "return_type": "slot_records_list",
         "parameters" : [
             {
               "name" : "delegate_name",
               "type" : "string",
-              "description" : "Delegate whose block stats to query"
+              "description" : "Delegate whose block production slot records to query"
             }
         ],
         "is_const" : true,

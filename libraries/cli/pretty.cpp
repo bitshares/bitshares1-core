@@ -67,7 +67,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
     out << std::left;
 
     out << std::setw(  6 ) << "ID";
-    out << std::setw( 32 ) << "NAME (* next)";
+    out << std::setw( 32 ) << "NAME (* next in line)";
     out << std::setw( 15 ) << "APPROVAL";
     out << std::setw(  9 ) << "PRODUCED";
     out << std::setw(  9 ) << "MISSED";
@@ -80,7 +80,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
     const auto current_slot_timestamp = blockchain::get_slot_start_time( blockchain::now() );
     const auto head_block_timestamp = client->get_chain()->get_head_block().timestamp;
-    const auto next_slot_time = std::max( current_slot_timestamp, head_block_timestamp );
+    const auto next_slot_time = std::max( current_slot_timestamp, head_block_timestamp + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC );
     const auto& active_delegates = client->get_chain()->get_active_delegates();
     const auto next_slot_signee = client->get_chain()->get_slot_signee( next_slot_time, active_delegates );
     const auto next_signee_name = next_slot_signee.name;
@@ -145,26 +145,30 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     {
         /* Print any missed slots */
 
-        int missed_slots = (block_record.timestamp - last_block_timestamp).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-        if( missed_slots < 0 ) missed_slots *= -1;
-        --missed_slots;
-
-        if( missed_slots > 0 )
+        const bool descending = last_block_timestamp > block_record.timestamp;
+        while( last_block_timestamp != block_record.timestamp )
         {
-            for( auto i = 0; i < missed_slots; ++i )
-            {
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw( 20 ) << "MISSED";
-                out << std::setw( 32 ) << "N/A";
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw( 16 ) << "N/A";
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw( 15 ) << "N/A";
-                out << '\n';
-            }
+            if( descending ) last_block_timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+            else last_block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
+            if( last_block_timestamp == block_record.timestamp ) break;
+
+            out << std::setw(  8 ) << "MISSED";
+            out << std::setw( 20 ) << pretty_timestamp( last_block_timestamp );
+
+            const auto slot_record = client->get_chain()->get_slot_record( last_block_timestamp );
+            FC_ASSERT( slot_record.valid() );
+            const auto delegate_record = client->get_chain()->get_account_record( slot_record->block_producer_id );
+            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+            out << std::setw( 32 ) << pretty_shorten( delegate_record->name, 31 );
+
+            out << std::setw(  8 ) << "N/A";
+            out << std::setw(  8 ) << "N/A";
+            out << std::setw( 16 ) << "N/A";
+            out << std::setw(  8 ) << "N/A";
+            out << std::setw( 15 ) << "N/A";
+            out << '\n';
         }
-        last_block_timestamp = block_record.timestamp;
 
         /* Print produced block */
 
