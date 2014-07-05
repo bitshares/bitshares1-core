@@ -61,7 +61,7 @@ struct pretty_withdraw_op
     std::string                                 op_name;
     std::pair<address, std::string>             owner;
     share_type                                  amount;
-    //std::pair<name_id_type, std::string>        vote;   TODO how to get this?
+    //std::pair<account_id_type, std::string>   vote;   TODO how to get this?
 };
 
 struct pretty_deposit_op 
@@ -70,7 +70,7 @@ struct pretty_deposit_op
     std::string                                 op_name;
     std::pair<address, std::string>             owner;
     share_type                                  amount;
-    std::pair<name_id_type, std::string>        vote;
+    std::pair<account_id_type, std::string>     vote;
 };
 
 struct pretty_reserve_name_op

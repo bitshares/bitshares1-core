@@ -13,7 +13,7 @@ namespace bts { namespace blockchain {
       balance_record( const withdraw_condition& c )
       :balance(0),condition(c){}
 
-      balance_record( const address& owner, const asset& balance, name_id_type delegate_id );
+      balance_record( const address& owner, const asset& balance, account_id_type delegate_id );
 
       /** condition.get_address() */
       balance_id_type            id()const { return condition.get_address(); }

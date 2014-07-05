@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
    struct order_record 
    {
       order_record():balance(0){}
-      order_record( share_type b, name_id_type d )
+      order_record( share_type b, account_id_type d )
       :balance(b),delegate_id(d){}
 
       bool is_null() const { return 0 == balance; }
@@ -59,9 +59,9 @@ namespace bts { namespace blockchain {
       collateral_record():collateral_balance(0),payoff_balance(0){}
       bool is_null() const { return 0 == payoff_balance; }
 
-      share_type    collateral_balance;
-      share_type    payoff_balance;
-      name_id_type  delegate_id;
+      share_type      collateral_balance;
+      share_type      payoff_balance;
+      account_id_type delegate_id;
    };
    typedef fc::optional<collateral_record> ocollateral_record;
 

@@ -8,7 +8,7 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type; 
 
-      name_id_type          submitting_delegate_id; // the delegate_id of the submitter
+      account_id_type       submitting_delegate_id; // the delegate id of the submitter
       fc::time_point_sec    submission_date;
       std::string           subject;
       std::string           body;

@@ -29,8 +29,6 @@ namespace bts { namespace blockchain {
    typedef fc::ecc::private_key               private_key_type;
    typedef address                            balance_id_type;
    typedef fc::signed_int                     asset_id_type;
-   /** @deprecated use account_id_type instead */
-   typedef fc::signed_int                     name_id_type;
    typedef fc::signed_int                     account_id_type;
    typedef fc::signed_int                     proposal_id_type;
    typedef uint32_t                           tapos_type; 
@@ -84,11 +82,11 @@ namespace bts { namespace blockchain {
 
    struct proposal_vote_id_type
    {
-      proposal_vote_id_type( proposal_id_type proposal_id_arg = 0, name_id_type delegate_id_arg = 0 )
+      proposal_vote_id_type( proposal_id_type proposal_id_arg = 0, account_id_type delegate_id_arg = 0 )
          :proposal_id(proposal_id_arg),delegate_id(delegate_id_arg){}
 
       proposal_id_type proposal_id;
-      name_id_type     delegate_id;
+      account_id_type  delegate_id;
 
       proposal_vote_id_type& operator=( const proposal_vote_id_type& other )
       {

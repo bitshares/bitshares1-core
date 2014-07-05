@@ -2834,8 +2834,8 @@ namespace bts { namespace wallet {
                   auto deposit_op = op.as<deposit_operation>();
 /*
                   // TODO
-                  name_id_type vote = deposit_op.condition.delegate_id;
-                  name_id_type pos_delegate_id = (vote > 0) ? vote : name_id_type(-vote);
+                  account_id_type vote = deposit_op.condition.delegate_id;
+                  account_id_type pos_delegate_id = (vote > 0) ? vote : account_id_type(-vote);
                   int32_t delegate_account_num = my->_wallet_db.account_id_to_account[pos_delegate_id];
                   blockchain::oaccount_record delegate_acct_rec = my->_blockchain->get_account_record( delegate_account_num );
                   string delegate_name = delegate_acct_rec ? delegate_acct_rec->name : "";

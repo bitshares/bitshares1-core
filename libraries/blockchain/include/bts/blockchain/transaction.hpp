@@ -67,10 +67,10 @@ namespace bts { namespace blockchain {
       void register_account( const string& name, 
                          const variant& public_data, 
                          const public_key_type& master, 
-                         const public_key_type& active, 
+                         const public_key_type& active,
                          uint8_t pro_fee = 255 );
 
-      void update_account( account_id_type name_id, 
+      void update_account( account_id_type account_id,
                         uint8_t delegate_pay_rate,
                         const optional<variant>& public_data, 
                         const optional<public_key_type>& active );
