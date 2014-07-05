@@ -16,3 +16,4 @@
 #define P2P_MIN_DOMAIN_NAME_SIZE (1)
 #define P2P_MAX_DOMAIN_NAME_SIZE (63)
 
+#define P2P_DILUTION_RATE (100000) // extra block reward = (max_supply - current_supply) / this

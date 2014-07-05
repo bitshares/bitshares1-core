@@ -10,6 +10,8 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
+#include <bts/blockchain/dns_config.hpp>
+
 #include <bts/blockchain/dns_operations.hpp>
 #include <bts/blockchain/dns_record.hpp>
 
@@ -189,8 +191,8 @@ namespace bts { namespace blockchain {
             // DNS
 
             bts::db::level_map< string, domain_record >                         _domain_db;
-            // just a cache of what is in auction
-            bts::db::level_map< string, string >                                _auction_db;
+            // an ordered cache of what is in auction
+            bts::db::level_map< auction_index_key, string >                     _auction_db;
 
             // END DNS
 
@@ -552,6 +554,7 @@ namespace bts { namespace blockchain {
             }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) ) }
 
+      // "amount" is amount of fees - delegate pay from preallocation is added automatically
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const share_type& amount,
                                               const pending_chain_state_ptr& pending_state )
@@ -560,15 +563,24 @@ namespace bts { namespace blockchain {
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
             auto pay_rate = delegate_record->delegate_info->pay_rate;
             FC_ASSERT( pay_rate <= 100 );
-            auto pay = (amount*pay_rate)/100;
+
+            auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
+
+            auto standard_pay = (amount*pay_rate)/100;
+            auto dilution = (base_asset_record->maximum_share_supply - base_asset_record->current_share_supply)
+                            / P2P_DILUTION_RATE;
+            auto dilution_pay = (dilution*pay_rate) / 100;
+            auto dilution_burn = (dilution * (100 - pay_rate)) / 100;
+
+            auto pay = standard_pay + dilution_pay;
 
             delegate_record->delegate_info->pay_balance += pay;
             delegate_record->delegate_info->votes_for += pay;
             pending_state->store_account_record( *delegate_record );
 
-            auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
             base_asset_record->current_share_supply += pay;
+            base_asset_record->maximum_share_supply -= dilution_burn;
             pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("amount",amount) ) }
 
@@ -761,6 +773,7 @@ namespace bts { namespace blockchain {
 
             apply_transactions( block_data, block_data.user_transactions, pending_state );
 
+            // pay delegate and adjust current and total share supply
             pay_delegate( block_data.id(), block_data.delegate_pay_rate, pending_state );
 
             update_active_delegate_list( block_data, pending_state );
