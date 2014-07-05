@@ -1591,11 +1591,12 @@ config load_config( const fc::path& datadir )
       return oasset_record();
     }
 
-    void detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
+    bool detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
     { try {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
       _wallet->set_delegate_approval( delegate_name, approved );
+      return _wallet->get_delegate_approval( delegate_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved",approved) ) }
 
     otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const

@@ -207,11 +207,11 @@ class WalletAPI
     @rpc.request('wallet_account_set_favorite', [account_name, is_favorite]).then (response) ->
       response.result
 
-  # Updates your approval of the specified delegate
+  # Updates your approval for the specified delegate
   # parameters: 
   #   account_name `delegate_name` - the name of the delegate to set approval for
-  #   bool `approved` - true to approve and false for neutral
-  # return_type: `void`
+  #   bool `approved` - true to approve and false otherwise
+  # return_type: `bool`
   approve_delegate: (delegate_name, approved) ->
     @rpc.request('wallet_approve_delegate', [delegate_name, approved]).then (response) ->
       response.result
