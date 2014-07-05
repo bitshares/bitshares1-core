@@ -802,14 +802,17 @@ namespace bts { namespace wallet {
 
    void wallet::export_to_json( const path& filename )const
    { try {
-      FC_ASSERT( !fc::exists( filename ) );
+      if( fc::exists( filename ) )
+          FC_THROW_EXCEPTION( file_already_exists, "Filename to export to already exists!", ("filename",filename) );
+
       FC_ASSERT( is_open() );
       my->_wallet_db.export_to_json( filename );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
 
    void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
    { try {
-      FC_ASSERT( fc::exists( filename ) );
+      if( !fc::exists( filename ) )
+          FC_THROW_EXCEPTION( file_not_found, "Filename to import from could not be found!", ("filename",filename) );
 
       if( !is_valid_account_name( wallet_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
