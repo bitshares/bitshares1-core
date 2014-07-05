@@ -74,7 +74,7 @@ namespace bts { namespace blockchain {
       switch( n )
       {
 #if BTS_BLOCKCHAIN_VERSION > 104
-#warning Remove below invalid asset precision
+#warning [HARDFORK] Remove below invalid asset precision
 #else
          case 0ll:
 #endif

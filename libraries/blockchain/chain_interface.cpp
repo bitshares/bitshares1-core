@@ -1,10 +1,7 @@
 #include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <fc/io/json.hpp>
+
 #include <algorithm>
-#include <sstream>
-#include <cctype>
 
 namespace bts{ namespace blockchain {
 
@@ -31,16 +28,17 @@ namespace bts{ namespace blockchain {
    {
 #if BTS_BLOCKCHAIN_VERSION > 104
       return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/BTS_BLOCKCHAIN_NUM_DELEGATES;
-#warning Remove below deprecated delegate registration fee calculation
+#warning [HARDFORK] Remove below deprecated delegate registration fee calculation
 #else
       return (get_fee_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/1000;
 #endif
    }
+
    share_type chain_interface::get_asset_registration_fee()const
    {
 #if BTS_BLOCKCHAIN_VERSION > 104
       return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
-#warning Remove below deprecated asset registration fee calculation
+#warning [HARDFORK] Remove below deprecated asset registration fee calculation
 #else
       return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
 #endif
@@ -130,7 +128,6 @@ namespace bts{ namespace blockchain {
       auto tmp = price_to_pretty_print;
       tmp.ratio *= obase_asset->get_precision();
       tmp.ratio /= oquote_asset->get_precision();
-
 
       return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
 

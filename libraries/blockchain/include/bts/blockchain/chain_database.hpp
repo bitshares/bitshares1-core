@@ -1,15 +1,9 @@
 #pragma once
-#include <bts/blockchain/types.hpp>
+
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
-#include <bts/blockchain/block.hpp>
-
-#include <fc/filesystem.hpp>
-
-#include <functional>
 
 namespace bts { namespace blockchain {
-
 
    namespace detail { class chain_database_impl; }
 
@@ -208,7 +202,6 @@ namespace bts { namespace blockchain {
           *  Evaluate the transaction and return the results.
           */
          virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, share_type min_fee = 0 );
-
 
          /** return the timestamp from the head block */
          virtual time_point_sec         now()const override;

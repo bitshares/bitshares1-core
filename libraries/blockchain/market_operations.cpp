@@ -1,7 +1,6 @@
-#include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/market_operations.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -25,7 +24,6 @@ namespace bts { namespace blockchain {
       eval_state.validate_asset( delta_amount );
 
       auto current_bid   = eval_state._current_state->get_bid_record( this->bid_index );
-
 
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
@@ -53,11 +51,6 @@ namespace bts { namespace blockchain {
 
       auto check   = eval_state._current_state->get_bid_record( this->bid_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
-
-
-
-
 
    /**
     *  If the amount is negative then it will withdraw/cancel the bid assuming
@@ -107,10 +100,5 @@ namespace bts { namespace blockchain {
 
       auto check   = eval_state._current_state->get_ask_record( this->ask_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
-
-
-
-
 
 } } // bts::blockchain

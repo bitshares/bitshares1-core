@@ -1,4 +1,5 @@
 #pragma once
+
 #include <bts/blockchain/block.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
@@ -45,7 +46,7 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<slot_record> oslot_record;
 
-} }
+} } // bts::blockchain
 
 FC_REFLECT_DERIVED( bts::blockchain::block_record, 
                     (bts::blockchain::digest_block), 

@@ -1,6 +1,7 @@
 #pragma once
-#include <bts/blockchain/operations.hpp>
+
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/operations.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -71,10 +72,9 @@ namespace bts { namespace blockchain {
           void to_variant( const bts::blockchain::operation& in, fc::variant& output );
           /// defined in operations.cpp
           void from_variant( const fc::variant& in, bts::blockchain::operation& output );
-       private: 
 
+       private:
           std::unordered_map<int, std::shared_ptr<operation_converter_base> > _converters;
-
    };
 
 } } // bts::blockchain 

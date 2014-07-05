@@ -1,8 +1,9 @@
 #pragma once
+
 #include <bts/blockchain/pts_address.hpp>
+
 #include <fc/array.hpp>
 #include <fc/crypto/ripemd160.hpp>
-#include <string>
 
 namespace fc { namespace ecc { 
     class public_key; 
@@ -45,7 +46,6 @@ namespace bts { namespace blockchain {
    inline bool operator <  ( const address& a, const address& b ) { return a.addr <  b.addr; }
 
 } } // namespace bts::blockchain
-
 
 namespace fc 
 { 

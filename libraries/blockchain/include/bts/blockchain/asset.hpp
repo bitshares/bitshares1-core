@@ -1,13 +1,9 @@
 #pragma once
+
 #include <bts/blockchain/types.hpp>
-#include <bts/blockchain/config.hpp>
-#include <fc/uint128.hpp>
-#include <fc/io/enum_type.hpp>
-#include <stdint.h>
 
 namespace bts { namespace blockchain {
 
-  #define BTS_PRICE_PRECISION uint64_t(BTS_BLOCKCHAIN_MAX_SHARES*1000)
   struct price;
 
   /**
@@ -106,8 +102,6 @@ namespace bts { namespace blockchain {
    */
   asset operator * ( const asset& a, const price& p );
 
-
-
 } } // bts::blockchain
 
 namespace fc
@@ -121,4 +115,3 @@ namespace fc
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::price, (ratio)(quote_asset_id)(base_asset_id) );
 FC_REFLECT( bts::blockchain::asset, (amount)(asset_id) );
-

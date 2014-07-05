@@ -1,12 +1,13 @@
 #pragma once
-#include <fc/reflect/reflect.hpp>
-#include <fc/crypto/sha1.hpp>
-#include <fc/crypto/elliptic.hpp>
-#include <fc/array.hpp>
+
 #include <bts/blockchain/address.hpp>
-#include <string>
+
+#include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/sha1.hpp>
+#include <fc/reflect/reflect.hpp>
 
 namespace bts { namespace blockchain {
+
     /**
      *  Given an extended public key you can calculate the public key of all
      *  children keys, but not the corresponding private keys.
@@ -89,7 +90,7 @@ namespace bts { namespace blockchain {
 
    /**
     *  @brief encapsulates an encoded, checksumed public key in
-    *  binary form.   It can be converted to base58 for display
+    *  binary form. It can be converted to base58 for display
     *  or input purposes and can also be constructed from an ecc
     *  public key.
     *
@@ -119,15 +120,13 @@ namespace bts { namespace blockchain {
        extended_public_key addr;      ///< binary representation of extended_address
    };
 
-
    inline bool operator == ( const extended_address& a, const extended_address& b ) { return a.addr == b.addr; }
    inline bool operator != ( const extended_address& a, const extended_address& b ) { return a.addr != b.addr; }
    inline bool operator <  ( const extended_address& a, const extended_address& b ) { return a.addr <  b.addr; }
 
 } } // namespace bts::blockchain
 
-#include <fc/reflect/reflect.hpp>
-FC_REFLECT( bts::blockchain::extended_public_key,  (pub_key)(chain_code)  )
+FC_REFLECT( bts::blockchain::extended_public_key, (pub_key)(chain_code) )
 FC_REFLECT( bts::blockchain::extended_private_key, (priv_key)(chain_code) )
 FC_REFLECT( bts::blockchain::extended_address, (addr) )
 

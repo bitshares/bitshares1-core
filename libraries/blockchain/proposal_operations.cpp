@@ -1,9 +1,9 @@
-#include <bts/blockchain/proposal_operations.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/proposal_operations.hpp>
 
 namespace bts { namespace blockchain {
+
    void submit_proposal_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
        auto delegate_record = eval_state._current_state->get_account_record( submitting_delegate_id );
@@ -66,4 +66,4 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-} } 
+} } // bts::blockchain

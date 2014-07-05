@@ -1,6 +1,7 @@
 #pragma once
-#include <bts/blockchain/address.hpp>
-#include <fc/optional.hpp>
+
+#include <bts/blockchain/asset.hpp>
+#include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -24,7 +25,6 @@ namespace bts { namespace blockchain {
          return  a.owner < b.owner;
       }
    };
-
 
    struct order_record 
    {

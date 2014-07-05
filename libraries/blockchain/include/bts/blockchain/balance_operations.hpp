@@ -1,6 +1,9 @@
 #pragma once
-#include <bts/blockchain/operations.hpp>
+
+#include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
+#include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 
 namespace bts { namespace blockchain { 
 
@@ -43,7 +46,6 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state );
    };
 
-
    /**
     *  The first time a deposit is made to a new address
     *  the condition under which it may be spent must be
@@ -73,4 +75,3 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::define_delegate_slate_operation, (slate) )
 FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_input_data) )
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
- 

@@ -1,14 +1,12 @@
-#include <algorithm>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/pts_address.hpp>
 
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
-#include <fc/exception/exception.hpp>
-
-#include <bts/blockchain/pts_address.hpp>
-#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
+
    pts_address::pts_address()
    {
       memset( addr.data, 0, sizeof(addr.data) );
@@ -64,9 +62,7 @@ namespace bts { namespace blockchain {
         return fc::to_base58( addr.data, sizeof(addr) );
    }
 
-
 } } // namespace bts
-
 
 namespace fc 
 { 

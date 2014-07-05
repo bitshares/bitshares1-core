@@ -1,10 +1,8 @@
 #include <bts/blockchain/asset_operations.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
-
  
    /**
     *  @note in this method we are using 'this->' to refer to member variables for

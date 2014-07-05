@@ -1,7 +1,7 @@
 #pragma once
+
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
-#include <bts/blockchain/transaction.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -32,6 +32,7 @@ namespace bts { namespace blockchain {
       fc::time_point_sec         last_update;
    };
    typedef fc::optional<balance_record> obalance_record;
-} }
+
+} } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(last_update) )

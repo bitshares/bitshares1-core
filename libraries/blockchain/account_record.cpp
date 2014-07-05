@@ -1,5 +1,7 @@
 #include <bts/blockchain/account_record.hpp>
 
+#include <fc/exception/exception.hpp>
+
 namespace bts { namespace blockchain {
 
     bool account_record::is_null()const
@@ -20,8 +22,8 @@ namespace bts { namespace blockchain {
         return delegate_info->pay_balance;
     }
 
-    bool    account_record::is_delegate()const
-    { 
+    bool account_record::is_delegate()const
+    {
         return !!delegate_info; 
     }
 

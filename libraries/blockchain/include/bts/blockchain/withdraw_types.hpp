@@ -1,8 +1,11 @@
 #pragma once
-#include <fc/io/raw.hpp>
-#include <bts/blockchain/pts_address.hpp>
-#include <bts/blockchain/types.hpp>
+
 #include <bts/blockchain/asset.hpp>
+#include <bts/blockchain/config.hpp>
+#include <bts/blockchain/types.hpp>
+
+#include <fc/io/enum_type.hpp>
+#include <fc/io/raw.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -75,8 +78,6 @@ namespace bts { namespace blockchain {
       fc::enum_type<uint8_t,memo_flags_enum>           memo_flags;
    };
    typedef fc::optional<memo_data>         omemo_data;
-
-
 
    struct titan_memo
    {
@@ -162,9 +163,7 @@ namespace bts { namespace blockchain {
       price                strike_price;
    };
 
-
 } } // bts::blockchain
-
 
 namespace fc {
    void to_variant( const bts::blockchain::withdraw_condition& var,  variant& vo );
@@ -174,12 +173,11 @@ namespace fc {
 }
 
 FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types, 
-        (withdraw_null_type)
-        (withdraw_signature_type)
-        (withdraw_multi_sig_type)
-        (withdraw_password_type)
-        (withdraw_option_type) 
-        )
+                 (withdraw_null_type)
+                 (withdraw_signature_type)
+                 (withdraw_multi_sig_type)
+                 (withdraw_password_type)
+                 (withdraw_option_type) )
 
 FC_REFLECT( bts::blockchain::titan_memo, (one_time_key)(encrypted_memo_data) );
 FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_slate_id)(type)(data) )
@@ -192,4 +190,3 @@ FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_fla
 FC_REFLECT_DERIVED( bts::blockchain::memo_status, 
                     (bts::blockchain::memo_data), 
                     (has_valid_signature)(owner_private_key) )
-

@@ -1,7 +1,4 @@
 #include <bts/blockchain/block.hpp>
-#include <bts/blockchain/config.hpp>
-#include <fc/log/logger.hpp>
-#include <algorithm>
 
 namespace bts { namespace blockchain {
 
@@ -23,6 +20,7 @@ namespace bts { namespace blockchain {
    { 
       return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
    }
+
    public_key_type signed_block_header::signee()const
    { 
       return fc::ecc::public_key( delegate_signature, digest() );
@@ -73,6 +71,7 @@ namespace bts { namespace blockchain {
    {
       return calculate_transaction_digest() == transaction_digest;
    }
+
    bool digest_block::validate_unique()const
    {
       std::unordered_set<transaction_id_type> trx_ids;

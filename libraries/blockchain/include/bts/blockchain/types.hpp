@@ -1,12 +1,9 @@
 #pragma once
-#include <fc/crypto/ripemd160.hpp>
-#include <fc/crypto/elliptic.hpp>
-#include <fc/crypto/base58.hpp>
-#include <fc/io/varint.hpp>
-#include <fc/exception/exception.hpp>
 
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
+
+#include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/ripemd160.hpp>
 
 #include <functional>
 
@@ -117,17 +114,13 @@ namespace bts { namespace blockchain {
        double              participation_rate;
    };
 
-   #define BASE_ASSET_ID  (asset_id_type())
-
 } } // bts::blockchain
-
 
 namespace fc
 {
     void to_variant( const bts::blockchain::public_key_type& var,  fc::variant& vo );
     void from_variant( const fc::variant& var,  bts::blockchain::public_key_type& vo );
 }
-
 
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::proposal_vote_id_type, (proposal_id)(delegate_id) )

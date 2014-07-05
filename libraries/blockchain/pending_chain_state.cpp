@@ -1,8 +1,7 @@
 #include <bts/blockchain/pending_chain_state.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
+
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
    :_prev_state( prev_state )
    {
@@ -322,6 +321,7 @@ namespace bts { namespace blockchain {
       if( prev_state ) return prev_state->get_property( property_id );
       return fc::variant();
    }
+
    void pending_chain_state::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
    {

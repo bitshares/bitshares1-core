@@ -79,12 +79,7 @@ struct WFixture
       vector<fc::ecc::private_key> delegate_private_keys;
 
       genesis_block_config config;
-      config.precision         = BTS_BLOCKCHAIN_PRECISION;
       config.timestamp         = bts::blockchain::now();
-      config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
-      config.base_name         = BTS_BLOCKCHAIN_NAME;
-      config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
-      config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
 
       for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
       {
