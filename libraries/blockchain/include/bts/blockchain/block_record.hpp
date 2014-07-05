@@ -16,6 +16,7 @@ namespace bts { namespace blockchain {
       uint32_t          latency; /* Seconds */
       fc::microseconds  processing_time; /* Time taken for most recent push_block */
    };
+   typedef optional<block_record> oblock_record;
 
    struct transaction_record : public transaction_evaluation_state
    {
@@ -27,9 +28,22 @@ namespace bts { namespace blockchain {
 
       transaction_location chain_location;
    };
-
    typedef optional<transaction_record> otransaction_record;
-   typedef optional<block_record>       oblock_record;
+
+   struct slot_record
+   {
+      slot_record( const time_point_sec& t, const account_id_type& d, bool p = false, const block_id_type& b = block_id_type() )
+      :start_time(t),block_producer_id(d),block_produced(p),block_id(b){}
+
+      slot_record()
+      :block_produced(false){}
+
+      time_point_sec  start_time;
+      account_id_type block_producer_id;
+      bool            block_produced;
+      block_id_type   block_id;
+   };
+   typedef fc::optional<slot_record> oslot_record;
 
 } }
 
@@ -44,3 +58,5 @@ FC_REFLECT_DERIVED( bts::blockchain::block_record,
 FC_REFLECT_DERIVED( bts::blockchain::transaction_record, 
                     (bts::blockchain::transaction_evaluation_state), 
                     (chain_location) );
+
+FC_REFLECT( bts::blockchain::slot_record, (start_time)(block_producer_id)(block_produced)(block_id) )

@@ -124,60 +124,59 @@ namespace bts { namespace blockchain {
              *  After a new block is pushed this state is recalculated based upon what ever
              *  pending transactions remain.
              */
-            pending_chain_state_ptr                                             _pending_trx_state;
+            pending_chain_state_ptr                                         _pending_trx_state;
 
-            chain_database*                                                     self;
-            unordered_set<chain_observer*>                                      _observers;
-            digest_type                                                         _chain_id;
-            bool                                                                _skip_signature_verification;
-            share_type                                                          _priority_fee;
+            chain_database*                                                 self;
+            unordered_set<chain_observer*>                                  _observers;
+            digest_type                                                     _chain_id;
+            bool                                                            _skip_signature_verification;
+            share_type                                                      _priority_fee;
 
-            bts::db::level_map<slate_id_type, delegate_slate >                  _slate_db;
-            bts::db::level_map<uint32_t, std::vector<block_id_type> >    _fork_number_db;
-            bts::db::level_map<block_id_type,block_fork_data>            _fork_db;
-            bts::db::level_map<uint32_t, fc::variant >                   _property_db;
-            bts::db::level_map<proposal_id_type, proposal_record >       _proposal_db;
-            bts::db::level_map<proposal_vote_id_type, proposal_vote >    _proposal_vote_db;
+            bts::db::level_map<slate_id_type, delegate_slate >              _slate_db;
+            bts::db::level_map<uint32_t, std::vector<block_id_type> >       _fork_number_db;
+            bts::db::level_map<block_id_type,block_fork_data>               _fork_db;
+            bts::db::level_map<uint32_t, fc::variant >                      _property_db;
+            bts::db::level_map<proposal_id_type, proposal_record >          _proposal_db;
+            bts::db::level_map<proposal_vote_id_type, proposal_vote >       _proposal_vote_db;
 
             /** the data required to 'undo' the changes a block made to the database */
-            bts::db::level_map<block_id_type,pending_chain_state>               _undo_state_db;
+            bts::db::level_map<block_id_type,pending_chain_state>           _undo_state_db;
 
             // blocks in the current 'official' chain.
-            bts::db::level_map<uint32_t,block_id_type >                         _block_num_to_id_db;
+            bts::db::level_map<uint32_t,block_id_type >                     _block_num_to_id_db;
             // all blocks from any fork..
-            //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
-            bts::db::level_map<block_id_type,block_record >                     _block_id_to_block_record_db;
+            //bts::db::level_map<block_id_type,full_block>                  _block_id_to_block_db;
+            bts::db::level_map<block_id_type,block_record >                 _block_id_to_block_record_db;
 
-            bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_data_db;
+            bts::db::level_map<block_id_type,full_block>                    _block_id_to_block_data_db;
 
-            std::unordered_set<transaction_id_type>                             _known_transactions;
-            bts::db::level_map<transaction_id_type,transaction_record>          _id_to_transaction_record_db;
+            std::unordered_set<transaction_id_type>                         _known_transactions;
+            bts::db::level_map<transaction_id_type,transaction_record>      _id_to_transaction_record_db;
 
             // used to revert block state in the event of a fork
-            // bts::db::level_map<uint32_t,undo_data>                              _block_num_to_undo_data_db;
+            // bts::db::level_map<uint32_t,undo_data>                       _block_num_to_undo_data_db;
 
-            signed_block_header                                                 _head_block_header;
-            block_id_type                                                       _head_block_id;
+            signed_block_header                                             _head_block_header;
+            block_id_type                                                   _head_block_id;
 
-            bts::db::level_map< transaction_id_type, signed_transaction>        _pending_transaction_db;
-            std::map< fee_index, transaction_evaluation_state_ptr >             _pending_fee_index;
+            bts::db::level_map< transaction_id_type, signed_transaction>    _pending_transaction_db;
+            std::map< fee_index, transaction_evaluation_state_ptr >         _pending_fee_index;
 
-            bts::db::level_map< asset_id_type, asset_record >            _asset_db;
-            bts::db::level_map< balance_id_type, balance_record>         _balance_db;
-            bts::db::level_map< account_id_type, account_record>         _account_db;
-            bts::db::level_map< address, account_id_type >               _address_to_account_db;
+            bts::db::level_map< asset_id_type, asset_record >               _asset_db;
+            bts::db::level_map< balance_id_type, balance_record>            _balance_db;
+            bts::db::level_map< account_id_type, account_record>            _account_db;
+            bts::db::level_map< address, account_id_type >                  _address_to_account_db;
 
-            bts::db::level_map< string, account_id_type >                _account_index_db;
-            bts::db::level_map< string, asset_id_type >                  _symbol_index_db;
-            bts::db::level_map< vote_del, int >                          _delegate_vote_index_db;
+            bts::db::level_map< string, account_id_type >                   _account_index_db;
+            bts::db::level_map< string, asset_id_type >                     _symbol_index_db;
+            bts::db::level_map< vote_del, int >                             _delegate_vote_index_db;
 
-            bts::db::level_map< std::pair< account_id_type, uint32_t >, delegate_block_stats >
-                                                                                _delegate_block_stats_db;
+            bts::db::level_map< time_point_sec, slot_record >               _slot_record_db;
 
-            bts::db::level_map< market_index_key, order_record >                _ask_db;
-            bts::db::level_map< market_index_key, order_record >                _bid_db;
-            bts::db::level_map< market_index_key, order_record >                _short_db;
-            bts::db::level_map< market_index_key, collateral_record >           _collateral_db;
+            bts::db::level_map< market_index_key, order_record >            _ask_db;
+            bts::db::level_map< market_index_key, order_record >            _bid_db;
+            bts::db::level_map< market_index_key, order_record >            _short_db;
+            bts::db::level_map< market_index_key, collateral_record >       _collateral_db;
 
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
@@ -242,7 +241,7 @@ namespace bts { namespace blockchain {
           _symbol_index_db.open( data_dir / "index/symbol_index_db" );
           _delegate_vote_index_db.open( data_dir / "index/delegate_vote_index_db" );
 
-          _delegate_block_stats_db.open( data_dir / "index/delegate_block_stats_db" );
+          _slot_record_db.open( data_dir / "index/slot_record_db" );
 
           _ask_db.open( data_dir / "index/ask_db" );
           _bid_db.open( data_dir / "index/bid_db" );
@@ -642,24 +641,21 @@ namespace bts { namespace blockchain {
           delegate_record->delegate_info->last_block_num_produced = produced_block.block_num;
           pending_state->store_account_record( *delegate_record );
 
-          auto block_stats = delegate_block_stats( false, produced_block.id() );
-          pending_state->store_delegate_block_stats( delegate_record->id, produced_block.block_num, block_stats );
+          auto slot = slot_record( produced_block.timestamp, delegate_id, true, produced_block.id() );
+          pending_state->store_slot_record( slot );
 
           /* Update production info for missing delegates */
 
           auto required_confirmations = pending_state->get_property( confirmation_requirement ).as_int64();
 
-          auto head_block = self->get_head_block();
-          auto block_num = head_block.block_num + 1;
-
           time_point_sec block_timestamp;
-          if( block_num > 1 ) block_timestamp = head_block.timestamp + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+          auto head_block = self->get_head_block();
+          if( head_block.block_num > 0 ) block_timestamp = head_block.timestamp + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           else block_timestamp = produced_block.timestamp;
           const auto& active_delegates = self->get_active_delegates();
 
           for( ; block_timestamp < produced_block.timestamp;
                  block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC,
-                 ++block_num,
                  required_confirmations += 2 )
           {
               /* Note: Active delegate list has not been updated yet so we can use the timestamp */
@@ -670,7 +666,7 @@ namespace bts { namespace blockchain {
               delegate_record->delegate_info->blocks_missed += 1;
               pending_state->store_account_record( *delegate_record );
 
-              pending_state->store_delegate_block_stats( delegate_record->id, block_num, delegate_block_stats() );
+              pending_state->store_slot_record( slot_record( block_timestamp, delegate_id )  );
           }
 
           /* Update required confirmation count */
@@ -1026,7 +1022,7 @@ namespace bts { namespace blockchain {
       my->_symbol_index_db.close();
       my->_delegate_vote_index_db.close();
 
-      my->_delegate_block_stats_db.close();
+      my->_slot_record_db.close();
 
       my->_ask_db.close();
       my->_bid_db.close();
@@ -1882,16 +1878,16 @@ namespace bts { namespace blockchain {
         return fork_blocks;
     }
 
-    std::map<uint32_t, delegate_block_stats> chain_database::get_delegate_block_stats( const account_id_type& delegate_id )const
+    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type& delegate_id )const
     {
-        std::map<uint32_t, delegate_block_stats> delegate_block_stats;
-        for( auto iter = my->_delegate_block_stats_db.begin(); iter.valid(); ++iter )
+        vector<slot_record> slot_records;
+        for( auto iter = my->_slot_record_db.begin(); iter.valid(); ++iter )
         {
-            std::pair< account_id_type, uint32_t > key = iter.key();
-            if( key.first == delegate_id )
-                delegate_block_stats[key.second] = iter.value();
+            const auto slot_record = iter.value();
+            if( slot_record.block_producer_id == delegate_id )
+                slot_records.push_back( slot_record );
         }
-        return delegate_block_stats;
+        return slot_records;
     }
 
    fc::variant chain_database::get_property( chain_property_enum property_id )const
@@ -2165,16 +2161,6 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
-
-
-
-
-
-
-
-
-
-
    pending_chain_state_ptr chain_database::get_pending_state()const
    {
       return my->_pending_trx_state;
@@ -2193,21 +2179,18 @@ namespace bts { namespace blockchain {
          my->_slate_db.store( id, slate );
    }
 
-   void chain_database::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
-                                                    const delegate_block_stats& block_stats )
+   void chain_database::store_slot_record( const slot_record& r )
    {
-      if( block_stats.missed || (block_stats.id != block_id_type()) ) /* If in valid state */
-         my->_delegate_block_stats_db.store( std::make_pair( delegate_id, block_num ), block_stats );
+      if( !r.block_produced || (r.block_id != block_id_type()) ) /* If in valid state */
+         my->_slot_record_db.store( r.start_time, r );
       else
-         my->_delegate_block_stats_db.remove( std::make_pair( delegate_id, block_num ) );
+         my->_slot_record_db.remove( r.start_time );
    }
 
-   odelegate_block_stats chain_database::get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                   uint32_t block_num )const
+   oslot_record chain_database::get_slot_record( const time_point_sec& start_time )const
    {
-      return my->_delegate_block_stats_db.fetch_optional( std::make_pair( delegate_id, block_num ) );
+      return my->_slot_record_db.fetch_optional( start_time );
    }
-
 
    bool chain_database::is_known_transaction( const transaction_id_type& id )
    {

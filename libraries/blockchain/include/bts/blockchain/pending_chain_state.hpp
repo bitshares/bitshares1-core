@@ -62,11 +62,9 @@ namespace bts { namespace blockchain {
          virtual void                 set_property( chain_property_enum property_id, 
                                                           const variant& property_value )override;
 
-         virtual void                   store_delegate_block_stats( const account_id_type& delegate_id,
-                                                                    uint32_t block_num,
-                                                                    const delegate_block_stats& block_stats )override;
-         virtual odelegate_block_stats  get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                  uint32_t block_num )const override;
+         virtual void                 store_slot_record( const slot_record& r ) override;
+         virtual oslot_record         get_slot_record( const time_point_sec& start_time )const override;
+
          /**
           *  Based upon the current state of the database, calculate any updates that
           *  should be executed in a deterministic manner.
@@ -105,8 +103,7 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                           asks; 
          map< market_index_key, order_record>                           shorts; 
          map< market_index_key, collateral_record>                      collateral; 
-
-         map<std::pair<account_id_type, uint32_t>, delegate_block_stats> _block_stats;
+         map<time_point_sec, slot_record>                               slots;
 
          chain_interface_weak_ptr                                       _prev_state;
    };
@@ -117,4 +114,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(_block_stats) )
+            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots) )

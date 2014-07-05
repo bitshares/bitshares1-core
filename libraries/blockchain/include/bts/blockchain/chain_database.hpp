@@ -189,7 +189,7 @@ namespace bts { namespace blockchain {
          vector<asset_record>     get_assets( const string& first_symbol, 
                                               uint32_t count )const;
 
-         std::map<uint32_t, delegate_block_stats> get_delegate_block_stats( const account_id_type& delegate_id )const;
+         std::vector<slot_record> get_delegate_slot_records( const account_id_type& delegate_id )const;
 
          std::map<uint32_t, std::vector<fork_record> > get_forks_list()const;
          std::string export_fork_graph( uint32_t start_block = 1, uint32_t end_block = -1, const fc::path& filename = "" )const;
@@ -274,11 +274,8 @@ namespace bts { namespace blockchain {
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual void                       store_delegate_block_stats( const account_id_type& delegate_id,
-                                                                        uint32_t block_num,
-                                                                        const delegate_block_stats& block_stats )override;
-         virtual odelegate_block_stats      get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                      uint32_t block_num )const override;
+         virtual void                       store_slot_record( const slot_record& r )override;
+         virtual oslot_record               get_slot_record( const time_point_sec& start_time )const override;
 
       private:
          unique_ptr<detail::chain_database_impl> my;

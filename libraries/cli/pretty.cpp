@@ -145,26 +145,30 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     {
         /* Print any missed slots */
 
-        int missed_slots = (block_record.timestamp - last_block_timestamp).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-        if( missed_slots < 0 ) missed_slots *= -1;
-        --missed_slots;
-
-        if( missed_slots > 0 )
+        const bool descending = last_block_timestamp > block_record.timestamp;
+        while( last_block_timestamp != block_record.timestamp )
         {
-            for( auto i = 0; i < missed_slots; ++i )
-            {
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw( 20 ) << "MISSED";
-                out << std::setw( 32 ) << "N/A";
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw( 16 ) << "N/A";
-                out << std::setw(  8 ) << "N/A";
-                out << std::setw( 15 ) << "N/A";
-                out << '\n';
-            }
+            if( descending ) last_block_timestamp -= BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+            else last_block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+
+            if( last_block_timestamp == block_record.timestamp ) break;
+
+            out << std::setw(  8 ) << "MISSED";
+            out << std::setw( 20 ) << pretty_timestamp( last_block_timestamp );
+
+            const auto slot_record = client->get_chain()->get_slot_record( last_block_timestamp );
+            FC_ASSERT( slot_record.valid() );
+            const auto delegate_record = client->get_chain()->get_account_record( slot_record->block_producer_id );
+            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+            out << std::setw( 32 ) << pretty_shorten( delegate_record->name, 31 );
+
+            out << std::setw(  8 ) << "N/A";
+            out << std::setw(  8 ) << "N/A";
+            out << std::setw( 16 ) << "N/A";
+            out << std::setw(  8 ) << "N/A";
+            out << std::setw( 15 ) << "N/A";
+            out << '\n';
         }
-        last_block_timestamp = block_record.timestamp;
 
         /* Print produced block */
 

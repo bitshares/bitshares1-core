@@ -36,19 +36,6 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<delegate_stats> odelegate_stats;
 
-   struct delegate_block_stats
-   {
-      delegate_block_stats( bool m, const block_id_type& b )
-      :missed(m),id(b){}
-
-      delegate_block_stats()
-      :missed(true){}
-
-      bool          missed;
-      block_id_type id;
-   };
-   typedef fc::optional<delegate_block_stats> odelegate_block_stats;
-
    struct account_record
    {
       account_record()
@@ -84,9 +71,6 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::account_meta_info, (type)(data) )
 
 FC_REFLECT( bts::blockchain::account_record,
-            (id)(name)(public_data)(owner_key)(active_key_history)(registration_date)(last_update)(delegate_info)(meta_data)
-          )
+            (id)(name)(public_data)(owner_key)(active_key_history)(registration_date)(last_update)(delegate_info)(meta_data) )
 FC_REFLECT( bts::blockchain::delegate_stats, 
-            (votes_for)(blocks_produced)
-            (blocks_missed)(pay_rate)(pay_balance)(next_secret_hash)(last_block_num_produced) )
-FC_REFLECT( bts::blockchain::delegate_block_stats, (missed)(id) )
+            (votes_for)(blocks_produced)(blocks_missed)(pay_rate)(pay_balance)(next_secret_hash)(last_block_num_produced) )
