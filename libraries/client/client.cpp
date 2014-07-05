@@ -2963,6 +2963,61 @@ config load_config( const fc::path& datadir )
        return upnp_info;
    }
 
+
+
+    /* DNS methods */
+
+    signed_transaction        client_impl::domain_bid( const string& domain_name,
+                                                       const share_type& bid_amount,
+                                                       const string& owner_name )
+    {
+        auto trx = _wallet->domain_bid( domain_name, bid_amount, owner_name, true ); 
+        network_broadcast_transaction( trx );
+        return trx;
+    }
+
+    signed_transaction        client_impl::domain_sell( const string& domain_name,
+                                                        const share_type& min_amount )
+    {
+        auto trx = _wallet->domain_sell( domain_name, min_amount, true);
+        network_broadcast_transaction( trx );
+        return trx;
+    }
+
+    signed_transaction        client_impl::domain_transfer( const string& domain_name,
+                                                            const string& account_name )
+    {
+        auto trx = _wallet->domain_transfer( domain_name, account_name, true );
+        network_broadcast_transaction( trx );
+        return trx;
+    }
+
+    signed_transaction        client_impl::domain_update( const string& domain_name,
+                                                          const variant& value )
+    {
+        auto trx = _wallet->domain_update( domain_name, value, true );
+        network_broadcast_transaction( trx );
+        return trx;
+    }
+
+    variant                   client_impl::domain_show( const string& domain_name )
+    {
+        return fc::variant( _chain_db->get_domain_record( domain_name ) );
+    }    
+
+
+    /* End DNS methods */
+
+
+
+
+
+
+
+
+
+
+
    } // namespace detail
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

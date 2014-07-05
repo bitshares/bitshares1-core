@@ -26,7 +26,8 @@ set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/types.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/bitcoin_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/general_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/debug_api.json")
+                           "${CMAKE_CURRENT_SOURCE_DIR}/debug_api.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/dns_api.json")
 source_group("JSON Files" FILES ${json_description_files})
 
 set(generated_api_files "${CMAKE_CURRENT_BINARY_DIR}/include/bts/api/common_api.hpp")

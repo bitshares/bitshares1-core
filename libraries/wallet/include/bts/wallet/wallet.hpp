@@ -396,6 +396,29 @@ namespace bts { namespace wallet {
          void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
 
+
+         // DNS
+         signed_transaction        domain_bid( const string& domain_name,
+                                               const share_type& bid_amount,
+                                               const string& owner_name,
+                                               bool  sign );
+
+         signed_transaction        domain_sell( const string& domain_name,
+                                                const share_type& min_amount,
+                                                bool sign );
+
+         signed_transaction        domain_transfer( const string& domain_name,
+                                                    const string& account_name,
+                                                    bool sign );
+
+         signed_transaction        domain_update( const string& domain_name,
+                                                  const variant& value,
+                                                  bool sign );
+
+
+
+
+
       private:
          unique_ptr<detail::wallet_impl> my;
    };

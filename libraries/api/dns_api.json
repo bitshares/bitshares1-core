@@ -3,57 +3,9 @@
     "methods":
     [
         {
-            "method_name": "domain_pre_bid",
-            "description": "Submit a hash of a bid to stop someone from reverse-sniping it",
-            "return_type": "transaction_id_type",
-            "parameters": 
-            [
-                {
-                    "name": "domain_name",
-                    "type": "string",
-                    "description": ""
-                },
-                {
-                    "name": "bid_amount",
-                    "type": "share_type",
-                    "description": ""
-                },
-                {
-                    "name": "owner_account",
-                    "type": "account_name",
-                    "description": ""
-                }
-            ],
-            "prerequisites": ["wallet_open"]
-        },
-        {
-            "method_name": "domain_first_bid",
-            "description": "A first bid, which must be linked to a pre_bid",
-            "return_type": "transaction_id_type",
-            "parameters": 
-            [
-                {
-                    "name": "domain_name",
-                    "type": "string",
-                    "description": ""
-                },
-                {
-                    "name": "bid_amount",
-                    "type": "share_type",
-                    "description": ""
-                },
-                {
-                    "name": "owner_account",
-                    "type": "account_name",
-                    "description": ""
-                }
-            ],
-            "prerequisites": ["wallet_open"]
-        },
-        {
             "method_name": "domain_bid",
-            "description": "Place a bid on a domain that is already in an auction.",
-            "return_type": "transaction_id_type",
+            "description": "Place a bid on a domain.",
+            "return_type": "signed_transaction",
             "parameters": 
             [
                 {
@@ -72,36 +24,12 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["wallet_open"]
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
         },
         {
-            "method_name": "domain_bid",
-            "description": "Place a bid on a domain that is already in an auction.",
-            "return_type": "transaction_id_type",
-            "parameters": 
-            [
-                {
-                    "name": "domain_name",
-                    "type": "string",
-                    "description": ""
-                },
-                {
-                    "name": "bid_amount",
-                    "type": "share_type",
-                    "description": ""
-                },
-                {
-                    "name": "owner_account",
-                    "type": "account_name",
-                    "description": ""
-                }
-            ],
-            "prerequisites": ["wallet_open"]
-        },
-        {
-            "method_name": "sell_domain",
+            "method_name": "domain_sell",
             "description": "Start an auction for a domain you own at a particular price.",
-            "return_type": "transaction_id_type",
+            "return_type": "signed_transaction",
             "parameters": 
             [
                 {
@@ -115,12 +43,12 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["wallet_open"]
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
         },
         {
-            "method_name": "update_domain",
-            "description": "Update a domain's value and/or owner.",
-            "return_type": "transaction_id_type",
+            "method_name": "domain_update",
+            "description": "Update a domain's value.",
+            "return_type": "signed_transaction",
             "parameters": 
             [
                 {
@@ -132,6 +60,20 @@
                     "name": "value",
                     "type": "json_variant",
                     "description": ""
+                }
+            ],
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
+        },
+        {
+            "method_name": "domain_transfer",
+            "description": "Update a domain's owner.",
+            "return_type": "signed_transaction",
+            "parameters": 
+            [
+                {
+                    "name": "domain_name",
+                    "type": "string",
+                    "description": ""
                 },
                 {
                     "name": "owner",
@@ -139,7 +81,21 @@
                     "description": ""
                 }
             ],
-            "prerequisites": ["wallet_open"]
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
+        },
+        {
+            "method_name": "domain_show",
+            "description": "Gets the user-specified value associated with this domain.",
+            "return_type": "json_variant",
+            "parameters": 
+            [
+                {
+                    "name": "domain_name",
+                    "type": "string",
+                    "description": ""
+                }
+            ],
+            "prerequisites": ["json_authenticated"]
         }
     ]
 }

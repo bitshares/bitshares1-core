@@ -10,6 +10,9 @@
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
+#include <bts/blockchain/dns_operations.hpp>
+#include <bts/blockchain/dns_record.hpp>
+
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
@@ -182,6 +185,17 @@ namespace bts { namespace blockchain {
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
 
+
+            // DNS
+
+            bts::db::level_map< string, domain_record >                         _domain_db;
+            // just a cache of what is in auction
+            bts::db::level_map< string, string >                                _auction_db;
+
+            // END DNS
+
+
+
             void open_database(const fc::path& data_dir );
       };
 
@@ -248,6 +262,10 @@ namespace bts { namespace blockchain {
           _bid_db.open( data_dir / "index/bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
+
+          // DNS
+          _domain_db.open( data_dir / "index/domain_db" );
+
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
@@ -1034,6 +1052,8 @@ namespace bts { namespace blockchain {
       my->_short_db.close();
       my->_collateral_db.close();
 
+      my->_domain_db.close();
+
       //my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -1419,6 +1439,63 @@ namespace bts { namespace blockchain {
         my->_known_transactions.insert( record_id );
       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
+
+
+
+
+// DNS
+
+
+   odomain_record chain_database::get_domain_record( const string& domain_name )const
+   { try {
+       auto itr = my->_domain_db.find( domain_name );
+       if( itr.valid() )
+          return itr.value();
+       return odomain_record();
+   } FC_CAPTURE_AND_RETHROW( (domain_name) ) }
+
+   void chain_database::store_domain_record( const domain_record& rec )
+   { try {
+      my->_domain_db.store( rec.domain_name, rec );
+   } FC_CAPTURE_AND_RETHROW( (rec) ) }
+
+
+
+    vector<domain_record>       chain_database::get_domain_records( const string& first_name,
+                                                        uint32_t count )const
+    {
+       auto itr = my->_domain_db.lower_bound(first_name);
+       vector<domain_record> domains;
+       while( itr.valid() && domains.size() < count )
+       {
+          domains.push_back( itr.value() );
+          ++itr;
+       }
+       return domains;
+
+    }   
+    vector<domain_record>       chain_database::get_domains_in_auction()const
+    {
+        vector<domain_record> domains;
+        auto itr = my->_auction_db.begin();
+        while( itr.valid() )
+        {
+            auto domain_rec = get_domain_record( itr.value() );
+            FC_ASSERT( domain_rec.valid(), "all domain records in auction cache should be valid" );
+            domains.push_back( *domain_rec );
+            itr++;
+        }
+        return domains;
+    }
+
+
+// END DNS
+
+
+
+
+
+
 
    void chain_database::scan_assets( function<void( const asset_record& )> callback )
    {

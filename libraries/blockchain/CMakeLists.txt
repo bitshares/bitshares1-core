@@ -32,6 +32,8 @@ add_library( bts_blockchain
              proposal_operations.cpp
              asset_operations.cpp
              market_operations.cpp
+             dns_operations.cpp
+             dns_utils.cpp
              transaction_evaluation_state.cpp
              delegate_slate.cpp
              time.cpp

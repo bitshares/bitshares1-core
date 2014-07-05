@@ -264,6 +264,18 @@ namespace bts { namespace blockchain {
          virtual void                       store_proposal_vote( const proposal_vote& r )override;
          virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const override;
 
+
+//DNS
+         virtual void                        store_domain_record( const domain_record& rec) override;
+         virtual odomain_record              get_domain_record( const string& domain_name ) const override;
+                                           
+         virtual vector<domain_record>       get_domain_records( const string& first_name,
+                                                                uint32_t count )const override;
+         virtual vector<domain_record>       get_domains_in_auction()const;
+
+
+
+
          virtual oorder_record              get_bid_record( const market_index_key& )const override;
          virtual oorder_record              get_ask_record( const market_index_key& )const override;
          virtual oorder_record              get_short_record( const market_index_key& )const override;

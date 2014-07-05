@@ -63,6 +63,8 @@ namespace bts { namespace blockchain {
       for( const auto& item : transactions )    prev_state->store_transaction( item.first, item.second );
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
       for( const auto& item : _block_stats )    prev_state->store_delegate_block_stats( item.first.first, item.first.second, item.second );
+      
+      for( const auto& item : domains )         prev_state->store_domain_record( item.second );
    }
 
    otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
@@ -163,6 +165,12 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->get_collateral_record( item.first );
          if( prev_value.valid() ) undo_state->store_collateral_record( item.first, *prev_value );
          else  undo_state->store_collateral_record( item.first, collateral_record() );
+      }
+      for( const auto& item : domains )
+      {
+         auto prev_value = prev_state->get_domain_record( item.first );
+         if( prev_value.valid() ) undo_state->store_domain_record( *prev_value );
+         else  undo_state->store_domain_record( domain_record() );
       }
       for( const auto& item : _block_stats )
       {
@@ -271,6 +279,42 @@ namespace bts { namespace blockchain {
       FC_ASSERT(prev_state);
       return prev_state->get_account_record( owner );
    }
+
+
+    // DNS
+   odomain_record pending_chain_state::get_domain_record( const std::string& domain_name )const
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      auto itr = domains.find( domain_name );
+      if( itr != domains.end() ) 
+        itr->second;
+      else if( prev_state ) 
+        return prev_state->get_domain_record( domain_name );
+      return odomain_record();
+   }
+
+   void pending_chain_state::store_domain_record( const domain_record& r )
+   {
+      domains[r.domain_name] = r;
+   }
+
+   vector<domain_record>   pending_chain_state::get_domain_records( const string& first_name,
+                                                                uint32_t count )const
+   {
+        FC_ASSERT(!"unimplemented");
+   }
+   vector<domain_record>   pending_chain_state::get_domains_in_auction()const
+   {
+        FC_ASSERT(!"unimplemented");
+   }
+
+
+    // END DNS
+
+
+
+
+
 
    oaccount_record pending_chain_state::get_account_record( account_id_type account_id )const
    {
