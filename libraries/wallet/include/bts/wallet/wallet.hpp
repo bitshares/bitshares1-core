@@ -293,11 +293,22 @@ namespace bts { namespace wallet {
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *
-          *  Requires the user have 10 BTC
+          *  Requires the user have 10 BTC + fees
           */
          signed_transaction  submit_ask( const string& from_account_name,
                                          double real_quantity, 
                                          const string& quantity_symbol,
+                                         double price_per_unit,
+                                         const string& quote_symbol,
+                                         bool sign = true );
+
+         /**
+          *  ie: submit_short( 10 USD at 600.34 USD per XTS )
+          *
+          *  Requires the user have 10 / 600.34 XTS + fees
+          */
+         signed_transaction  submit_short( const string& from_account_name,
+                                         double real_quantity_usd, 
                                          double price_per_unit,
                                          const string& quote_symbol,
                                          bool sign = true );

@@ -2707,6 +2707,15 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
+   signed_transaction client_impl::wallet_market_submit_short( const string& from_account,
+                                                             double quantity,
+                                                             double quote_price, const string& quote_symbol )
+   {
+      auto trx = _wallet->submit_short( from_account, quantity, quote_price, quote_symbol, true );
+
+      network_broadcast_transaction( trx );
+      return trx;
+   }
 
    signed_transaction client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                  const string& to_account_name,
@@ -2754,6 +2763,12 @@ config load_config( const fc::path& datadir )
                                                                        uint32_t limit  )
    {
       return _chain_db->get_market_asks( quote_symbol, base_symbol, limit );
+   }
+
+   vector<market_order>    client_impl::blockchain_market_list_shorts( const string& quote_symbol,
+                                                                       uint32_t limit  )
+   {
+      return _chain_db->get_market_shorts( quote_symbol, limit );
    }
 
    vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,

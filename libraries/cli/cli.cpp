@@ -1222,7 +1222,7 @@ namespace bts { namespace cli {
                 std::ostream& out = *_out;
 
                 out << std::setw( 40 ) << std::left << "ID";
-                out << std::setw( 10 )  << "TYPE";
+                out << std::setw( 12 )  << "TYPE";
                 out << std::setw( 20 ) << "QUANTITY";
                 out << std::setw( 20 ) << "PRICE";
                 out << std::setw( 20 ) << "BALANCE";
@@ -1233,7 +1233,7 @@ namespace bts { namespace cli {
                 for( const auto& order : order_list )
                 {
                    out << std::setw( 40 )  << std::left << variant( order.order.market_index.owner ).as_string(); //order.get_id();
-                   out << std::setw( 10  )  << variant( order.get_type() ).as_string();
+                   out << std::setw( 12  )  << variant( order.get_type() ).as_string();
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() );
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_price( order.get_price() ); //order.market_index.order_price );
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_balance() );

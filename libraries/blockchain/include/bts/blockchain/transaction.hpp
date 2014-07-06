@@ -98,6 +98,10 @@ namespace bts { namespace blockchain {
                 const price& price_per_unit, 
                 const address& owner );
 
+      void short_sell( const asset& quantity, 
+                const price& price_per_unit, 
+                const address& owner );
+
    }; // transaction
 
    struct transaction_summary_details

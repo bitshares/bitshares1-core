@@ -49,7 +49,7 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_bid_record( this->bid_index, *current_bid );
 
-      auto check   = eval_state._current_state->get_bid_record( this->bid_index );
+      //auto check   = eval_state._current_state->get_bid_record( this->bid_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    /**
@@ -98,7 +98,52 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
 
-      auto check   = eval_state._current_state->get_ask_record( this->ask_index );
+      //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+   void short_operation::evaluate( transaction_evaluation_state& eval_state )
+   {
+      if( this->short_index.order_price == price() )
+         FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
+
+      auto owner = this->short_index.owner;
+      if( !eval_state.check_signature( owner ) )
+         FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
+
+      asset delta_amount  = this->get_amount();
+      wdump( (delta_amount) );
+
+      eval_state.validate_asset( delta_amount );
+
+      auto current_short   = eval_state._current_state->get_short_record( this->short_index );
+      if( current_short ) wdump( (current_short) );
+
+      if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
+      if( this->amount <  0 ) // withdraw
+      {
+          if( NOT current_short ) 
+             FC_CAPTURE_AND_THROW( unknown_market_order, (short_index) );
+
+          if( abs(this->amount) > current_short->balance )
+             FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_short->balance) );
+
+          // add the delta amount to the eval state that we withdrew from the short
+          eval_state.add_balance( -delta_amount );
+      }
+      else // this->amount > 0 - deposit
+      {
+          if( NOT current_short )  // then initialize to 0
+            current_short = order_record();
+          // sub the delta amount from the eval state that we deposited to the short
+          eval_state.sub_balance( balance_id_type(), delta_amount );
+      }
+      
+      wdump( (amount) );
+      current_short->balance     += this->amount;
+
+      eval_state._current_state->store_short_record( this->short_index, *current_short );
+
+      //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
+   }
 
 } } // bts::blockchain

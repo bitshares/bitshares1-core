@@ -116,6 +116,7 @@ namespace bts { namespace wallet {
              bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
              bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
              bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
+             bool scan_short( wallet_transaction_record& trx_rec, const short_operation& op );
 
              bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
@@ -334,7 +335,7 @@ namespace bts { namespace wallet {
                      cache_trx |= scan_ask( *current_trx_record, op.as<ask_operation>() );
                      break;
                   case short_op_type:
-                     // TODO: FC_THROW( "short_op_type not implemented!" );
+                     cache_trx |= scan_short( *current_trx_record, op.as<short_operation>() );
                      break;
                   case cover_op_type:
                      // TODO: FC_THROW( "cover_op_type not implemented!" );
@@ -469,6 +470,18 @@ namespace bts { namespace wallet {
           }
           return false;
       } FC_CAPTURE_AND_RETHROW( (ask_op) ) } 
+
+      bool wallet_impl::scan_short( wallet_transaction_record& trx_rec, const short_operation& short_op )
+      { try {
+          auto okey_rec = _wallet_db.lookup_key( short_op.short_index.owner ); 
+          if( okey_rec && okey_rec->has_private_key() )
+          {
+             auto order = _blockchain->get_market_short( short_op.short_index );
+             _wallet_db.update_market_order( short_op.short_index.owner, order, trx_rec.trx.id() );
+             return true;
+          }
+          return false;
+      } FC_CAPTURE_AND_RETHROW( (short_op) ) } 
 
       bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
                                       const deposit_operation& op, 
@@ -2400,12 +2413,14 @@ namespace bts { namespace wallet {
            case bid_order:
               trx.bid( -balance, order.order.market_index.order_price, owner_address );
               break;
+           case short_order:
+              trx.short_sell( -balance, order.order.market_index.order_price, owner_address );
+              break;
         }
 
+        asset deposit_amount = balance;
         if( balance.asset_id == 0 )
         {
-           asset deposit_amount = balance;
-
            if( required_fees.amount < balance.amount )
            {
               deposit_amount -= required_fees;
@@ -2439,7 +2454,7 @@ namespace bts { namespace wallet {
 
         my->_blockchain->store_pending_transaction( trx, true );
 
-        my->_wallet_db.cache_transaction( trx, balance,
+        my->_wallet_db.cache_transaction( trx, deposit_amount,
                                           required_fees.amount,
                                           memo_message, 
                                           to_account_key, //from_account_key,
@@ -2535,11 +2550,7 @@ namespace bts { namespace wallet {
                                        required_signatures );
        }
 
-       // withdraw to transaction cost_share_quantity + fee
-       if( cost_shares.asset_id == 0 )
-          trx.bid( cost_shares, quote_price_shares, order_address );
-       else
-          trx.bid( cost_shares, quote_price_shares, order_address );
+       trx.bid( cost_shares, quote_price_shares, order_address );
 
        if( sign )
        {
@@ -2660,11 +2671,7 @@ namespace bts { namespace wallet {
                                        required_signatures );
        }
 
-       // withdraw to transaction cost_share_quantity + fee
-       if( cost_shares.asset_id == 0 )
-          trx.ask( cost_shares, quote_price_shares, order_address );
-       else
-          trx.ask( cost_shares, quote_price_shares, order_address );
+       trx.ask( cost_shares, quote_price_shares, order_address );
 
        if( sign )
        {
@@ -2695,6 +2702,123 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
+
+
+
+
+
+
+
+
+
+
+
+
+   /**
+    *  Short $200 USD at  $20 USD / XTS   
+    *  @param real_quantity - the amount in quote units that we wish to short sell
+    *  @param quote_price   - the price at which we are selling them 
+    *  @param quote_symbol  - the symbol of the item being sold (shorted)
+    *  @param from_account  - the account that will be providing  real_quantity / quote_price XTS to 
+    *                         fund the transaction.
+    */
+   signed_transaction  wallet::submit_short( const string& from_account_name,
+                                           double real_quantity, 
+                                           double quote_price,
+                                           const string& quote_symbol,
+                                           bool sign )
+   { try {
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+       if( NOT is_receive_account(from_account_name) )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
+       if( real_quantity <= 0 )
+          FC_CAPTURE_AND_THROW( negative_bid, (real_quantity) );
+       if( quote_price <= 0 )
+          FC_CAPTURE_AND_THROW( invalid_price, (quote_price) );
+       
+       auto quote_asset_record = my->_blockchain->get_asset_record( quote_symbol );
+       auto base_asset_record  = my->_blockchain->get_asset_record( asset_id_type(0) );
+
+       if( NOT quote_asset_record ) 
+          FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quote_symbol) );
+
+       auto from_account_key = get_account_public_key( from_account_name );
+       //auto& to_account_key = from_account_key;
+
+       if( quote_asset_record->id == 0 )
+          FC_CAPTURE_AND_THROW( shorting_base_shares, (quote_symbol) );
+
+       double cost = real_quantity / quote_price;
+       idump( (cost)(real_quantity)(quote_price) );
+
+       asset cost_shares( cost *  base_asset_record->get_precision(), base_asset_record->id );
+       asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
+       asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
+
+       auto quote_price_shares = price_shares / base_one_quantity;
+
+       auto order_key = get_new_public_key( from_account_name );
+       auto order_address = order_key;
+
+       signed_transaction trx;
+       unordered_set<address>     required_signatures;
+       required_signatures.insert(order_address);
+
+       private_key_type from_private_key  = get_account_private_key( from_account_name );
+       address          from_address( from_private_key.get_public_key() );
+
+       auto required_fees = get_priority_fee();
+
+       idump( (cost_shares)(required_fees) );
+       my->withdraw_to_transaction( cost_shares.amount + required_fees.amount, 
+                                    0, 
+                                    from_address, 
+                                    trx, 
+                                    required_signatures );
+
+       // withdraw to transaction cost_share_quantity + fee
+       trx.short_sell( cost_shares, quote_price_shares, order_address );
+
+       if( sign )
+       {
+           sign_transaction( trx, required_signatures );
+           my->_blockchain->store_pending_transaction( trx, true );
+
+           std::stringstream memoss;
+           memoss << "short " << real_quantity << " " << quote_asset_record->symbol << " @ ";
+           memoss << quote_price << " " << quote_asset_record->symbol << "/" BTS_BLOCKCHAIN_SYMBOL;
+
+           auto memo_message = memoss.str();
+
+           my->_wallet_db.cache_transaction( trx, cost_shares,
+                                             required_fees.amount,
+                                             memo_message, 
+                                             order_key,
+                                             bts::blockchain::now(),
+                                             bts::blockchain::now(),
+                                             from_account_key
+                                           );
+
+           auto key_rec = my->_wallet_db.lookup_key( order_key );
+           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           my->_wallet_db.store_key(*key_rec);
+       }
+
+       return trx;
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)
+                             (real_quantity) (quote_price)(quote_symbol)(sign) ) }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

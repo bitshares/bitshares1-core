@@ -378,7 +378,7 @@ namespace bts { namespace blockchain {
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = shorts.find( key );
-      if( rec_itr == shorts.end() ) return rec_itr->second;
+      if( rec_itr != shorts.end() ) return rec_itr->second;
       else if( prev_state ) return prev_state->get_short_record( key );
       return oorder_record();
    }
@@ -387,7 +387,7 @@ namespace bts { namespace blockchain {
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = collateral.find( key );
-      if( rec_itr == collateral.end() ) return rec_itr->second;
+      if( rec_itr != collateral.end() ) return rec_itr->second;
       else if( prev_state ) return prev_state->get_collateral_record( key );
       return ocollateral_record();
    }

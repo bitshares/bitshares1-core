@@ -67,6 +67,18 @@ namespace bts { namespace blockchain {
       operations.emplace_back(op);
    }
 
+   void transaction::short_sell( const asset& quantity, 
+                          const price& price_per_unit, 
+                          const address& owner )
+   {
+      short_operation op;
+      op.amount = quantity.amount;
+      op.short_index.order_price = price_per_unit;
+      op.short_index.owner = owner;
+
+      operations.emplace_back(op);
+   }
+
    void transaction::withdraw( const balance_id_type& account, 
                                share_type             amount )
    { try {

@@ -223,6 +223,10 @@ namespace bts { namespace blockchain {
                                                              const string& base_symbol, 
                                                              uint32_t limit = uint32_t(-1) );
 
+         optional<market_order>             get_market_short( const market_index_key& )const;
+         vector<market_order>               get_market_shorts( const string& quote_symbol, 
+                                                               uint32_t limit = uint32_t(-1) );
+
          optional<market_order>             get_market_ask( const market_index_key& )const;
          vector<market_order>               get_market_asks( const string& quote_symbol, 
                                                              const string& base_symbol, 
