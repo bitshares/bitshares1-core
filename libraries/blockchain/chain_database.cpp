@@ -1969,11 +1969,25 @@ namespace bts { namespace blockchain {
    {
       return my->_bid_db.fetch_optional(key);
    }
-   oorder_record         chain_database::get_ask_record( const market_index_key&  key )const
+   omarket_order   chain_database::get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      omarket_order result;
+      auto itr = my->_ask_db.lower_bound( market_index_key( price(0,quote_id,base_id) ) );
+      if( itr.valid() )
+      {
+         auto market_index = itr.key();
+         if( market_index.order_price.quote_asset_id == quote_id && 
+             market_index.order_price.base_asset_id == base_id      )
+            return market_order( ask_order, market_index, itr.value() );
+      }
+      return result;
+   }
+
+   oorder_record   chain_database::get_ask_record( const market_index_key&  key )const
    {
       return my->_ask_db.fetch_optional(key);
    }
-   oorder_record         chain_database::get_short_record( const market_index_key& key )const
+   oorder_record    chain_database::get_short_record( const market_index_key& key )const
    {
       return my->_short_db.fetch_optional(key);
    }

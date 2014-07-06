@@ -38,6 +38,7 @@ namespace bts { namespace blockchain {
          virtual oasset_record        get_asset_record( const string& symbol )const override;
          virtual oaccount_record      get_account_record( const string& name )const override;
 
+         virtual omarket_order        get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override;
          virtual oorder_record        get_bid_record( const market_index_key& )const override;
          virtual oorder_record        get_ask_record( const market_index_key& )const override;
          virtual oorder_record        get_short_record( const market_index_key& )const override;

@@ -700,6 +700,7 @@ namespace bts { namespace wallet {
           my->_wallet_db.open( wallet_file_path );
           my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
 
+
           master_key new_master_key;
           extended_private_key epk;
           if( !brainkey.empty() )
@@ -725,6 +726,7 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
+          my->_current_wallet_path = wallet_file_path;
 
 
           FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
