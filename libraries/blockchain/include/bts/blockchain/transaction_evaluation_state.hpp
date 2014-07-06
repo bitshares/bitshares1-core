@@ -1,7 +1,6 @@
 #pragma once 
+
 #include <bts/blockchain/types.hpp>
-#include <bts/blockchain/transaction.hpp>
-#include <bts/blockchain/asset.hpp>
 
 namespace bts { namespace blockchain { 
 
@@ -76,7 +75,6 @@ namespace bts { namespace blockchain {
          // increases with funds are withdrawn, decreases when funds are deposited or fees paid
          optional<fc::exception>                     validation_error;
          
-         
          /** every time a deposit is made this balance is increased
           *  every time a deposit is required this balance is decreased
           *
@@ -102,7 +100,6 @@ namespace bts { namespace blockchain {
           */
          unordered_map<asset_id_type, share_type>    balance;
 
-
          struct vote_state
          {
             vote_state():votes_for(0){}
@@ -114,7 +111,6 @@ namespace bts { namespace blockchain {
           *  the deposits and withdraws to addresses.
           */
          unordered_map<account_id_type, vote_state>     net_delegate_votes;
-
 
       // not serialized
          chain_interface_ptr                              _current_state;

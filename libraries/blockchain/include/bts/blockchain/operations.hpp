@@ -1,7 +1,8 @@
 #pragma once 
-#include <bts/blockchain/address.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
-#include <fc/time.hpp>
+
+#include <fc/io/enum_type.hpp>
+#include <fc/io/raw.hpp>
+#include <fc/reflect/reflect.hpp>
 
 /**
  *  The C keyword 'not' is NOT friendly on VC++ but we still want to use
@@ -100,7 +101,6 @@ namespace bts { namespace blockchain {
       fc::enum_type<uint8_t,operation_type_enum> type;
       std::vector<char> data;
    };
-
 
 } } // bts::blockchain
 

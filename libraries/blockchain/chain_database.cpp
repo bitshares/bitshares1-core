@@ -1,12 +1,7 @@
 //#define DEFAULT_LOGGER "blockchain"
 
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/genesis_config.hpp>
-#include <bts/blockchain/time.hpp>
-#include <bts/blockchain/operation_factory.hpp>
-#include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
@@ -16,13 +11,13 @@
 #include <bts/blockchain/dns_record.hpp>
 
 #include <bts/db/level_map.hpp>
+#include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
-#include <bts/db/level_pod_map.hpp>
 
+#include <fc/io/fstream.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
-#include <fc/io/fstream.hpp>
-#include <fc/log/logger.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -89,7 +84,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
-            void                       initialize_genesis(fc::optional<fc::path> genesis_file);
+            void                                        initialize_genesis(fc::optional<fc::path> genesis_file);
 
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
@@ -1697,7 +1692,6 @@ namespace bts { namespace blockchain {
       account_record god; god.id = 0; god.name = "god";
       self->store_account_record( god );
 
-
       fc::time_point_sec timestamp = config.timestamp;
       std::vector<account_id_type> delegate_ids;
       int32_t account_id = 1;
@@ -2212,9 +2206,41 @@ namespace bts { namespace blockchain {
 
           ++market_itr;
        }
-       ilog( "end of db" );
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
+
+   optional<market_order> chain_database::get_market_short( const market_index_key& key )const
+   { try {
+       auto market_itr  = my->_short_db.find(key);
+       if( market_itr.valid() )
+          return market_order { short_order, market_itr.key(), market_itr.value() };
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
+
+   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, 
+                                                          uint32_t limit  )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = 0;
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+
+       auto market_itr  = my->_short_db.begin();
+       while( market_itr.valid() )
+       {
+          results.push_back( {short_order, market_itr.key(), market_itr.value()} );
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
+
 
 
    optional<market_order> chain_database::get_market_ask( const market_index_key& key )const

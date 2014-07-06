@@ -767,7 +767,7 @@
                },
                {
                   "name" : "maximum_share_supply",
-                  "type" : "int64_t",
+                  "type" : "real_amount",
                   "description" : "the maximum number of shares of the asset",
                   "default_value" : 1000000000000000
                },
@@ -1040,6 +1040,35 @@
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "ask" ]
+      },
+      {
+         "method_name" : "wallet_market_submit_short",
+         "description" : "Used to place a request to short sell a quantity of assets at a price specified",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "quote_price",
+               "type" : "real_amount",
+               "description" : "the price you would like to sell"
+            },
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "short" ]
       },
       {
          "method_name" : "wallet_market_order_list",

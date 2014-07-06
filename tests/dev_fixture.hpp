@@ -151,12 +151,7 @@ struct chain_fixture
                                 "a3331c76c729494f18a479f4c9a5b17d936ec89fca24b6287b8a84ce1aea60a8"])").as<vector< fc::ecc::private_key>>();
 
       genesis_block_config config;
-      config.precision         = BTS_BLOCKCHAIN_PRECISION;
       config.timestamp         = bts::blockchain::now();
-      config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
-      config.base_name         = BTS_BLOCKCHAIN_NAME;
-      config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
-      config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
 
       for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
       {

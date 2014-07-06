@@ -1,4 +1,5 @@
 #pragma  once
+
 #include <bts/blockchain/chain_interface.hpp>
 
 namespace bts { namespace blockchain {
@@ -7,7 +8,6 @@ namespace bts { namespace blockchain {
    {
       public:
          pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
-
 
          void set_prev_state( chain_interface_ptr prev_state );
 

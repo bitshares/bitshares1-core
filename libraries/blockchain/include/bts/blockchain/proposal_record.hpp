@@ -1,9 +1,9 @@
 #pragma once
+
 #include <bts/blockchain/types.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
-//#include <bts/blockchain/transaction.hpp>
 
 namespace bts { namespace blockchain {
+
    struct proposal_record
    {
       bool is_null()const { return submitting_delegate_id == -1; }
@@ -12,7 +12,7 @@ namespace bts { namespace blockchain {
       proposal_record():ratified(false){}
 
       proposal_id_type      id;
-      name_id_type          submitting_delegate_id; // the delegate_id of the submitter
+      account_id_type       submitting_delegate_id; // the delegate id of the submitter
       fc::time_point_sec    submission_date;
       string                subject;
       string                body;
@@ -39,6 +39,7 @@ namespace bts { namespace blockchain {
       fc::enum_type<uint8_t,vote_type>  vote;
    };
    typedef fc::optional<proposal_vote> oproposal_vote;
+
 }} // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::proposal_vote::vote_type, (no)(yes)(undefined) )

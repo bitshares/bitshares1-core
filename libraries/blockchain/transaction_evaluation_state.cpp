@@ -1,6 +1,6 @@
 #include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
 
 namespace bts { namespace blockchain { 
 
@@ -12,6 +12,7 @@ namespace bts { namespace blockchain {
    transaction_evaluation_state::~transaction_evaluation_state()
    {
    }
+
    void transaction_evaluation_state::reset()
    {
       signed_keys.clear();
@@ -35,7 +36,6 @@ namespace bts { namespace blockchain {
       if( !current_account->is_delegate() ) FC_CAPTURE_AND_THROW( not_a_delegate, (id) );
    }
 
-
    void transaction_evaluation_state::add_required_deposit( const address& owner_key, const asset& amount )
    {
       FC_ASSERT( trx.delegate_slate_id );
@@ -56,7 +56,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::update_delegate_votes()
    {
-      auto asset_rec = _current_state->get_asset_record( BASE_ASSET_ID );
+      auto asset_rec = _current_state->get_asset_record( asset_id_type() );
 
       for( auto del_vote : net_delegate_votes )
       {
@@ -250,6 +250,4 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_to_validate) );
    }
 
-
-} } 
-
+} } // bts::blockchain

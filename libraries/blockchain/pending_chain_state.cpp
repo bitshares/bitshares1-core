@@ -1,10 +1,9 @@
 #include <bts/blockchain/pending_chain_state.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/log/logger.hpp>
 
 #include <algorithm>
 
 namespace bts { namespace blockchain {
+
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
    :_prev_state( prev_state )
    {
@@ -380,6 +379,7 @@ namespace bts { namespace blockchain {
       if( prev_state ) return prev_state->get_property( property_id );
       return fc::variant();
    }
+
    void pending_chain_state::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
    {
@@ -436,7 +436,7 @@ namespace bts { namespace blockchain {
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = shorts.find( key );
-      if( rec_itr == shorts.end() ) return rec_itr->second;
+      if( rec_itr != shorts.end() ) return rec_itr->second;
       else if( prev_state ) return prev_state->get_short_record( key );
       return oorder_record();
    }
@@ -445,7 +445,7 @@ namespace bts { namespace blockchain {
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = collateral.find( key );
-      if( rec_itr == collateral.end() ) return rec_itr->second;
+      if( rec_itr != collateral.end() ) return rec_itr->second;
       else if( prev_state ) return prev_state->get_collateral_record( key );
       return ocollateral_record();
    }

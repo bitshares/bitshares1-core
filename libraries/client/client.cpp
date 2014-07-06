@@ -28,6 +28,7 @@
 #include <fc/io/json.hpp>
 #include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
+#include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/hex.hpp>
 
@@ -1444,10 +1445,10 @@ config load_config( const fc::path& datadir )
     bts::blockchain::signed_transaction detail::client_impl::wallet_asset_create(const string& symbol,
                                                                     const string& asset_name,
                                                                     const string& issuer_name,
-                                                                    const string& description /* = fc::variant("").as<string>() */,
-                                                                    const variant& data /* = fc::variant("").as<fc::variant_object>() */,
-                                                                    int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */,
-                                                                    int64_t precision /* = 1 */,
+                                                                    const string& description,
+                                                                    const variant& data,
+                                                                    double maximum_share_supply ,
+                                                                    int64_t precision,
                                                                     bool    is_market_issued /* = false */)
     {
       generate_transaction_flag flag = sign_and_broadcast;
@@ -2706,6 +2707,15 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
+   signed_transaction client_impl::wallet_market_submit_short( const string& from_account,
+                                                             double quantity,
+                                                             double quote_price, const string& quote_symbol )
+   {
+      auto trx = _wallet->submit_short( from_account, quantity, quote_price, quote_symbol, true );
+
+      network_broadcast_transaction( trx );
+      return trx;
+   }
 
    signed_transaction client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                  const string& to_account_name,
@@ -2753,6 +2763,12 @@ config load_config( const fc::path& datadir )
                                                                        uint32_t limit  )
    {
       return _chain_db->get_market_asks( quote_symbol, base_symbol, limit );
+   }
+
+   vector<market_order>    client_impl::blockchain_market_list_shorts( const string& quote_symbol,
+                                                                       uint32_t limit  )
+   {
+      return _chain_db->get_market_shorts( quote_symbol, limit );
    }
 
    vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,

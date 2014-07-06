@@ -1,11 +1,11 @@
-#include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/extended_address.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
+
 #include <fc/crypto/aes.hpp>
 #include <fc/reflect/variant.hpp>
-#include <fc/io/raw.hpp>
-#include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
+
    const uint8_t withdraw_with_signature::type    = withdraw_signature_type;
    const uint8_t withdraw_with_multi_sig::type    = withdraw_multi_sig_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
@@ -16,7 +16,7 @@ namespace bts { namespace blockchain {
                    const fc::ecc::private_key& opk )
    :memo_data(memo),has_valid_signature(valid_signature),owner_private_key(opk){}
 
-   void        memo_data::set_message( const std::string& message_str )
+   void memo_data::set_message( const std::string& message_str )
    {
       FC_ASSERT( message_str.size() <= sizeof( message ) );
       if( message_str.size() )
@@ -30,11 +30,11 @@ namespace bts { namespace blockchain {
       return std::string( (const char*)&message, sizeof(message) ).c_str();
    }
 
-
    balance_id_type withdraw_condition::get_address()const
    {
       return address( *this );
    }
+
    omemo_status withdraw_with_signature::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
    { try {
       FC_ASSERT( memo.valid() );
@@ -69,7 +69,6 @@ namespace bts { namespace blockchain {
 
       return memo_status( memo, has_valid_signature, secret_private_key );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
-
 
    void  withdraw_with_signature::encrypt_memo_data( const fc::ecc::private_key& one_time_private_key, 
                                    const fc::ecc::public_key&  to_public_key,
@@ -174,6 +173,7 @@ namespace fc {
             break;
       }
    }
+
    void to_variant( const bts::blockchain::memo_data& var,  variant& vo )
    {
       mutable_variant_object obj("from",var.from);
@@ -182,6 +182,7 @@ namespace fc {
          ("memo_flags",var.memo_flags);
       vo = std::move( obj );
    }
+
    void from_variant( const variant& var,  bts::blockchain::memo_data& vo )
    { try {
       const variant_object& obj = var.get_object();
