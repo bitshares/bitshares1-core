@@ -3498,27 +3498,7 @@ namespace bts { namespace wallet {
       return war->approved;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
 
-   vector<wallet_balance_record>  wallet::get_unspent_balances( const string& account_name,
-                                                               const string& symbol ) const
-   { try {
-      vector<wallet_balance_record> balances;
-      for( const auto& balance_item : my->_wallet_db.get_balances() )
-      {
-    /*     auto owner = balance_item.second.owner();
-         if( balance_item.second.asset_id() == asset_id && 
-             address_in_account( owner, from_account_address ) )
-         {
-    */
-            if( balance_item.second.balance > 0 )
-            {
-               balances.push_back( balance_item.second );
-            }
-    //    }
-      }
-      return balances;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("symbol",symbol) ) }
-
-   optional<wallet_account_record>         wallet::get_account_record( const address& addr)const
+   optional<wallet_account_record> wallet::get_account_record( const address& addr)const
    {
       return my->_wallet_db.lookup_account( addr );
    }
@@ -3562,12 +3542,15 @@ namespace bts { namespace wallet {
       return result;
    }
 
+   // TODO: Input parameter to filter by account name
    account_balance_summary_type wallet::get_account_balances()const
    { try {
       FC_ASSERT( is_open() );
+
       auto pending_state = my->_blockchain->get_pending_state();
       account_balance_summary_type result;
       map< address, map< asset_id_type, share_type> > raw_results;
+
       for( const auto& b : my->_wallet_db.get_balances() )
       {
           auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
@@ -3581,6 +3564,7 @@ namespace bts { namespace wallet {
              }
           }
       }
+
       for( const auto& account : raw_results )
       {
          auto oaccount = my->_wallet_db.lookup_account( account.first );
@@ -3591,6 +3575,7 @@ namespace bts { namespace wallet {
             result[name][symbol] = item.second;
          }
       }
+
       return result;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
 

@@ -28,11 +28,6 @@
          "cpp_return_type" : "bts::wallet::wallet_balance_record"
       },
       {
-         "type_name" : "wallet_balance_record_array",
-         "container_type" : "array",
-         "contained_type" : "wallet_balance_record"
-      },
-      {
         "type_name" : "account_record",
         "cpp_return_type" : "bts::blockchain::account_record",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -283,8 +278,8 @@
         "default_example" : "TODO"
       },
       {
-         "type_name" : "map<account_name, map<asset_symbol, share_type>>",
-         "cpp_return_type" : "std::map<std::string, std::map<std::string, bts::blockchain::share_type>>"
+         "type_name" : "account_balance_summary_type",
+         "cpp_return_type" : "bts::wallet::account_balance_summary_type"
       },
       {
          "type_name" : "market_order",
