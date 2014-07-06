@@ -227,6 +227,7 @@ namespace bts { namespace blockchain {
          vector<market_order>               get_market_shorts( const string& quote_symbol, 
                                                                uint32_t limit = uint32_t(-1) );
 
+         virtual omarket_order              get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override; 
          optional<market_order>             get_market_ask( const market_index_key& )const;
          vector<market_order>               get_market_asks( const string& quote_symbol, 
                                                              const string& base_symbol, 
