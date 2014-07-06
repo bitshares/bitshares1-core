@@ -2782,7 +2782,7 @@ config load_config( const fc::path& datadir )
 
    account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )const
    {
-      if( !_chain_db->is_valid_account_name( account_name ) )
+      if( !account_name.empty() && !_chain_db->is_valid_account_name( account_name ) )
           FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
       return _wallet->get_account_vote_summary( account_name );
