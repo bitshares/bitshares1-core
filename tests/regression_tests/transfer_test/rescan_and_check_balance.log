@@ -3,6 +3,7 @@ Rescanning blockchain...
 Scan complete.
 OK
 default (unlocked) >>> wallet_account_balance test
-test:
-    100.00000 XTS
+ACCOUNT                         BALANCE                 
+--------------------------------------------------------
+test                            100.00000 XTS           
 default (unlocked) >>> quit

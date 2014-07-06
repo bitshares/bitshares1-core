@@ -3542,14 +3542,13 @@ namespace bts { namespace wallet {
       return result;
    }
 
-   // TODO: Input parameter to filter by account name
-   account_balance_summary_type wallet::get_account_balances()const
+   account_balance_summary_type wallet::get_account_balances( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
 
-      auto pending_state = my->_blockchain->get_pending_state();
+      const auto pending_state = my->_blockchain->get_pending_state();
       account_balance_summary_type result;
-      map< address, map< asset_id_type, share_type> > raw_results;
+      map<address, map<asset_id_type, share_type>> raw_results;
 
       for( const auto& b : my->_wallet_db.get_balances() )
       {
@@ -3560,7 +3559,15 @@ namespace bts { namespace wallet {
              if( pending_balance )
              {
                 asset bal = pending_balance->get_balance();
-                raw_results[ okey_rec->account_address ][ bal.asset_id ] += bal.amount;
+                if( bal.amount <= 0 ) continue;
+
+                if( raw_results.count( okey_rec->account_address ) <= 0 )
+                    raw_results[ okey_rec->account_address ] = map<asset_id_type, share_type>();
+
+                if( raw_results[ okey_rec->account_address ].count( bal.asset_id ) <= 0 )
+                    raw_results[ okey_rec->account_address ][ bal.asset_id ] = bal.amount;
+                else
+                    raw_results[ okey_rec->account_address ][ bal.asset_id ] += bal.amount;
              }
           }
       }
@@ -3569,8 +3576,12 @@ namespace bts { namespace wallet {
       {
          auto oaccount = my->_wallet_db.lookup_account( account.first );
          string name = oaccount ? oaccount->name : string(account.first);
+         if( !account_name.empty() && name != account_name ) continue;
          for( const auto& item : account.second )
          {
+            if( result.count( name ) <= 0 )
+                result[name] = map<string, share_type>();
+
             string symbol = my->_blockchain->get_asset_symbol( item.first );
             result[name][symbol] = item.second;
          }

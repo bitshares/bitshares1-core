@@ -375,9 +375,9 @@ namespace bts { namespace wallet {
          unordered_map<address,string>    get_send_addresses()const;
          */
          
-         account_balance_summary_type       get_account_balances()const;
+         account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
 
-         account_vote_summary_type          get_account_vote_summary( const string& account_name )const;
+         account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
          vector<market_order_status>        get_market_orders( const string& quote, const string& base )const;
 

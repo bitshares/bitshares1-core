@@ -2662,22 +2662,16 @@ config load_config( const fc::path& datadir )
 
    account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      account_balance_summary_type balances;
-      if( account_name.empty() )
-      {
-         balances = _wallet->get_account_balances();
-      }
-      else
+      if( !account_name.empty() )
       {
          if( !_chain_db->is_valid_account_name( account_name ) )
             FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
          if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
-
-         balances[ account_name ] = _wallet->get_account_balances()[ account_name ];
       }
-      return balances;
+
+      return _wallet->get_account_balances( account_name );
    }
 
    signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
