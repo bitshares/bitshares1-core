@@ -1,4 +1,5 @@
 #include <bts/blockchain/block.hpp>
+#include <algorithm>
 
 namespace bts { namespace blockchain {
 

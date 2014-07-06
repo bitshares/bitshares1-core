@@ -2,6 +2,7 @@
 #include <bts/blockchain/exceptions.hpp>
 
 #include <algorithm>
+#include <locale>
 
 namespace bts{ namespace blockchain {
 
@@ -157,8 +158,9 @@ namespace bts{ namespace blockchain {
          return false;
       if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
          return false;
+      std::locale loc;
       for( const auto& c : name )
-         if( !std::isalnum(c) || !std::isupper(c) )
+         if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
             return false;
       return true;
    }
