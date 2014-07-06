@@ -106,6 +106,12 @@ namespace bts { namespace blockchain {
          map< market_index_key, collateral_record>                      collateral; 
          map<time_point_sec, slot_record>                               slots;
 
+         /**
+          * Set of markets that have had changes to their bids/asks and therefore must 
+          * be executed 
+          */
+         map<asset_id_type, asset_id_type>                              _dirty_markets;
+
          chain_interface_weak_ptr                                       _prev_state;
    };
 

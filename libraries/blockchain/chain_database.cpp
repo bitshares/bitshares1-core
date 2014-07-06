@@ -101,6 +101,7 @@ namespace bts { namespace blockchain {
             std::pair<block_id_type, block_fork_data>   recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
             void                                        recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
+            void                                        execute_markets( const pending_chain_state_ptr& pending_state );
             void                                        update_random_seed( secret_hash_type new_secret,
                                                                            const pending_chain_state_ptr& pending_state );
             void                                        update_active_delegate_list(const full_block& block_data,
@@ -702,6 +703,38 @@ namespace bts { namespace blockchain {
              pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(active_del) );
           }
       }
+      void chain_database_impl::execute_markets( const pending_chain_state_ptr& pending_state )
+      { try { 
+        for( auto market_pair : pending_state->_dirty_markets )
+        {
+           FC_ASSERT( market_pair.first > market_pair.second ) 
+
+           // if( market_pair.first is market issued asset )
+           {
+              // while highest_call < lowest-ask
+              //    trade
+              // while highest_call < lowest short
+              //    trade
+           }
+           /* TODO: verify lower bound is working properly... fix get_bid/ask orders which also use lower bound 
+           auto bid_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, market_pair.first,   market_pair.second) ) );
+           auto ask_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, market_pair.first+1, market_pair.second) ) );
+           while( bid_itr.valid() && ask_itr.valid() )
+           {
+              ++bid_itr;
+              --ask_itr;
+           }
+           */
+
+           // while highest_bid > lowest_ask 
+           //    trade... 
+           // while highest_bid > lowest_short 
+           //    trade...
+
+           // if there are any fees collected other than XTS... 
+           //  try to match that order...
+        } 
+      } FC_CAPTURE_AND_RETHROW() }
 
       /**
        *  Performs all of the block validation steps and throws if error.
@@ -730,6 +763,8 @@ namespace bts { namespace blockchain {
             //apply_deterministic_updates(pending_state);
 
             apply_transactions( block_data, block_data.user_transactions, pending_state );
+
+            execute_markets( pending_state );
 
             pay_delegate( block_data.id(), block_data.delegate_pay_rate, pending_state );
 
