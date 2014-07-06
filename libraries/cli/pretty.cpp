@@ -52,6 +52,11 @@ string pretty_timestamp( const time_point_sec& timestamp )
 
 string pretty_percent( double part, double whole, int precision )
 {
+    FC_ASSERT( part >= 0 );
+    FC_ASSERT( whole >= 0 );
+    FC_ASSERT( precision >= 0 );
+    FC_ASSERT( part <= whole );
+    if( whole <= 0 ) return "N/A";
     const auto percent = 100 * part / whole;
     std::stringstream ss;
     ss << std::setprecision( precision ) << std::fixed << percent << " %";
