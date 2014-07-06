@@ -2648,11 +2648,6 @@ config load_config( const fc::path& datadir )
       fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
     }
 
-    vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
-    {
-       return _wallet->get_unspent_balances( account_name, symbol );
-    }
-
     vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
     {
         vector<public_key_summary> summaries;
@@ -2665,10 +2660,13 @@ config load_config( const fc::path& datadir )
         return summaries;
     }
 
-   map<string, map<string, int64_t>> client_impl::wallet_account_balance( const string& account_name )
+   account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      if( account_name == string() || account_name == "*")
-         return _wallet->get_account_balances();
+      account_balance_summary_type balances;
+      if( account_name.empty() )
+      {
+         balances = _wallet->get_account_balances();
+      }
       else
       {
          if( !_chain_db->is_valid_account_name( account_name ) )
@@ -2677,12 +2675,9 @@ config load_config( const fc::path& datadir )
          if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
-         auto all_balances = _wallet->get_account_balances();
-         map<string, map<string,int64_t>> balance;
-         balance[account_name] = all_balances[account_name];
-         balance[account_name][BTS_BLOCKCHAIN_SYMBOL] = all_balances[account_name][BTS_BLOCKCHAIN_SYMBOL];
-         return balance;
+         balances[ account_name ] = _wallet->get_account_balances()[ account_name ];
       }
+      return balances;
    }
 
    signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
@@ -2784,8 +2779,12 @@ config load_config( const fc::path& datadir )
       network_broadcast_transaction( trx );
       return trx;
    }
-   account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )
+
+   account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )const
    {
+      if( !_chain_db->is_valid_account_name( account_name ) )
+          FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
+
       return _wallet->get_account_vote_summary( account_name );
    }
 
