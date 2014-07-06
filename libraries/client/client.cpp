@@ -1445,10 +1445,10 @@ config load_config( const fc::path& datadir )
     bts::blockchain::signed_transaction detail::client_impl::wallet_asset_create(const string& symbol,
                                                                     const string& asset_name,
                                                                     const string& issuer_name,
-                                                                    const string& description /* = fc::variant("").as<string>() */,
-                                                                    const variant& data /* = fc::variant("").as<fc::variant_object>() */,
-                                                                    int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */,
-                                                                    int64_t precision /* = 1 */,
+                                                                    const string& description,
+                                                                    const variant& data,
+                                                                    double maximum_share_supply ,
+                                                                    int64_t precision,
                                                                     bool    is_market_issued /* = false */)
     {
       generate_transaction_flag flag = sign_and_broadcast;

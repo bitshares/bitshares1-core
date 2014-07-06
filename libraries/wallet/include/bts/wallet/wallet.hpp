@@ -267,8 +267,8 @@ namespace bts { namespace wallet {
                                            const string& description,
                                            const variant& data,
                                            const string& issuer_name,
-                                           share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
-                                           int64_t  precision = 1,
+                                           double max_share_supply,
+                                           int64_t  precision,
                                            bool is_market_issued = false,
                                            bool sign = true );
 

@@ -4,6 +4,7 @@
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/ripemd160.hpp>
+#include <algorithm>
 
 namespace bts { namespace blockchain {
 

@@ -2,6 +2,7 @@
 #include <bts/blockchain/withdraw_types.hpp>
 
 #include <fc/crypto/base58.hpp>
+#include <algorithm>
 
 namespace bts {
   namespace blockchain {

@@ -186,6 +186,7 @@ namespace bts { namespace blockchain {
                                    int64_t      precision )
    {
       FC_ASSERT( max_share_supply > 0 );
+      FC_ASSERT( max_share_supply <= BTS_BLOCKCHAIN_MAX_SHARES );
       create_asset_operation op;
       op.symbol = symbol;
       op.name = name;

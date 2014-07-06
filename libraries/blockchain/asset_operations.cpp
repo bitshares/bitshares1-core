@@ -18,6 +18,8 @@ namespace bts { namespace blockchain {
 
       if( this->maximum_share_supply <= 0 )
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (maximum_share_supply) );
+      if( this->maximum_share_supply > BTS_BLOCKCHAIN_MAX_SHARES )
+         FC_CAPTURE_AND_THROW( invalid_asset_amount, (maximum_share_supply) );
 
       auto current_asset_record = eval_state._current_state->get_asset_record( this->symbol );
       if( current_asset_record )
