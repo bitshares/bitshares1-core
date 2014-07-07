@@ -425,15 +425,19 @@ namespace bts { namespace wallet {
                                            const create_asset_operation& op  )
       {
          wlog( "${op}", ("op",op) );
-         auto oissuer =  _blockchain->get_account_record( op.issuer_account_id );
-         FC_ASSERT( oissuer.valid() );
-         auto opt_key_rec = _wallet_db.lookup_key( oissuer->owner_key );
-         if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
+
+         if( op.issuer_account_id != asset_record::market_issued_asset )
          {
-            trx_rec.to_account = oissuer->owner_key;
-            trx_rec.from_account = oissuer->owner_key;
-            trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
-            return true;
+            auto oissuer =  _blockchain->get_account_record( op.issuer_account_id );
+            FC_ASSERT( oissuer.valid() );
+            auto opt_key_rec = _wallet_db.lookup_key( oissuer->owner_key );
+            if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
+            {
+               trx_rec.to_account = oissuer->owner_key;
+               trx_rec.from_account = oissuer->owner_key;
+               trx_rec.memo_message = "create " + op.symbol + " ("+op.name+")";
+               return true;
+            }
          }
          return false;
       }
