@@ -1682,6 +1682,26 @@ namespace bts { namespace blockchain {
          ++account_id;
       }
 
+      int32_t asset_id = 1;
+      for (const auto& asset : config.market_assets)
+      {
+         asset_record rec;
+         rec.id = asset_id;
+         rec.symbol = asset.symbol;
+         rec.name = asset.name;
+         rec.description = asset.description;
+         rec.public_data = variant("");
+         rec.issuer_account_id = 0;
+         rec.precision = asset.precision;
+         rec.registration_date = bts::blockchain::now();
+         rec.last_update = bts::blockchain::now();
+         rec.current_share_supply = 0;
+         rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+         rec.collected_fees = 0;
+         self->store_asset_record( rec );
+         ++asset_id;
+      }
+
       int64_t n = 0;
       for( const auto& item : config.balances )
       {
