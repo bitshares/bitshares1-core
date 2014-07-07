@@ -1,22 +1,17 @@
 #pragma once
-#include <bts/blockchain/types.hpp>
-#include <bts/blockchain/operations.hpp>
-#include <bts/blockchain/error_codes.hpp>
+
 #include <bts/blockchain/delegate_slate.hpp>
-#include <fc/optional.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/io/raw.hpp>
-
+#include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/proposal_record.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 
-#include <unordered_set>
+#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace blockchain {
 
    class chain_interface;
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
    typedef std::weak_ptr<chain_interface> chain_interface_weak_ptr;
-   struct fire_delegate_operation;
 
    /**
     *  A transaction is a set of operations that are
@@ -67,10 +62,10 @@ namespace bts { namespace blockchain {
       void register_account( const string& name, 
                          const variant& public_data, 
                          const public_key_type& master, 
-                         const public_key_type& active, 
+                         const public_key_type& active,
                          uint8_t pro_fee = 255 );
 
-      void update_account( account_id_type name_id, 
+      void update_account( account_id_type account_id,
                         uint8_t delegate_pay_rate,
                         const optional<variant>& public_data, 
                         const optional<public_key_type>& active );
@@ -96,6 +91,14 @@ namespace bts { namespace blockchain {
                          int64_t      precision );
 
       void bid( const asset& quantity, 
+                const price& price_per_unit, 
+                const address& owner );
+
+      void ask( const asset& quantity, 
+                const price& price_per_unit, 
+                const address& owner );
+
+      void short_sell( const asset& quantity, 
                 const price& price_per_unit, 
                 const address& owner );
 
@@ -140,7 +143,6 @@ namespace bts { namespace blockchain {
       variant                                public_data;
    }; // transaction_summary
 
-
    struct signed_transaction : public transaction
    {
       transaction_id_type                     id()const;
@@ -152,7 +154,6 @@ namespace bts { namespace blockchain {
    typedef vector<signed_transaction> signed_transactions;
    typedef optional<signed_transaction> osigned_transaction;
 
-
    struct transaction_location
    {
       transaction_location( uint32_t block_num = 0, uint32_t trx_num = 0 )
@@ -161,9 +162,7 @@ namespace bts { namespace blockchain {
       uint32_t block_num;
       uint32_t trx_num;
    };
-
    typedef optional<transaction_location> otransaction_location;
-
 
 } } // bts::blockchain 
 

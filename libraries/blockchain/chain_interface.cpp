@@ -1,10 +1,8 @@
 #include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <fc/io/json.hpp>
+
 #include <algorithm>
-#include <sstream>
-#include <cctype>
+#include <locale>
 
 namespace bts{ namespace blockchain {
 
@@ -27,26 +25,27 @@ namespace bts{ namespace blockchain {
       return address();
    }
 
-   share_type     chain_interface::get_delegate_registration_fee()const
+   share_type chain_interface::get_delegate_registration_fee()const
    {
 #if BTS_BLOCKCHAIN_VERSION > 104
       return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/BTS_BLOCKCHAIN_NUM_DELEGATES;
-#warning Remove below deprecated delegate registration fee calculation
+#warning [HARDFORK] Remove below deprecated delegate registration fee calculation
 #else
       return (get_fee_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/1000;
 #endif
    }
-   share_type    chain_interface::get_asset_registration_fee()const
+
+   share_type chain_interface::get_asset_registration_fee()const
    {
 #if BTS_BLOCKCHAIN_VERSION > 104
       return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
-#warning Remove below deprecated asset registration fee calculation
+#warning [HARDFORK] Remove below deprecated asset registration fee calculation
 #else
       return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
 #endif
    }
    
-   share_type    chain_interface::calculate_data_fee(size_t bytes) const
+   share_type chain_interface::calculate_data_fee(size_t bytes) const
    {
       return (get_fee_rate() * bytes)/1000;
    }
@@ -131,7 +130,6 @@ namespace bts{ namespace blockchain {
       tmp.ratio *= obase_asset->get_precision();
       tmp.ratio /= oquote_asset->get_precision();
 
-
       return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
 
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
@@ -160,8 +158,9 @@ namespace bts{ namespace blockchain {
          return false;
       if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
          return false;
+      std::locale loc;
       for( const auto& c : name )
-         if( !std::isalnum(c) || !std::isupper(c) )
+         if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
             return false;
       return true;
    }

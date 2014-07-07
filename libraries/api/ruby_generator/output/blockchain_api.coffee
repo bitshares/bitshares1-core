@@ -121,6 +121,25 @@ class BlockchainAPI
     @rpc.request('blockchain_market_list_bids', [quote_symbol, base_symbol, limit]).then (response) ->
       response.result
 
+  # Returns the ask side of the order book for a given market
+  # parameters: 
+  #   asset_symbol `quote_symbol` - the symbol name the market is quoted in
+  #   asset_symbol `base_symbol` - the item being bought in this market
+  #   uint32_t `limit` - the maximum number of items to return, -1 for all
+  # return_type: `market_order_array`
+  market_list_asks: (quote_symbol, base_symbol, limit) ->
+    @rpc.request('blockchain_market_list_asks', [quote_symbol, base_symbol, limit]).then (response) ->
+      response.result
+
+  # Returns the short side of the order book for a given market
+  # parameters: 
+  #   asset_symbol `quote_symbol` - the symbol name the market is quoted in
+  #   uint32_t `limit` - the maximum number of items to return, -1 for all
+  # return_type: `market_order_array`
+  market_list_shorts: (quote_symbol, limit) ->
+    @rpc.request('blockchain_market_list_shorts', [quote_symbol, limit]).then (response) ->
+      response.result
+
   # Returns a list of the current round's active delegates in signing order
   # parameters: 
   #   uint32_t `first` - 
@@ -165,12 +184,12 @@ class BlockchainAPI
     @rpc.request('blockchain_list_forks').then (response) ->
       response.result
 
-  # Query the block production stats for a particular delegate
+  # Query the block production slot records for a particular delegate
   # parameters: 
-  #   string `delegate_name` - Delegate whose block stats to query
-  # return_type: `delegate_block_stats_map`
-  get_delegate_block_stats: (delegate_name) ->
-    @rpc.request('blockchain_get_delegate_block_stats', [delegate_name]).then (response) ->
+  #   string `delegate_name` - Delegate whose block production slot records to query
+  # return_type: `slot_records_list`
+  get_delegate_slot_records: (delegate_name) ->
+    @rpc.request('blockchain_get_delegate_slot_records', [delegate_name]).then (response) ->
       response.result
 
   # Get the delegate that signed a given block

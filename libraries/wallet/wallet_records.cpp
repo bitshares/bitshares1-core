@@ -52,6 +52,9 @@ namespace bts { namespace wallet {
          case ask_order:
             asset_id = order.market_index.order_price.base_asset_id;
             break;
+         case short_order:
+            asset_id = 0; // always base shares for shorts.
+            break;
          default:
             FC_ASSERT( !"Not Implemented" );
       }
@@ -67,6 +70,13 @@ namespace bts { namespace wallet {
             return get_balance() * get_price();
          }
          case ask_order:
+         { // balance is in USD  divide by price
+            return get_balance();
+         }
+         case short_order:
+         {
+            return get_balance() * get_price();
+         }
          default:
             FC_ASSERT( !"Not Implemented" );
       }

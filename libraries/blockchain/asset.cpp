@@ -1,23 +1,15 @@
-#define __STDC_CONSTANT_MACROS
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <fc/exception/exception.hpp>
-#include <fc/crypto/bigint.hpp>
-#include <fc/log/logger.hpp>
+
 #include <fc/reflect/variant.hpp>
+#include <fc/uint128.hpp>
+
 #include <sstream>
-#include <cstdint>
 
-
-
-/** more base 10 digits is beyond the precision of 64 bits */
-#define BASE10_PRECISION  UINT64_C(100000000000000)
-
+#define BTS_PRICE_PRECISION uint64_t(BTS_BLOCKCHAIN_MAX_SHARES*1000)
 
 namespace bts { namespace blockchain {
-
-
 
   asset::operator std::string()const
   {
@@ -65,6 +57,7 @@ namespace bts { namespace blockchain {
      static fc::uint128_t o = fc::uint128(1,0);
      return o;
   }
+
   const fc::uint128& price::infinite()
   {
       static fc::uint128 i(-1);
@@ -145,6 +138,7 @@ namespace bts { namespace blockchain {
 
      return number;
   }
+
   price::operator std::string()const
   { try {
      auto number = ratio_string();
@@ -188,7 +182,6 @@ namespace bts { namespace blockchain {
         return p;
     } FC_RETHROW_EXCEPTIONS( warn, "${a} / ${b}", ("a",a)("b",b) );
   }
-
 
   /**
    *  Assuming a.type is either the numerator.type or denominator.type in
@@ -254,12 +247,11 @@ namespace bts { namespace blockchain {
 
   }
 
-
-
-
 } } // bts::blockchain
+
 namespace fc
 {
+
 /*
    void to_variant( const bts::blockchain::asset& var,  variant& vo )
    {
@@ -284,4 +276,5 @@ namespace fc
      from_variant( obj["quote_asset_id"], vo.quote_asset_id );
      from_variant( obj["base_asset_id"], vo.base_asset_id );
    }
-}
+
+} // fc

@@ -1,14 +1,19 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK
+default (unlocked) >>> wait 1
+OK
 default (unlocked) >>> filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_import_private_key "5JMnSU8bfBcu67oA9KemNm5jbs9RTp2eBHqxoR53WWyB4CH2QJF" account-for-client1 true false
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
 OK
+default (unlocked) >>> wait 1
+OK
 default (unlocked) >>> wallet_account_balance account-for-client1
-account-for-client1:
-    150.00000 XTS
+ACCOUNT                         BALANCE                 
+--------------------------------------------------------
+account-for-client1             150.00000 XTS           
 default (unlocked) >>> wallet_transfer 100 XTS account-for-client1 test-account "take this"
     BLK.TRX  TIMESTAMP           FROM                TO                  AMOUNT              FEE                 MEMO                                   ID      
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -16,6 +21,7 @@ default (unlocked) >>> wallet_transfer 100 XTS account-for-client1 test-account 
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> wallet_account_balance account-for-client1
-account-for-client1:
-    49.90000 XTS
+ACCOUNT                         BALANCE                 
+--------------------------------------------------------
+account-for-client1             49.90000 XTS            
 default (unlocked) >>> quit

@@ -1,4 +1,5 @@
 #pragma  once
+
 #include <bts/blockchain/chain_interface.hpp>
 
 namespace bts { namespace blockchain {
@@ -8,7 +9,6 @@ namespace bts { namespace blockchain {
       public:
          pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
 
-
          void set_prev_state( chain_interface_ptr prev_state );
 
          virtual ~pending_chain_state()override;
@@ -16,8 +16,8 @@ namespace bts { namespace blockchain {
          fc::ripemd160                get_current_random_seed()const override;
 
          virtual fc::time_point_sec   now()const override;
-         virtual int64_t              get_fee_rate()const override;
-         virtual int64_t              get_delegate_pay_rate()const override;
+         virtual share_type           get_fee_rate()const override;
+         virtual share_type           get_delegate_pay_rate()const override;
 
          virtual oasset_record        get_asset_record( asset_id_type id )const override;
          virtual obalance_record      get_balance_record( const balance_id_type& id )const override;
@@ -38,6 +38,7 @@ namespace bts { namespace blockchain {
          virtual oasset_record        get_asset_record( const string& symbol )const override;
          virtual oaccount_record      get_account_record( const string& name )const override;
 
+         virtual omarket_order        get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override;
          virtual oorder_record        get_bid_record( const market_index_key& )const override;
          virtual oorder_record        get_ask_record( const market_index_key& )const override;
          virtual oorder_record        get_short_record( const market_index_key& )const override;
@@ -62,11 +63,9 @@ namespace bts { namespace blockchain {
          virtual void                 set_property( chain_property_enum property_id, 
                                                           const variant& property_value )override;
 
-         virtual void                   store_delegate_block_stats( const account_id_type& delegate_id,
-                                                                    uint32_t block_num,
-                                                                    const delegate_block_stats& block_stats )override;
-         virtual odelegate_block_stats  get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                  uint32_t block_num )const override;
+         virtual void                 store_slot_record( const slot_record& r ) override;
+         virtual oslot_record         get_slot_record( const time_point_sec& start_time )const override;
+
          /**
           *  Based upon the current state of the database, calculate any updates that
           *  should be executed in a deterministic manner.
@@ -105,8 +104,13 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                           asks; 
          map< market_index_key, order_record>                           shorts; 
          map< market_index_key, collateral_record>                      collateral; 
+         map<time_point_sec, slot_record>                               slots;
 
-         map<std::pair<account_id_type, uint32_t>, delegate_block_stats> _block_stats;
+         /**
+          * Set of markets that have had changes to their bids/asks and therefore must 
+          * be executed 
+          */
+         map<asset_id_type, asset_id_type>                              _dirty_markets;
 
          chain_interface_weak_ptr                                       _prev_state;
    };
@@ -117,4 +121,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(_block_stats) )
+            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots) )

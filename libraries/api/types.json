@@ -28,11 +28,6 @@
          "cpp_return_type" : "bts::wallet::wallet_balance_record"
       },
       {
-         "type_name" : "wallet_balance_record_array",
-         "container_type" : "array",
-         "contained_type" : "wallet_balance_record"
-      },
-      {
         "type_name" : "account_record",
         "cpp_return_type" : "bts::blockchain::account_record",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -283,8 +278,8 @@
         "default_example" : "TODO"
       },
       {
-         "type_name" : "map<account_name, map<asset_symbol, share_type>>",
-         "cpp_return_type" : "std::map<std::string, std::map<std::string, bts::blockchain::share_type>>"
+         "type_name" : "account_balance_summary_type",
+         "cpp_return_type" : "bts::wallet::account_balance_summary_type"
       },
       {
          "type_name" : "market_order",
@@ -525,14 +520,18 @@
           "cpp_return_type" : "std::map<bts::blockchain::account_id_type, std::string>"
       },
       {
-          "type_name" : "delegate_block_stats_map",
-          "cpp_return_type" : "std::map<uint32_t, bts::blockchain::delegate_block_stats>",
-          "cpp_include_file" : "bts/blockchain/account_record.hpp"
+          "type_name" : "slot_records_list",
+          "cpp_return_type" : "std::vector<bts::blockchain::slot_record>",
+          "cpp_include_file" : "bts/blockchain/block_record.hpp"
       },
       {
           "type_name" : "map<uint32_t, vector<fork_record>>",
           "cpp_return_type" : "std::map<uint32_t, std::vector<bts::blockchain::fork_record>>",
           "cpp_include_file" : "bts/blockchain/chain_database.hpp"
+      },
+      {
+          "type_name" : "map<transaction_id_type, fc::exception>",
+          "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, fc::exception>"
       }
     ]
 }

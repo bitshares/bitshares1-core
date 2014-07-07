@@ -1,15 +1,9 @@
 #pragma once
-#include <bts/blockchain/types.hpp>
+
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/pending_chain_state.hpp>
-#include <bts/blockchain/block.hpp>
-
-#include <fc/filesystem.hpp>
-
-#include <functional>
 
 namespace bts { namespace blockchain {
-
 
    namespace detail { class chain_database_impl; }
 
@@ -103,7 +97,9 @@ namespace bts { namespace blockchain {
 
          void add_observer( chain_observer* observer );
          void remove_observer( chain_observer* observer );
-         void set_priority_fee( int64_t shares );
+
+         void set_priority_fee( share_type shares );
+         share_type get_priority_fee();
 
          void sanity_check()const;
 
@@ -187,7 +183,7 @@ namespace bts { namespace blockchain {
          vector<asset_record>     get_assets( const string& first_symbol, 
                                               uint32_t count )const;
 
-         std::map<uint32_t, delegate_block_stats> get_delegate_block_stats( const account_id_type& delegate_id )const;
+         std::vector<slot_record> get_delegate_slot_records( const account_id_type& delegate_id )const;
 
          std::map<uint32_t, std::vector<fork_record> > get_forks_list()const;
          std::string export_fork_graph( uint32_t start_block = 1, uint32_t end_block = -1, const fc::path& filename = "" )const;
@@ -207,13 +203,12 @@ namespace bts { namespace blockchain {
           */
          virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, share_type min_fee = 0 );
 
-
          /** return the timestamp from the head block */
          virtual time_point_sec         now()const override;
 
          /** return the current fee rate in millishares */
-         virtual int64_t                    get_fee_rate()const override;
-         virtual int64_t                    get_delegate_pay_rate()const override;
+         virtual share_type                 get_fee_rate()const override;
+         virtual share_type                 get_delegate_pay_rate()const override;
 
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;
@@ -225,6 +220,16 @@ namespace bts { namespace blockchain {
 
          optional<market_order>             get_market_bid( const market_index_key& )const;
          vector<market_order>               get_market_bids( const string& quote_symbol, 
+                                                             const string& base_symbol, 
+                                                             uint32_t limit = uint32_t(-1) );
+
+         optional<market_order>             get_market_short( const market_index_key& )const;
+         vector<market_order>               get_market_shorts( const string& quote_symbol, 
+                                                               uint32_t limit = uint32_t(-1) );
+
+         virtual omarket_order              get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override; 
+         optional<market_order>             get_market_ask( const market_index_key& )const;
+         vector<market_order>               get_market_asks( const string& quote_symbol, 
                                                              const string& base_symbol, 
                                                              uint32_t limit = uint32_t(-1) );
 
@@ -267,11 +272,8 @@ namespace bts { namespace blockchain {
          virtual void                       store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                       store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
-         virtual void                       store_delegate_block_stats( const account_id_type& delegate_id,
-                                                                        uint32_t block_num,
-                                                                        const delegate_block_stats& block_stats )override;
-         virtual odelegate_block_stats      get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                      uint32_t block_num )const override;
+         virtual void                       store_slot_record( const slot_record& r )override;
+         virtual oslot_record               get_slot_record( const time_point_sec& start_time )const override;
 
       private:
          unique_ptr<detail::chain_database_impl> my;

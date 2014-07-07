@@ -1,7 +1,7 @@
 #pragma once
+
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
-#include <bts/blockchain/transaction.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -13,7 +13,7 @@ namespace bts { namespace blockchain {
       balance_record( const withdraw_condition& c )
       :balance(0),condition(c){}
 
-      balance_record( const address& owner, const asset& balance, name_id_type delegate_id );
+      balance_record( const address& owner, const asset& balance, account_id_type delegate_id );
 
       /** condition.get_address() */
       balance_id_type            id()const { return condition.get_address(); }
@@ -32,6 +32,7 @@ namespace bts { namespace blockchain {
       fc::time_point_sec         last_update;
    };
    typedef fc::optional<balance_record> obalance_record;
-} }
+
+} } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(last_update) )

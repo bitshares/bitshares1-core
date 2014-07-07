@@ -1,19 +1,12 @@
-#include <fc/crypto/ripemd160.hpp>
-#include <fc/crypto/elliptic.hpp>
+#include <bts/blockchain/config.hpp>
+#include <bts/blockchain/types.hpp>
+
 #include <fc/crypto/base58.hpp>
-#include <fc/io/varint.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/io/raw.hpp>
 
-#include <bts/blockchain/types.hpp>
-#include <bts/blockchain/config.hpp>
-#include <bts/blockchain/address.hpp>
-
-
 namespace bts { namespace blockchain {
 
-    using std::string;   
- 
     public_key_type::public_key_type():key_data(){};
 
     public_key_type::public_key_type( const fc::ecc::public_key_data& data )
@@ -37,6 +30,7 @@ namespace bts { namespace blockchain {
     {
        return key_data;    
     };
+
     public_key_type::operator fc::ecc::public_key() const
     {
        return fc::ecc::public_key( key_data );
@@ -50,6 +44,7 @@ namespace bts { namespace blockchain {
        auto data = fc::raw::pack( k );
        return BTS_ADDRESS_PREFIX + fc::to_base58( data.data(), data.size() );
     }
+
     bool operator == ( const public_key_type& p1, const fc::ecc::public_key& p2)
     {
        return p1.key_data == p2.serialize();
@@ -59,14 +54,13 @@ namespace bts { namespace blockchain {
     {
        return p1.key_data == p2.key_data;
     }
+
     bool operator != ( const public_key_type& p1, const public_key_type& p2)
     {
        return p1.key_data != p2.key_data;
     }
 
-
-}} //bts::blockchain
-
+} } // bts::blockchain
 
 namespace fc
 {
@@ -74,8 +68,9 @@ namespace fc
     {
         vo = std::string(var);
     }
+
     void from_variant( const fc::variant& var,  bts::blockchain::public_key_type& vo )
     {
         vo = bts::blockchain::public_key_type( var.as_string() );
     }
-} //fc
+} // fc

@@ -1,0 +1,31 @@
+default (unlocked) >>> wait 5
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> wait 1
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> wait 1
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> wait 1
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> wait 1
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
+OK
+default (unlocked) >>> wait 1
+OK
+default (unlocked) >>> quit

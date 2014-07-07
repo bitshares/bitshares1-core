@@ -283,18 +283,32 @@
       },
       {
         "method_name": "wallet_account_transaction_history",
-        "description": "Lists all transactions for the specified account",
+        "description": "Lists transaction history for the specified account",
         "return_type": "pretty_transactions",
         "parameters" : 
           [
             { 
-              "name" : "account_name", 
-              "type" : "account_name", 
+              "name" : "account_name",
+              "type" : "string",
               "description" : "the name of the account for which the transaction history will be returned",
               "example" : "alice",
               "default_value" : ""
-            }          ],
+            },
+            {
+               "name" : "start_block_num",
+               "type" : "uint32_t",
+               "description" : "the earliest block number to list transactions from; -1 to include all transactions starting from genesis",
+               "default_value" : -1
+            },
+            {
+               "name" : "end_block_num",
+               "type" : "uint32_t",
+               "description" : "the latest block to list transaction from; -1 to include all transactions ending at the head block",
+               "default_value" : -1
+            }
+        ],
         "prerequisites" : ["wallet_open"],
+        "is_const": true,
         "aliases" : ["history"]
       },
       {
@@ -303,6 +317,15 @@
         "return_type": "void",
         "parameters" : [],
         "prerequisites" : ["wallet_open"],
+        "aliases" : []
+      },
+      {
+        "method_name": "wallet_get_pending_transaction_errors",
+        "description": "Return any errors for your currently pending transactions",
+        "return_type": "map<transaction_id_type, fc::exception>",
+        "parameters" : [],
+        "prerequisites" : ["wallet_open"],
+        "is_const": true,
         "aliases" : []
       },
       {
@@ -402,8 +425,8 @@
       },
       {
         "method_name": "wallet_approve_delegate",
-        "description": "Updates your approval of the specified delegate",
-        "return_type": "void",
+        "description": "Updates your approval for the specified delegate",
+        "return_type": "bool",
         "parameters" : 
           [
             { 
@@ -414,8 +437,8 @@
             { 
               "name" : "approved",
               "type" : "bool",
-              "description" : "true to approve and false for neutral",
-              "default_value" : false
+              "description" : "true to approve and false otherwise",
+              "default_value" : true
             }
           ],
         "prerequisites" : ["wallet_open"],
@@ -744,7 +767,7 @@
                },
                {
                   "name" : "maximum_share_supply",
-                  "type" : "int64_t",
+                  "type" : "real_amount",
                   "description" : "the maximum number of shares of the asset",
                   "default_value" : 1000000000000000
                },
@@ -753,6 +776,12 @@
                   "type" : "int64_t",
                   "description" : "defines where the decimal should be displayed, must be a power of 10",
                   "default_value" : 1000000
+               },
+               {
+                  "name" : "is_market_issued",
+                  "type" : "bool",
+                  "description" : "creation of a new BitAsset that is created by shorting",
+                  "default_value": false
                }
             ],
          "prerequisites" : ["wallet_unlocked"]
@@ -780,7 +809,8 @@
                {
                   "name" : "memo_message",
                   "type" : "string",
-                  "description" : "the memo to send to the receiver"
+                  "description" : "the memo to send to the receiver",
+                  "default_value": ""
                }
             ],
          "detailed_description" : "The asset being issued must have been created via wallet_asset_create in a previous block.",
@@ -849,37 +879,18 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_list_unspent_balances",
-         "description" : "Lists the unspent balances that are controlled by this wallet",
-         "return_type" : "wallet_balance_record_array",
-         "parameters"  : [
-           {
-                "name" : "account_name",
-                "type" : "account_name",
-                "description" : "the account for which unspent balances should be listed",
-                "default_value" : "*"
-           },
-           {
-               "name" : "symbol",
-               "type" : "asset_symbol",
-               "description" : "The symbol to filter by, '*' for all",
-                "default_value" : "*"
-           }
-         ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
          "method_name"    : "wallet_account_balance",
-         "description"    : "Lists the total balances of all accounts sorted by account and asset",
-         "return_type"    : "map<account_name, map<asset_symbol, share_type>>",
+         "description"    : "Lists the total asset balances for the specified account",
+         "return_type"    : "account_balance_summary_type",
          "parameters"     : [
          {
             "name" : "account_name",
             "type" : "account_name",
-            "description" : "the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned",
-            "default_value" : "*"
+            "description" : "the account to get a balance for, or leave empty for all accounts",
+            "default_value" : ""
          }
          ],
+         "is_const" : true,
          "prerequisites" : ["wallet_open"],
          "aliases" : ["balance"]
       },
@@ -978,6 +989,69 @@
          "aliases" : [ "bid" ]
       },
       {
+         "method_name" : "wallet_market_submit_ask",
+         "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to sell"
+            },
+            {
+               "name" : "quote_price",
+               "type" : "real_amount",
+               "description" : "the price you would like to sell"
+            },
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "ask" ]
+      },
+      {
+         "method_name" : "wallet_market_submit_short",
+         "description" : "Used to place a request to short sell a quantity of assets at a price specified",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "quote_price",
+               "type" : "real_amount",
+               "description" : "the price you would like to sell"
+            },
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "short" ]
+      },
+      {
          "method_name" : "wallet_market_order_list",
          "description" : "List an order list of a specific market",
          "return_type" : "market_order_status_array",
@@ -1042,8 +1116,9 @@
                 "default_value" : ""
             }
           ],
-          "aliases" : ["votes"],
-         "prerequisites" : ["wallet_open"]
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["votes"]
       },
       {
          "method_name" : "wallet_account_export_private_key",

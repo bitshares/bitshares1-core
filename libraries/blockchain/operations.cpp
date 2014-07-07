@@ -42,6 +42,7 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<bid_operation>();
       bts::blockchain::operation_factory::instance().register_operation<ask_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<short_operation>();
       bts::blockchain::operation_factory::instance().register_operation<define_delegate_slate_operation>();
       return true;
    }();
@@ -73,7 +74,11 @@ namespace bts { namespace blockchain {
    {
       switch( n )
       {
+#if BTS_BLOCKCHAIN_VERSION > 104
+#warning [HARDFORK] Remove below invalid asset precision
+#else
          case 0ll:
+#endif
          case 1ll:
          case 10ll:
          case 100ll:

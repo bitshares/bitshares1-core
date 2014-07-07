@@ -82,12 +82,7 @@ BOOST_AUTO_TEST_CASE( master_test )
    vector<fc::ecc::private_key> delegate_private_keys;
 
    genesis_block_config config;
-   config.precision         = BTS_BLOCKCHAIN_PRECISION;
    config.timestamp         = bts::blockchain::now();
-   config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
-   config.base_name         = BTS_BLOCKCHAIN_NAME;
-   config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
-   config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
 
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
@@ -401,12 +396,7 @@ void create_genesis_block(fc::path genesis_json_file)
    vector<fc::ecc::private_key> delegate_private_keys;
 
    genesis_block_config config;
-   config.precision         = BTS_BLOCKCHAIN_PRECISION;
    config.timestamp         = bts::blockchain::now();
-   config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
-   config.base_name         = BTS_BLOCKCHAIN_NAME;
-   config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
-   config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
 
    // set our fake random number generator to generate deterministic keys
    set_random_seed_for_testing(fc::sha512());

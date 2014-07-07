@@ -1,10 +1,8 @@
 #include <bts/blockchain/asset_operations.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
-
  
    /**
     *  @note in this method we are using 'this->' to refer to member variables for
@@ -19,6 +17,8 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
 
       if( this->maximum_share_supply <= 0 )
+         FC_CAPTURE_AND_THROW( invalid_asset_amount, (maximum_share_supply) );
+      if( this->maximum_share_supply > BTS_BLOCKCHAIN_MAX_SHARES )
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (maximum_share_supply) );
 
       auto current_asset_record = eval_state._current_state->get_asset_record( this->symbol );
