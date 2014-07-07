@@ -274,6 +274,31 @@
         "aliases" : ["market_shorts"]
       },
       {
+        "method_name" : "blockchain_market_order_book",
+        "description" : "Returns the long and short sides of the order book for a given market",
+        "return_type" : "pair<market_order_array,market_order_array>",
+        "parameters"  : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "the item being bought in this market"
+           },
+           {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "the maximum number of items to return, -1 for all",
+              "default_value" : "-1"
+           }
+        ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["market_book"]
+      },
+      {
          "method_name" : "blockchain_list_active_delegates",
          "description" : "Returns a list of the current round's active delegates in signing order",
          "return_type" : "account_record_array",

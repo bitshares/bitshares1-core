@@ -2771,6 +2771,34 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_shorts( quote_symbol, limit );
    }
 
+   std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
+                                                                                              const string& base_symbol,
+                                                                                              uint32_t limit  )
+   {
+      auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
+
+      if( _chain_db->get_asset_id(base_symbol) == 0 )
+      {
+        auto shorts = blockchain_market_list_shorts(quote_symbol, limit);
+        bids.reserve(bids.size() + shorts.size());
+        for( auto order : shorts )
+          bids.push_back(order);
+        std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
+          return a.market_index < b.market_index;
+        });
+
+        if( bids.size() > limit )
+          bids.resize(limit);
+      }
+
+      auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
+      std::sort(asks.begin(), asks.end(), [](const market_order& a, const market_order& b) -> bool {
+        return a.market_index < b.market_index;
+      });
+
+      return std::make_pair(bids, asks);
+   }
+
    vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                  const string& base_symbol,
                                                                  int64_t limit  )
