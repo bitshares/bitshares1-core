@@ -1787,13 +1787,26 @@ namespace bts { namespace blockchain {
 
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t count )const
     { try {
-       auto itr = my->_account_index_db.lower_bound(first);
        std::vector<account_record> names;
+       auto itr = my->_account_index_db.begin();
+
+       if( first.size() > 0 && isdigit(first[0]) )
+       {
+         int32_t skip = atoi(first.c_str()) - 1;
+
+         while( skip-- > 0 && itr++.valid() );
+       }
+       else
+       {
+         itr = my->_account_index_db.lower_bound(first);
+       }
+
        while( itr.valid() && names.size() < count )
        {
           names.push_back( *get_account_record( itr.value() ) );
           ++itr;
        }
+
        return names;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
 
