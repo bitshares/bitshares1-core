@@ -2798,7 +2798,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_transactions_for_block(id);
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors(  int32_t first_error_number, uint32_t limit, const string& filename )const
+   map<fc::time_point, fc::exception> client_impl::list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
    {
       map<fc::time_point, fc::exception> result;
       int count = 0;
@@ -2828,20 +2828,24 @@ config load_config( const fc::path& datadir )
       return result;
    }
 
-   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
+   map<fc::time_point, std::string> client_impl::list_errors_brief( int32_t first_error_number, uint32_t limit, const string& filename ) const
    {
-      map<fc::time_point, std::string> result;
-      auto itr = _exception_db.lower_bound( start_time );
-      while( itr.valid() )
+      map<fc::time_point, fc::exception> full_errors = list_errors(first_error_number, limit, "");
+
+      map<fc::time_point, std::string> brief_errors;
+      for (auto full_error : full_errors)
+        brief_errors.emplace(std::make_pair(full_error.first, full_error.second.what()));
+
+      if( filename != "" )
       {
-         if (--first_error_number)
-             continue;
-         result[itr.key()] = itr.value().what();
-         ++itr;
-         if (--limit == 0)
-             break;
+          fc::path file_path( filename );
+          FC_ASSERT( !fc::exists( file_path ) );
+          std::ofstream out( filename.c_str() );
+          for( auto item : brief_errors )
+             out << std::string(item.first) << "  " << item.second <<"\n";
       }
-      return result;
+
+      return brief_errors;
    }
 
    void client_impl::clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
