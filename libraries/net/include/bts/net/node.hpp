@@ -10,7 +10,14 @@ namespace bts { namespace net {
 
   using fc::variant_object;
 
-   namespace detail { class node_impl; }
+  namespace detail
+  { 
+    class node_impl;
+    struct node_impl_deleter
+    {
+      void operator()(node_impl*);
+    };
+  }
 
   // during network development, we need to track message propagation across the network
   // using a structure like this:
@@ -228,7 +235,7 @@ namespace bts { namespace net {
         void disable_peer_advertising();
 
       private:
-        std::unique_ptr<detail::node_impl> my;
+        std::unique_ptr<detail::node_impl, detail::node_impl_deleter> my;
    };
 
     class simulated_network : public node

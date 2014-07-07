@@ -47,6 +47,8 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
+//#define P2P_IN_DEDICATED_THREAD 1
+
 namespace bts { namespace net { 
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
@@ -197,11 +199,41 @@ namespace bts { namespace net { namespace detail {
         return (signed)(rhs.sequence_number - sequence_number) > 0;
       }
     };
+
+    class thread_switching_node_delegate_wrapper : public node_delegate
+    {
+    private:
+      fc::thread* _thread;
+      node_delegate *_node_delegate;
+    public:
+      thread_switching_node_delegate_wrapper(fc::thread* thread, node_delegate* delegate);
+      bool has_item( const net::item_id& id ) override;
+      bool handle_message( const message&, bool sync_mode ) override;
+      std::vector<item_hash_t> get_item_ids(uint32_t item_type,
+                                            const std::vector<item_hash_t>& blockchain_synopsis,
+                                            uint32_t& remaining_item_count,
+                                            uint32_t limit = 2000) override;
+      message get_item( const item_id& id ) override;
+      fc::sha256 get_chain_id() const override;
+      std::vector<item_hash_t> get_blockchain_synopsis(uint32_t item_type, 
+                                                       const bts::net::item_hash_t& reference_point = bts::net::item_hash_t(), 
+                                                       uint32_t number_of_blocks_after_reference_point = 0) override;
+      void     sync_status( uint32_t item_type, uint32_t item_count ) override;
+      void     connection_count_changed( uint32_t c ) override;
+      uint32_t get_block_number(const item_hash_t& block_id) override;
+      fc::time_point_sec get_block_time(const item_hash_t& block_id) override;
+      fc::time_point_sec get_blockchain_now() override;
+      void error_encountered(const std::string& message, const fc::oexception& error) override;
+    };
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     class node_impl : public peer_connection_delegate
     {
     public:
+#ifdef P2P_IN_DEDICATED_THREAD
+      std::shared_ptr<fc::thread> _thread;
+#endif // P2P_IN_DEDICATED_THREAD
       node_delegate*       _delegate;
       fc::sha256           _chain_id;
 
@@ -450,6 +482,7 @@ namespace bts { namespace net { namespace detail {
       void broadcast( const message& item_to_broadcast );
       void sync_from( const item_id& );
       bool is_connected() const;
+      std::vector<potential_peer_record> get_potential_peers() const;
       void set_advanced_node_parameters( const fc::variant_object& params );
 
       fc::variant_object         get_advanced_node_parameters();
@@ -469,7 +502,23 @@ namespace bts { namespace net { namespace detail {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    void node_impl_deleter::operator()(node_impl* impl_to_delete)
+    {
+#ifdef P2P_IN_DEDICATED_THREAD
+      if (impl_to_delete)
+      {
+        std::shared_ptr<fc::thread> impl_thread(impl_to_delete->_thread);
+        impl_thread->async([impl_to_delete](){ delete impl_to_delete; }).wait();
+      }
+#else // P2P_IN_DEDICATED_THREAD
+      delete impl_to_delete;
+#endif // P2P_IN_DEDICATED_THREAD
+    }
+
     node_impl::node_impl() : 
+#ifdef P2P_IN_DEDICATED_THREAD
+      _thread(std::make_shared<fc::thread>("p2p")),
+#endif // P2P_IN_DEDICATED_THREAD
       _delegate( nullptr ),
       _potential_peer_database_updated(false),
       _sync_items_to_fetch_updated(false),
@@ -1566,35 +1615,41 @@ namespace bts { namespace net { namespace detail {
     //    blocks the peer has already told us it has
     std::vector<item_hash_t> node_impl::create_blockchain_synopsis_for_peer( const peer_connection* peer )
     {
-      item_hash_t reference_point;
-      uint32_t number_of_blocks_after_reference_point = 0;
+      item_hash_t reference_point = peer->last_block_delegate_has_seen;
+      uint32_t reference_point_block_num = peer->last_block_number_delegate_has_seen;
+      uint32_t number_of_blocks_after_reference_point = peer->ids_of_items_to_get.size();
 
-      reference_point = peer->last_block_delegate_has_seen;
-      number_of_blocks_after_reference_point = peer->ids_of_items_to_get.size();
-
-      std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
+      // when we call _delegate->get_blockchain_synopsis(), we may yield and there's a
+      // chance this peer's state will change before we get control back.  Save off 
+      // the stuff necessary for generating the synopsis.
+      // This is pretty expensive, we should find a better way to do this
+      std::unique_ptr<std::vector<item_hash_t> > original_ids_of_items_to_get(new std::vector<item_hash_t>(peer->ids_of_items_to_get.begin(), peer->ids_of_items_to_get.end()));
       
+      std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
+      assert( reference_point == item_hash_t() || !synopsis.empty() );
+      
+#if 0 // I have no idea why this code was here .. bad merge?
       // if we passed in a reference point, we believe it is one the client has already accepted and should
       // be able to generate a synopsis based on it
       if( reference_point != item_hash_t() && synopsis.empty() )
       {
         synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
       }
-      assert( reference_point == item_hash_t() || !synopsis.empty() );
+#endif
 
       if( number_of_blocks_after_reference_point )
       {
         // then the synopsis is incomplete, add the missing elements from ids_of_items_to_get
-        uint32_t true_high_block_num = peer->last_block_number_delegate_has_seen + number_of_blocks_after_reference_point;
+        uint32_t true_high_block_num = reference_point_block_num + number_of_blocks_after_reference_point;
         uint32_t low_block_num = 1;
         do
         {
-          if( low_block_num > peer->last_block_number_delegate_has_seen )
-            synopsis.push_back( peer->ids_of_items_to_get[low_block_num - peer->last_block_number_delegate_has_seen - 1] );
+          if( low_block_num > reference_point_block_num )
+            synopsis.push_back( (*original_ids_of_items_to_get)[low_block_num - reference_point_block_num - 1] );
           low_block_num += ( (true_high_block_num - low_block_num + 2 ) / 2 );
         }
         while ( low_block_num <= true_high_block_num );
-        assert( synopsis.back() == peer->ids_of_items_to_get.back() );
+        assert( synopsis.back() == original_ids_of_items_to_get->back() );
       }
       return synopsis;
     }
@@ -2974,6 +3029,15 @@ namespace bts { namespace net { namespace detail {
       return !_active_connections.empty();
     }
 
+    std::vector<potential_peer_record> node_impl::get_potential_peers() const
+    {
+      std::vector<potential_peer_record> result;
+      // use explicit iterators here, for some reason the mac compiler can't used ranged-based for loops here
+      for (peer_database::iterator itr = _potential_peer_db.begin(); itr != _potential_peer_db.end(); ++itr)
+        result.push_back(*itr);
+      return result;
+    }
+
     void node_impl::set_advanced_node_parameters( const fc::variant_object& params )
     {
       if( params.contains("peer_connection_retry_timeout" ) )
@@ -3067,11 +3131,19 @@ namespace bts { namespace net { namespace detail {
 
 
 
-  ///////////////////////////////////////////////////////////////////////
-  // implement node functions, they just delegate to detail::node_impl //
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // implement node functions, they call the matching function in to detail::node_impl in the correct thread //
+
+#ifdef P2P_IN_DEDICATED_THREAD
+# define INVOKE_IN_IMPL(method_name, ...) \
+    return my->_thread->async([&](){ return my->method_name(__VA_ARGS__); }).wait()
+#else
+# define INVOKE_IN_IMPL(method_name, ...) \
+    return my->method_name(__VA_ARGS__)
+#endif // P2P_IN_DEDICATED_THREAD
 
   node::node() : 
-    my( new detail::node_impl() )
+    my( new detail::node_impl )
   {
   }
 
@@ -3081,132 +3153,141 @@ namespace bts { namespace net { namespace detail {
 
   void node::set_node_delegate( node_delegate* del )
   {
-    my->set_node_delegate( del );
+#ifdef P2P_IN_DEDICATED_THREAD
+    del = new detail::thread_switching_node_delegate_wrapper(&fc::thread::current(), del);
+#endif
+    INVOKE_IN_IMPL(set_node_delegate, del);
   }
 
   void node::load_configuration( const fc::path& configuration_directory )
   {
-    my->load_configuration( configuration_directory );
+    INVOKE_IN_IMPL(load_configuration, configuration_directory);
   }
 
   void node::listen_to_p2p_network()
   {
-    my->listen_to_p2p_network();
+    INVOKE_IN_IMPL(listen_to_p2p_network);
   }
 
   void node::connect_to_p2p_network()
   {
-    my->connect_to_p2p_network();
+    INVOKE_IN_IMPL(connect_to_p2p_network);
   }
 
   void node::add_node( const fc::ip::endpoint& ep )
   {
-    my->add_node( ep );
+    INVOKE_IN_IMPL(add_node, ep);
   }
 
   void node::connect_to( const fc::ip::endpoint& remote_endpoint )
   {
-    my->connect_to( remote_endpoint );
+    INVOKE_IN_IMPL(connect_to, remote_endpoint);
   }
 
   void node::listen_on_endpoint( const fc::ip::endpoint& ep )
   {
-    my->listen_on_endpoint( ep );
+    INVOKE_IN_IMPL(listen_on_endpoint, ep);
   }
 
   void node::listen_on_port( uint16_t port, bool wait_if_not_available )
   {
-    my->listen_on_port( port, wait_if_not_available );
+    INVOKE_IN_IMPL(listen_on_port, port, wait_if_not_available);
   }
 
   fc::ip::endpoint node::get_actual_listening_endpoint() const
   {
-    return my->get_actual_listening_endpoint();
+    INVOKE_IN_IMPL(get_actual_listening_endpoint);
   }
 
   std::vector<peer_status> node::get_connected_peers() const
   {
-    return my->get_connected_peers();
+    INVOKE_IN_IMPL(get_connected_peers);
   }
 
   uint32_t node::get_connection_count() const
   {
-    return my->get_connection_count();
+    INVOKE_IN_IMPL(get_connection_count);
   }
 
   void node::broadcast( const message& msg )
   {
-    my->broadcast( msg );
+    INVOKE_IN_IMPL(broadcast, msg);
   }
 
   void node::sync_from( const item_id& id )
   {
-    my->sync_from( id );
+    INVOKE_IN_IMPL(sync_from, id);
   }
 
   bool node::is_connected() const
   {
-    return my->is_connected();
+    INVOKE_IN_IMPL(is_connected);
   }
 
   std::vector<potential_peer_record> node::get_potential_peers()const
   {
-    std::vector<potential_peer_record> result;
-    for (auto itr = my->_potential_peer_db.begin(); itr != my->_potential_peer_db.end(); ++itr)
-      result.push_back( *itr );
-    return result;
+    INVOKE_IN_IMPL(get_potential_peers);
   }
 
   void node::set_advanced_node_parameters( const fc::variant_object& params )
   {
-    my->set_advanced_node_parameters( params );
+    INVOKE_IN_IMPL(set_advanced_node_parameters, params);
   }
 
   fc::variant_object node::get_advanced_node_parameters()
   {
-    return my->get_advanced_node_parameters();
+    INVOKE_IN_IMPL(get_advanced_node_parameters);
   }
 
   message_propagation_data node::get_transaction_propagation_data( const bts::blockchain::transaction_id_type& transaction_id )
   {
-    return my->get_transaction_propagation_data( transaction_id );
+    INVOKE_IN_IMPL(get_transaction_propagation_data, transaction_id);
   }
+
   message_propagation_data node::get_block_propagation_data( const bts::blockchain::block_id_type& block_id )
   {
-    return my->get_block_propagation_data( block_id );
+    INVOKE_IN_IMPL(get_block_propagation_data, block_id);
   }
+
   node_id_t node::get_node_id() const
   {
-    return my->get_node_id();
+    INVOKE_IN_IMPL(get_node_id);
   }
+
   void node::set_allowed_peers( const std::vector<node_id_t>& allowed_peers )
   {
-    my->set_allowed_peers( allowed_peers );
+    INVOKE_IN_IMPL(set_allowed_peers, allowed_peers);
   }
+
   void node::clear_peer_database()
   {
-    my->clear_peer_database();
+    INVOKE_IN_IMPL(clear_peer_database);
   }
 
   void node::set_total_bandwidth_limit( uint32_t upload_bytes_per_second, 
                                        uint32_t download_bytes_per_second )
   {
-    my->set_total_bandwidth_limit( upload_bytes_per_second, download_bytes_per_second );
+    INVOKE_IN_IMPL(set_total_bandwidth_limit, upload_bytes_per_second, download_bytes_per_second);
   }
 
   void node::disable_peer_advertising()
   {
-    my->disable_peer_advertising();
+    INVOKE_IN_IMPL(disable_peer_advertising);
   }
 
   fc::variant_object node::network_get_info() const
   {
-    return my->network_get_info();
+    INVOKE_IN_IMPL(network_get_info);
   }
 
   fc::variant_object node::network_get_usage_stats() const
   {
-    return my->network_get_usage_stats();
+    INVOKE_IN_IMPL(network_get_usage_stats);
+  }
+
+  void node::close()
+  {
+    my->close();
   }
 
   void simulated_network::broadcast( const message& item_to_broadcast  )
@@ -3225,7 +3306,83 @@ namespace bts { namespace net { namespace detail {
   void simulated_network::add_node_delegate( node_delegate* node_delegate_to_add )
   { 
      network_nodes.push_back( node_delegate_to_add );
-  }      
-  
-  void node::close() { my->close(); }
+  }
+
+  namespace detail
+  {
+#define INVOKE_IN_DELEGATE_THREAD(method_name, ...) \
+    return _thread->async([&](){ return _node_delegate->method_name(__VA_ARGS__); }).wait()
+
+    thread_switching_node_delegate_wrapper::thread_switching_node_delegate_wrapper(fc::thread* thread, node_delegate* delegate) :
+      _thread(thread),
+      _node_delegate(delegate)
+    {}
+
+    bool thread_switching_node_delegate_wrapper::has_item( const net::item_id& id )
+    {
+      INVOKE_IN_DELEGATE_THREAD(has_item, id);
+    }
+
+    bool thread_switching_node_delegate_wrapper::handle_message( const message& message_to_handle, bool sync_mode )
+    {
+      INVOKE_IN_DELEGATE_THREAD(handle_message, message_to_handle, sync_mode);
+    }
+
+    std::vector<item_hash_t> thread_switching_node_delegate_wrapper::get_item_ids(uint32_t item_type,
+                                                                                  const std::vector<item_hash_t>& blockchain_synopsis,
+                                                                                  uint32_t& remaining_item_count,
+                                                                                  uint32_t limit /* = 2000 */)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_item_ids, item_type, blockchain_synopsis, remaining_item_count, limit);
+    }
+
+    message thread_switching_node_delegate_wrapper::get_item( const item_id& id )
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_item, id);
+    }
+
+    fc::sha256 thread_switching_node_delegate_wrapper::get_chain_id() const
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_chain_id);
+    }
+
+    std::vector<item_hash_t> thread_switching_node_delegate_wrapper::get_blockchain_synopsis(uint32_t item_type, 
+                                                                                             const bts::net::item_hash_t& reference_point /* = bts::net::item_hash_t() */, 
+                                                                                             uint32_t number_of_blocks_after_reference_point /* = 0 */)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_blockchain_synopsis, item_type, reference_point, number_of_blocks_after_reference_point);
+    }
+
+    void thread_switching_node_delegate_wrapper::sync_status( uint32_t item_type, uint32_t item_count )
+    {
+      INVOKE_IN_DELEGATE_THREAD(sync_status, item_type, item_count);
+    }
+
+    void thread_switching_node_delegate_wrapper::connection_count_changed( uint32_t c )
+    {
+      INVOKE_IN_DELEGATE_THREAD(connection_count_changed, c);
+    }
+
+    uint32_t thread_switching_node_delegate_wrapper::get_block_number(const item_hash_t& block_id)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_block_number, block_id);
+    }
+    fc::time_point_sec thread_switching_node_delegate_wrapper::get_block_time(const item_hash_t& block_id)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_block_time, block_id);
+    }
+
+    /** returns bts::blockchain::now() */
+    fc::time_point_sec thread_switching_node_delegate_wrapper::get_blockchain_now()
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_blockchain_now);
+    }
+
+    void thread_switching_node_delegate_wrapper::error_encountered(const std::string& message, const fc::oexception& error)
+    {
+      INVOKE_IN_DELEGATE_THREAD(error_encountered, message, error);
+    }
+#undef INVOKE_IN_DELEGATE_THREAD
+  } // end namespace detail
+
 } } // end namespace bts::net
