@@ -45,7 +45,7 @@
             {
               "name" : "first_account_name", 
               "type" : "account_name", 
-              "description" : "the first account name to include",
+              "description" : "the first account name to include. May be either a name or an index",
               "default_value" : ""
             },
             {

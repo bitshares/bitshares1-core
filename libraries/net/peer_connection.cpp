@@ -22,6 +22,18 @@ namespace bts { namespace net
         {
         }
       }
+
+      if (accept_or_connect_task_done.valid() && !accept_or_connect_task_done.ready())
+      {
+        accept_or_connect_task_done.cancel();
+        try 
+        { 
+          accept_or_connect_task_done.wait(); 
+        } 
+        catch (...)
+        {
+        }
+      }
     }
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -34,12 +46,12 @@ namespace bts { namespace net
       try
       {
         assert( our_state == our_connection_state::disconnected &&
-               their_state == their_connection_state::disconnected );
+                their_state == their_connection_state::disconnected );
         direction = peer_connection_direction::inbound;
+        _remote_endpoint = _message_connection.get_socket().remote_endpoint();
         negotiation_status = connection_negotiation_status::accepting;
         _message_connection.accept();           // perform key exchange
         negotiation_status = connection_negotiation_status::accepted;
-        _remote_endpoint = _message_connection.get_socket().remote_endpoint();
 
         // firewall-detecting info is pretty useless for inbound connections, but initialize 
         // it the best we can

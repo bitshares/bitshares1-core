@@ -44,6 +44,7 @@ namespace bts { namespace net {
 
       message_oriented_connection_impl(message_oriented_connection* self, 
                                        message_oriented_connection_delegate* delegate = nullptr);
+      ~message_oriented_connection_impl();
 
       void send_message(const message& message_to_send);
       void close_connection();
@@ -63,6 +64,20 @@ namespace bts { namespace net {
       _bytes_received(0),
       _bytes_sent(0)
     {
+    }
+    message_oriented_connection_impl::~message_oriented_connection_impl()
+    {
+      if (_read_loop_done.valid() && !_read_loop_done.ready())
+      {
+        _read_loop_done.cancel();
+        try 
+        { 
+          _read_loop_done.wait();
+        } 
+        catch (...)
+        {
+        }
+      }
     }
 
     fc::tcp_socket& message_oriented_connection_impl::get_socket()
