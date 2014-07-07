@@ -38,4 +38,6 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
 
 string pretty_vote_summary( const account_vote_summary_type& votes );
 
+string pretty_market_orders( const vector<market_order>& market_orders, cptr client );
+
 } } // bts::cli

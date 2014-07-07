@@ -173,9 +173,9 @@ namespace bts { namespace wallet {
       string          get_id()const;
 
       asset           get_balance()const; // funds available for this order
-      asset           get_proceeds()const;
-      asset           get_quantity()const;
       price           get_price()const;
+      asset           get_quantity()const;
+      asset           get_proceeds()const;
 
       bts::blockchain::market_order        order;
       share_type                           proceeds;

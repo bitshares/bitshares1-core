@@ -678,8 +678,19 @@ namespace bts { namespace cli {
               }
               else if( method_name == "wallet_market_order_list" )
               {
-                  auto order_list = result.as<vector<market_order_status> >();
-                  print_wallet_market_order_list( order_list );
+                  const auto& market_order_statuses = result.as<vector<market_order_status>>();
+                  vector<market_order> market_orders;
+                  market_orders.reserve( market_order_statuses.size() );
+                  for( const auto& market_order_status : market_order_statuses )
+                      market_orders.push_back( market_order_status.order );
+                  *_out << pretty_market_orders( market_orders, _client );
+              }
+              else if( method_name == "blockchain_market_list_asks"
+                       || method_name == "blockchain_market_list_bids"
+                       || method_name == "blockchain_market_list_shorts" )
+              {
+                  const auto& market_orders = result.as<vector<market_order>>();
+                  *_out << pretty_market_orders( market_orders, _client );
               }
               else if ( command == "wallet_list_my_accounts" )
               {
@@ -1126,34 +1137,6 @@ namespace bts { namespace cli {
                     counter++;
 
                 }
-            }
-
-            void print_wallet_market_order_list( const vector<market_order_status>& order_list )
-            {
-                if( !_out ) return;
-
-                std::ostream& out = *_out;
-
-                out << std::setw( 40 ) << std::left << "ID";
-                out << std::setw( 12 )  << "TYPE";
-                out << std::setw( 20 ) << "QUANTITY";
-                out << std::setw( 20 ) << "PRICE";
-                out << std::setw( 20 ) << "BALANCE";
-                out << std::setw( 20 ) << "COST";
-                out << "\n";
-                out <<"-----------------------------------------------------------------------------------------------------------\n";
-
-                for( const auto& order : order_list )
-                {
-                   out << std::setw( 40 )  << std::left << variant( order.order.market_index.owner ).as_string(); //order.get_id();
-                   out << std::setw( 12  )  << variant( order.get_type() ).as_string();
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() );
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_price( order.get_price() ); //order.market_index.order_price );
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_balance() );
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
-                   out << "\n";
-                }
-                out << "\n";
             }
 
             void print_network_usage_graph( const std::vector<uint32_t>& usage_data )
