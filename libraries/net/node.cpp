@@ -2458,14 +2458,7 @@ namespace bts { namespace net { namespace detail {
           new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert( new_peer );
           _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-
-          /**
-              TODO:
-              Handshaking connections needs to be converted to a map from new_peer to future<void>
-              and capture this future.  Then when we exit all handshaking peers must be disconnected
-              and waited on.
-           */
-          fc::async( [=]() { accept_connection_task(new_peer ); } );
+          new_peer->accept_or_connect_task_done = fc::async( [=]() { accept_connection_task(new_peer); } );
 
           // limit the rate at which we accept connections to mitigate DOS attacks
           fc::usleep( fc::microseconds(1000 * 10 ) );
@@ -2685,7 +2678,7 @@ namespace bts { namespace net { namespace detail {
     {
       assert( _node_id != fc::ecc::public_key_data() );
 
-      _accept_loop_complete = fc::async(  [=](){ accept_loop(); } );
+      _accept_loop_complete = fc::async( [=](){ accept_loop(); } );
 
       _p2p_network_connect_loop_done = fc::async( [=]() { p2p_network_connect_loop(); } );
       _fetch_sync_items_loop_done = fc::async( [=]() { fetch_sync_items_loop(); } );
@@ -2724,7 +2717,7 @@ namespace bts { namespace net { namespace detail {
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert( new_peer );
       _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-      fc::async( [=](){ connect_to_task(new_peer, remote_endpoint ); } );
+      new_peer->accept_or_connect_task_done = fc::async( [=](){ connect_to_task(new_peer, remote_endpoint ); } );
     }
 
     peer_connection_ptr node_impl::get_connection_to_endpoint( const fc::ip::endpoint& remote_endpoint )

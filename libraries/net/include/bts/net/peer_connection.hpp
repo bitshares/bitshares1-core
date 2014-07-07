@@ -138,6 +138,9 @@ namespace bts { namespace net
       // if they're flooding us with transactions, we set this to avoid fetching for a few seconds to let the
       // blockchain catch up
       fc::time_point transaction_fetching_inhibited_until;
+
+      // 
+      fc::future<void> accept_or_connect_task_done;
     public:
       peer_connection(peer_connection_delegate* delegate) : 
         _node(delegate),
