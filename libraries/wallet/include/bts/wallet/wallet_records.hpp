@@ -158,8 +158,8 @@ namespace bts { namespace wallet {
        share_type                fees;
        std::string               memo_message;
        uint32_t                  block_num;
-       fc::time_point            created_time;
-       fc::time_point            received_time;
+       fc::time_point_sec        created_time;
+       fc::time_point_sec        received_time;
        /** the number of times this transaction has been transmitted */
        uint32_t                  transmit_count;
        vector<address>           extra_addresses;

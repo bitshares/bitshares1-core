@@ -25,6 +25,8 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( file_already_exists,     bts::wallet::wallet_exception, 20018, "file already exists" );
   FC_DECLARE_DERIVED_EXCEPTION( file_not_found,          bts::wallet::wallet_exception, 20019, "file not found" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_timeout,         bts::wallet::wallet_exception, 20020, "invalid timeout" );
+  FC_DECLARE_DERIVED_EXCEPTION( invalid_operation,       bts::wallet::wallet_exception, 20021, "invalid operation" );
+  FC_DECLARE_DERIVED_EXCEPTION( transaction_not_found,   bts::wallet::wallet_exception, 20022, "transaction not found" );
   // registered in wallet.cpp
 
 } } // bts::wallet

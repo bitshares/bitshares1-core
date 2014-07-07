@@ -2548,7 +2548,12 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
+    void client_impl::wallet_scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
+    { try {
+       _wallet->scan_transaction( block_num, transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
+
+    bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
     {
         blockchain_security_state state;
         int64_t required_confirmations = _chain_db->get_required_confirmations();
