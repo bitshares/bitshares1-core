@@ -1,6 +1,8 @@
 #pragma once
+
 #include <bts/blockchain/types.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
+
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 

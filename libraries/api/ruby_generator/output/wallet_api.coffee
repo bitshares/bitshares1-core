@@ -357,7 +357,7 @@ class WalletAPI
   #   string `issuer_name` - the name of the issuer of the asset
   #   string `description` - a description of the asset
   #   json_variant `data` - arbitrary data attached to the asset
-  #   int64_t `maximum_share_supply` - the maximum number of shares of the asset
+  #   real_amount `maximum_share_supply` - the maximum number of shares of the asset
   #   int64_t `precision` - defines where the decimal should be displayed, must be a power of 10
   #   bool `is_market_issued` - creation of a new BitAsset that is created by shorting
   # return_type: `signed_transaction`
@@ -399,19 +399,10 @@ class WalletAPI
     @rpc.request('wallet_vote_proposal', [name, proposal_id, vote, message]).then (response) ->
       response.result
 
-  # Lists the unspent balances that are controlled by this wallet
+  # Lists the total asset balances for the specified account
   # parameters: 
-  #   account_name `account_name` - the account for which unspent balances should be listed
-  #   asset_symbol `symbol` - The symbol to filter by, '*' for all
-  # return_type: `wallet_balance_record_array`
-  list_unspent_balances: (account_name, symbol) ->
-    @rpc.request('wallet_list_unspent_balances', [account_name, symbol]).then (response) ->
-      response.result
-
-  # Lists the total balances of all accounts sorted by account and asset
-  # parameters: 
-  #   account_name `account_name` - the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned
-  # return_type: `map<account_name, map<asset_symbol, share_type>>`
+  #   account_name `account_name` - the account to get a balance for, or leave empty for all accounts
+  # return_type: `account_balance_summary_type`
   account_balance: (account_name) ->
     @rpc.request('wallet_account_balance', [account_name]).then (response) ->
       response.result
@@ -465,6 +456,17 @@ class WalletAPI
   # return_type: `signed_transaction`
   market_submit_ask: (from_account_name, quantity, quantity_symbol, quote_price, quote_symbol) ->
     @rpc.request('wallet_market_submit_ask', [from_account_name, quantity, quantity_symbol, quote_price, quote_symbol]).then (response) ->
+      response.result
+
+  # Used to place a request to short sell a quantity of assets at a price specified
+  # parameters: 
+  #   account_name `from_account_name` - the account that will provide funds for the ask
+  #   real_amount `quantity` - the quantity of items you would like to sell
+  #   real_amount `quote_price` - the price you would like to sell
+  #   asset_symbol `quote_symbol` - the type of asset you would like to be paid
+  # return_type: `signed_transaction`
+  market_submit_short: (from_account_name, quantity, quote_price, quote_symbol) ->
+    @rpc.request('wallet_market_submit_short', [from_account_name, quantity, quote_price, quote_symbol]).then (response) ->
       response.result
 
   # List an order list of a specific market

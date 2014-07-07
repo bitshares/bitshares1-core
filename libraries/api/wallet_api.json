@@ -767,7 +767,7 @@
                },
                {
                   "name" : "maximum_share_supply",
-                  "type" : "int64_t",
+                  "type" : "real_amount",
                   "description" : "the maximum number of shares of the asset",
                   "default_value" : 1000000000000000
                },
@@ -879,37 +879,18 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_list_unspent_balances",
-         "description" : "Lists the unspent balances that are controlled by this wallet",
-         "return_type" : "wallet_balance_record_array",
-         "parameters"  : [
-           {
-                "name" : "account_name",
-                "type" : "account_name",
-                "description" : "the account for which unspent balances should be listed",
-                "default_value" : "*"
-           },
-           {
-               "name" : "symbol",
-               "type" : "asset_symbol",
-               "description" : "The symbol to filter by, '*' for all",
-                "default_value" : "*"
-           }
-         ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
          "method_name"    : "wallet_account_balance",
-         "description"    : "Lists the total balances of all accounts sorted by account and asset",
-         "return_type"    : "map<account_name, map<asset_symbol, share_type>>",
+         "description"    : "Lists the total asset balances for the specified account",
+         "return_type"    : "account_balance_summary_type",
          "parameters"     : [
          {
             "name" : "account_name",
             "type" : "account_name",
-            "description" : "the account to get a balance for, '*' or ''.  If '*' or '' then all accounts will be returned",
-            "default_value" : "*"
+            "description" : "the account to get a balance for, or leave empty for all accounts",
+            "default_value" : ""
          }
          ],
+         "is_const" : true,
          "prerequisites" : ["wallet_open"],
          "aliases" : ["balance"]
       },
@@ -1042,6 +1023,35 @@
          "aliases" : [ "ask" ]
       },
       {
+         "method_name" : "wallet_market_submit_short",
+         "description" : "Used to place a request to short sell a quantity of assets at a price specified",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "quote_price",
+               "type" : "real_amount",
+               "description" : "the price you would like to sell"
+            },
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "short" ]
+      },
+      {
          "method_name" : "wallet_market_order_list",
          "description" : "List an order list of a specific market",
          "return_type" : "market_order_status_array",
@@ -1106,8 +1116,9 @@
                 "default_value" : ""
             }
           ],
-          "aliases" : ["votes"],
-         "prerequisites" : ["wallet_open"]
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["votes"]
       },
       {
          "method_name" : "wallet_account_export_private_key",

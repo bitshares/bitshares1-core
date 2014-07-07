@@ -1,5 +1,8 @@
 #pragma once
+
+#include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain { 
 

@@ -5,9 +5,9 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                          (2104)
-#define BTS_WALLET_VERSION                              (2101)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                 (2110)
+#define BTS_BLOCKCHAIN_VERSION                              (104)
+#define BTS_WALLET_VERSION                                  (101)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (110)
 
 /**
  *  The address prepended to string representation of
@@ -54,61 +54,61 @@
  *
  *  Adjusting this value will change the effective fee charged on transactions
  */
-#define BTS_BLOCKCHAIN_MAX_SIZE                         (1024*1024*1024*100ll) // 100 GB
-#define BTS_BLOCKCHAIN_MIN_NAME_SIZE                    (1)
-#define BTS_BLOCKCHAIN_MAX_NAME_SIZE                    (63)
-#define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE               (1024*64)
-#define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                    (19) // bytes
-#define BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE                  (5) // characters
-#define BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE                  (3) // characters
-#define BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE   (1024) // bytes
+#define BTS_BLOCKCHAIN_MAX_SIZE                             (1024*1024*1024*100ll) // 100 GB
+#define BTS_BLOCKCHAIN_MIN_NAME_SIZE                        (1)
+#define BTS_BLOCKCHAIN_MAX_NAME_SIZE                        (63)
+#define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE                   (1024*64)
+#define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                        (19) // bytes
+#define BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE                      (5) // characters
+#define BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE                      (3) // characters
+#define BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE       (1024) // bytes
 
 /**
  *  The maximum amount that can be issued for user assets.
  *
  *  10^18 / 2^63 < 1
  */
-#define BTS_BLOCKCHAIN_MAX_SHARES                       (1000*1000*1000ll*1000*1000ll)
+#define BTS_BLOCKCHAIN_MAX_SHARES                           (1000*1000*1000ll*1000*1000ll)
 
 /**
  * Initial shares read from the genesis block are scaled to this number. It is divided
  * by 100 so that new shares may be issued without exceeding BTS_BLOCKCHAIN_MAX_SHARES
  */
-#define BTS_BLOCKCHAIN_INITIAL_SHARES                   (BTS_BLOCKCHAIN_MAX_SHARES / 5)
+#define BTS_BLOCKCHAIN_INITIAL_SHARES                       (BTS_BLOCKCHAIN_MAX_SHARES / 5)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
  */
-#define BTS_BLOCKCHAIN_BLOCKS_PER_HOUR                  ((60*60)/BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
+#define BTS_BLOCKCHAIN_BLOCKS_PER_HOUR                      ((60*60)/BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
 
 /**
  *  The number of blocks expected per day based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
  */
-#define BTS_BLOCKCHAIN_BLOCKS_PER_DAY                   (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR*24ll)
+#define BTS_BLOCKCHAIN_BLOCKS_PER_DAY                       (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR*24ll)
 
 /**
  * The number of blocks expected per year based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
  */
-#define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                  (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
+#define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
 /** defines the maximum block size allowed, 2 MB per hour */
-#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                   ( 2 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
-#define BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE             ( BTS_BLOCKCHAIN_MAX_BLOCK_SIZE / 2 )
+#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       ( 2 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
+#define BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE                 ( BTS_BLOCKCHAIN_MAX_BLOCK_SIZE / 2 )
 
 /** defines the target block size, fees will be adjusted to maintain this target */
-#define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
+#define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                    (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
 
-#define BTS_BLOCKCHAIN_BLOCK_REWARD                     (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE) //10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
-#define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                 (10)  // 10% per year
+#define BTS_BLOCKCHAIN_BLOCK_REWARD                         (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE) //10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
+#define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                     (10)  // 10% per year
 
-#define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                 (512) // just a random assumption used to calibrate TRX per SEC
-#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND               (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE / BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
-#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE           20
+#define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
+#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE / BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
+#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (20)
 
 /**
  *  defines the min fee in milli-shares per byte
  */
-#define BTS_BLOCKCHAIN_MIN_FEE                          (1000)
+#define BTS_BLOCKCHAIN_MIN_FEE                              (1000)
 
 /**
     This constant defines the number of blocks a delegate must produce before
@@ -117,9 +117,9 @@
  *   Currently set to 2 weeks of active block production to break even.
  */
 #if BTS_BLOCKCHAIN_VERSION > 104
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
 #else
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE        (BTS_BLOCKCHAIN_BLOCK_REWARD)
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCK_REWARD)
 #endif
 
 
@@ -133,7 +133,7 @@
     block production.
  */
 #if BTS_BLOCKCHAIN_VERSION > 104
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE               (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
 #else
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE           (BTS_BLOCKCHAIN_BLOCK_REWARD)
+#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE               (BTS_BLOCKCHAIN_BLOCK_REWARD)
 #endif

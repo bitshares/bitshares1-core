@@ -693,25 +693,8 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_account_balance" )
               {
-                  const auto& summary = result.as<map<string, map<string, share_type>>>();
-                  if( !summary.empty() )
-                  {
-                      auto bc = _client->get_chain();
-                      for( const auto& accts : summary )
-                      {
-                          *_out << accts.first << ":\n";
-                          for( const auto& balance : accts.second )
-                          {
-                             *_out << "    "
-                                   << bc->to_pretty_asset( asset( balance.second, bc->get_asset_id( balance.first) ) )
-                                   << "\n";
-                          }
-                      }
-                  }
-                  else
-                  {
-                      *_out << "No funds available.\n";
-                  }
+                  const auto& balances = result.as<account_balance_summary_type>();
+                  *_out << pretty_balances( balances, _client );
               }
               else if (method_name == "wallet_transfer")
               {
@@ -730,11 +713,6 @@ namespace bts { namespace cli {
                   else
                       for( const auto& wallet : wallets )
                           *_out << wallet << "\n";
-              }
-              else if (method_name == "wallet_list_unspent_balances" )
-              {
-                  auto balance_recs = result.as<vector<wallet_balance_record>>();
-                  print_unspent_balances(balance_recs);
               }
               else if (method_name == "wallet_approve_delegate" )
               {
@@ -1010,71 +988,6 @@ namespace bts { namespace cli {
               *_out << std::right; /* Ensure default alignment is restored */
             }
 
-            void print_unspent_balances( const vector<wallet_balance_record>& balance_recs )
-            {
-                *_out << std::right;
-                *_out << std::setw(18) << "BALANCE";
-                *_out << std::right << std::setw(40) << "OWNER";
-                *_out << std::right << std::setw(25) << "VOTE";
-                *_out << "\n";
-                *_out << "-------------------------------------------------------------";
-                *_out << "-------------------------------------------------------------\n";
-                for( const auto& balance_rec : balance_recs )
-                {
-                    *_out << std::setw(18) << _client->get_chain()->to_pretty_asset( asset(balance_rec.balance, 0) );
-                    switch (withdraw_condition_types(balance_rec.condition.type))
-                    {
-                        case (withdraw_signature_type):
-                        {
-                            auto cond = balance_rec.condition.as<withdraw_with_signature>();
-                            auto acct_rec = _client->get_wallet()->get_account_record( cond.owner );
-                            string owner;
-                            if ( acct_rec.valid() )
-                                owner = acct_rec->name;
-                            else
-                                owner = string( balance_rec.owner() );
-
-                            if (owner.size() > 36)
-                            {
-                                *_out << std::setw(40) << owner.substr(0, 31) << "...";
-                            }
-                            else
-                            {
-                                *_out << std::setw(40) << owner;
-                            }
-
-                            /*
-                             * TODO... what about the slate??
-                            auto delegate_id = balance_rec.condition.delegate_id;
-                            auto delegate_rec = _client->get_chain()->get_account_record( delegate_id );
-                            if( delegate_rec )
-                            {
-                               string sign = (delegate_id > 0 ? "+" : "-");
-                               if (delegate_rec->name.size() > 21)
-                               {
-                                   *_out << std::setw(25) << (sign + delegate_rec->name.substr(0, 21) + "...");
-                               }
-                               else
-                               {
-                                   *_out << std::setw(25) << (sign + delegate_rec->name);
-                               }
-                               break;
-                            }
-                            else
-                            {
-                                   *_out << std::setw(25) << "none";
-                            }
-                            */
-                        }
-                        default:
-                        {
-                            FC_ASSERT(!"unimplemented condition type");
-                        }
-                    } // switch cond type
-                    *_out << "\n";
-                } // for balance in balances
-            }
-
             void print_contact_account_list( const vector<wallet_account_record>& account_records )
             {
                 *_out << std::setw( 35 ) << std::left << "NAME (* delegate)";
@@ -1222,7 +1135,7 @@ namespace bts { namespace cli {
                 std::ostream& out = *_out;
 
                 out << std::setw( 40 ) << std::left << "ID";
-                out << std::setw( 10 )  << "TYPE";
+                out << std::setw( 12 )  << "TYPE";
                 out << std::setw( 20 ) << "QUANTITY";
                 out << std::setw( 20 ) << "PRICE";
                 out << std::setw( 20 ) << "BALANCE";
@@ -1233,7 +1146,7 @@ namespace bts { namespace cli {
                 for( const auto& order : order_list )
                 {
                    out << std::setw( 40 )  << std::left << variant( order.order.market_index.owner ).as_string(); //order.get_id();
-                   out << std::setw( 10  )  << variant( order.get_type() ).as_string();
+                   out << std::setw( 12  )  << variant( order.get_type() ).as_string();
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() );
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_price( order.get_price() ); //order.market_index.order_price );
                    out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_balance() );

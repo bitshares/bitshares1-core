@@ -289,7 +289,13 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clienta );
    exec( clientb, "wallet_market_order_list USD XTS" );
    exec( clientb, "wallet_account_transaction_history" );
-//   exec( clientb, "blockchain_get_transaction 6f28bd041522ebf968009b1ff85dcc6355d80cb7" );
+   exec( clientb, "short c-account 6 5.43 USD" );
+   produce_block( clienta );
+   exec( clientb, "wallet_market_order_list USD XTS" );
+   exec( clientb, "blockchain_market_list_shorts USD" );
+   exec( clientb, "wallet_market_cancel_order XTS4PMby4EF26wxV4vrP9YPf2eSqi8VfLZUN" );
+   produce_block( clienta );
+   exec( clientb, "wallet_account_transaction_history" );
 
 
 //   exec( clientb, "wallet_account_transaction_history" );

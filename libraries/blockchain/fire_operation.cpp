@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
       return fc::ecc::public_key( delegate_signature, digest()  );
    }
 
-   fire_delegate_operation::fire_delegate_operation( name_id_type delegate_id_arg, const multiple_block_proof& proof )
+   fire_delegate_operation::fire_delegate_operation( account_id_type delegate_id_arg, const multiple_block_proof& proof )
    :delegate_id( delegate_id_arg )
    {
       reason = multiple_blocks_signed;

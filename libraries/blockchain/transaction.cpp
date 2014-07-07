@@ -1,23 +1,12 @@
-#include <bts/blockchain/config.hpp>
-#include <bts/blockchain/transaction.hpp>
-#include <bts/blockchain/fire_operation.hpp>
-#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/account_operations.hpp>
+#include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/proposal_operations.hpp>
-#include <bts/blockchain/pts_address.hpp>
-#include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/error_codes.hpp>
 #include <bts/blockchain/time.hpp>
-#include <fc/reflect/variant.hpp>
+#include <bts/blockchain/transaction.hpp>
 
-#include <fc/log/logger.hpp>
 #include <fc/io/raw_variant.hpp>
-#include <iostream>
-#include <fc/io/json.hpp>
-
-#include <cctype>
 
 namespace bts { namespace blockchain {
 
@@ -28,18 +17,21 @@ namespace bts { namespace blockchain {
       fc::raw::pack(enc,chain_id);
       return enc.result();
    }
+
    size_t signed_transaction::data_size()const
    {
       fc::datastream<size_t> ds;
       fc::raw::pack(ds,*this);
       return ds.tellp();
    }
+
    transaction_id_type signed_transaction::id()const
    {
       fc::sha512::encoder enc;
       fc::raw::pack(enc,*this);
       return fc::ripemd160::hash( enc.result() );
    }
+
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
@@ -63,7 +55,6 @@ namespace bts { namespace blockchain {
       operations.emplace_back(op);
    }
 
-
    void transaction::ask( const asset& quantity, 
                           const price& price_per_unit, 
                           const address& owner )
@@ -72,6 +63,18 @@ namespace bts { namespace blockchain {
       op.amount = quantity.amount;
       op.ask_index.order_price = price_per_unit;
       op.ask_index.owner = owner;
+
+      operations.emplace_back(op);
+   }
+
+   void transaction::short_sell( const asset& quantity, 
+                          const price& price_per_unit, 
+                          const address& owner )
+   {
+      short_operation op;
+      op.amount = quantity.amount;
+      op.short_index.order_price = price_per_unit;
+      op.short_index.owner = owner;
 
       operations.emplace_back(op);
    }
@@ -123,7 +126,6 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
-
    void transaction::register_account( const std::string& name, 
                                    const fc::variant& public_data, 
                                    const public_key_type& master, 
@@ -131,6 +133,7 @@ namespace bts { namespace blockchain {
    {
       operations.push_back( register_account_operation( name, public_data, master, active, pro_fee ) );
    }
+
    void transaction::update_account( account_id_type account_id, 
                                   uint8_t delegate_pay_rate,
                                   const fc::optional<fc::variant>& public_data, 
@@ -174,7 +177,6 @@ namespace bts { namespace blockchain {
      operations.push_back(op);
    }
 
-
    void transaction::create_asset( const std::string& symbol, 
                                    const std::string& name, 
                                    const std::string& description,
@@ -184,6 +186,7 @@ namespace bts { namespace blockchain {
                                    int64_t      precision )
    {
       FC_ASSERT( max_share_supply > 0 );
+      FC_ASSERT( max_share_supply <= BTS_BLOCKCHAIN_MAX_SHARES );
       create_asset_operation op;
       op.symbol = symbol;
       op.name = name;

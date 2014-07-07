@@ -52,6 +52,11 @@ string pretty_timestamp( const time_point_sec& timestamp )
 
 string pretty_percent( double part, double whole, int precision )
 {
+    FC_ASSERT( part >= 0 );
+    FC_ASSERT( whole >= 0 );
+    FC_ASSERT( precision >= 0 );
+    FC_ASSERT( part <= whole );
+    if( whole <= 0 ) return "N/A";
     const auto percent = 100 * part / whole;
     std::stringstream ss;
     ss << std::setprecision( precision ) << std::fixed << percent << " %";
@@ -304,32 +309,6 @@ string pretty_asset_list( const vector<asset_record>& asset_records, cptr client
     return out.str();
 }
 
-string pretty_vote_summary( const account_vote_summary_type& votes )
-{
-    if( votes.empty() ) return "No votes found.\n";
-
-    std::stringstream out;
-    out << std::left;
-
-    out << std::setw( 32 ) << "DELEGATE";
-    out << std::setw( 16 ) << "VOTES";
-
-    out << pretty_line( 48 );
-
-    for( const auto& vote : votes )
-    {
-        const auto& delegate_name = vote.first;
-        const auto votes_for = vote.second;
-
-        out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
-        out << std::setw( 16 ) << votes_for;
-
-        out << "\n";
-    }
-
-    return out.str();
-}
-
 string pretty_account( const oaccount_record& record, cptr client )
 {
     if( !record.valid() ) return "No account found.\n";
@@ -370,6 +349,72 @@ string pretty_account( const oaccount_record& record, cptr client )
     {
       out << "Public Data:\n";
       out << fc::json::to_pretty_string( record->public_data ) << "\n";
+    }
+
+    return out.str();
+}
+
+string pretty_balances( const account_balance_summary_type& balances, cptr client )
+{
+    if( balances.empty() ) return "No balances found.\n";
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    out << std::setw( 32 ) << "ACCOUNT";
+    out << std::setw( 24 ) << "BALANCE";
+
+    out << pretty_line( 56 );
+
+    for( const auto& item : balances )
+    {
+        const auto& account_name = item.first;
+        bool first = true;
+
+        for( const auto& asset_balance : item.second )
+        {
+            if( first )
+            {
+                out << std::setw( 32 ) << pretty_shorten( account_name, 31 );
+                first = false;
+            }
+            else
+            {
+                out << std::setw( 32 ) << "";
+            }
+
+            const auto balance = asset( asset_balance.second, client->get_chain()->get_asset_id( asset_balance.first ) );
+            out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( balance );
+
+            out << "\n";
+        }
+    }
+
+    return out.str();
+}
+
+string pretty_vote_summary( const account_vote_summary_type& votes )
+{
+    if( votes.empty() ) return "No votes found.\n";
+
+    std::stringstream out;
+    out << std::left;
+
+    out << std::setw( 32 ) << "DELEGATE";
+    out << std::setw( 16 ) << "VOTES";
+
+    out << pretty_line( 48 );
+
+    for( const auto& vote : votes )
+    {
+        const auto& delegate_name = vote.first;
+        const auto votes_for = vote.second;
+
+        out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
+        out << std::setw( 16 ) << votes_for;
+
+        out << "\n";
     }
 
     return out.str();

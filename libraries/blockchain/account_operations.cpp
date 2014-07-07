@@ -2,22 +2,11 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain { 
 
    static const fc::microseconds one_year = fc::seconds( 60*60*24*365 );
-
-   register_account_operation::register_account_operation( const std::string& n, 
-                                                   const fc::variant& d, 
-                                                   const public_key_type& owner, 
-                                                   const public_key_type& active, 
-                                                   uint8_t pay_rate )
-   :name(n),
-    public_data(d),
-    owner_key(owner),
-    active_key(active),
-    delegate_pay_rate(pay_rate){}
-
 
    string get_parent_account_name( const string& child )
    {
@@ -26,6 +15,10 @@ namespace bts { namespace blockchain {
       return child.substr( pos+1, string::npos );
    }
 
+   bool register_account_operation::is_delegate()const
+   {
+       return delegate_pay_rate <= 100;
+   }
 
    void register_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
@@ -49,7 +42,6 @@ namespace bts { namespace blockchain {
          if( parent_record->is_retracted() )
             FC_CAPTURE_AND_THROW( parent_account_retracted, (parent_record) );
       }
-
 
       auto account_with_same_key = eval_state._current_state->get_account_record( address(this->active_key) );
       if( account_with_same_key.valid() )
@@ -75,33 +67,10 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_account_record( new_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
-   void withdraw_pay_operation::evaluate( transaction_evaluation_state& eval_state )
-   { try {
-      if( this->amount <= 0 ) FC_CAPTURE_AND_THROW( negative_withdraw, (amount) );
-
-      auto pay_to_account_id = abs(this->account_id);
-      auto pay_to_account = eval_state._current_state->get_account_record( pay_to_account_id ); 
-      if( !pay_to_account ) FC_CAPTURE_AND_THROW( unknown_account_id, (pay_to_account_id) );
-      if( pay_to_account->is_retracted() ) FC_CAPTURE_AND_THROW( account_retracted, (pay_to_account) );
-      if( !pay_to_account->is_delegate() ) FC_CAPTURE_AND_THROW( not_a_delegate, (pay_to_account) );
-
-      auto active_key = pay_to_account->active_key();
-      if( !eval_state.check_signature( active_key ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (active_key) );
-
-      eval_state.net_delegate_votes[ pay_to_account_id ].votes_for -= this->amount;
-
-      if( pay_to_account->delegate_info->pay_balance < this->amount )
-         FC_CAPTURE_AND_THROW( insufficient_funds, (pay_to_account)(amount) );
-
-      pay_to_account->delegate_info->pay_balance -= this->amount;
-
-      eval_state._current_state->store_account_record( *pay_to_account );
-      eval_state.add_balance( asset(this->amount, 0) );
-
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
+   bool update_account_operation::is_delegate()const
+   {
+       return delegate_pay_rate <= 100;
+   }
 
    void update_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
@@ -209,6 +178,32 @@ namespace bts { namespace blockchain {
       }
 
       eval_state._current_state->store_account_record( *current_record );
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+   void withdraw_pay_operation::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+      if( this->amount <= 0 ) FC_CAPTURE_AND_THROW( negative_withdraw, (amount) );
+
+      auto pay_to_account_id = abs(this->account_id);
+      auto pay_to_account = eval_state._current_state->get_account_record( pay_to_account_id );
+      if( !pay_to_account ) FC_CAPTURE_AND_THROW( unknown_account_id, (pay_to_account_id) );
+      if( pay_to_account->is_retracted() ) FC_CAPTURE_AND_THROW( account_retracted, (pay_to_account) );
+      if( !pay_to_account->is_delegate() ) FC_CAPTURE_AND_THROW( not_a_delegate, (pay_to_account) );
+
+      auto active_key = pay_to_account->active_key();
+      if( !eval_state.check_signature( active_key ) )
+         FC_CAPTURE_AND_THROW( missing_signature, (active_key) );
+
+      eval_state.net_delegate_votes[ pay_to_account_id ].votes_for -= this->amount;
+
+      if( pay_to_account->delegate_info->pay_balance < this->amount )
+         FC_CAPTURE_AND_THROW( insufficient_funds, (pay_to_account)(amount) );
+
+      pay_to_account->delegate_info->pay_balance -= this->amount;
+
+      eval_state._current_state->store_account_record( *pay_to_account );
+      eval_state.add_balance( asset(this->amount, 0) );
+
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

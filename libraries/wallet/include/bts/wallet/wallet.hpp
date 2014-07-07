@@ -267,8 +267,8 @@ namespace bts { namespace wallet {
                                            const string& description,
                                            const variant& data,
                                            const string& issuer_name,
-                                           share_type max_share_supply = BTS_BLOCKCHAIN_MAX_SHARES,
-                                           int64_t  precision = 1,
+                                           double max_share_supply,
+                                           int64_t  precision,
                                            bool is_market_issued = false,
                                            bool sign = true );
 
@@ -293,11 +293,22 @@ namespace bts { namespace wallet {
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *
-          *  Requires the user have 10 BTC
+          *  Requires the user have 10 BTC + fees
           */
          signed_transaction  submit_ask( const string& from_account_name,
                                          double real_quantity, 
                                          const string& quantity_symbol,
+                                         double price_per_unit,
+                                         const string& quote_symbol,
+                                         bool sign = true );
+
+         /**
+          *  ie: submit_short( 10 USD at 600.34 USD per XTS )
+          *
+          *  Requires the user have 10 / 600.34 XTS + fees
+          */
+         signed_transaction  submit_short( const string& from_account_name,
+                                         double real_quantity_usd, 
                                          double price_per_unit,
                                          const string& quote_symbol,
                                          bool sign = true );
@@ -364,36 +375,29 @@ namespace bts { namespace wallet {
          unordered_map<address,string>    get_send_addresses()const;
          */
          
-         account_vote_summary_type get_account_vote_summary( const string& account_name )const;
+         account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
 
-         account_balance_summary_type get_account_balances()const;
+         account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         //vector<asset>                         get_balances( const string& symbol = string("*"),
-         //                                                    const string& account_name  = string("*") )const;
-         ///@}
+         vector<market_order_status>        get_market_orders( const string& quote, const string& base )const;
 
-         vector<market_order_status>           get_market_orders( const string& quote, const string& base )const;
-
-         vector<wallet_transaction_record>     get_transaction_history( const string& account_name = string(),
+         vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
                                                                         uint32_t start_block_num = -1,
                                                                         uint32_t end_block_num = -1 )const;
-         vector<pretty_transaction>            get_pretty_transaction_history( const string& account_name = string(),
+         vector<pretty_transaction>         get_pretty_transaction_history( const string& account_name = string(),
                                                                                uint32_t start_block_num = -1,
                                                                                uint32_t end_block_num = -1 )const;
 
-         vector<wallet_balance_record>         get_unspent_balances( const string& account_name,
-                                                                     const string& sybmol ) const;
-
-         optional<wallet_account_record>       get_account_record( const address& addr)const;
+         optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*
-         optional<address>                      get_owning_address( const balance_id_type& id )const;
+         optional<address>                  get_owning_address( const balance_id_type& id )const;
 
          unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const string& account_name = string() )const;
          */
 
          /*
-         unordered_map<account_id_type,       wallet_name_record>         names( const string& account_name = "*" )const;
-         unordered_map<asset_id_type,      wallet_asset_record>        assets( const string& account_name = "*" )const;
+         unordered_map<account_id_type,     wallet_name_record>         names( const string& account_name = "*" )const;
+         unordered_map<asset_id_type,       wallet_asset_record>        assets( const string& account_name = "*" )const;
          */
 
          /** signs transaction with the specified keys for the specified addresses */

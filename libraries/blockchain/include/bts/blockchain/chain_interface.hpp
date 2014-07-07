@@ -1,18 +1,16 @@
 #pragma once
-#include <bts/blockchain/types.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
-#include <bts/blockchain/transaction.hpp>
+
 #include <bts/blockchain/account_record.hpp>
-#include <bts/blockchain/proposal_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
-#include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/dns_record.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
+#include <bts/blockchain/market_records.hpp>
+#include <bts/blockchain/proposal_record.hpp>
+#include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain {
-   typedef fc::optional<signed_transaction> osigned_transaction;
 
    enum chain_property_enum
    {
@@ -81,6 +79,7 @@ namespace bts { namespace blockchain {
          virtual void                       set_property( chain_property_enum property_id, 
                                                           const fc::variant& property_value )       = 0;
 
+         virtual omarket_order              get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) = 0;
          virtual oorder_record              get_bid_record( const market_index_key& )const          = 0;
          virtual oorder_record              get_ask_record( const market_index_key& )const          = 0;
          virtual oorder_record              get_short_record( const market_index_key& )const        = 0;
@@ -156,8 +155,8 @@ namespace bts { namespace blockchain {
          virtual void                       store_slot_record( const slot_record& r )               = 0;
          virtual oslot_record               get_slot_record( const time_point_sec& start_time )const= 0;
    };
-
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
+
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, 
@@ -169,4 +168,3 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (confirmation_requirement)
                  (active_delegate_list_id)
                  (database_version) )
-

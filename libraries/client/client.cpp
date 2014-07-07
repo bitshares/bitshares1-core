@@ -28,6 +28,7 @@
 #include <fc/io/json.hpp>
 #include <fc/network/http/connection.hpp>
 #include <fc/network/resolve.hpp>
+#include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/hex.hpp>
 
@@ -1386,6 +1387,7 @@ config load_config( const fc::path& datadir )
       _wallet->unlock(password, timeout);
       reschedule_delegate_loop();
     }
+
     void detail::client_impl::wallet_change_passphrase(const string& new_password)
     {
       _wallet->change_passphrase(new_password);
@@ -1444,10 +1446,10 @@ config load_config( const fc::path& datadir )
     bts::blockchain::signed_transaction detail::client_impl::wallet_asset_create(const string& symbol,
                                                                     const string& asset_name,
                                                                     const string& issuer_name,
-                                                                    const string& description /* = fc::variant("").as<string>() */,
-                                                                    const variant& data /* = fc::variant("").as<fc::variant_object>() */,
-                                                                    int64_t maximum_share_supply /* = fc::variant("1000000000000000").as<int64_t>() */,
-                                                                    int64_t precision /* = 1 */,
+                                                                    const string& description,
+                                                                    const variant& data,
+                                                                    double maximum_share_supply ,
+                                                                    int64_t precision,
                                                                     bool    is_market_issued /* = false */)
     {
       generate_transaction_flag flag = sign_and_broadcast;
@@ -2416,32 +2418,37 @@ config load_config( const fc::path& datadir )
     {
        fc::mutable_variant_object info;
        info["blockchain_id"]                        = _chain_db->chain_id();
-       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
-       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
        info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
        info["name"]                                 = BTS_BLOCKCHAIN_NAME;
        info["version"]                              = BTS_BLOCKCHAIN_VERSION;
-       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
+       info["genesis_timestamp"]                    = _chain_db->get_asset_record( asset_id_type() )->registration_date;
 
+       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
+       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
+       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
+       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
        info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
 
-
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+
        info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
        info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
        info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
+
        info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
+
        info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -2647,11 +2654,6 @@ config load_config( const fc::path& datadir )
       fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
     }
 
-    vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
-    {
-       return _wallet->get_unspent_balances( account_name, symbol );
-    }
-
     vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
     {
         vector<public_key_summary> summaries;
@@ -2664,24 +2666,18 @@ config load_config( const fc::path& datadir )
         return summaries;
     }
 
-   map<string, map<string, int64_t>> client_impl::wallet_account_balance( const string& account_name )
+   account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      if( account_name == string() || account_name == "*")
-         return _wallet->get_account_balances();
-      else
+      if( !account_name.empty() )
       {
          if( !_chain_db->is_valid_account_name( account_name ) )
             FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
          if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
-
-         auto all_balances = _wallet->get_account_balances();
-         map<string, map<string,int64_t>> balance;
-         balance[account_name] = all_balances[account_name];
-         balance[account_name][BTS_BLOCKCHAIN_SYMBOL] = all_balances[account_name][BTS_BLOCKCHAIN_SYMBOL];
-         return balance;
       }
+
+      return _wallet->get_account_balances( account_name );
    }
 
    signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
@@ -2706,6 +2702,15 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
+   signed_transaction client_impl::wallet_market_submit_short( const string& from_account,
+                                                             double quantity,
+                                                             double quote_price, const string& quote_symbol )
+   {
+      auto trx = _wallet->submit_short( from_account, quantity, quote_price, quote_symbol, true );
+
+      network_broadcast_transaction( trx );
+      return trx;
+   }
 
    signed_transaction client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                  const string& to_account_name,
@@ -2755,6 +2760,12 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_asks( quote_symbol, base_symbol, limit );
    }
 
+   vector<market_order>    client_impl::blockchain_market_list_shorts( const string& quote_symbol,
+                                                                       uint32_t limit  )
+   {
+      return _chain_db->get_market_shorts( quote_symbol, limit );
+   }
+
    vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                  const string& base_symbol,
                                                                  int64_t limit  )
@@ -2768,8 +2779,12 @@ config load_config( const fc::path& datadir )
       network_broadcast_transaction( trx );
       return trx;
    }
-   account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )
+
+   account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )const
    {
+      if( !account_name.empty() && !_chain_db->is_valid_account_name( account_name ) )
+          FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
+
       return _wallet->get_account_vote_summary( account_name );
    }
 
