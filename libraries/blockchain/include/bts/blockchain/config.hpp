@@ -42,7 +42,7 @@
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC                   int64_t(15)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC                   int64_t(10)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
@@ -91,8 +91,12 @@
  */
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
+#define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
+#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (10) 
+#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
+
 /** defines the maximum block size allowed, 2 MB per hour */
-#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       ( 2 * 1024*1024 / BTS_BLOCKCHAIN_BLOCKS_PER_HOUR)
+#define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       (BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE                 ( BTS_BLOCKCHAIN_MAX_BLOCK_SIZE / 2 )
 
 /** defines the target block size, fees will be adjusted to maintain this target */
@@ -101,9 +105,6 @@
 #define BTS_BLOCKCHAIN_BLOCK_REWARD                         (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE) //10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
 #define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                     (10)  // 10% per year
 
-#define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
-#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE / BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
-#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (20)
 
 /**
  *  defines the min fee in milli-shares per byte
