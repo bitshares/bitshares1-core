@@ -220,6 +220,7 @@ struct chain_fixture
    template<typename T>
    void produce_block( T my_client )
    {
+      fc::usleep( fc::microseconds( 10000 ) );
       if( my_client == clienta )
          console->print( "A: produce block----------------------------------------\n", fc::console_appender::color::blue );
       else

@@ -7,6 +7,8 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
 
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/unique_lock.hpp>
 #include <fc/io/fstream.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -109,6 +111,39 @@ namespace bts { namespace blockchain {
 
             void                                        update_delegate_production_info( const full_block& block_data,
                                                                                          const pending_chain_state_ptr& pending_state );
+
+            void                                        revalidate_pending()
+            {
+                  _pending_fee_index.clear();
+
+                  vector<transaction_id_type> trx_to_discard;
+
+                  _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+                  auto itr = _pending_transaction_db.begin();
+                  while( itr.valid() )
+                  {
+                     auto trx = itr.value();
+                     auto trx_id = trx.id();
+                     try {
+                        auto eval_state = self->evaluate_transaction( trx, _priority_fee );
+                        share_type fees = eval_state->get_fees();
+                        _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
+                        _pending_transaction_db.store( trx_id, trx );
+                     } 
+                     catch ( const fc::exception& e )
+                     {
+                        trx_to_discard.push_back(trx_id);
+                        wlog( "discarding invalid transaction: ${id} ${e}",
+                              ("id",trx_id)("e",e.to_detail_string()) );
+                     }
+                     ++itr;
+                  }
+
+                  for( const auto& item : trx_to_discard )
+                     _pending_transaction_db.remove( item );
+            }
+            fc::future<void> _revalidate_pending;
+            fc::mutex        _push_block_mutex;
       
             /**
              *  Used to track the cumulative effect of all pending transactions that are known,
@@ -265,31 +300,19 @@ namespace bts { namespace blockchain {
 
          _pending_fee_index.clear();
 
-         vector<transaction_id_type> trx_to_discard;
+         if( _revalidate_pending.valid() ) 
+         {
+            try {
+            _revalidate_pending.cancel();
+            _revalidate_pending.wait();
+            } catch ( ... ) {}
+         }
+         // schedule the revalidating of pending transactions for 1 second in the future so that we don't hold
+         // up block validation / propagation
+         //revalidate_pending();
+         _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );//, fc::time_point::now() + fc::seconds(1) );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-         auto itr = _pending_transaction_db.begin();
-         while( itr.valid() )
-         {
-            auto trx = itr.value();
-            auto trx_id = trx.id();
-            try {
-               auto eval_state = self->evaluate_transaction( trx, _priority_fee );
-               share_type fees = eval_state->get_fees();
-               _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-               _pending_transaction_db.store( trx_id, trx );
-            } 
-            catch ( const fc::exception& e )
-            {
-               trx_to_discard.push_back(trx_id);
-               wlog( "discarding invalid transaction: ${id} ${e}",
-                     ("id",trx_id)("e",e.to_detail_string()) );
-            }
-            ++itr;
-         }
-
-         for( const auto& item : trx_to_discard )
-            _pending_transaction_db.remove( item );
       }
 
       std::pair<block_id_type, block_fork_data> chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
@@ -1196,6 +1219,10 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
+      // only allow a single fiber attempt to push blocks at any given time,
+      // this method is not re-entrant.
+      fc::unique_lock<fc::mutex> lock( my->_push_block_mutex );
+
       auto processing_start_time = time_point::now();
       auto block_id = block_data.id();
       auto current_head_id = my->_head_block_id;
