@@ -1387,6 +1387,7 @@ config load_config( const fc::path& datadir )
       _wallet->unlock(password, timeout);
       reschedule_delegate_loop();
     }
+
     void detail::client_impl::wallet_change_passphrase(const string& new_password)
     {
       _wallet->change_passphrase(new_password);
@@ -2417,32 +2418,37 @@ config load_config( const fc::path& datadir )
     {
        fc::mutable_variant_object info;
        info["blockchain_id"]                        = _chain_db->chain_id();
-       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
-       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
        info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
        info["name"]                                 = BTS_BLOCKCHAIN_NAME;
        info["version"]                              = BTS_BLOCKCHAIN_VERSION;
-       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
+       info["genesis_timestamp"]                    = _chain_db->get_asset_record( asset_id_type() )->registration_date;
 
+       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
+       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
+       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
+       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
        info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
 
-
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+
        info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
        info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
        info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
+
        info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
+
        info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -2662,22 +2668,16 @@ config load_config( const fc::path& datadir )
 
    account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      account_balance_summary_type balances;
-      if( account_name.empty() )
-      {
-         balances = _wallet->get_account_balances();
-      }
-      else
+      if( !account_name.empty() )
       {
          if( !_chain_db->is_valid_account_name( account_name ) )
             FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
          if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
-
-         balances[ account_name ] = _wallet->get_account_balances()[ account_name ];
       }
-      return balances;
+
+      return _wallet->get_account_balances( account_name );
    }
 
    signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
@@ -2782,7 +2782,7 @@ config load_config( const fc::path& datadir )
 
    account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )const
    {
-      if( !_chain_db->is_valid_account_name( account_name ) )
+      if( !account_name.empty() && !_chain_db->is_valid_account_name( account_name ) )
           FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
       return _wallet->get_account_vote_summary( account_name );

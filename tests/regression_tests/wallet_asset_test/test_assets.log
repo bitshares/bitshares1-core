@@ -1,5 +1,7 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK
+default (unlocked) >>> wait 1
+OK
 default (unlocked) >>> filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_account_create test
@@ -10,18 +12,21 @@ default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
    PENDING   [redacted]          delegate0           test                100.00000 XTS       0.10000 XTS                                                [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
+default (unlocked) >>> wait 1
+OK
 default (unlocked) >>> wallet_account_balance test
-test:
-    100.00000 XTS
+ACCOUNT                         BALANCE                 
+--------------------------------------------------------
+test                            100.00000 XTS           
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
-  "expiration": null,
+  "expiration": "20140620T164010",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 1976081,
+        "amount": 12913,
         "claim_input_data": ""
       }
     },{
@@ -32,31 +37,35 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
         "description": "CREATING AN ASSET",
         "public_data": null,
         "issuer_account_id": 1,
-        "maximum_share_supply": 50000,
+        "maximum_share_supply": 500,
         "precision": 100
       }
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d228f77394c090d456f962fddb3529522f5376e02e77b2bf6670b89181bdddc130d",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bd15af46957166d8bb08108c3297aa18712fd7c545f9f90f4bf5d2ccac92020ef"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22113a61f6a78b4afd64bb8b6f0e174898949eed444ee698a16882d45d790332fc",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bf992fbb7a052e03dc916f31a98724f65578b8bd1c94d5ae54e574e0d26d1e35e"
   ]
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
+default (unlocked) >>> wait 1
+OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 -------------------------------------------------------------------------------------------------------------------
-1       [redacted]          delegate13                      0       182     0.00000 XTS     [redacted][redacted]     
-2       [redacted]          delegate14                      1       423     0.10000 XTS     [redacted][redacted]     
-3       [redacted]          delegate15                      1       405     19.76081 XTS    [redacted][redacted]     
+4       [redacted]          delegate81                      0       182     0.00000 XTS     [redacted][redacted]     
+3       [redacted]          delegate80                      1       408     0.12913 XTS     [redacted][redacted]     
+2       [redacted]          delegate79                      1       426     0.10000 XTS     [redacted][redacted]     
+1       [redacted]          delegate78                      0       182     0.00000 XTS     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
-    ID SYMBOL           NAME                        DESCRIPTION  CURRENT_SUPPLY      MAX_SUPPLY  FEES COLLECTED      REGISTERED
-     1    XMO DIGITAL_DEV...                  CREATING AN ASSET               0             500               0      [redacted]
-     0    XTS  BitShares XTS  Stake in future BitShares X ch...1999999980.14512     10000000000        19.86081      [redacted]
-default (unlocked) >>> wallet_asset_issue 100 XMO test "Sending some assets"
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       0.00 %    0.00 XMO                    
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.76988 XTS     
+default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
 {
-  "expiration": null,
+  "expiration": "20140620T164015",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -69,23 +78,23 @@ default (unlocked) >>> wallet_asset_issue 100 XMO test "Sending some assets"
       "type": "issue_asset_op_type",
       "data": {
         "amount": {
-          "amount": 10000,
+          "amount": 100,
           "asset_id": 1
         }
       }
     },{
       "type": "deposit_op_type",
       "data": {
-        "amount": 10000,
+        "amount": 100,
         "condition": {
           "asset_id": 1,
           "delegate_slate_id": 0,
           "type": "withdraw_signature_type",
           "data": {
-            "owner": "XTS2UYQDzrV1WxqZxo1rsCZBxaZAsjMBmnWg",
+            "owner": "XTSNSsyLyuw2CqSHq2KwBBLCmX3xSxeG9UbW",
             "memo": {
-              "one_time_key": "XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ",
-              "encrypted_memo_data": "e465255c8bca471b4107dac9b3d06aa72b4f8eeb6077067edf9258b71f686b9d0e4f44a98e3c9c2e8c32c14bab9c73498273bec4997334703a7264119bad00d1"
+              "one_time_key": "XTS7tiuERuqKUprGXxmsxW2vir3pJYvA38paRsFL1UCUs34pirbA3",
+              "encrypted_memo_data": "a68b8815fcdfa28d1b1f94e82523be71e915f763cb49150229cc53b7bde5a00df97f86ed90e21b9d9510d606d17cccac966ca62597ed4969b496381031cb39eb"
             }
           }
         }
@@ -93,18 +102,22 @@ default (unlocked) >>> wallet_asset_issue 100 XMO test "Sending some assets"
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0033d4e0d399ce5e9622d03a6c821586f7a8d0a81b0e560e2831e15c1aa773c576",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e668cc61c18f801cd1871d06e2646d69e38c883972143f8a519858d1db74d278029"
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e6601674f623f699cb0fe2b95a1befe215cf30e6aae744d01a32295183c3de8469b",
+    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c06a14867d4aa4f7b40c9a0cc0e36ba587bea66f3bcf60024e02fd8915efbc5d2"
   ]
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
+default (unlocked) >>> wait 1
+OK
 default (unlocked) >>> blockchain_list_assets
-    ID SYMBOL           NAME                        DESCRIPTION  CURRENT_SUPPLY      MAX_SUPPLY  FEES COLLECTED      REGISTERED
-     1    XMO DIGITAL_DEV...                  CREATING AN ASSET             100             500               0      [redacted]
-     0    XTS  BitShares XTS  Stake in future BitShares X ch...1999999980.05204     10000000000        19.96081      [redacted]
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       20.00 %   1.00 XMO                    
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.66988 XTS     
 default (unlocked) >>> wallet_account_balance test
-test:
-    100.00 XMO
-    100.00000 XTS
+ACCOUNT                         BALANCE                 
+--------------------------------------------------------
+test                            1.00 XMO                
+                                100.00000 XTS           
 default (unlocked) >>> quit
