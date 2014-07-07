@@ -307,6 +307,8 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _bandwidth_monitor_loop_done;
 
+      fc::future<void> _dump_node_status_task_done;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -335,6 +337,7 @@ namespace bts { namespace net { namespace detail {
       void fetch_updated_peer_lists_loop();
       void update_bandwidth_data(uint32_t usage_this_second);
       void bandwidth_monitor_loop();
+      void dump_node_status_task();
 
       bool is_accepting_new_connections();
       bool is_wanting_new_connections();
@@ -825,7 +828,7 @@ namespace bts { namespace net { namespace detail {
         // reconnect with the rest of the network, or it might just futher isolate us.
       
         uint32_t handshaking_timeout = _peer_inactivity_timeout;
-        fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout );
+        fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout);
         for( const peer_connection_ptr handshaking_peer : _handshaking_connections )
           if( handshaking_peer->connection_initiation_time < handshaking_disconnect_threshold &&
               handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
@@ -981,6 +984,12 @@ namespace bts { namespace net { namespace detail {
         update_bandwidth_data(usage_this_second);
         last_update_time = current_time;
       }
+    }
+
+    void node_impl::dump_node_status_task()
+    {
+      dump_node_status();
+      _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, fc::time_point::now() + fc::minutes(1));
     }
 
     bool node_impl::is_accepting_new_connections()
@@ -2189,7 +2198,6 @@ namespace bts { namespace net { namespace detail {
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
-      //dump_node_status();
       dlog( "received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint() ) );
       trigger_fetch_items_loop();
 
@@ -2368,7 +2376,7 @@ namespace bts { namespace net { namespace detail {
         }
         catch ( const fc::exception& e )
         {
-          wlog( "client rejected block sent by peer ${peer}, ${e}", ("peer", originating_peer->get_remote_endpoint() )("e", e.to_string() ) );
+          wlog( "client rejected message sent by peer ${peer}, ${e}", ("peer", originating_peer->get_remote_endpoint() )("e", e.to_string() ) );
           return;
         }
 
@@ -2419,14 +2427,17 @@ namespace bts { namespace net { namespace detail {
       _terminate_inactive_connections_loop_done.cancel();
       _fetch_updated_peer_lists_loop_done.cancel();
       _bandwidth_monitor_loop_done.cancel();
+      if (_dump_node_status_task_done.valid())
+        _dump_node_status_task_done.cancel();
 
-      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch ( ...  ){}
-      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch ( ...  ) {}
-      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(... ){}
-      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch ( ...  ){}
-      try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (... ){}
-      try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (... ){}
-      try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (... ){}
+      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch (...){}
+      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch (...) {}
+      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(...){}
+      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch (...){}
+      try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (...){}
+      try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (...){}
+      try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (...){}
+      try { if (_dump_node_status_task_done.valid()) _dump_node_status_task_done.wait(); } catch (...){}
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
@@ -2683,6 +2694,7 @@ namespace bts { namespace net { namespace detail {
       _terminate_inactive_connections_loop_done = fc::async( [=]() { terminate_inactive_connections_loop(); } );
       _fetch_updated_peer_lists_loop_done = fc::async([=](){ fetch_updated_peer_lists_loop(); });
       _bandwidth_monitor_loop_done = fc::async([=](){ bandwidth_monitor_loop(); });
+      _dump_node_status_task_done = fc::async([=](){ dump_node_status_task(); });
     }
 
     void node_impl::add_node( const fc::ip::endpoint& ep )
@@ -2739,40 +2751,40 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::dump_node_status()
     {
-      dlog( "----------------- PEER STATUS UPDATE --------------------" );
-      dlog( " number of peers: ${active} active, ${handshaking}, ${closing} closing.  attempting to maintain ${desired} - ${maximum} peers", 
+      ilog( "----------------- PEER STATUS UPDATE --------------------" );
+      ilog( " number of peers: ${active} active, ${handshaking}, ${closing} closing.  attempting to maintain ${desired} - ${maximum} peers", 
            ( "active", _active_connections.size() )("handshaking", _handshaking_connections.size() )("closing",_closing_connections.size() )
            ( "desired", _desired_number_of_connections )("maximum", _maximum_number_of_connections ) );
       for( const peer_connection_ptr& peer : _active_connections )
       {
-        dlog( "       active peer ${endpoint} peer_is_in_sync_with_us:${in_sync_with_us} we_are_in_sync_with_peer:${in_sync_with_them}", 
+        ilog( "       active peer ${endpoint} peer_is_in_sync_with_us:${in_sync_with_us} we_are_in_sync_with_peer:${in_sync_with_them}", 
              ( "endpoint", peer->get_remote_endpoint() )
              ( "in_sync_with_us", !peer->peer_needs_sync_items_from_us )("in_sync_with_them", !peer->we_need_sync_items_from_peer ) );
         if( peer->we_need_sync_items_from_peer )
-          dlog( "              above peer has ${count} sync items we might need", ("count", peer->ids_of_items_to_get.size() ) );
+          ilog( "              above peer has ${count} sync items we might need", ("count", peer->ids_of_items_to_get.size() ) );
       }
       for( const peer_connection_ptr& peer : _handshaking_connections )
       {
-        dlog( "  handshaking peer ${endpoint} in state ours(${our_state}) theirs(${their_state})", 
+        ilog( "  handshaking peer ${endpoint} in state ours(${our_state}) theirs(${their_state})", 
              ( "endpoint", peer->get_remote_endpoint() )("our_state", peer->our_state )("their_state", peer->their_state ) );
       }
 
-      dlog( "--------- MEMORY USAGE ------------" );
-      dlog( "node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
-      dlog( "node._received_sync_items size: ${size}", ("size", _received_sync_items.size() ) );
-      dlog( "node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size() ) );
-      dlog( "node._new_inventory size: ${size}", ("size", _new_inventory.size() ) );
-      dlog( "node._message_cache size: ${size}", ("size", _message_cache.size() ) );
+      ilog( "--------- MEMORY USAGE ------------" );
+      ilog( "node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
+      ilog( "node._received_sync_items size: ${size}", ("size", _received_sync_items.size() ) );
+      ilog( "node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size() ) );
+      ilog( "node._new_inventory size: ${size}", ("size", _new_inventory.size() ) );
+      ilog( "node._message_cache size: ${size}", ("size", _message_cache.size() ) );
       for( const peer_connection_ptr& peer : _active_connections )
       {
-        dlog( "  peer ${endpoint}", ("endpoint", peer->get_remote_endpoint() ) );
-        dlog( "    peer.ids_of_items_to_get size: ${size}", ("size", peer->ids_of_items_to_get.size() ) );
-        dlog( "    peer.inventory_peer_advertised_to_us size: ${size}", ("size", peer->inventory_peer_advertised_to_us.size() ) );
-        dlog( "    peer.inventory_advertised_to_peer size: ${size}", ("size", peer->inventory_advertised_to_peer.size() ) );
-        dlog( "    peer.items_requested_from_peer size: ${size}", ("size", peer->items_requested_from_peer.size() ) );
-        dlog( "    peer.sync_items_requested_from_peer size: ${size}", ("size", peer->sync_items_requested_from_peer.size() ) );
+        ilog( "  peer ${endpoint}", ("endpoint", peer->get_remote_endpoint() ) );
+        ilog( "    peer.ids_of_items_to_get size: ${size}", ("size", peer->ids_of_items_to_get.size() ) );
+        ilog( "    peer.inventory_peer_advertised_to_us size: ${size}", ("size", peer->inventory_peer_advertised_to_us.size() ) );
+        ilog( "    peer.inventory_advertised_to_peer size: ${size}", ("size", peer->inventory_advertised_to_peer.size() ) );
+        ilog( "    peer.items_requested_from_peer size: ${size}", ("size", peer->items_requested_from_peer.size() ) );
+        ilog( "    peer.sync_items_requested_from_peer size: ${size}", ("size", peer->sync_items_requested_from_peer.size() ) );
       }
-      dlog( "--------- END MEMORY USAGE ------------" );
+      ilog( "--------- END MEMORY USAGE ------------" );
     }
 
     void node_impl::disconnect_from_peer( peer_connection* peer_to_disconnect,
@@ -2948,7 +2960,6 @@ namespace bts { namespace net { namespace detail {
       _message_cache.cache_message( item_to_broadcast, hash_of_item_to_broadcast, propagation_data, hash_of_message_contents );
       _new_inventory.insert( item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast ) );
       trigger_advertise_inventory_loop();
-      dump_node_status();
     }
 
     void node_impl::broadcast( const message& item_to_broadcast )
