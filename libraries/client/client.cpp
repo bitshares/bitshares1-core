@@ -1387,6 +1387,7 @@ config load_config( const fc::path& datadir )
       _wallet->unlock(password, timeout);
       reschedule_delegate_loop();
     }
+
     void detail::client_impl::wallet_change_passphrase(const string& new_password)
     {
       _wallet->change_passphrase(new_password);

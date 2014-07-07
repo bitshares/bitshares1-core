@@ -847,32 +847,45 @@ namespace bts { namespace wallet {
 
    void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
-      FC_ASSERT( is_open() );
-      FC_ASSERT( password.size() >= BTS_WALLET_MIN_PASSWORD_LENGTH ) 
-      FC_ASSERT( timeout_seconds >= 1 );
+      try
+      {
+          FC_ASSERT( is_open() );
 
-      my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-      if( !my->_wallet_db.validate_password( my->_wallet_password ) )
+          if( timeout_seconds < 1 )
+              FC_THROW_EXCEPTION( invalid_timeout, "Invalid timeout!" );
+
+          const auto now = fc::time_point::now();
+          const auto new_lock_time = now + fc::seconds( timeout_seconds );
+          if( new_lock_time.sec_since_epoch() <= now.sec_since_epoch() )
+              FC_THROW_EXCEPTION( invalid_timeout, "Invalid timeout!" );
+
+          if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
+              FC_THROW_EXCEPTION( password_too_short, "Invalid password!" );
+
+          my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
+          if( !my->_wallet_db.validate_password( my->_wallet_password ) )
+              FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
+
+          my->_scheduled_lock_time = new_lock_time;
+          ilog( "Wallet unlocked at time: ${t}", ("t", fc::time_point_sec(now)) );
+          my->reschedule_relocker();
+          wallet_lock_state_changed( false );
+          ilog( "Wallet unlocked until time: ${t}", ("t", fc::time_point_sec(*my->_scheduled_lock_time)) );
+
+          /* Scan blocks we have missed while locked */
+          uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
+          scan_chain( first,
+                      my->_blockchain->get_head_block_num(),
+                      [first](uint32_t current, uint32_t end){
+              std::cout << " Scanning for new transactions in block: " << current-first << '/' << end-first << "\r" << std::flush;
+          });
+          std::cout << "Finished scanning for new transactions.                                " << std::endl;
+      }
+      catch( ... )
       {
           lock();
-          FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
+          throw;
       }
-
-      fc::time_point now = fc::time_point::now();
-      my->_scheduled_lock_time = now + fc::seconds(timeout_seconds);
-      ilog( "Wallet unlocked at time: ${t}", ("t", fc::time_point_sec(now)) );
-      my->reschedule_relocker();
-      wallet_lock_state_changed( false );
-      ilog( "Wallet unlocked until time: ${t}", ("t", fc::time_point_sec(*my->_scheduled_lock_time)) );
-
-      /* Scan blocks we have missed while locked */
-      uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
-      scan_chain( first,
-                  my->_blockchain->get_head_block_num(),
-                  [first](uint32_t current, uint32_t end){
-          std::cout << " Scanning for new transactions in block: " << current-first << '/' << end-first << "\r" << std::flush;
-      });
-      std::cout << "Finished scanning for new transactions.                                " << std::endl;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
 
    void wallet::lock()
