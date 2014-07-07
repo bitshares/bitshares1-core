@@ -1,5 +1,7 @@
 #include <bts/blockchain/pending_chain_state.hpp>
 
+#include <algorithm>
+
 namespace bts { namespace blockchain {
 
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
@@ -36,6 +38,17 @@ namespace bts { namespace blockchain {
    {
       /** nothing to do for now... charge 5% inactivity fee? */
       /** execute order matching */
+      auto domain_recs = vector<domain_record>();
+      for ( auto kv : domains )
+      {
+        domain_recs.push_back(kv.second);
+      }
+      std::sort(domain_recs.begin(), domain_recs.end(),
+                [](const domain_record& a, const domain_record& b)
+      {
+          return a.last_bid > b.last_bid; // largest first
+      });
+       
    }
 
    /** polymorphically allcoate a new state */

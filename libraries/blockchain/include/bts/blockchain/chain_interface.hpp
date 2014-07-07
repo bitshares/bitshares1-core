@@ -3,10 +3,10 @@
 #include <bts/blockchain/account_record.hpp>
 #include <bts/blockchain/asset_record.hpp>
 #include <bts/blockchain/balance_record.hpp>
+#include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/dns_record.hpp>
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
-#include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/proposal_record.hpp>
 #include <bts/blockchain/types.hpp>
 
