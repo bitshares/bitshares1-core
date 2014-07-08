@@ -928,6 +928,41 @@ namespace bts { namespace cli {
                   }
                   *_out << "\n"; 
               }
+              else if (method_name == "blockchain_market_order_book")
+              {
+                  auto bids_asks = result.as<std::pair<vector<market_order>,vector<market_order>>>();
+                  *_out << std::string(18, ' ') << "BIDS" << std::string(18, ' ') << " | " << std::string(18, ' ') << "ASKS" << std::string(18, ' ') << "\n"
+                        << std::left << std::setw(20) << "QUANTITY" << std::right << std::setw(20) << "PRICE"
+                        << " | " << std::left << std::setw(20) << "PRICE" << std::right << std::setw(20) << "QUANTITY" << "\n"
+                        << std::string(83, '-') << "\n";
+
+                  vector<market_order>::iterator bid_itr = bids_asks.first.begin();
+                  auto ask_itr = bids_asks.second.begin();
+
+                  while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
+                  {
+                    if( bid_itr != bids_asks.first.end() )
+                    {
+                      *_out << std::left << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order?
+                                 _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
+                               : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
+                            << std::right << std::setw(20) << _client->get_chain()->to_pretty_price(bid_itr->get_price());
+                      ++bid_itr;
+                    }
+                      else
+                          *_out << std::string(40, '-');
+
+                      *_out << " | ";
+
+                    if( ask_itr != bids_asks.second.end() )
+                    {
+                      *_out << std::left << std::setw(20) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                            << std::right << std::setw(20) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity());
+                      ++ask_itr;
+                    }
+                      *_out << "\n";
+                  }
+              }
               else if (method_name == "network_list_potential_peers")
               {
                   auto peers = result.as<std::vector<net::potential_peer_record>>();
