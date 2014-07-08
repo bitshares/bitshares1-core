@@ -2867,7 +2867,7 @@ config load_config( const fc::path& datadir )
 
       map<fc::time_point, std::string> brief_errors;
       for (auto full_error : full_errors)
-        brief_errors.emplace(std::make_pair(full_error.first, full_error.second.what()));
+        brief_errors.insert(std::make_pair(full_error.first, full_error.second.what()));
 
       if( filename != "" )
       {
