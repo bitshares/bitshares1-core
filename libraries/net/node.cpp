@@ -47,7 +47,7 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
-#define P2P_IN_DEDICATED_THREAD 1
+//#define P2P_IN_DEDICATED_THREAD 1
 
 namespace bts { namespace net { 
 
@@ -535,7 +535,7 @@ namespace bts { namespace net { namespace detail {
       _desired_number_of_connections( BTS_NET_DEFAULT_DESIRED_CONNECTIONS ),
       _maximum_number_of_connections( BTS_NET_DEFAULT_MAX_CONNECTIONS ),
       _peer_connection_retry_timeout( BTS_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME ),
-      _peer_inactivity_timeout(  BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT ),
+      _peer_inactivity_timeout(  BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT * 10 ),
       _most_recent_blocks_accepted( _maximum_number_of_connections ),
       _total_number_of_unfetched_items( 0 ),
       _rate_limiter( 0, 0 ),
