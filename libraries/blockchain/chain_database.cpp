@@ -1764,7 +1764,7 @@ namespace bts { namespace blockchain {
          rec.id                = account_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
-         rec.set_active_key( bts::blockchain::now(),  name.owner );
+         rec.set_active_key( timestamp, name.owner );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
          if( name.is_delegate )
@@ -1774,6 +1774,26 @@ namespace bts { namespace blockchain {
          }
          self->store_account_record( rec );
          ++account_id;
+      }
+
+      int32_t asset_id = 1;
+      for( const auto& asset : config.market_assets )
+      {
+         asset_record rec;
+         rec.id = asset_id;
+         rec.symbol = asset.symbol;
+         rec.name = asset.name;
+         rec.description = asset.description;
+         rec.public_data = variant("");
+         rec.issuer_account_id = god.id;
+         rec.precision = asset.precision;
+         rec.registration_date = timestamp;
+         rec.last_update = timestamp;
+         rec.current_share_supply = 0;
+         rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+         rec.collected_fees = 0;
+         self->store_asset_record( rec );
+         ++asset_id;
       }
 
       int64_t n = 0;
@@ -1812,12 +1832,14 @@ namespace bts { namespace blockchain {
       base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
       base_asset.name = BTS_BLOCKCHAIN_NAME;
       base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
-      base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
+      base_asset.public_data = variant("");
       base_asset.issuer_account_id = god.id;
+      base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
+      base_asset.registration_date = timestamp;
+      base_asset.last_update = timestamp;
       base_asset.current_share_supply = total.amount;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
       base_asset.collected_fees = 0;
-      base_asset.registration_date = config.timestamp;
       self->store_asset_record( base_asset );
 
       block_fork_data gen_fork;
@@ -1881,13 +1903,26 @@ namespace bts { namespace blockchain {
 
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t count )const
     { try {
-       auto itr = my->_account_index_db.lower_bound(first);
        std::vector<account_record> names;
+       auto itr = my->_account_index_db.begin();
+
+       if( first.size() > 0 && isdigit(first[0]) )
+       {
+         int32_t skip = atoi(first.c_str()) - 1;
+
+         while( skip-- > 0 && itr++.valid() );
+       }
+       else
+       {
+         itr = my->_account_index_db.lower_bound(first);
+       }
+
        while( itr.valid() && names.size() < count )
        {
           names.push_back( *get_account_record( itr.value() ) );
           ++itr;
        }
+
        return names;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
 

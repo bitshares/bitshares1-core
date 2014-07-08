@@ -678,8 +678,19 @@ namespace bts { namespace cli {
               }
               else if( method_name == "wallet_market_order_list" )
               {
-                  auto order_list = result.as<vector<market_order_status> >();
-                  print_wallet_market_order_list( order_list );
+                  const auto& market_order_statuses = result.as<vector<market_order_status>>();
+                  vector<market_order> market_orders;
+                  market_orders.reserve( market_order_statuses.size() );
+                  for( const auto& market_order_status : market_order_statuses )
+                      market_orders.push_back( market_order_status.order );
+                  *_out << pretty_market_orders( market_orders, _client );
+              }
+              else if( method_name == "blockchain_market_list_asks"
+                       || method_name == "blockchain_market_list_bids"
+                       || method_name == "blockchain_market_list_shorts" )
+              {
+                  const auto& market_orders = result.as<vector<market_order>>();
+                  *_out << pretty_market_orders( market_orders, _client );
               }
               else if ( command == "wallet_list_my_accounts" )
               {
@@ -917,6 +928,50 @@ namespace bts { namespace cli {
                   }
                   *_out << "\n"; 
               }
+              else if (method_name == "blockchain_market_order_book")
+              {
+                  auto bids_asks = result.as<std::pair<vector<market_order>,vector<market_order>>>();
+                  *_out << std::string(28, ' ') << "BIDS" << std::string(28, ' ') << " | " << std::string(28, ' ') << "ASKS" << std::string(28, ' ') << "\n"
+                        << std::left << std::setw(26) << "TOTAL" << std::setw(14) << "QUANTITY" << std::right << std::setw(20) << "PRICE"
+                        << " | " << std::left << std::setw(14) << "PRICE" << std::right << std::setw(20) << "QUANTITY" << std::setw(26) << "TOTAL" << "\n"
+                        << std::string(123, '-') << "\n";
+
+                  vector<market_order>::iterator bid_itr = bids_asks.first.begin();
+                  auto ask_itr = bids_asks.second.begin();
+
+                  while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
+                  {
+                    if( bid_itr != bids_asks.first.end() )
+                    {
+                      *_out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order?
+                                 _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
+                               : _client->get_chain()->to_pretty_asset(bid_itr->get_quantity()))
+                            << std::setw(14) << (bid_itr->type == bts::blockchain::bid_order?
+                                 _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
+                               : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
+                            << std::right << std::setw(20) << _client->get_chain()->to_pretty_price(bid_itr->get_price());
+
+                      if( bid_itr->type == bts::blockchain::short_order )
+                          *_out << '*';
+                      else
+                          *_out << ' ';
+
+                      ++bid_itr;
+                    }
+
+                    *_out << "| ";
+
+                    if( ask_itr != bids_asks.second.end() )
+                    {
+                      *_out << std::left << std::setw(14) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                            << std::right << std::setw(20) << _client->get_chain()->to_pretty_asset(ask_itr->get_balance())
+                            << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_balance()*ask_itr->get_price());
+                      ++ask_itr;
+                    }
+                    *_out << "\n";
+                  }
+                  *_out << "\n* Short Order\n";
+              }
               else if (method_name == "network_list_potential_peers")
               {
                   auto peers = result.as<std::vector<net::potential_peer_record>>();
@@ -1126,34 +1181,6 @@ namespace bts { namespace cli {
                     counter++;
 
                 }
-            }
-
-            void print_wallet_market_order_list( const vector<market_order_status>& order_list )
-            {
-                if( !_out ) return;
-
-                std::ostream& out = *_out;
-
-                out << std::setw( 40 ) << std::left << "ID";
-                out << std::setw( 12 )  << "TYPE";
-                out << std::setw( 20 ) << "QUANTITY";
-                out << std::setw( 20 ) << "PRICE";
-                out << std::setw( 20 ) << "BALANCE";
-                out << std::setw( 20 ) << "COST";
-                out << "\n";
-                out <<"-----------------------------------------------------------------------------------------------------------\n";
-
-                for( const auto& order : order_list )
-                {
-                   out << std::setw( 40 )  << std::left << variant( order.order.market_index.owner ).as_string(); //order.get_id();
-                   out << std::setw( 12  )  << variant( order.get_type() ).as_string();
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() );
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_price( order.get_price() ); //order.market_index.order_price );
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_balance() );
-                   out << std::setw( 20  ) << _client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
-                   out << "\n";
-                }
-                out << "\n";
             }
 
             void print_network_usage_graph( const std::vector<uint32_t>& usage_data )

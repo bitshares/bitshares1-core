@@ -88,7 +88,7 @@ namespace bts { namespace blockchain {
    *  asset type with the lower enum value is always the
    *  denominator.  Therefore  bts/usd and  usd/bts will
    *  always result in a price measured in usd/bts because
-   *  bitasset_id_type::bit_shares <  bitasset_id_type::bit_usd.
+   *  bitasset_id_type::bit_shares < bitasset_id_type::bit_usd.
    */
   price operator / ( const asset& a, const asset& b );
 

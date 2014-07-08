@@ -63,6 +63,7 @@ namespace bts { namespace wallet {
              bool                               _delegate_scanning_enabled;
 
              fc::thread                         _wallet_scan_thread;
+             float                              _wallet_scan_progress;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -102,42 +103,43 @@ namespace bts { namespace wallet {
                }
             }
 
-             secret_hash_type get_secret( uint32_t block_num,
-                                          const private_key_type& delegate_key )const;
+            secret_hash_type get_secret( uint32_t block_num,
+                                         const private_key_type& delegate_key )const;
 
-             void scan_block( uint32_t block_num, 
-                              const vector<private_key_type>& keys );
+            void scan_block( uint32_t block_num, const vector<private_key_type>& keys );
 
-             bool scan_withdraw( const withdraw_operation& op );
+            void scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
+                                   const vector<private_key_type>& keys );
 
-             bool scan_deposit( wallet_transaction_record& trx_rec, const deposit_operation& op, 
-                                 const private_keys& keys );
+            bool scan_withdraw( const withdraw_operation& op );
 
-             bool scan_register_account( const register_account_operation& op );
-             bool scan_update_account( const update_account_operation& op );
-             bool scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op );
-             bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
-             bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
-             bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
-             bool scan_short( wallet_transaction_record& trx_rec, const short_operation& op );
+            bool scan_deposit( wallet_transaction_record& trx_rec, const deposit_operation& op, 
+                               const private_keys& keys );
 
-             bool sync_balance_with_blockchain( const balance_id_type& balance_id );
+            bool scan_register_account( const register_account_operation& op );
+            bool scan_update_account( const update_account_operation& op );
+            bool scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op );
+            bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
+            bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
+            bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
+            bool scan_short( wallet_transaction_record& trx_rec, const short_operation& op );
 
-             vector<wallet_transaction_record> get_pending_transactions()const;
-             void clear_pending_transactions();
+            bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
-             void scan_balances();
-             void scan_registered_accounts();
-             void withdraw_to_transaction( share_type amount,
-                                           asset_id_type asset_id,
-                                           const address& from_account_address,
-                                           signed_transaction& trx, 
-                                           unordered_set<address>& required_fees );
-             bool address_in_account( const address& address_to_check,
-                                      const address& account_address )const;
+            vector<wallet_transaction_record> get_pending_transactions()const;
+            void clear_pending_transactions();
 
+            void scan_balances();
+            void scan_registered_accounts();
+            void withdraw_to_transaction( share_type amount,
+                                          asset_id_type asset_id,
+                                          const address& from_account_address,
+                                          signed_transaction& trx, 
+                                          unordered_set<address>& required_fees );
+            bool address_in_account( const address& address_to_check,
+                                     const address& account_address )const;
 
-             owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
+            owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
       };
      
       vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
@@ -262,106 +264,102 @@ namespace bts { namespace wallet {
          return fc::ripemd160::hash( enc.result() );
       }
 
-      void wallet_impl::scan_block( uint32_t block_num, 
-                                    const private_keys& keys )
+      void wallet_impl::scan_block( uint32_t block_num, const private_keys& keys )
       {
-         //std::cout << "scanning block number " << block_num << "    keys: " << keys.size() << "    \r";
-         auto current_block = _blockchain->get_block( block_num );
-         for( const auto& trx : current_block.user_transactions )
-         {
-            bool cache_trx = false;
-            //std::cout << "scanning block number " << block_num << "    \n";
-            //std::cout << "    scanning trx: " << fc::json::to_string( trx) << "    \n";
-            owallet_transaction_record current_trx_record = _wallet_db.lookup_transaction( trx.id() );
-            if( current_trx_record.valid() )
-            {
-               cache_trx = true;
-            }
-            else
-            {
-               current_trx_record = wallet_transaction_record();
-            }
-            current_trx_record->block_num = block_num;
-            current_trx_record->trx = trx;
-            current_trx_record->received_time = current_block.timestamp;
+         const auto block = _blockchain->get_block( block_num );
+         for( const auto& transaction : block.user_transactions )
+             scan_transaction( transaction, block.block_num, block.timestamp, keys );
+      }
 
-            for( const auto& op : trx.operations )
-            {
-               switch( (operation_type_enum)op.type )
-               {
+      void wallet_impl::scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
+                                          const vector<private_key_type>& keys )
+      {
+          const auto transaction_id = transaction.id();
+          auto transaction_record = _wallet_db.lookup_transaction( transaction_id );
+          bool cache_transaction = transaction_record.valid();
+          if( !cache_transaction ) transaction_record = wallet_transaction_record();
+
+          transaction_record->trx = transaction;
+          transaction_record->transaction_id = transaction_id;
+          transaction_record->block_num = block_num;
+          transaction_record->received_time = block_timestamp; /* TODO: Use actual network received time */
+
+          for( const auto& op : transaction.operations )
+          {
+              switch( operation_type_enum( op.type ) )
+              {
                   case null_op_type:
-                     FC_THROW( "null_op_type not implemented!" );
-                     break;
+                      FC_THROW_EXCEPTION( invalid_operation, "Null operation type!", ("op",op) );
+                      break;
 
                   case withdraw_op_type:
-                     cache_trx |= scan_withdraw( op.as<withdraw_operation>() );
-                     break;
+                      cache_transaction |= scan_withdraw( op.as<withdraw_operation>() );
+                      break;
                   case deposit_op_type:
-                     cache_trx |= scan_deposit( *current_trx_record, op.as<deposit_operation>(), keys ); 
-                     break;
+                      cache_transaction |= scan_deposit( *transaction_record, op.as<deposit_operation>(), keys );
+                      break;
 
                   case register_account_op_type:
-                     cache_trx |= scan_register_account( op.as<register_account_operation>() );
-                     break;
+                      cache_transaction |= scan_register_account( op.as<register_account_operation>() );
+                      break;
                   case update_account_op_type:
-                     cache_trx |= scan_update_account( op.as<update_account_operation>() );
-                     break;
+                      cache_transaction |= scan_update_account( op.as<update_account_operation>() );
+                      break;
                   case withdraw_pay_op_type:
-                     // TODO: FC_THROW( "withdraw_pay_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "withdraw_pay_op_type not implemented!" );
+                      break;
 
                   case create_asset_op_type:
-                     cache_trx |= scan_create_asset( *current_trx_record, op.as<create_asset_operation>() );
-                     break;
+                      cache_transaction |= scan_create_asset( *transaction_record, op.as<create_asset_operation>() );
+                      break;
                   case update_asset_op_type:
-                     // TODO: FC_THROW( "update_asset_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "update_asset_op_type not implemented!" );
+                      break;
                   case issue_asset_op_type:
-                     cache_trx |= scan_issue_asset( *current_trx_record, op.as<issue_asset_operation>() );
-                     break;
+                      cache_transaction |= scan_issue_asset( *transaction_record, op.as<issue_asset_operation>() );
+                      break;
 
                   case fire_delegate_op_type:
-                     // TODO: FC_THROW( "fire_delegate_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "fire_delegate_op_type not implemented!" );
+                      break;
 
                   case submit_proposal_op_type:
-                     // TODO: FC_THROW( "submit_proposal_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "submit_proposal_op_type not implemented!" );
+                      break;
                   case vote_proposal_op_type:
-                     // TODO: FC_THROW( "vote_proposal_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "vote_proposal_op_type not implemented!" );
+                      break;
 
                   case bid_op_type:
-                     cache_trx |= scan_bid( *current_trx_record, op.as<bid_operation>() );
-                     break;
+                      cache_transaction |= scan_bid( *transaction_record, op.as<bid_operation>() );
+                      break;
                   case ask_op_type:
-                     cache_trx |= scan_ask( *current_trx_record, op.as<ask_operation>() );
-                     break;
+                      cache_transaction |= scan_ask( *transaction_record, op.as<ask_operation>() );
+                      break;
                   case short_op_type:
-                     cache_trx |= scan_short( *current_trx_record, op.as<short_operation>() );
-                     break;
+                      cache_transaction |= scan_short( *transaction_record, op.as<short_operation>() );
+                      break;
                   case cover_op_type:
-                     // TODO: FC_THROW( "cover_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "cover_op_type not implemented!" );
+                      break;
                   case add_collateral_op_type:
-                     // TODO: FC_THROW( "add_collateral_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "add_collateral_op_type not implemented!" );
+                      break;
                   case remove_collateral_op_type:
-                     // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
+                      break;
+
                   case define_delegate_slate_op_type:
-                     // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                     break;
+                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
+                      break;
 
                   default:
-                     FC_THROW( "unknown operation type!" );
-                     break;
-               }
-            }
+                      FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type!", ("op",op) );
+                      break;
+              }
+          }
 
-            if( cache_trx )
-               _wallet_db.store_transaction( *current_trx_record );
-         }
+          if( cache_transaction ) _wallet_db.store_transaction( *transaction_record );
       }
 
       bool wallet_impl::scan_withdraw( const withdraw_operation& op )
@@ -688,7 +686,6 @@ namespace bts { namespace wallet {
 
       try
       {
-          close();
           create_file( wallet_file_path, password, brainkey );
           open( wallet_name );
           unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
@@ -712,9 +709,10 @@ namespace bts { namespace wallet {
 
       try
       {
+          close();
+
           my->_wallet_db.open( wallet_file_path );
           my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-
 
           master_key new_master_key;
           extended_private_key epk;
@@ -763,8 +761,6 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
-      if( is_open() ) return;
-
       try
       {
           open_file( wallet_file_path );
@@ -781,15 +777,13 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
-      if( is_open() ) return;
-
       try
       {
           close();
           my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
 
-          auto tmp_balances = my->_wallet_db.get_balances();
+          const auto tmp_balances = my->_wallet_db.get_balances();
           for( const auto& item : tmp_balances )
               my->sync_balance_with_blockchain( item.first );
 
@@ -1263,28 +1257,57 @@ namespace bts { namespace wallet {
 
       auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
 
-      auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
-
-      for( auto block_num = start; block_num <= min_end; ++block_num )
+      try
       {
-         my->scan_block( block_num, account_priv_keys );
-         if( progress_callback )
-            progress_callback( block_num, min_end );
-         my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+        my->_wallet_scan_progress = 0;
+        auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+
+        for( auto block_num = start; block_num <= min_end; ++block_num )
+        {
+           my->scan_block( block_num, account_priv_keys );
+           if( progress_callback )
+              progress_callback( block_num, min_end );
+           my->_wallet_scan_progress = float(block_num-start)/(min_end-start+1);
+           my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+        }
+
+        for( auto acct : my->_wallet_db.get_accounts() )
+        {
+           auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
+           if (blockchain_acct_rec.valid())
+           {
+               blockchain::account_record& brec = acct.second;
+               brec = *blockchain_acct_rec;
+               my->_wallet_db.cache_account( acct.second );
+           }
+        }
+        my->_wallet_scan_progress = 1;
       }
-
-      for( auto acct : my->_wallet_db.get_accounts() )
+      catch(...)
       {
-         auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
-         if (blockchain_acct_rec.valid())
-         {
-             blockchain::account_record& brec = acct.second;
-             brec = *blockchain_acct_rec;
-             my->_wallet_db.cache_account( acct.second );
-         }
+        my->_wallet_scan_progress = -1;
+        throw;
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
+
+   void wallet::scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      const auto block = my->_blockchain->get_block( block_num );
+
+      const auto transaction = std::find_if( block.user_transactions.begin(), block.user_transactions.end(),
+                                             [transaction_id]( const signed_transaction& transaction )
+                                             { return transaction.id() == transaction_id; } );
+      if( transaction == block.user_transactions.end() )
+          FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!",
+                              ("block_num",block_num)("transaction_id",transaction_id) );
+
+      const auto keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+      my->scan_transaction( *transaction, block_num, block.timestamp, keys );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
@@ -3636,6 +3659,7 @@ namespace bts { namespace wallet {
           if (my->_scheduled_lock_time)
             relock_time_in_sec = *my->_scheduled_lock_time;                                
           obj( "scheduled_lock_time", relock_time_in_sec);
+          obj( "wallet_scan_progress", my->_wallet_scan_progress );
        }
        else
        {

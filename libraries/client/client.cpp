@@ -250,7 +250,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::info;
+    dlc_p2p.level = fc::log_level::debug;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -973,7 +973,7 @@ config load_config( const fc::path& datadir )
           //_chain_db->export_fork_graph(dot_filename);
           //wlog("Graph written to file ${dot_filename}", ("dot_filename", dot_filename));
 
-          assert(false);
+          FC_ASSERT(false);
           // and work around it
           last_seen_block_num = head_block_num;
         }
@@ -992,7 +992,7 @@ config load_config( const fc::path& datadir )
           {
             ilog("chain_database::get_block failed to return block number ${last_seen_block_num} even though chain_database::get_block_num() provided its block number",
                  ("last_seen_block_num",last_seen_block_num));
-            assert( !"I assume this can never happen");
+            FC_ASSERT( !"I assume this can never happen");
           }
           hashes_to_return.push_back(header.id());
           ++last_seen_block_num;
@@ -1022,7 +1022,7 @@ config load_config( const fc::path& datadir )
             {
               // block is a block we know about and is on the main chain
               uint32_t reference_point_block_num = _chain_db->get_block_num(reference_point);
-              assert(reference_point_block_num > 0);
+              FC_ASSERT(reference_point_block_num > 0);
               high_block_num = reference_point_block_num;
               non_fork_high_block_num = high_block_num;
             }
@@ -1032,22 +1032,22 @@ config load_config( const fc::path& datadir )
               try
               {
                 fork_history = _chain_db->get_fork_history(reference_point);
-                assert(fork_history.size() >= 2);
-                assert(fork_history.front() == reference_point);
+                FC_ASSERT(fork_history.size() >= 2);
+                FC_ASSERT(fork_history.front() == reference_point);
                 block_id_type last_non_fork_block = fork_history.back();
                 fork_history.pop_back();
                 boost::reverse(fork_history);
                 try
                 {
                   non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-                  assert(non_fork_high_block_num > 0);
+                  FC_ASSERT(non_fork_high_block_num > 0);
                 }
                 catch (const fc::key_not_found_exception&)
                 {
-                  assert(!"get_fork_history() returned a history that doesn't link to the main chain");
+                  FC_ASSERT(!"get_fork_history() returned a history that doesn't link to the main chain");
                 }
                 high_block_num = non_fork_high_block_num + fork_history.size();
-                assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
+                FC_ASSERT(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
               }
               catch (const fc::exception& e)
               {
@@ -1060,7 +1060,7 @@ config load_config( const fc::path& datadir )
           }
           catch (const fc::key_not_found_exception&)
           {
-            assert(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
+            FC_ASSERT(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
             // we've never seen this block
             return synopsis;
           }
@@ -1172,7 +1172,7 @@ config load_config( const fc::path& datadir )
            // genesis block?  That's not stored off directly anywhere I can find, but it
            // does wind its way into the the registration date of the base asset.
            oasset_record base_asset_record = _chain_db->get_asset_record(BTS_BLOCKCHAIN_SYMBOL);
-           assert(base_asset_record);
+           FC_ASSERT(base_asset_record);
            if (!base_asset_record)
              return fc::time_point_sec::min();
            return base_asset_record->registration_date;
@@ -1254,8 +1254,34 @@ config load_config( const fc::path& datadir )
         // re-register the _user_appender which was overwritten by configure_logging()
         fc::logger::get( "user" ).add_appender( my->_user_appender );
 
-        my->_exception_db.open( data_dir / "exceptions", true );
-        my->_chain_db->open( data_dir / "chain", genesis_file_path );
+        try
+        {
+          my->_exception_db.open( data_dir / "exceptions", true );
+        }
+        catch( const db::db_in_use_exception& e )
+        {
+          if( e.to_string().find("Corruption") != string::npos )
+          {
+            elog("Exception database corrupted. Deleting it and attempting to recover.");
+            fc::remove_all( data_dir / "exceptions" );
+            my->_exception_db.open( data_dir / "exceptions", true );
+          }
+        }
+
+        try
+        {
+          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+        }
+        catch( const db::db_in_use_exception& e )
+        {
+          if( e.to_string().find("Corruption") != string::npos )
+          {
+            elog("Chain database corrupted. Deleting it and attempting to recover.");
+            fc::remove_all( data_dir / "chain" );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          }
+        }
+
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
@@ -2312,7 +2338,13 @@ config load_config( const fc::path& datadir )
                 FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
             }
         }
-        my->_p2p_node->connect_to(ep);
+        try
+        {
+          my->_p2p_node->connect_to(ep);
+        }
+        catch (const bts::net::already_connected_to_requested_peer&)
+        {
+        }
     }
 
     void client::listen_to_p2p_network()
@@ -2548,7 +2580,12 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
+    void client_impl::wallet_scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
+    { try {
+       _wallet->scan_transaction( block_num, transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
+
+    bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
     {
         blockchain_security_state state;
         int64_t required_confirmations = _chain_db->get_required_confirmations();
@@ -2766,6 +2803,34 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_shorts( quote_symbol, limit );
    }
 
+   std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
+                                                                                              const string& base_symbol,
+                                                                                              uint32_t limit  )
+   {
+      auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
+
+      if( _chain_db->get_asset_id(base_symbol) == 0 )
+      {
+        auto shorts = blockchain_market_list_shorts(quote_symbol, limit);
+        bids.reserve(bids.size() + shorts.size());
+        for( auto order : shorts )
+          bids.push_back(order);
+        std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
+          return a.market_index < b.market_index;
+        });
+
+        if( bids.size() > limit )
+          bids.resize(limit);
+      }
+
+      auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
+      std::sort(asks.begin(), asks.end(), [](const market_order& a, const market_order& b) -> bool {
+        return a.market_index < b.market_index;
+      });
+
+      return std::make_pair(bids, asks);
+   }
+
    vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                  const string& base_symbol,
                                                                  int64_t limit  )
@@ -2834,7 +2899,7 @@ config load_config( const fc::path& datadir )
 
       map<fc::time_point, std::string> brief_errors;
       for (auto full_error : full_errors)
-        brief_errors.emplace(std::make_pair(full_error.first, full_error.second.what()));
+        brief_errors.insert(std::make_pair(full_error.first, full_error.second.what()));
 
       if( filename != "" )
       {

@@ -87,8 +87,8 @@ namespace bts { namespace net {
     std::vector<potential_peer_record> get_all()const;
 
     typedef detail::peer_database_iterator iterator;
-    iterator begin();
-    iterator end();
+    iterator begin() const;
+    iterator end() const;
     size_t size() const;
   private:
     std::unique_ptr<detail::peer_database_impl> my;

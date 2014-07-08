@@ -216,12 +216,12 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 20 ) << "TIMESTAMP";
     out << std::setw( 20 ) << "FROM";
     out << std::setw( 20 ) << "TO";
-    out << std::setw( 20 ) << "AMOUNT";
+    out << std::setw( 22 ) << "AMOUNT";
     out << std::setw( 20 ) << "FEE";
     out << std::setw( 39 ) << "MEMO";
     out << std::setw(  8 ) << "ID";
 
-    out << pretty_line( 160 );
+    out << pretty_line( 162 );
 
     for( const auto& transaction : transactions )
     {
@@ -238,7 +238,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         out << std::setw( 20 ) << pretty_timestamp( fc::time_point_sec( transaction.received_time ) );
         out << std::setw( 20 ) << pretty_shorten( transaction.from_account, 19 );
         out << std::setw( 20 ) << pretty_shorten( transaction.to_account, 19 );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( transaction.amount );
+        out << std::setw( 22 ) << client->get_chain()->to_pretty_asset( transaction.amount );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( transaction.fees ) );
         out << std::setw( 39 ) << pretty_shorten( transaction.memo_message, 38 );
 
@@ -413,6 +413,39 @@ string pretty_vote_summary( const account_vote_summary_type& votes )
 
         out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
         out << std::setw( 16 ) << votes_for;
+
+        out << "\n";
+    }
+
+    return out.str();
+}
+
+string pretty_market_orders( const vector<market_order>& market_orders, cptr client )
+{
+    if( market_orders.empty() ) return "No market orders found.\n";
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    out << std::setw( 12 ) << "TYPE";
+    out << std::setw( 20 ) << "QUANTITY";
+    out << std::setw( 20 ) << "PRICE";
+    out << std::setw( 20 ) << "BALANCE";
+    out << std::setw( 20 ) << "COST";
+    out << std::setw( 36 ) << "ID";
+
+    out << pretty_line( 128 );
+
+    for( const auto& order : market_orders )
+    {
+        out << std::setw( 12 ) << variant( order.type ).as_string();
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_price( order.get_price() );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
+        //out << std::setw( 36 ) << order.get_id();
+        out << std::setw( 36 ) << fc::variant( order.market_index.owner ).as_string();
 
         out << "\n";
     }

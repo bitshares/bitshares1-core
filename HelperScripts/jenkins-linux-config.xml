@@ -1,13 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
-  <description>Bitshares Toolkit for Windows 32-bit&#xd;
-</description>
-  <displayName>Bitshares Toolkit for Windows 32-bit</displayName>
+  <description></description>
+  <displayName>Bitshares Toolkit for Linux</displayName>
   <keepDependencies>false</keepDependencies>
   <properties/>
   <scm class="hudson.scm.NullSCM"/>
-  <assignedNode>win32</assignedNode>
+  <assignedNode>linux</assignedNode>
   <canRoam>false</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
@@ -18,16 +17,13 @@
     </hudson.triggers.TimerTrigger>
   </triggers>
   <concurrentBuild>false</concurrentBuild>
-  <customWorkspace>c:\jenkins\workspace\bitshares_toolkit_win32</customWorkspace>
   <builders>
-    <hudson.tasks.BatchFile>
-      <command>if exist bitshares_toolkit (
-  rmdir /Q /S bitshares_toolkit || exit /b 10
-)
-git clone https://github.com/BitShares/bitshares_toolkit.git || exit /b 11
-call bitshares_toolkit\HelperScripts\jenkins_build32.bat || exit /b 12
+    <hudson.tasks.Shell>
+      <command>rm -rf bitshares_toolkit build
+git clone https://github.com/BitShares/bitshares_toolkit.git
+$WORKSPACE/bitshares_toolkit/HelperScripts/jenkins_build.sh
 </command>
-    </hudson.tasks.BatchFile>
+    </hudson.tasks.Shell>
   </builders>
   <publishers/>
   <buildWrappers/>

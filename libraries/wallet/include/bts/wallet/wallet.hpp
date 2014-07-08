@@ -123,6 +123,8 @@ namespace bts { namespace wallet {
                                const scan_progress_callback& progress_callback = scan_progress_callback() );
          uint32_t  get_last_scanned_block_number()const;
 
+         void      scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id );
+
          ///@{ account management
          public_key_type  create_account( const string& account_name, 
                                           const variant& private_data = variant() );

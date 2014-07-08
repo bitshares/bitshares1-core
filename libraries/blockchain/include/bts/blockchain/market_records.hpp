@@ -53,9 +53,14 @@ namespace bts { namespace blockchain {
        
       market_order(){}
 
-      order_type_enum  type;
-      market_index_key market_index;
-      order_record     state;
+      string            get_id()const;
+      asset             get_balance()const; // funds available for this order
+      price             get_price()const;
+      asset             get_quantity()const;
+
+      order_type_enum   type;
+      market_index_key  market_index;
+      order_record      state;
    };
 
    typedef optional<market_order> omarket_order;
