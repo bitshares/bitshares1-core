@@ -257,7 +257,7 @@ class WalletAPI
     @rpc.request('wallet_transfer', [amount_to_transfer, asset_symbol, from_account_name, to_account_name, memo_message]).then (response) ->
       response.result
 
-  # Scans the transaction history for operations relevant to this wallet.
+  # Scans the blockchain history for operations relevant to this wallet.
   # parameters: 
   #   uint32_t `first_block_number` - the first block to scan
   #   uint32_t `num_blocks` - the number of blocks to scan

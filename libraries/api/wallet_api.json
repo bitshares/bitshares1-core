@@ -553,7 +553,7 @@
       },
       {
         "method_name": "wallet_rescan_blockchain",
-        "description": "Scans the transaction history for operations relevant to this wallet.",
+        "description": "Scans the blockchain history for operations relevant to this wallet.",
         "return_type": "void",
         "parameters" : 
           [

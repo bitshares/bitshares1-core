@@ -221,7 +221,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 39 ) << "MEMO";
     out << std::setw(  8 ) << "ID";
 
-    out << pretty_line( 162 );
+    out << pretty_line( 163 );
 
     for( const auto& transaction : transactions )
     {
