@@ -48,10 +48,10 @@ namespace bts { namespace net
         assert( our_state == our_connection_state::disconnected &&
                 their_state == their_connection_state::disconnected );
         direction = peer_connection_direction::inbound;
-        _remote_endpoint = _message_connection.get_socket().remote_endpoint();
         negotiation_status = connection_negotiation_status::accepting;
         _message_connection.accept();           // perform key exchange
         negotiation_status = connection_negotiation_status::accepted;
+        _remote_endpoint = _message_connection.get_socket().remote_endpoint();
 
         // firewall-detecting info is pretty useless for inbound connections, but initialize 
         // it the best we can

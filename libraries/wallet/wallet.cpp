@@ -683,7 +683,6 @@ namespace bts { namespace wallet {
 
       try
       {
-          close();
           create_file( wallet_file_path, password, brainkey );
           open( wallet_name );
           unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
@@ -707,9 +706,10 @@ namespace bts { namespace wallet {
 
       try
       {
+          close();
+
           my->_wallet_db.open( wallet_file_path );
           my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-
 
           master_key new_master_key;
           extended_private_key epk;
@@ -758,8 +758,6 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
-      if( is_open() ) return;
-
       try
       {
           open_file( wallet_file_path );
@@ -776,15 +774,13 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
-      if( is_open() ) return;
-
       try
       {
           close();
           my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
 
-          auto tmp_balances = my->_wallet_db.get_balances();
+          const auto tmp_balances = my->_wallet_db.get_balances();
           for( const auto& item : tmp_balances )
               my->sync_balance_with_blockchain( item.first );
 

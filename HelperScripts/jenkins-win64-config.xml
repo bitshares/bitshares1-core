@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description>Bitshares Toolkit for Windows 64-bit</description>
+  <displayName>Bitshares Toolkit for Windows 64-bit</displayName>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <assignedNode>win64</assignedNode>
+  <canRoam>false</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers class="vector">
+    <hudson.triggers.TimerTrigger>
+      <spec>@midnight</spec>
+    </hudson.triggers.TimerTrigger>
+  </triggers>
+  <concurrentBuild>false</concurrentBuild>
+  <customWorkspace>c:\jenkins\workspace\bitshares_toolkit_win64</customWorkspace>
+  <builders>
+    <hudson.tasks.BatchFile>
+      <command>if exist bitshares_toolkit (
+  rmdir /Q /S bitshares_toolkit || exit /b 10
+)
+git clone https://github.com/BitShares/bitshares_toolkit.git || exit /b 11
+call bitshares_toolkit\HelperScripts\jenkins_build64.bat || exit /b 12
+</command>
+    </hudson.tasks.BatchFile>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>

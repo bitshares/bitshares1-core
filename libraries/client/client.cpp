@@ -250,7 +250,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::info;
+    dlc_p2p.level = fc::log_level::debug;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -2312,7 +2312,13 @@ config load_config( const fc::path& datadir )
                 FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
             }
         }
-        my->_p2p_node->connect_to(ep);
+        try
+        {
+          my->_p2p_node->connect_to(ep);
+        }
+        catch (const bts::net::already_connected_to_requested_peer&)
+        {
+        }
     }
 
     void client::listen_to_p2p_network()
@@ -2867,7 +2873,7 @@ config load_config( const fc::path& datadir )
 
       map<fc::time_point, std::string> brief_errors;
       for (auto full_error : full_errors)
-        brief_errors.emplace(std::make_pair(full_error.first, full_error.second.what()));
+        brief_errors.insert(std::make_pair(full_error.first, full_error.second.what()));
 
       if( filename != "" )
       {
