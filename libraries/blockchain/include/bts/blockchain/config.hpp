@@ -5,9 +5,9 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                              (105)
-#define BTS_WALLET_VERSION                                  (101)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (110)
+#define BTS_BLOCKCHAIN_VERSION                          (2105)
+#define BTS_WALLET_VERSION                              (2101)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                 (2110)
 
 /**
  *  The address prepended to string representation of
