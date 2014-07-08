@@ -1254,8 +1254,34 @@ config load_config( const fc::path& datadir )
         // re-register the _user_appender which was overwritten by configure_logging()
         fc::logger::get( "user" ).add_appender( my->_user_appender );
 
-        my->_exception_db.open( data_dir / "exceptions", true );
-        my->_chain_db->open( data_dir / "chain", genesis_file_path );
+        try
+        {
+          my->_exception_db.open( data_dir / "exceptions", true );
+        }
+        catch( const db::db_in_use_exception& e )
+        {
+          if( e.to_string().find("Corruption") != string::npos )
+          {
+            elog("Exception database corrupted. Deleting it and attempting to recover.");
+            fc::remove_all( data_dir / "exceptions" );
+            my->_exception_db.open( data_dir / "exceptions", true );
+          }
+        }
+
+        try
+        {
+          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+        }
+        catch( const db::db_in_use_exception& e )
+        {
+          if( e.to_string().find("Corruption") != string::npos )
+          {
+            elog("Chain database corrupted. Deleting it and attempting to recover.");
+            fc::remove_all( data_dir / "chain" );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          }
+        }
+
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
