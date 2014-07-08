@@ -19,11 +19,12 @@ if exist leveldb-win (
 )
 
 cd %WORKSPACE%
-call bitshares_toolkit/setenv.bat || exit /b 26
+call bitshares_toolkit/setenv_x64.bat || exit /b 26
+call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" x86_amd64 || exit /b 29
 if exist build (
   rmdir /Q /S build || exit /b 27
 )
 mkdir build
 cd build
-cmake -G "Visual Studio 12" ../bitshares_toolkit || exit /b 28
-msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebinfo /p:Platform=Win32 /target:rebuild /clp:ErrorsOnly BitShares.sln || exit /b 30
+cmake -G "Visual Studio 12 Win64" ../bitshares_toolkit || exit /b 28
+msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebinfo /p:Platform=x64 /target:rebuild /clp:ErrorsOnly BitShares.sln || exit /b 30

@@ -1,13 +1,12 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <project>
   <actions/>
-  <description>Bitshares Toolkit for Windows 32-bit&#xd;
-</description>
-  <displayName>Bitshares Toolkit for Windows 32-bit</displayName>
+  <description>Bitshares Toolkit for Windows 64-bit</description>
+  <displayName>Bitshares Toolkit for Windows 64-bit</displayName>
   <keepDependencies>false</keepDependencies>
   <properties/>
   <scm class="hudson.scm.NullSCM"/>
-  <assignedNode>win32</assignedNode>
+  <assignedNode>win64</assignedNode>
   <canRoam>false</canRoam>
   <disabled>false</disabled>
   <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
@@ -18,7 +17,7 @@
     </hudson.triggers.TimerTrigger>
   </triggers>
   <concurrentBuild>false</concurrentBuild>
-  <customWorkspace>c:\jenkins\workspace\bitshares_toolkit_win32</customWorkspace>
+  <customWorkspace>c:\jenkins\workspace\bitshares_toolkit_win64</customWorkspace>
   <builders>
     <hudson.tasks.BatchFile>
       <command>if exist bitshares_toolkit (
