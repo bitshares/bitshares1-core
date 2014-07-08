@@ -1306,6 +1306,31 @@ namespace bts { namespace wallet {
       my->scan_transaction( *transaction, block_num, block.timestamp, keys );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   void wallet::scan_transactions( uint32_t block_num, const string& transaction_id_prefix )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+          FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+
+      const auto block = my->_blockchain->get_block( block_num );
+      const auto keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+      bool found = false;
+
+      for( const auto& transaction : block.user_transactions )
+      {
+          const auto transaction_id = string( transaction.id() );
+          if( string( transaction.id() ).find( transaction_id_prefix ) != 0 ) continue;
+          my->scan_transaction( transaction, block_num, block.timestamp, keys );
+          found = true;
+      }
+
+      if( !found )
+          FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!",
+                              ("block_num",block_num)("transaction_id_prefix",transaction_id_prefix) );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
    void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
       trx.expiration = bts::blockchain::now() + BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC;

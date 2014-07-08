@@ -211,7 +211,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
     std::stringstream out;
 
-    out << std::setw(  7 ) << std::right << "BLK" << ".";
+    out << std::setw(  8 ) << std::right << "BLK" << ".";
     out << std::setw(  5 ) << std::left << "TRX";
     out << std::setw( 20 ) << "TIMESTAMP";
     out << std::setw( 20 ) << "FROM";
@@ -227,12 +227,12 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     {
         if( transaction.block_num > 0 )
         {
-            out << std::setw( 7 ) << std::right << transaction.block_num << ".";
+            out << std::setw( 8 ) << std::right << transaction.block_num << ".";
             out << std::setw( 5 ) << std::left << transaction.trx_num;
         }
         else
         {
-            out << std::setw( 13 ) << "   PENDING";
+            out << std::setw( 14 ) << "   PENDING";
         }
 
         out << std::setw( 20 ) << pretty_timestamp( fc::time_point_sec( transaction.received_time ) );

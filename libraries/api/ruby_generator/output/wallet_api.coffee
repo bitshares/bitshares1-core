@@ -266,6 +266,15 @@ class WalletAPI
     @rpc.request('wallet_rescan_blockchain', [first_block_number, num_blocks]).then (response) ->
       response.result
 
+  # Scans the specified transaction
+  # parameters: 
+  #   uint32_t `block_num` - the block containing the transaction
+  #   string `transaction_id` - the id (or id prefix) of the transaction
+  # return_type: `void`
+  scan_transaction: (block_num, transaction_id) ->
+    @rpc.request('wallet_scan_transaction', [block_num, transaction_id]).then (response) ->
+      response.result
+
   # Updates the data published about a given account
   # parameters: 
   #   account_name `account_name` - the account that will be updated
