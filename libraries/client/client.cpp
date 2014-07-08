@@ -2470,9 +2470,14 @@ config load_config( const fc::path& datadir )
       /* Blockchain */
       uint32_t head_block_num                                   = _chain_db->get_head_block_num();
       info["blockchain_head_block_num"]                         = head_block_num;
-      fc::time_point_sec head_block_timestamp                   = _chain_db->now();
-      info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
-      info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
+      info["blockchain_head_block_age"]                         = variant();
+      info["blockchain_head_block_timestamp"]                   = variant();
+      if( head_block_num > 0 )
+      {
+          fc::time_point_sec head_block_timestamp                   = _chain_db->now();
+          info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
+          info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
+      }
 
       info["blockchain_average_delegate_participation"]         = _chain_db->get_average_delegate_participation();
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
