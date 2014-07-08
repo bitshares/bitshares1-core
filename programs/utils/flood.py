@@ -19,7 +19,7 @@ def main() :
     i = 1
     while True :
         print "sending 1 transactions"
-        for j in range(10):
+        for j in range(11):
             payload = {
                 "method": "wallet_transfer",
                 "params": [0.1, "XTS", "founders", "founders", "id:%d.%d"%(i,j)],
