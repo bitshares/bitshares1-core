@@ -3093,6 +3093,10 @@ config load_config( const fc::path& datadir )
         return fc::variant( _chain_db->get_domain_record( domain_name ) );
     }    
 
+    vector<domain_record>     client_impl::domain_list_auctions()
+    {
+        return _chain_db->get_domains_in_auction();
+    }
 
     /* End DNS methods */
 

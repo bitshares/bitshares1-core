@@ -84,6 +84,15 @@
             "prerequisites": ["wallet_open", "wallet_unlocked"]
         },
         {
+            "method_name": "domain_list_auctions",
+            "description": "List all the domains currently in auction",
+            "return_type": "domain_record_array",
+            "parameters": 
+            [
+            ],
+            "prerequisites": ["json_authenticated"]
+        },
+        {
             "method_name": "domain_show",
             "description": "Gets the user-specified value associated with this domain.",
             "return_type": "json_variant",

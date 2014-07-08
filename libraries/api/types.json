@@ -536,6 +536,15 @@
       {
           "type_name" : "map<transaction_id_type, fc::exception>",
           "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, fc::exception>"
+      },
+      {
+        "type_name" : "domain_record",
+        "cpp_return_type" : "bts::blockchain::domain_record"
+      },
+      {
+        "type_name" : "domain_record_array",
+        "container_type" : "array",
+        "contained_type" : "domain_record"
       }
     ]
 }

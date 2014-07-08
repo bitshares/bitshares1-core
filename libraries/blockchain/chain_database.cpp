@@ -1526,12 +1526,12 @@ namespace bts { namespace blockchain {
       auto old_domain_rec = my->_domain_db.find( rec.domain_name );
       if( old_domain_rec.valid() && my->_auction_db.find( old_domain_rec.value().get_auction_key() ).valid() )
       {
-          my->_auction_db.erase( old_domain_rec.value().get_auction_key() );
+          my->_auction_db.remove( old_domain_rec.value().get_auction_key() );
       }
       my->_domain_db.store( rec.domain_name, rec );
-      if( rec.update_type == domain_record::first_bid
-       || rec.update_type == domain_record::bid
-       || rec.update_type == domain_record::sell )
+      if(   rec.update_type == domain_record::first_bid
+         || rec.update_type == domain_record::bid
+         || rec.update_type == domain_record::sell )
       {
          my->_auction_db.store( rec.get_auction_key(), rec.domain_name );
       }

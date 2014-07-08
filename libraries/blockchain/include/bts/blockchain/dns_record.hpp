@@ -48,7 +48,7 @@ namespace bts { namespace blockchain {
 
         uint32_t                                      time_in_top;
 
-        auction_index_key get_auction_key()
+        auction_index_key get_auction_key() const
         {
             auto key = auction_index_key();
             key.domain_name = this->domain_name;

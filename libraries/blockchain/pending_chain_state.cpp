@@ -309,7 +309,16 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_domain_record( const domain_record& r )
    {
+      if( domains.find( r.domain_name ) != domains.end() )
+      {
+          auto old_rec = domains[r.domain_name];
+          if( auctions.find( old_rec.get_auction_key() ) != auctions.end() )
+          {
+              auctions.erase( old_rec.get_auction_key() );
+          }
+      }
       domains[r.domain_name] = r;
+      auctions[r.get_auction_key()] = r.domain_name;
    }
 
    vector<domain_record>   pending_chain_state::get_domain_records( const string& first_name,
