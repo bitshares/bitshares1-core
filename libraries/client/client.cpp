@@ -2143,6 +2143,7 @@ config load_config( const fc::path& datadir )
       auto option_variables = parse_option_variables(argc,argv);
 
       fc::path datadir = bts::client::get_data_dir(option_variables);
+      fc::create_directories(datadir);
 
       // this just clears the database if the command line says
       // TODO: rename it to smething better
