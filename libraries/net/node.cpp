@@ -47,13 +47,14 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
-//#define P2P_IN_DEDICATED_THREAD 1
+#define P2P_IN_DEDICATED_THREAD 1
 
 namespace bts { namespace net { 
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
                           (send_queue_overflow)
-                          (insufficient_priority_fee) )
+                          (insufficient_priority_fee)
+                          (already_connected_to_requested_peer) )
 
   namespace detail 
   {
@@ -346,7 +347,7 @@ namespace bts { namespace net { namespace detail {
 #endif // ENABLE_P2P_DEBUGGING_API
 
       node_impl();
-      ~node_impl();
+      virtual ~node_impl();
 
       void save_node_configuration();
 
@@ -2829,8 +2830,8 @@ namespace bts { namespace net { namespace detail {
     void node_impl::connect_to( const fc::ip::endpoint& remote_endpoint )
     {
       VERIFY_CORRECT_THREAD();
-      if( is_connection_to_endpoint_in_progress(remote_endpoint ) )
-        FC_THROW( "already connected to requested endpoint ${endpoint}", ("endpoint", remote_endpoint ) );
+      if( is_connection_to_endpoint_in_progress(remote_endpoint) )
+        FC_THROW_EXCEPTION( already_connected_to_requested_peer, "already connected to requested endpoint ${endpoint}", ("endpoint", remote_endpoint ) );
 
       dlog( "node_impl::connect_to(${endpoint})", ("endpoint", remote_endpoint ) );
       peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
