@@ -1521,7 +1521,19 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_domain_record( const domain_record& rec )
    { try {
+      // delete the old auction index if it exists
+      auto old_domain_rec = my->_domain_db.find( rec.domain_name );
+      if( old_domain_rec.valid() && my->_auction_db.find( old_domain_rec.value().get_auction_key() ).valid() )
+      {
+          my->_auction_db.erase( old_domain_rec.value().get_auction_key() );
+      }
       my->_domain_db.store( rec.domain_name, rec );
+      if( rec.update_type == domain_record::first_bid
+       || rec.update_type == domain_record::bid
+       || rec.update_type == domain_record::sell )
+      {
+         my->_auction_db.store( rec.get_auction_key(), rec.domain_name );
+      }
    } FC_CAPTURE_AND_RETHROW( (rec) ) }
 
 
