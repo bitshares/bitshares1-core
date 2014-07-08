@@ -25,6 +25,11 @@ namespace bts { namespace blockchain {
       if( current_asset_record )
          FC_CAPTURE_AND_THROW( asset_symbol_in_use, (symbol) );
 
+      auto asset_id = eval_state._current_state->last_asset_id() + 1;
+      current_asset_record = eval_state._current_state->get_asset_record( asset_id );
+      if( current_asset_record )
+         FC_CAPTURE_AND_THROW( asset_id_in_use, (asset_id) );
+
       if( issuer_account_id != asset_record::market_issued_asset )
       {
          auto issuer_account_record = eval_state._current_state->get_account_record( this->issuer_account_id );
