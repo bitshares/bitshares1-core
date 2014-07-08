@@ -973,7 +973,7 @@ config load_config( const fc::path& datadir )
           //_chain_db->export_fork_graph(dot_filename);
           //wlog("Graph written to file ${dot_filename}", ("dot_filename", dot_filename));
 
-          assert(false);
+          FC_ASSERT(false);
           // and work around it
           last_seen_block_num = head_block_num;
         }
@@ -992,7 +992,7 @@ config load_config( const fc::path& datadir )
           {
             ilog("chain_database::get_block failed to return block number ${last_seen_block_num} even though chain_database::get_block_num() provided its block number",
                  ("last_seen_block_num",last_seen_block_num));
-            assert( !"I assume this can never happen");
+            FC_ASSERT( !"I assume this can never happen");
           }
           hashes_to_return.push_back(header.id());
           ++last_seen_block_num;
@@ -1022,7 +1022,7 @@ config load_config( const fc::path& datadir )
             {
               // block is a block we know about and is on the main chain
               uint32_t reference_point_block_num = _chain_db->get_block_num(reference_point);
-              assert(reference_point_block_num > 0);
+              FC_ASSERT(reference_point_block_num > 0);
               high_block_num = reference_point_block_num;
               non_fork_high_block_num = high_block_num;
             }
@@ -1032,22 +1032,22 @@ config load_config( const fc::path& datadir )
               try
               {
                 fork_history = _chain_db->get_fork_history(reference_point);
-                assert(fork_history.size() >= 2);
-                assert(fork_history.front() == reference_point);
+                FC_ASSERT(fork_history.size() >= 2);
+                FC_ASSERT(fork_history.front() == reference_point);
                 block_id_type last_non_fork_block = fork_history.back();
                 fork_history.pop_back();
                 boost::reverse(fork_history);
                 try
                 {
                   non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-                  assert(non_fork_high_block_num > 0);
+                  FC_ASSERT(non_fork_high_block_num > 0);
                 }
                 catch (const fc::key_not_found_exception&)
                 {
-                  assert(!"get_fork_history() returned a history that doesn't link to the main chain");
+                  FC_ASSERT(!"get_fork_history() returned a history that doesn't link to the main chain");
                 }
                 high_block_num = non_fork_high_block_num + fork_history.size();
-                assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
+                FC_ASSERT(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
               }
               catch (const fc::exception& e)
               {
@@ -1060,7 +1060,7 @@ config load_config( const fc::path& datadir )
           }
           catch (const fc::key_not_found_exception&)
           {
-            assert(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
+            FC_ASSERT(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
             // we've never seen this block
             return synopsis;
           }
@@ -1172,7 +1172,7 @@ config load_config( const fc::path& datadir )
            // genesis block?  That's not stored off directly anywhere I can find, but it
            // does wind its way into the the registration date of the base asset.
            oasset_record base_asset_record = _chain_db->get_asset_record(BTS_BLOCKCHAIN_SYMBOL);
-           assert(base_asset_record);
+           FC_ASSERT(base_asset_record);
            if (!base_asset_record)
              return fc::time_point_sec::min();
            return base_asset_record->registration_date;

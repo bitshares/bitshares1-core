@@ -45,7 +45,7 @@ namespace bts { namespace net
     {
       try
       {
-        assert( our_state == our_connection_state::disconnected &&
+        FC_ASSERT( our_state == our_connection_state::disconnected &&
                 their_state == their_connection_state::disconnected );
         direction = peer_connection_direction::inbound;
         negotiation_status = connection_negotiation_status::accepting;
@@ -75,7 +75,7 @@ namespace bts { namespace net
     {
       try
       {
-        assert( our_state == our_connection_state::disconnected && their_state == their_connection_state::disconnected );
+        FC_ASSERT( our_state == our_connection_state::disconnected && their_state == their_connection_state::disconnected );
         direction = peer_connection_direction::outbound;
 
         _remote_endpoint = remote_endpoint;
