@@ -105,7 +105,6 @@
 #define BTS_BLOCKCHAIN_BLOCK_REWARD                         (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE) //10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
 #define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                     (10)  // 10% per year
 
-
 /**
  *  defines the min fee in milli-shares per byte
  */
@@ -117,12 +116,7 @@
 
  *   Currently set to 2 weeks of active block production to break even.
  */
-#if BTS_BLOCKCHAIN_VERSION > 104
 #define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
-#else
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCK_REWARD)
-#endif
-
 
 /**
     If you are going to create an asset, you expect that it will be used in transactions.  We would
@@ -133,8 +127,4 @@
     The fee is set such that the transactions of this asset alone could justify filling up 2 full weeks of
     block production.
  */
-#if BTS_BLOCKCHAIN_VERSION > 104
 #define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE               (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
-#else
-#define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE               (BTS_BLOCKCHAIN_BLOCK_REWARD)
-#endif
