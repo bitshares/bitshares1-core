@@ -346,7 +346,7 @@ namespace bts { namespace net { namespace detail {
 #endif // ENABLE_P2P_DEBUGGING_API
 
       node_impl();
-      ~node_impl();
+      virtual ~node_impl();
 
       void save_node_configuration();
 
