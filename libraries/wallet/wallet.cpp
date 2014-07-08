@@ -60,6 +60,7 @@ namespace bts { namespace wallet {
              bool                               _delegate_scanning_enabled;
 
              fc::thread                         _wallet_scan_thread;
+             float                              _wallet_scan_progress;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -1253,25 +1254,36 @@ namespace bts { namespace wallet {
 
       auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
 
-      auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
-
-      for( auto block_num = start; block_num <= min_end; ++block_num )
+      try
       {
-         my->scan_block( block_num, account_priv_keys );
-         if( progress_callback )
-            progress_callback( block_num, min_end );
-         my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+        my->_wallet_scan_progress = 0;
+        auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+
+        for( auto block_num = start; block_num <= min_end; ++block_num )
+        {
+           my->scan_block( block_num, account_priv_keys );
+           if( progress_callback )
+              progress_callback( block_num, min_end );
+           my->_wallet_scan_progress = float(block_num-start)/(min_end-start+1);
+           my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+        }
+
+        for( auto acct : my->_wallet_db.get_accounts() )
+        {
+           auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
+           if (blockchain_acct_rec.valid())
+           {
+               blockchain::account_record& brec = acct.second;
+               brec = *blockchain_acct_rec;
+               my->_wallet_db.cache_account( acct.second );
+           }
+        }
+        my->_wallet_scan_progress = 1;
       }
-
-      for( auto acct : my->_wallet_db.get_accounts() )
+      catch(...)
       {
-         auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
-         if (blockchain_acct_rec.valid())
-         {
-             blockchain::account_record& brec = acct.second;
-             brec = *blockchain_acct_rec;
-             my->_wallet_db.cache_account( acct.second );
-         }
+        my->_wallet_scan_progress = -1;
+        throw;
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
@@ -3644,6 +3656,7 @@ namespace bts { namespace wallet {
           if (my->_scheduled_lock_time)
             relock_time_in_sec = *my->_scheduled_lock_time;                                
           obj( "scheduled_lock_time", relock_time_in_sec);
+          obj( "wallet_scan_progress", my->_wallet_scan_progress );
        }
        else
        {
