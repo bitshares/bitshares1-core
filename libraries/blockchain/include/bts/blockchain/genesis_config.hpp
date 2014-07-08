@@ -14,31 +14,24 @@ namespace bts { namespace blockchain {
      bool               is_delegate;
   };
 
+  struct asset_config // these are all market-issued assets
+  {
+     std::string       symbol;
+     std::string       name;
+     std::string       description;
+     uint64_t          precision;
+  };
+  
   struct genesis_block_config
   {
-     fc::time_point_sec                             timestamp;
-     std::vector< name_config >                     names;
-     std::vector<std::pair<pts_address, double>>    balances;
-#if BTS_BLOCKCHAIN_VERSION > 104
-#warning [HARDFORK] Remove below deprecated members
-#else
-     genesis_block_config():supply(0),precision(1000000) {}
-     int64_t                                                        supply;
-     int64_t                                                        precision;
-     std::string                                                    base_symbol;
-     std::string                                                    base_name;
-     std::string                                                    base_description;
-#endif
+     fc::time_point_sec                         timestamp;
+     std::vector<asset_config>                  market_assets;
+     std::vector<name_config>                   names;
+     std::vector<std::pair<pts_address,double>> balances;
   };
 
 } } // bts::blockchain
 
-#if BTS_BLOCKCHAIN_VERSION > 104
 FC_REFLECT( bts::blockchain::name_config, (name)(owner)(is_delegate) )
-FC_REFLECT( bts::blockchain::genesis_block_config, (timestamp)(names)(balances) )
-#warning [HARDFORK] Remove below deprecated members
-#else
-FC_REFLECT( bts::blockchain::name_config, (name)(is_delegate)(owner) )
-FC_REFLECT( bts::blockchain::genesis_block_config,
-            (supply)(precision)(timestamp)(base_name)(base_symbol)(base_description)(names)(balances) )
-#endif
+FC_REFLECT( bts::blockchain::asset_config, (symbol)(name)(description)(precision) )
+FC_REFLECT( bts::blockchain::genesis_block_config, (timestamp)(market_assets)(names)(balances) )

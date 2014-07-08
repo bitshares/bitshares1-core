@@ -38,6 +38,7 @@ namespace bts { namespace blockchain {
          virtual oasset_record        get_asset_record( const string& symbol )const override;
          virtual oaccount_record      get_account_record( const string& name )const override;
 
+         virtual omarket_order        get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override;
          virtual oorder_record        get_bid_record( const market_index_key& )const override;
          virtual oorder_record        get_ask_record( const market_index_key& )const override;
          virtual oorder_record        get_short_record( const market_index_key& )const override;
@@ -119,6 +120,11 @@ namespace bts { namespace blockchain {
 
          unordered_map< string, domain_record>                          domains;
          map< auction_index_key, string >                               auctions;
+         /**
+          * Set of markets that have had changes to their bids/asks and therefore must 
+          * be executed 
+          */
+         map<asset_id_type, asset_id_type>                              _dirty_markets;
 
          chain_interface_weak_ptr                                       _prev_state;
    };

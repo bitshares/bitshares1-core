@@ -423,6 +423,22 @@ namespace bts { namespace blockchain {
       return oorder_record();
    }
 
+   omarket_order   pending_chain_state::get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      omarket_order result;
+      if( prev_state ) 
+      {
+        auto pending = prev_state->get_lowest_ask_record( quote_id, base_id );
+        if( pending )
+        {
+           pending->state = *get_ask_record( pending->market_index );
+        }
+        return pending;
+      }
+      return result;
+   }
+
    oorder_record pending_chain_state::get_ask_record( const market_index_key& key )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();

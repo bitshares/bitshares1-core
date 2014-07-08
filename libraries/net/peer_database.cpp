@@ -72,8 +72,8 @@ namespace bts { namespace net {
       void update_entry(const potential_peer_record& updatedRecord);
       potential_peer_record lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);
 
-      peer_database::iterator begin();
-      peer_database::iterator end();
+      peer_database::iterator begin() const;
+      peer_database::iterator end() const;
       size_t size() const;
     };
 
@@ -160,12 +160,12 @@ namespace bts { namespace net {
       return potential_peer_record(endpointToLookup);
     }
 
-    peer_database::iterator peer_database_impl::begin()
+    peer_database::iterator peer_database_impl::begin() const
     {
       return peer_database::iterator(new peer_database_iterator_impl(_potential_peer_set.get<last_seen_time_index>().begin()));
     }
 
-    peer_database::iterator peer_database_impl::end()
+    peer_database::iterator peer_database_impl::end() const
     {
       return peer_database::iterator(new peer_database_iterator_impl(_potential_peer_set.get<last_seen_time_index>().end()));
     }
@@ -245,12 +245,12 @@ namespace bts { namespace net {
     return my->lookup_or_create_entry_for_endpoint(endpointToLookup);
   }
 
-  peer_database::iterator peer_database::begin()
+  peer_database::iterator peer_database::begin() const
   {
     return my->begin();
   }
 
-  peer_database::iterator peer_database::end()
+  peer_database::iterator peer_database::end() const
   {
     return my->end();
   }

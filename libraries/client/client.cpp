@@ -1387,6 +1387,7 @@ config load_config( const fc::path& datadir )
       _wallet->unlock(password, timeout);
       reschedule_delegate_loop();
     }
+
     void detail::client_impl::wallet_change_passphrase(const string& new_password)
     {
       _wallet->change_passphrase(new_password);
@@ -2417,32 +2418,37 @@ config load_config( const fc::path& datadir )
     {
        fc::mutable_variant_object info;
        info["blockchain_id"]                        = _chain_db->chain_id();
-       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
-       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
        info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
        info["name"]                                 = BTS_BLOCKCHAIN_NAME;
        info["version"]                              = BTS_BLOCKCHAIN_VERSION;
-       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
+       info["genesis_timestamp"]                    = _chain_db->get_asset_record( asset_id_type() )->registration_date;
 
+       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+
+       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
+       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
+       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
        info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
 
-
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+
        info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
        info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
        info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
+
        info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
+
        info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -2542,7 +2548,12 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    bts::blockchain::blockchain_security_state    client_impl::blockchain_get_security_state()const
+    void client_impl::wallet_scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
+    { try {
+       _wallet->scan_transaction( block_num, transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
+
+    bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
     {
         blockchain_security_state state;
         int64_t required_confirmations = _chain_db->get_required_confirmations();
@@ -2648,11 +2659,6 @@ config load_config( const fc::path& datadir )
       fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
     }
 
-    vector<wallet_balance_record> client_impl::wallet_list_unspent_balances( const string& account_name, const string& symbol )
-    {
-       return _wallet->get_unspent_balances( account_name, symbol );
-    }
-
     vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
     {
         vector<public_key_summary> summaries;
@@ -2665,24 +2671,18 @@ config load_config( const fc::path& datadir )
         return summaries;
     }
 
-   map<string, map<string, int64_t>> client_impl::wallet_account_balance( const string& account_name )
+   account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      if( account_name == string() || account_name == "*")
-         return _wallet->get_account_balances();
-      else
+      if( !account_name.empty() )
       {
          if( !_chain_db->is_valid_account_name( account_name ) )
             FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
          if( !_wallet->is_receive_account( account_name ) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
-
-         auto all_balances = _wallet->get_account_balances();
-         map<string, map<string,int64_t>> balance;
-         balance[account_name] = all_balances[account_name];
-         balance[account_name][BTS_BLOCKCHAIN_SYMBOL] = all_balances[account_name][BTS_BLOCKCHAIN_SYMBOL];
-         return balance;
       }
+
+      return _wallet->get_account_balances( account_name );
    }
 
    signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
@@ -2771,6 +2771,34 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_shorts( quote_symbol, limit );
    }
 
+   std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
+                                                                                              const string& base_symbol,
+                                                                                              uint32_t limit  )
+   {
+      auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
+
+      if( _chain_db->get_asset_id(base_symbol) == 0 )
+      {
+        auto shorts = blockchain_market_list_shorts(quote_symbol, limit);
+        bids.reserve(bids.size() + shorts.size());
+        for( auto order : shorts )
+          bids.push_back(order);
+        std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
+          return a.market_index < b.market_index;
+        });
+
+        if( bids.size() > limit )
+          bids.resize(limit);
+      }
+
+      auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
+      std::sort(asks.begin(), asks.end(), [](const market_order& a, const market_order& b) -> bool {
+        return a.market_index < b.market_index;
+      });
+
+      return std::make_pair(bids, asks);
+   }
+
    vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                  const string& base_symbol,
                                                                  int64_t limit  )
@@ -2784,8 +2812,12 @@ config load_config( const fc::path& datadir )
       network_broadcast_transaction( trx );
       return trx;
    }
-   account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )
+
+   account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )const
    {
+      if( !account_name.empty() && !_chain_db->is_valid_account_name( account_name ) )
+          FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
+
       return _wallet->get_account_vote_summary( account_name );
    }
 
@@ -2799,7 +2831,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_transactions_for_block(id);
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors(  int32_t first_error_number, uint32_t limit, const string& filename )const
+   map<fc::time_point, fc::exception> client_impl::list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
    {
       map<fc::time_point, fc::exception> result;
       int count = 0;
@@ -2829,20 +2861,24 @@ config load_config( const fc::path& datadir )
       return result;
    }
 
-   map<fc::time_point, std::string> client_impl::list_errors_brief( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )const
+   map<fc::time_point, std::string> client_impl::list_errors_brief( int32_t first_error_number, uint32_t limit, const string& filename ) const
    {
-      map<fc::time_point, std::string> result;
-      auto itr = _exception_db.lower_bound( start_time );
-      while( itr.valid() )
+      map<fc::time_point, fc::exception> full_errors = list_errors(first_error_number, limit, "");
+
+      map<fc::time_point, std::string> brief_errors;
+      for (auto full_error : full_errors)
+        brief_errors.emplace(std::make_pair(full_error.first, full_error.second.what()));
+
+      if( filename != "" )
       {
-         if (--first_error_number)
-             continue;
-         result[itr.key()] = itr.value().what();
-         ++itr;
-         if (--limit == 0)
-             break;
+          fc::path file_path( filename );
+          FC_ASSERT( !fc::exists( file_path ) );
+          std::ofstream out( filename.c_str() );
+          for( auto item : brief_errors )
+             out << std::string(item.first) << "  " << item.second <<"\n";
       }
-      return result;
+
+      return brief_errors;
    }
 
    void client_impl::clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
