@@ -24,7 +24,7 @@
   rmdir /Q /S bitshares_toolkit || exit /b 10
 )
 git clone https://github.com/BitShares/bitshares_toolkit.git || exit /b 11
-call bitshares_toolkit\HelperScripts\jenkins_build32.bat || exit /b 12
+call bitshares_toolkit\HelperScripts\jenkins_build64.bat || exit /b 12
 </command>
     </hudson.tasks.BatchFile>
   </builders>
