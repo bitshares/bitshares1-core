@@ -8,6 +8,4 @@ y2 (unlocked) >>> wallet_open y1
 OK
 y1 (unlocked) >>> wallet_get_name 
 "y1"
-y1 (unlocked) >>> exit
-Command aborted
-
+y1 (unlocked) >>> quit
