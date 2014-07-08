@@ -517,7 +517,7 @@ namespace bts { namespace net { namespace detail {
     }
 
 #ifdef P2P_IN_DEDICATED_THREAD
-# define VERIFY_CORRECT_THREAD() assert(_thread->is_current())
+# define VERIFY_CORRECT_THREAD() FC_ASSERT(_thread->is_current())
 #else
 # define VERIFY_CORRECT_THREAD() do {} while (0)
 #endif
@@ -1667,7 +1667,7 @@ namespace bts { namespace net { namespace detail {
       std::unique_ptr<std::vector<item_hash_t> > original_ids_of_items_to_get(new std::vector<item_hash_t>(peer->ids_of_items_to_get.begin(), peer->ids_of_items_to_get.end()));
       
       std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
-      assert( reference_point == item_hash_t() || !synopsis.empty() );
+      FC_ASSERT( reference_point == item_hash_t() || !synopsis.empty() );
       
 #if 0 // I have no idea why this code was here .. bad merge?
       // if we passed in a reference point, we believe it is one the client has already accepted and should
@@ -1690,7 +1690,7 @@ namespace bts { namespace net { namespace detail {
           low_block_num += ( (true_high_block_num - low_block_num + 2 ) / 2 );
         }
         while ( low_block_num <= true_high_block_num );
-        assert( synopsis.back() == original_ids_of_items_to_get->back() );
+        FC_ASSERT( synopsis.back() == original_ids_of_items_to_get->back() );
       }
       return synopsis;
     }
@@ -1713,7 +1713,7 @@ namespace bts { namespace net { namespace detail {
            ( "blockchain_synopsis", blockchain_synopsis ) );
       peer->item_ids_requested_from_peer = boost::make_tuple( item_id(_sync_item_type, last_item_seen ), fc::time_point::now() );
       //std::vector<item_hash_t> blockchain_synopsis = _delegate->get_blockchain_synopsis( last_item_id_seen.item_type, last_item_id_seen.item_hash );
-      //assert( last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back() );
+      //FC_ASSERT( last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back() );
       //ilog( "actual last item from blockchain synopsis is ${last_item_seen_for_real}", ("last_item_seen_for_real", blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back() ) );
       peer->send_message( fetch_blockchain_item_ids_message(_sync_item_type, blockchain_synopsis ) );
     }
@@ -1726,7 +1726,7 @@ namespace bts { namespace net { namespace detail {
       if( originating_peer->item_ids_requested_from_peer )
       {
 #if 0
-        assert( originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t() ||
+        FC_ASSERT( originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t() ||
                blockchain_item_ids_inventory_message_received.item_hashes_available.empty() ||
                blockchain_item_ids_inventory_message_received.item_hashes_available.front() == originating_peer->item_ids_requested_from_peer->get<0>().item_hash );
 #endif
@@ -1786,7 +1786,7 @@ namespace bts { namespace net { namespace detail {
                    _delegate->has_item( item_id(blockchain_item_ids_inventory_message_received.item_type,
                                                item_hashes_received.front() ) ) )
             {
-              assert( item_hashes_received.front() != item_hash_t() );
+              FC_ASSERT( item_hashes_received.front() != item_hash_t() );
               originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
               ++originating_peer->last_block_number_delegate_has_seen;
               originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time(item_hashes_received.front());
@@ -1823,7 +1823,7 @@ namespace bts { namespace net { namespace detail {
             // We don't know where in the blockchain the new front() actually falls, all we can
             // expect is that it is a block that we knew about because it should be one of the 
             // blocks we sent in the initial synopsis.
-            assert( _delegate->has_item(item_id(_sync_item_type, item_hashes_received.front() ) ) );
+            FC_ASSERT( _delegate->has_item(item_id(_sync_item_type, item_hashes_received.front() ) ) );
             originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
             originating_peer->last_block_number_delegate_has_seen = _delegate->get_block_number( item_hashes_received.front() );
             originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time( item_hashes_received.front() );
@@ -1837,7 +1837,7 @@ namespace bts { namespace net { namespace detail {
         }
 
         if( !item_hashes_received.empty() && !originating_peer->ids_of_items_to_get.empty() )
-          assert( item_hashes_received.front() != originating_peer->ids_of_items_to_get.back() );
+          FC_ASSERT( item_hashes_received.front() != originating_peer->ids_of_items_to_get.back() );
 
         // append the remaining items to the peer's list
         boost::push_back( originating_peer->ids_of_items_to_get, item_hashes_received );
@@ -2473,14 +2473,14 @@ namespace bts { namespace net { namespace detail {
           //bool message_caused_fork_switch = _delegate->handle_message( message_to_process, false );
           // for now, we assume an "ordinary" message won't cause us to switch forks (which
           // is currently the case.  if this changes, add some logic to handle it here)
-          //assert( !message_caused_fork_switch );
+          //FC_ASSERT( !message_caused_fork_switch );
           _delegate->handle_message(message_to_process, false);
           message_validated_time = fc::time_point::now();
         }
         catch ( const insufficient_priority_fee& )
         {
           // flooding control.  The message was valid but we can't handle it now.  
-          assert(message_to_process.msg_type == bts::client::trx_message_type); // we only support throttling transactions.
+          FC_ASSERT(message_to_process.msg_type == bts::client::trx_message_type); // we only support throttling transactions.
           if (message_to_process.msg_type == bts::client::trx_message_type)
             originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC);
           return;
@@ -2714,7 +2714,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::listen_to_p2p_network()
     {
       VERIFY_CORRECT_THREAD();
-      assert( _node_id != fc::ecc::public_key_data() );
+      FC_ASSERT( _node_id != fc::ecc::public_key_data() );
 
       fc::ip::endpoint listen_endpoint = _node_configuration.listen_endpoint;
       if( listen_endpoint.port() != 0 )
@@ -2798,7 +2798,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::connect_to_p2p_network()
     {
       VERIFY_CORRECT_THREAD();
-      assert( _node_id != fc::ecc::public_key_data() );
+      FC_ASSERT( _node_id != fc::ecc::public_key_data() );
 
       _accept_loop_complete = fc::async( [=](){ accept_loop(); } );
 
