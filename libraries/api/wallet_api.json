@@ -101,7 +101,7 @@
               "name" : "rescan",
               "type" : "bool",
               "description" : "If true, the wallet will rescan the blockchain looking for transactions that involve this private key",
-              "default_value" : true
+              "default_value" : false
            }
         ],
         "prerequisites" : ["wallet_unlocked"],
@@ -553,7 +553,7 @@
       },
       {
         "method_name": "wallet_rescan_blockchain",
-        "description": "Scans the transaction history for operations relevant to this wallet.",
+        "description": "Scans the blockchain history for operations relevant to this wallet.",
         "return_type": "void",
         "parameters" : 
           [
@@ -586,8 +586,8 @@
             },
             {
               "name" : "transaction_id", 
-              "type" : "transaction_id", 
-              "description" : "the id of the transaction"
+              "type" : "string", 
+              "description" : "the id (or id prefix) of the transaction"
             }
           ],
         "prerequisites" : ["wallet_unlocked"],

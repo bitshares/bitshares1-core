@@ -47,7 +47,7 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
-//#define P2P_IN_DEDICATED_THREAD 1
+#define P2P_IN_DEDICATED_THREAD 1
 
 namespace bts { namespace net { 
 
@@ -1948,6 +1948,7 @@ namespace bts { namespace net { namespace detail {
         }
         catch ( fc::key_not_found_exception& )
         {
+           // it wasn't in our local cache, that's ok ask the client
         }
 
         item_id item_to_fetch( fetch_items_message_received.item_type, item_hash );

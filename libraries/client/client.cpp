@@ -2496,9 +2496,14 @@ config load_config( const fc::path& datadir )
       /* Blockchain */
       uint32_t head_block_num                                   = _chain_db->get_head_block_num();
       info["blockchain_head_block_num"]                         = head_block_num;
-      fc::time_point_sec head_block_timestamp                   = _chain_db->now();
-      info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
-      info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
+      info["blockchain_head_block_age"]                         = variant();
+      info["blockchain_head_block_timestamp"]                   = variant();
+      if( head_block_num > 0 )
+      {
+          fc::time_point_sec head_block_timestamp                   = _chain_db->now();
+          info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
+          info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
+      }
 
       info["blockchain_average_delegate_participation"]         = _chain_db->get_average_delegate_participation();
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
@@ -2580,9 +2585,9 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    void client_impl::wallet_scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
+    void client_impl::wallet_scan_transaction( uint32_t block_num, const string& transaction_id )
     { try {
-       _wallet->scan_transaction( block_num, transaction_id );
+       _wallet->scan_transactions( block_num, transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
 
     bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
