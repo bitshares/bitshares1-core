@@ -2312,7 +2312,13 @@ config load_config( const fc::path& datadir )
                 FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
             }
         }
-        my->_p2p_node->connect_to(ep);
+        try
+        {
+          my->_p2p_node->connect_to(ep);
+        }
+        catch (const bts::net::already_connected_to_requested_peer&)
+        {
+        }
     }
 
     void client::listen_to_p2p_network()
