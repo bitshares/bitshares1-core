@@ -47,7 +47,7 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
-#define P2P_IN_DEDICATED_THREAD 1
+//#define P2P_IN_DEDICATED_THREAD 1
 
 namespace bts { namespace net { 
 
