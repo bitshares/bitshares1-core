@@ -16,22 +16,22 @@ namespace bts { namespace blockchain {
 
   struct asset_config // these are all market-issued assets
   {
-      std::string              symbol;
-      std::string              name;
-      std::string              description;
-      uint64_t                 precision;
+     std::string       symbol;
+     std::string       name;
+     std::string       description;
+     uint64_t          precision;
   };
   
   struct genesis_block_config
   {
-     fc::time_point_sec                                             timestamp;
-     std::vector<std::pair<bts::blockchain::pts_address,double>>    balances;
-     std::vector< name_config >                                     names;
-     std::vector< asset_config >                                    market_assets;
+     fc::time_point_sec                         timestamp;
+     std::vector<asset_config>                  market_assets;
+     std::vector<name_config>                   names;
+     std::vector<std::pair<pts_address,double>> balances;
   };
 
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::name_config, (name)(owner)(is_delegate) )
 FC_REFLECT( bts::blockchain::asset_config, (symbol)(name)(description)(precision) )
-FC_REFLECT( bts::blockchain::genesis_block_config, (timestamp)(balances)(names)(market_assets) )
+FC_REFLECT( bts::blockchain::genesis_block_config, (timestamp)(market_assets)(names)(balances) )
