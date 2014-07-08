@@ -1682,26 +1682,6 @@ namespace bts { namespace blockchain {
          ++account_id;
       }
 
-      int32_t asset_id = 1;
-      for( const auto& asset : config.market_assets )
-      {
-         asset_record rec;
-         rec.id = asset_id;
-         rec.symbol = asset.symbol;
-         rec.name = asset.name;
-         rec.description = asset.description;
-         rec.public_data = variant("");
-         rec.issuer_account_id = god.id;
-         rec.precision = asset.precision;
-         rec.registration_date = timestamp;
-         rec.last_update = timestamp;
-         rec.current_share_supply = 0;
-         rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
-         rec.collected_fees = 0;
-         self->store_asset_record( rec );
-         ++asset_id;
-      }
-
       int64_t n = 0;
       for( const auto& item : config.balances )
       {
@@ -1733,8 +1713,9 @@ namespace bts { namespace blockchain {
          ++itr;
       }
 
+      int32_t asset_id = 0;
       asset_record base_asset;
-      base_asset.id = 0;
+      base_asset.id = asset_id;
       base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
       base_asset.name = BTS_BLOCKCHAIN_NAME;
       base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
@@ -1748,6 +1729,25 @@ namespace bts { namespace blockchain {
       base_asset.collected_fees = 0;
       self->store_asset_record( base_asset );
 
+      for( const auto& asset : config.market_assets )
+      {
+         ++asset_id;
+         asset_record rec;
+         rec.id = asset_id;
+         rec.symbol = asset.symbol;
+         rec.name = asset.name;
+         rec.description = asset.description;
+         rec.public_data = variant("");
+         rec.issuer_account_id = asset_record::market_issued_asset;
+         rec.precision = asset.precision;
+         rec.registration_date = timestamp;
+         rec.last_update = timestamp;
+         rec.current_share_supply = 0;
+         rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+         rec.collected_fees = 0;
+         self->store_asset_record( rec );
+      }
+
       block_fork_data gen_fork;
       gen_fork.is_valid = true;
       gen_fork.is_included = true;
@@ -1756,7 +1756,7 @@ namespace bts { namespace blockchain {
       _fork_db.store( block_id_type(), gen_fork );
 
       self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
-      self->set_property( chain_property_enum::last_asset_id, 0 );
+      self->set_property( chain_property_enum::last_asset_id, asset_id );
       self->set_property( chain_property_enum::last_proposal_id, 0 );
       self->set_property( chain_property_enum::last_account_id, uint64_t(config.names.size()) );
       self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
