@@ -2575,10 +2575,17 @@ namespace bts { namespace net { namespace detail {
           new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert( new_peer );
           _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-          new_peer->accept_or_connect_task_done = fc::async( [=]() { accept_connection_task(new_peer); } );
+          std::weak_ptr<peer_connection> new_weak_peer(new_peer);
+          new_peer->accept_or_connect_task_done = fc::async( [this, new_weak_peer]() {
+            peer_connection_ptr new_peer(new_weak_peer.lock());
+            assert(new_peer);
+            if (!new_peer)
+              return;
+            accept_connection_task(new_peer);
+          } );
 
           // limit the rate at which we accept connections to mitigate DOS attacks
-          fc::usleep( fc::microseconds(1000 * 10 ) );
+          fc::usleep( fc::milliseconds(10) );
         } FC_CAPTURE_AND_RETHROW(   ) 
       }
     } // accept_loop()
@@ -2842,7 +2849,14 @@ namespace bts { namespace net { namespace detail {
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert( new_peer );
       _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-      new_peer->accept_or_connect_task_done = fc::async( [=](){ connect_to_task(new_peer, remote_endpoint ); } );
+      std::weak_ptr<peer_connection> new_weak_peer(new_peer);
+      new_peer->accept_or_connect_task_done = fc::async( [this, new_weak_peer, remote_endpoint](){
+        peer_connection_ptr new_peer(new_weak_peer.lock());
+        assert(new_peer);
+        if (!new_peer)
+          return;
+        connect_to_task(new_peer, remote_endpoint );
+      } );
     }
 
     peer_connection_ptr node_impl::get_connection_to_endpoint( const fc::ip::endpoint& remote_endpoint )
