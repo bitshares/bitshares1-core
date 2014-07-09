@@ -110,13 +110,14 @@ OK
 default (unlocked) >>> wait 1
 OK
 default (unlocked) >>> blockchain_list_assets XMO
-ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
-1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       20.00 %   1.00 XMO
+1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       20.00 %   1.00 XMO                    
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,998.48974 XTS     
 default (unlocked) >>> blockchain_list_assets XTS
-ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
-0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,998.48974 XTS
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,998.48974 XTS     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 -----------------------------------------------------------------------------------------------------------------------------------------------------------

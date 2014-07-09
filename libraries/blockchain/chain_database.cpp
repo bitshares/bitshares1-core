@@ -1128,7 +1128,7 @@ namespace bts { namespace blockchain {
       return optional<time_point_sec>();
    } FC_CAPTURE_AND_RETHROW( (delegate_ids) ) }
 
-   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx, share_type required_fees )
+   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx, const share_type& required_fees )
    { try {
       if( !my->_pending_trx_state )
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
@@ -1146,6 +1146,25 @@ namespace bts { namespace blockchain {
 
       return trx_eval_state;
    } FC_CAPTURE_AND_RETHROW( (trx) ) }
+
+   optional<fc::exception> chain_database::get_transaction_error( const signed_transaction& transaction, const share_type& min_fee )
+   { try {
+       try
+       {
+          auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
+          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state, my->_chain_id );
+
+          eval_state->evaluate( transaction );
+          auto fees = eval_state->get_fees();
+          if( fees < min_fee )
+             FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(min_fee) );
+       }
+       catch( fc::exception& e )
+       {
+           return e;
+       }
+       return optional<fc::exception>();
+   } FC_CAPTURE_AND_RETHROW( (transaction) ) }
 
    signed_block_header  chain_database::get_block_header( const block_id_type& block_id )const
    { try {
@@ -1479,7 +1498,7 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void    chain_database::scan_balances( function<void( const balance_record& )> callback )
+   void chain_database::scan_balances( function<void( const balance_record& )> callback )
    {
         auto balances = my->_balance_db.begin();
         while( balances.valid() )
@@ -1488,7 +1507,8 @@ namespace bts { namespace blockchain {
            ++balances;
         }
    }
-   void    chain_database::scan_accounts( function<void( const account_record& )> callback )
+
+   void chain_database::scan_accounts( function<void( const account_record& )> callback )
    {
         auto name_itr = my->_account_db.begin();
         while( name_itr.valid() )
@@ -1528,7 +1548,7 @@ namespace bts { namespace blockchain {
       return eval_state;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx) ) }
 
-   /** returns all transactions that are valid (indepdnent of eachother) sorted by fee */
+   /** returns all transactions that are valid (independent of each other) sorted by fee */
    std::vector<transaction_evaluation_state_ptr> chain_database::get_pending_transactions()const
    {
       std::vector<transaction_evaluation_state_ptr> trxs;

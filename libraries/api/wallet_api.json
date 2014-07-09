@@ -297,8 +297,8 @@
             {
                "name" : "start_block_num",
                "type" : "uint32_t",
-               "description" : "the earliest block number to list transactions from; -1 to include all transactions starting from genesis",
-               "default_value" : -1
+               "description" : "the earliest block number to list transactions from; 0 to include all transactions starting from genesis",
+               "default_value" : 0
             },
             {
                "name" : "end_block_num",

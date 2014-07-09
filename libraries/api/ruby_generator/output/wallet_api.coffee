@@ -137,7 +137,7 @@ class WalletAPI
   # Lists transaction history for the specified account
   # parameters: 
   #   string `account_name` - the name of the account for which the transaction history will be returned, example: alice
-  #   uint32_t `start_block_num` - the earliest block number to list transactions from; -1 to include all transactions starting from genesis
+  #   uint32_t `start_block_num` - the earliest block number to list transactions from; 0 to include all transactions starting from genesis
   #   uint32_t `end_block_num` - the latest block to list transaction from; -1 to include all transactions ending at the head block
   # return_type: `pretty_transactions`
   account_transaction_history: (account_name, start_block_num, end_block_num) ->

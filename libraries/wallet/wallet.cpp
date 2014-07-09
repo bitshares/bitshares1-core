@@ -1359,8 +1359,7 @@ namespace bts { namespace wallet {
                                                                       uint32_t end_block_num )const
    { try {
       FC_ASSERT( is_open() );
-      if( start_block_num != -1 && end_block_num != -1 )
-          FC_ASSERT( start_block_num <= end_block_num );
+      if( end_block_num != -1 ) FC_ASSERT( start_block_num <= end_block_num );
 
       std::vector<wallet_transaction_record> recs;
       auto my_trxs = my->_wallet_db.get_transactions();
@@ -1379,7 +1378,7 @@ namespace bts { namespace wallet {
               || (tx_record.to_account && *tx_record.to_account == account_pub)
               || (tx_record.from_account && *tx_record.from_account == account_pub) )
           {
-              if( start_block_num != -1 && tx_record.block_num < start_block_num ) continue;
+              if( tx_record.block_num < start_block_num ) continue;
               if( end_block_num != -1 && tx_record.block_num > end_block_num ) continue;
               recs.push_back( tx_record );
           }
@@ -3355,7 +3354,6 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW() }
 
 
-
    owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
    {
        return my->_wallet_db.lookup_transaction(trx_id);
@@ -3381,14 +3379,9 @@ namespace bts { namespace wallet {
        const auto priority_fee = my->_blockchain->get_priority_fee();
        for( const auto& transaction_record : transaction_records )
        {
-           try
-           {
-               my->_blockchain->evaluate_transaction( transaction_record.trx, priority_fee );
-           }
-           catch( fc::exception& e )
-           {
-               transaction_errors[transaction_record.transaction_id] = e;
-           }
+           const auto error = my->_blockchain->get_transaction_error( transaction_record.trx, priority_fee );
+           if( !error.valid() ) continue;
+           transaction_errors[transaction_record.transaction_id] = *error;
        }
        return transaction_errors;
    } FC_CAPTURE_AND_RETHROW() }
