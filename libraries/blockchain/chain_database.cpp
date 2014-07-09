@@ -2101,6 +2101,7 @@ namespace bts { namespace blockchain {
    }
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order ) 
    {
+      wlog( "STORE ASK ${k} ${o}", ("k",key)("o",order) );
       if( order.is_null() )
          my->_ask_db.remove( key );
       else
@@ -2212,11 +2213,17 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
        vector<market_order> results;
-       //auto market_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
-       auto market_itr  = my->_bid_db.begin();
+       auto market_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
        while( market_itr.valid() )
        {
-          results.push_back( {bid_order, market_itr.key(), market_itr.value()} );
+          auto key = market_itr.key();
+          if( key.order_price.quote_asset_id == quote_asset_id &&
+              key.order_price.base_asset_id == base_asset_id  )
+          {
+             results.push_back( {bid_order, key, market_itr.value()} );
+          }
+          else break;
+
 
           if( results.size() == limit ) 
              return results;
@@ -2245,10 +2252,19 @@ namespace bts { namespace blockchain {
 
        vector<market_order> results;
 
-       auto market_itr  = my->_short_db.begin();
+       auto market_itr  = my->_short_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
        while( market_itr.valid() )
        {
-          results.push_back( {short_order, market_itr.key(), market_itr.value()} );
+          auto key = market_itr.key();
+          if( key.order_price.quote_asset_id == quote_asset_id &&
+              key.order_price.base_asset_id == base_asset_id  )
+          {
+             results.push_back( {short_order, key, market_itr.value()} );
+          }
+          else
+          {
+             break;
+          }
 
           if( results.size() == limit ) 
              return results;
@@ -2279,11 +2295,19 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
        vector<market_order> results;
-       //auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
-       auto market_itr  = my->_ask_db.begin();
+       auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
        while( market_itr.valid() )
        {
-          results.push_back( {ask_order, market_itr.key(), market_itr.value()} );
+          auto key = market_itr.key();
+          if( key.order_price.quote_asset_id == quote_asset_id &&
+              key.order_price.base_asset_id == base_asset_id  )
+          {
+             results.push_back( {ask_order, key, market_itr.value()} );
+          }
+          else
+          {
+             break;
+          }
 
           if( results.size() == limit ) 
              return results;
