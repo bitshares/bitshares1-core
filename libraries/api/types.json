@@ -226,6 +226,10 @@
         "contained_type" : "blockchain_transaction_record"
       },
       {
+        "type_name" : "blockchain_transaction_record_map",
+        "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, bts::blockchain::transaction_record>"
+      },
+      {
         "type_name" : "signed_transaction",
         "cpp_return_type" : "bts::blockchain::signed_transaction",
         "cpp_include_file" : "bts/blockchain/transaction.hpp",

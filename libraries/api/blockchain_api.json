@@ -125,7 +125,7 @@
       {
         "method_name": "blockchain_get_block_transactions",
         "description": "Retrieves the detailed transaction information for a block",
-        "return_type": "blockchain_transaction_record_array",
+        "return_type": "blockchain_transaction_record_map",
         "parameters" : [
             {
               "name" : "block",
