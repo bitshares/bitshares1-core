@@ -2871,9 +2871,12 @@ config load_config( const fc::path& datadir )
       return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
    }
 
-   vector<transaction_record> client_impl::blockchain_get_transactions_for_block( const block_id_type& id )const
+   vector<transaction_record> client_impl::blockchain_get_block_transactions( const string& block )const
    {
-      return _chain_db->get_transactions_for_block(id);
+      if( block.size() == 40 )
+        return _chain_db->get_transactions_for_block( block_id_type( block ) );
+      else
+        return _chain_db->get_transactions_for_block( _chain_db->get_block_id( std::stoi( block ) ) );
    }
 
    map<fc::time_point, fc::exception> client_impl::list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const

@@ -123,14 +123,14 @@
         "aliases" : ["get_block"]
       },
       {
-        "method_name": "blockchain_get_transactions_for_block",
+        "method_name": "blockchain_get_block_transactions",
         "description": "Retrieves the detailed transaction information for a block",
         "return_type": "blockchain_transaction_record_array",
         "parameters" : [
             {
-              "name" : "block_id", 
-              "type" : "block_id_type", 
-              "description" : "the id of the block to return"
+              "name" : "block",
+              "type" : "string",
+              "description" : "the number or id of the block to get transactions from"
             }
         ],
         "is_const" : true,

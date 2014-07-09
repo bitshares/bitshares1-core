@@ -72,10 +72,10 @@ class BlockchainAPI
 
   # Retrieves the detailed transaction information for a block
   # parameters: 
-  #   block_id_type `block_id` - the id of the block to return
+  #   string `block` - the number or id of the block to get transactions from
   # return_type: `blockchain_transaction_record_array`
-  get_transactions_for_block: (block_id) ->
-    @rpc.request('blockchain_get_transactions_for_block', [block_id]).then (response) ->
+  get_block_transactions: (block) ->
+    @rpc.request('blockchain_get_block_transactions', [block]).then (response) ->
       response.result
 
   # Retrieves the record for the given account name or ID
