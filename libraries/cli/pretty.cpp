@@ -223,12 +223,18 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
     out << pretty_line( 163 );
 
+    const map<transaction_id_type, fc::exception>& errors = client->get_wallet()->get_pending_transaction_errors();
+
     for( const auto& transaction : transactions )
     {
         if( transaction.block_num > 0 )
         {
             out << std::setw( 8 ) << std::right << transaction.block_num << ".";
             out << std::setw( 5 ) << std::left << transaction.trx_num;
+        }
+        else if( errors.count( transaction.trx_id ) > 0 )
+        {
+            out << std::setw( 14 ) << "   ERROR";
         }
         else
         {
