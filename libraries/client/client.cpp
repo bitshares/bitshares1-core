@@ -1425,9 +1425,16 @@ config load_config( const fc::path& datadir )
       _wallet->clear_pending_transactions();
     }
 
-    map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors()const
+    map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const
     {
-      return _wallet->get_pending_transaction_errors();
+      const auto& errors = _wallet->get_pending_transaction_errors();
+      if( filename != "" )
+      {
+          FC_ASSERT( !fc::exists( filename ) );
+          std::ofstream out( filename.c_str() );
+          out << fc::json::to_pretty_string( errors );
+      }
+      return errors;
     }
 
     vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer,

@@ -153,9 +153,10 @@ class WalletAPI
 
   # Return any errors for your currently pending transactions
   # parameters: 
+  #   string `filename` - filename to save pending transaction errors to
   # return_type: `map<transaction_id_type, fc::exception>`
-  get_pending_transaction_errors:  ->
-    @rpc.request('wallet_get_pending_transaction_errors').then (response) ->
+  get_pending_transaction_errors: (filename) ->
+    @rpc.request('wallet_get_pending_transaction_errors', [filename]).then (response) ->
       response.result
 
   # Lock the private keys in wallet, disables spending commands until unlocked
