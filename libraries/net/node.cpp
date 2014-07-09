@@ -632,8 +632,8 @@ namespace bts { namespace net { namespace detail {
 
               if( !is_connection_to_endpoint_in_progress(iter->endpoint ) &&
                   ( (iter->last_connection_disposition != last_connection_failed && 
-                    iter->last_connection_disposition != last_connection_rejected &&
-                    iter->last_connection_disposition != last_connection_handshaking_failed ) ||
+                     iter->last_connection_disposition != last_connection_rejected &&
+                     iter->last_connection_disposition != last_connection_handshaking_failed) ||
                     ( fc::time_point::now() - iter->last_connection_attempt_time ) > delay_until_retry  ) )
               {
                 connect_to( iter->endpoint );
@@ -745,6 +745,7 @@ namespace bts { namespace net { namespace detail {
         // make all the requests we scheduled in the loop above
         for( auto sync_item_request : sync_item_requests_to_send )
           request_sync_item_from_peer( sync_item_request.first, sync_item_request.second );
+        sync_item_requests_to_send.clear();
 
         if( !_sync_items_to_fetch_updated )
         {
@@ -800,6 +801,7 @@ namespace bts { namespace net { namespace detail {
         for( const auto& peer_and_item : fetch_messages_to_send )
           peer_and_item.first->send_message(fetch_items_message(peer_and_item.second.item_type, 
                                                                 std::vector<item_hash_t>{peer_and_item.second.item_hash}));
+        fetch_messages_to_send.clear();
 
         if( !_items_to_fetch_updated )
         {
@@ -861,6 +863,7 @@ namespace bts { namespace net { namespace detail {
 
         for( auto iter = inventory_messages_to_send.begin(); iter != inventory_messages_to_send.end(); ++iter )
           iter->first->send_message( iter->second );
+        inventory_messages_to_send.clear();
 
         if( _new_inventory.empty() )
         {
@@ -999,12 +1002,15 @@ namespace bts { namespace net { namespace detail {
                                                        ( "inactivity_timeout", _active_connections.find(peer ) != _active_connections.end() ? _peer_inactivity_timeout * 10 : _peer_inactivity_timeout ) ) );
           disconnect_from_peer( peer.get(), "Disconnecting due to inactivity", false, detailed_error );
         }
+        peers_to_disconnect_gently.clear();
 
         for( const peer_connection_ptr& peer : peers_to_disconnect_forcibly )
           peer->close_connection();
+        peers_to_disconnect_forcibly.clear();
 
         for( const peer_connection_ptr& peer : peers_to_send_keep_alive )
           peer->send_message(current_time_request_message());
+        peers_to_send_keep_alive.clear();
 
         fc::usleep( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) );
       } // while( !canceled  )
@@ -3190,7 +3196,7 @@ namespace bts { namespace net { namespace detail {
       std::list<peer_connection_ptr> peers_to_disconnect;
       if( !_allowed_peers.empty() )
         for( const peer_connection_ptr& peer : _active_connections )
-          if( _allowed_peers.find(peer->node_id ) == _allowed_peers.end() )
+          if( _allowed_peers.find(peer->node_id) == _allowed_peers.end() )
             peers_to_disconnect.push_back( peer );
       for( const peer_connection_ptr& peer : peers_to_disconnect )
         disconnect_from_peer( peer.get(), "My allowed_peers list has changed, and you're no longer allowed.  Bye." );
