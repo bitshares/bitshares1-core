@@ -22,5 +22,5 @@ namespace bts { namespace net {
 
 } } // bts::client
 
-static_assert(bts::net::block_message_type == bts::client::block_message_type, "enum values don't match");
-static_assert(bts::net::trx_message_type == bts::client::trx_message_type, "enum values don't match");
+static_assert((int)bts::net::block_message_type == (int)bts::client::block_message_type, "enum values don't match");
+static_assert((int)bts::net::trx_message_type == (int)bts::client::trx_message_type, "enum values don't match");
