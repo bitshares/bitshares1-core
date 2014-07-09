@@ -102,7 +102,6 @@
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                    (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
 
-#define BTS_BLOCKCHAIN_BLOCK_REWARD                         (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE) //10000 // (BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_BLOCKS_PER_YEAR)
 #define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                     (10)  // 10% per year
 
 /**

@@ -2471,13 +2471,11 @@ config load_config( const fc::path& datadir )
 
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
-       info["block_reward"]                         = _chain_db->to_pretty_asset( asset( BTS_BLOCKCHAIN_BLOCK_REWARD ) );
        info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        const auto delegate_reg_fee                  = _chain_db->get_delegate_registration_fee();
        info["delegate_reg_fee"]                     = _chain_db->to_pretty_asset( asset( delegate_reg_fee ) );
-       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
 
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;

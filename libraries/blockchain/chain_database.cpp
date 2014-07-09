@@ -1588,7 +1588,6 @@ namespace bts { namespace blockchain {
       next_block.fee_rate           = next_block.next_fee( head_block.fee_rate, block_size );
 
       // TODO: Adjust fees vs dividends here... right now 100% of fees are paid to delegates
-      //total_fees += BTS_BLOCKCHAIN_BLOCK_REWARD;
       /**
        *  Right now delegates are paid a salary regardless of fees, this initial salary is a pittance and
        *  should be less than eventual fees.
