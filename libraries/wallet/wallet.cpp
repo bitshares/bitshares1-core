@@ -1104,6 +1104,7 @@ namespace bts { namespace wallet {
    { try {
       auto oaccount = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( oaccount.valid() );
+      FC_ASSERT( is_unique_account(account_name), "Ambiguous name '${name}' could refer to multiple accounts. Rename one of them first." );
       FC_ASSERT( ! my->_wallet_db.has_private_key(address(oaccount->owner_key)),
               "you can only remove contact accounts" );
       my->_wallet_db.remove_contact_account( account_name );
@@ -1122,11 +1123,28 @@ namespace bts { namespace wallet {
 
       auto old_account = my->_wallet_db.lookup_account( old_account_name );
       FC_ASSERT( old_account.valid() );
+      auto old_key = old_account->owner_key;
+
+      //Check for duplicate names in wallet
+      if( !is_unique_account(old_account_name) )
+      {
+        //Find the wallet record that is not in the blockchain; or is, but under a different name
+        auto wallet_accounts = my->_wallet_db.get_accounts();
+        for( auto wallet_account : wallet_accounts )
+        {
+          if( wallet_account.second.name == old_account_name )
+          {
+            auto record = my->_blockchain->get_account_record(wallet_account.second.owner_key);
+            if( !(record.valid() && record->name == old_account_name) )
+              old_key = wallet_account.second.owner_key;
+          }
+        }
+      }
 
       auto new_account = my->_wallet_db.lookup_account( new_account_name );
       FC_ASSERT( !new_account.valid() );
 
-      my->_wallet_db.rename_account( old_account_name, new_account_name );
+      my->_wallet_db.rename_account( old_key, new_account_name );
    } FC_RETHROW_EXCEPTIONS( warn, "", 
                 ("old_account_name",old_account_name)
                 ("new_account_name",new_account_name) ) }
@@ -3450,6 +3468,24 @@ namespace bts { namespace wallet {
 
    bool wallet::is_unique_account( const string& account_name )const
    {
+      //There are two possibilities here. First, the wallet has multiple records named account_name
+      //Second, the wallet has a different record named account_name than the blockchain does.
+
+      //Check that the wallet has at most one account named account_name
+      auto known_accounts = my->_wallet_db.get_accounts();
+      bool found = false;
+      for( auto known_account : known_accounts )
+        if( known_account.second.name == account_name )
+        {
+          if( found )
+            return false;
+          found = true;
+        }
+      if( !found )
+        //The wallet does not contain an account with this name. No conflict is possible.
+        return false;
+
+      //The wallet has an account named account_name. Check that it matches with the blockchain
       auto local_account      = my->_wallet_db.lookup_account( account_name );
       auto registered_account = my->_blockchain->get_account_record( account_name );
       if( local_account && registered_account )

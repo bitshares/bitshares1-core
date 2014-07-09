@@ -96,7 +96,7 @@ namespace bts { namespace wallet {
 
          void remove_contact_account( const string& account_name);
 
-         void rename_account( const string& old_account_name,
+         void rename_account( const public_key_type& old_account_key,
                               const string& new_account_name );
 
          void export_to_json( const path& filename )const;
