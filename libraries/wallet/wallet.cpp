@@ -1104,6 +1104,7 @@ namespace bts { namespace wallet {
    { try {
       auto oaccount = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( oaccount.valid() );
+      FC_ASSERT( is_unique_account(account_name), "Ambiguous name '${name}' could refer to multiple accounts. Rename one of them first." );
       FC_ASSERT( ! my->_wallet_db.has_private_key(address(oaccount->owner_key)),
               "you can only remove contact accounts" );
       my->_wallet_db.remove_contact_account( account_name );
