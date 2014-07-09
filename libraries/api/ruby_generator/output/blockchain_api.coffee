@@ -30,7 +30,7 @@ class BlockchainAPI
 
   # Returns registered accounts starting with a given name upto a the limit provided
   # parameters: 
-  #   account_name `first_account_name` - the first account name to include
+  #   account_name `first_account_name` - the first account name to include. May be either a name or an index
   #   int32_t `limit` - the maximum number of items to list
   # return_type: `account_record_array`
   list_accounts: (first_account_name, limit) ->
@@ -72,10 +72,10 @@ class BlockchainAPI
 
   # Retrieves the detailed transaction information for a block
   # parameters: 
-  #   block_id_type `block_id` - the id of the block to return
-  # return_type: `blockchain_transaction_record_array`
-  get_transactions_for_block: (block_id) ->
-    @rpc.request('blockchain_get_transactions_for_block', [block_id]).then (response) ->
+  #   string `block` - the number or id of the block to get transactions from
+  # return_type: `blockchain_transaction_record_map`
+  get_block_transactions: (block) ->
+    @rpc.request('blockchain_get_block_transactions', [block]).then (response) ->
       response.result
 
   # Retrieves the record for the given account name or ID
@@ -138,6 +138,16 @@ class BlockchainAPI
   # return_type: `market_order_array`
   market_list_shorts: (quote_symbol, limit) ->
     @rpc.request('blockchain_market_list_shorts', [quote_symbol, limit]).then (response) ->
+      response.result
+
+  # Returns the long and short sides of the order book for a given market
+  # parameters: 
+  #   asset_symbol `quote_symbol` - the symbol name the market is quoted in
+  #   asset_symbol `base_symbol` - the item being bought in this market
+  #   uint32_t `limit` - the maximum number of items to return, -1 for all
+  # return_type: `pair<market_order_array,market_order_array>`
+  market_order_book: (quote_symbol, base_symbol, limit) ->
+    @rpc.request('blockchain_market_order_book', [quote_symbol, base_symbol, limit]).then (response) ->
       response.result
 
   # Returns a list of the current round's active delegates in signing order

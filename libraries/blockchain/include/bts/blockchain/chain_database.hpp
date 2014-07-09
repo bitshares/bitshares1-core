@@ -201,7 +201,8 @@ namespace bts { namespace blockchain {
          /**
           *  Evaluate the transaction and return the results.
           */
-         virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, share_type min_fee = 0 );
+         virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, const share_type& required_fees = 0 );
+         optional<fc::exception> get_transaction_error( const signed_transaction& transaction, const share_type& min_fee );
 
          /** return the timestamp from the head block */
          virtual time_point_sec         now()const override;

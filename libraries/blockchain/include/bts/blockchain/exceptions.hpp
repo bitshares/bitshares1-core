@@ -76,6 +76,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( negative_issue, bts::blockchain::evaluation_error, 35006, "negative issue" );
    FC_DECLARE_DERIVED_EXCEPTION( over_issue, bts::blockchain::evaluation_error, 35007, "over issue" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_asset_symbol, bts::blockchain::evaluation_error, 35008, "unknown asset symbol" );
+   FC_DECLARE_DERIVED_EXCEPTION( asset_id_in_use, bts::blockchain::evaluation_error, 35009, "asset id in use" );
 
    FC_DECLARE_DERIVED_EXCEPTION( delegate_vote_limit,  bts::blockchain::evaluation_error, 36001, "delegate_vote_limit" );
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_fee,  bts::blockchain::evaluation_error, 36002, "insufficient fee" );

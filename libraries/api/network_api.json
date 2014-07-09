@@ -18,7 +18,8 @@
               "name" : "command", 
               "type" : "std::string", 
               "description" : "'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once",
-              "example" : "add"
+              "example" : "add",
+              "default_value" : "add"
             }
           ],
         "prerequisites" : ["json_authenticated"]
@@ -35,7 +36,15 @@
         "method_name": "network_get_peer_info",
         "description": "Returns data about each connected node",
         "return_type": "json_object_array",
-        "parameters" : [],
+        "parameters" : 
+          [
+            { 
+              "name" : "not_firewalled", 
+              "type" : "bool", 
+              "description" : "true to output only peers not behind a firewall and false otherwise",
+              "default_value" : false
+            }
+          ],
         "is_const"   : true,
         "prerequisites" : ["json_authenticated"]
       },

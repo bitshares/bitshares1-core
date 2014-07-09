@@ -78,10 +78,10 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
     out << std::setw(  9 ) << "MISSED";
     out << std::setw( 14 ) << "RELIABILITY";
     out << std::setw(  9 ) << "PAY RATE";
-    out << std::setw( 16 ) << "PAY BALANCE";
+    out << std::setw( 20 ) << "PAY BALANCE";
     out << std::setw( 10 ) << "LAST BLOCK";
 
-    out << pretty_line( 120 );
+    out << pretty_line( 124 );
 
     const auto current_slot_timestamp = blockchain::get_slot_start_time( blockchain::now() );
     const auto head_block_timestamp = client->get_chain()->get_head_block().timestamp;
@@ -114,7 +114,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
         out << std::setw(  9 ) << pretty_percent( delegate_record.delegate_info->pay_rate, 100, 0 );
         const auto pay_balance = asset( delegate_record.delegate_info->pay_balance );
-        out << std::setw( 16 ) << client->get_chain()->to_pretty_asset( pay_balance );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( pay_balance );
 
         const auto last_block = delegate_record.delegate_info->last_block_num_produced;
         out << std::setw( 10 ) << ( last_block > 0 ? std::to_string( last_block ) : "NONE" );
@@ -211,7 +211,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
     std::stringstream out;
 
-    out << std::setw(  7 ) << std::right << "BLK" << ".";
+    out << std::setw(  8 ) << std::right << "BLK" << ".";
     out << std::setw(  5 ) << std::left << "TRX";
     out << std::setw( 20 ) << "TIMESTAMP";
     out << std::setw( 20 ) << "FROM";
@@ -221,18 +221,24 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 39 ) << "MEMO";
     out << std::setw(  8 ) << "ID";
 
-    out << pretty_line( 162 );
+    out << pretty_line( 163 );
+
+    const map<transaction_id_type, fc::exception>& errors = client->get_wallet()->get_pending_transaction_errors();
 
     for( const auto& transaction : transactions )
     {
         if( transaction.block_num > 0 )
         {
-            out << std::setw( 7 ) << std::right << transaction.block_num << ".";
+            out << std::setw( 8 ) << std::right << transaction.block_num << ".";
             out << std::setw( 5 ) << std::left << transaction.trx_num;
+        }
+        else if( errors.count( transaction.trx_id ) > 0 )
+        {
+            out << std::setw( 14 ) << "   ERROR";
         }
         else
         {
-            out << std::setw( 13 ) << "   PENDING";
+            out << std::setw( 14 ) << "   PENDING";
         }
 
         out << std::setw( 20 ) << pretty_timestamp( fc::time_point_sec( transaction.received_time ) );

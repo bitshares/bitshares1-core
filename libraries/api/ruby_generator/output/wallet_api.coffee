@@ -137,7 +137,7 @@ class WalletAPI
   # Lists transaction history for the specified account
   # parameters: 
   #   string `account_name` - the name of the account for which the transaction history will be returned, example: alice
-  #   uint32_t `start_block_num` - the earliest block number to list transactions from; -1 to include all transactions starting from genesis
+  #   uint32_t `start_block_num` - the earliest block number to list transactions from; 0 to include all transactions starting from genesis
   #   uint32_t `end_block_num` - the latest block to list transaction from; -1 to include all transactions ending at the head block
   # return_type: `pretty_transactions`
   account_transaction_history: (account_name, start_block_num, end_block_num) ->
@@ -153,9 +153,10 @@ class WalletAPI
 
   # Return any errors for your currently pending transactions
   # parameters: 
+  #   string `filename` - filename to save pending transaction errors to
   # return_type: `map<transaction_id_type, fc::exception>`
-  get_pending_transaction_errors:  ->
-    @rpc.request('wallet_get_pending_transaction_errors').then (response) ->
+  get_pending_transaction_errors: (filename) ->
+    @rpc.request('wallet_get_pending_transaction_errors', [filename]).then (response) ->
       response.result
 
   # Lock the private keys in wallet, disables spending commands until unlocked
@@ -257,13 +258,22 @@ class WalletAPI
     @rpc.request('wallet_transfer', [amount_to_transfer, asset_symbol, from_account_name, to_account_name, memo_message]).then (response) ->
       response.result
 
-  # Scans the transaction history for operations relevant to this wallet.
+  # Scans the blockchain history for operations relevant to this wallet.
   # parameters: 
   #   uint32_t `first_block_number` - the first block to scan
   #   uint32_t `num_blocks` - the number of blocks to scan
   # return_type: `void`
   rescan_blockchain: (first_block_number, num_blocks) ->
     @rpc.request('wallet_rescan_blockchain', [first_block_number, num_blocks]).then (response) ->
+      response.result
+
+  # Scans the specified transaction
+  # parameters: 
+  #   uint32_t `block_num` - the block containing the transaction
+  #   string `transaction_id` - the id (or id prefix) of the transaction
+  # return_type: `void`
+  scan_transaction: (block_num, transaction_id) ->
+    @rpc.request('wallet_scan_transaction', [block_num, transaction_id]).then (response) ->
       response.result
 
   # Updates the data published about a given account

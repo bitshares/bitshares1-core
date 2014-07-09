@@ -1,5 +1,7 @@
 #include <bts/net/core_messages.hpp>
 
+#include <bts/client/messages.hpp>
+
 namespace bts { namespace net {
 
   const core_message_type_enum item_ids_inventory_message::type            = core_message_type_enum::item_ids_inventory_message_type;
@@ -19,3 +21,6 @@ namespace bts { namespace net {
   const core_message_type_enum check_firewall_reply_message::type          = core_message_type_enum::check_firewall_reply_message_type;
 
 } } // bts::client
+
+static_assert((int)bts::net::block_message_type == (int)bts::client::block_message_type, "enum values don't match");
+static_assert((int)bts::net::trx_message_type == (int)bts::client::trx_message_type, "enum values don't match");

@@ -64,9 +64,8 @@ namespace bts { namespace blockchain {
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    /**
-    *  TODO: Documen rules for Withdraws
+    *  TODO: Document rules for Withdraws
     */
    void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {

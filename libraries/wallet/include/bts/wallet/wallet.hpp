@@ -124,6 +124,7 @@ namespace bts { namespace wallet {
          uint32_t  get_last_scanned_block_number()const;
 
          void      scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id );
+         void      scan_transactions( uint32_t block_num, const string& transaction_id_prefix );
 
          ///@{ account management
          public_key_type  create_account( const string& account_name, 

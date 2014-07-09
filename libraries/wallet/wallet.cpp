@@ -63,6 +63,7 @@ namespace bts { namespace wallet {
              bool                               _delegate_scanning_enabled;
 
              fc::thread                         _wallet_scan_thread;
+             float                              _wallet_scan_progress;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -685,7 +686,6 @@ namespace bts { namespace wallet {
 
       try
       {
-          close();
           create_file( wallet_file_path, password, brainkey );
           open( wallet_name );
           unlock( password, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
@@ -709,9 +709,10 @@ namespace bts { namespace wallet {
 
       try
       {
+          close();
+
           my->_wallet_db.open( wallet_file_path );
           my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
-
 
           master_key new_master_key;
           extended_private_key epk;
@@ -760,8 +761,6 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
-      if( is_open() ) return;
-
       try
       {
           open_file( wallet_file_path );
@@ -778,15 +777,13 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
-      if( is_open() ) return;
-
       try
       {
           close();
           my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
 
-          auto tmp_balances = my->_wallet_db.get_balances();
+          const auto tmp_balances = my->_wallet_db.get_balances();
           for( const auto& item : tmp_balances )
               my->sync_balance_with_blockchain( item.first );
 
@@ -1110,6 +1107,7 @@ namespace bts { namespace wallet {
    { try {
       auto oaccount = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( oaccount.valid() );
+      FC_ASSERT( is_unique_account(account_name), "Ambiguous name '${name}' could refer to multiple accounts. Rename one of them first." );
       FC_ASSERT( ! my->_wallet_db.has_private_key(address(oaccount->owner_key)),
               "you can only remove contact accounts" );
       my->_wallet_db.remove_contact_account( account_name );
@@ -1128,11 +1126,28 @@ namespace bts { namespace wallet {
 
       auto old_account = my->_wallet_db.lookup_account( old_account_name );
       FC_ASSERT( old_account.valid() );
+      auto old_key = old_account->owner_key;
+
+      //Check for duplicate names in wallet
+      if( !is_unique_account(old_account_name) )
+      {
+        //Find the wallet record that is not in the blockchain; or is, but under a different name
+        auto wallet_accounts = my->_wallet_db.get_accounts();
+        for( auto wallet_account : wallet_accounts )
+        {
+          if( wallet_account.second.name == old_account_name )
+          {
+            auto record = my->_blockchain->get_account_record(wallet_account.second.owner_key);
+            if( !(record.valid() && record->name == old_account_name) )
+              old_key = wallet_account.second.owner_key;
+          }
+        }
+      }
 
       auto new_account = my->_wallet_db.lookup_account( new_account_name );
       FC_ASSERT( !new_account.valid() );
 
-      my->_wallet_db.rename_account( old_account_name, new_account_name );
+      my->_wallet_db.rename_account( old_key, new_account_name );
    } FC_RETHROW_EXCEPTIONS( warn, "", 
                 ("old_account_name",old_account_name)
                 ("new_account_name",new_account_name) ) }
@@ -1260,25 +1275,36 @@ namespace bts { namespace wallet {
 
       auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
 
-      auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
-
-      for( auto block_num = start; block_num <= min_end; ++block_num )
+      try
       {
-         my->scan_block( block_num, account_priv_keys );
-         if( progress_callback )
-            progress_callback( block_num, min_end );
-         my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+        my->_wallet_scan_progress = 0;
+        auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+
+        for( auto block_num = start; block_num <= min_end; ++block_num )
+        {
+           my->scan_block( block_num, account_priv_keys );
+           if( progress_callback )
+              progress_callback( block_num, min_end );
+           my->_wallet_scan_progress = float(block_num-start)/(min_end-start+1);
+           my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+        }
+
+        for( auto acct : my->_wallet_db.get_accounts() )
+        {
+           auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
+           if (blockchain_acct_rec.valid())
+           {
+               blockchain::account_record& brec = acct.second;
+               brec = *blockchain_acct_rec;
+               my->_wallet_db.cache_account( acct.second );
+           }
+        }
+        my->_wallet_scan_progress = 1;
       }
-
-      for( auto acct : my->_wallet_db.get_accounts() )
+      catch(...)
       {
-         auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
-         if (blockchain_acct_rec.valid())
-         {
-             blockchain::account_record& brec = acct.second;
-             brec = *blockchain_acct_rec;
-             my->_wallet_db.cache_account( acct.second );
-         }
+        my->_wallet_scan_progress = -1;
+        throw;
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
@@ -1299,6 +1325,31 @@ namespace bts { namespace wallet {
 
       const auto keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
       my->scan_transaction( *transaction, block_num, block.timestamp, keys );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void wallet::scan_transactions( uint32_t block_num, const string& transaction_id_prefix )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+          FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+
+      const auto block = my->_blockchain->get_block( block_num );
+      const auto keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+      bool found = false;
+
+      for( const auto& transaction : block.user_transactions )
+      {
+          const auto transaction_id = string( transaction.id() );
+          if( string( transaction.id() ).find( transaction_id_prefix ) != 0 ) continue;
+          my->scan_transaction( transaction, block_num, block.timestamp, keys );
+          found = true;
+      }
+
+      if( !found )
+          FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!",
+                              ("block_num",block_num)("transaction_id_prefix",transaction_id_prefix) );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
@@ -1329,8 +1380,7 @@ namespace bts { namespace wallet {
                                                                       uint32_t end_block_num )const
    { try {
       FC_ASSERT( is_open() );
-      if( start_block_num != -1 && end_block_num != -1 )
-          FC_ASSERT( start_block_num <= end_block_num );
+      if( end_block_num != -1 ) FC_ASSERT( start_block_num <= end_block_num );
 
       std::vector<wallet_transaction_record> recs;
       auto my_trxs = my->_wallet_db.get_transactions();
@@ -1349,7 +1399,7 @@ namespace bts { namespace wallet {
               || (tx_record.to_account && *tx_record.to_account == account_pub)
               || (tx_record.from_account && *tx_record.from_account == account_pub) )
           {
-              if( start_block_num != -1 && tx_record.block_num < start_block_num ) continue;
+              if( tx_record.block_num < start_block_num ) continue;
               if( end_block_num != -1 && tx_record.block_num > end_block_num ) continue;
               recs.push_back( tx_record );
           }
@@ -1629,19 +1679,22 @@ namespace bts { namespace wallet {
 
        if( sign ) // don't store invalid trxs..
        {
+          const auto now = blockchain::now();
           for( const auto& rec : balances_to_store )
           {
               my->_wallet_db.cache_balance( rec );
           }
           for( uint32_t i =0 ; i < trxs.size(); ++i )
+          {
              my->_wallet_db.cache_transaction( trxs[i], asset( -amount_sent[i], asset_id), 
                                                total_fee.amount, 
                                                memo_message, 
                                                receiver_public_key,
-                                               bts::blockchain::now(),
-                                               bts::blockchain::now(),
+                                               now,
+                                               now,
                                                sender_public_key
                                              );
+          }
        }
 
        return trxs;
@@ -1712,12 +1765,13 @@ namespace bts { namespace wallet {
           sign_transaction( trx, required_signatures );
           my->_blockchain->store_pending_transaction( trx, true );
 
+          const auto now = blockchain::now();
           my->_wallet_db.cache_transaction( trx, asset(amount_to_withdraw,0),
                                            required_fees.amount,
                                            memo_message,
                                            receiver_public_key,
-                                           bts::blockchain::now(),
-                                           bts::blockchain::now(),
+                                           now,
+                                           now,
                                            delegate_private_key.get_public_key(),
                                            vector<address>()//{to_address}
                                            );
@@ -1792,12 +1846,13 @@ namespace bts { namespace wallet {
       {
          sign_transaction( trx, required_signatures );
          my->_blockchain->store_pending_transaction( trx, true );
+         const auto now = blockchain::now();
          my->_wallet_db.cache_transaction( trx, asset_to_transfer,
                                           required_fees.amount,
                                           memo_message,
                                           public_key_type(),
-                                          bts::blockchain::now(),
-                                          bts::blockchain::now(),
+                                          now,
+                                          now,
                                           sender_public_key,
                                           vector<address>{to_address}
                                           );
@@ -1866,12 +1921,13 @@ namespace bts { namespace wallet {
          {
             sign_transaction( trx, required_signatures );
             my->_blockchain->store_pending_transaction( trx, true );
+            const auto now = blockchain::now();
             my->_wallet_db.cache_transaction( trx, total_asset_to_transfer,
                                              required_fees.amount,
                                              memo_message,
                                              public_key_type(),
-                                             bts::blockchain::now(),
-                                             bts::blockchain::now(),
+                                             now,
+                                             now,
                                              sender_public_key,
                                              to_addresses
                                              );
@@ -1962,12 +2018,13 @@ namespace bts { namespace wallet {
       {
          sign_transaction( trx, required_signatures );
          my->_blockchain->store_pending_transaction( trx, true );
+         const auto now = blockchain::now();
          my->_wallet_db.cache_transaction( trx, asset_to_transfer,
                                           required_fees.amount,
                                           memo_message,
                                           receiver_public_key,
-                                          bts::blockchain::now(),
-                                          bts::blockchain::now(),
+                                          now,
+                                          now,
                                           sender_public_key
                                           );
       }
@@ -2019,7 +2076,6 @@ namespace bts { namespace wallet {
           required_signatures.insert(opt_parent_acct->active_address());
       }
 
-
       auto required_fees = get_priority_fee();
 
       bool as_delegate = false;
@@ -2033,7 +2089,7 @@ namespace bts { namespace wallet {
       required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       // TODO: adjust fee based upon blockchain price per byte and
-      // the size of trx... 'recursivey'
+      // the size of trx... 'recursively'
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -2044,15 +2100,15 @@ namespace bts { namespace wallet {
       {
          sign_transaction( trx, required_signatures );
          my->_blockchain->store_pending_transaction( trx, true );
+         const auto now = blockchain::now();
          return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
                                                   "register " + account_to_register + (as_delegate? " as a delegate" : ""), 
-                                                  payer_public_key, 
-                                                  bts::blockchain::now(),
-                                                  bts::blockchain::now(),
-                                                  account_public_key
-                                                );
+                                                  account_public_key,
+                                                  now,
+                                                  now,
+                                                  payer_public_key );
       }
       return wallet_transaction_record(transaction_data(trx));
 
@@ -2122,13 +2178,14 @@ namespace bts { namespace wallet {
       {
          sign_transaction( trx, required_signatures );
          my->_blockchain->store_pending_transaction( trx, true );
+         const auto now = blockchain::now();
          my->_wallet_db.cache_transaction( trx,
                                   asset(),
                                   required_fees.amount,
                                   "create " + symbol + " (" + asset_name + ")",
                                   from_account_address,
-                                  bts::blockchain::now(),
-                                  bts::blockchain::now(),
+                                  now,
+                                  now,
                                   from_account_address
                                 );
 
@@ -2193,13 +2250,14 @@ namespace bts { namespace wallet {
       {
           sign_transaction( trx, required_signatures );
           my->_blockchain->store_pending_transaction( trx, true );
+          const auto now = blockchain::now();
           my->_wallet_db.cache_transaction( trx,
                                             shares_to_issue,
                                             required_fees.amount,
                                             "issue " + my->_blockchain->to_pretty_asset(shares_to_issue),
                                             receiver_public_key,
-                                            bts::blockchain::now(),
-                                            bts::blockchain::now(),
+                                            now,
+                                            now,
                                             issuer->active_key()
                                           );
       }
@@ -2240,6 +2298,7 @@ namespace bts { namespace wallet {
 
       auto account = my->_blockchain->get_account_record( account_to_update );
       FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_to_update));
+      auto account_public_key = get_account_public_key( account_to_update );
 
       auto required_fees = get_priority_fee();
 
@@ -2271,13 +2330,14 @@ namespace bts { namespace wallet {
       {
           sign_transaction( trx, required_signatures );
           my->_blockchain->store_pending_transaction( trx, true );
+          const auto now = blockchain::now();
           return my->_wallet_db.cache_transaction( trx, 
                                                   asset(), 
                                                   required_fees.amount, 
                                                   "update " + account_to_update, 
-                                                  payer_public_key, 
-                                                  bts::blockchain::now(),
-                                                  bts::blockchain::now(),
+                                                  account_public_key,
+                                                  now,
+                                                  now,
                                                   payer_public_key
                                                 );
       }
@@ -2502,12 +2562,13 @@ namespace bts { namespace wallet {
 
         my->_blockchain->store_pending_transaction( trx, true );
 
+        const auto now = blockchain::now();
         my->_wallet_db.cache_transaction( trx, deposit_amount,
                                           required_fees.amount,
                                           memo_message, 
                                           to_account_key, //from_account_key,
-                                          bts::blockchain::now(),
-                                          bts::blockchain::now(),
+                                          now,
+                                          now,
                                           owner_key_record->public_key
                                         );
 
@@ -2611,12 +2672,13 @@ namespace bts { namespace wallet {
 
            auto memo_message = memoss.str();
 
+           const auto now = blockchain::now();
            my->_wallet_db.cache_transaction( trx, cost_shares,
                                              required_fees.amount,
                                              memo_message, 
                                              order_key,
-                                             bts::blockchain::now(),
-                                             bts::blockchain::now(),
+                                             now,
+                                             now,
                                              from_account_key
                                            );
 
@@ -2732,12 +2794,13 @@ namespace bts { namespace wallet {
 
            auto memo_message = memoss.str();
 
+           const auto now = blockchain::now();
            my->_wallet_db.cache_transaction( trx, cost_shares,
                                              required_fees.amount,
                                              memo_message, 
                                              order_key,
-                                             bts::blockchain::now(),
-                                             bts::blockchain::now(),
+                                             now,
+                                             now,
                                              from_account_key
                                            );
 
@@ -2750,17 +2813,6 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
-
-
-
-
-
-
-
-
-
-
-
 
    /**
     *  Short $200 USD at  $20 USD / XTS   
@@ -2839,12 +2891,13 @@ namespace bts { namespace wallet {
 
            auto memo_message = memoss.str();
 
+           const auto now = blockchain::now();
            my->_wallet_db.cache_transaction( trx, cost_shares,
                                              required_fees.amount,
                                              memo_message, 
                                              order_key,
-                                             bts::blockchain::now(),
-                                             bts::blockchain::now(),
+                                             now,
+                                             now,
                                              from_account_key
                                            );
 
@@ -2856,29 +2909,6 @@ namespace bts { namespace wallet {
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity) (quote_price)(quote_symbol)(sign) ) }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
    void wallet::set_priority_fee( const asset& fee )
    {
@@ -3345,7 +3375,6 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW() }
 
 
-
    owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
    {
        return my->_wallet_db.lookup_transaction(trx_id);
@@ -3371,14 +3400,9 @@ namespace bts { namespace wallet {
        const auto priority_fee = my->_blockchain->get_priority_fee();
        for( const auto& transaction_record : transaction_records )
        {
-           try
-           {
-               my->_blockchain->evaluate_transaction( transaction_record.trx, priority_fee );
-           }
-           catch( fc::exception& e )
-           {
-               transaction_errors[transaction_record.transaction_id] = e;
-           }
+           const auto error = my->_blockchain->get_transaction_error( transaction_record.trx, priority_fee );
+           if( !error.valid() ) continue;
+           transaction_errors[transaction_record.transaction_id] = *error;
        }
        return transaction_errors;
    } FC_CAPTURE_AND_RETHROW() }
@@ -3447,6 +3471,24 @@ namespace bts { namespace wallet {
 
    bool wallet::is_unique_account( const string& account_name )const
    {
+      //There are two possibilities here. First, the wallet has multiple records named account_name
+      //Second, the wallet has a different record named account_name than the blockchain does.
+
+      //Check that the wallet has at most one account named account_name
+      auto known_accounts = my->_wallet_db.get_accounts();
+      bool found = false;
+      for( auto known_account : known_accounts )
+        if( known_account.second.name == account_name )
+        {
+          if( found )
+            return false;
+          found = true;
+        }
+      if( !found )
+        //The wallet does not contain an account with this name. No conflict is possible.
+        return false;
+
+      //The wallet has an account named account_name. Check that it matches with the blockchain
       auto local_account      = my->_wallet_db.lookup_account( account_name );
       auto registered_account = my->_blockchain->get_account_record( account_name );
       if( local_account && registered_account )
@@ -3651,6 +3693,7 @@ namespace bts { namespace wallet {
           if (my->_scheduled_lock_time)
             relock_time_in_sec = *my->_scheduled_lock_time;                                
           obj( "scheduled_lock_time", relock_time_in_sec);
+          obj( "wallet_scan_progress", my->_wallet_scan_progress );
        }
        else
        {

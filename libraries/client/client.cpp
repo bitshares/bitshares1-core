@@ -250,7 +250,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::info;
+    dlc_p2p.level = fc::log_level::debug;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -973,7 +973,7 @@ config load_config( const fc::path& datadir )
           //_chain_db->export_fork_graph(dot_filename);
           //wlog("Graph written to file ${dot_filename}", ("dot_filename", dot_filename));
 
-          assert(false);
+          FC_ASSERT(false);
           // and work around it
           last_seen_block_num = head_block_num;
         }
@@ -992,7 +992,7 @@ config load_config( const fc::path& datadir )
           {
             ilog("chain_database::get_block failed to return block number ${last_seen_block_num} even though chain_database::get_block_num() provided its block number",
                  ("last_seen_block_num",last_seen_block_num));
-            assert( !"I assume this can never happen");
+            FC_ASSERT( !"I assume this can never happen");
           }
           hashes_to_return.push_back(header.id());
           ++last_seen_block_num;
@@ -1022,7 +1022,7 @@ config load_config( const fc::path& datadir )
             {
               // block is a block we know about and is on the main chain
               uint32_t reference_point_block_num = _chain_db->get_block_num(reference_point);
-              assert(reference_point_block_num > 0);
+              FC_ASSERT(reference_point_block_num > 0);
               high_block_num = reference_point_block_num;
               non_fork_high_block_num = high_block_num;
             }
@@ -1032,22 +1032,22 @@ config load_config( const fc::path& datadir )
               try
               {
                 fork_history = _chain_db->get_fork_history(reference_point);
-                assert(fork_history.size() >= 2);
-                assert(fork_history.front() == reference_point);
+                FC_ASSERT(fork_history.size() >= 2);
+                FC_ASSERT(fork_history.front() == reference_point);
                 block_id_type last_non_fork_block = fork_history.back();
                 fork_history.pop_back();
                 boost::reverse(fork_history);
                 try
                 {
                   non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-                  assert(non_fork_high_block_num > 0);
+                  FC_ASSERT(non_fork_high_block_num > 0);
                 }
                 catch (const fc::key_not_found_exception&)
                 {
-                  assert(!"get_fork_history() returned a history that doesn't link to the main chain");
+                  FC_ASSERT(!"get_fork_history() returned a history that doesn't link to the main chain");
                 }
                 high_block_num = non_fork_high_block_num + fork_history.size();
-                assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
+                FC_ASSERT(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
               }
               catch (const fc::exception& e)
               {
@@ -1060,7 +1060,7 @@ config load_config( const fc::path& datadir )
           }
           catch (const fc::key_not_found_exception&)
           {
-            assert(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
+            FC_ASSERT(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
             // we've never seen this block
             return synopsis;
           }
@@ -1172,7 +1172,7 @@ config load_config( const fc::path& datadir )
            // genesis block?  That's not stored off directly anywhere I can find, but it
            // does wind its way into the the registration date of the base asset.
            oasset_record base_asset_record = _chain_db->get_asset_record(BTS_BLOCKCHAIN_SYMBOL);
-           assert(base_asset_record);
+           FC_ASSERT(base_asset_record);
            if (!base_asset_record)
              return fc::time_point_sec::min();
            return base_asset_record->registration_date;
@@ -1254,8 +1254,34 @@ config load_config( const fc::path& datadir )
         // re-register the _user_appender which was overwritten by configure_logging()
         fc::logger::get( "user" ).add_appender( my->_user_appender );
 
-        my->_exception_db.open( data_dir / "exceptions", true );
-        my->_chain_db->open( data_dir / "chain", genesis_file_path );
+        try
+        {
+          my->_exception_db.open( data_dir / "exceptions", true );
+        }
+        catch( const db::db_in_use_exception& e )
+        {
+          if( e.to_string().find("Corruption") != string::npos )
+          {
+            elog("Exception database corrupted. Deleting it and attempting to recover.");
+            fc::remove_all( data_dir / "exceptions" );
+            my->_exception_db.open( data_dir / "exceptions", true );
+          }
+        }
+
+        try
+        {
+          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+        }
+        catch( const db::db_in_use_exception& e )
+        {
+          if( e.to_string().find("Corruption") != string::npos )
+          {
+            elog("Chain database corrupted. Deleting it and attempting to recover.");
+            fc::remove_all( data_dir / "chain" );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          }
+        }
+
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
@@ -1399,9 +1425,16 @@ config load_config( const fc::path& datadir )
       _wallet->clear_pending_transactions();
     }
 
-    map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors()const
+    map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const
     {
-      return _wallet->get_pending_transaction_errors();
+      const auto& errors = _wallet->get_pending_transaction_errors();
+      if( filename != "" )
+      {
+          FC_ASSERT( !fc::exists( filename ) );
+          std::ofstream out( filename.c_str() );
+          out << fc::json::to_pretty_string( errors );
+      }
+      return errors;
     }
 
     vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer,
@@ -1596,7 +1629,7 @@ config load_config( const fc::path& datadir )
     bool detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
     { try {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
       _wallet->set_delegate_approval( delegate_name, approved );
       return _wallet->get_delegate_approval( delegate_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved",approved) ) }
@@ -1713,12 +1746,16 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_assets(first, count);
     }
 
-    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info() const
+    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool not_firewalled )const
     {
       std::vector<fc::variant_object> results;
       vector<bts::net::peer_status> peer_statuses = _p2p_node->get_connected_peers();
       for (const bts::net::peer_status& peer_status : peer_statuses)
-        results.push_back(peer_status.info);
+      {
+        const auto& info = peer_status.info;
+        if( not_firewalled && ( info["firewall_status"].as_string() != "not_firewalled" ) ) continue;
+        results.push_back( info );
+      }
       return results;
     }
 
@@ -2117,6 +2154,7 @@ config load_config( const fc::path& datadir )
       auto option_variables = parse_option_variables(argc,argv);
 
       fc::path datadir = bts::client::get_data_dir(option_variables);
+      fc::create_directories(datadir);
 
       // this just clears the database if the command line says
       // TODO: rename it to smething better
@@ -2312,7 +2350,13 @@ config load_config( const fc::path& datadir )
                 FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
             }
         }
-        my->_p2p_node->connect_to(ep);
+        try
+        {
+          my->_p2p_node->connect_to(ep);
+        }
+        catch (const bts::net::already_connected_to_requested_peer&)
+        {
+        }
     }
 
     void client::listen_to_p2p_network()
@@ -2430,13 +2474,12 @@ config load_config( const fc::path& datadir )
        info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
 
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
-       info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
-       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
+       info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
        info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
-       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
+       const auto delegate_reg_fee                  = _chain_db->get_delegate_registration_fee();
+       info["delegate_reg_fee"]                     = _chain_db->to_pretty_asset( asset( delegate_reg_fee ) );
 
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
@@ -2444,7 +2487,8 @@ config load_config( const fc::path& datadir )
 
        info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
        info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-       info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+       const auto asset_reg_fee                     = _chain_db->get_asset_registration_fee();
+       info["asset_reg_fee"]                        = _chain_db->to_pretty_asset( asset( asset_reg_fee ) );
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
 
        info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
@@ -2464,9 +2508,14 @@ config load_config( const fc::path& datadir )
       /* Blockchain */
       uint32_t head_block_num                                   = _chain_db->get_head_block_num();
       info["blockchain_head_block_num"]                         = head_block_num;
-      fc::time_point_sec head_block_timestamp                   = _chain_db->now();
-      info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
-      info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
+      info["blockchain_head_block_age"]                         = variant();
+      info["blockchain_head_block_timestamp"]                   = variant();
+      if( head_block_num > 0 )
+      {
+          fc::time_point_sec head_block_timestamp                   = _chain_db->now();
+          info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
+          info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
+      }
 
       info["blockchain_average_delegate_participation"]         = _chain_db->get_average_delegate_participation();
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
@@ -2548,9 +2597,9 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    void client_impl::wallet_scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
+    void client_impl::wallet_scan_transaction( uint32_t block_num, const string& transaction_id )
     { try {
-       _wallet->scan_transaction( block_num, transaction_id );
+       _wallet->scan_transactions( block_num, transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
 
     bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
@@ -2826,9 +2875,19 @@ config load_config( const fc::path& datadir )
       return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
    }
 
-   vector<transaction_record> client_impl::blockchain_get_transactions_for_block( const block_id_type& id )const
+   map<transaction_id_type, transaction_record> client_impl::blockchain_get_block_transactions( const string& block )const
    {
-      return _chain_db->get_transactions_for_block(id);
+      vector<transaction_record> transactions;
+      if( block.size() == 40 )
+        transactions = _chain_db->get_transactions_for_block( block_id_type( block ) );
+      else
+        transactions = _chain_db->get_transactions_for_block( _chain_db->get_block_id( std::stoi( block ) ) );
+
+      map<transaction_id_type, transaction_record> transactions_map;
+      for( const auto& transaction : transactions )
+          transactions_map[ transaction.trx.id() ] = transaction;
+
+      return transactions_map;
    }
 
    map<fc::time_point, fc::exception> client_impl::list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
@@ -2867,7 +2926,7 @@ config load_config( const fc::path& datadir )
 
       map<fc::time_point, std::string> brief_errors;
       for (auto full_error : full_errors)
-        brief_errors.emplace(std::make_pair(full_error.first, full_error.second.what()));
+        brief_errors.insert(std::make_pair(full_error.first, full_error.second.what()));
 
       if( filename != "" )
       {
@@ -2924,7 +2983,7 @@ config load_config( const fc::path& datadir )
    vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name )const
    {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
       return _chain_db->get_delegate_slot_records( delegate_record->id );
    }
 
