@@ -1629,7 +1629,7 @@ config load_config( const fc::path& datadir )
     bool detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
     { try {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
       _wallet->set_delegate_approval( delegate_name, approved );
       return _wallet->get_delegate_approval( delegate_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved",approved) ) }
@@ -1746,12 +1746,16 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_assets(first, count);
     }
 
-    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info() const
+    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool not_firewalled )const
     {
       std::vector<fc::variant_object> results;
       vector<bts::net::peer_status> peer_statuses = _p2p_node->get_connected_peers();
       for (const bts::net::peer_status& peer_status : peer_statuses)
-        results.push_back(peer_status.info);
+      {
+        const auto& info = peer_status.info;
+        if( not_firewalled && ( info["firewall_status"].as_string() != "not_firewalled" ) ) continue;
+        results.push_back( info );
+      }
       return results;
     }
 
@@ -2979,7 +2983,7 @@ config load_config( const fc::path& datadir )
    vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name )const
    {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
       return _chain_db->get_delegate_slot_records( delegate_record->id );
    }
 
