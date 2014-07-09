@@ -638,19 +638,22 @@ namespace bts{ namespace wallet {
       name_to_account_wallet_record_index.erase( account_name );
    }
 
-   void wallet_db::rename_account( const string& old_account_name, 
+   void wallet_db::rename_account(const public_key_type &old_account_key,
                                    const string& new_account_name )
    {
       /* Precondition: check that new_account doesn't exist in wallet and that old_account does
        */
       FC_ASSERT( is_open() );
 
-      auto opt_old_acct = lookup_account( old_account_name );
+      auto opt_old_acct = lookup_account( old_account_key );
       FC_ASSERT( opt_old_acct.valid() );
       auto acct = *opt_old_acct;
+      auto old_name = acct.name;
       acct.name = new_account_name;
       name_to_account_wallet_record_index[acct.name] = acct.wallet_record_index;
-      name_to_account_wallet_record_index.erase( old_account_name );
+      if( name_to_account_wallet_record_index[old_name] == acct.wallet_record_index )
+        //Only remove the old name from the map if it pointed to the record we've just renamed
+        name_to_account_wallet_record_index.erase( old_name );
       accounts[acct.wallet_record_index] = acct;
       address_to_account_wallet_record_index[address(acct.owner_key)] = acct.wallet_record_index;
       for( const auto& time_key_pair : acct.active_key_history )
