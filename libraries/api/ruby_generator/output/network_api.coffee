@@ -24,9 +24,10 @@ class NetworkAPI
 
   # Returns data about each connected node
   # parameters: 
+  #   bool `not_firewalled` - true to output only peers not behind a firewall and false otherwise
   # return_type: `json_object_array`
-  get_peer_info:  ->
-    @rpc.request('network_get_peer_info').then (response) ->
+  get_peer_info: (not_firewalled) ->
+    @rpc.request('network_get_peer_info', [not_firewalled]).then (response) ->
       response.result
 
   # Broadcast a previously-created signed transaction to the network

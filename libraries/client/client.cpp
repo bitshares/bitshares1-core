@@ -1746,12 +1746,16 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_assets(first, count);
     }
 
-    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info() const
+    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool not_firewalled )const
     {
       std::vector<fc::variant_object> results;
       vector<bts::net::peer_status> peer_statuses = _p2p_node->get_connected_peers();
       for (const bts::net::peer_status& peer_status : peer_statuses)
-        results.push_back(peer_status.info);
+      {
+        const auto& info = peer_status.info;
+        if( not_firewalled && ( info["firewall_status"].as_string() != "not_firewalled" ) ) continue;
+        results.push_back( info );
+      }
       return results;
     }
 
