@@ -24,6 +24,8 @@ namespace bts { namespace blockchain {
 
     bool domain_in_auction( odomain_record rec )
     {
+        FC_ASSERT(!"unimplemented domain_in_auction");
+    /*
         auto now = fc::time_point::now().sec_since_epoch();
         if ( ! rec.valid() )
             return false;
@@ -36,11 +38,14 @@ namespace bts { namespace blockchain {
         if ( rec->update_type == domain_record::sell )
             return true;
         return false;
+*/
     }
 
     /* Is ownership actually locked in? (auction over, not expired) */
     bool domain_owned_by_owner( odomain_record rec )
     {
+    FC_ASSERT(!"unimplemented");
+/*
         auto now = fc::time_point::now().sec_since_epoch();
         if ( ! rec.valid() )
         {
@@ -58,5 +63,6 @@ namespace bts { namespace blockchain {
             return false;
         }
         return true;
+*/
     }
 }} // bts::blockchain

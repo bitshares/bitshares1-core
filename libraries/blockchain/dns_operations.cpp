@@ -15,8 +15,10 @@ namespace bts { namespace blockchain {
         auto now = eval_state._current_state->now().sec_since_epoch();
         auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
         /* First bid case */
-        if (this->update_type == domain_record::first_bid)
+        if (this->update_type == domain_record::unclaimed)
         {
+            FC_ASSERT(!"unimplemented");
+/*
             FC_ASSERT( ! domain_in_auction( odomain_rec ), "Attempt to start auction for a domain already in an auction" );
             FC_ASSERT( ! domain_owned_by_owner( odomain_rec ), "Someone already owns that domain." );
 
@@ -35,10 +37,13 @@ namespace bts { namespace blockchain {
             updated_record.next_required_bid = P2P_NEXT_REQ_BID(0, this->bid_amount);
             
             eval_state._current_state->store_domain_record( updated_record );
+*/
         }
         /* Normal bid case */
-        else if( this->update_type == domain_record::bid )
+        else if( this->update_type == domain_record::in_auction )
         {
+            FC_ASSERT(!"unimplemented");
+            /* 
             FC_ASSERT( domain_in_auction( odomain_rec ),
                      "Attempting to make a normal bid on a domain that is not in auction.");
             FC_ASSERT(this->bid_amount >= odomain_rec->next_required_bid,
@@ -80,9 +85,12 @@ namespace bts { namespace blockchain {
             updated_record.next_required_bid = P2P_NEXT_REQ_BID(odomain_rec->next_required_bid, this->bid_amount);
             
             eval_state._current_state->store_domain_record( updated_record ); 
+            */
         }
-        else if( this->update_type == domain_record::sell )
+        else if( this->update_type == domain_record::in_sale )
         {
+            FC_ASSERT(!"unimplemented");
+            /*
             FC_ASSERT( domain_owned_by_owner(odomain_rec), "This domain is not owned by anyone." );
             FC_ASSERT( eval_state.check_signature( odomain_rec->owner ) );
             
@@ -96,9 +104,12 @@ namespace bts { namespace blockchain {
             updated_record.next_required_bid = P2P_NEXT_REQ_BID(this->bid_amount, this->bid_amount);
             
             eval_state._current_state->store_domain_record( updated_record ); 
+            */
         }
-        else if( this->update_type == domain_record::info )
+        else if( this->update_type == domain_record::owned )
         {
+            FC_ASSERT(!"unimplemented");
+            /*
             FC_ASSERT( domain_owned_by_owner(odomain_rec), "This domain is not owned by anyone.");
             FC_ASSERT( eval_state.check_signature( odomain_rec->owner ) );
 
@@ -112,6 +123,7 @@ namespace bts { namespace blockchain {
             updated_record.next_required_bid = 0;
  
             eval_state._current_state->store_domain_record( updated_record ); 
+            */
         }
     }
 

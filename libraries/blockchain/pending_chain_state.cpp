@@ -43,11 +43,13 @@ namespace bts { namespace blockchain {
       {
         domain_recs.push_back(kv.second);
       }
+/*
       std::sort(domain_recs.begin(), domain_recs.end(),
                 [](const domain_record& a, const domain_record& b)
       {
           return a.last_bid > b.last_bid; // largest first
       });
+*/
        
    }
 

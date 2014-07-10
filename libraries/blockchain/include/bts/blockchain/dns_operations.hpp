@@ -15,7 +15,7 @@ namespace bts { namespace blockchain {
         address                                                         owner;
         string                                                          domain_name;
         variant                                                         value;
-        fc::enum_type<uint8_t, domain_record::domain_update_type>       update_type;
+        fc::enum_type<uint8_t, domain_record::domain_state_type>        update_type;
         share_type                                                      bid_amount;
 
         void evaluate( transaction_evaluation_state& eval_state );
