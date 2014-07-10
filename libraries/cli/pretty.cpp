@@ -50,6 +50,12 @@ string pretty_timestamp( const time_point_sec& timestamp )
     return boost::posix_time::to_iso_extended_string( ptime );
 }
 
+string pretty_age( const time_point_sec& timestamp )
+{
+    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
+    return fc::get_approximate_relative_time_string( timestamp );
+}
+
 string pretty_percent( double part, double whole, int precision )
 {
     FC_ASSERT( part >= 0 );
@@ -331,7 +337,7 @@ string pretty_account( const oaccount_record& record, cptr client )
 
     out << "Name: " << record->name << "\n";
     out << "Registered: " << pretty_timestamp( record->registration_date ) << "\n";
-    out << "Last Updated: " << fc::get_approximate_relative_time_string( record->last_update ) << "\n";
+    out << "Last Updated: " << pretty_age( record->last_update ) << "\n";
     out << "Owner Key: " << std::string( record->owner_key ) << "\n";
 
     /* Only print active key history if there are keys in the history which are not the owner key */
@@ -343,7 +349,7 @@ string pretty_account( const oaccount_record& record, cptr client )
       for( const auto& key : record->active_key_history )
       {
           out << "  Key: " << std::string( key.second )
-              << ", last used " << fc::get_approximate_relative_time_string( key.first ) << "\n";
+              << ", last used " << pretty_age( key.first ) << "\n";
       }
     }
 
