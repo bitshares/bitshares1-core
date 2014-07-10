@@ -9,7 +9,6 @@
 
 namespace bts { namespace net
   {
-  int total_objects_in_existence = 0;
     peer_connection::peer_connection(peer_connection_delegate* delegate) : 
       _node(delegate),
       _message_connection(this),
@@ -27,8 +26,6 @@ namespace bts { namespace net
       last_block_number_delegate_has_seen(0),
       transaction_fetching_inhibited_until(fc::time_point::min())
     {
-      ++total_objects_in_existence;
-      dlog("peer_connection constructor, ${count} objects", ("count", total_objects_in_existence));
     }
 
     peer_connection_ptr peer_connection::make_shared(peer_connection_delegate* delegate)
@@ -69,8 +66,6 @@ namespace bts { namespace net
         {
         }
       }
-      --total_objects_in_existence;
-      dlog("peer_connection destructor, ${count} objects", ("count", total_objects_in_existence));
     }
 
     fc::tcp_socket& peer_connection::get_socket()
