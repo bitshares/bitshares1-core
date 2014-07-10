@@ -2466,7 +2466,7 @@ config load_config( const fc::path& datadir )
        info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
        info["name"]                                 = BTS_BLOCKCHAIN_NAME;
        info["version"]                              = BTS_BLOCKCHAIN_VERSION;
-       info["genesis_timestamp"]                    = _chain_db->get_asset_record( asset_id_type() )->registration_date;
+       info["genesis_timestamp"]                    = _chain_db->get_genesis_timestamp();
 
        info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
        info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;

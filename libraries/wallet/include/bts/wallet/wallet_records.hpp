@@ -147,17 +147,22 @@ namespace bts { namespace wallet {
 
    struct transaction_data
    {
-       transaction_data():fees(0),block_num(0),transmit_count(0){}
-       transaction_data( const signed_transaction& t ):trx(t),fees(0),block_num(0),transmit_count(0){}
+       transaction_data()
+       :block_num(0),is_virtual(false),fees(0),is_confirmed(false),transmit_count(0){}
 
+       transaction_data( const signed_transaction& t )
+       :block_num(0),is_virtual(false),trx(t),fees(0),is_confirmed(false),transmit_count(0){}
+
+       transaction_id_type       transaction_id; // TODO: Rename to transaction_index
+       uint32_t                  block_num;
+       bool                      is_virtual;
        signed_transaction        trx;
-       transaction_id_type       transaction_id;
-       optional<public_key_type> to_account;
        optional<public_key_type> from_account;
+       optional<public_key_type> to_account;
        asset                     amount;
        share_type                fees;
        std::string               memo_message;
-       uint32_t                  block_num;
+       bool                      is_confirmed;
        fc::time_point_sec        created_time;
        fc::time_point_sec        received_time;
        /** the number of times this transaction has been transmitted */
@@ -240,17 +245,21 @@ FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
 FC_REFLECT( bts::wallet::transaction_data, 
-            (trx)
             (transaction_id)
-            (to_account)
+            (block_num)
+            (is_virtual)
+            (trx)
             (from_account)
+            (to_account)
             (amount)
             (fees)
             (memo_message)
+            (is_confirmed)
             (created_time)
             (received_time)
-            (block_num)
-            (transmit_count) )
+            (transmit_count)
+            (extra_addresses)
+          )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )

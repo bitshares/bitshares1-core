@@ -118,7 +118,7 @@ namespace bts { namespace wallet {
          void                                       clear_pending_transactions();
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
-         void      scan_state();
+         void      scan_state( const time_point_sec& received_time );
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
                                const scan_progress_callback& progress_callback = scan_progress_callback() );
          uint32_t  get_last_scanned_block_number()const;
@@ -385,10 +385,10 @@ namespace bts { namespace wallet {
          vector<market_order_status>        get_market_orders( const string& quote, const string& base )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
-                                                                        uint32_t start_block_num = -1,
+                                                                        uint32_t start_block_num = 0,
                                                                         uint32_t end_block_num = -1 )const;
          vector<pretty_transaction>         get_pretty_transaction_history( const string& account_name = string(),
-                                                                               uint32_t start_block_num = -1,
+                                                                               uint32_t start_block_num = 0,
                                                                                uint32_t end_block_num = -1 )const;
 
          optional<wallet_account_record>    get_account_record( const address& addr)const;

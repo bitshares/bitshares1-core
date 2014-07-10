@@ -103,6 +103,8 @@ namespace bts { namespace blockchain {
 
          void sanity_check()const;
 
+         time_point_sec get_genesis_timestamp()const;
+
          double get_average_delegate_participation()const;
 
          /**

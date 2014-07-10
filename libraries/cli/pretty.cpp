@@ -210,10 +210,11 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     FC_ASSERT( client != nullptr );
 
     std::stringstream out;
+    out << std::left;
 
+    out << std::setw( 20 ) << "RECEIVED";
     out << std::setw(  8 ) << std::right << "BLK" << ".";
     out << std::setw(  5 ) << std::left << "TRX";
-    out << std::setw( 20 ) << "TIMESTAMP";
     out << std::setw( 20 ) << "FROM";
     out << std::setw( 20 ) << "TO";
     out << std::setw( 22 ) << "AMOUNT";
@@ -227,21 +228,22 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
     for( const auto& transaction : transactions )
     {
-        if( transaction.block_num > 0 )
+        out << std::setw( 20 ) << pretty_timestamp( transaction.received_time );
+
+        if( transaction.is_virtual || transaction.is_confirmed )
         {
             out << std::setw( 8 ) << std::right << transaction.block_num << ".";
             out << std::setw( 5 ) << std::left << transaction.trx_num;
         }
         else if( errors.count( transaction.trx_id ) > 0 )
         {
-            out << std::setw( 14 ) << "   ERROR";
+            out << std::setw( 14 ) << "ERROR";
         }
         else
         {
-            out << std::setw( 14 ) << "   PENDING";
+            out << std::setw( 14 ) << "PENDING";
         }
 
-        out << std::setw( 20 ) << pretty_timestamp( fc::time_point_sec( transaction.received_time ) );
         out << std::setw( 20 ) << pretty_shorten( transaction.from_account, 19 );
         out << std::setw( 20 ) << pretty_shorten( transaction.to_account, 19 );
         out << std::setw( 22 ) << client->get_chain()->to_pretty_asset( transaction.amount );
@@ -250,6 +252,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
         out << std::setw( 8 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+        else if( transaction.is_virtual ) out << "N/A";
         else out << string( transaction.trx_id ).substr( 0, 8 );
 
         out << "\n";
