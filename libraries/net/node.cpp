@@ -47,6 +47,26 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
+#define INVOCATION_COUNTER(name) \
+    static unsigned total_ ## name ## _counter = 0; \
+    static unsigned active_ ## name ## _counter = 0; \
+    struct name ## _invocation_logger { \
+      unsigned *total; \
+      unsigned *active; \
+      name ## _invocation_logger(unsigned *total, unsigned *active) : \
+        total(total), active(active) \
+      { \
+        ++*total; \
+        ++*active; \
+        dlog("NEWDEBUG: Entering " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
+      } \
+      ~name ## _invocation_logger() \
+      { \
+        --*active; \
+        dlog("NEWDEBUG: Leaving " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
+      } \
+    } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
+
 //#define P2P_IN_DEDICATED_THREAD
 
 namespace bts { namespace net { 
@@ -2573,7 +2593,7 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       while ( !_accept_loop_complete.canceled() )
       {
-        peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
+        peer_connection_ptr new_peer(peer_connection::make_shared(this));
         try
         {
           _tcp_server.accept( new_peer->get_socket() );
@@ -2848,7 +2868,7 @@ namespace bts { namespace net { namespace detail {
         FC_THROW_EXCEPTION( already_connected_to_requested_peer, "already connected to requested endpoint ${endpoint}", ("endpoint", remote_endpoint ) );
 
       dlog( "node_impl::connect_to(${endpoint})", ("endpoint", remote_endpoint ) );
-      peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
+      peer_connection_ptr new_peer(peer_connection::make_shared(this));
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
       new_peer->set_remote_endpoint( remote_endpoint );

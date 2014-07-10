@@ -27,7 +27,7 @@ public:
   peer_probe() : 
     _peer_closed_connection(false),
     _we_closed_connection(false),
-    _connection(std::make_shared<bts::net::peer_connection>(this)),
+    _connection(bts::net::peer_connection::make_shared(this)),
     _connection_was_rejected(false),
     _done(false),
     _probe_complete_promise(fc::promise<void>::ptr(new fc::promise<void>()))
