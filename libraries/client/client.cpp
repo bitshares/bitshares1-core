@@ -743,7 +743,8 @@ config load_config( const fc::path& datadir )
 
        vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t block_num )
        {
-           FC_ASSERT(block_num > 1, "Cannot use this call on block 0 or 1"); //lazy
+           if (block_num == 0 || block_num == 1)
+               return vector<string>();
            vector<string> delegates;
            auto this_block = _chain_db->get_block_record( block_num );
            FC_ASSERT(this_block.valid(), "Cannot use this call on a block that has not yet been produced");
