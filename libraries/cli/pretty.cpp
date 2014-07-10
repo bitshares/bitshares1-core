@@ -336,21 +336,17 @@ string pretty_account( const oaccount_record& record, cptr client )
     out << std::left;
 
     out << "Name: " << record->name << "\n";
-    out << "Registered: " << pretty_timestamp( record->registration_date ) << "\n";
+    bool founder = record->registration_date == client->get_chain()->get_genesis_timestamp();
+    string registered = !founder ? pretty_timestamp( record->registration_date ) : "Genesis (Keyhotee Founder)";
+    out << "Registered: " << registered << "\n";
     out << "Last Updated: " << pretty_age( record->last_update ) << "\n";
     out << "Owner Key: " << std::string( record->owner_key ) << "\n";
 
-    /* Only print active key history if there are keys in the history which are not the owner key */
-    if( record->active_key_history.size() > 1
-        || record->active_key_history.begin()->second != record->owner_key )
+    out << "Active Key History:\n";
+    for( const auto& key : record->active_key_history )
     {
-      out << "Active Key History:\n";
-
-      for( const auto& key : record->active_key_history )
-      {
-          out << "  Key: " << std::string( key.second )
-              << ", last used " << pretty_age( key.first ) << "\n";
-      }
+        out << "- " << std::string( key.second )
+            << ", last used " << pretty_age( key.first ) << "\n";
     }
 
     if( record->is_delegate() )

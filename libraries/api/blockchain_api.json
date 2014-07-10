@@ -144,7 +144,7 @@
             {
               "name" : "account",
               "type" : "string",
-              "description" : "account name or account ID to retrieve"
+              "description" : "account name, ID, or public key to retrieve the record for"
             }
         ],
         "is_const" : true,

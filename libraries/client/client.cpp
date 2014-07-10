@@ -1622,10 +1622,12 @@ config load_config( const fc::path& datadir )
     {
       try
       {
-          if( !std::all_of( account.begin(), account.end(), ::isdigit) )
-              return _chain_db->get_account_record( account );
-          else
+          if( std::all_of( account.begin(), account.end(), ::isdigit) )
               return _chain_db->get_account_record( std::stoi( account ) );
+          else if( account.substr( 0, string( BTS_ADDRESS_PREFIX ).size() ) == BTS_ADDRESS_PREFIX )
+              return _chain_db->get_account_record( address( public_key_type( account ) ) );
+          else
+              return _chain_db->get_account_record( account );
       }
       catch( ... )
       {
