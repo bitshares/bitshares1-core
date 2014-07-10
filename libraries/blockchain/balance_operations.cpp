@@ -31,7 +31,7 @@ namespace bts { namespace blockchain {
       {
          for( auto delegate_id : this->slate.supported_delegates )
          {
-            eval_state.verify_delegate_id( delegate_id );
+            eval_state.verify_delegate_id( abs(delegate_id) );
          }
          eval_state._current_state->store_delegate_slate( slate_id, slate );
       }

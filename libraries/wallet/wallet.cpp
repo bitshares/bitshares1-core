@@ -3588,7 +3588,7 @@ namespace bts { namespace wallet {
       return result;
    }
 
-   void wallet::set_delegate_approval( const string& delegate_name, bool approved )
+   void wallet::set_delegate_approval( const string& delegate_name, int approved )
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );
@@ -3609,7 +3609,7 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved", approved) ) }
 
-   bool wallet::get_delegate_approval( const string& delegate_name )const
+   int wallet::get_delegate_approval( const string& delegate_name )const
    { try {
       FC_ASSERT( is_open() );
       auto war = my->_wallet_db.lookup_account( delegate_name );

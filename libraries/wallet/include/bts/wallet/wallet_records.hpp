@@ -81,7 +81,7 @@ namespace bts { namespace wallet {
    struct account : public bts::blockchain::account_record
    {
        account()
-       :approved(false)
+       :approved(0)
        ,block_production_enabled(false)
        ,is_my_account(false),is_favorite(false)
        {}
@@ -100,7 +100,7 @@ namespace bts { namespace wallet {
         * The assumption is that if the delegate is in the
         * user's wallet then they are a potential candidate.
         */
-       bool              approved;
+       int               approved;
 
        bool              block_production_enabled;
        bool              is_my_account;
