@@ -837,7 +837,7 @@ namespace bts { namespace cli {
                               *_out << std::setw(15) << tine.transaction_count
                                     << std::setw(10) << tine.size
                                     << std::setw(20) << pretty_timestamp(tine.timestamp)
-                                    << std::setw(10) << tine.latency
+                                    << std::setw(10) << tine.latency.to_seconds()
                                     << std::setw(8);
 
                               if (tine.is_valid.valid()) {

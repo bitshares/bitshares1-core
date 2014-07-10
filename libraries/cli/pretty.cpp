@@ -203,7 +203,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         }
         else
         {
-            out << std::setw(  8 ) << block_record.latency;
+            out << std::setw(  8 ) << block_record.latency.to_seconds();
             out << std::setw( 15 ) << block_record.processing_time.count() / double( 1000000 );
         }
 

@@ -399,7 +399,7 @@ namespace bts { namespace blockchain {
 
           if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
           {
-              auto latency = (now - block_data.timestamp).to_seconds();
+              auto latency = now - block_data.timestamp;
               block_record record( block_data, self->get_current_random_seed(), block_data.block_size(), latency );
               _block_id_to_block_record_db.store( block_id, record );
           }
