@@ -3078,9 +3078,9 @@ config load_config( const fc::path& datadir )
        return upnp_info;
    }
 
-   fc::ecc::signature client_impl::wallet_sign_hash(const string& signing_account, const fc::sha256& hash)
+   fc::ecc::compact_signature client_impl::wallet_sign_hash(const string& signing_account, const fc::sha256& hash)
    {
-      return _wallet->get_account_private_key(signing_account).sign(hash);
+      return _wallet->get_account_private_key(signing_account).sign_compact(hash);
    }
 
    } // namespace detail
