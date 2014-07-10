@@ -78,10 +78,10 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
     out << std::setw(  9 ) << "MISSED";
     out << std::setw( 14 ) << "RELIABILITY";
     out << std::setw(  9 ) << "PAY RATE";
-    out << std::setw( 16 ) << "PAY BALANCE";
+    out << std::setw( 20 ) << "PAY BALANCE";
     out << std::setw( 10 ) << "LAST BLOCK";
 
-    out << pretty_line( 120 );
+    out << pretty_line( 124 );
 
     const auto current_slot_timestamp = blockchain::get_slot_start_time( blockchain::now() );
     const auto head_block_timestamp = client->get_chain()->get_head_block().timestamp;
@@ -114,7 +114,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
 
         out << std::setw(  9 ) << pretty_percent( delegate_record.delegate_info->pay_rate, 100, 0 );
         const auto pay_balance = asset( delegate_record.delegate_info->pay_balance );
-        out << std::setw( 16 ) << client->get_chain()->to_pretty_asset( pay_balance );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( pay_balance );
 
         const auto last_block = delegate_record.delegate_info->last_block_num_produced;
         out << std::setw( 10 ) << ( last_block > 0 ? std::to_string( last_block ) : "NONE" );

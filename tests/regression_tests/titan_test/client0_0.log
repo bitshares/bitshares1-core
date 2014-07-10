@@ -11,9 +11,9 @@ delegate0                       19,801,980.19801 XTS
 default (unlocked) >>> wallet_add_contact_account account-for-client1 "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j"
 OK
 default (unlocked) >>> wallet_transfer 150 XTS delegate0 account-for-client1 "send this back"
-    BLK.TRX  TIMESTAMP           FROM                TO                  AMOUNT                FEE                 MEMO                                   ID      
-------------------------------------------------------------------------------------------------------------------------------------------------------------------
-   PENDING   [redacted]          delegate0           account-for-client1 150.00000 XTS         0.10000 XTS         send this back                         [redacted]
+     BLK.TRX  TIMESTAMP           FROM                TO                  AMOUNT                FEE                 MEMO                                   ID      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   PENDING    [redacted]          delegate0           account-for-client1 150.00000 XTS         0.10000 XTS         send this back                         [redacted]
 default (unlocked) >>> wallet_account_create test-account
 "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
 default (unlocked) >>> wallet_account_register test-account delegate0
@@ -46,8 +46,8 @@ default (unlocked) >>> wallet_account_register test-account delegate0
     ]
   },
   "transaction_id": "8f757b2d36950c0b88782ff3dd4019283ece4891",
-  "to_account": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z",
-  "from_account": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+  "to_account": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+  "from_account": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z",
   "amount": {
     "amount": 0,
     "asset_id": 0

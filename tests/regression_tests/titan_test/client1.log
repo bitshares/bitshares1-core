@@ -15,9 +15,9 @@ ACCOUNT                         BALANCE
 --------------------------------------------------------
 account-for-client1             150.00000 XTS           
 default (unlocked) >>> wallet_transfer 100 XTS account-for-client1 test-account "take this"
-    BLK.TRX  TIMESTAMP           FROM                TO                  AMOUNT                FEE                 MEMO                                   ID      
-------------------------------------------------------------------------------------------------------------------------------------------------------------------
-   PENDING   [redacted]          account-for-client1 test-account        100.00000 XTS         0.10000 XTS         take this                              [redacted]
+     BLK.TRX  TIMESTAMP           FROM                TO                  AMOUNT                FEE                 MEMO                                   ID      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   PENDING    [redacted]          account-for-client1 test-account        100.00000 XTS         0.10000 XTS         take this                              [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> wallet_account_balance account-for-client1
