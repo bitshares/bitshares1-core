@@ -182,15 +182,9 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
         const auto& delegate_name = client->blockchain_get_block_signee( block_record.block_num );
 
-
-        if( FILTER_OUTPUT_FOR_TESTS )
-        {
-            out << std::setw( 32 ) << "[redacted]";
-        }
-        else
-        {
-            out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
-        }
+        out << std::setw( 32 );
+        if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+        else out << pretty_shorten( delegate_name, 31 );
 
         out << std::setw(  8 ) << block_record.user_transaction_ids.size();
         out << std::setw(  8 ) << block_record.block_size;
