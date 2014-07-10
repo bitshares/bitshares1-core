@@ -403,7 +403,7 @@ void create_genesis_block(fc::path genesis_json_file)
    std::ofstream key_stream( genesis_json_file.string() + ".keypairs" );
    //create a script for importing the delegate keys
    std::ofstream delegate_key_import_stream(genesis_json_file.string() + ".log");
-   delegate_key_import_stream << CLI_PROMPT_SUFFIX " enable_output false" << std::endl;
+   delegate_key_import_stream << CLI_PROMPT_SUFFIX " debug_enable_output false" << std::endl;
    std::cout << "*** creating delegate public/private key pairs ***" << std::endl;
    for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
    {
@@ -425,7 +425,7 @@ void create_genesis_block(fc::path genesis_json_file)
       //add command to import the delegate keys into a client
       delegate_key_import_stream << CLI_PROMPT_SUFFIX " wallet_import_private_key " << wif_key << " " << delegate_account.name << " false" << std::endl;
    }
-   delegate_key_import_stream << CLI_PROMPT_SUFFIX " enable_output true" << std::endl;
+   delegate_key_import_stream << CLI_PROMPT_SUFFIX " debug_enable_output true" << std::endl;
 
    fc::json::save_to_file( config, genesis_json_file);
 }

@@ -658,7 +658,7 @@ namespace bts { namespace cli {
                   const auto& votes = result.as<account_vote_summary_type>();
                   *_out << pretty_vote_summary( votes );
               }
-              else if (method_name == "list_errors")
+              else if (method_name == "debug_list_errors")
               {
                   auto error_map = result.as<map<fc::time_point,fc::exception> >();
                   if (error_map.empty())

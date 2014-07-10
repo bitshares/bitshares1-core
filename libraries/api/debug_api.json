@@ -37,6 +37,21 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
+        "method_name": "debug_wait",
+        "description": "wait for specified amount of time",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wait_time", 
+              "type" : "uint32_t", 
+              "description" : "time in seconds to wait before accepting more input"
+            }
+          ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
         "method_name": "debug_wait_for_block_by_number",
         "description": "Don't return until the specified block has arrived",
         "return_type": "void",
@@ -55,6 +70,152 @@
         ],
         "is_const" : false,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "debug_wait_block_interval",
+        "description": "wait for n block intervals",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "wait_time_in_block_intervals",
+              "type" : "uint32_t", 
+              "description" : "time in block intervals to wait before accepting more input"
+            }
+          ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "debug_enable_output",
+        "description": "enables or disables output from the CLI",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "enable_flag", 
+              "type" : "bool", 
+              "description" : "true to enable output, false to disable it"
+            }
+          ],
+        "is_const"   : false,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "debug_filter_output_for_tests",
+        "description": "prevents printing any times or other unpredictable data",
+        "return_type": "void",
+        "parameters" : 
+          [
+            { 
+              "name" : "enable_flag", 
+              "type" : "bool", 
+              "description" : "true to enable filtering, false to disable it"
+            }
+          ],
+        "is_const"   : false,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+          "method_name" : "debug_list_errors",
+          "description" : "returns a list of notable errors",
+          "return_type" : "error_map",
+          "parameters"  : [ 
+               {
+                  "name" : "first_error_number",
+                  "description" : "the first error to list",
+                  "type" : "int32_t",
+                  "default_value" : "0"
+               },
+               {
+                  "name" : "limit",
+                  "description" : "the maximum number of errors to return",
+                  "type" : "uint32_t",
+                  "default_value" : "20"
+               },
+               {
+                  "name" : "filename",
+                  "type" : "string",
+                  "description" : "the filename to save json error list to",
+                  "default_value" : ""
+               }
+        ],
+        "is_const"   : true,
+        "aliases"    : ["errors"],
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+          "method_name" : "debug_list_errors_brief",
+          "description" : "returns a list of short summaries of notable errors",
+          "return_type" : "brief_error_map",
+          "parameters"  : [ 
+               {
+                  "name" : "first_error_number",
+                  "description" : "the first error to list",
+                  "type" : "int32_t",
+                  "default_value" : "0"
+               },
+               {
+                  "name" : "limit",
+                  "description" : "the maximum number of errors to return",
+                  "type" : "uint32_t",
+                  "default_value" : "20"
+               },
+               {
+                  "name" : "filename",
+                  "type" : "string",
+                  "description" : "the filename to save json error list to",
+                  "default_value" : ""
+               } ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+          "method_name" : "debug_write_errors_to_file",
+          "description" : "writes a list of notable errors to a file",
+          "return_type" : "void",
+          "parameters"  : [ 
+               {
+                  "name" : "path", 
+                  "description" : "Where to dump the log file",
+                  "type" : "string", 
+                  "default_value" : ""
+               },
+               {
+                  "name" : "start_time", 
+                  "description" : "time of the first error",
+                  "type" : "timestamp", 
+                  "default_value" : "20000101T000000"
+               } 
+        ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name" : "debug_clear_errors",
+        "description" : "clears the specified errors from the log",
+        "return_type" : "void",
+        "parameters"  : [
+              {
+                 "name" : "start_time",
+                 "description" : "time of the first error",
+                 "type" : "timestamp",
+                 "default_value" : "20000101T000000"
+              },
+              {
+                 "name" : "first_error_number",
+                 "description" : "the first error to erase",
+                 "type" : "int32_t",
+                 "default_value" : "1"
+              },
+              {
+                 "name" : "limit",
+                 "description" : "the maximum number of errors to erase",
+                 "type" : "uint32_t",
+                 "default_value" : "20"
+              } ],
+          "aliases"    : [],
+          "prerequisites" : ["no_prerequisites"]
       }
     ]
 }
