@@ -540,6 +540,16 @@
       {
           "type_name" : "map<transaction_id_type, fc::exception>",
           "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, fc::exception>"
+      },
+      {
+          "type_name" : "signature",
+          "cpp_return_type" : "fc::ecc::signature",
+          "cpp_include_file" : "fc/crypto/elliptic.hpp"
+      },
+      {
+          "type_name" : "sha256",
+          "cpp_return_type" : "fc::sha256",
+          "cpp_include_file" : "fc/crypto/sha256.hpp"
       }
     ]
 }
