@@ -93,7 +93,20 @@ namespace bts { namespace net {
 
     void message_oriented_connection_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
     {
-      _sock.connect_to(remote_endpoint);
+      // this try/catch is a hack to avoid a handle leak.
+      // There is currently a memory leak that is preventing us from deleting 
+      // message_oriented_connection objects in the case where connect_to throws,
+      // and deleting the object is what is supposed to call close().
+      // When we get that straightened out, we should remove this hack
+      try
+      {
+        _sock.connect_to(remote_endpoint);
+      }
+      catch (...)
+      {
+        _sock.close();
+        throw;
+      }
       _read_loop_done = fc::async([=](){ read_loop(); });
     }
 
