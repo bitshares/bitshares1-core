@@ -1132,7 +1132,7 @@ config load_config( const fc::path& datadir )
          FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
-       string client_impl::execute_command_line(const string& input) const
+       string client_impl::debug_execute_command_line(const string& input) const
        {
            if (_cli)
            {

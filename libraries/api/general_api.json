@@ -69,21 +69,6 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
-        "method_name": "execute_command_line",
-        "description": "Execute the given command as if it were typed on the CLI",
-        "return_type": "std::string",
-        "parameters" : 
-          [
-            { 
-              "name" : "input", 
-              "type" : "passphrase", 
-              "description" : "The entire command input as if it were a CLI input"
-            }
-          ],
-        "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
-      },
-      {
          "method_name": "batch",
          "description": "Takes any command and an array of its arguments and returns an array of results. Example: batch blockchain_get_blockhash [[1], [2]]",
          "return_type": "variants",

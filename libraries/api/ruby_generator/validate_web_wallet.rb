@@ -11,7 +11,7 @@ class WebWalletValidator
     load_api_methods JSON.parse(IO.read('../network_api.json'))
     load_api_methods JSON.parse(IO.read('../blockchain_api.json'))
     @methods['batch'] = [2, 0]
-    @methods['execute_command_line'] = [1,0]
+    @methods['debug_execute_command_line'] = [1,0]
   end
 
   def load_api_methods(json)
