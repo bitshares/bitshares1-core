@@ -360,8 +360,8 @@ namespace bts { namespace wallet {
          pretty_transaction to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
 
-         void      set_delegate_approval( const string& delegate_name, bool approved );
-         bool      get_delegate_approval( const string& delegate_name )const;
+         void      set_delegate_approval( const string& delegate_name, int approved );
+         int      get_delegate_approval( const string& delegate_name )const;
 
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;
