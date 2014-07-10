@@ -147,7 +147,7 @@ namespace bts { namespace net
       peer_connection(peer_connection_delegate* delegate);
     public:
       static peer_connection_ptr make_shared(peer_connection_delegate* delegate); // use this instead of the constructor
-      ~peer_connection();
+      virtual ~peer_connection();
 
       fc::tcp_socket& get_socket();
       void accept_connection();
