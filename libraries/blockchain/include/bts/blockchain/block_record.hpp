@@ -14,7 +14,7 @@ namespace bts { namespace blockchain {
       fc::ripemd160     random_seed;
       uint64_t          block_size; /* Bytes */
       share_type        total_fees;
-      uint32_t          latency; /* Seconds */
+      int32_t          latency; /* Seconds */
       fc::microseconds  processing_time; /* Time taken for most recent push_block */
    };
    typedef optional<block_record> oblock_record;
