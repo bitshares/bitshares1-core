@@ -234,9 +234,11 @@ namespace bts { namespace blockchain {
             if( delegate_id < signed_int(0) )
                net_delegate_votes[abs(delegate_id)].votes_for -= amount;
             else
-#warning [HARDFORK] Remove this check
-#endif
                net_delegate_votes[abs(delegate_id)].votes_for += amount;
+#warning [HARDFORK] Remove below
+#else
+               net_delegate_votes[delegate_id].votes_for += amount;
+#endif
          }
       }
    }
