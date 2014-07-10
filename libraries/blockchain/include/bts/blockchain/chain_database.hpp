@@ -207,10 +207,6 @@ namespace bts { namespace blockchain {
          /** return the timestamp from the head block */
          virtual time_point_sec         now()const override;
 
-         /** return the current fee rate in millishares */
-         virtual share_type                 get_fee_rate()const override;
-         virtual share_type                 get_delegate_pay_rate()const override;
-
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;
                                             

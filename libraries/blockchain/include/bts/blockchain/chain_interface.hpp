@@ -33,7 +33,9 @@ namespace bts { namespace blockchain {
        *  are on the minority chain.
        */
       confirmation_requirement = 6,
-      database_version         = 7 // database version, to know when we need to upgrade
+      database_version         = 7, // database version, to know when we need to upgrade
+      current_fee_rate         = 8, // database version, to know when we need to upgrade
+      accumulated_fees         = 9 // database version, to know when we need to upgrade
    };
    typedef uint32_t chain_property_type;
 
@@ -62,9 +64,14 @@ namespace bts { namespace blockchain {
 
          virtual fc::ripemd160              get_current_random_seed()const                          = 0;
 
+         share_type                         get_delegate_pay_rate()const;
+         share_type                         get_accumulated_fees()const;
+         void                               set_accumulated_fees( share_type fees );
+
+         share_type                         get_fee_rate()const;
+         void                               set_fee_rate( share_type fees );
+
          /** return the current fee rate in millishares */
-         virtual share_type                 get_fee_rate()const                                     = 0;
-         virtual share_type                 get_delegate_pay_rate()const                            = 0;
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const             = 0;
          virtual void                       store_delegate_slate( slate_id_type id, 
                                                                   const delegate_slate& slate )     = 0;
@@ -151,4 +158,8 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (chain_id)
                  (confirmation_requirement)
                  (active_delegate_list_id)
-                 (database_version) )
+                 (database_version) 
+                 (current_fee_rate)
+                 (accumulated_fees)
+               )
+

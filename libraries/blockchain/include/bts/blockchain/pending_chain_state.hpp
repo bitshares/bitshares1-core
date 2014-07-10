@@ -16,8 +16,6 @@ namespace bts { namespace blockchain {
          fc::ripemd160                get_current_random_seed()const override;
 
          virtual fc::time_point_sec   now()const override;
-         virtual share_type           get_fee_rate()const override;
-         virtual share_type           get_delegate_pay_rate()const override;
 
          virtual oasset_record        get_asset_record( asset_id_type id )const override;
          virtual obalance_record      get_balance_record( const balance_id_type& id )const override;

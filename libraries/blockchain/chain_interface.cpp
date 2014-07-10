@@ -155,4 +155,29 @@ namespace bts{ namespace blockchain {
       return true;
    }
 
+   share_type  chain_interface::get_delegate_pay_rate()const
+   {
+      return get_accumulated_fees() / BTS_BLOCKCHAIN_NUM_DELEGATES;
+   }
+
+   share_type  chain_interface::get_accumulated_fees()const
+   {
+      return get_property( accumulated_fees ).as_int64();
+   }
+
+   void  chain_interface::set_accumulated_fees( share_type fees )
+   {
+      set_property( accumulated_fees, variant(fees) );
+   }
+   share_type  chain_interface::get_fee_rate()const
+   {
+      return get_property( current_fee_rate ).as_int64();
+   }
+
+   void  chain_interface::set_fee_rate( share_type fees )
+   {
+      set_property( current_fee_rate, variant(fees) );
+   }
+
+
 } } // bts::blockchain

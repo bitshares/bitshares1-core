@@ -214,22 +214,6 @@ namespace bts { namespace blockchain {
       return oasset_record();
    }
 
-   share_type pending_chain_state::get_fee_rate()const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state ) 
-        return prev_state->get_fee_rate();
-      FC_ASSERT( false, "No current fee rate set" );
-   }
-
-   share_type pending_chain_state::get_delegate_pay_rate()const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state ) 
-        return prev_state->get_delegate_pay_rate();
-      FC_ASSERT( false, "No current delegate_pay rate set" );
-   }
-
    fc::time_point_sec pending_chain_state::now()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();

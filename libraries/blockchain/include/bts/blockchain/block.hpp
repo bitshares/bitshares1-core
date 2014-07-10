@@ -8,15 +8,12 @@ namespace bts { namespace blockchain {
    {
        digest_type  digest()const;
 
-       block_header():block_num(0),fee_rate(0),delegate_pay_rate(0){}
+       block_header():block_num(0){}
 
        share_type   next_fee( share_type prev_fee_rate, size_t block_size )const;
-       share_type   next_delegate_pay( share_type prev_fee_rate, share_type block_fees )const;
 
        block_id_type        previous;
        uint32_t             block_num;
-       share_type           fee_rate;
-       share_type           delegate_pay_rate;
        fc::time_point_sec   timestamp;
        digest_type          transaction_digest;
        /** used for random number generation on the blockchain */
@@ -58,7 +55,7 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::block_header,
-            (previous)(block_num)(fee_rate)(delegate_pay_rate)(timestamp)(transaction_digest)(next_secret_hash)(previous_secret) )
+            (previous)(block_num)(timestamp)(transaction_digest)(next_secret_hash)(previous_secret) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_block_header, (bts::blockchain::block_header), (delegate_signature) )
 FC_REFLECT_DERIVED( bts::blockchain::digest_block, (bts::blockchain::signed_block_header), (user_transaction_ids) )
 FC_REFLECT_DERIVED( bts::blockchain::full_block, (bts::blockchain::signed_block_header), (user_transactions) )

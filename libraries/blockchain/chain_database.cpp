@@ -93,9 +93,7 @@ namespace bts { namespace blockchain {
             void                                        apply_transactions( const signed_block_header& block,
                                                                             const std::vector<signed_transaction>&,
                                                                             const pending_chain_state_ptr& );
-            void                                        pay_delegate( const block_id_type& block_id,
-                                                                      const share_type& amount,
-                                                                      const pending_chain_state_ptr& );
+            void                                        pay_delegate( const block_id_type& block_id, const pending_chain_state_ptr& );
             void                                        save_undo_state( const block_id_type& id,
                                                                             const pending_chain_state_ptr& );
             void                                        update_head_block( const full_block& blk );
@@ -237,6 +235,8 @@ namespace bts { namespace blockchain {
                 rebuild_index = true;
               }
               self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
+              self->set_property( chain_property_enum::current_fee_rate, BTS_BLOCKCHAIN_MIN_FEE );
+              self->set_property( chain_property_enum::accumulated_fees, 0 );
           }
           else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
@@ -517,6 +517,7 @@ namespace bts { namespace blockchain {
          ilog( "Applying transactions from block: ${n}", ("n",block.block_num) );
          uint32_t trx_num = 0;
          try {
+            share_type total_fees = 0;
             // apply changes from each transaction
             for( const auto& trx : user_transactions )
             {
@@ -540,24 +541,31 @@ namespace bts { namespace blockchain {
                if( trx_num % 20 == 19 ) 
                   fc::usleep( fc::microseconds( 2000 ) );
 
-               /* Collect fees in block record */
-               auto block_id = block.id();
-               auto block_record = self->get_block_record( block_id );
-               FC_ASSERT( block_record.valid() );
-               block_record->total_fees += record.get_fees();
-               _block_id_to_block_record_db.store( block_id, *block_record );
+               total_fees += record.get_fees();
             }
+            /* Collect fees in block record */
+            auto block_id = block.id();
+            auto block_record = self->get_block_record( block_id );
+            FC_ASSERT( block_record.valid() );
+            block_record->total_fees += total_fees;
+            _block_id_to_block_record_db.store( block_id, *block_record );
+
+            auto prev_accumulated_fees = pending_state->get_accumulated_fees();
+            pending_state->set_accumulated_fees( prev_accumulated_fees + total_fees );
+
       } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) ) }
 
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                              const share_type& amount,
                                               const pending_chain_state_ptr& pending_state )
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_block_signee( block_id ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            auto pay_rate = delegate_record->delegate_info->pay_rate;
+            auto pay_rate = pending_state->get_delegate_pay_rate();
             FC_ASSERT( pay_rate <= 100 );
-            auto pay = (amount*pay_rate)/100;
+            auto pay = (pay_rate)/100;
+
+            auto prev_accumulated_fees = pending_state->get_accumulated_fees();
+            pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
 
             delegate_record->delegate_info->pay_balance += pay;
             delegate_record->delegate_info->votes_for += pay;
@@ -567,7 +575,7 @@ namespace bts { namespace blockchain {
             FC_ASSERT( base_asset_record.valid() );
             base_asset_record->current_share_supply += pay;
             pending_state->store_asset_record( *base_asset_record );
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id)("amount",amount) ) }
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
@@ -595,11 +603,9 @@ namespace bts { namespace blockchain {
             if( block_data.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
                 FC_CAPTURE_AND_THROW( time_in_future, (block_data.timestamp)(now)(delta_seconds) );
 
-            size_t block_size = block_data.block_size();
-            auto   expected_next_fee = block_data.next_fee( self->get_fee_rate(),  block_size );
 
-            if( block_data.fee_rate != expected_next_fee )
-              FC_CAPTURE_AND_THROW( invalid_fee_rate, (block_data.fee_rate)(expected_next_fee) );
+            // TODO: move to state update
+            //auto   expected_next_fee = block_data.next_fee( self->get_fee_rate(),  block_size );
 
             digest_block digest_data(block_data);
             if( NOT digest_data.validate_digest() )
@@ -784,16 +790,19 @@ namespace bts { namespace blockchain {
 
             // apply any deterministic operations such as market operations before we perturb indexes
             //apply_deterministic_updates(pending_state);
+            
+            pay_delegate( block_data.id(), pending_state );
 
             apply_transactions( block_data, block_data.user_transactions, pending_state );
 
             execute_markets( pending_state );
 
-            pay_delegate( block_data.id(), block_data.delegate_pay_rate, pending_state );
-
             update_active_delegate_list( block_data, pending_state );
 
             update_random_seed( block_data.previous_secret, pending_state );
+
+            // update fee rate
+            pending_state->set_fee_rate( block_data.next_fee( pending_state->get_fee_rate(), block_data.block_size() ) );
 
             save_undo_state( block_id, pending_state );
 
@@ -1299,17 +1308,6 @@ namespace bts { namespace blockchain {
       return my->_head_block_header.timestamp;
    }
 
-   /** return the current fee rate in millishares */
-   share_type chain_database::get_fee_rate()const
-   {
-      return my->_head_block_header.fee_rate;
-   }
-
-   share_type chain_database::get_delegate_pay_rate()const
-   {
-      return my->_head_block_header.delegate_pay_rate;
-   }
-
    oasset_record chain_database::get_asset_record( asset_id_type id )const
    {
       auto itr = my->_asset_db.find( id );
@@ -1605,15 +1603,6 @@ namespace bts { namespace blockchain {
 
       next_block.previous           = head_block.block_num ? head_block.id() : block_id_type();
       next_block.block_num          = head_block.block_num + 1;
-      next_block.fee_rate           = next_block.next_fee( head_block.fee_rate, block_size );
-
-      // TODO: Adjust fees vs dividends here... right now 100% of fees are paid to delegates
-      /**
-       *  Right now delegates are paid a salary regardless of fees, this initial salary is a pittance and
-       *  should be less than eventual fees.
-       */
-      next_block.delegate_pay_rate  = next_block.next_delegate_pay( head_block.delegate_pay_rate, total_fees );
-
       next_block.timestamp          = timestamp;
       next_block.transaction_digest = digest_block( next_block ).calculate_transaction_digest();
 
@@ -2001,6 +1990,7 @@ namespace bts { namespace blockchain {
    { try {
       return my->_property_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
+
 
    void  chain_database::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
