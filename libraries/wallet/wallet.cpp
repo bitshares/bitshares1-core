@@ -3508,16 +3508,18 @@ namespace bts { namespace wallet {
       //Check that the wallet has at most one account named account_name
       auto known_accounts = my->_wallet_db.get_accounts();
       bool found = false;
-      for( auto known_account : known_accounts )
+      for( const auto& known_account : known_accounts )
+      {
         if( known_account.second.name == account_name )
         {
-          if( found )
-            return false;
+          if( found ) return false;
           found = true;
         }
+      }
+
       if( !found )
         //The wallet does not contain an account with this name. No conflict is possible.
-        return false;
+        return true;
 
       //The wallet has an account named account_name. Check that it matches with the blockchain
       auto local_account      = my->_wallet_db.lookup_account( account_name );
