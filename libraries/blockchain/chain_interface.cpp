@@ -46,6 +46,10 @@ namespace bts{ namespace blockchain {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( str[0] < 'a' || str[0] > 'z' ) return false;
+#if BTS_BLOCKCHAIN_VERSION > 105
+#warning HARDFORK invalid name
+      if (str[str.size() - 1] == '-' ) return false;
+#endif
       for( const auto& c : str )
       {
           if( c >= 'a' && c <= 'z' ) continue;
