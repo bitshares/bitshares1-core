@@ -3007,8 +3007,7 @@ namespace bts { namespace wallet {
       if( !trx_rec.is_virtual && trx_rec.is_confirmed )
       {
           const auto loc = my->_blockchain->get_transaction( trx_id );
-          FC_ASSERT( loc.valid() && trx_rec.block_num == loc->chain_location.block_num );
-          pretty_trx.trx_num = loc->chain_location.trx_num;
+          if( loc.valid() ) pretty_trx.trx_num = loc->chain_location.trx_num;
       }
 
       if( trx_rec.from_account )
