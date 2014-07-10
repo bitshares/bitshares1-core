@@ -3175,15 +3175,10 @@ namespace bts { namespace wallet {
 
       auto keys = bitcoin::import_bitcoin_wallet( wallet_dat, wallet_dat_passphrase );
       for( const auto& key : keys )
-      {
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
-      }
-      scan_chain( 0, 1 );
 
+      scan_chain( 0, 1 );
+      std::cout << "Successfully imported " << keys.size() << " keys from: " << wallet_dat.filename().string() << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
@@ -3200,16 +3195,10 @@ namespace bts { namespace wallet {
       auto keys = bitcoin::import_multibit_wallet( wallet_dat, wallet_dat_passphrase );
 
       for( const auto& key : keys )
-      {
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
-      }
 
       scan_chain( 0, 1 );
-
+      std::cout << "Successfully imported " << keys.size() << " keys from: " << wallet_dat.filename().string() << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
@@ -3226,15 +3215,10 @@ namespace bts { namespace wallet {
       auto keys = bitcoin::import_electrum_wallet( wallet_dat, wallet_dat_passphrase );
 
       for( const auto& key : keys )
-      {
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
-      }
-      scan_chain( 0, 1 );
 
+      scan_chain( 0, 1 );
+      std::cout << "Successfully imported " << keys.size() << " keys from: " << wallet_dat.filename().string() << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
@@ -3251,15 +3235,10 @@ namespace bts { namespace wallet {
       auto keys = bitcoin::import_armory_wallet( wallet_dat, wallet_dat_passphrase );
 
       for( const auto& key : keys )
-      {
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 56 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), true, 0 ) ) << "\n";
-         //std::cout << "importing " << std::string( pts_address( key.get_public_key(), false, 0 ) ) << "\n";
          import_private_key( key, account_name );
-      }
-      scan_chain( 0, 1 );
 
+      scan_chain( 0, 1 );
+      std::cout << "Successfully imported " << keys.size() << " keys from: " << wallet_dat.filename().string() << "\n";
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
     
@@ -3283,6 +3262,7 @@ namespace bts { namespace wallet {
         import_private_key(private_key, fc::to_lower(keyhoteeid), true);
         
         scan_chain( 0, 1 );
+        std::cout << "Successfully imported Keyhotee private key.\n";
     } FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
                             ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
 
