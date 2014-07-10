@@ -364,6 +364,19 @@
          "prerequisites" : ["json_authenticated"]
       },
       {
+         "method_name" : "blockchain_list_missing_block_delegates",
+         "description" : "Returns any delegates who were supposed to produce a given block number but didn't",
+         "return_type" : "account_name_array",
+         "parameters"  : [
+            {
+               "name" : "block_number",
+               "type" : "uint32_t",
+               "description" : "The block to examine"
+            }
+         ], 
+         "prerequisites" : ["json_authenticated"]
+      },
+      {
          "method_name" : "blockchain_export_fork_graph",
          "description" : "dumps the fork data to graphviz format",
          "return_type" : "std::string",

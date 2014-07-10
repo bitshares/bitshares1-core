@@ -741,6 +741,27 @@ config load_config( const fc::path& datadir )
           return delegate_records;
        }
 
+       vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t block_num )
+       {
+           FC_ASSERT(block_num > 1, "Cannot use this call on block 0 or 1"); //lazy
+           vector<string> delegates;
+           auto this_block = _chain_db->get_block_record( block_num );
+           FC_ASSERT(this_block.valid(), "Cannot use this call on a block that has not yet been produced");
+           auto prev_block = _chain_db->get_block_record( block_num - 1 );
+           auto timestamp = prev_block->timestamp;
+           timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+           while (timestamp != this_block->timestamp)
+           {
+               auto slot_record = _chain_db->get_slot_record( timestamp );
+               FC_ASSERT( slot_record.valid() );
+               auto delegate_record = _chain_db->get_account_record( slot_record->block_producer_id );
+               FC_ASSERT( delegate_record.valid() );
+               delegates.push_back( delegate_record->name );
+               timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+           }
+           return delegates;
+       }
+
        vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count )
        {
           FC_ASSERT( count <= 1000 );

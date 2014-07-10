@@ -18,6 +18,11 @@
         "default_example" : "Bob"
       },
       {
+        "type_name" : "account_name_array",
+        "container_type": "array",
+        "contained_type": "account_name"
+      },
+      {
         "type_name" : "new_account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
