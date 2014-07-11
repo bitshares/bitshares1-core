@@ -409,7 +409,12 @@ namespace bts { namespace wallet {
          void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
 
-      private:
+         std::string           login_start( const std::string& account_name );
+
+         fc::variant login_finish(const public_key_type& server_key,
+                                            const public_key_type& client_key,
+                                            const fc::ecc::compact_signature& client_signature);
+     private:
          unique_ptr<detail::wallet_impl> my;
    };
 

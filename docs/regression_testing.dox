@@ -91,13 +91,14 @@ Developing and Testing a Single Test
 ------------------------------------
 The above command runs all the tests in the regresssion_tests directory. 
 While developing a test, you will often only want to run your test. 
-The easiest way to do this right now is to temporarily rename regression_tests dir to
-something like regression_tests_x, then create a new regresssion_tests dir and put just
-your test subdir inside it.
+The easiest way to do this right now is to name it on the command line:
+@code
+./wallet_tests -t regression_tests_without_network/transfer_test
+@code
 
 Creating a Regression Test
 --------------------------
-To create a regression test, you need to do perform the following steps:
+To create a regression test, you need to perform the following steps:
 
 1. Create a new test directory under test\regression_tests (e.g. my_test)
 2. Record a log session using the bitshares client for each client that will
@@ -109,7 +110,7 @@ To create a regression test, you need to do perform the following steps:
    block" and that will just connect up to your other "test clients". The test genesis block is
    located in bitshares_toolkit\tests\test_genesis.json. The public/private key pairs for
    the delegates in this test genesis block are stored in 
-   bitshares_toolkit\tests\test_genesis.json.keyparis. These two files were originally created
+   bitshares_toolkit\tests\test_genesis.json.keypairs. These two files were originally created
    by running "wallet_tests.exe --t make_test_genesis_block". 
 3. To record a test log session with  one or more clients, you can run these batch scripts: 
    client0.bat, client1.bat, client2.bat.
@@ -128,4 +129,80 @@ To create a regression test, you need to do perform the following steps:
    you could name the first client "sender" and the second client "receiver".
 6. By convention, scripts that are useful in many tests should be stored in this directory:
    regresssion_tests\_common_logs   
+   
+Configuring Delegates for a Test
+--------------------------------
+The DPOS blockchain used by bitshares_toolkit requires that "delegate" accounts are created that can
+produce the blocks every block interval. These delegate accounts are already registered in the genesis
+block for the tests (genesis.json file). 
+
+Any test that requires a blockchain (in other words, most tests) will need to configure at least
+one or two clients with delegate accounts so that blocks can be produced (otherwise, no transactions
+will be included into blocks). The existing tests use one of two methods
+for this: 
+1) a single client imports the keys for all the delegates and this client is responsible for
+generating all the blocks
+2) two clients each import 1/2 of the delegate keys and each produces blocks
+
+Single client tests are simplest because they don't require synchronization between clients. There
+are however two drawbacks to this technique:
+1) it doesn't test broadcast operations across clients, so it's not suitable for network testing
+2) you have to enable and disable block production in the delegate accounts before your client will
+scan the blockchain for transactions pertinent to your wallet (this is a restriction on clients
+that was implemented to avoid causing wallet scanning to slow down delegates too much causing them
+to fail to produce a block during their time slot which in turn could increase the chance for
+blockchain forks).
+
+Despite these restrictions, simple API tests should probably use the single client approach.
+
+When you do need to use multiple clients for a test, the current recommended practice is to create
+one client that has all the delegates (the "block-maker" client) and another client that will act
+will generate transactions and scans the blockchain to ensure that they get incorporated into blocks 
+in the future (the "transactor" client).  The transactor client may import a few
+delegate accounts in order to access their initial balances, but the transactor should leave 
+block production disabled for all delegate accounts so that it can perform blockchain scanning, 
+and should have at most 5 accounts (scanning time increases as the number of accounts increases)
+   
+   
+Using Simulated Time in Tests
+-----------------------------
+To make the tests run faster and also to ensure repeatability of timestamps in the test, the tests 
+are generally written to use simulated time instead of actual time. The simulated time system is 
+less than perfect at the moment when creating a multiple client test, because it can be tricky to 
+get the clients properly syncrhonized. 
+
+Simulated time is first initialized by the `debug_start_simulated_time` 
+command, then then advanced by using `debug_advance_time` commands. Time 
+is shared by all clients in the test, so if one client advances the 
+time, all clients will see the time advance. In simulated time tests, 
+clients will usually avoid waiting for specific amounts of time, instead 
+wait for blocks to be produced using `debug_wait_for_block`. There's 
+three methodologies that work right now for simulated time: 
+
+1) one client test is the simplest as it requires no cross-client time synchronization
+2) two client test where one client is block-maker and simulated time is advanced by whichever client is 
+generating the transaction (other client waits for the block). This approach is used in `titan_test`.
+3) three or more client tests where the block-maker advances time and the transactor clients wait for 
+blocks generated by the block-maker (so far this method has only been tested with 2 clients and only 
+in create_asset test). 
+
+Using Real Time in Tests
+------------------------
+Wall-time can also be used for a test, although it's not recommended for any test that generates 
+more than one or two blocks. An example of such a test is transfer_test.  It uses `debug_wait_block_interval`
+to wait long enough to guarantee that a block is produced.
+
+   
+Common Scripts Needed for a Test
+--------------------------------
+The directory regression_tests\_common_logs contains a number of re-usable scripts, and several of 
+these scripts will be needed by most tests. Below is a short summary of the purpose of some of these 
+scripts: 
+
+initialize_simulated_time.log: initializes a client to use simulated time instead of actual wall-time. 
+create_and_unlock_wallet: these creates a wallet named default in the client. Most all clients will need this script.
+import_delegate_keys: imports all delegate keys into a client
+advance_5_blocks: advances simulated time for 5 blocks. This script is intended for use by a block-maker client.
+
+
 */

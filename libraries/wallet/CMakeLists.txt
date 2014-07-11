@@ -11,6 +11,8 @@ target_link_libraries( bts_wallet fc bts_db bts_utilities bts_blockchain leveldb
 target_include_directories( bts_wallet 
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
+configure_file( "${CMAKE_CURRENT_SOURCE_DIR}/include/bts/wallet/url.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/include/bts/wallet/url.hpp" )
+
 if (USE_PCH)
   set_target_properties(bts_wallet PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
   cotire(bts_wallet)
