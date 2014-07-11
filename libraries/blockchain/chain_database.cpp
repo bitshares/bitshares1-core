@@ -736,6 +736,8 @@ namespace bts { namespace blockchain {
       void chain_database_impl::execute_markets( const pending_chain_state_ptr& pending_state )
       { try { 
         elog( "execute markets ${e}", ("e", pending_state->get_dirty_markets()) );
+        map<asset_id_type,share_type> collected_fees;
+
         for( auto market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
@@ -783,7 +785,7 @@ namespace bts { namespace blockchain {
                current_ask = market_order( ask_order, ask_itr.key(), ask_itr.value() );
            }
 
-           asset usd_fees_collected( 0, market_pair.first );
+           asset xts_fees_collected( 0, market_pair.second );
            while( bid_itr.valid() && ask_itr.valid() )
            {
               wlog( "CURRENT BID:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_bid.get_quantity()))("p",current_bid.get_price() ) );
@@ -801,14 +803,14 @@ namespace bts { namespace blockchain {
 
               if( bid_key.order_price >= ask_key.order_price )
               {
-                  auto quantity = std::min( current_bid.get_quantity(), current_ask.get_quantity() );
+                  auto quote_quantity = std::min( current_bid.get_quote_quantity(), current_ask.get_quote_quantity() );
                  
-                  auto usd_paid_by_bid     = quantity * current_bid.get_price();
-                  auto usd_received_by_ask = quantity * current_ask.get_price();
-                  auto xts_paid_by_ask     = quantity;
-                  auto xts_received_by_bid = quantity;
+                  auto usd_paid_by_bid     = quote_quantity;// * current_bid.get_price();
+                  auto usd_received_by_ask = quote_quantity;// * current_ask.get_price();
+                  auto xts_paid_by_ask     = quote_quantity * current_ask.get_price();
+                  auto xts_received_by_bid = quote_quantity * current_bid.get_price();
 
-                  usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
+                  xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
 
                   // fill ask, remove it 
                   current_bid.state.balance -= usd_paid_by_bid.amount;
@@ -827,7 +829,7 @@ namespace bts { namespace blockchain {
                   bid_payout->balance += xts_received_by_bid.amount;
                   wlog( "      fill ${x} of bid", ("x",self->to_pretty_asset( usd_paid_by_bid ) ) );
                   wlog( "      paying ${x} to bidder", ("x",self->to_pretty_asset( xts_received_by_bid ) ) );
-                  wlog( "      collected fees ${x}", ("x",self->to_pretty_asset( usd_fees_collected ) ) );
+                  wlog( "      collected fees ${x}", ("x",self->to_pretty_asset( xts_fees_collected ) ) );
 
                   pending_state->store_balance_record( *ask_payout );
                   pending_state->store_balance_record( *bid_payout );
@@ -855,11 +857,12 @@ namespace bts { namespace blockchain {
            }
            // now that I have some USD fees... I need to update the asset record to reflect the
            // change in supply.
-           auto quote_record = pending_state->get_asset_record( market_pair.first );
+           auto quote_record = pending_state->get_asset_record( market_pair.second );
            FC_ASSERT( quote_record );
-           quote_record->collected_fees += usd_fees_collected.amount;
-           quote_record->current_share_supply -= usd_fees_collected.amount;
+           quote_record->collected_fees += xts_fees_collected.amount;
+           quote_record->current_share_supply -= xts_fees_collected.amount;
            pending_state->store_asset_record( *quote_record );
+           collected_fees[market_pair.second] = xts_fees_collected.amount;
         } 
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
       } FC_CAPTURE_AND_RETHROW() }

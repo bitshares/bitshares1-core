@@ -54,5 +54,26 @@ asset market_order::get_quantity()const
   }
   return get_balance() * get_price();
 }
+asset market_order::get_quote_quantity()const
+{
+  switch( type )
+  {
+     case bid_order:
+     { // balance is in USD  divide by price
+        return get_balance();
+     }
+     case ask_order:
+     { // balance is in USD  divide by price
+        return get_balance() * get_price();
+     }
+     case short_order:
+     {
+        return get_balance(); 
+     }
+     default:
+        FC_ASSERT( !"Not Implemented" );
+  }
+  return get_balance() * get_price();
+}
 
 } } // bts::blockchain
