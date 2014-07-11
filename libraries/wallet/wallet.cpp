@@ -1749,13 +1749,13 @@ namespace bts { namespace wallet {
              slate_id_type slate_id = 0;
              if( amount_to_deposit.asset_id == 0 )
              {
-                auto new_slate = select_delegate_vote();
-                slate_id = new_slate.id();
-
-                if( !my->_blockchain->get_delegate_slate( slate_id ) )
-                {
-                   trx.define_delegate_slate( new_slate );
-                }
+                 auto new_slate = select_delegate_vote();
+                 slate_id = new_slate.id();
+                 
+                 if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+                 {
+                    trx.define_delegate_slate( new_slate );
+                 }
              }
 
              if( amount_to_deposit.amount > 0 )
@@ -1797,8 +1797,9 @@ namespace bts { namespace wallet {
 
              if( sign )
              {
-                auto owner_private_key = get_private_key( balance_item.second.owner() );
-                trx.sign( owner_private_key, my->_blockchain->chain_id() );
+                unordered_set<address> required_signatures;
+                required_signatures.insert( balance_item.second.owner() );
+                sign_transaction( trx, required_signatures );
              }
 
              trxs.emplace_back( trx );

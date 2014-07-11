@@ -1,4 +1,4 @@
-(wallet closed) >>> help wallet_import_keyhotee 
+(wallet closed) >>> help wallet_import_keyhotee
 Usage:
 wallet_import_keyhotee <firstname> <middlename> <lastname> <brainkey> <keyhoteeid>                    Create the key from keyhotee config and import it to the wallet, creating a new account using this key
 Create the key from keyhotee config and import it to the wallet, creating a new account using this key
@@ -16,19 +16,19 @@ Returns:
 OK
 testwallet (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
 OK
-testwallet (unlocked) >>> wallet_list_accounts 
+testwallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
 testwallet (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
 OK
-testwallet (unlocked) >>> wallet_list_accounts 
+testwallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
 testwallet (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
 OK
 testwallet (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk1
 OK
-testwallet (unlocked) >>> wallet_list_accounts 
+testwallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
 tk1                                XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55           NO                    NO             0         
@@ -36,7 +36,7 @@ testwallet (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk1*
 OK
 testwallet (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" t*
 OK
-testwallet (unlocked) >>> wallet_list_accounts 
+testwallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
 t                                  XTS6XzybdQrxwJ55UpRrrr6QSEFPFmYSqSzeDhiTnkrhJDy7Dh38Y           NO                    NO             0         
 tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
