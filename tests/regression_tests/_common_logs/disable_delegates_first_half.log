@@ -1,4 +1,4 @@
-default (unlocked) >>>  enable_output false
+default (unlocked) >>>  debug_enable_output false
 >>>  wallet_delegate_set_block_production delegate0 false
 >>>  wallet_delegate_set_block_production delegate2 false
 >>>  wallet_delegate_set_block_production delegate4 false
@@ -50,5 +50,5 @@ default (unlocked) >>>  enable_output false
 >>>  wallet_delegate_set_block_production delegate96 false
 >>>  wallet_delegate_set_block_production delegate98 false
 >>>  wallet_delegate_set_block_production delegate100 false
->>>  enable_output true
+>>>  debug_enable_output true
 OK

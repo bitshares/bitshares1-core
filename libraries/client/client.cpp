@@ -743,7 +743,8 @@ config load_config( const fc::path& datadir )
 
        vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t block_num )
        {
-           FC_ASSERT(block_num > 1, "Cannot use this call on block 0 or 1"); //lazy
+           if (block_num == 0 || block_num == 1)
+               return vector<string>();
            vector<string> delegates;
            auto this_block = _chain_db->get_block_record( block_num );
            FC_ASSERT(this_block.valid(), "Cannot use this call on a block that has not yet been produced");
@@ -1132,7 +1133,7 @@ config load_config( const fc::path& datadir )
          FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
-       string client_impl::execute_command_line(const string& input) const
+       string client_impl::debug_execute_command_line(const string& input) const
        {
            if (_cli)
            {
@@ -1612,19 +1613,22 @@ config load_config( const fc::path& datadir )
 
     vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
                                                                                         uint32_t start_block_num,
-                                                                                        uint32_t end_block_num )const
+                                                                                        uint32_t end_block_num,
+                                                                                        const string& asset_symbol )const
     {
-      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num );
+      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
     }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
       try
       {
-          if( !std::all_of( account.begin(), account.end(), ::isdigit) )
-              return _chain_db->get_account_record( account );
-          else
+          if( std::all_of( account.begin(), account.end(), ::isdigit) )
               return _chain_db->get_account_record( std::stoi( account ) );
+          else if( account.substr( 0, string( BTS_ADDRESS_PREFIX ).size() ) == BTS_ADDRESS_PREFIX )
+              return _chain_db->get_account_record( address( public_key_type( account ) ) );
+          else
+              return _chain_db->get_account_record( account );
       }
       catch( ... )
       {
@@ -2453,12 +2457,12 @@ config load_config( const fc::path& datadir )
         _wallet->account_set_favorite( account_name, is_favorite );
     }
 
-    void client_impl::enable_output(bool enable_flag)
+    void client_impl::debug_enable_output(bool enable_flag)
     {
       _cli->enable_output(enable_flag);
     }
 
-    void client_impl::filter_output_for_tests(bool enable_flag)
+    void client_impl::debug_filter_output_for_tests(bool enable_flag)
     {
       _cli->filter_output_for_tests(enable_flag);
     }
@@ -2719,12 +2723,12 @@ config load_config( const fc::path& datadir )
       return result;
     }
 
-    void client_impl::wait(uint32_t wait_time) const
+    void client_impl::debug_wait(uint32_t wait_time) const
     {
       fc::usleep(fc::seconds(wait_time));
     }
 
-    void client_impl::wait_block_interval(uint32_t wait_time) const
+    void client_impl::debug_wait_block_interval(uint32_t wait_time) const
     {
       fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
     }
@@ -2911,7 +2915,7 @@ config load_config( const fc::path& datadir )
       return transactions_map;
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
+   map<fc::time_point, fc::exception> client_impl::debug_list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
    {
       map<fc::time_point, fc::exception> result;
       int count = 0;
@@ -2941,9 +2945,9 @@ config load_config( const fc::path& datadir )
       return result;
    }
 
-   map<fc::time_point, std::string> client_impl::list_errors_brief( int32_t first_error_number, uint32_t limit, const string& filename ) const
+   map<fc::time_point, std::string> client_impl::debug_list_errors_brief( int32_t first_error_number, uint32_t limit, const string& filename ) const
    {
-      map<fc::time_point, fc::exception> full_errors = list_errors(first_error_number, limit, "");
+      map<fc::time_point, fc::exception> full_errors = debug_list_errors(first_error_number, limit, "");
 
       map<fc::time_point, std::string> brief_errors;
       for (auto full_error : full_errors)
@@ -2961,7 +2965,7 @@ config load_config( const fc::path& datadir )
       return brief_errors;
    }
 
-   void client_impl::clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
+   void client_impl::debug_clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
    {
       auto itr = _exception_db.lower_bound( start_time );
       while( itr.valid() )
@@ -2975,7 +2979,7 @@ config load_config( const fc::path& datadir )
       }
    }
 
-   void client_impl::write_errors_to_file( const string& path, const fc::time_point& start_time ) const
+   void client_impl::debug_write_errors_to_file( const string& path, const fc::time_point& start_time )const
    {
       map<fc::time_point, fc::exception> result;
       auto itr = _exception_db.lower_bound( start_time );

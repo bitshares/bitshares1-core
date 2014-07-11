@@ -12,7 +12,7 @@ default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                 
 --------------------------------------------------------
 delegate0                       19,801,880.09801 XTS    
-default (unlocked) >>> wait_block_interval 1
+default (unlocked) >>> debug_wait_block_interval 1
 OK
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                 

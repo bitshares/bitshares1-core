@@ -203,7 +203,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         }
         else
         {
-            out << std::setw(  8 ) << block_record.latency;
+            out << std::setw(  8 ) << block_record.latency.to_seconds();
             out << std::setw( 15 ) << block_record.processing_time.count() / double( 1000000 );
         }
 
@@ -222,16 +222,15 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::left;
 
     out << std::setw( 20 ) << "RECEIVED";
-    out << std::setw(  8 ) << std::right << "BLK" << ".";
-    out << std::setw(  5 ) << std::left << "TRX";
+    out << std::setw( 10 ) << "BLOCK";
     out << std::setw( 20 ) << "FROM";
     out << std::setw( 20 ) << "TO";
     out << std::setw( 22 ) << "AMOUNT";
     out << std::setw( 20 ) << "FEE";
-    out << std::setw( 39 ) << "MEMO";
+    out << std::setw( 40 ) << "MEMO";
     out << std::setw(  8 ) << "ID";
 
-    out << pretty_line( 163 );
+    out << pretty_line( 160 );
 
     const map<transaction_id_type, fc::exception>& errors = client->get_wallet()->get_pending_transaction_errors();
 
@@ -239,25 +238,16 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     {
         out << std::setw( 20 ) << pretty_timestamp( transaction.received_time );
 
-        if( transaction.is_virtual || transaction.is_confirmed )
-        {
-            out << std::setw( 8 ) << std::right << transaction.block_num << ".";
-            out << std::setw( 5 ) << std::left << transaction.trx_num;
-        }
-        else if( errors.count( transaction.trx_id ) > 0 )
-        {
-            out << std::setw( 14 ) << "ERROR";
-        }
-        else
-        {
-            out << std::setw( 14 ) << "PENDING";
-        }
+        out << std::setw( 10 );
+        if( transaction.is_virtual || transaction.is_confirmed ) out << transaction.block_num;
+        else if( errors.count( transaction.trx_id ) > 0 ) out << "ERROR";
+        else out << "PENDING";
 
         out << std::setw( 20 ) << pretty_shorten( transaction.from_account, 19 );
         out << std::setw( 20 ) << pretty_shorten( transaction.to_account, 19 );
         out << std::setw( 22 ) << client->get_chain()->to_pretty_asset( transaction.amount );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( transaction.fees ) );
-        out << std::setw( 39 ) << pretty_shorten( transaction.memo_message, 38 );
+        out << std::setw( 40 ) << pretty_shorten( transaction.memo_message, 39 );
 
         out << std::setw( 8 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
@@ -336,21 +326,17 @@ string pretty_account( const oaccount_record& record, cptr client )
     out << std::left;
 
     out << "Name: " << record->name << "\n";
-    out << "Registered: " << pretty_timestamp( record->registration_date ) << "\n";
+    bool founder = record->registration_date == client->get_chain()->get_genesis_timestamp();
+    string registered = !founder ? pretty_timestamp( record->registration_date ) : "Genesis (Keyhotee Founder)";
+    out << "Registered: " << registered << "\n";
     out << "Last Updated: " << pretty_age( record->last_update ) << "\n";
     out << "Owner Key: " << std::string( record->owner_key ) << "\n";
 
-    /* Only print active key history if there are keys in the history which are not the owner key */
-    if( record->active_key_history.size() > 1
-        || record->active_key_history.begin()->second != record->owner_key )
+    out << "Active Key History:\n";
+    for( const auto& key : record->active_key_history )
     {
-      out << "Active Key History:\n";
-
-      for( const auto& key : record->active_key_history )
-      {
-          out << "  Key: " << std::string( key.second )
-              << ", last used " << pretty_age( key.first ) << "\n";
-      }
+        out << "- " << std::string( key.second )
+            << ", last used " << pretty_age( key.first ) << "\n";
     }
 
     if( record->is_delegate() )

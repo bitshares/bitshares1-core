@@ -385,11 +385,13 @@ namespace bts { namespace wallet {
          vector<market_order_status>        get_market_orders( const string& quote, const string& base )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
-                                                                        uint32_t start_block_num = 0,
-                                                                        uint32_t end_block_num = -1 )const;
+                                                                     uint32_t start_block_num = 0,
+                                                                     uint32_t end_block_num = -1,
+                                                                     const string& asset_symbol = "" )const;
          vector<pretty_transaction>         get_pretty_transaction_history( const string& account_name = string(),
-                                                                               uint32_t start_block_num = 0,
-                                                                               uint32_t end_block_num = -1 )const;
+                                                                            uint32_t start_block_num = 0,
+                                                                            uint32_t end_block_num = -1,
+                                                                            const string& asset_symbol = "" )const;
 
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*

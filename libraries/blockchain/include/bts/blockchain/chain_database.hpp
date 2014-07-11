@@ -60,7 +60,7 @@ namespace bts { namespace blockchain {
        block_id_type block_id;
        account_id_type signing_delegate;
        uint32_t transaction_count;
-       uint32_t latency;
+       fc::microseconds latency;
        uint32_t size;
        fc::time_point_sec timestamp;
        fc::optional<bool> is_valid;
@@ -246,7 +246,7 @@ namespace bts { namespace blockchain {
 
          bool                               is_valid_symbol( const string& asset_symbol )const;
          string                             get_asset_symbol( asset_id_type asset_id )const;
-         asset_id_type                      get_asset_id( const string& asset_sybmol )const;
+         asset_id_type                      get_asset_id( const string& asset_symbol )const;
          virtual oasset_record              get_asset_record( asset_id_type id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
          virtual oaccount_record            get_account_record( account_id_type id )const override;

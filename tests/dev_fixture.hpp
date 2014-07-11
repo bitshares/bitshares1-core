@@ -262,7 +262,7 @@ struct chain_fixture
          console->print( "B: " + command_to_run + "\n", fc::console_appender::color::green );
 
       std::cerr << command_to_run << "\n";
-      std::cerr << c->execute_command_line( command_to_run ) << "\n";
+      std::cerr << c->debug_execute_command_line( command_to_run ) << "\n";
    }
 
    std::shared_ptr<bts::net::simulated_network> sim_network;
