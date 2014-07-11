@@ -47,6 +47,10 @@ namespace bts { namespace wallet {
              {
                 _wallet_thread = &fc::thread::current();
              }
+             ~wallet_impl()
+             {
+                _login_map_cleaner.cancel();
+             }
              fc::thread*                        _wallet_thread;
 
              wallet*                            self;
@@ -63,7 +67,15 @@ namespace bts { namespace wallet {
              fc::thread                         _wallet_scan_thread;
              float                              _wallet_scan_progress;
 
-             std::map<public_key_type, fc::ecc::private_key> _login_map;
+             struct login_record
+             {
+                 fc::ecc::private_key key;
+                 fc::time_point_sec insertion_time;
+             };
+             std::map<public_key_type, login_record>  _login_map;
+             fc::future<void>                         _login_map_cleaner;
+             const static short                       _login_cleaner_interval_seconds = 60;
+             const static short                       _login_lifetime_seconds = 300;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -1415,11 +1427,35 @@ namespace bts { namespace wallet {
 
       fc::ecc::private_key one_time_key = fc::ecc::private_key::generate();
       public_key_type one_time_public_key = one_time_key.get_public_key();
-      my->_login_map[one_time_public_key] = one_time_key;
+      my->_login_map[one_time_public_key] = {one_time_key, fc::time_point::now()};
 
-      auto signature = key->decrypt_private_key(my->_wallet_password).sign_compact(fc::sha256::hash((char*)&one_time_public_key, sizeof(one_time_public_key)));
+      std::function<void()> cleaner = [this, &cleaner]{
+          std::vector<public_key_type> expired_records;
+          for( auto record : my->_login_map )
+            if( fc::time_point::now() - record.second.insertion_time >= fc::seconds(my->_login_lifetime_seconds) )
+              expired_records.push_back(record.first);
+          ilog("Purging ${count} expired records from login map.", ("count", expired_records.size()));
+          for( auto record : expired_records )
+            my->_login_map.erase(record);
 
-      return CUSTOM_URL_SCHEME ":Login/" + variant(public_key_type(one_time_public_key)).as_string() + "/" + fc::variant(signature).as_string() + "/";
+          if( !my->_login_map.empty() )
+            my->_login_map_cleaner = fc::thread::current().schedule(cleaner,
+                                                                    fc::time_point::now()
+                                                                    + fc::seconds(my->_login_cleaner_interval_seconds));
+          else
+            my->_login_map_cleaner = fc::future<void>();
+      };
+      if( !my->_login_map_cleaner.valid() )
+        my->_login_map_cleaner = fc::thread::current().schedule(cleaner,
+                                                                fc::time_point::now()
+                                                                + fc::seconds(my->_login_cleaner_interval_seconds));
+
+      auto signature = key->decrypt_private_key(my->_wallet_password)
+                          .sign_compact(fc::sha256::hash((char*)&one_time_public_key,
+                                                         sizeof(one_time_public_key)));
+
+      return CUSTOM_URL_SCHEME ":Login/" + variant(public_key_type(one_time_public_key)).as_string()
+                                         + "/" + fc::variant(signature).as_string() + "/";
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    fc::variant wallet::login_finish(const public_key_type& server_key,
@@ -1430,7 +1466,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_login_map.find(server_key) != my->_login_map.end(), "Login session has expired. Generate a new login URL and try again." );
 
-      fc::ecc::private_key private_key = my->_login_map[server_key];
+      fc::ecc::private_key private_key = my->_login_map[server_key].key;
       my->_login_map.erase(server_key);
       auto secret = private_key.get_shared_secret( fc::ecc::public_key_data(client_key) );
       auto user_account_key = fc::ecc::public_key(client_signature, fc::sha256::hash(secret.data(), sizeof(secret)));
