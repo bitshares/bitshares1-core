@@ -7,9 +7,9 @@ OK
 default (unlocked) >>> wallet_account_create test
 "XTS5kmVHDwLN9zsxa18jKFrLn6yPJkBsxJJHmFeRygEpUaBWCqcb4"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
-RECEIVED                 BLK.TRX  FROM                TO                  AMOUNT                FEE                 MEMO                                   ID      
--------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[redacted]          PENDING       delegate0           test                100.00000 XTS         0.10000 XTS                                                [redacted]
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                FEE                 MEMO                                    ID      
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+[redacted]          PENDING   delegate0           test                100.00000 XTS         0.10000 XTS                                                 [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> debug_wait 1

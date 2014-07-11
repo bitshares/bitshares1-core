@@ -1,4 +1,4 @@
-default (unlocked) >>> blockchain_get_config 
+(wallet closed) >>> blockchain_get_config
 {
   "blockchain_id": "02fb5976e227428159b962510f5f495e7b713492d6195121481644589c3bc310",
   "symbol": "XTS",
@@ -25,4 +25,4 @@ default (unlocked) >>> blockchain_get_config
   "max_pending_queue_size": 100,
   "max_trx_per_second": 10
 }
-default (unlocked) >>> quit
+(wallet closed) >>> quit
