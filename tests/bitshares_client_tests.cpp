@@ -339,10 +339,6 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
     initial_shares_requested += client_processes[i].initial_balance;
   }
 
-  genesis_block.precision = 6;
-  genesis_block.base_symbol = "XTS";
-  genesis_block.base_name = "BitShares XTS";
-
   double scale_factor = BTS_BLOCKCHAIN_INITIAL_SHARES / (double)initial_shares_requested;
   for (unsigned i = 0; i < client_processes.size(); ++i)
     client_processes[i].initial_balance *= (int64_t)scale_factor;
@@ -389,7 +385,7 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
   master_wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
     master_wallet->import_private_key(delegate_keys[i], "delegatekeys");
-  master_wallet->scan_state();
+  master_wallet->scan_state(bts::blockchain::now());
 
   // master wallet is created and ready to go.  Fill it with the desired number of blocks
   uint32_t current_block_count = 0;
@@ -421,13 +417,13 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
     client_processes[client_index].wallet->unlock(WALLET_PASSPHRASE, UINT32_MAX);
     client_processes[client_index].wallet->create_account("delegatekeys");
     client_processes[client_index].wallet->import_private_key(delegate_keys[client_index], "delegatekeys");
-    client_processes[client_index].wallet->scan_state();
+    client_processes[client_index].wallet->scan_state(bts::blockchain::now());
 
     for (unsigned delegate_index = 0; delegate_index < delegate_keys.size(); ++delegate_index)
       if (delegate_index % client_processes.size() == client_index)
       {
         client_processes[client_index].wallet->import_private_key(delegate_keys[delegate_index], "delegatekeys");
-        client_processes[client_index].wallet->scan_state();
+        client_processes[client_index].wallet->scan_state(bts::blockchain::now());
       }
 
     // this client's wallet and blockchain are initialized.  Now give it some blocks from the master blockchain
@@ -475,7 +471,7 @@ void bts_client_launcher_fixture::create_forked_wallets()
   first_client.wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
     first_client.wallet->import_private_key(delegate_keys[i], "delegatekeys");
-  first_client.wallet->scan_state();
+  first_client.wallet->scan_state(bts::blockchain::now());
 
   uint32_t current_block_count = 0;
   for (current_block_count = 0; current_block_count < initial_block_count; ++current_block_count)
@@ -486,7 +482,7 @@ void bts_client_launcher_fixture::create_forked_wallets()
     bts::blockchain::advance_time(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
     std::vector<bts::wallet::wallet_account_record> enabled_delegates = first_client.wallet->get_my_delegates( enabled_delegate_status );
     fc::optional<fc::time_point_sec> next_block_time = first_client.wallet->get_next_producible_block_timestamp( enabled_delegates );
-    assert(next_block_time);
+    FC_ASSERT(next_block_time);
     fc::time_point_sec my_next_block_time = *next_block_time;
     bts::blockchain::advance_time(my_next_block_time.sec_since_epoch() - bts::blockchain::now().sec_since_epoch());
     bts::blockchain::full_block next_block = first_client.blockchain->generate_block(my_next_block_time);
@@ -661,7 +657,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
     for (uint32_t i = 0; i < boost::num_vertices(_undirected_graph); ++i)
       for (uint32_t j = 0; j < boost::num_vertices(_undirected_graph); ++j)
       {
-        assert(distances[i][j] == distances[j][i]);
+        FC_ASSERT(distances[i][j] == distances[j][i]);
         if (distances[i][j] > longest_path_length && distances[i][j] != std::numeric_limits<WeightMap::value_type>::max())
         {
           longest_path_length = distances[i][j];

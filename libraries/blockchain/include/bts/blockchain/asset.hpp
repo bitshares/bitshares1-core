@@ -1,13 +1,9 @@
 #pragma once
+
 #include <bts/blockchain/types.hpp>
-#include <bts/blockchain/config.hpp>
-#include <fc/uint128.hpp>
-#include <fc/io/enum_type.hpp>
-#include <stdint.h>
 
 namespace bts { namespace blockchain {
 
-  #define BTS_PRICE_PRECISION uint64_t(BTS_BLOCKCHAIN_MAX_SHARES*1000)
   struct price;
 
   /**
@@ -82,8 +78,22 @@ namespace bts { namespace blockchain {
 
   inline bool operator == ( const price& l, const price& r ) { return l.ratio == r.ratio; }
   inline bool operator != ( const price& l, const price& r ) { return l.ratio == r.ratio; }
-  inline bool operator <  ( const price& l, const price& r ) { return l.ratio <  r.ratio; }
-  inline bool operator >  ( const price& l, const price& r ) { return l.ratio >  r.ratio; }
+  inline bool operator <  ( const price& l, const price& r ) 
+  { 
+     if( l.quote_asset_id < r.quote_asset_id ) return true;
+     if( l.quote_asset_id > r.quote_asset_id ) return false;
+     if( l.base_asset_id < r.base_asset_id ) return true;
+     if( l.base_asset_id > r.base_asset_id ) return false;
+     return l.ratio <  r.ratio; 
+  }
+  inline bool operator >  ( const price& l, const price& r ) 
+  { 
+     if( l.quote_asset_id > r.quote_asset_id ) return true;
+     if( l.quote_asset_id < r.quote_asset_id ) return false;
+     if( l.base_asset_id > r.base_asset_id ) return true;
+     if( l.base_asset_id < r.base_asset_id ) return false;
+     return l.ratio >  r.ratio; 
+  }
   inline bool operator <= ( const price& l, const price& r ) { return l.ratio <= r.ratio && l.asset_pair() == r.asset_pair(); }
   inline bool operator >= ( const price& l, const price& r ) { return l.ratio >= r.ratio && l.asset_pair() == r.asset_pair(); }
 
@@ -92,7 +102,7 @@ namespace bts { namespace blockchain {
    *  asset type with the lower enum value is always the
    *  denominator.  Therefore  bts/usd and  usd/bts will
    *  always result in a price measured in usd/bts because
-   *  bitasset_id_type::bit_shares <  bitasset_id_type::bit_usd.
+   *  bitasset_id_type::bit_shares < bitasset_id_type::bit_usd.
    */
   price operator / ( const asset& a, const asset& b );
 
@@ -105,8 +115,6 @@ namespace bts { namespace blockchain {
    *  ie:  p = 3 usd/bts & a = 4 usd then result = 1.333 bts 
    */
   asset operator * ( const asset& a, const price& p );
-
-
 
 } } // bts::blockchain
 
@@ -121,4 +129,3 @@ namespace fc
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::price, (ratio)(quote_asset_id)(base_asset_id) );
 FC_REFLECT( bts::blockchain::asset, (amount)(asset_id) );
-

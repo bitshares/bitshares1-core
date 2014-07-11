@@ -6,7 +6,7 @@ namespace bts { namespace blockchain {
    {
       digest_type         digest()const;
 
-      name_id_type        delegate_id;
+      account_id_type     delegate_id;
       transaction_id_type transaction_id;
       bool                valid;
       fc::time_point_sec  timestamp;
@@ -34,11 +34,11 @@ namespace bts { namespace blockchain {
       };
 
       fire_delegate_operation():delegate_id(0){}
-      fire_delegate_operation( name_id_type delegate_id, const multiple_block_proof& p );
+      fire_delegate_operation( account_id_type delegate_id, const multiple_block_proof& p );
       fire_delegate_operation( const signed_delegate_testimony& p );
 
       fc::enum_type<uint8_t,reason_type> reason;
-      name_id_type                       delegate_id;
+      account_id_type                    delegate_id;
       std::vector<char>                  data;
 
       void evaluate( transaction_evaluation_state& eval_state );

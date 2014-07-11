@@ -1,10 +1,12 @@
 #pragma once
+
 #include <fc/array.hpp>
 #include <string>
 
 namespace fc { namespace ecc { class public_key; } }
 
 namespace bts { namespace blockchain {
+
    /**
     *  Implements address stringification and validation from PTS
     */
@@ -43,7 +45,6 @@ namespace std
    };
 }
 
-
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::pts_address, (addr) )
 
@@ -52,4 +53,3 @@ namespace fc
    void to_variant( const bts::blockchain::pts_address& var,  fc::variant& vo );
    void from_variant( const fc::variant& var,  bts::blockchain::pts_address& vo );
 }
-

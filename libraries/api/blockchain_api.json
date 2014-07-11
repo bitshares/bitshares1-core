@@ -45,7 +45,7 @@
             {
               "name" : "first_account_name", 
               "type" : "account_name", 
-              "description" : "the first account name to include",
+              "description" : "the first account name to include. May be either a name or an index",
               "default_value" : ""
             },
             {
@@ -123,14 +123,14 @@
         "aliases" : ["get_block"]
       },
       {
-        "method_name": "blockchain_get_transactions_for_block",
+        "method_name": "blockchain_get_block_transactions",
         "description": "Retrieves the detailed transaction information for a block",
-        "return_type": "blockchain_transaction_record_array",
+        "return_type": "blockchain_transaction_record_map",
         "parameters" : [
             {
-              "name" : "block_id", 
-              "type" : "block_id_type", 
-              "description" : "the id of the block to return"
+              "name" : "block",
+              "type" : "string",
+              "description" : "the number or id of the block to get transactions from"
             }
         ],
         "is_const" : true,
@@ -144,7 +144,7 @@
             {
               "name" : "account",
               "type" : "string",
-              "description" : "account name or account ID to retrieve"
+              "description" : "account name, ID, or public key to retrieve the record for"
             }
         ],
         "is_const" : true,
@@ -229,6 +229,76 @@
         "aliases" : ["market_bids"]
       },
       {
+        "method_name" : "blockchain_market_list_asks",
+        "description" : "Returns the ask side of the order book for a given market",
+        "return_type" : "market_order_array",
+        "parameters"  : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "the item being bought in this market"
+           },
+           {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "the maximum number of items to return, -1 for all",
+              "default_value" : "-1"
+           }
+        ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["market_asks"]
+      },
+      {
+        "method_name" : "blockchain_market_list_shorts",
+        "description" : "Returns the short side of the order book for a given market",
+        "return_type" : "market_order_array",
+        "parameters"  : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "the maximum number of items to return, -1 for all",
+              "default_value" : "-1"
+           }
+        ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["market_shorts"]
+      },
+      {
+        "method_name" : "blockchain_market_order_book",
+        "description" : "Returns the long and short sides of the order book for a given market",
+        "return_type" : "pair<market_order_array,market_order_array>",
+        "parameters"  : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "the item being bought in this market"
+           },
+           {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "the maximum number of items to return, -1 for all",
+              "default_value" : "-1"
+           }
+        ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["market_book"]
+      },
+      {
          "method_name" : "blockchain_list_active_delegates",
          "description" : "Returns a list of the current round's active delegates in signing order",
          "return_type" : "account_record_array",
@@ -294,6 +364,19 @@
          "prerequisites" : ["json_authenticated"]
       },
       {
+         "method_name" : "blockchain_list_missing_block_delegates",
+         "description" : "Returns any delegates who were supposed to produce a given block number but didn't",
+         "return_type" : "account_name_array",
+         "parameters"  : [
+            {
+               "name" : "block_number",
+               "type" : "uint32_t",
+               "description" : "The block to examine"
+            }
+         ], 
+         "prerequisites" : ["json_authenticated"]
+      },
+      {
          "method_name" : "blockchain_export_fork_graph",
          "description" : "dumps the fork data to graphviz format",
          "return_type" : "std::string",
@@ -331,14 +414,14 @@
          "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "blockchain_get_delegate_block_stats",
-        "description": "Query the block production stats for a particular delegate",
-        "return_type": "delegate_block_stats_map",
+        "method_name": "blockchain_get_delegate_slot_records",
+        "description": "Query the block production slot records for a particular delegate",
+        "return_type": "slot_records_list",
         "parameters" : [
             {
               "name" : "delegate_name",
               "type" : "string",
-              "description" : "Delegate whose block stats to query"
+              "description" : "Delegate whose block production slot records to query"
             }
         ],
         "is_const" : true,

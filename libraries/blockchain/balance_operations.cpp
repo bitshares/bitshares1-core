@@ -1,7 +1,6 @@
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -32,7 +31,12 @@ namespace bts { namespace blockchain {
       {
          for( auto delegate_id : this->slate.supported_delegates )
          {
+#if BTS_BLOCKCHAIN_VERSION > 105 
+            eval_state.verify_delegate_id( abs(delegate_id) );
+#warning [HARDFORK] Remove below
+#else
             eval_state.verify_delegate_id( delegate_id );
+#endif
          }
          eval_state._current_state->store_delegate_slate( slate_id, slate );
       }
@@ -65,9 +69,8 @@ namespace bts { namespace blockchain {
        eval_state._current_state->store_balance_record( *cur_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    /**
-    *  TODO: Documen rules for Withdraws
+    *  TODO: Document rules for Withdraws
     */
    void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {

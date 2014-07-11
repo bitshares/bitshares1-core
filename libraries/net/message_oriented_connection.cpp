@@ -44,6 +44,7 @@ namespace bts { namespace net {
 
       message_oriented_connection_impl(message_oriented_connection* self, 
                                        message_oriented_connection_delegate* delegate = nullptr);
+      ~message_oriented_connection_impl();
 
       void send_message(const message& message_to_send);
       void close_connection();
@@ -63,6 +64,20 @@ namespace bts { namespace net {
       _bytes_received(0),
       _bytes_sent(0)
     {
+    }
+    message_oriented_connection_impl::~message_oriented_connection_impl()
+    {
+      if (_read_loop_done.valid() && !_read_loop_done.ready())
+      {
+        _read_loop_done.cancel();
+        try 
+        { 
+          _read_loop_done.wait();
+        } 
+        catch (...)
+        {
+        }
+      }
     }
 
     fc::tcp_socket& message_oriented_connection_impl::get_socket()
@@ -127,10 +142,11 @@ namespace bts { namespace net {
           /// Dedicated catches needed to distinguish from general fc::exception
           catch ( fc::canceled_exception& e ) { throw e; }
           catch ( fc::eof_exception& e ) { throw e; }
-          catch ( fc::exception& ) 
+          catch ( fc::exception& e) 
           { 
             /// Here loop should be continued so exception should be just caught locally.
-            //wlog( "message transmission failed ${er}", ("er", e.to_detail_string() ) );
+            wlog( "message transmission failed ${er}", ("er", e.to_detail_string() ) );
+            throw;
           }
         }
       } 
@@ -153,6 +169,7 @@ namespace bts { namespace net {
       }
       catch ( ... )
       {
+         elog( "something else happened" );
         _delegate->on_connection_closed(_self);
         FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected: {e}", ("e", fc::except_str() ) );
       }
@@ -168,8 +185,10 @@ namespace bts { namespace net {
         std::unique_ptr<char[]> padded_message(new char[size_with_padding]);
         memcpy(padded_message.get(), (char*)&message_to_send, sizeof(message_header));
         memcpy(padded_message.get() + sizeof(message_header), message_to_send.data.data(), message_to_send.size );
-        fc::scoped_lock<fc::mutex> lock(_send_mutex);
-        _sock.write(padded_message.get(), size_with_padding);
+        {
+         fc::scoped_lock<fc::mutex> lock(_send_mutex);
+         _sock.write(padded_message.get(), size_with_padding);
+        }
         _sock.flush();
         _bytes_sent += size_with_padding;
         _last_message_sent_time = fc::time_point::now();

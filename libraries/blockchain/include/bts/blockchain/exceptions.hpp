@@ -1,4 +1,5 @@
 #pragma once
+
 #include <fc/exception/exception.hpp>
 
 namespace bts { namespace blockchain {
@@ -60,7 +61,7 @@ namespace bts { namespace blockchain {
    // TODO: asset.data size
    // FC_DECLARE_DERIVED_EXCEPTION( invalid_vote_message_size, bts::blockchain::evaluation_error, 34001, "invalid vote message size" );
 
-   FC_DECLARE_DERIVED_EXCEPTION( invalid_fire_operation, bts::blockchain::evaluation_error, 33001, "invalid fire operation" );
+   //FC_DECLARE_DERIVED_EXCEPTION( invalid_fire_operation, bts::blockchain::evaluation_error, 33001, "invalid fire operation" );
    FC_DECLARE_DERIVED_EXCEPTION( not_a_delegate_signature, bts::blockchain::evaluation_error, 33002, "not delegates signature" );
 
    
@@ -75,6 +76,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( negative_issue, bts::blockchain::evaluation_error, 35006, "negative issue" );
    FC_DECLARE_DERIVED_EXCEPTION( over_issue, bts::blockchain::evaluation_error, 35007, "over issue" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_asset_symbol, bts::blockchain::evaluation_error, 35008, "unknown asset symbol" );
+   FC_DECLARE_DERIVED_EXCEPTION( asset_id_in_use, bts::blockchain::evaluation_error, 35009, "asset id in use" );
 
    FC_DECLARE_DERIVED_EXCEPTION( delegate_vote_limit,  bts::blockchain::evaluation_error, 36001, "delegate_vote_limit" );
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_fee,  bts::blockchain::evaluation_error, 36002, "insufficient fee" );
@@ -85,4 +87,6 @@ namespace bts { namespace blockchain {
 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_market,  bts::blockchain::evaluation_error, 37001, "invalid market" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_market_order,  bts::blockchain::evaluation_error, 37002, "unknown market order" );
-} }
+   FC_DECLARE_DERIVED_EXCEPTION( shorting_base_shares,  bts::blockchain::evaluation_error, 37003, "shorting base shares" );
+
+} } // bts::blockchain

@@ -1,18 +1,8 @@
-#include <algorithm>
-
-#include <fc/crypto/base58.hpp>
-#include <fc/crypto/ripemd160.hpp>
-#include <fc/crypto/sha512.hpp>
-#include <fc/crypto/elliptic.hpp>
-#include <fc/exception/exception.hpp>
-
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/address.hpp>
-#include <bts/blockchain/types.hpp>
-#include <bts/blockchain/pts_address.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
 
-#include <fc/io/raw.hpp>
+#include <fc/crypto/base58.hpp>
+#include <algorithm>
 
 namespace bts {
   namespace blockchain {
@@ -72,7 +62,6 @@ namespace bts {
        addr = fc::ripemd160::hash( fc::sha512::hash( pub.key_data.data, sizeof(pub.key_data) ) );
    }
 
-
    address::operator std::string()const
    {
         fc::array<char,24> bin_addr;
@@ -82,10 +71,7 @@ namespace bts {
         return BTS_ADDRESS_PREFIX + fc::to_base58( bin_addr.data, sizeof(bin_addr) );
    }
 
-
-
 } } // namespace bts::blockchain
-
 
 namespace fc 
 { 

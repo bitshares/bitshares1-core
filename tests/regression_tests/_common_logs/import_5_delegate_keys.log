@@ -1,0 +1,9 @@
+default (unlocked) >>>  debug_enable_output false
+>>>  wallet_import_private_key 5JkroJ7UEjXsYwiYDSmeT6czzsyJuUthSZaGJLU79WXgis6ebtZ delegate0 false false
+>>>  wallet_import_private_key 5KgPRATnTBkT4nfNAy9AHrDDmCQxEQPkSwCgtm8cpSyZnGHrnJn delegate1 false false
+>>>  wallet_import_private_key 5JrRjV624PbQgSLGy867DXYdT9YwDen4oLv62Fv2bGKT5gtyNnH delegate2 false false
+>>>  wallet_import_private_key 5JJD9pMEvAPzVDpTQBfRjzQfQnDcePyPuzbECTkLojAeL8kTvZ1 delegate3 false false
+>>>  wallet_import_private_key 5JSeX8xH3vgj9z5rvboaBcET5mruYECFRQRUnk41TM1W9or4wkv delegate4 false false
+>>>  wallet_rescan_blockchain
+>>>  debug_enable_output true
+OK

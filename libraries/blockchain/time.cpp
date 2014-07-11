@@ -1,5 +1,6 @@
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/time.hpp>
+
 #include <fc/exception/exception.hpp>
 #include <fc/network/ntp.hpp>
 

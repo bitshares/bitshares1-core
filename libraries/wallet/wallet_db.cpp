@@ -6,7 +6,8 @@
 
 #include <fc/log/logger.hpp>
 
-namespace bts{ namespace wallet {
+namespace bts { namespace wallet {
+
    using namespace bts::blockchain;
 
    namespace detail { 
@@ -96,7 +97,7 @@ namespace bts{ namespace wallet {
            { try {
               address key_address( key_to_load.public_key );
               auto current_key_itr = self->keys.find( key_address );
-              if( !overwrite) FC_ASSERT( current_key_itr == self->keys.end(), "key should be unique" );
+              if( !overwrite) FC_ASSERT( current_key_itr == self->keys.end(), "Key should be unique!" );
 
               self->keys[key_address] = key_to_load;
 
@@ -111,9 +112,9 @@ namespace bts{ namespace wallet {
 
            void load_transaction_record( const wallet_transaction_record& rec, bool overwrite )
            { try {
-              auto itr = self->transactions.find( rec.trx.id() );
-              if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate Transaction found in Wallet" )
-              self->transactions[ rec.trx.id() ] = rec;
+              auto itr = self->transactions.find( rec.transaction_id );
+              if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet" )
+              self->transactions[ rec.transaction_id ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
 
            void load_asset_record( const wallet_asset_record& asset_rec, bool overwrite )
@@ -126,7 +127,7 @@ namespace bts{ namespace wallet {
               if( !overwrite )
               {
                   auto itr = self->balances.find( rec.id() );
-                  FC_ASSERT( itr == self->balances.end(), "Duplicate balance Record" );
+                  FC_ASSERT( itr == self->balances.end(), "Duplicate balance record" );
               }
               self->balances[ rec.id() ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
@@ -176,6 +177,8 @@ namespace bts{ namespace wallet {
              try 
              {
                 my->load_generic_record( record );
+                // prevent hanging on large wallets
+                fc::usleep( fc::microseconds(1000) ); 
              } 
              catch ( const fc::exception& e )
              {
@@ -297,12 +300,14 @@ namespace bts{ namespace wallet {
       if( property_itr != properties.end() ) return property_itr->second.value;
       return variant();
    }
-   string  wallet_db::get_account_name( const address& account_address )const
+
+   string wallet_db::get_account_name( const address& account_address )const
    {
       auto opt = lookup_account( account_address );
       if( opt ) return opt->name;
       return "?";
    }
+
    owallet_account_record wallet_db::lookup_account( account_id_type aid )const
    {
       auto itr = account_id_to_wallet_record_index.find(aid);
@@ -315,6 +320,12 @@ namespace bts{ namespace wallet {
       return owallet_account_record();
    }
 
+   owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& trx_id )const
+   {
+      auto itr = transactions.find(trx_id);
+      if( itr != transactions.end() ) return itr->second;
+      return owallet_transaction_record();
+   }
 
    void wallet_db::store_setting(const string& name, const variant& value)
    {
@@ -383,18 +394,26 @@ namespace bts{ namespace wallet {
       }
    }
 
+   vector<wallet_transaction_record> wallet_db::get_pending_transactions()const
+   {
+       vector<wallet_transaction_record> transaction_records;
+       for( const auto& item : transactions )
+       {
+           const auto& transaction_record = item.second;
+           if( !transaction_record.is_virtual && !transaction_record.is_confirmed )
+               transaction_records.push_back( transaction_record );
+       }
+       return transaction_records;
+   }
+
    void wallet_db::clear_pending_transactions()
    {
-       vector<transaction_id_type> clear_list;
-       for( const auto& id_trx_pair : transactions )
+       const auto transaction_records = get_pending_transactions();
+       for( const auto& transaction_record : transaction_records )
        {
-           if (id_trx_pair.second.block_num == 0)
-           {
-               clear_list.push_back( id_trx_pair.first );
-               my->_records.remove( id_trx_pair.second.wallet_record_index );
-           }
+           my->_records.remove( transaction_record.wallet_record_index );
+           transactions.erase( transaction_record.transaction_id );
        }
-       for( const auto& id : clear_list ) transactions.erase(id);
    }
 
    void wallet_db::export_to_json( const path& filename )const
@@ -472,7 +491,7 @@ namespace bts{ namespace wallet {
 
    owallet_key_record wallet_db::lookup_key( const address& address )const
    {
-      auto btc_to_bts_itr = btc_to_bts_address.find(address);
+      auto btc_to_bts_itr = btc_to_bts_address.find( address );
       if( btc_to_bts_itr != btc_to_bts_address.end() )
       {
          auto itr = keys.find( btc_to_bts_itr->second ); //address );
@@ -481,7 +500,7 @@ namespace bts{ namespace wallet {
       return owallet_key_record();
    }
 
-   owallet_setting_record   wallet_db::lookup_setting( const string& name)const
+   owallet_setting_record wallet_db::lookup_setting( const string& name)const
    {
       auto itr = settings.find(name);
       if (itr != settings.end() )
@@ -628,19 +647,22 @@ namespace bts{ namespace wallet {
       name_to_account_wallet_record_index.erase( account_name );
    }
 
-   void wallet_db::rename_account( const string& old_account_name, 
+   void wallet_db::rename_account(const public_key_type &old_account_key,
                                    const string& new_account_name )
    {
       /* Precondition: check that new_account doesn't exist in wallet and that old_account does
        */
       FC_ASSERT( is_open() );
 
-      auto opt_old_acct = lookup_account( old_account_name );
+      auto opt_old_acct = lookup_account( old_account_key );
       FC_ASSERT( opt_old_acct.valid() );
       auto acct = *opt_old_acct;
+      auto old_name = acct.name;
       acct.name = new_account_name;
       name_to_account_wallet_record_index[acct.name] = acct.wallet_record_index;
-      name_to_account_wallet_record_index.erase( old_account_name );
+      if( name_to_account_wallet_record_index[old_name] == acct.wallet_record_index )
+        //Only remove the old name from the map if it pointed to the record we've just renamed
+        name_to_account_wallet_record_index.erase( old_name );
       accounts[acct.wallet_record_index] = acct;
       address_to_account_wallet_record_index[address(acct.owner_key)] = acct.wallet_record_index;
       for( const auto& time_key_pair : acct.active_key_history )
@@ -651,11 +673,10 @@ namespace bts{ namespace wallet {
 
    void wallet_db::store_transaction( wallet_transaction_record& trx_to_store )
    { try {
-      wallet_transaction_record data;
       if( trx_to_store.wallet_record_index == 0 )
          trx_to_store.wallet_record_index = new_wallet_record_index();
       store_record( trx_to_store );
-      transactions[trx_to_store.trx.id()] = trx_to_store;
+      transactions[ trx_to_store.transaction_id ] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
 
 
@@ -687,16 +708,10 @@ namespace bts{ namespace wallet {
       data.received_time   = received;
       data.memo_message    = memo_message;
       data.extra_addresses = extra_addresses;
-      store_record( data );
-      transactions[trx_id] = data;
 
+      store_transaction( data );
       return data;
-       
-       //transaction_data data
-   } FC_RETHROW_EXCEPTIONS( warn, "", 
-            ("trx",trx)
-            ("memo_message",memo_message)
-            ("to",to) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("memo_message",memo_message)("to",to) ) }
 
    void wallet_db::cache_account( const wallet_account_record& war )
    {

@@ -45,13 +45,14 @@ namespace bts { namespace wallet {
          void cache_order( const bts::blockchain::market_order& );
          void remove_balance( const balance_id_type& balance_id );
 
-         void clear_pending_transactions();
+         vector<wallet_transaction_record> get_pending_transactions()const;
+         void                              clear_pending_transactions();
 
          void update_market_order( const address& owner, 
                                    optional<bts::blockchain::market_order>& order,
                                    const transaction_id_type& trx_id );
 
-         wallet_transaction_record  cache_transaction( const signed_transaction& trx,
+         wallet_transaction_record cache_transaction( const signed_transaction& trx,
                                  const asset&           amount, share_type fees,
                                  const string&          memo_message,
                                  const public_key_type& to,
@@ -61,12 +62,7 @@ namespace bts { namespace wallet {
                                  const vector<address>& extra_addresses = vector<address>()
                                  );
 
-         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const
-         {
-            auto itr = transactions.find(trx_id);
-            if( itr != transactions.end() ) return itr->second;
-            return owallet_transaction_record();
-         }
+         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
 
          private_keys get_account_private_keys( const fc::sha512& password );
          string       get_account_name( const address& account_address )const;
@@ -95,7 +91,7 @@ namespace bts { namespace wallet {
 
          void remove_contact_account( const string& account_name);
 
-         void rename_account( const string& old_account_name,
+         void rename_account( const public_key_type& old_account_key,
                               const string& new_account_name );
 
          void export_to_json( const path& filename )const;

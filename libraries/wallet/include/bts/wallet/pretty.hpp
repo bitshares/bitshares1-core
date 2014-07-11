@@ -27,21 +27,19 @@ struct public_key_summary
 struct pretty_transaction
 {
     pretty_transaction()
-    :block_num(0),trx_num(0),created_time(0),received_time(0),fees(0),to_me(false),from_me(false){}
+    :is_virtual(false),is_confirmed(false),block_num(0),fees(0){}
 
-    int32_t                                     block_num;
-    int32_t                                     trx_num;
+    bool                                        is_virtual;
+    bool                                        is_confirmed;
     transaction_id_type                         trx_id;
-    uint32_t                                    created_time;
-    uint32_t                                    received_time;
+    int32_t                                     block_num;
+    string                                      from_account;
+    string                                      to_account;
     asset                                       amount;
     share_type                                  fees;
-    string                                      to_account;
-    string                                      from_account;
-    bool                                        to_me;     // since to/from accounts are just strings we need
-    bool                                        from_me;   // to populate these if we want to pretty print nicely
-
     string                                      memo_message;
+    fc::time_point_sec                          created_time;
+    fc::time_point_sec                          received_time;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }
@@ -61,7 +59,7 @@ struct pretty_withdraw_op
     std::string                                 op_name;
     std::pair<address, std::string>             owner;
     share_type                                  amount;
-    //std::pair<name_id_type, std::string>        vote;   TODO how to get this?
+    //std::pair<account_id_type, std::string>   vote;   TODO how to get this?
 };
 
 struct pretty_deposit_op 
@@ -70,7 +68,7 @@ struct pretty_deposit_op
     std::string                                 op_name;
     std::pair<address, std::string>             owner;
     share_type                                  amount;
-    std::pair<name_id_type, std::string>        vote;
+    std::pair<account_id_type, std::string>     vote;
 };
 
 struct pretty_reserve_name_op
@@ -180,7 +178,7 @@ struct pretty_remove_collateral_op
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
-FC_REFLECT( bts::wallet::pretty_transaction, (block_num)(trx_num)(trx_id)(created_time)(received_time)(amount)(fees)(to_account)(from_account)(memo_message)(fees));
+FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_confirmed)(trx_id)(block_num)(from_account)(to_account)(amount)(fees)(memo_message)(created_time)(received_time) );
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
 FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));

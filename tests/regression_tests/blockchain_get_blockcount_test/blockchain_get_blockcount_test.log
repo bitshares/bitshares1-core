@@ -1,0 +1,21 @@
+default (unlocked) >>> help blockchain_get_blockcount 
+Usage:
+blockchain_get_blockcount                                                                             Returns the number of blocks in the longest block chain
+Returns the number of blocks in the longest block chain
+
+Parameters:
+  (none)
+
+Returns:
+  uint32_t
+
+aliases: getblockcount
+default (unlocked) >>> blockchain_get_blockcount 
+1
+default (unlocked) >>> getblockcount
+1
+default (unlocked) >>> blockchain_get_blockcount 
+1
+default (unlocked) >>> getblockcount
+1
+default (unlocked) >>> quit

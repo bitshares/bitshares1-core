@@ -1,7 +1,5 @@
 #pragma once
-#include <vector>
-#include <fc/io/varint.hpp>
-#include <fc/reflect/reflect.hpp>
+
 #include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain {
@@ -13,11 +11,16 @@ namespace bts { namespace blockchain {
     */
    struct delegate_slate
    {
-      slate_id_type            id()const;
-      vector< unsigned_int >   supported_delegates;
+      slate_id_type         id()const;
+#if BTS_BLOCKCHAIN_VERSION > 105 
+      vector<signed_int>    supported_delegates;
+#warning [HARDFORK] Remove below deprecated member
+#else
+      vector<unsigned_int>  supported_delegates;
+#endif
    };
-
    typedef optional<delegate_slate> odelegate_slate;
+
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::delegate_slate, (supported_delegates) )

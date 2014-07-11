@@ -1,23 +1,17 @@
 //#define DEFAULT_LOGGER "blockchain"
 
-#include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/genesis_config.hpp>
-#include <bts/blockchain/time.hpp>
-#include <bts/blockchain/operation_factory.hpp>
-#include <bts/blockchain/fire_operation.hpp>
 #include <bts/blockchain/genesis_json.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
-
+#include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
-#include <bts/db/level_map.hpp>
-#include <bts/db/level_pod_map.hpp>
 
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/unique_lock.hpp>
+#include <fc/io/fstream.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
-#include <fc/io/fstream.hpp>
-#include <fc/log/logger.hpp>
 
 #include <algorithm>
 #include <fstream>
@@ -84,7 +78,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
-            void                       initialize_genesis(fc::optional<fc::path> genesis_file);
+            void                                        initialize_genesis(fc::optional<fc::path> genesis_file);
 
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
@@ -109,6 +103,7 @@ namespace bts { namespace blockchain {
             std::pair<block_id_type, block_fork_data>   recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids );
             void                                        recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
+            void                                        execute_markets( const pending_chain_state_ptr& pending_state );
             void                                        update_random_seed( secret_hash_type new_secret,
                                                                            const pending_chain_state_ptr& pending_state );
             void                                        update_active_delegate_list(const full_block& block_data,
@@ -116,6 +111,39 @@ namespace bts { namespace blockchain {
 
             void                                        update_delegate_production_info( const full_block& block_data,
                                                                                          const pending_chain_state_ptr& pending_state );
+
+            void                                        revalidate_pending()
+            {
+                  _pending_fee_index.clear();
+
+                  vector<transaction_id_type> trx_to_discard;
+
+                  _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+                  auto itr = _pending_transaction_db.begin();
+                  while( itr.valid() )
+                  {
+                     auto trx = itr.value();
+                     auto trx_id = trx.id();
+                     try {
+                        auto eval_state = self->evaluate_transaction( trx, _priority_fee );
+                        share_type fees = eval_state->get_fees();
+                        _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
+                        _pending_transaction_db.store( trx_id, trx );
+                     } 
+                     catch ( const fc::exception& e )
+                     {
+                        trx_to_discard.push_back(trx_id);
+                        wlog( "discarding invalid transaction: ${id} ${e}",
+                              ("id",trx_id)("e",e.to_detail_string()) );
+                     }
+                     ++itr;
+                  }
+
+                  for( const auto& item : trx_to_discard )
+                     _pending_transaction_db.remove( item );
+            }
+            fc::future<void> _revalidate_pending;
+            fc::mutex        _push_block_mutex;
       
             /**
              *  Used to track the cumulative effect of all pending transactions that are known,
@@ -124,60 +152,59 @@ namespace bts { namespace blockchain {
              *  After a new block is pushed this state is recalculated based upon what ever
              *  pending transactions remain.
              */
-            pending_chain_state_ptr                                             _pending_trx_state;
+            pending_chain_state_ptr                                         _pending_trx_state;
 
-            chain_database*                                                     self;
-            unordered_set<chain_observer*>                                      _observers;
-            digest_type                                                         _chain_id;
-            bool                                                                _skip_signature_verification;
-            share_type                                                          _priority_fee;
+            chain_database*                                                 self;
+            unordered_set<chain_observer*>                                  _observers;
+            digest_type                                                     _chain_id;
+            bool                                                            _skip_signature_verification;
+            share_type                                                      _priority_fee;
 
-            bts::db::level_map<slate_id_type, delegate_slate >                  _slate_db;
-            bts::db::level_map<uint32_t, std::vector<block_id_type> >    _fork_number_db;
-            bts::db::level_map<block_id_type,block_fork_data>            _fork_db;
-            bts::db::level_map<uint32_t, fc::variant >                   _property_db;
-            bts::db::level_map<proposal_id_type, proposal_record >       _proposal_db;
-            bts::db::level_map<proposal_vote_id_type, proposal_vote >    _proposal_vote_db;
+            bts::db::level_map<slate_id_type, delegate_slate >              _slate_db;
+            bts::db::level_map<uint32_t, std::vector<block_id_type> >       _fork_number_db;
+            bts::db::level_map<block_id_type,block_fork_data>               _fork_db;
+            bts::db::level_map<uint32_t, fc::variant >                      _property_db;
+            bts::db::level_map<proposal_id_type, proposal_record >          _proposal_db;
+            bts::db::level_map<proposal_vote_id_type, proposal_vote >       _proposal_vote_db;
 
             /** the data required to 'undo' the changes a block made to the database */
-            bts::db::level_map<block_id_type,pending_chain_state>               _undo_state_db;
+            bts::db::level_map<block_id_type,pending_chain_state>           _undo_state_db;
 
             // blocks in the current 'official' chain.
-            bts::db::level_map<uint32_t,block_id_type >                         _block_num_to_id_db;
+            bts::db::level_map<uint32_t,block_id_type >                     _block_num_to_id_db;
             // all blocks from any fork..
-            //bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_db;
-            bts::db::level_map<block_id_type,block_record >                     _block_id_to_block_record_db;
+            //bts::db::level_map<block_id_type,full_block>                  _block_id_to_block_db;
+            bts::db::level_map<block_id_type,block_record >                 _block_id_to_block_record_db;
 
-            bts::db::level_map<block_id_type,full_block>                        _block_id_to_block_data_db;
+            bts::db::level_map<block_id_type,full_block>                    _block_id_to_block_data_db;
 
-            std::unordered_set<transaction_id_type>                             _known_transactions;
-            bts::db::level_map<transaction_id_type,transaction_record>          _id_to_transaction_record_db;
+            std::unordered_set<transaction_id_type>                         _known_transactions;
+            bts::db::level_map<transaction_id_type,transaction_record>      _id_to_transaction_record_db;
 
             // used to revert block state in the event of a fork
-            // bts::db::level_map<uint32_t,undo_data>                              _block_num_to_undo_data_db;
+            // bts::db::level_map<uint32_t,undo_data>                       _block_num_to_undo_data_db;
 
-            signed_block_header                                                 _head_block_header;
-            block_id_type                                                       _head_block_id;
+            signed_block_header                                             _head_block_header;
+            block_id_type                                                   _head_block_id;
 
-            bts::db::level_map< transaction_id_type, signed_transaction>        _pending_transaction_db;
-            std::map< fee_index, transaction_evaluation_state_ptr >             _pending_fee_index;
+            bts::db::level_map< transaction_id_type, signed_transaction>    _pending_transaction_db;
+            std::map< fee_index, transaction_evaluation_state_ptr >         _pending_fee_index;
 
-            bts::db::level_map< asset_id_type, asset_record >            _asset_db;
-            bts::db::level_map< balance_id_type, balance_record>         _balance_db;
-            bts::db::level_map< account_id_type, account_record>         _account_db;
-            bts::db::level_map< address, account_id_type >               _address_to_account_db;
+            bts::db::level_map< asset_id_type, asset_record >               _asset_db;
+            bts::db::level_map< balance_id_type, balance_record>            _balance_db;
+            bts::db::level_map< account_id_type, account_record>            _account_db;
+            bts::db::level_map< address, account_id_type >                  _address_to_account_db;
 
-            bts::db::level_map< string, account_id_type >                _account_index_db;
-            bts::db::level_map< string, asset_id_type >                  _symbol_index_db;
-            bts::db::level_map< vote_del, int >                          _delegate_vote_index_db;
+            bts::db::level_map< string, account_id_type >                   _account_index_db;
+            bts::db::level_map< string, asset_id_type >                     _symbol_index_db;
+            bts::db::level_map< vote_del, int >                             _delegate_vote_index_db;
 
-            bts::db::level_map< std::pair< account_id_type, uint32_t >, delegate_block_stats >
-                                                                                _delegate_block_stats_db;
+            bts::db::level_map< time_point_sec, slot_record >               _slot_record_db;
 
-            bts::db::level_map< market_index_key, order_record >                _ask_db;
-            bts::db::level_map< market_index_key, order_record >                _bid_db;
-            bts::db::level_map< market_index_key, order_record >                _short_db;
-            bts::db::level_map< market_index_key, collateral_record >           _collateral_db;
+            bts::db::level_map< market_index_key, order_record >            _ask_db;
+            bts::db::level_map< market_index_key, order_record >            _bid_db;
+            bts::db::level_map< market_index_key, order_record >            _short_db;
+            bts::db::level_map< market_index_key, collateral_record >       _collateral_db;
 
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
@@ -242,7 +269,7 @@ namespace bts { namespace blockchain {
           _symbol_index_db.open( data_dir / "index/symbol_index_db" );
           _delegate_vote_index_db.open( data_dir / "index/delegate_vote_index_db" );
 
-          _delegate_block_stats_db.open( data_dir / "index/delegate_block_stats_db" );
+          _slot_record_db.open( data_dir / "index/slot_record_db" );
 
           _ask_db.open( data_dir / "index/ask_db" );
           _bid_db.open( data_dir / "index/bid_db" );
@@ -273,31 +300,19 @@ namespace bts { namespace blockchain {
 
          _pending_fee_index.clear();
 
-         vector<transaction_id_type> trx_to_discard;
+         if( _revalidate_pending.valid() ) 
+         {
+            try {
+            _revalidate_pending.cancel();
+            _revalidate_pending.wait();
+            } catch ( ... ) {}
+         }
+         // schedule the revalidating of pending transactions for 1 second in the future so that we don't hold
+         // up block validation / propagation
+         //revalidate_pending();
+         _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );//, fc::time_point::now() + fc::seconds(1) );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
-         auto itr = _pending_transaction_db.begin();
-         while( itr.valid() )
-         {
-            auto trx = itr.value();
-            auto trx_id = trx.id();
-            try {
-               auto eval_state = self->evaluate_transaction( trx, _priority_fee );
-               share_type fees = eval_state->get_fees();
-               _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-               _pending_transaction_db.store( trx_id, trx );
-            } 
-            catch ( const fc::exception& e )
-            {
-               trx_to_discard.push_back(trx_id);
-               wlog( "discarding invalid transaction: ${id} ${e}",
-                     ("id",trx_id)("e",e.to_detail_string()) );
-            }
-            ++itr;
-         }
-
-         for( const auto& item : trx_to_discard )
-            _pending_transaction_db.remove( item );
       }
 
       std::pair<block_id_type, block_fork_data> chain_database_impl::recursive_mark_as_linked( const std::unordered_set<block_id_type>& ids )
@@ -384,7 +399,7 @@ namespace bts { namespace blockchain {
 
           if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
           {
-              auto latency = (now - block_data.timestamp).to_seconds();
+              auto latency = now - block_data.timestamp;
               block_record record( block_data, self->get_current_random_seed(), block_data.block_size(), latency );
               _block_id_to_block_record_db.store( block_id, record );
           }
@@ -642,24 +657,21 @@ namespace bts { namespace blockchain {
           delegate_record->delegate_info->last_block_num_produced = produced_block.block_num;
           pending_state->store_account_record( *delegate_record );
 
-          auto block_stats = delegate_block_stats( false, produced_block.id() );
-          pending_state->store_delegate_block_stats( delegate_record->id, produced_block.block_num, block_stats );
+          auto slot = slot_record( produced_block.timestamp, delegate_id, true, produced_block.id() );
+          pending_state->store_slot_record( slot );
 
           /* Update production info for missing delegates */
 
           auto required_confirmations = pending_state->get_property( confirmation_requirement ).as_int64();
 
-          auto head_block = self->get_head_block();
-          auto block_num = head_block.block_num + 1;
-
           time_point_sec block_timestamp;
-          if( block_num > 1 ) block_timestamp = head_block.timestamp + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+          auto head_block = self->get_head_block();
+          if( head_block.block_num > 0 ) block_timestamp = head_block.timestamp + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
           else block_timestamp = produced_block.timestamp;
           const auto& active_delegates = self->get_active_delegates();
 
           for( ; block_timestamp < produced_block.timestamp;
                  block_timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC,
-                 ++block_num,
                  required_confirmations += 2 )
           {
               /* Note: Active delegate list has not been updated yet so we can use the timestamp */
@@ -670,7 +682,7 @@ namespace bts { namespace blockchain {
               delegate_record->delegate_info->blocks_missed += 1;
               pending_state->store_account_record( *delegate_record );
 
-              pending_state->store_delegate_block_stats( delegate_record->id, block_num, delegate_block_stats() );
+              pending_state->store_slot_record( slot_record( block_timestamp, delegate_id )  );
           }
 
           /* Update required confirmation count */
@@ -714,6 +726,38 @@ namespace bts { namespace blockchain {
              pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(active_del) );
           }
       }
+      void chain_database_impl::execute_markets( const pending_chain_state_ptr& pending_state )
+      { try { 
+        for( auto market_pair : pending_state->_dirty_markets )
+        {
+           FC_ASSERT( market_pair.first > market_pair.second ) 
+
+           // if( market_pair.first is market issued asset )
+           {
+              // while highest_call < lowest-ask
+              //    trade
+              // while highest_call < lowest short
+              //    trade
+           }
+           /* TODO: verify lower bound is working properly... fix get_bid/ask orders which also use lower bound 
+           auto bid_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, market_pair.first,   market_pair.second) ) );
+           auto ask_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, market_pair.first+1, market_pair.second) ) );
+           while( bid_itr.valid() && ask_itr.valid() )
+           {
+              ++bid_itr;
+              --ask_itr;
+           }
+           */
+
+           // while highest_bid > lowest_ask 
+           //    trade... 
+           // while highest_bid > lowest_short 
+           //    trade...
+
+           // if there are any fees collected other than XTS... 
+           //  try to match that order...
+        } 
+      } FC_CAPTURE_AND_RETHROW() }
 
       /**
        *  Performs all of the block validation steps and throws if error.
@@ -742,6 +786,8 @@ namespace bts { namespace blockchain {
             //apply_deterministic_updates(pending_state);
 
             apply_transactions( block_data, block_data.user_transactions, pending_state );
+
+            execute_markets( pending_state );
 
             pay_delegate( block_data.id(), block_data.delegate_pay_rate, pending_state );
 
@@ -956,8 +1002,7 @@ namespace bts { namespace blockchain {
              auto block_itr = my->_block_id_to_block_data_db.begin();
              while( block_itr.valid() )
              {
-                 if( ++blocks_indexed % 50 == 0 )
-                     std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed/50 % 4] << "]" << std::flush;
+                 std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed++ % 4] << "]" << std::flush;
 
                  auto block = block_itr.value();
                  ++block_itr;
@@ -1027,7 +1072,7 @@ namespace bts { namespace blockchain {
       my->_symbol_index_db.close();
       my->_delegate_vote_index_db.close();
 
-      my->_delegate_block_stats_db.close();
+      my->_slot_record_db.close();
 
       my->_ask_db.close();
       my->_bid_db.close();
@@ -1083,7 +1128,7 @@ namespace bts { namespace blockchain {
       return optional<time_point_sec>();
    } FC_CAPTURE_AND_RETHROW( (delegate_ids) ) }
 
-   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx, share_type required_fees )
+   transaction_evaluation_state_ptr chain_database::evaluate_transaction( const signed_transaction& trx, const share_type& required_fees )
    { try {
       if( !my->_pending_trx_state )
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
@@ -1101,6 +1146,25 @@ namespace bts { namespace blockchain {
 
       return trx_eval_state;
    } FC_CAPTURE_AND_RETHROW( (trx) ) }
+
+   optional<fc::exception> chain_database::get_transaction_error( const signed_transaction& transaction, const share_type& min_fee )
+   { try {
+       try
+       {
+          auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
+          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state, my->_chain_id );
+
+          eval_state->evaluate( transaction );
+          auto fees = eval_state->get_fees();
+          if( fees < min_fee )
+             FC_CAPTURE_AND_THROW( insufficient_priority_fee, (fees)(min_fee) );
+       }
+       catch( fc::exception& e )
+       {
+           return e;
+       }
+       return optional<fc::exception>();
+   } FC_CAPTURE_AND_RETHROW( (transaction) ) }
 
    signed_block_header  chain_database::get_block_header( const block_id_type& block_id )const
    { try {
@@ -1174,6 +1238,10 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
+      // only allow a single fiber attempt to push blocks at any given time,
+      // this method is not re-entrant.
+      fc::unique_lock<fc::mutex> lock( my->_push_block_mutex );
+
       auto processing_start_time = time_point::now();
       auto block_id = block_data.id();
       auto current_head_id = my->_head_block_id;
@@ -1232,12 +1300,12 @@ namespace bts { namespace blockchain {
    }
 
    /** return the current fee rate in millishares */
-   int64_t chain_database::get_fee_rate()const
+   share_type chain_database::get_fee_rate()const
    {
       return my->_head_block_header.fee_rate;
    }
 
-   int64_t chain_database::get_delegate_pay_rate()const
+   share_type chain_database::get_delegate_pay_rate()const
    {
       return my->_head_block_header.delegate_pay_rate;
    }
@@ -1430,7 +1498,7 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void    chain_database::scan_balances( function<void( const balance_record& )> callback )
+   void chain_database::scan_balances( function<void( const balance_record& )> callback )
    {
         auto balances = my->_balance_db.begin();
         while( balances.valid() )
@@ -1439,7 +1507,8 @@ namespace bts { namespace blockchain {
            ++balances;
         }
    }
-   void    chain_database::scan_accounts( function<void( const account_record& )> callback )
+
+   void chain_database::scan_accounts( function<void( const account_record& )> callback )
    {
         auto name_itr = my->_account_db.begin();
         while( name_itr.valid() )
@@ -1479,7 +1548,7 @@ namespace bts { namespace blockchain {
       return eval_state;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx) ) }
 
-   /** returns all transactions that are valid (indepdnent of eachother) sorted by fee */
+   /** returns all transactions that are valid (independent of each other) sorted by fee */
    std::vector<transaction_evaluation_state_ptr> chain_database::get_pending_transactions()const
    {
       std::vector<transaction_evaluation_state_ptr> trxs;
@@ -1539,7 +1608,6 @@ namespace bts { namespace blockchain {
       next_block.fee_rate           = next_block.next_fee( head_block.fee_rate, block_size );
 
       // TODO: Adjust fees vs dividends here... right now 100% of fees are paid to delegates
-      //total_fees += BTS_BLOCKCHAIN_BLOCK_REWARD;
       /**
        *  Right now delegates are paid a salary regardless of fees, this initial salary is a pittance and
        *  should be less than eventual fees.
@@ -1612,7 +1680,6 @@ namespace bts { namespace blockchain {
       account_record god; god.id = 0; god.name = "god";
       self->store_account_record( god );
 
-
       fc::time_point_sec timestamp = config.timestamp;
       std::vector<account_id_type> delegate_ids;
       int32_t account_id = 1;
@@ -1622,7 +1689,7 @@ namespace bts { namespace blockchain {
          rec.id                = account_id;
          rec.name              = name.name;
          rec.owner_key         = name.owner;
-         rec.set_active_key( bts::blockchain::now(),  name.owner );
+         rec.set_active_key( timestamp, name.owner );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
          if( name.is_delegate )
@@ -1651,6 +1718,7 @@ namespace bts { namespace blockchain {
          // in case of redundant balances
          auto cur = self->get_balance_record( initial_balance.id() );
          if( cur.valid() ) initial_balance.balance += cur->balance;
+         initial_balance.genesis                    = true;
          initial_balance.last_update                = config.timestamp;
          self->store_balance_record( initial_balance );
       }
@@ -1665,18 +1733,40 @@ namespace bts { namespace blockchain {
          ++itr;
       }
 
+      int32_t asset_id = 0;
       asset_record base_asset;
-      base_asset.id = 0;
+      base_asset.id = asset_id;
       base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
       base_asset.name = BTS_BLOCKCHAIN_NAME;
       base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
-      base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
+      base_asset.public_data = variant("");
       base_asset.issuer_account_id = god.id;
+      base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
+      base_asset.registration_date = timestamp;
+      base_asset.last_update = timestamp;
       base_asset.current_share_supply = total.amount;
       base_asset.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
       base_asset.collected_fees = 0;
-      base_asset.registration_date = config.timestamp;
       self->store_asset_record( base_asset );
+
+      for( const auto& asset : config.market_assets )
+      {
+         ++asset_id;
+         asset_record rec;
+         rec.id = asset_id;
+         rec.symbol = asset.symbol;
+         rec.name = asset.name;
+         rec.description = asset.description;
+         rec.public_data = variant("");
+         rec.issuer_account_id = asset_record::market_issued_asset;
+         rec.precision = asset.precision;
+         rec.registration_date = timestamp;
+         rec.last_update = timestamp;
+         rec.current_share_supply = 0;
+         rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
+         rec.collected_fees = 0;
+         self->store_asset_record( rec );
+      }
 
       block_fork_data gen_fork;
       gen_fork.is_valid = true;
@@ -1686,7 +1776,7 @@ namespace bts { namespace blockchain {
       _fork_db.store( block_id_type(), gen_fork );
 
       self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
-      self->set_property( chain_property_enum::last_asset_id, 0 );
+      self->set_property( chain_property_enum::last_asset_id, asset_id );
       self->set_property( chain_property_enum::last_proposal_id, 0 );
       self->set_property( chain_property_enum::last_account_id, uint64_t(config.names.size()) );
       self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
@@ -1739,16 +1829,28 @@ namespace bts { namespace blockchain {
 
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t count )const
     { try {
-       auto itr = my->_account_index_db.lower_bound(first);
        std::vector<account_record> names;
+       auto itr = my->_account_index_db.begin();
+
+       if( first.size() > 0 && isdigit(first[0]) )
+       {
+         int32_t skip = atoi(first.c_str()) - 1;
+
+         while( skip-- > 0 && itr++.valid() );
+       }
+       else
+       {
+         itr = my->_account_index_db.lower_bound(first);
+       }
+
        while( itr.valid() && names.size() < count )
        {
           names.push_back( *get_account_record( itr.value() ) );
           ++itr;
        }
+
        return names;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
-
 
     std::vector<asset_record> chain_database::get_assets( const string& first_symbol, uint32_t count )const
     { try {
@@ -1883,16 +1985,16 @@ namespace bts { namespace blockchain {
         return fork_blocks;
     }
 
-    std::map<uint32_t, delegate_block_stats> chain_database::get_delegate_block_stats( const account_id_type& delegate_id )const
+    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type& delegate_id )const
     {
-        std::map<uint32_t, delegate_block_stats> delegate_block_stats;
-        for( auto iter = my->_delegate_block_stats_db.begin(); iter.valid(); ++iter )
+        vector<slot_record> slot_records;
+        for( auto iter = my->_slot_record_db.begin(); iter.valid(); ++iter )
         {
-            std::pair< account_id_type, uint32_t > key = iter.key();
-            if( key.first == delegate_id )
-                delegate_block_stats[key.second] = iter.value();
+            const auto slot_record = iter.value();
+            if( slot_record.block_producer_id == delegate_id )
+                slot_records.push_back( slot_record );
         }
-        return delegate_block_stats;
+        return slot_records;
     }
 
    fc::variant chain_database::get_property( chain_property_enum property_id )const
@@ -1900,7 +2002,7 @@ namespace bts { namespace blockchain {
       return my->_property_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
 
-   void  chain_database::set_property( chain_property_enum property_id, 
+   void chain_database::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
    {
       if( property_value.is_null() )
@@ -1908,6 +2010,7 @@ namespace bts { namespace blockchain {
       else
          my->_property_db.store( property_id, property_value );
    }
+
    void chain_database::store_proposal_record( const proposal_record& r )
    {
       if( r.is_null() )
@@ -1946,7 +2049,8 @@ namespace bts { namespace blockchain {
    {
          return my->_chain_id;
    }
-   std::vector<proposal_record>  chain_database::get_proposals( uint32_t first, uint32_t count )const
+
+   std::vector<proposal_record> chain_database::get_proposals( uint32_t first, uint32_t count )const
    {
       std::vector<proposal_record> results;
       auto current_itr = my->_proposal_db.lower_bound( first );
@@ -1959,7 +2063,8 @@ namespace bts { namespace blockchain {
       }
       return results;
    }
-   std::vector<proposal_vote>   chain_database::get_proposal_votes( proposal_id_type proposal_id ) const
+
+   std::vector<proposal_vote> chain_database::get_proposal_votes( proposal_id_type proposal_id ) const
    {
       std::vector<proposal_vote> results;
       auto current_itr = my->_proposal_vote_db.lower_bound( proposal_vote_id_type(proposal_id,0) );
@@ -1974,24 +2079,41 @@ namespace bts { namespace blockchain {
       return results;
    }
 
-   fc::ripemd160    chain_database::get_current_random_seed()const
+   fc::ripemd160 chain_database::get_current_random_seed()const
    {
       return get_property( last_random_seed_id ).as<fc::ripemd160>();
    }
 
-   oorder_record         chain_database::get_bid_record( const market_index_key&  key )const
+   oorder_record chain_database::get_bid_record( const market_index_key&  key )const
    {
       return my->_bid_db.fetch_optional(key);
    }
-   oorder_record         chain_database::get_ask_record( const market_index_key&  key )const
+
+   omarket_order chain_database::get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      omarket_order result;
+      auto itr = my->_ask_db.lower_bound( market_index_key( price(0,quote_id,base_id) ) );
+      if( itr.valid() )
+      {
+         auto market_index = itr.key();
+         if( market_index.order_price.quote_asset_id == quote_id && 
+             market_index.order_price.base_asset_id == base_id      )
+            return market_order( ask_order, market_index, itr.value() );
+      }
+      return result;
+   }
+
+   oorder_record chain_database::get_ask_record( const market_index_key&  key )const
    {
       return my->_ask_db.fetch_optional(key);
    }
-   oorder_record         chain_database::get_short_record( const market_index_key& key )const
+
+   oorder_record chain_database::get_short_record( const market_index_key& key )const
    {
       return my->_short_db.fetch_optional(key);
    }
-   ocollateral_record    chain_database::get_collateral_record( const market_index_key& key )const
+
+   ocollateral_record chain_database::get_collateral_record( const market_index_key& key )const
    {
       return my->_collateral_db.fetch_optional(key);
    }
@@ -2003,13 +2125,16 @@ namespace bts { namespace blockchain {
       else
          my->_bid_db.store( key, order );
    }
+
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order ) 
    {
+      wlog( "STORE ASK ${k} ${o}", ("k",key)("o",order) );
       if( order.is_null() )
          my->_ask_db.remove( key );
       else
          my->_ask_db.store( key, order );
    }
+
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
    {
       if( order.is_null() )
@@ -2017,6 +2142,7 @@ namespace bts { namespace blockchain {
       else
          my->_short_db.store( key, order );
    }
+
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral ) 
    {
       if( collateral.is_null() )
@@ -2024,12 +2150,18 @@ namespace bts { namespace blockchain {
       else
          my->_collateral_db.store( key, collateral );
    }
-   string  chain_database::get_asset_symbol( asset_id_type asset_id )const
+
+   string chain_database::get_asset_symbol( asset_id_type asset_id )const
    { try {
       auto asset_rec = get_asset_record( asset_id );
       FC_ASSERT( asset_rec.valid(), "Unknown Asset ID: ${id}", ("asset_id",asset_id) );
       return asset_rec->symbol;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_id",asset_id) ) }
+
+   time_point_sec chain_database::get_genesis_timestamp()const
+   {
+       return get_asset_record( asset_id_type() )->registration_date;
+   }
 
    void chain_database::sanity_check()const
    { try {
@@ -2116,11 +2248,101 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
        vector<market_order> results;
-       //auto market_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
-       auto market_itr  = my->_bid_db.begin();
+       auto market_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
        while( market_itr.valid() )
        {
-          results.push_back( {bid_order, market_itr.key(), market_itr.value()} );
+          auto key = market_itr.key();
+          if( key.order_price.quote_asset_id == quote_asset_id &&
+              key.order_price.base_asset_id == base_asset_id  )
+          {
+             results.push_back( {bid_order, key, market_itr.value()} );
+          }
+          else break;
+
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
+
+   optional<market_order> chain_database::get_market_short( const market_index_key& key )const
+   { try {
+       auto market_itr  = my->_short_db.find(key);
+       if( market_itr.valid() )
+          return market_order { short_order, market_itr.key(), market_itr.value() };
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
+
+   vector<market_order> chain_database::get_market_shorts( const string& quote_symbol, 
+                                                          uint32_t limit  )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = 0;
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+
+       auto market_itr  = my->_short_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       while( market_itr.valid() )
+       {
+          auto key = market_itr.key();
+          if( key.order_price.quote_asset_id == quote_asset_id &&
+              key.order_price.base_asset_id == base_asset_id  )
+          {
+             results.push_back( {short_order, key, market_itr.value()} );
+          }
+          else
+          {
+             break;
+          }
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
+
+
+
+   optional<market_order> chain_database::get_market_ask( const market_index_key& key )const
+   { try {
+       auto market_itr  = my->_ask_db.find(key);
+       if( market_itr.valid() )
+          return market_order { ask_order, market_itr.key(), market_itr.value() };
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
+
+   vector<market_order> chain_database::get_market_asks( const string& quote_symbol, 
+                                                          const string& base_symbol, 
+                                                          uint32_t limit  )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = get_asset_id( base_symbol );
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+       auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       while( market_itr.valid() )
+       {
+          auto key = market_itr.key();
+          if( key.order_price.quote_asset_id == quote_asset_id &&
+              key.order_price.base_asset_id == base_asset_id  )
+          {
+             results.push_back( {ask_order, key, market_itr.value()} );
+          }
+          else
+          {
+             break;
+          }
 
           if( results.size() == limit ) 
              return results;
@@ -2149,21 +2371,18 @@ namespace bts { namespace blockchain {
          my->_slate_db.store( id, slate );
    }
 
-   void chain_database::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
-                                                    const delegate_block_stats& block_stats )
+   void chain_database::store_slot_record( const slot_record& r )
    {
-      if( block_stats.missed || (block_stats.id != block_id_type()) ) /* If in valid state */
-         my->_delegate_block_stats_db.store( std::make_pair( delegate_id, block_num ), block_stats );
+      if( !r.block_produced || (r.block_id != block_id_type()) ) /* If in valid state */
+         my->_slot_record_db.store( r.start_time, r );
       else
-         my->_delegate_block_stats_db.remove( std::make_pair( delegate_id, block_num ) );
+         my->_slot_record_db.remove( r.start_time );
    }
 
-   odelegate_block_stats chain_database::get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                   uint32_t block_num )const
+   oslot_record chain_database::get_slot_record( const time_point_sec& start_time )const
    {
-      return my->_delegate_block_stats_db.fetch_optional( std::make_pair( delegate_id, block_num ) );
+      return my->_slot_record_db.fetch_optional( start_time );
    }
-
 
    bool chain_database::is_known_transaction( const transaction_id_type& id )
    {
@@ -2174,10 +2393,14 @@ namespace bts { namespace blockchain {
       my->_skip_signature_verification = state;
    }
 
-   void chain_database::set_priority_fee( int64_t shares )
+   void chain_database::set_priority_fee( share_type shares )
    {
       my->_priority_fee = shares;
    }
-    
 
-} } // namespace bts::blockchain
+   share_type chain_database::get_priority_fee()
+   {
+      return my->_priority_fee;
+   }
+
+} } // bts::blockchain

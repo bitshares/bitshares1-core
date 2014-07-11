@@ -1,7 +1,7 @@
 #include <bts/blockchain/delegate_slate.hpp>
+
 #include <fc/crypto/sha256.hpp>
 #include <fc/io/raw.hpp>
-#include <algorithm>
 
 namespace bts { namespace blockchain {
 
@@ -16,4 +16,4 @@ namespace bts { namespace blockchain {
       return enc.result()._hash[0];
    }
 
-} }
+} } // bts::blockchain

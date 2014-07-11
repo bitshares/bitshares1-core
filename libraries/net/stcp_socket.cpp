@@ -57,8 +57,8 @@ void stcp_socket::bind( const fc::ip::endpoint& local_endpoint )
  */
 size_t stcp_socket::readsome( char* buffer, size_t len )
 { try {
-    assert( (len % 16) == 0 );
-    assert( len >= 16 );
+    FC_ASSERT( (len % 16) == 0 );
+    FC_ASSERT( len >= 16 );
     char crypt_buf[4096];
     len = std::min<size_t>(sizeof(crypt_buf),len);
 
@@ -79,8 +79,8 @@ bool stcp_socket::eof()const
 
 size_t stcp_socket::writesome( const char* buffer, size_t len )
 { try {
-    assert( len % 16 == 0 );
-    assert( len > 0 );
+    FC_ASSERT( len % 16 == 0 );
+    FC_ASSERT( len > 0 );
     char crypt_buf[4096];
     len = std::min<size_t>(sizeof(crypt_buf),len);
     memcpy( crypt_buf, buffer, len );

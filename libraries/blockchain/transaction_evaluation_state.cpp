@@ -1,6 +1,6 @@
 #include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/transaction_evaluation_state.hpp>
 
 namespace bts { namespace blockchain { 
 
@@ -12,6 +12,7 @@ namespace bts { namespace blockchain {
    transaction_evaluation_state::~transaction_evaluation_state()
    {
    }
+
    void transaction_evaluation_state::reset()
    {
       signed_keys.clear();
@@ -35,7 +36,6 @@ namespace bts { namespace blockchain {
       if( !current_account->is_delegate() ) FC_CAPTURE_AND_THROW( not_a_delegate, (id) );
    }
 
-
    void transaction_evaluation_state::add_required_deposit( const address& owner_key, const asset& amount )
    {
       FC_ASSERT( trx.delegate_slate_id );
@@ -56,7 +56,7 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::update_delegate_votes()
    {
-      auto asset_rec = _current_state->get_asset_record( BASE_ASSET_ID );
+      auto asset_rec = _current_state->get_asset_record( asset_id_type() );
 
       for( auto del_vote : net_delegate_votes )
       {
@@ -85,6 +85,58 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::post_evaluate()
    { try {
       required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
+
+      balance[0]; // make sure we have something for this.
+      for( auto fee : balance )
+      {
+         if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
+         if( fee.second > 0 )
+         {
+            if( fee.first == 0  )
+               continue;
+            // check to see if there are any open bids to buy the asset
+         }
+
+         // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
+         // is an amount of USD which can be converted to price*USD XTS provided we
+         // send lowest_ask.index.owner the USD
+         omarket_order lowest_ask = _current_state->get_lowest_ask_record( fee.first, 0 );
+         if( lowest_ask )
+         {
+            // do we have enough funds in the ask to cover the fees?
+            asset required_order_balance = asset( fee.second, fee.first ) * 
+                                            lowest_ask->market_index.order_price;  
+            
+            if( required_order_balance.amount <= lowest_ask->state.balance )
+            {
+               balance[0] += required_order_balance.amount;
+
+               auto balance_id = withdraw_condition( 
+                                   withdraw_with_signature( lowest_ask->market_index.owner ), 
+                                   fee.first       ).get_address(); 
+
+
+               auto balance_rec = _current_state->get_balance_record( balance_id );
+               if( balance_rec )
+               {
+                  balance_rec->balance += fee.second; 
+               }
+               else
+               {
+                  balance_rec = balance_record( lowest_ask->market_index.owner, 
+                                              asset( fee.second, fee.first ), 0 );
+
+               }
+               _current_state->store_balance_record( *balance_rec );
+
+               lowest_ask->state.balance -= required_order_balance.amount;
+               _current_state->store_ask_record( lowest_ask->market_index, lowest_ask->state );
+            }
+            // trade fee.second 
+         }
+      }
+
+
       for( auto fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
@@ -102,6 +154,8 @@ namespace bts { namespace blockchain {
             _current_state->store_asset_record( *asset_record );
          }
       }
+
+
       for( auto required_deposit : required_deposits )
       {
          auto provided_itr = provided_deposits.find( required_deposit.first );
@@ -163,11 +217,11 @@ namespace bts { namespace blockchain {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx_arg) ) }
 
-
    void transaction_evaluation_state::evaluate_operation( const operation& op )
    {
       operation_factory::instance().evaluate( *this, op );
    }
+
    void transaction_evaluation_state::adjust_vote( slate_id_type slate_id, share_type amount )
    {
       if( slate_id )
@@ -176,7 +230,15 @@ namespace bts { namespace blockchain {
          if( !slate ) FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
          for( auto delegate_id : slate->supported_delegates )
          {
-            net_delegate_votes[delegate_id].votes_for += amount;
+#if BTS_BLOCKCHAIN_VERSION > 105 
+            if( delegate_id < signed_int(0) )
+               net_delegate_votes[abs(delegate_id)].votes_for -= amount;
+            else
+               net_delegate_votes[abs(delegate_id)].votes_for += amount;
+#warning [HARDFORK] Remove below
+#else
+               net_delegate_votes[delegate_id].votes_for += amount;
+#endif
          }
       }
    }
@@ -250,6 +312,4 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_to_validate) );
    }
 
-
-} } 
-
+} } // bts::blockchain

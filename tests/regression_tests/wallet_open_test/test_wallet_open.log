@@ -1,0 +1,9 @@
+(wallet closed) >>> wallet_create y1 123456789
+OK
+y1 (unlocked) >>> wallet_create y2 123456789
+OK
+y2 (unlocked) >>> wallet_open y1
+OK
+y1 (locked) >>> wallet_get_name 
+"y1"
+y1 (locked) >>> quit

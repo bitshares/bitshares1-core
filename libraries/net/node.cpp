@@ -47,11 +47,34 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
+#define INVOCATION_COUNTER(name) \
+    static unsigned total_ ## name ## _counter = 0; \
+    static unsigned active_ ## name ## _counter = 0; \
+    struct name ## _invocation_logger { \
+      unsigned *total; \
+      unsigned *active; \
+      name ## _invocation_logger(unsigned *total, unsigned *active) : \
+        total(total), active(active) \
+      { \
+        ++*total; \
+        ++*active; \
+        dlog("NEWDEBUG: Entering " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
+      } \
+      ~name ## _invocation_logger() \
+      { \
+        --*active; \
+        dlog("NEWDEBUG: Leaving " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
+      } \
+    } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
+
+//#define P2P_IN_DEDICATED_THREAD
+
 namespace bts { namespace net { 
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
                           (send_queue_overflow)
-                          (insufficient_priority_fee) )
+                          (insufficient_priority_fee)
+                          (already_connected_to_requested_peer) )
 
   namespace detail 
   {
@@ -197,11 +220,41 @@ namespace bts { namespace net { namespace detail {
         return (signed)(rhs.sequence_number - sequence_number) > 0;
       }
     };
+
+    class thread_switching_node_delegate_wrapper : public node_delegate
+    {
+    private:
+      fc::thread* _thread;
+      node_delegate *_node_delegate;
+    public:
+      thread_switching_node_delegate_wrapper(fc::thread* thread, node_delegate* delegate);
+      bool has_item( const net::item_id& id ) override;
+      bool handle_message( const message&, bool sync_mode ) override;
+      std::vector<item_hash_t> get_item_ids(uint32_t item_type,
+                                            const std::vector<item_hash_t>& blockchain_synopsis,
+                                            uint32_t& remaining_item_count,
+                                            uint32_t limit = 2000) override;
+      message get_item( const item_id& id ) override;
+      fc::sha256 get_chain_id() const override;
+      std::vector<item_hash_t> get_blockchain_synopsis(uint32_t item_type, 
+                                                       const bts::net::item_hash_t& reference_point = bts::net::item_hash_t(), 
+                                                       uint32_t number_of_blocks_after_reference_point = 0) override;
+      void     sync_status( uint32_t item_type, uint32_t item_count ) override;
+      void     connection_count_changed( uint32_t c ) override;
+      uint32_t get_block_number(const item_hash_t& block_id) override;
+      fc::time_point_sec get_block_time(const item_hash_t& block_id) override;
+      fc::time_point_sec get_blockchain_now() override;
+      void error_encountered(const std::string& message, const fc::oexception& error) override;
+    };
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     class node_impl : public peer_connection_delegate
     {
     public:
+#ifdef P2P_IN_DEDICATED_THREAD
+      std::shared_ptr<fc::thread> _thread;
+#endif // P2P_IN_DEDICATED_THREAD
       node_delegate*       _delegate;
       fc::sha256           _chain_id;
 
@@ -307,12 +360,14 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _bandwidth_monitor_loop_done;
 
+      fc::future<void> _dump_node_status_task_done;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
 
       node_impl();
-      ~node_impl();
+      virtual ~node_impl();
 
       void save_node_configuration();
 
@@ -335,6 +390,7 @@ namespace bts { namespace net { namespace detail {
       void fetch_updated_peer_lists_loop();
       void update_bandwidth_data(uint32_t usage_this_second);
       void bandwidth_monitor_loop();
+      void dump_node_status_task();
 
       bool is_accepting_new_connections();
       bool is_wanting_new_connections();
@@ -447,6 +503,7 @@ namespace bts { namespace net { namespace detail {
       void broadcast( const message& item_to_broadcast );
       void sync_from( const item_id& );
       bool is_connected() const;
+      std::vector<potential_peer_record> get_potential_peers() const;
       void set_advanced_node_parameters( const fc::variant_object& params );
 
       fc::variant_object         get_advanced_node_parameters();
@@ -466,7 +523,29 @@ namespace bts { namespace net { namespace detail {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    void node_impl_deleter::operator()(node_impl* impl_to_delete)
+    {
+#ifdef P2P_IN_DEDICATED_THREAD
+      if (impl_to_delete)
+      {
+        std::shared_ptr<fc::thread> impl_thread(impl_to_delete->_thread);
+        impl_thread->async([impl_to_delete](){ delete impl_to_delete; }).wait();
+      }
+#else // P2P_IN_DEDICATED_THREAD
+      delete impl_to_delete;
+#endif // P2P_IN_DEDICATED_THREAD
+    }
+
+#ifdef P2P_IN_DEDICATED_THREAD
+# define VERIFY_CORRECT_THREAD() FC_ASSERT(_thread->is_current())
+#else
+# define VERIFY_CORRECT_THREAD() do {} while (0)
+#endif
+
     node_impl::node_impl() : 
+#ifdef P2P_IN_DEDICATED_THREAD
+      _thread(std::make_shared<fc::thread>("p2p")),
+#endif // P2P_IN_DEDICATED_THREAD
       _delegate( nullptr ),
       _potential_peer_database_updated(false),
       _sync_items_to_fetch_updated(false),
@@ -493,6 +572,7 @@ namespace bts { namespace net { namespace detail {
 
     node_impl::~node_impl()
     {
+      VERIFY_CORRECT_THREAD();
       for( const peer_connection_ptr& active_peer : _active_connections )
       {
         potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
@@ -512,6 +592,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::save_node_configuration()
     {
+      VERIFY_CORRECT_THREAD();
       if( fc::exists(_node_configuration_directory ) )
       {
         fc::path configuration_file_name( _node_configuration_directory / NODE_CONFIGURATION_FILENAME );
@@ -529,6 +610,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::p2p_network_connect_loop()
     {
+      VERIFY_CORRECT_THREAD();
       while( !_p2p_network_connect_loop_done.canceled() )
       {
         try 
@@ -570,8 +652,8 @@ namespace bts { namespace net { namespace detail {
 
               if( !is_connection_to_endpoint_in_progress(iter->endpoint ) &&
                   ( (iter->last_connection_disposition != last_connection_failed && 
-                    iter->last_connection_disposition != last_connection_rejected &&
-                    iter->last_connection_disposition != last_connection_handshaking_failed ) ||
+                     iter->last_connection_disposition != last_connection_rejected &&
+                     iter->last_connection_disposition != last_connection_handshaking_failed) ||
                     ( fc::time_point::now() - iter->last_connection_attempt_time ) > delay_until_retry  ) )
               {
                 connect_to( iter->endpoint );
@@ -619,6 +701,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::trigger_p2p_network_connect_loop()
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "Triggering connect loop now" );
       _potential_peer_database_updated = true;
       if( _retrigger_connect_loop_promise )
@@ -627,12 +710,14 @@ namespace bts { namespace net { namespace detail {
 
     bool node_impl::have_already_received_sync_item( const item_hash_t& item_hash )
     {
+      VERIFY_CORRECT_THREAD();
       return std::find_if( _received_sync_items.begin(), _received_sync_items.end(), 
                           [&item_hash]( const bts::client::block_message& message ) { return message.block_id == item_hash; } ) != _received_sync_items.end();
     }
 
     void node_impl::request_sync_item_from_peer( const peer_connection_ptr& peer, const item_hash_t& item_to_request )
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "requesting item ${item_hash} from peer ${endpoint}", ("item_hash", item_to_request )("endpoint", peer->get_remote_endpoint() ) );
       item_id item_id_to_request( bts::client::block_message_type, item_to_request );
       _active_sync_requests.insert( active_sync_requests_map::value_type(item_to_request, fc::time_point::now() ) );
@@ -643,6 +728,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::fetch_sync_items_loop()
     {
+      VERIFY_CORRECT_THREAD();
       while( !_fetch_sync_items_loop_done.canceled() )
       {
         _sync_items_to_fetch_updated = false;
@@ -679,6 +765,7 @@ namespace bts { namespace net { namespace detail {
         // make all the requests we scheduled in the loop above
         for( auto sync_item_request : sync_item_requests_to_send )
           request_sync_item_from_peer( sync_item_request.first, sync_item_request.second );
+        sync_item_requests_to_send.clear();
 
         if( !_sync_items_to_fetch_updated )
         {
@@ -692,6 +779,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::trigger_fetch_sync_items_loop()
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "Triggering fetch sync items loop now" );
       _sync_items_to_fetch_updated = true;
       if( _retrigger_fetch_sync_items_loop_promise )
@@ -700,6 +788,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::fetch_items_loop()
     {
+      VERIFY_CORRECT_THREAD();
       while( !_fetch_item_loop_done.canceled() )
       {
         _items_to_fetch_updated = false;
@@ -732,6 +821,7 @@ namespace bts { namespace net { namespace detail {
         for( const auto& peer_and_item : fetch_messages_to_send )
           peer_and_item.first->send_message(fetch_items_message(peer_and_item.second.item_type, 
                                                                 std::vector<item_hash_t>{peer_and_item.second.item_hash}));
+        fetch_messages_to_send.clear();
 
         if( !_items_to_fetch_updated )
         {
@@ -744,6 +834,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::trigger_fetch_items_loop()
     {
+      VERIFY_CORRECT_THREAD();
       _items_to_fetch_updated = true;
       if( _retrigger_fetch_item_loop_promise )
         _retrigger_fetch_item_loop_promise->set_value();
@@ -751,6 +842,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::advertise_inventory_loop()
     {
+      VERIFY_CORRECT_THREAD();
       while( !_advertise_inventory_loop_done.canceled() )
       {
         dlog( "beginning an iteration of advertise inventory" );
@@ -791,6 +883,7 @@ namespace bts { namespace net { namespace detail {
 
         for( auto iter = inventory_messages_to_send.begin(); iter != inventory_messages_to_send.end(); ++iter )
           iter->first->send_message( iter->second );
+        inventory_messages_to_send.clear();
 
         if( _new_inventory.empty() )
         {
@@ -803,12 +896,14 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::trigger_advertise_inventory_loop()
     {
+      VERIFY_CORRECT_THREAD();
       if( _retrigger_advertise_inventory_loop_promise )
         _retrigger_advertise_inventory_loop_promise->set_value();
     }
 
     void node_impl::terminate_inactive_connections_loop()
     {
+      VERIFY_CORRECT_THREAD();
       while( !_terminate_inactive_connections_loop_done.canceled() )
       {
         std::list<peer_connection_ptr> peers_to_disconnect_gently;
@@ -825,7 +920,7 @@ namespace bts { namespace net { namespace detail {
         // reconnect with the rest of the network, or it might just futher isolate us.
       
         uint32_t handshaking_timeout = _peer_inactivity_timeout;
-        fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout );
+        fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout);
         for( const peer_connection_ptr handshaking_peer : _handshaking_connections )
           if( handshaking_peer->connection_initiation_time < handshaking_disconnect_threshold &&
               handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
@@ -927,12 +1022,15 @@ namespace bts { namespace net { namespace detail {
                                                        ( "inactivity_timeout", _active_connections.find(peer ) != _active_connections.end() ? _peer_inactivity_timeout * 10 : _peer_inactivity_timeout ) ) );
           disconnect_from_peer( peer.get(), "Disconnecting due to inactivity", false, detailed_error );
         }
+        peers_to_disconnect_gently.clear();
 
         for( const peer_connection_ptr& peer : peers_to_disconnect_forcibly )
           peer->close_connection();
+        peers_to_disconnect_forcibly.clear();
 
         for( const peer_connection_ptr& peer : peers_to_send_keep_alive )
           peer->send_message(current_time_request_message());
+        peers_to_send_keep_alive.clear();
 
         fc::usleep( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) );
       } // while( !canceled  )
@@ -940,6 +1038,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::fetch_updated_peer_lists_loop()
     {
+      VERIFY_CORRECT_THREAD();
       while (!_fetch_updated_peer_lists_loop_done.canceled())
       {
         fc::usleep(fc::minutes(15));
@@ -950,6 +1049,7 @@ namespace bts { namespace net { namespace detail {
     }
     void node_impl::update_bandwidth_data(uint32_t usage_this_second)
     {
+      VERIFY_CORRECT_THREAD();
       _average_network_usage_seconds.push_back(usage_this_second);
       ++_average_network_usage_second_counter;
       if (_average_network_usage_second_counter >= 60)
@@ -968,6 +1068,7 @@ namespace bts { namespace net { namespace detail {
     }
     void node_impl::bandwidth_monitor_loop()
     {
+      VERIFY_CORRECT_THREAD();
       fc::time_point_sec last_update_time = fc::time_point::now();
       while (!_bandwidth_monitor_loop_done.canceled())
       {
@@ -983,23 +1084,34 @@ namespace bts { namespace net { namespace detail {
       }
     }
 
+    void node_impl::dump_node_status_task()
+    {
+      VERIFY_CORRECT_THREAD();
+      dump_node_status();
+      _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, fc::time_point::now() + fc::minutes(1));
+    }
+
     bool node_impl::is_accepting_new_connections()
     {
+      VERIFY_CORRECT_THREAD();
       return !_p2p_network_connect_loop_done.canceled() && get_number_of_connections() <= _maximum_number_of_connections;
     }
 
     bool node_impl::is_wanting_new_connections()
     {
+      VERIFY_CORRECT_THREAD();
       return !_p2p_network_connect_loop_done.canceled() && get_number_of_connections() < _desired_number_of_connections;
     }
 
     uint32_t node_impl::get_number_of_connections()
     {
+      VERIFY_CORRECT_THREAD();
       return _handshaking_connections.size() + _active_connections.size();
     }
 
     bool node_impl::is_already_connected_to_id( const node_id_t node_id )
     {
+      VERIFY_CORRECT_THREAD();
       if( _node_id == node_id )
       {
         dlog( "is_already_connected_to_id returning true because the peer is us" );
@@ -1023,6 +1135,7 @@ namespace bts { namespace net { namespace detail {
     // merge addresses received from a peer into our database
     bool node_impl::merge_address_info_with_potential_peer_database( const std::vector<address_info> addresses )
     {
+      VERIFY_CORRECT_THREAD();
       bool new_information_received = false;
       for( const address_info& address : addresses )
       {
@@ -1040,6 +1153,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::display_current_connections()
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "Currently have ${current} of [${desired}/${max}] connections", 
             ( "current", get_number_of_connections() )
             ( "desired", _desired_number_of_connections )
@@ -1058,6 +1172,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_message( peer_connection* originating_peer, const message& received_message )
     {
+      VERIFY_CORRECT_THREAD();
       message_hash_type message_hash = received_message.id();
       dlog( "handling message ${type} ${hash} size ${size} from peer ${endpoint}", 
            ( "type", bts::net::core_message_type_enum(received_message.msg_type ) )("hash", message_hash )("size", received_message.size )("endpoint", originating_peer->get_remote_endpoint() ) );
@@ -1121,6 +1236,7 @@ namespace bts { namespace net { namespace detail {
 
     fc::variant_object node_impl::generate_hello_user_data()
     {
+      VERIFY_CORRECT_THREAD();
       // for the time being, shoehorn a bunch of properties into the user_data variant object, 
       // which lets us add and remove fields without changing the protocol.  Once we
       // settle on what we really want in there, we'll likely promote them to first
@@ -1143,6 +1259,7 @@ namespace bts { namespace net { namespace detail {
     }
     void node_impl::parse_hello_user_data_for_peer( peer_connection* originating_peer, const fc::variant_object& user_data )
     {
+      VERIFY_CORRECT_THREAD();
       // try to parse data out of the user_agent string
       if( user_data.contains("bitshares_git_revision_sha" ) )
         originating_peer->bitshares_git_revision_sha = user_data["bitshares_git_revision_sha"].as_string();
@@ -1158,6 +1275,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_hello_message( peer_connection* originating_peer, const hello_message& hello_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       // this check must come before we fill in peer data below
       bool already_connected_to_this_peer = is_already_connected_to_id( hello_message_received.node_id );
 
@@ -1299,6 +1417,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_connection_accepted_message( peer_connection* originating_peer, const connection_accepted_message& connection_accepted_message_received )
     {
+      VERIFY_CORRECT_THREAD();
 #if 0
       bool already_connected_to_this_peer = is_already_connected_to_id( hello_reply_message_received.node_id );
 
@@ -1358,6 +1477,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_connection_rejected_message( peer_connection* originating_peer, const connection_rejected_message& connection_rejected_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       if( originating_peer->our_state == peer_connection::our_connection_state::just_connected )
       {
         ilog( "Received a rejection from ${peer} in response to my \"hello\", reason: \"${reason}\"", 
@@ -1391,6 +1511,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_address_request_message( peer_connection* originating_peer, const address_request_message& address_request_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "Received an address request message" );
 
       address_message reply;
@@ -1418,6 +1539,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_address_message( peer_connection* originating_peer, const address_message& address_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "Received an address message containing ${size} addresses", ("size", address_message_received.addresses.size() ) );
       for( const address_info& address : address_message_received.addresses )
       {
@@ -1463,6 +1585,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_fetch_blockchain_item_ids_message( peer_connection* originating_peer, 
                                                         const fetch_blockchain_item_ids_message& fetch_blockchain_item_ids_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       item_id peers_last_item_seen;
       if( !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() )
         peers_last_item_seen = item_id( fetch_blockchain_item_ids_message_received.item_type,
@@ -1541,6 +1664,7 @@ namespace bts { namespace net { namespace detail {
 
     uint32_t node_impl::calculate_unsynced_block_count_from_all_peers()
     {
+      VERIFY_CORRECT_THREAD();
       uint32_t max_number_of_unfetched_items = 0;
       for( const peer_connection_ptr& peer : _active_connections )
       {
@@ -1557,41 +1681,49 @@ namespace bts { namespace net { namespace detail {
     //    blocks the peer has already told us it has
     std::vector<item_hash_t> node_impl::create_blockchain_synopsis_for_peer( const peer_connection* peer )
     {
-      item_hash_t reference_point;
-      uint32_t number_of_blocks_after_reference_point = 0;
+      VERIFY_CORRECT_THREAD();
+      item_hash_t reference_point = peer->last_block_delegate_has_seen;
+      uint32_t reference_point_block_num = peer->last_block_number_delegate_has_seen;
+      uint32_t number_of_blocks_after_reference_point = peer->ids_of_items_to_get.size();
 
-      reference_point = peer->last_block_delegate_has_seen;
-      number_of_blocks_after_reference_point = peer->ids_of_items_to_get.size();
-
-      std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
+      // when we call _delegate->get_blockchain_synopsis(), we may yield and there's a
+      // chance this peer's state will change before we get control back.  Save off 
+      // the stuff necessary for generating the synopsis.
+      // This is pretty expensive, we should find a better way to do this
+      std::unique_ptr<std::vector<item_hash_t> > original_ids_of_items_to_get(new std::vector<item_hash_t>(peer->ids_of_items_to_get.begin(), peer->ids_of_items_to_get.end()));
       
+      std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
+      FC_ASSERT( reference_point == item_hash_t() || !synopsis.empty() );
+      
+#if 0 // I have no idea why this code was here .. bad merge?
       // if we passed in a reference point, we believe it is one the client has already accepted and should
       // be able to generate a synopsis based on it
       if( reference_point != item_hash_t() && synopsis.empty() )
       {
         synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
       }
-      assert( reference_point == item_hash_t() || !synopsis.empty() );
+#endif
 
       if( number_of_blocks_after_reference_point )
       {
         // then the synopsis is incomplete, add the missing elements from ids_of_items_to_get
-        uint32_t true_high_block_num = peer->last_block_number_delegate_has_seen + number_of_blocks_after_reference_point;
+        uint32_t true_high_block_num = reference_point_block_num + number_of_blocks_after_reference_point;
         uint32_t low_block_num = 1;
         do
         {
-          if( low_block_num > peer->last_block_number_delegate_has_seen )
-            synopsis.push_back( peer->ids_of_items_to_get[low_block_num - peer->last_block_number_delegate_has_seen - 1] );
+          if( low_block_num > reference_point_block_num )
+            synopsis.push_back( (*original_ids_of_items_to_get)[low_block_num - reference_point_block_num - 1] );
           low_block_num += ( (true_high_block_num - low_block_num + 2 ) / 2 );
         }
         while ( low_block_num <= true_high_block_num );
-        assert( synopsis.back() == peer->ids_of_items_to_get.back() );
+        FC_ASSERT( synopsis.back() == original_ids_of_items_to_get->back() );
       }
       return synopsis;
     }
 
     void node_impl::fetch_next_batch_of_item_ids_from_peer( peer_connection* peer, bool reset_fork_tracking_data_for_peer /* = false */ )
     {
+      VERIFY_CORRECT_THREAD();
       if( reset_fork_tracking_data_for_peer )
       {
         peer->last_block_delegate_has_seen = item_hash_t();
@@ -1607,7 +1739,7 @@ namespace bts { namespace net { namespace detail {
            ( "blockchain_synopsis", blockchain_synopsis ) );
       peer->item_ids_requested_from_peer = boost::make_tuple( item_id(_sync_item_type, last_item_seen ), fc::time_point::now() );
       //std::vector<item_hash_t> blockchain_synopsis = _delegate->get_blockchain_synopsis( last_item_id_seen.item_type, last_item_id_seen.item_hash );
-      //assert( last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back() );
+      //FC_ASSERT( last_item_id_seen.item_hash == item_hash_t() || last_item_id_seen.item_hash == blockchain_synopsis.back() );
       //ilog( "actual last item from blockchain synopsis is ${last_item_seen_for_real}", ("last_item_seen_for_real", blockchain_synopsis.empty() ? item_hash_t() : blockchain_synopsis.back() ) );
       peer->send_message( fetch_blockchain_item_ids_message(_sync_item_type, blockchain_synopsis ) );
     }
@@ -1615,11 +1747,12 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_blockchain_item_ids_inventory_message(peer_connection* originating_peer,
                                                              const blockchain_item_ids_inventory_message& blockchain_item_ids_inventory_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       // ignore unless we asked for the data
       if( originating_peer->item_ids_requested_from_peer )
       {
 #if 0
-        assert( originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t() ||
+        FC_ASSERT( originating_peer->item_ids_requested_from_peer->get<0>().item_hash == item_hash_t() ||
                blockchain_item_ids_inventory_message_received.item_hashes_available.empty() ||
                blockchain_item_ids_inventory_message_received.item_hashes_available.front() == originating_peer->item_ids_requested_from_peer->get<0>().item_hash );
 #endif
@@ -1679,7 +1812,7 @@ namespace bts { namespace net { namespace detail {
                    _delegate->has_item( item_id(blockchain_item_ids_inventory_message_received.item_type,
                                                item_hashes_received.front() ) ) )
             {
-              assert( item_hashes_received.front() != item_hash_t() );
+              FC_ASSERT( item_hashes_received.front() != item_hash_t() );
               originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
               ++originating_peer->last_block_number_delegate_has_seen;
               originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time(item_hashes_received.front());
@@ -1716,7 +1849,7 @@ namespace bts { namespace net { namespace detail {
             // We don't know where in the blockchain the new front() actually falls, all we can
             // expect is that it is a block that we knew about because it should be one of the 
             // blocks we sent in the initial synopsis.
-            assert( _delegate->has_item(item_id(_sync_item_type, item_hashes_received.front() ) ) );
+            FC_ASSERT( _delegate->has_item(item_id(_sync_item_type, item_hashes_received.front() ) ) );
             originating_peer->last_block_delegate_has_seen = item_hashes_received.front();
             originating_peer->last_block_number_delegate_has_seen = _delegate->get_block_number( item_hashes_received.front() );
             originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time( item_hashes_received.front() );
@@ -1730,7 +1863,7 @@ namespace bts { namespace net { namespace detail {
         }
 
         if( !item_hashes_received.empty() && !originating_peer->ids_of_items_to_get.empty() )
-          assert( item_hashes_received.front() != originating_peer->ids_of_items_to_get.back() );
+          FC_ASSERT( item_hashes_received.front() != originating_peer->ids_of_items_to_get.back() );
 
         // append the remaining items to the peer's list
         boost::push_back( originating_peer->ids_of_items_to_get, item_hashes_received );
@@ -1821,6 +1954,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_fetch_items_message( peer_connection* originating_peer, const fetch_items_message& fetch_items_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "received items request for ids ${ids} of type ${type} from peer ${endpoint}", 
            ( "ids", fetch_items_message_received.items_to_fetch )
            ( "type", fetch_items_message_received.item_type )
@@ -1840,6 +1974,7 @@ namespace bts { namespace net { namespace detail {
         }
         catch ( fc::key_not_found_exception& )
         {
+           // it wasn't in our local cache, that's ok ask the client
         }
 
         item_id item_to_fetch( fetch_items_message_received.item_type, item_hash );
@@ -1866,6 +2001,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_item_not_available_message( peer_connection* originating_peer, const item_not_available_message& item_not_available_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       auto regular_item_iter = originating_peer->items_requested_from_peer.find( item_not_available_message_received.requested_item );
       if( regular_item_iter != originating_peer->items_requested_from_peer.end() )
       {
@@ -1890,6 +2026,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_item_ids_inventory_message( peer_connection* originating_peer, const item_ids_inventory_message& item_ids_inventory_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "received inventory of ${count} items from peer ${endpoint}", 
            ( "count", item_ids_inventory_message_received.item_hashes_available.size() )("endpoint", originating_peer->get_remote_endpoint() ) );
       for( const item_hash_t& item_hash : item_ids_inventory_message_received.item_hashes_available )
@@ -1929,6 +2066,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_closing_connection_message( peer_connection* originating_peer, const closing_connection_message& closing_connection_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       originating_peer->they_have_requested_close = true;
 
       if( closing_connection_message_received.closing_due_to_error )
@@ -1956,6 +2094,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::on_connection_closed( peer_connection* originating_peer )
     {
+      VERIFY_CORRECT_THREAD();
       peer_connection_ptr originating_peer_ptr = originating_peer->shared_from_this();
       _rate_limiter.remove_tcp_socket( &originating_peer->get_socket() );
 
@@ -2013,6 +2152,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::process_backlog_of_sync_blocks()
     {
+      VERIFY_CORRECT_THREAD();
       bool block_processed_this_iteration;
       do
       {
@@ -2172,6 +2312,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::process_block_during_sync( peer_connection* originating_peer,
                                                const bts::client::block_message& block_message_to_process, const message_hash_type& message_hash )
     {
+      VERIFY_CORRECT_THREAD();
       dlog( "received a sync block from peer ${endpoint}", ("endpoint", originating_peer->get_remote_endpoint() ) );
 
       // add it to the front of _received_sync_items, then process _received_sync_items to try to 
@@ -2189,7 +2330,6 @@ namespace bts { namespace net { namespace detail {
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
-      //dump_node_status();
       dlog( "received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint() ) );
       trigger_fetch_items_loop();
 
@@ -2251,6 +2391,7 @@ namespace bts { namespace net { namespace detail {
                                            const message& message_to_process, 
                                            const message_hash_type& message_hash )
     {
+      VERIFY_CORRECT_THREAD();
       // find out whether we requested this item while we were synchronizing or during normal operation
       // (it's possible that we request an item during normal operation and then get kicked into sync
       // mode before we receive and process the item.  In that case, we should process the item as a normal
@@ -2292,6 +2433,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_current_time_request_message( peer_connection* originating_peer, 
                                                      const current_time_request_message& current_time_request_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       fc::time_point request_received_time( fc::time_point::now() );
       current_time_reply_message reply( current_time_request_message_received.request_sent_time,
                                        request_received_time,
@@ -2302,12 +2444,14 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_current_time_reply_message( peer_connection* originating_peer, 
                                                    const current_time_reply_message& current_time_reply_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       // TODO
     }
 
     void node_impl::on_check_firewall_message( peer_connection* originating_peer, 
                                                const check_firewall_message& check_firewall_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       // TODO
       check_firewall_reply_message reply;
       reply.node_id = check_firewall_message_received.node_id;
@@ -2318,6 +2462,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_check_firewall_reply_message( peer_connection* originating_peer, 
                                                      const check_firewall_reply_message& check_firewall_reply_message_received )
     {
+      VERIFY_CORRECT_THREAD();
       // TODO
     }
 
@@ -2329,6 +2474,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::process_ordinary_message( peer_connection* originating_peer, 
                                               const message& message_to_process, const message_hash_type& message_hash )
     {
+      VERIFY_CORRECT_THREAD();
       fc::time_point message_receive_time = fc::time_point::now();
 
       // only process it if we asked for it
@@ -2354,21 +2500,21 @@ namespace bts { namespace net { namespace detail {
           //bool message_caused_fork_switch = _delegate->handle_message( message_to_process, false );
           // for now, we assume an "ordinary" message won't cause us to switch forks (which
           // is currently the case.  if this changes, add some logic to handle it here)
-          //assert( !message_caused_fork_switch );
+          //FC_ASSERT( !message_caused_fork_switch );
           _delegate->handle_message(message_to_process, false);
           message_validated_time = fc::time_point::now();
         }
         catch ( const insufficient_priority_fee& )
         {
           // flooding control.  The message was valid but we can't handle it now.  
-          assert(message_to_process.msg_type == bts::client::trx_message_type); // we only support throttling transactions.
+          FC_ASSERT(message_to_process.msg_type == bts::client::trx_message_type); // we only support throttling transactions.
           if (message_to_process.msg_type == bts::client::trx_message_type)
             originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC);
           return;
         }
         catch ( const fc::exception& e )
         {
-          wlog( "client rejected block sent by peer ${peer}, ${e}", ("peer", originating_peer->get_remote_endpoint() )("e", e.to_string() ) );
+          wlog( "client rejected message sent by peer ${peer}, ${e}", ("peer", originating_peer->get_remote_endpoint() )("e", e.to_string() ) );
           return;
         }
 
@@ -2380,6 +2526,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::start_synchronizing_with_peer( const peer_connection_ptr& peer )
     {
+      VERIFY_CORRECT_THREAD();
       peer->we_need_sync_items_from_peer = true;
       peer->last_block_delegate_has_seen = item_hash_t();
       peer->last_block_number_delegate_has_seen = 0;
@@ -2395,6 +2542,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::new_peer_just_added( const peer_connection_ptr& peer )
     {
+      VERIFY_CORRECT_THREAD();
       start_synchronizing_with_peer( peer );
       if( _active_connections.size() != _last_reported_number_of_connections )
       {
@@ -2405,6 +2553,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::close()
     {
+      VERIFY_CORRECT_THREAD();
       _tcp_server.close();
       if( _accept_loop_complete.valid() )
       {
@@ -2419,27 +2568,32 @@ namespace bts { namespace net { namespace detail {
       _terminate_inactive_connections_loop_done.cancel();
       _fetch_updated_peer_lists_loop_done.cancel();
       _bandwidth_monitor_loop_done.cancel();
+      if (_dump_node_status_task_done.valid())
+        _dump_node_status_task_done.cancel();
 
-      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch ( ...  ){}
-      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch ( ...  ) {}
-      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(... ){}
-      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch ( ...  ){}
-      try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (... ){}
-      try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (... ){}
-      try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (... ){}
+      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch (...){}
+      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch (...) {}
+      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(...){}
+      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch (...){}
+      try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (...){}
+      try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (...){}
+      try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (...){}
+      try { if (_dump_node_status_task_done.valid()) _dump_node_status_task_done.wait(); } catch (...){}
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
     {
+      VERIFY_CORRECT_THREAD();
       new_peer->accept_connection(); // this blocks until the secure connection is fully negotiated
       send_hello_message( new_peer );
     }
 
     void node_impl::accept_loop()
     {
+      VERIFY_CORRECT_THREAD();
       while ( !_accept_loop_complete.canceled() )
       {
-        peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
+        peer_connection_ptr new_peer(peer_connection::make_shared(this));
         try
         {
           _tcp_server.accept( new_peer->get_socket() );
@@ -2447,23 +2601,24 @@ namespace bts { namespace net { namespace detail {
           new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert( new_peer );
           _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-
-          /**
-              TODO:
-              Handshaking connections needs to be converted to a map from new_peer to future<void>
-              and capture this future.  Then when we exit all handshaking peers must be disconnected
-              and waited on.
-           */
-          fc::async( [=]() { accept_connection_task(new_peer ); } );
+          std::weak_ptr<peer_connection> new_weak_peer(new_peer);
+          new_peer->accept_or_connect_task_done = fc::async( [this, new_weak_peer]() {
+            peer_connection_ptr new_peer(new_weak_peer.lock());
+            assert(new_peer);
+            if (!new_peer)
+              return;
+            accept_connection_task(new_peer);
+          } );
 
           // limit the rate at which we accept connections to mitigate DOS attacks
-          fc::usleep( fc::microseconds(1000 * 10 ) );
+          fc::usleep( fc::milliseconds(10) );
         } FC_CAPTURE_AND_RETHROW(   ) 
       }
     } // accept_loop()
 
     void node_impl::send_hello_message( const peer_connection_ptr& peer )
     {
+      VERIFY_CORRECT_THREAD();
       peer->negotiation_status = peer_connection::connection_negotiation_status::hello_sent;
       hello_message hello( _user_agent_string, 
                           core_protocol_version, 
@@ -2480,6 +2635,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::connect_to_task( peer_connection_ptr new_peer, 
                                      const fc::ip::endpoint& remote_endpoint )
     {
+      VERIFY_CORRECT_THREAD();
       // create or find the database entry for the new peer
       // if we're connecting to them, we believe they're not firewalled
       potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( remote_endpoint );
@@ -2532,6 +2688,7 @@ namespace bts { namespace net { namespace detail {
     // methods implementing node's public interface
     void node_impl::set_node_delegate( node_delegate* del )
     {
+      VERIFY_CORRECT_THREAD();
       _delegate = del;
       if( _delegate )
         _chain_id = del->get_chain_id();
@@ -2539,6 +2696,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::load_configuration( const fc::path& configuration_directory )
     {
+      VERIFY_CORRECT_THREAD();
       _node_configuration_directory = configuration_directory;
       fc::path configuration_file_name( _node_configuration_directory / NODE_CONFIGURATION_FILENAME );
       bool node_configuration_loaded = false;
@@ -2589,7 +2747,8 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::listen_to_p2p_network()
     {
-      assert( _node_id != fc::ecc::public_key_data() );
+      VERIFY_CORRECT_THREAD();
+      FC_ASSERT( _node_id != fc::ecc::public_key_data() );
 
       fc::ip::endpoint listen_endpoint = _node_configuration.listen_endpoint;
       if( listen_endpoint.port() != 0 )
@@ -2672,9 +2831,10 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::connect_to_p2p_network()
     {
-      assert( _node_id != fc::ecc::public_key_data() );
+      VERIFY_CORRECT_THREAD();
+      FC_ASSERT( _node_id != fc::ecc::public_key_data() );
 
-      _accept_loop_complete = fc::async(  [=](){ accept_loop(); } );
+      _accept_loop_complete = fc::async( [=](){ accept_loop(); } );
 
       _p2p_network_connect_loop_done = fc::async( [=]() { p2p_network_connect_loop(); } );
       _fetch_sync_items_loop_done = fc::async( [=]() { fetch_sync_items_loop(); } );
@@ -2683,10 +2843,12 @@ namespace bts { namespace net { namespace detail {
       _terminate_inactive_connections_loop_done = fc::async( [=]() { terminate_inactive_connections_loop(); } );
       _fetch_updated_peer_lists_loop_done = fc::async([=](){ fetch_updated_peer_lists_loop(); });
       _bandwidth_monitor_loop_done = fc::async([=](){ bandwidth_monitor_loop(); });
+      _dump_node_status_task_done = fc::async([=](){ dump_node_status_task(); });
     }
 
     void node_impl::add_node( const fc::ip::endpoint& ep )
     {
+      VERIFY_CORRECT_THREAD();
       // if we're connecting to them, we believe they're not firewalled
       potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( ep );
 
@@ -2701,22 +2863,31 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::connect_to( const fc::ip::endpoint& remote_endpoint )
     {
-      if( is_connection_to_endpoint_in_progress(remote_endpoint ) )
-        FC_THROW( "already connected to requested endpoint ${endpoint}", ("endpoint", remote_endpoint ) );
+      VERIFY_CORRECT_THREAD();
+      if( is_connection_to_endpoint_in_progress(remote_endpoint) )
+        FC_THROW_EXCEPTION( already_connected_to_requested_peer, "already connected to requested endpoint ${endpoint}", ("endpoint", remote_endpoint ) );
 
       dlog( "node_impl::connect_to(${endpoint})", ("endpoint", remote_endpoint ) );
-      peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
+      peer_connection_ptr new_peer(peer_connection::make_shared(this));
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
       new_peer->set_remote_endpoint( remote_endpoint );
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert( new_peer );
       _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-      fc::async( [=](){ connect_to_task(new_peer, remote_endpoint ); } );
+      std::weak_ptr<peer_connection> new_weak_peer(new_peer);
+      new_peer->accept_or_connect_task_done = fc::async( [this, new_weak_peer, remote_endpoint](){
+        peer_connection_ptr new_peer(new_weak_peer.lock());
+        assert(new_peer);
+        if (!new_peer)
+          return;
+        connect_to_task(new_peer, remote_endpoint );
+      } );
     }
 
     peer_connection_ptr node_impl::get_connection_to_endpoint( const fc::ip::endpoint& remote_endpoint )
     {
+      VERIFY_CORRECT_THREAD();
       for( const peer_connection_ptr& active_peer : _active_connections )
       {
         fc::optional<fc::ip::endpoint> endpoint_for_this_peer( active_peer->get_remote_endpoint() );
@@ -2734,45 +2905,47 @@ namespace bts { namespace net { namespace detail {
 
     bool node_impl::is_connection_to_endpoint_in_progress( const fc::ip::endpoint& remote_endpoint )
     {
+      VERIFY_CORRECT_THREAD();
       return get_connection_to_endpoint( remote_endpoint ) != peer_connection_ptr();
     }
 
     void node_impl::dump_node_status()
     {
-      dlog( "----------------- PEER STATUS UPDATE --------------------" );
-      dlog( " number of peers: ${active} active, ${handshaking}, ${closing} closing.  attempting to maintain ${desired} - ${maximum} peers", 
+      VERIFY_CORRECT_THREAD();
+      ilog( "----------------- PEER STATUS UPDATE --------------------" );
+      ilog( " number of peers: ${active} active, ${handshaking}, ${closing} closing.  attempting to maintain ${desired} - ${maximum} peers", 
            ( "active", _active_connections.size() )("handshaking", _handshaking_connections.size() )("closing",_closing_connections.size() )
            ( "desired", _desired_number_of_connections )("maximum", _maximum_number_of_connections ) );
       for( const peer_connection_ptr& peer : _active_connections )
       {
-        dlog( "       active peer ${endpoint} peer_is_in_sync_with_us:${in_sync_with_us} we_are_in_sync_with_peer:${in_sync_with_them}", 
+        ilog( "       active peer ${endpoint} peer_is_in_sync_with_us:${in_sync_with_us} we_are_in_sync_with_peer:${in_sync_with_them}", 
              ( "endpoint", peer->get_remote_endpoint() )
              ( "in_sync_with_us", !peer->peer_needs_sync_items_from_us )("in_sync_with_them", !peer->we_need_sync_items_from_peer ) );
         if( peer->we_need_sync_items_from_peer )
-          dlog( "              above peer has ${count} sync items we might need", ("count", peer->ids_of_items_to_get.size() ) );
+          ilog( "              above peer has ${count} sync items we might need", ("count", peer->ids_of_items_to_get.size() ) );
       }
       for( const peer_connection_ptr& peer : _handshaking_connections )
       {
-        dlog( "  handshaking peer ${endpoint} in state ours(${our_state}) theirs(${their_state})", 
+        ilog( "  handshaking peer ${endpoint} in state ours(${our_state}) theirs(${their_state})", 
              ( "endpoint", peer->get_remote_endpoint() )("our_state", peer->our_state )("their_state", peer->their_state ) );
       }
 
-      dlog( "--------- MEMORY USAGE ------------" );
-      dlog( "node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
-      dlog( "node._received_sync_items size: ${size}", ("size", _received_sync_items.size() ) );
-      dlog( "node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size() ) );
-      dlog( "node._new_inventory size: ${size}", ("size", _new_inventory.size() ) );
-      dlog( "node._message_cache size: ${size}", ("size", _message_cache.size() ) );
+      ilog( "--------- MEMORY USAGE ------------" );
+      ilog( "node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
+      ilog( "node._received_sync_items size: ${size}", ("size", _received_sync_items.size() ) );
+      ilog( "node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size() ) );
+      ilog( "node._new_inventory size: ${size}", ("size", _new_inventory.size() ) );
+      ilog( "node._message_cache size: ${size}", ("size", _message_cache.size() ) );
       for( const peer_connection_ptr& peer : _active_connections )
       {
-        dlog( "  peer ${endpoint}", ("endpoint", peer->get_remote_endpoint() ) );
-        dlog( "    peer.ids_of_items_to_get size: ${size}", ("size", peer->ids_of_items_to_get.size() ) );
-        dlog( "    peer.inventory_peer_advertised_to_us size: ${size}", ("size", peer->inventory_peer_advertised_to_us.size() ) );
-        dlog( "    peer.inventory_advertised_to_peer size: ${size}", ("size", peer->inventory_advertised_to_peer.size() ) );
-        dlog( "    peer.items_requested_from_peer size: ${size}", ("size", peer->items_requested_from_peer.size() ) );
-        dlog( "    peer.sync_items_requested_from_peer size: ${size}", ("size", peer->sync_items_requested_from_peer.size() ) );
+        ilog( "  peer ${endpoint}", ("endpoint", peer->get_remote_endpoint() ) );
+        ilog( "    peer.ids_of_items_to_get size: ${size}", ("size", peer->ids_of_items_to_get.size() ) );
+        ilog( "    peer.inventory_peer_advertised_to_us size: ${size}", ("size", peer->inventory_peer_advertised_to_us.size() ) );
+        ilog( "    peer.inventory_advertised_to_peer size: ${size}", ("size", peer->inventory_advertised_to_peer.size() ) );
+        ilog( "    peer.items_requested_from_peer size: ${size}", ("size", peer->items_requested_from_peer.size() ) );
+        ilog( "    peer.sync_items_requested_from_peer size: ${size}", ("size", peer->sync_items_requested_from_peer.size() ) );
       }
-      dlog( "--------- END MEMORY USAGE ------------" );
+      ilog( "--------- END MEMORY USAGE ------------" );
     }
 
     void node_impl::disconnect_from_peer( peer_connection* peer_to_disconnect,
@@ -2780,6 +2953,7 @@ namespace bts { namespace net { namespace detail {
                                           bool caused_by_error /* = false */,
                                           const fc::oexception& error /* = fc::oexception() */ )
     {
+      VERIFY_CORRECT_THREAD();
       _closing_connections.insert( peer_to_disconnect->shared_from_this() );
       _handshaking_connections.erase( peer_to_disconnect->shared_from_this() );
       _active_connections.erase( peer_to_disconnect->shared_from_this() );
@@ -2823,12 +2997,14 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::listen_on_endpoint( const fc::ip::endpoint& ep )
     {
+      VERIFY_CORRECT_THREAD();
       _node_configuration.listen_endpoint = ep;
       save_node_configuration();
     }
 
     void node_impl::listen_on_port( uint16_t port, bool wait_if_not_available )
     {
+      VERIFY_CORRECT_THREAD();
       _node_configuration.listen_endpoint = fc::ip::endpoint( fc::ip::address(), port );
       _node_configuration.wait_if_endpoint_is_busy = wait_if_not_available;
       save_node_configuration();
@@ -2836,11 +3012,13 @@ namespace bts { namespace net { namespace detail {
 
     fc::ip::endpoint node_impl::get_actual_listening_endpoint() const
     {
+      VERIFY_CORRECT_THREAD();
       return _actual_listening_endpoint;
     }
 
     std::vector<peer_status> node_impl::get_connected_peers() const
     {
+      VERIFY_CORRECT_THREAD();
       std::vector<peer_status> statuses;
       for( const peer_connection_ptr& peer : _active_connections )
       {
@@ -2925,11 +3103,13 @@ namespace bts { namespace net { namespace detail {
 
     uint32_t node_impl::get_connection_count() const
     {
+      VERIFY_CORRECT_THREAD();
       return _active_connections.size();
     }
 
     void node_impl::broadcast( const message& item_to_broadcast, const message_propagation_data& propagation_data )
     {
+      VERIFY_CORRECT_THREAD();
       fc::uint160_t hash_of_message_contents;
       if( item_to_broadcast.msg_type == bts::client::block_message_type )
       {
@@ -2948,11 +3128,11 @@ namespace bts { namespace net { namespace detail {
       _message_cache.cache_message( item_to_broadcast, hash_of_item_to_broadcast, propagation_data, hash_of_message_contents );
       _new_inventory.insert( item_id(item_to_broadcast.msg_type, hash_of_item_to_broadcast ) );
       trigger_advertise_inventory_loop();
-      dump_node_status();
     }
 
     void node_impl::broadcast( const message& item_to_broadcast )
     {
+      VERIFY_CORRECT_THREAD();
       // this version is called directly from the client
       message_propagation_data propagation_data{fc::time_point::now(), fc::time_point::now(), _node_id};
       broadcast( item_to_broadcast, propagation_data );
@@ -2960,6 +3140,7 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::sync_from( const item_id& last_item_id_seen )
     {
+      VERIFY_CORRECT_THREAD();
       _most_recent_blocks_accepted.clear();
       _sync_item_type = last_item_id_seen.item_type;
       _most_recent_blocks_accepted.push_back( last_item_id_seen.item_hash );
@@ -2967,11 +3148,23 @@ namespace bts { namespace net { namespace detail {
 
     bool node_impl::is_connected() const
     {
+      VERIFY_CORRECT_THREAD();
       return !_active_connections.empty();
+    }
+
+    std::vector<potential_peer_record> node_impl::get_potential_peers() const
+    {
+      VERIFY_CORRECT_THREAD();
+      std::vector<potential_peer_record> result;
+      // use explicit iterators here, for some reason the mac compiler can't used ranged-based for loops here
+      for (peer_database::iterator itr = _potential_peer_db.begin(); itr != _potential_peer_db.end(); ++itr)
+        result.push_back(*itr);
+      return result;
     }
 
     void node_impl::set_advanced_node_parameters( const fc::variant_object& params )
     {
+      VERIFY_CORRECT_THREAD();
       if( params.contains("peer_connection_retry_timeout" ) )
         _peer_connection_retry_timeout = ( uint32_t )params["peer_connection_retry_timeout"].as_uint64();
       if( params.contains("desired_number_of_connections" ) )
@@ -2989,6 +3182,7 @@ namespace bts { namespace net { namespace detail {
 
     fc::variant_object node_impl::get_advanced_node_parameters()
     {
+      VERIFY_CORRECT_THREAD();
       fc::mutable_variant_object result;
       result["peer_connection_retry_timeout"] = _peer_connection_retry_timeout;
       result["desired_number_of_connections"] = _desired_number_of_connections;
@@ -2998,27 +3192,31 @@ namespace bts { namespace net { namespace detail {
 
     message_propagation_data node_impl::get_transaction_propagation_data( const bts::blockchain::transaction_id_type& transaction_id )
     {
+      VERIFY_CORRECT_THREAD();
       return _message_cache.get_message_propagation_data( transaction_id );
     }
 
     message_propagation_data node_impl::get_block_propagation_data( const bts::blockchain::block_id_type& block_id )
     {
+      VERIFY_CORRECT_THREAD();
       return _message_cache.get_message_propagation_data( block_id );
     }
 
     node_id_t node_impl::get_node_id() const
     {
+      VERIFY_CORRECT_THREAD();
       return _node_id;
     }
     void node_impl::set_allowed_peers( const std::vector<node_id_t>& allowed_peers )
     {
+      VERIFY_CORRECT_THREAD();
 #ifdef ENABLE_P2P_DEBUGGING_API
       _allowed_peers.clear();
       _allowed_peers.insert( allowed_peers.begin(), allowed_peers.end() );
       std::list<peer_connection_ptr> peers_to_disconnect;
       if( !_allowed_peers.empty() )
         for( const peer_connection_ptr& peer : _active_connections )
-          if( _allowed_peers.find(peer->node_id ) == _allowed_peers.end() )
+          if( _allowed_peers.find(peer->node_id) == _allowed_peers.end() )
             peers_to_disconnect.push_back( peer );
       for( const peer_connection_ptr& peer : peers_to_disconnect )
         disconnect_from_peer( peer.get(), "My allowed_peers list has changed, and you're no longer allowed.  Bye." );
@@ -3026,22 +3224,26 @@ namespace bts { namespace net { namespace detail {
     }
     void node_impl::clear_peer_database()
     {
+      VERIFY_CORRECT_THREAD();
       _potential_peer_db.clear();
     }
 
     void node_impl::set_total_bandwidth_limit( uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second )
     {
+      VERIFY_CORRECT_THREAD();
       _rate_limiter.set_upload_limit( upload_bytes_per_second );
       _rate_limiter.set_download_limit( download_bytes_per_second );
     }
 
     void node_impl::disable_peer_advertising()
     {
+      VERIFY_CORRECT_THREAD();
       _peer_advertising_disabled = true;
     }
 
     fc::variant_object node_impl::network_get_info() const
     {
+      VERIFY_CORRECT_THREAD();
       fc::mutable_variant_object info;
       info["listening_on"] = _actual_listening_endpoint;
       info["node_id"] = _node_id;
@@ -3049,6 +3251,7 @@ namespace bts { namespace net { namespace detail {
     }
     fc::variant_object node_impl::network_get_usage_stats() const
     {
+      VERIFY_CORRECT_THREAD();
       std::vector<uint32_t> network_usage_by_second(_average_network_usage_seconds.begin(), _average_network_usage_seconds.end());
       std::vector<uint32_t> network_usage_by_minute(_average_network_usage_minutes.begin(), _average_network_usage_minutes.end());
       std::vector<uint32_t> network_usage_by_hour(_average_network_usage_hours.begin(), _average_network_usage_hours.end());
@@ -3063,11 +3266,19 @@ namespace bts { namespace net { namespace detail {
 
 
 
-  ///////////////////////////////////////////////////////////////////////
-  // implement node functions, they just delegate to detail::node_impl //
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // implement node functions, they call the matching function in to detail::node_impl in the correct thread //
+
+#ifdef P2P_IN_DEDICATED_THREAD
+# define INVOKE_IN_IMPL(method_name, ...) \
+    return my->_thread->async([&](){ return my->method_name(__VA_ARGS__); }).wait()
+#else
+# define INVOKE_IN_IMPL(method_name, ...) \
+    return my->method_name(__VA_ARGS__)
+#endif // P2P_IN_DEDICATED_THREAD
 
   node::node() : 
-    my( new detail::node_impl() )
+    my( new detail::node_impl )
   {
   }
 
@@ -3077,132 +3288,141 @@ namespace bts { namespace net { namespace detail {
 
   void node::set_node_delegate( node_delegate* del )
   {
-    my->set_node_delegate( del );
+#ifdef P2P_IN_DEDICATED_THREAD
+    del = new detail::thread_switching_node_delegate_wrapper(&fc::thread::current(), del);
+#endif
+    INVOKE_IN_IMPL(set_node_delegate, del);
   }
 
   void node::load_configuration( const fc::path& configuration_directory )
   {
-    my->load_configuration( configuration_directory );
+    INVOKE_IN_IMPL(load_configuration, configuration_directory);
   }
 
   void node::listen_to_p2p_network()
   {
-    my->listen_to_p2p_network();
+    INVOKE_IN_IMPL(listen_to_p2p_network);
   }
 
   void node::connect_to_p2p_network()
   {
-    my->connect_to_p2p_network();
+    INVOKE_IN_IMPL(connect_to_p2p_network);
   }
 
   void node::add_node( const fc::ip::endpoint& ep )
   {
-    my->add_node( ep );
+    INVOKE_IN_IMPL(add_node, ep);
   }
 
   void node::connect_to( const fc::ip::endpoint& remote_endpoint )
   {
-    my->connect_to( remote_endpoint );
+    INVOKE_IN_IMPL(connect_to, remote_endpoint);
   }
 
   void node::listen_on_endpoint( const fc::ip::endpoint& ep )
   {
-    my->listen_on_endpoint( ep );
+    INVOKE_IN_IMPL(listen_on_endpoint, ep);
   }
 
   void node::listen_on_port( uint16_t port, bool wait_if_not_available )
   {
-    my->listen_on_port( port, wait_if_not_available );
+    INVOKE_IN_IMPL(listen_on_port, port, wait_if_not_available);
   }
 
   fc::ip::endpoint node::get_actual_listening_endpoint() const
   {
-    return my->get_actual_listening_endpoint();
+    INVOKE_IN_IMPL(get_actual_listening_endpoint);
   }
 
   std::vector<peer_status> node::get_connected_peers() const
   {
-    return my->get_connected_peers();
+    INVOKE_IN_IMPL(get_connected_peers);
   }
 
   uint32_t node::get_connection_count() const
   {
-    return my->get_connection_count();
+    INVOKE_IN_IMPL(get_connection_count);
   }
 
   void node::broadcast( const message& msg )
   {
-    my->broadcast( msg );
+    INVOKE_IN_IMPL(broadcast, msg);
   }
 
   void node::sync_from( const item_id& id )
   {
-    my->sync_from( id );
+    INVOKE_IN_IMPL(sync_from, id);
   }
 
   bool node::is_connected() const
   {
-    return my->is_connected();
+    INVOKE_IN_IMPL(is_connected);
   }
 
   std::vector<potential_peer_record> node::get_potential_peers()const
   {
-    std::vector<potential_peer_record> result;
-    for (auto itr = my->_potential_peer_db.begin(); itr != my->_potential_peer_db.end(); ++itr)
-      result.push_back( *itr );
-    return result;
+    INVOKE_IN_IMPL(get_potential_peers);
   }
 
   void node::set_advanced_node_parameters( const fc::variant_object& params )
   {
-    my->set_advanced_node_parameters( params );
+    INVOKE_IN_IMPL(set_advanced_node_parameters, params);
   }
 
   fc::variant_object node::get_advanced_node_parameters()
   {
-    return my->get_advanced_node_parameters();
+    INVOKE_IN_IMPL(get_advanced_node_parameters);
   }
 
   message_propagation_data node::get_transaction_propagation_data( const bts::blockchain::transaction_id_type& transaction_id )
   {
-    return my->get_transaction_propagation_data( transaction_id );
+    INVOKE_IN_IMPL(get_transaction_propagation_data, transaction_id);
   }
+
   message_propagation_data node::get_block_propagation_data( const bts::blockchain::block_id_type& block_id )
   {
-    return my->get_block_propagation_data( block_id );
+    INVOKE_IN_IMPL(get_block_propagation_data, block_id);
   }
+
   node_id_t node::get_node_id() const
   {
-    return my->get_node_id();
+    INVOKE_IN_IMPL(get_node_id);
   }
+
   void node::set_allowed_peers( const std::vector<node_id_t>& allowed_peers )
   {
-    my->set_allowed_peers( allowed_peers );
+    INVOKE_IN_IMPL(set_allowed_peers, allowed_peers);
   }
+
   void node::clear_peer_database()
   {
-    my->clear_peer_database();
+    INVOKE_IN_IMPL(clear_peer_database);
   }
 
   void node::set_total_bandwidth_limit( uint32_t upload_bytes_per_second, 
                                        uint32_t download_bytes_per_second )
   {
-    my->set_total_bandwidth_limit( upload_bytes_per_second, download_bytes_per_second );
+    INVOKE_IN_IMPL(set_total_bandwidth_limit, upload_bytes_per_second, download_bytes_per_second);
   }
 
   void node::disable_peer_advertising()
   {
-    my->disable_peer_advertising();
+    INVOKE_IN_IMPL(disable_peer_advertising);
   }
 
   fc::variant_object node::network_get_info() const
   {
-    return my->network_get_info();
+    INVOKE_IN_IMPL(network_get_info);
   }
 
   fc::variant_object node::network_get_usage_stats() const
   {
-    return my->network_get_usage_stats();
+    INVOKE_IN_IMPL(network_get_usage_stats);
+  }
+
+  void node::close()
+  {
+    my->close();
   }
 
   void simulated_network::broadcast( const message& item_to_broadcast  )
@@ -3221,7 +3441,83 @@ namespace bts { namespace net { namespace detail {
   void simulated_network::add_node_delegate( node_delegate* node_delegate_to_add )
   { 
      network_nodes.push_back( node_delegate_to_add );
-  }      
-  
-  void node::close() { my->close(); }
+  }
+
+  namespace detail
+  {
+#define INVOKE_IN_DELEGATE_THREAD(method_name, ...) \
+    return _thread->async([&](){ return _node_delegate->method_name(__VA_ARGS__); }).wait()
+
+    thread_switching_node_delegate_wrapper::thread_switching_node_delegate_wrapper(fc::thread* thread, node_delegate* delegate) :
+      _thread(thread),
+      _node_delegate(delegate)
+    {}
+
+    bool thread_switching_node_delegate_wrapper::has_item( const net::item_id& id )
+    {
+      INVOKE_IN_DELEGATE_THREAD(has_item, id);
+    }
+
+    bool thread_switching_node_delegate_wrapper::handle_message( const message& message_to_handle, bool sync_mode )
+    {
+      INVOKE_IN_DELEGATE_THREAD(handle_message, message_to_handle, sync_mode);
+    }
+
+    std::vector<item_hash_t> thread_switching_node_delegate_wrapper::get_item_ids(uint32_t item_type,
+                                                                                  const std::vector<item_hash_t>& blockchain_synopsis,
+                                                                                  uint32_t& remaining_item_count,
+                                                                                  uint32_t limit /* = 2000 */)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_item_ids, item_type, blockchain_synopsis, remaining_item_count, limit);
+    }
+
+    message thread_switching_node_delegate_wrapper::get_item( const item_id& id )
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_item, id);
+    }
+
+    fc::sha256 thread_switching_node_delegate_wrapper::get_chain_id() const
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_chain_id);
+    }
+
+    std::vector<item_hash_t> thread_switching_node_delegate_wrapper::get_blockchain_synopsis(uint32_t item_type, 
+                                                                                             const bts::net::item_hash_t& reference_point /* = bts::net::item_hash_t() */, 
+                                                                                             uint32_t number_of_blocks_after_reference_point /* = 0 */)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_blockchain_synopsis, item_type, reference_point, number_of_blocks_after_reference_point);
+    }
+
+    void thread_switching_node_delegate_wrapper::sync_status( uint32_t item_type, uint32_t item_count )
+    {
+      INVOKE_IN_DELEGATE_THREAD(sync_status, item_type, item_count);
+    }
+
+    void thread_switching_node_delegate_wrapper::connection_count_changed( uint32_t c )
+    {
+      INVOKE_IN_DELEGATE_THREAD(connection_count_changed, c);
+    }
+
+    uint32_t thread_switching_node_delegate_wrapper::get_block_number(const item_hash_t& block_id)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_block_number, block_id);
+    }
+    fc::time_point_sec thread_switching_node_delegate_wrapper::get_block_time(const item_hash_t& block_id)
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_block_time, block_id);
+    }
+
+    /** returns bts::blockchain::now() */
+    fc::time_point_sec thread_switching_node_delegate_wrapper::get_blockchain_now()
+    {
+      INVOKE_IN_DELEGATE_THREAD(get_blockchain_now);
+    }
+
+    void thread_switching_node_delegate_wrapper::error_encountered(const std::string& message, const fc::oexception& error)
+    {
+      INVOKE_IN_DELEGATE_THREAD(error_encountered, message, error);
+    }
+#undef INVOKE_IN_DELEGATE_THREAD
+  } // end namespace detail
+
 } } // end namespace bts::net

@@ -1,8 +1,7 @@
 #include <bts/blockchain/pending_chain_state.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/log/logger.hpp>
 
 namespace bts { namespace blockchain {
+
    pending_chain_state::pending_chain_state( chain_interface_ptr prev_state )
    :_prev_state( prev_state )
    {
@@ -62,7 +61,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : collateral )      prev_state->store_collateral_record( item.first, item.second );
       for( const auto& item : transactions )    prev_state->store_transaction( item.first, item.second );
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
-      for( const auto& item : _block_stats )    prev_state->store_delegate_block_stats( item.first.first, item.first.second, item.second );
+      for( const auto& item : slots )           prev_state->store_slot_record( item.second );
    }
 
    otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
@@ -164,16 +163,17 @@ namespace bts { namespace blockchain {
          if( prev_value.valid() ) undo_state->store_collateral_record( item.first, *prev_value );
          else  undo_state->store_collateral_record( item.first, collateral_record() );
       }
-      for( const auto& item : _block_stats )
+      for( const auto& item : slots )
       {
-         auto prev_value = prev_state->get_delegate_block_stats( item.first.first, item.first.second );
-         if( prev_value ) undo_state->store_delegate_block_stats( item.first.first, item.first.second, *prev_value );
+         auto prev_value = prev_state->get_slot_record( item.first );
+         if( prev_value ) undo_state->store_slot_record( *prev_value );
          else
          {
-             delegate_block_stats invalid_block_stats;
-             invalid_block_stats.missed = false;
-             invalid_block_stats.id = block_id_type();
-             undo_state->store_delegate_block_stats( item.first.first, item.first.second, invalid_block_stats );
+             slot_record invalid_slot_record;
+             invalid_slot_record.start_time = item.first;
+             invalid_slot_record.block_produced = true;
+             invalid_slot_record.block_id = block_id_type();
+             undo_state->store_slot_record( invalid_slot_record );
          }
       }
    }
@@ -214,7 +214,7 @@ namespace bts { namespace blockchain {
       return oasset_record();
    }
 
-   int64_t pending_chain_state::get_fee_rate()const
+   share_type pending_chain_state::get_fee_rate()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( prev_state ) 
@@ -222,7 +222,7 @@ namespace bts { namespace blockchain {
       FC_ASSERT( false, "No current fee rate set" );
    }
 
-   int64_t pending_chain_state::get_delegate_pay_rate()const
+   share_type pending_chain_state::get_delegate_pay_rate()const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       if( prev_state ) 
@@ -321,6 +321,7 @@ namespace bts { namespace blockchain {
       if( prev_state ) return prev_state->get_property( property_id );
       return fc::variant();
    }
+
    void pending_chain_state::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
    {
@@ -364,6 +365,22 @@ namespace bts { namespace blockchain {
       return oorder_record();
    }
 
+   omarket_order   pending_chain_state::get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      omarket_order result;
+      if( prev_state ) 
+      {
+        auto pending = prev_state->get_lowest_ask_record( quote_id, base_id );
+        if( pending )
+        {
+           pending->state = *get_ask_record( pending->market_index );
+        }
+        return pending;
+      }
+      return result;
+   }
+
    oorder_record pending_chain_state::get_ask_record( const market_index_key& key )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
@@ -377,7 +394,7 @@ namespace bts { namespace blockchain {
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = shorts.find( key );
-      if( rec_itr == shorts.end() ) return rec_itr->second;
+      if( rec_itr != shorts.end() ) return rec_itr->second;
       else if( prev_state ) return prev_state->get_short_record( key );
       return oorder_record();
    }
@@ -386,7 +403,7 @@ namespace bts { namespace blockchain {
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto rec_itr = collateral.find( key );
-      if( rec_itr == collateral.end() ) return rec_itr->second;
+      if( rec_itr != collateral.end() ) return rec_itr->second;
       else if( prev_state ) return prev_state->get_collateral_record( key );
       return ocollateral_record();
    }
@@ -410,21 +427,18 @@ namespace bts { namespace blockchain {
       collateral[key] = rec;
    }
 
-   void pending_chain_state::store_delegate_block_stats( const account_id_type& delegate_id, uint32_t block_num,
-                                                         const delegate_block_stats& block_stats )
+   void pending_chain_state::store_slot_record( const slot_record& r )
    {
-       _block_stats[ std::make_pair( delegate_id, block_num ) ] = block_stats;
+      slots[ r.start_time ] = r;
    }
 
-   odelegate_block_stats pending_chain_state::get_delegate_block_stats( const account_id_type& delegate_id,
-                                                                        uint32_t block_num )const
+   oslot_record pending_chain_state::get_slot_record( const time_point_sec& start_time )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
-      auto key = std::make_pair( delegate_id, block_num );
-      auto itr = _block_stats.find(key);
-      if( itr != _block_stats.end() ) return itr->second;
-      if( prev_state ) return prev_state->get_delegate_block_stats( key.first, key.second );
-      return odelegate_block_stats();
+      auto itr = slots.find( start_time );
+      if( itr != slots.end() ) return itr->second;
+      if( prev_state ) return prev_state->get_slot_record( start_time );
+      return oslot_record();
    }
 
 } } // bts::blockchain

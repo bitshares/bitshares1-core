@@ -1,21 +1,20 @@
 #include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <fc/io/json.hpp>
+
 #include <algorithm>
-#include <sstream>
-#include <cctype>
+#include <locale>
 
 namespace bts{ namespace blockchain {
 
    balance_record::balance_record( const address& owner, const asset& balance_arg, account_id_type delegate_id )
+   :genesis(false)
    {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
    /** returns 0 if asset id is not condition.asset_id */
-   asset     balance_record::get_balance()const
+   asset balance_record::get_balance()const
    {
       return asset( balance, condition.asset_id );
    }
@@ -27,16 +26,17 @@ namespace bts{ namespace blockchain {
       return address();
    }
 
-   share_type     chain_interface::get_delegate_registration_fee()const
+   share_type chain_interface::get_delegate_registration_fee()const
    {
-      return (get_fee_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/1000;
+      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/BTS_BLOCKCHAIN_NUM_DELEGATES;
    }
-   share_type    chain_interface::get_asset_registration_fee()const
+
+   share_type chain_interface::get_asset_registration_fee()const
    {
-      return (get_fee_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE)/1000;
+      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
    }
    
-   share_type    chain_interface::calculate_data_fee(size_t bytes) const
+   share_type chain_interface::calculate_data_fee(size_t bytes) const
    {
       return (get_fee_rate() * bytes)/1000;
    }
@@ -46,6 +46,10 @@ namespace bts{ namespace blockchain {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( str[0] < 'a' || str[0] > 'z' ) return false;
+#if BTS_BLOCKCHAIN_VERSION > 105
+#warning HARDFORK invalid name
+      if (str[str.size() - 1] == '-' ) return false;
+#endif
       for( const auto& c : str )
       {
           if( c >= 'a' && c <= 'z' ) continue;
@@ -121,7 +125,6 @@ namespace bts{ namespace blockchain {
       tmp.ratio *= obase_asset->get_precision();
       tmp.ratio /= oquote_asset->get_precision();
 
-
       return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
 
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
@@ -150,8 +153,9 @@ namespace bts{ namespace blockchain {
          return false;
       if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
          return false;
+      std::locale loc;
       for( const auto& c : name )
-         if( !std::isalnum(c) || !std::isupper(c) )
+         if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
             return false;
       return true;
    }

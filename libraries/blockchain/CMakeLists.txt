@@ -27,28 +27,30 @@ add_custom_command(OUTPUT ${generated_genesis_file}
 file(GLOB HEADERS "include/bts/blockchain/*.hpp")
 
 add_library( bts_blockchain
-             balance_operations.cpp
-             account_operations.cpp
-             proposal_operations.cpp
-             asset_operations.cpp
-             market_operations.cpp
-             transaction_evaluation_state.cpp
-             delegate_slate.cpp
-             time.cpp
-             extended_address.cpp
              address.cpp
              pts_address.cpp
-             asset.cpp
+             extended_address.cpp
              types.cpp
-             operations.cpp
              withdraw_types.cpp
-             pending_chain_state.cpp
-             transaction.cpp
-             chain_interface.cpp
-             block.cpp
-             chain_database.cpp
+             operations.cpp
+             balance_operations.cpp
+             account_operations.cpp
+             delegate_slate.cpp
+             asset_operations.cpp
+             market_operations.cpp
+             proposal_operations.cpp
 #fire_operation.cpp
+             asset.cpp
+             transaction.cpp
+             time.cpp
+             block.cpp
+             transaction_evaluation_state.cpp
              account_record.cpp
+             asset_record.cpp
+             market_records.cpp
+             chain_interface.cpp
+             pending_chain_state.cpp
+             chain_database.cpp
              ${generated_genesis_file}
              ${genesis_json}
              ${HEADERS}

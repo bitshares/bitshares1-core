@@ -42,7 +42,7 @@ std::cerr << "Out: " << FORMAT << "\n"; \
 #define run_cmd( client, cmd ) \
 do { \
 std::cerr << "Command in " << #client << ": " << cmd << "\n"; \
-std::cerr << "Out: \n" << client->execute_command_line( cmd ) << "\n"; \
+std::cerr << "Out: \n" << client->debug_execute_command_line( cmd ) << "\n"; \
 } while (0)
 
 
@@ -79,12 +79,7 @@ struct WFixture
       vector<fc::ecc::private_key> delegate_private_keys;
 
       genesis_block_config config;
-      config.precision         = BTS_BLOCKCHAIN_PRECISION;
       config.timestamp         = bts::blockchain::now();
-      config.base_symbol       = BTS_BLOCKCHAIN_SYMBOL;
-      config.base_name         = BTS_BLOCKCHAIN_NAME;
-      config.base_description  = BTS_BLOCKCHAIN_DESCRIPTION;
-      config.supply            = BTS_BLOCKCHAIN_INITIAL_SHARES;
 
       for( uint32_t i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i )
       {
@@ -126,11 +121,11 @@ struct WFixture
          {
             if( (even++)%2 )
             {
-          std::cerr << "client a key: "<< even<<" "<< clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+          std::cerr << "client a key: "<< even<<" "<< clienta->debug_execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
             }
             else
             {
-          std::cerr << "client b key: "<< even<<" "<< clientb->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+          std::cerr << "client b key: "<< even<<" "<< clientb->debug_execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
             }
             if( even >= 34 ) break;
          }
