@@ -3779,51 +3779,25 @@ namespace bts { namespace wallet {
         unordered_set<address> required_signatures;
 
         FC_ASSERT( is_valid_domain( domain_name ), "Invalid domain name." );
-
-        auto domain_op = update_domain_operation();
-        domain_op.domain_name = domain_name;
+        FC_ASSERT( bid_amount >= P2P_MIN_INITIAL_BID, "Must pay at least the minimum required initial bid");
 
         auto odomain_rec = my->_blockchain->get_domain_record( domain_name );
-
         auto bidder_pubkey = get_account_public_key( owner_name );
 
-        /* First, see if we are allowed to start a new auction.
-         */
-        if ( (NOT domain_in_auction(odomain_rec)) && (NOT domain_owned_by_owner(odomain_rec)) )
+        auto bid_op = domain_bid_operation();
+        bid_op.domain_name = domain_name;
+        bid_op.bid_amount = bid_amount;
+        bid_op.bidder_address = get_new_address( owner_name );
+
+        auto priority_fee = get_priority_fee().amount;
+
+        if ( ! odomain_rec.valid() )
         {
-            FC_ASSERT(bid_amount >= P2P_MIN_INITIAL_BID, "Not large enough initial bid.");
-            // reset domain value
-            FC_ASSERT(!"unimplemented wallet first_bid");
-            //domain_op.update_type = domain_record::first_bid;
-            domain_op.owner = get_new_address( owner_name );
-            domain_op.value = variant("");
-            domain_op.bid_amount = bid_amount;
-            trx.operations.push_back(domain_op);
-            auto priority_fee = get_priority_fee( ).amount;
             my->withdraw_to_transaction( bid_amount + priority_fee, 0, bidder_pubkey, trx, required_signatures );
+            trx.operations.push_back( bid_op );
         }
-        // Otherwise, it's either currently in an auction...
-        else if ( domain_in_auction(odomain_rec) )
+        else
         {
-            FC_ASSERT(bid_amount >= odomain_rec->next_required_bid, "Bid lower than required bid.");
-            FC_ASSERT("unimplemnted bid op");
-            //domain_op.update_type = domain_record::bid;
-            domain_op.owner = get_new_address( owner_name );
-            domain_op.value = variant("");
-            domain_op.bid_amount = bid_amount;
-            trx.operations.push_back(domain_op);
-            auto bid_diff      = bid_amount - odomain_rec->price;
-            auto to_last_owner = odomain_rec->price + (P2P_KICKBACK_RATIO * bid_diff);
-            auto to_fees       = (P2P_DIVIDEND_RATIO * bid_diff);
-            auto priority_fee  = get_priority_fee( ).amount;
-            trx.deposit(odomain_rec->owner, asset(to_last_owner, 0), 0);
-            my->withdraw_to_transaction(to_last_owner + to_fees + priority_fee,
-                                0, bidder_pubkey, trx, required_signatures);
-            
-        }
-        else // Or someone already owns it!
-        {
-            FC_ASSERT(!"Someone already owns that domain.");
         }
 
         if ( sign )
@@ -3844,26 +3818,12 @@ namespace bts { namespace wallet {
         unordered_set<address> required_signatures;
         auto odomain_rec = my->_blockchain->get_domain_record( domain_name );
 
-        FC_ASSERT( domain_owned_by_owner( odomain_rec ), "That domain is not owned by you yet." )
-
         auto okey = my->_wallet_db.lookup_key( odomain_rec->owner );
         FC_ASSERT( okey.valid(), "Owner key for that domain is not in this wallet." );
         auto oacct = my->_wallet_db.lookup_account( okey->account_address );
         FC_ASSERT(oacct.valid(), "Account that owns this name doesn't exist in wallet." );
         auto seller_pubkey = get_account_public_key( oacct->name );
 
-        auto domain_op = update_domain_operation();
-        domain_op.domain_name = domain_name;
-        domain_op.value = variant("");
-        FC_ASSERT(!"unimplemented wallet sell");
-        //domain_op.update_type = domain_record::sell;
-        domain_op.owner = get_new_address( oacct->name );
-        domain_op.bid_amount = min_amount;
-        trx.operations.push_back(domain_op);
-        required_signatures.insert(odomain_rec->owner);
-
-        auto priority_fee  = get_priority_fee( ).amount;
-        my->withdraw_to_transaction(priority_fee, 0, seller_pubkey, trx, required_signatures);
 
         if ( sign )
             sign_transaction( trx, required_signatures );
@@ -3878,6 +3838,7 @@ namespace bts { namespace wallet {
                                                   bool sign )
     {
         FC_ASSERT(!"unimplemented domain_transfer");
+/*
         if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
         if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
@@ -3911,12 +3872,15 @@ namespace bts { namespace wallet {
 
 
         return trx;
+*/
     }
 
     signed_transaction   wallet::domain_update( const string& domain_name,
                                                 const variant& value,
                                                 bool sign )
     {
+FC_ASSERT(!"unimplemented domain_update");
+/*
         if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
         if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
@@ -3951,6 +3915,7 @@ namespace bts { namespace wallet {
 
 
         return trx;
+*/
     }
 
 

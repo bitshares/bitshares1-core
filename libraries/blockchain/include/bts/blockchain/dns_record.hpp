@@ -1,7 +1,10 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/dns_config.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/io/enum_type.hpp>
+
+#include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -26,16 +29,15 @@ namespace bts { namespace blockchain {
         }
     };
 
-
     struct domain_record
     {
-
+        domain_record():domain_name(""),value(variant("")),last_update(0),time_in_top(0){};
         enum domain_state_type
         {
-            unclaimed = 0,
-            in_auction = 1,
-            in_sale = 2,
-            owned = 3
+            unclaimed,
+            in_auction,
+            in_sale,
+            owned
         };    
 
         string                                        domain_name;
@@ -47,6 +49,17 @@ namespace bts { namespace blockchain {
         share_type                                    next_required_bid;
 
         uint32_t                                      time_in_top;
+
+        domain_state_type get_true_state() const
+        {
+            if (domain_state_type(this->state) == owned)
+            {
+                if (fc::time_point::now().sec_since_epoch() > last_update + P2P_EXPIRE_DURATION_SECS)
+                    return unclaimed;
+                return owned;
+            }
+            return this->state;
+        }
 
         auction_index_key get_auction_key() const
         {

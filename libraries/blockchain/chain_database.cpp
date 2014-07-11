@@ -1549,7 +1549,7 @@ namespace bts { namespace blockchain {
       my->_domain_db.store( rec.domain_name, rec );
       if( rec.state == domain_record::in_auction )
       {
-         my->_auction_db.remove( rec.get_auction_key() );
+         my->_auction_db.store( rec.get_auction_key(), rec.domain_name );
       }
    } FC_CAPTURE_AND_RETHROW( (rec) ) }
 
