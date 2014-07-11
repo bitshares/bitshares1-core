@@ -1110,34 +1110,34 @@ namespace bts { namespace wallet {
 
    } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) } 
 
-   owallet_account_record wallet::get_account( const string& account_name )const
-   {
+   wallet_account_record wallet::get_account( const string& account_name )const
+   { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
       FC_ASSERT( is_open() );
 
       auto local_account = my->_wallet_db.lookup_account( account_name );
-      if( local_account )
+      if( !local_account.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown local account name!", ("account_name",account_name) );
+
+      auto chain_account = my->_blockchain->get_account_record( account_name );
+      if( chain_account )
       {
-        auto chain_account = my->_blockchain->get_account_record( account_name );
-        if( chain_account )
-        {
-           if( local_account->owner_key == chain_account->owner_key )
-           {
-               blockchain::account_record& bca = *local_account;
-               bca = *chain_account;
-               my->_wallet_db.cache_account( *local_account );
-           }
-           else
-           {
-              wlog( "local account is owned by someone different public key than blockchain account" );
-              wdump( (local_account)(chain_account) );
-           }
-        }
+         if( local_account->owner_key == chain_account->owner_key )
+         {
+             blockchain::account_record& bca = *local_account;
+             bca = *chain_account;
+             my->_wallet_db.cache_account( *local_account );
+         }
+         else
+         {
+            wlog( "local account is owned by someone different public key than blockchain account" );
+            wdump( (local_account)(chain_account) );
+         }
       }
-      return local_account;
-   }
+      return *local_account;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::remove_contact_account( const string& account_name )
    { try {
@@ -1421,7 +1421,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      auto key = my->_wallet_db.lookup_key( get_account(account_name)->active_address() );
+      auto key = my->_wallet_db.lookup_key( get_account(account_name).active_address() );
       FC_ASSERT( key.valid() );
       FC_ASSERT( key->has_private_key() );
 
@@ -1568,10 +1568,10 @@ namespace bts { namespace wallet {
               FC_THROW_EXCEPTION( invalid_name, "Invalid delegate name!", ("delegate_name",delegate_name) );
 
           auto delegate_record = get_account( delegate_name );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${name} is not a delegate.", ("name", delegate_name) );
-          auto key = my->_wallet_db.lookup_key( delegate_record->active_key() );
+          FC_ASSERT( delegate_record.is_delegate(), "${name} is not a delegate.", ("name", delegate_name) );
+          auto key = my->_wallet_db.lookup_key( delegate_record.active_key() );
           FC_ASSERT( key.valid() && key->has_private_key(), "Unable to find private key for ${name}.", ("name", delegate_name) );
-          delegate_records.push_back( *delegate_record );
+          delegate_records.push_back( delegate_record );
       }
       else
       {
@@ -2202,8 +2202,6 @@ namespace bts { namespace wallet {
       auto payer_public_key = get_account_public_key( pay_with_account_name );
       address from_account_address( payer_public_key );
 
-      auto opt_account = get_account( account_to_register );
-      FC_ASSERT( opt_account.valid() );
       auto account_public_key = get_account_public_key( account_to_register );
 
       signed_transaction     trx;
@@ -2218,9 +2216,8 @@ namespace bts { namespace wallet {
       if( pos != string::npos )
       {
           auto parent_name = account_to_register.substr( pos+1, string::npos );
-          auto opt_parent_acct = get_account( parent_name );
-          FC_ASSERT(opt_parent_acct.valid(), "You must own the parent name to register a subname!");
-          required_signatures.insert(opt_parent_acct->active_address());
+          auto parent_acct = get_account( parent_name );
+          required_signatures.insert( parent_acct.active_address() );
       }
 
       auto required_fees = get_priority_fee();
@@ -3627,7 +3624,7 @@ namespace bts { namespace wallet {
     *  Looks up the public key for an account whether local or in the blockchain, with
     *  the local name taking priority.
     */
-   public_key_type  wallet::get_account_public_key( const string& account_name )const
+   public_key_type wallet::get_account_public_key( const string& account_name )const
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -3711,7 +3708,7 @@ namespace bts { namespace wallet {
       return war->approved;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
 
-   optional<wallet_account_record> wallet::get_account_record( const address& addr)const
+   owallet_account_record wallet::get_account_record( const address& addr)const
    {
       return my->_wallet_db.lookup_account( addr );
    }

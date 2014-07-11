@@ -150,7 +150,7 @@ BOOST_FIXTURE_TEST_CASE( private_key_test, WFixture )
    run_cmd(clienta, "scan 0 100");
    
    auto wallet = clienta->get_wallet();
-   auto private_key = wallet->get_private_key(wallet->get_account("delegate31")->active_address());
+   auto private_key = wallet->get_private_key(wallet->get_account("delegate31").active_address());
    BOOST_CHECK(private_key == wallet->get_account_private_key("delegate31"));
 }
 

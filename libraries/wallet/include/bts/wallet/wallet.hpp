@@ -318,7 +318,7 @@ namespace bts { namespace wallet {
 
          signed_transaction  cancel_market_order( const address& owner_address );
 
-         owallet_account_record get_account( const string& account_name )const;
+         wallet_account_record get_account( const string& account_name )const;
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.

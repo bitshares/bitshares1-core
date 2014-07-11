@@ -1605,10 +1605,7 @@ config load_config( const fc::path& datadir )
 
     wallet_account_record detail::client_impl::wallet_get_account(const string& account_name) const
     { try {
-      auto opt_account = _wallet->get_account(account_name);
-      if( opt_account.valid() )
-         return *opt_account;
-      FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
+      return _wallet->get_account( account_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
     vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
