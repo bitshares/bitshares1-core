@@ -305,6 +305,12 @@
                "type" : "uint32_t",
                "description" : "the latest block to list transaction from; -1 to include all transactions ending at the head block",
                "default_value" : -1
+            },
+            {
+               "name" : "asset_symbol",
+               "type" : "string",
+               "description" : "only include transactions involving the specified asset, or \"\" to include all",
+               "default_value" : ""
             }
         ],
         "prerequisites" : ["wallet_open"],

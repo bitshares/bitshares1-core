@@ -28,6 +28,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( invalid_operation,       bts::wallet::wallet_exception, 20021, "invalid operation" );
   FC_DECLARE_DERIVED_EXCEPTION( transaction_not_found,   bts::wallet::wallet_exception, 20022, "transaction not found" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_transaction_id,  bts::wallet::wallet_exception, 20023, "invalid transaction id" );
+  FC_DECLARE_DERIVED_EXCEPTION( invalid_asset_symbol,    bts::wallet::wallet_exception, 20024, "invalid asset symbol" );
   // registered in wallet.cpp
 
 } } // bts::wallet

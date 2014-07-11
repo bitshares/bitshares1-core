@@ -1401,13 +1401,27 @@ namespace bts { namespace wallet {
     */
    vector<wallet_transaction_record> wallet::get_transaction_history( const string& account_name,
                                                                       uint32_t start_block_num,
-                                                                      uint32_t end_block_num )const
+                                                                      uint32_t end_block_num,
+                                                                      const string& asset_symbol )const
    { try {
       FC_ASSERT( is_open() );
       if( end_block_num != -1 ) FC_ASSERT( start_block_num <= end_block_num );
 
       vector<wallet_transaction_record> history_records;
       const auto& transactions = my->_wallet_db.get_transactions();
+
+      auto asset_id = 0;
+      if( !asset_symbol.empty() && asset_symbol != BTS_BLOCKCHAIN_SYMBOL )
+      {
+          try
+          {
+              asset_id = my->_blockchain->get_asset_id( asset_symbol );
+          }
+          catch( const fc::exception& )
+          {
+              FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("asset_symbol",asset_symbol) );
+          }
+      }
 
       for( const auto& item : transactions )
       {
@@ -1424,6 +1438,14 @@ namespace bts { namespace wallet {
               if( !match ) continue;
           }
 
+          if( asset_id != 0 )
+          {
+              bool match = false;
+              match |= tx_record.amount.asset_id == asset_id;
+              match |= tx_record.memo_message.find( asset_symbol ) != string::npos;
+              if( !match ) continue;
+          }
+
           history_records.push_back( tx_record );
       }
 
@@ -1432,9 +1454,10 @@ namespace bts { namespace wallet {
 
    vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name,
                                                                       uint32_t start_block_num,
-                                                                      uint32_t end_block_num )const
+                                                                      uint32_t end_block_num,
+                                                                      const string& asset_symbol )const
    { try {
-       const auto& history = get_transaction_history( account_name, start_block_num, end_block_num );
+       const auto& history = get_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
        vector<pretty_transaction> pretties;
        pretties.reserve( history.size() );
        for( const auto& item : history )
