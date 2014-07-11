@@ -1445,7 +1445,6 @@ namespace bts { namespace wallet {
                   {
                      if( a.received_time != b.received_time) return a.received_time < b.received_time;
                      if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                     if( a.trx_num != b.trx_num ) return a.trx_num < b.trx_num;
                      if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account );
                      if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account );
                      return string( a.trx_id ).compare( string( b.trx_id ) );
@@ -3003,12 +3002,6 @@ namespace bts { namespace wallet {
       pretty_trx.is_confirmed = trx_rec.is_confirmed;
       pretty_trx.trx_id = trx_id;
       pretty_trx.block_num = trx_rec.block_num;
-
-      if( !trx_rec.is_virtual && trx_rec.is_confirmed )
-      {
-          const auto loc = my->_blockchain->get_transaction( trx_id );
-          if( loc.valid() ) pretty_trx.trx_num = loc->chain_location.trx_num;
-      }
 
       if( trx_rec.from_account )
          pretty_trx.from_account = get_key_label( *trx_rec.from_account );
