@@ -60,7 +60,7 @@ namespace bts { namespace blockchain {
        block_id_type block_id;
        account_id_type signing_delegate;
        uint32_t transaction_count;
-       uint32_t latency;
+       fc::microseconds latency;
        uint32_t size;
        fc::time_point_sec timestamp;
        fc::optional<bool> is_valid;
@@ -102,6 +102,8 @@ namespace bts { namespace blockchain {
          share_type get_priority_fee();
 
          void sanity_check()const;
+
+         time_point_sec get_genesis_timestamp()const;
 
          double get_average_delegate_participation()const;
 
@@ -201,7 +203,8 @@ namespace bts { namespace blockchain {
          /**
           *  Evaluate the transaction and return the results.
           */
-         virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, share_type min_fee = 0 );
+         virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, const share_type& required_fees = 0 );
+         optional<fc::exception> get_transaction_error( const signed_transaction& transaction, const share_type& min_fee );
 
          /** return the timestamp from the head block */
          virtual time_point_sec         now()const override;

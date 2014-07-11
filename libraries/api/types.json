@@ -18,6 +18,11 @@
         "default_example" : "Bob"
       },
       {
+        "type_name" : "account_name_array",
+        "container_type": "array",
+        "contained_type": "account_name"
+      },
+      {
         "type_name" : "new_account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -224,6 +229,10 @@
         "type_name" : "blockchain_transaction_record_array",
         "container_type" : "array",
         "contained_type" : "blockchain_transaction_record"
+      },
+      {
+        "type_name" : "blockchain_transaction_record_map",
+        "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, bts::blockchain::transaction_record>"
       },
       {
         "type_name" : "signed_transaction",
@@ -537,6 +546,17 @@
           "type_name" : "map<transaction_id_type, fc::exception>",
           "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, fc::exception>"
       },
+      {
+          "type_name" : "compact_signature",
+          "cpp_return_type" : "fc::ecc::compact_signature",
+          "cpp_include_file" : "fc/crypto/elliptic.hpp"
+      },
+      {
+          "type_name" : "sha256",
+          "cpp_return_type" : "fc::sha256",
+          "cpp_include_file" : "fc/crypto/sha256.hpp"
+      },
+
       {
         "type_name" : "domain_record",
         "cpp_return_type" : "bts::blockchain::domain_record"

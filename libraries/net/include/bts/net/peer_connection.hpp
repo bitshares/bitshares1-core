@@ -22,6 +22,8 @@ namespace bts { namespace net
       virtual void on_connection_closed(peer_connection* originating_peer) = 0;
     };
 
+    class peer_connection;
+    typedef std::shared_ptr<peer_connection> peer_connection_ptr;
     class peer_connection : public message_oriented_connection_delegate,
                             public std::enable_shared_from_this<peer_connection>
     {
@@ -141,25 +143,11 @@ namespace bts { namespace net
 
       // 
       fc::future<void> accept_or_connect_task_done;
+    private:
+      peer_connection(peer_connection_delegate* delegate);
     public:
-      peer_connection(peer_connection_delegate* delegate) : 
-        _node(delegate),
-        _message_connection(this),
-        _total_queued_messages_size(0),
-        direction(peer_connection_direction::unknown),
-        is_firewalled(firewalled_state::unknown),
-        our_state(our_connection_state::disconnected),
-        they_have_requested_close(false),
-        their_state(their_connection_state::disconnected),
-        we_have_requested_close(false),
-        negotiation_status(connection_negotiation_status::disconnected),
-        number_of_unfetched_item_ids(0),
-        peer_needs_sync_items_from_us(true),
-        we_need_sync_items_from_peer(true),
-        last_block_number_delegate_has_seen(0),
-        transaction_fetching_inhibited_until(fc::time_point::min())
-      {}
-      ~peer_connection();
+      static peer_connection_ptr make_shared(peer_connection_delegate* delegate); // use this instead of the constructor
+      virtual ~peer_connection();
 
       fc::tcp_socket& get_socket();
       void accept_connection();

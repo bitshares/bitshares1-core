@@ -741,6 +741,28 @@ config load_config( const fc::path& datadir )
           return delegate_records;
        }
 
+       vector<string> client_impl::blockchain_list_missing_block_delegates( uint32_t block_num )
+       {
+           if (block_num == 0 || block_num == 1)
+               return vector<string>();
+           vector<string> delegates;
+           auto this_block = _chain_db->get_block_record( block_num );
+           FC_ASSERT(this_block.valid(), "Cannot use this call on a block that has not yet been produced");
+           auto prev_block = _chain_db->get_block_record( block_num - 1 );
+           auto timestamp = prev_block->timestamp;
+           timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+           while (timestamp != this_block->timestamp)
+           {
+               auto slot_record = _chain_db->get_slot_record( timestamp );
+               FC_ASSERT( slot_record.valid() );
+               auto delegate_record = _chain_db->get_account_record( slot_record->block_producer_id );
+               FC_ASSERT( delegate_record.valid() );
+               delegates.push_back( delegate_record->name );
+               timestamp += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+           }
+           return delegates;
+       }
+
        vector<block_record> client_impl::blockchain_list_blocks( uint32_t first, int32_t count )
        {
           FC_ASSERT( count <= 1000 );
@@ -1111,7 +1133,7 @@ config load_config( const fc::path& datadir )
          FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
-       string client_impl::execute_command_line(const string& input) const
+       string client_impl::debug_execute_command_line(const string& input) const
        {
            if (_cli)
            {
@@ -1425,9 +1447,16 @@ config load_config( const fc::path& datadir )
       _wallet->clear_pending_transactions();
     }
 
-    map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors()const
+    map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const
     {
-      return _wallet->get_pending_transaction_errors();
+      const auto& errors = _wallet->get_pending_transaction_errors();
+      if( filename != "" )
+      {
+          FC_ASSERT( !fc::exists( filename ) );
+          std::ofstream out( filename.c_str() );
+          out << fc::json::to_pretty_string( errors );
+      }
+      return errors;
     }
 
     vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer,
@@ -1593,10 +1622,12 @@ config load_config( const fc::path& datadir )
     {
       try
       {
-          if( !std::all_of( account.begin(), account.end(), ::isdigit) )
-              return _chain_db->get_account_record( account );
-          else
+          if( std::all_of( account.begin(), account.end(), ::isdigit) )
               return _chain_db->get_account_record( std::stoi( account ) );
+          else if( account.substr( 0, string( BTS_ADDRESS_PREFIX ).size() ) == BTS_ADDRESS_PREFIX )
+              return _chain_db->get_account_record( address( public_key_type( account ) ) );
+          else
+              return _chain_db->get_account_record( account );
       }
       catch( ... )
       {
@@ -1622,7 +1653,7 @@ config load_config( const fc::path& datadir )
     bool detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
     { try {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
       _wallet->set_delegate_approval( delegate_name, approved );
       return _wallet->get_delegate_approval( delegate_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved",approved) ) }
@@ -1739,12 +1770,16 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_assets(first, count);
     }
 
-    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info() const
+    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool not_firewalled )const
     {
       std::vector<fc::variant_object> results;
       vector<bts::net::peer_status> peer_statuses = _p2p_node->get_connected_peers();
       for (const bts::net::peer_status& peer_status : peer_statuses)
-        results.push_back(peer_status.info);
+      {
+        const auto& info = peer_status.info;
+        if( not_firewalled && ( info["firewall_status"].as_string() != "not_firewalled" ) ) continue;
+        results.push_back( info );
+      }
       return results;
     }
 
@@ -2143,6 +2178,7 @@ config load_config( const fc::path& datadir )
       auto option_variables = parse_option_variables(argc,argv);
 
       fc::path datadir = bts::client::get_data_dir(option_variables);
+      fc::create_directories(datadir);
 
       // this just clears the database if the command line says
       // TODO: rename it to smething better
@@ -2420,12 +2456,12 @@ config load_config( const fc::path& datadir )
         _wallet->account_set_favorite( account_name, is_favorite );
     }
 
-    void client_impl::enable_output(bool enable_flag)
+    void client_impl::debug_enable_output(bool enable_flag)
     {
       _cli->enable_output(enable_flag);
     }
 
-    void client_impl::filter_output_for_tests(bool enable_flag)
+    void client_impl::debug_filter_output_for_tests(bool enable_flag)
     {
       _cli->filter_output_for_tests(enable_flag);
     }
@@ -2454,7 +2490,7 @@ config load_config( const fc::path& datadir )
        info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
        info["name"]                                 = BTS_BLOCKCHAIN_NAME;
        info["version"]                              = BTS_BLOCKCHAIN_VERSION;
-       info["genesis_timestamp"]                    = _chain_db->get_asset_record( asset_id_type() )->registration_date;
+       info["genesis_timestamp"]                    = _chain_db->get_genesis_timestamp();
 
        info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
        info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
@@ -2462,13 +2498,12 @@ config load_config( const fc::path& datadir )
        info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
 
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
-       info["min_block_fee"]                        = double( BTS_BLOCKCHAIN_MIN_FEE ) / 1000;
-       info["block_reward"]                         = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_BLOCK_REWARD, 0) );
+       info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
        info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       info["delegate_reg_fee"]                     = BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE;
-       info["delegate_reward_min"]                  = BTS_BLOCKCHAIN_BLOCK_REWARD;
+       const auto delegate_reg_fee                  = _chain_db->get_delegate_registration_fee();
+       info["delegate_reg_fee"]                     = _chain_db->to_pretty_asset( asset( delegate_reg_fee ) );
 
        info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
@@ -2476,7 +2511,8 @@ config load_config( const fc::path& datadir )
 
        info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
        info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-       info["asset_reg_fee"]                        = BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
+       const auto asset_reg_fee                     = _chain_db->get_asset_registration_fee();
+       info["asset_reg_fee"]                        = _chain_db->to_pretty_asset( asset( asset_reg_fee ) );
        info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
 
        info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
@@ -2686,12 +2722,12 @@ config load_config( const fc::path& datadir )
       return result;
     }
 
-    void client_impl::wait(uint32_t wait_time) const
+    void client_impl::debug_wait(uint32_t wait_time) const
     {
       fc::usleep(fc::seconds(wait_time));
     }
 
-    void client_impl::wait_block_interval(uint32_t wait_time) const
+    void client_impl::debug_wait_block_interval(uint32_t wait_time) const
     {
       fc::usleep(fc::seconds(wait_time*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC));
     }
@@ -2863,12 +2899,22 @@ config load_config( const fc::path& datadir )
       return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
    }
 
-   vector<transaction_record> client_impl::blockchain_get_transactions_for_block( const block_id_type& id )const
+   map<transaction_id_type, transaction_record> client_impl::blockchain_get_block_transactions( const string& block )const
    {
-      return _chain_db->get_transactions_for_block(id);
+      vector<transaction_record> transactions;
+      if( block.size() == 40 )
+        transactions = _chain_db->get_transactions_for_block( block_id_type( block ) );
+      else
+        transactions = _chain_db->get_transactions_for_block( _chain_db->get_block_id( std::stoi( block ) ) );
+
+      map<transaction_id_type, transaction_record> transactions_map;
+      for( const auto& transaction : transactions )
+          transactions_map[ transaction.trx.id() ] = transaction;
+
+      return transactions_map;
    }
 
-   map<fc::time_point, fc::exception> client_impl::list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
+   map<fc::time_point, fc::exception> client_impl::debug_list_errors( int32_t first_error_number, uint32_t limit, const string& filename )const
    {
       map<fc::time_point, fc::exception> result;
       int count = 0;
@@ -2898,9 +2944,9 @@ config load_config( const fc::path& datadir )
       return result;
    }
 
-   map<fc::time_point, std::string> client_impl::list_errors_brief( int32_t first_error_number, uint32_t limit, const string& filename ) const
+   map<fc::time_point, std::string> client_impl::debug_list_errors_brief( int32_t first_error_number, uint32_t limit, const string& filename ) const
    {
-      map<fc::time_point, fc::exception> full_errors = list_errors(first_error_number, limit, "");
+      map<fc::time_point, fc::exception> full_errors = debug_list_errors(first_error_number, limit, "");
 
       map<fc::time_point, std::string> brief_errors;
       for (auto full_error : full_errors)
@@ -2918,7 +2964,7 @@ config load_config( const fc::path& datadir )
       return brief_errors;
    }
 
-   void client_impl::clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
+   void client_impl::debug_clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
    {
       auto itr = _exception_db.lower_bound( start_time );
       while( itr.valid() )
@@ -2932,7 +2978,7 @@ config load_config( const fc::path& datadir )
       }
    }
 
-   void client_impl::write_errors_to_file( const string& path, const fc::time_point& start_time ) const
+   void client_impl::debug_write_errors_to_file( const string& path, const fc::time_point& start_time )const
    {
       map<fc::time_point, fc::exception> result;
       auto itr = _exception_db.lower_bound( start_time );
@@ -2961,7 +3007,7 @@ config load_config( const fc::path& datadir )
    vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name )const
    {
       auto delegate_record = _chain_db->get_account_record( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
       return _chain_db->get_delegate_slot_records( delegate_record->id );
    }
 
@@ -3057,6 +3103,13 @@ config load_config( const fc::path& datadir )
    }
 
 
+   fc::ecc::compact_signature client_impl::wallet_sign_hash(const string& signing_account, const fc::sha256& hash)
+   {
+      return _wallet->get_account_private_key(signing_account).sign_compact(hash);
+   }
+
+
+
 
     /* DNS methods */
 
@@ -3104,12 +3157,6 @@ config load_config( const fc::path& datadir )
     }
 
     /* End DNS methods */
-
-
-
-
-
-
 
 
 

@@ -7,111 +7,48 @@
 #include <bts/blockchain/dns_utils.hpp>
 #include <bts/blockchain/dns_config.hpp>
 
+#include <iostream>
+
 namespace bts { namespace blockchain { 
 
-    void update_domain_operation::evaluate( transaction_evaluation_state& eval_state )
+    void domain_bid_operation::evaluate( transaction_evaluation_state& eval_state )
     {
         FC_ASSERT( is_valid_domain( this->domain_name ) );
         auto now = eval_state._current_state->now().sec_since_epoch();
         auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
-        /* First bid case */
-        if (this->update_type == domain_record::first_bid)
+        /* If record is invalid, nobody has bid on it yet. You can bid if you exceed current minimum bid. */
+        if ( ! odomain_rec.valid() )
         {
-            FC_ASSERT( ! domain_in_auction( odomain_rec ), "Attempt to start auction for a domain already in an auction" );
-            FC_ASSERT( ! domain_owned_by_owner( odomain_rec ), "Someone already owns that domain." );
-
-            FC_ASSERT(this->bid_amount >= P2P_MIN_INITIAL_BID, "Not large enough initial bid.");
-            FC_ASSERT(this->value.as_string() == variant("").as_string());
-
-            eval_state.required_fees += asset(this->bid_amount);
-            
-            domain_record updated_record = domain_record(); 
-            updated_record.domain_name = this->domain_name;
-            updated_record.owner = this->owner;
-            updated_record.value = this->value;
-            updated_record.last_update = now;
-            updated_record.update_type = domain_record::first_bid;
-            updated_record.last_bid = this->bid_amount;
-            updated_record.next_required_bid = P2P_NEXT_REQ_BID(0, this->bid_amount);
-            
-            eval_state._current_state->store_domain_record( updated_record );
+            FC_ASSERT( this->bid_amount >= P2P_MIN_INITIAL_BID, "Initial bid does not exceed min required bid");
+            eval_state.required_fees += asset(this->bid_amount, 0);
+            auto rec = domain_record();
+            rec.domain_name = this->domain_name;
+            rec.owner = this->bidder_address;
+            rec.last_update = fc::time_point::now().sec_since_epoch();
+            rec.state = domain_record::in_auction;
+            rec.price = this->bid_amount;
+            rec.next_required_bid = P2P_NEXT_REQ_BID(0, this->bid_amount);
+            std::cerr << "domain is valid and I am storing it now\n";
+            eval_state._current_state->store_domain_record( rec );
+            std::cerr << "stored it!\n";
         }
-        /* Normal bid case */
-        else if( this->update_type == domain_record::bid )
+        else
         {
-            FC_ASSERT( domain_in_auction( odomain_rec ),
-                     "Attempting to make a normal bid on a domain that is not in auction.");
-            FC_ASSERT(this->bid_amount >= odomain_rec->next_required_bid,
-                     "Bid is not high enough.");
-
-            auto bid_difference = this->bid_amount - odomain_rec->last_bid;
-            share_type paid_to_previous_bidder = 0;
-            for (auto op : eval_state.trx.operations)
+            FC_ASSERT( odomain_rec->get_true_state() == domain_record::in_auction,
+                       "Trying to bid on a domain that is not in auction" );
+            if (false) // TODO if signed by owner
             {
-                if (op.type == operation_type_enum::deposit_op_type)
-                {
-                    auto deposit = op.as<deposit_operation>();
-                    if (deposit.condition.type == withdraw_condition_types::withdraw_signature_type)
-                    {
-                        auto condition = deposit.condition.as<withdraw_with_signature>();
-                        if (condition.owner == odomain_rec->owner)
-                        {
-                            paid_to_previous_bidder += deposit.amount;
-                        }
-                    }
-                }
             }
-            ilog("expecting to get paid back ${amt}", ("amt", odomain_rec->last_bid + (bid_difference * P2P_KICKBACK_RATIO) ) );
-            ilog("actually got back: ${amt}", ("amt", paid_to_previous_bidder));
-
-            FC_ASSERT(paid_to_previous_bidder == odomain_rec->last_bid + (bid_difference * P2P_KICKBACK_RATIO),
-                     "Did not pay back enough to previous owner.");
-            eval_state.required_fees += asset(bid_difference * P2P_DIVIDEND_RATIO);
-
-            FC_ASSERT(this->value.as_string() == variant("").as_string());
-            
-            domain_record updated_record = domain_record(); 
-            updated_record.domain_name = this->domain_name;
-            updated_record.owner = this->owner;
-            updated_record.value = this->value;
-            updated_record.last_update = now;
-            updated_record.update_type = domain_record::bid;
-            updated_record.last_bid = this->bid_amount;
-            updated_record.next_required_bid = P2P_NEXT_REQ_BID(odomain_rec->next_required_bid, this->bid_amount);
-            
-            eval_state._current_state->store_domain_record( updated_record ); 
-        }
-        else if( this->update_type == domain_record::sell )
-        {
-            FC_ASSERT( domain_owned_by_owner(odomain_rec), "This domain is not owned by anyone." );
-            FC_ASSERT( eval_state.check_signature( odomain_rec->owner ) );
-            
-            domain_record updated_record = domain_record();
-            updated_record.domain_name = this->domain_name;
-            updated_record.owner = this->owner;
-            updated_record.value = variant("");
-            updated_record.last_update = now;
-            updated_record.update_type = domain_record::sell;
-            updated_record.last_bid = this->bid_amount;
-            updated_record.next_required_bid = P2P_NEXT_REQ_BID(this->bid_amount, this->bid_amount);
-            
-            eval_state._current_state->store_domain_record( updated_record ); 
-        }
-        else if( this->update_type == domain_record::info )
-        {
-            FC_ASSERT( domain_owned_by_owner(odomain_rec), "This domain is not owned by anyone.");
-            FC_ASSERT( eval_state.check_signature( odomain_rec->owner ) );
-
-            domain_record updated_record = domain_record();
-            updated_record.domain_name = this->domain_name;
-            updated_record.owner = this->owner;
-            updated_record.value = this->value;
-            updated_record.last_update = now;
-            updated_record.update_type = domain_record::info;
-            updated_record.last_bid = 0;
-            updated_record.next_required_bid = 0;
- 
-            eval_state._current_state->store_domain_record( updated_record ); 
+            else
+            {
+                FC_ASSERT( this->bid_amount >= odomain_rec->next_required_bid );
+                eval_state.required_fees += asset(this->bid_amount, 0);
+                odomain_rec->owner = this->bidder_address;
+                odomain_rec->last_update = fc::time_point::now().sec_since_epoch();
+                odomain_rec->price = this->bid_amount;
+                odomain_rec->next_required_bid = P2P_NEXT_REQ_BID( odomain_rec->next_required_bid, this->bid_amount );
+            }
+            eval_state._current_state->store_domain_record( *odomain_rec );
         }
     }
 

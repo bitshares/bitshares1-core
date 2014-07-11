@@ -7,13 +7,14 @@
 namespace bts{ namespace blockchain {
 
    balance_record::balance_record( const address& owner, const asset& balance_arg, account_id_type delegate_id )
+   :genesis(false)
    {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
    /** returns 0 if asset id is not condition.asset_id */
-   asset     balance_record::get_balance()const
+   asset balance_record::get_balance()const
    {
       return asset( balance, condition.asset_id );
    }
@@ -45,6 +46,10 @@ namespace bts{ namespace blockchain {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( str[0] < 'a' || str[0] > 'z' ) return false;
+#if BTS_BLOCKCHAIN_VERSION > 105
+#warning HARDFORK invalid name
+      if (str[str.size() - 1] == '-' ) return false;
+#endif
       for( const auto& c : str )
       {
           if( c >= 'a' && c <= 'z' ) continue;

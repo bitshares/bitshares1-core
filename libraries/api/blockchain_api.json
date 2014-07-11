@@ -123,14 +123,14 @@
         "aliases" : ["get_block"]
       },
       {
-        "method_name": "blockchain_get_transactions_for_block",
+        "method_name": "blockchain_get_block_transactions",
         "description": "Retrieves the detailed transaction information for a block",
-        "return_type": "blockchain_transaction_record_array",
+        "return_type": "blockchain_transaction_record_map",
         "parameters" : [
             {
-              "name" : "block_id", 
-              "type" : "block_id_type", 
-              "description" : "the id of the block to return"
+              "name" : "block",
+              "type" : "string",
+              "description" : "the number or id of the block to get transactions from"
             }
         ],
         "is_const" : true,
@@ -144,7 +144,7 @@
             {
               "name" : "account",
               "type" : "string",
-              "description" : "account name or account ID to retrieve"
+              "description" : "account name, ID, or public key to retrieve the record for"
             }
         ],
         "is_const" : true,
@@ -361,6 +361,19 @@
             }
          ], 
          "aliases" : ["list_blocks"],
+         "prerequisites" : ["json_authenticated"]
+      },
+      {
+         "method_name" : "blockchain_list_missing_block_delegates",
+         "description" : "Returns any delegates who were supposed to produce a given block number but didn't",
+         "return_type" : "account_name_array",
+         "parameters"  : [
+            {
+               "name" : "block_number",
+               "type" : "uint32_t",
+               "description" : "The block to examine"
+            }
+         ], 
          "prerequisites" : ["json_authenticated"]
       },
       {

@@ -47,7 +47,27 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
-#define P2P_IN_DEDICATED_THREAD 1
+#define INVOCATION_COUNTER(name) \
+    static unsigned total_ ## name ## _counter = 0; \
+    static unsigned active_ ## name ## _counter = 0; \
+    struct name ## _invocation_logger { \
+      unsigned *total; \
+      unsigned *active; \
+      name ## _invocation_logger(unsigned *total, unsigned *active) : \
+        total(total), active(active) \
+      { \
+        ++*total; \
+        ++*active; \
+        dlog("NEWDEBUG: Entering " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
+      } \
+      ~name ## _invocation_logger() \
+      { \
+        --*active; \
+        dlog("NEWDEBUG: Leaving " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
+      } \
+    } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
+
+//#define P2P_IN_DEDICATED_THREAD
 
 namespace bts { namespace net { 
 
@@ -632,8 +652,8 @@ namespace bts { namespace net { namespace detail {
 
               if( !is_connection_to_endpoint_in_progress(iter->endpoint ) &&
                   ( (iter->last_connection_disposition != last_connection_failed && 
-                    iter->last_connection_disposition != last_connection_rejected &&
-                    iter->last_connection_disposition != last_connection_handshaking_failed ) ||
+                     iter->last_connection_disposition != last_connection_rejected &&
+                     iter->last_connection_disposition != last_connection_handshaking_failed) ||
                     ( fc::time_point::now() - iter->last_connection_attempt_time ) > delay_until_retry  ) )
               {
                 connect_to( iter->endpoint );
@@ -745,6 +765,7 @@ namespace bts { namespace net { namespace detail {
         // make all the requests we scheduled in the loop above
         for( auto sync_item_request : sync_item_requests_to_send )
           request_sync_item_from_peer( sync_item_request.first, sync_item_request.second );
+        sync_item_requests_to_send.clear();
 
         if( !_sync_items_to_fetch_updated )
         {
@@ -800,6 +821,7 @@ namespace bts { namespace net { namespace detail {
         for( const auto& peer_and_item : fetch_messages_to_send )
           peer_and_item.first->send_message(fetch_items_message(peer_and_item.second.item_type, 
                                                                 std::vector<item_hash_t>{peer_and_item.second.item_hash}));
+        fetch_messages_to_send.clear();
 
         if( !_items_to_fetch_updated )
         {
@@ -861,6 +883,7 @@ namespace bts { namespace net { namespace detail {
 
         for( auto iter = inventory_messages_to_send.begin(); iter != inventory_messages_to_send.end(); ++iter )
           iter->first->send_message( iter->second );
+        inventory_messages_to_send.clear();
 
         if( _new_inventory.empty() )
         {
@@ -999,12 +1022,15 @@ namespace bts { namespace net { namespace detail {
                                                        ( "inactivity_timeout", _active_connections.find(peer ) != _active_connections.end() ? _peer_inactivity_timeout * 10 : _peer_inactivity_timeout ) ) );
           disconnect_from_peer( peer.get(), "Disconnecting due to inactivity", false, detailed_error );
         }
+        peers_to_disconnect_gently.clear();
 
         for( const peer_connection_ptr& peer : peers_to_disconnect_forcibly )
           peer->close_connection();
+        peers_to_disconnect_forcibly.clear();
 
         for( const peer_connection_ptr& peer : peers_to_send_keep_alive )
           peer->send_message(current_time_request_message());
+        peers_to_send_keep_alive.clear();
 
         fc::usleep( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) );
       } // while( !canceled  )
@@ -2567,7 +2593,7 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       while ( !_accept_loop_complete.canceled() )
       {
-        peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
+        peer_connection_ptr new_peer(peer_connection::make_shared(this));
         try
         {
           _tcp_server.accept( new_peer->get_socket() );
@@ -2575,10 +2601,17 @@ namespace bts { namespace net { namespace detail {
           new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert( new_peer );
           _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-          new_peer->accept_or_connect_task_done = fc::async( [=]() { accept_connection_task(new_peer); } );
+          std::weak_ptr<peer_connection> new_weak_peer(new_peer);
+          new_peer->accept_or_connect_task_done = fc::async( [this, new_weak_peer]() {
+            peer_connection_ptr new_peer(new_weak_peer.lock());
+            assert(new_peer);
+            if (!new_peer)
+              return;
+            accept_connection_task(new_peer);
+          } );
 
           // limit the rate at which we accept connections to mitigate DOS attacks
-          fc::usleep( fc::microseconds(1000 * 10 ) );
+          fc::usleep( fc::milliseconds(10) );
         } FC_CAPTURE_AND_RETHROW(   ) 
       }
     } // accept_loop()
@@ -2835,14 +2868,21 @@ namespace bts { namespace net { namespace detail {
         FC_THROW_EXCEPTION( already_connected_to_requested_peer, "already connected to requested endpoint ${endpoint}", ("endpoint", remote_endpoint ) );
 
       dlog( "node_impl::connect_to(${endpoint})", ("endpoint", remote_endpoint ) );
-      peer_connection_ptr new_peer(std::make_shared<peer_connection>(this));
+      peer_connection_ptr new_peer(peer_connection::make_shared(this));
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
       new_peer->set_remote_endpoint( remote_endpoint );
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert( new_peer );
       _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
-      new_peer->accept_or_connect_task_done = fc::async( [=](){ connect_to_task(new_peer, remote_endpoint ); } );
+      std::weak_ptr<peer_connection> new_weak_peer(new_peer);
+      new_peer->accept_or_connect_task_done = fc::async( [this, new_weak_peer, remote_endpoint](){
+        peer_connection_ptr new_peer(new_weak_peer.lock());
+        assert(new_peer);
+        if (!new_peer)
+          return;
+        connect_to_task(new_peer, remote_endpoint );
+      } );
     }
 
     peer_connection_ptr node_impl::get_connection_to_endpoint( const fc::ip::endpoint& remote_endpoint )
@@ -3176,7 +3216,7 @@ namespace bts { namespace net { namespace detail {
       std::list<peer_connection_ptr> peers_to_disconnect;
       if( !_allowed_peers.empty() )
         for( const peer_connection_ptr& peer : _active_connections )
-          if( _allowed_peers.find(peer->node_id ) == _allowed_peers.end() )
+          if( _allowed_peers.find(peer->node_id) == _allowed_peers.end() )
             peers_to_disconnect.push_back( peer );
       for( const peer_connection_ptr& peer : peers_to_disconnect )
         disconnect_from_peer( peer.get(), "My allowed_peers list has changed, and you're no longer allowed.  Bye." );

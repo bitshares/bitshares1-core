@@ -1,18 +1,18 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK
-default (unlocked) >>> wait 1
+default (unlocked) >>> debug_wait 1
 OK
-default (unlocked) >>> filter_output_for_tests true
+default (unlocked) >>> debug_filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_account_create test
 "XTS5kmVHDwLN9zsxa18jKFrLn6yPJkBsxJJHmFeRygEpUaBWCqcb4"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
-    BLK.TRX  TIMESTAMP           FROM                TO                  AMOUNT                FEE                 MEMO                                   ID      
-------------------------------------------------------------------------------------------------------------------------------------------------------------------
-   PENDING   [redacted]          delegate0           test                100.00000 XTS         0.10000 XTS                                                [redacted]
+RECEIVED                 BLK.TRX  FROM                TO                  AMOUNT                FEE                 MEMO                                   ID      
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[redacted]          PENDING       delegate0           test                100.00000 XTS         0.10000 XTS                                                [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> wait 1
+default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
@@ -49,14 +49,14 @@ ACCOUNT                         BALANCE
 test                            100.00000 XTS           
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> wait 1
+default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 -------------------------------------------------------------------------------------------------------------------
-3       [redacted]          delegate41                      1       408     1.30961 XTS     [redacted][redacted]     
-2       [redacted]          delegate40                      1       426     0.10000 XTS     [redacted][redacted]     
-1       [redacted]          delegate39                      0       182     0.00000 XTS     [redacted][redacted]     
+3       [redacted]          [redacted]                      1       408     1.30961 XTS     [redacted][redacted]     
+2       [redacted]          [redacted]                      1       426     0.10000 XTS     [redacted][redacted]     
+1       [redacted]          [redacted]                      0       182     0.00000 XTS     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -107,8 +107,17 @@ default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> wait 1
+default (unlocked) >>> debug_wait 1
 OK
+default (unlocked) >>> blockchain_list_assets XMO
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       20.00 %   1.00 XMO                    
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,998.48974 XTS     
+default (unlocked) >>> blockchain_list_assets XTS
+ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,998.48974 XTS     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 -----------------------------------------------------------------------------------------------------------------------------------------------------------

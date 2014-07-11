@@ -1,4 +1,4 @@
-default (unlocked) >>>  enable_output false
+default (unlocked) >>>  debug_enable_output false
 >>>  wallet_delegate_set_block_production ALL false
->>>  enable_output true
+>>>  debug_enable_output true
 OK
