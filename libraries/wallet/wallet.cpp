@@ -1112,10 +1112,10 @@ namespace bts { namespace wallet {
 
    wallet_account_record wallet::get_account( const string& account_name )const
    { try {
+      FC_ASSERT( is_open() );
+
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-
-      FC_ASSERT( is_open() );
 
       auto local_account = my->_wallet_db.lookup_account( account_name );
       if( !local_account.valid() )
@@ -3755,46 +3755,58 @@ namespace bts { namespace wallet {
    account_balance_summary_type wallet::get_account_balances( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
+      if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
 
       const auto pending_state = my->_blockchain->get_pending_state();
-      account_balance_summary_type result;
-      map<address, map<asset_id_type, share_type>> raw_results;
+      auto raw_results = map<address, std::pair<map<asset_id_type, share_type>, share_type>>();
+      auto result = account_balance_summary_type();
 
       for( const auto& b : my->_wallet_db.get_balances() )
       {
-          auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
-          if( okey_rec && okey_rec->has_private_key() )
-          {
-             auto pending_balance = pending_state->get_balance_record( b.first );
-             if( pending_balance )
-             {
-                asset bal = pending_balance->get_balance();
-                if( bal.amount <= 0 ) continue;
+          const auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
+          if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
+          const auto account_address = okey_rec->account_address;
 
-                if( raw_results.count( okey_rec->account_address ) <= 0 )
-                    raw_results[ okey_rec->account_address ] = map<asset_id_type, share_type>();
+          const auto obalance = pending_state->get_balance_record( b.first );
+          auto balance = asset( 0 );
+          if( obalance.valid() )
+              balance = obalance->get_balance();
 
-                if( raw_results[ okey_rec->account_address ].count( bal.asset_id ) <= 0 )
-                    raw_results[ okey_rec->account_address ][ bal.asset_id ] = bal.amount;
-                else
-                    raw_results[ okey_rec->account_address ][ bal.asset_id ] += bal.amount;
-             }
-          }
+          /* Simpler to just check every time */
+          const auto oaccount = pending_state->get_account_record( account_address );
+          auto pay_balance = share_type( 0 );
+          if( oaccount.valid() && oaccount->is_delegate() )
+              pay_balance = oaccount->delegate_info->pay_balance;
+
+          if( balance.amount <= 0 && pay_balance <= 0 ) continue;
+
+          if( raw_results.count( account_address ) <= 0 )
+              raw_results[ account_address ] = std::make_pair( map<asset_id_type, share_type>(), share_type( 0 ) );
+
+          if( raw_results[ account_address ].first.count( balance.asset_id ) <= 0 )
+              raw_results[ account_address ].first[ balance.asset_id ] = balance.amount;
+          else
+              raw_results[ account_address ].first[ balance.asset_id ] += balance.amount;
+
+          raw_results[ account_address ].second = pay_balance;
       }
 
       for( const auto& account : raw_results )
       {
-         auto oaccount = my->_wallet_db.lookup_account( account.first );
-         string name = oaccount ? oaccount->name : string(account.first);
+         const auto oaccount = my->_wallet_db.lookup_account( account.first );
+         const auto name = oaccount.valid() ? oaccount->name : string( account.first );
          if( !account_name.empty() && name != account_name ) continue;
-         for( const auto& item : account.second )
-         {
-            if( result.count( name ) <= 0 )
-                result[name] = map<string, share_type>();
 
-            string symbol = my->_blockchain->get_asset_symbol( item.first );
-            result[name][symbol] = item.second;
+         if( result.count( name ) <= 0 )
+             result[ name ] = std::make_pair( map<string, share_type>(), share_type( 0 ) );
+
+         for( const auto& item : account.second.first )
+         {
+            const auto symbol = my->_blockchain->get_asset_symbol( item.first );
+            result[ name ].first[ symbol ] = item.second;
          }
+
+         result[ name ].second = account.second.second;
       }
 
       return result;

@@ -15,13 +15,13 @@ namespace bts { namespace wallet {
    typedef function<void(uint32_t,uint32_t)> scan_progress_callback;
 
    typedef map<string, int64_t> account_vote_summary_type;
-   typedef map<string, map<string, share_type>> account_balance_summary_type;
+   typedef map<string, std::pair<map<string, share_type>, share_type>> account_balance_summary_type;
 
    enum delegate_status_flags
    {
-       any_delegate_status = 0x00,
-       enabled_delegate_status = 0x01,
-       active_delegate_status = 0x02,
+       any_delegate_status      = 0x00,
+       enabled_delegate_status  = 0x01,
+       active_delegate_status   = 0x02,
        disabled_delegate_status = 0x04,
        inactive_delegate_status = 0x08
    };
