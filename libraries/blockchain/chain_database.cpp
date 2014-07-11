@@ -560,9 +560,9 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_block_signee( block_id ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            auto pay_rate = pending_state->get_delegate_pay_rate();
+            auto pay_rate = delegate_record->delegate_info->pay_rate; 
             FC_ASSERT( pay_rate <= 100 );
-            auto pay = (pay_rate)/100;
+            auto pay = (pay_rate*pending_state->get_delegate_pay_rate())/100;
 
             auto prev_accumulated_fees = pending_state->get_accumulated_fees();
             pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
