@@ -1,4 +1,4 @@
->>>  enable_output false
+>>>  debug_enable_output false
 >>>  wallet_import_private_key 5JkroJ7UEjXsYwiYDSmeT6czzsyJuUthSZaGJLU79WXgis6ebtZ delegate0 false
 >>>  wallet_import_private_key 5KgPRATnTBkT4nfNAy9AHrDDmCQxEQPkSwCgtm8cpSyZnGHrnJn delegate1 false
 >>>  wallet_import_private_key 5JrRjV624PbQgSLGy867DXYdT9YwDen4oLv62Fv2bGKT5gtyNnH delegate2 false
@@ -100,4 +100,4 @@
 >>>  wallet_import_private_key 5KX4KBhuyvFm6irw49VUUCTwyDJccq6ywUoRuTzSLEw8RmrLbQh delegate98 false
 >>>  wallet_import_private_key 5JEhzrCP51kEfx8hdn2Vpisxj9Fb4mGWC972gWKBwnPQodt9WYU delegate99 false
 >>>  wallet_import_private_key 5JAtkxtRS31TnVntLju55KDQBtasbvLELxxzDYJssgpjjQs6ncq delegate100 false
->>>  enable_output true
+>>>  debug_enable_output true

@@ -13,7 +13,7 @@ aliases: get_account
 default (unlocked) >>> blockchain_get_account delegate0
 Name: delegate0
 Registered: [redacted]
-Last Updated: 19 days ago
+Last Updated: [redacted]
 Owner Key: XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
@@ -23,7 +23,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 default (unlocked) >>> get_account delegate0
 Name: delegate0
 Registered: [redacted]
-Last Updated: 19 days ago
+Last Updated: [redacted]
 Owner Key: XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
@@ -35,7 +35,7 @@ No account found.
 default (unlocked) >>> blockchain_get_account delegate10
 Name: delegate10
 Registered: [redacted]
-Last Updated: 19 days ago
+Last Updated: [redacted]
 Owner Key: XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
@@ -45,7 +45,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 default (unlocked) >>> blockchain_get_account delegate11
 Name: delegate11
 Registered: [redacted]
-Last Updated: 19 days ago
+Last Updated: [redacted]
 Owner Key: XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK

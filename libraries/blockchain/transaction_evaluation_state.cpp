@@ -230,7 +230,15 @@ namespace bts { namespace blockchain {
          if( !slate ) FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
          for( auto delegate_id : slate->supported_delegates )
          {
-            net_delegate_votes[delegate_id].votes_for += amount;
+#if BTS_BLOCKCHAIN_VERSION > 105 
+            if( delegate_id < signed_int(0) )
+               net_delegate_votes[abs(delegate_id)].votes_for -= amount;
+            else
+               net_delegate_votes[abs(delegate_id)].votes_for += amount;
+#warning [HARDFORK] Remove below
+#else
+               net_delegate_votes[delegate_id].votes_for += amount;
+#endif
          }
       }
    }

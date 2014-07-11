@@ -50,6 +50,12 @@ string pretty_timestamp( const time_point_sec& timestamp )
     return boost::posix_time::to_iso_extended_string( ptime );
 }
 
+string pretty_age( const time_point_sec& timestamp )
+{
+    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
+    return fc::get_approximate_relative_time_string( timestamp );
+}
+
 string pretty_percent( double part, double whole, int precision )
 {
     FC_ASSERT( part >= 0 );
@@ -181,7 +187,10 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         out << std::setw( 20 ) << pretty_timestamp( block_record.timestamp );
 
         const auto& delegate_name = client->blockchain_get_block_signee( block_record.block_num );
-        out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
+
+        out << std::setw( 32 );
+        if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+        else out << pretty_shorten( delegate_name, 31 );
 
         out << std::setw(  8 ) << block_record.user_transaction_ids.size();
         out << std::setw(  8 ) << block_record.block_size;
@@ -194,7 +203,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         }
         else
         {
-            out << std::setw(  8 ) << block_record.latency;
+            out << std::setw(  8 ) << block_record.latency.to_seconds();
             out << std::setw( 15 ) << block_record.processing_time.count() / double( 1000000 );
         }
 
@@ -210,10 +219,11 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     FC_ASSERT( client != nullptr );
 
     std::stringstream out;
+    out << std::left;
 
+    out << std::setw( 20 ) << "RECEIVED";
     out << std::setw(  8 ) << std::right << "BLK" << ".";
     out << std::setw(  5 ) << std::left << "TRX";
-    out << std::setw( 20 ) << "TIMESTAMP";
     out << std::setw( 20 ) << "FROM";
     out << std::setw( 20 ) << "TO";
     out << std::setw( 22 ) << "AMOUNT";
@@ -227,21 +237,22 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
     for( const auto& transaction : transactions )
     {
-        if( transaction.block_num > 0 )
+        out << std::setw( 20 ) << pretty_timestamp( transaction.received_time );
+
+        if( transaction.is_virtual || transaction.is_confirmed )
         {
             out << std::setw( 8 ) << std::right << transaction.block_num << ".";
             out << std::setw( 5 ) << std::left << transaction.trx_num;
         }
         else if( errors.count( transaction.trx_id ) > 0 )
         {
-            out << std::setw( 14 ) << "   ERROR";
+            out << std::setw( 14 ) << "ERROR";
         }
         else
         {
-            out << std::setw( 14 ) << "   PENDING";
+            out << std::setw( 14 ) << "PENDING";
         }
 
-        out << std::setw( 20 ) << pretty_timestamp( fc::time_point_sec( transaction.received_time ) );
         out << std::setw( 20 ) << pretty_shorten( transaction.from_account, 19 );
         out << std::setw( 20 ) << pretty_shorten( transaction.to_account, 19 );
         out << std::setw( 22 ) << client->get_chain()->to_pretty_asset( transaction.amount );
@@ -250,6 +261,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
         out << std::setw( 8 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+        else if( transaction.is_virtual ) out << "N/A";
         else out << string( transaction.trx_id ).substr( 0, 8 );
 
         out << "\n";
@@ -324,21 +336,17 @@ string pretty_account( const oaccount_record& record, cptr client )
     out << std::left;
 
     out << "Name: " << record->name << "\n";
-    out << "Registered: " << pretty_timestamp( record->registration_date ) << "\n";
-    out << "Last Updated: " << fc::get_approximate_relative_time_string( record->last_update ) << "\n";
+    bool founder = record->registration_date == client->get_chain()->get_genesis_timestamp();
+    string registered = !founder ? pretty_timestamp( record->registration_date ) : "Genesis (Keyhotee Founder)";
+    out << "Registered: " << registered << "\n";
+    out << "Last Updated: " << pretty_age( record->last_update ) << "\n";
     out << "Owner Key: " << std::string( record->owner_key ) << "\n";
 
-    /* Only print active key history if there are keys in the history which are not the owner key */
-    if( record->active_key_history.size() > 1
-        || record->active_key_history.begin()->second != record->owner_key )
+    out << "Active Key History:\n";
+    for( const auto& key : record->active_key_history )
     {
-      out << "Active Key History:\n";
-
-      for( const auto& key : record->active_key_history )
-      {
-          out << "  Key: " << std::string( key.second )
-              << ", last used " << fc::get_approximate_relative_time_string( key.first ) << "\n";
-      }
+        out << "- " << std::string( key.second )
+            << ", last used " << pretty_age( key.first ) << "\n";
     }
 
     if( record->is_delegate() )

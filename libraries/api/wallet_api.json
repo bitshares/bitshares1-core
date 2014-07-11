@@ -290,7 +290,7 @@
             { 
               "name" : "account_name",
               "type" : "string",
-              "description" : "the name of the account for which the transaction history will be returned",
+              "description" : "the name of the account for which the transaction history will be returned, \"\" for all accounts",
               "example" : "alice",
               "default_value" : ""
             },
@@ -1216,6 +1216,24 @@
             }
           ],
          "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_sign_hash",
+         "description" : "Signs the provided message digest with the account key",
+         "return_type" : "compact_signature",
+         "parameters"  : [
+            {
+                "name" : "signing_account",
+                "type" : "string",
+                "description" : "Name of the account to sign the message with"
+            },
+            {
+                "name" : "hash",
+                "type" : "sha256",
+                "description" : "SHA256 digest of the message to sign"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }
