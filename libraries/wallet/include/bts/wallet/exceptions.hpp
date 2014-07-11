@@ -29,6 +29,9 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( transaction_not_found,   bts::wallet::wallet_exception, 20022, "transaction not found" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_transaction_id,  bts::wallet::wallet_exception, 20023, "invalid transaction id" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_asset_symbol,    bts::wallet::wallet_exception, 20024, "invalid asset symbol" );
+  FC_DECLARE_DERIVED_EXCEPTION( duplicate_account_name,  bts::wallet::wallet_exception, 20025, "duplicate account name" );
+  FC_DECLARE_DERIVED_EXCEPTION( not_contact_account,     bts::wallet::wallet_exception, 20026, "not contact account" );
+  FC_DECLARE_DERIVED_EXCEPTION( memo_too_long,           bts::wallet::wallet_exception, 20027, "memo too long" );
   // registered in wallet.cpp
 
 } } // bts::wallet

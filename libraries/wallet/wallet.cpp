@@ -1124,18 +1124,23 @@ namespace bts { namespace wallet {
       return local_account;
    }
 
-   void  wallet::remove_contact_account( const string& account_name )
+   void wallet::remove_contact_account( const string& account_name )
    { try {
-      auto oaccount = my->_wallet_db.lookup_account( account_name );
-      FC_ASSERT( oaccount.valid() );
-      FC_ASSERT( is_unique_account(account_name), "Ambiguous name '${name}' could refer to multiple accounts. Rename one of them first." );
-      FC_ASSERT( ! my->_wallet_db.has_private_key(address(oaccount->owner_key)),
-              "you can only remove contact accounts" );
-      my->_wallet_db.remove_contact_account( account_name );
+      if( !is_valid_account( account_name ) )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
 
+      if( !is_unique_account(account_name) )
+          FC_THROW_EXCEPTION( duplicate_account_name,
+                              "Local account name conflicts with registered name. Please rename your local account first.", ("account_name",account_name) );
+
+      const auto oaccount = my->_wallet_db.lookup_account( account_name );
+      if( my->_wallet_db.has_private_key( address( oaccount->owner_key ) ) )
+          FC_THROW_EXCEPTION( not_contact_account, "You can only remove contact accounts!", ("account_name",account_name) );
+
+      my->_wallet_db.remove_contact_account( account_name );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
 
-   void  wallet::rename_account( const string& old_account_name, 
+   void wallet::rename_account( const string& old_account_name, 
                                  const string& new_account_name )
    { try {
       if( !is_valid_account_name( old_account_name ) )
@@ -1583,13 +1588,22 @@ namespace bts { namespace wallet {
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
-       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-       FC_ASSERT( is_receive_account( from_account_name ) );
-       FC_ASSERT( is_valid_account( to_account_name ) );
-       FC_ASSERT( is_unique_account( to_account_name ), 
-                  "Local account name conflicts with registered name, "
-                  "please rename your local account before attempting a transfer",
-                  ("to_account_name",to_account_name) );
+
+       if( !my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) )
+           FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("amount_to_transfer_symbol",amount_to_transfer_symbol) );
+
+       if( !is_receive_account( from_account_name ) )
+           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",from_account_name) );
+
+       if( !is_valid_account( to_account_name ) )
+           FC_THROW_EXCEPTION( unknown_receive_account, "Unknown receiving account name!", ("to_account_name",to_account_name) );
+
+       if( !is_unique_account(to_account_name) )
+           FC_THROW_EXCEPTION( duplicate_account_name,
+                               "Local account name conflicts with registered name. Please rename your local account first.", ("to_account_name",to_account_name) );
+
+       if( memo_message.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+           FC_THROW_EXCEPTION( memo_too_long, "Memo too long!", ("memo_message",memo_message) );
 
        auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
        FC_ASSERT( asset_rec.valid() );
@@ -1599,7 +1613,6 @@ namespace bts { namespace wallet {
        share_type amount_to_transfer((share_type)(real_amount_to_transfer * precision));
        asset asset_to_transfer( amount_to_transfer, asset_id );
 
-       FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
        //FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ).amount );
 
        /**
@@ -1987,22 +2000,31 @@ namespace bts { namespace wallet {
                               ("to_address_amounts",to_address_amounts)
                               ("memo_message",memo_message) ) }
    
-   signed_transaction   wallet::transfer_asset( double real_amount_to_transfer,
+   signed_transaction wallet::transfer_asset( double real_amount_to_transfer,
                                         const string& amount_to_transfer_symbol,
                                         const string& from_account_name,
                                         const string& to_account_name,
                                         const string& memo_message,
                                         bool sign )
    { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-       FC_ASSERT( is_receive_account( from_account_name ) );
-       FC_ASSERT( is_valid_account( to_account_name ) );
-       FC_ASSERT( is_unique_account( to_account_name ), 
-                  "Local account name conflicts with registered name, "
-                  "please rename your local account before attempting a transfer",
-                  ("to_account_name",to_account_name) );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( !my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) )
+          FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("amount_to_transfer_symbol",amount_to_transfer_symbol) );
+
+      if( !is_receive_account( from_account_name ) )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",from_account_name) );
+
+      if( !is_valid_account( to_account_name ) )
+          FC_THROW_EXCEPTION( unknown_receive_account, "Unknown receiving account name!", ("to_account_name",to_account_name) );
+
+      if( !is_unique_account(to_account_name) )
+          FC_THROW_EXCEPTION( duplicate_account_name,
+                              "Local account name conflicts with registered name. Please rename your local account first.", ("to_account_name",to_account_name) );
+
+      if( memo_message.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+          FC_THROW_EXCEPTION( memo_too_long, "Memo too long!", ("memo_message",memo_message) );
 
       auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
       FC_ASSERT( asset_rec.valid() );
