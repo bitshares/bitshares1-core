@@ -35,7 +35,8 @@ namespace bts { namespace blockchain {
       confirmation_requirement = 6,
       database_version         = 7, // database version, to know when we need to upgrade
       current_fee_rate         = 8, // database version, to know when we need to upgrade
-      accumulated_fees         = 9 // database version, to know when we need to upgrade
+      accumulated_fees         = 9, // database version, to know when we need to upgrade
+      dirty_markets            = 10
    };
    typedef uint32_t chain_property_type;
 
@@ -145,6 +146,9 @@ namespace bts { namespace blockchain {
 
          virtual void                       store_slot_record( const slot_record& r )               = 0;
          virtual oslot_record               get_slot_record( const time_point_sec& start_time )const= 0;
+
+         virtual map<asset_id_type, asset_id_type>  get_dirty_markets()const;
+         virtual void                               set_dirty_markets( const map<asset_id_type,asset_id_type>& );
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 
@@ -161,5 +165,6 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (database_version) 
                  (current_fee_rate)
                  (accumulated_fees)
+                 (dirty_markets)
                )
 

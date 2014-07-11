@@ -111,9 +111,11 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
 
       asset delta_amount  = this->get_amount();
-      wdump( (delta_amount) );
 
       eval_state.validate_asset( delta_amount );
+      auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
+      FC_ASSERT( asset_to_short.valid() );
+      FC_ASSERT( asset_to_short->issuer_account_id == asset_record::market_issued_asset, "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       if( current_short ) wdump( (current_short) );
@@ -138,7 +140,6 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
       
-      wdump( (amount) );
       current_short->balance     += this->amount;
 
       eval_state._current_state->store_short_record( this->short_index, *current_short );

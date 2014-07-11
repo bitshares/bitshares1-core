@@ -181,5 +181,18 @@ namespace bts{ namespace blockchain {
       set_property( current_fee_rate, variant(fees) );
    }
 
+   map<asset_id_type, asset_id_type>  chain_interface::get_dirty_markets()const
+   {
+      try{
+         return get_property( dirty_markets ).as<map<asset_id_type,asset_id_type> >();
+      } catch ( ... )
+      {
+         return map<asset_id_type,asset_id_type>();
+      }
+   }
+   void  chain_interface::set_dirty_markets( const map<asset_id_type,asset_id_type>& d )
+   {
+      set_property( dirty_markets, fc::variant(d) );
+   }
 
 } } // bts::blockchain

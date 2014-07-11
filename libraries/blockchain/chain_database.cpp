@@ -237,6 +237,7 @@ namespace bts { namespace blockchain {
               self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
               self->set_property( chain_property_enum::current_fee_rate, BTS_BLOCKCHAIN_MIN_FEE );
               self->set_property( chain_property_enum::accumulated_fees, 0 );
+              self->set_property( chain_property_enum::dirty_markets, variant( map<asset_id_type,asset_id_type>() ) );
           }
           else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
@@ -734,7 +735,8 @@ namespace bts { namespace blockchain {
       }
       void chain_database_impl::execute_markets( const pending_chain_state_ptr& pending_state )
       { try { 
-        for( auto market_pair : pending_state->_dirty_markets )
+        elog( "execute markets ${e}", ("e", pending_state->get_dirty_markets()) );
+        for( auto market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
 
@@ -746,9 +748,32 @@ namespace bts { namespace blockchain {
               //    trade
            }
 
-           auto bid_itr  = _bid_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
-           auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second+1) ) );
-           if( ask_itr.valid() ) --ask_itr; // last item..
+           //auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
+
+           auto next_pair = market_pair.second+1 == market_pair.first ? price( 0, market_pair.first+1, 0) : price( 0, market_pair.first, market_pair.second+1 );
+           auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
+           auto bid_itr  = _bid_db.lower_bound( market_index_key( next_pair ) );
+           if( bid_itr.valid() ) --bid_itr; // last bid is the highest bid
+
+
+           /*
+           {
+              auto bid_itr  = _bid_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
+              auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
+              while( bid_itr.valid() )
+              {
+                  auto current_bid = market_order( bid_order, bid_itr.key(), bid_itr.value() );
+                  ilog( "       BID:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_bid.get_quantity()))("p",current_bid.get_price() ) );
+                 ++bid_itr;
+              }
+              while( ask_itr.valid() )
+              {
+                 auto current_ask = market_order( ask_order, ask_itr.key(), ask_itr.value() );
+                  ilog( "       ASK:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_ask.get_quantity()))("p",current_ask.get_price() ) );
+                 ++ask_itr;
+              }
+           }
+           */
 
            market_order current_bid;
            market_order current_ask;
@@ -761,6 +786,8 @@ namespace bts { namespace blockchain {
            asset usd_fees_collected( 0, market_pair.first );
            while( bid_itr.valid() && ask_itr.valid() )
            {
+              wlog( "CURRENT BID:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_bid.get_quantity()))("p",current_bid.get_price() ) );
+              wlog( "CURRENT ASK:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_ask.get_quantity()))("p",current_ask.get_price() ) );
               auto bid_key = bid_itr.key();
               auto ask_key = ask_itr.key();
               if( current_bid.get_price().quote_asset_id != market_pair.first || 
@@ -791,11 +818,16 @@ namespace bts { namespace blockchain {
                   if( !ask_payout )
                      ask_payout = balance_record( current_ask.market_index.owner, asset(0,market_pair.first), 0 );
                   ask_payout->balance += usd_received_by_ask.amount;
+                  wlog( "      fill ${x} of ask", ("x",self->to_pretty_asset( xts_paid_by_ask ) ) );
+                  wlog( "      paying ${x} to asker", ("x",self->to_pretty_asset( usd_received_by_ask ) ) );
 
                   auto bid_payout = pending_state->get_balance_record( withdraw_condition( withdraw_with_signature(current_bid.market_index.owner), market_pair.second ).get_address() );
                   if( !bid_payout )
                      bid_payout = balance_record( current_bid.market_index.owner, asset(0,market_pair.second), 0 );
                   bid_payout->balance += xts_received_by_bid.amount;
+                  wlog( "      fill ${x} of bid", ("x",self->to_pretty_asset( usd_paid_by_bid ) ) );
+                  wlog( "      paying ${x} to bidder", ("x",self->to_pretty_asset( xts_received_by_bid ) ) );
+                  wlog( "      collected fees ${x}", ("x",self->to_pretty_asset( usd_fees_collected ) ) );
 
                   pending_state->store_balance_record( *ask_payout );
                   pending_state->store_balance_record( *bid_payout );
@@ -811,7 +843,7 @@ namespace bts { namespace blockchain {
                   }
                   if( current_bid.state.balance == 0 )
                   {
-                     ++bid_itr;
+                     --bid_itr;
                      if( bid_itr.valid() ) current_bid = market_order( bid_order, bid_itr.key(), bid_itr.value() );
                      else break;
                   }
@@ -829,6 +861,7 @@ namespace bts { namespace blockchain {
            quote_record->current_share_supply -= usd_fees_collected.amount;
            pending_state->store_asset_record( *quote_record );
         } 
+        pending_state->set_dirty_markets( pending_state->_dirty_markets );
       } FC_CAPTURE_AND_RETHROW() }
 
       /**
