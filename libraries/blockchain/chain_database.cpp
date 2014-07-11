@@ -399,7 +399,7 @@ namespace bts { namespace blockchain {
 
           if( !self->get_block_record( block_id ).valid() ) /* Only insert with latency if not already present */
           {
-              auto latency = (now - block_data.timestamp).to_seconds();
+              auto latency = now - block_data.timestamp;
               block_record record( block_data, self->get_current_random_seed(), block_data.block_size(), latency );
               _block_id_to_block_record_db.store( block_id, record );
           }
@@ -1707,6 +1707,7 @@ namespace bts { namespace blockchain {
          // in case of redundant balances
          auto cur = self->get_balance_record( initial_balance.id() );
          if( cur.valid() ) initial_balance.balance += cur->balance;
+         initial_balance.genesis                    = true;
          initial_balance.last_update                = config.timestamp;
          self->store_balance_record( initial_balance );
       }
@@ -1839,7 +1840,6 @@ namespace bts { namespace blockchain {
 
        return names;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
-
 
     std::vector<asset_record> chain_database::get_assets( const string& first_symbol, uint32_t count )const
     { try {
@@ -1991,8 +1991,7 @@ namespace bts { namespace blockchain {
       return my->_property_db.fetch( property_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("property_id",property_id) ) }
 
-
-   void  chain_database::set_property( chain_property_enum property_id, 
+   void chain_database::set_property( chain_property_enum property_id, 
                                                      const fc::variant& property_value )
    {
       if( property_value.is_null() )
@@ -2000,6 +1999,7 @@ namespace bts { namespace blockchain {
       else
          my->_property_db.store( property_id, property_value );
    }
+
    void chain_database::store_proposal_record( const proposal_record& r )
    {
       if( r.is_null() )
@@ -2038,7 +2038,8 @@ namespace bts { namespace blockchain {
    {
          return my->_chain_id;
    }
-   std::vector<proposal_record>  chain_database::get_proposals( uint32_t first, uint32_t count )const
+
+   std::vector<proposal_record> chain_database::get_proposals( uint32_t first, uint32_t count )const
    {
       std::vector<proposal_record> results;
       auto current_itr = my->_proposal_db.lower_bound( first );
@@ -2051,7 +2052,8 @@ namespace bts { namespace blockchain {
       }
       return results;
    }
-   std::vector<proposal_vote>   chain_database::get_proposal_votes( proposal_id_type proposal_id ) const
+
+   std::vector<proposal_vote> chain_database::get_proposal_votes( proposal_id_type proposal_id ) const
    {
       std::vector<proposal_vote> results;
       auto current_itr = my->_proposal_vote_db.lower_bound( proposal_vote_id_type(proposal_id,0) );
@@ -2066,16 +2068,17 @@ namespace bts { namespace blockchain {
       return results;
    }
 
-   fc::ripemd160    chain_database::get_current_random_seed()const
+   fc::ripemd160 chain_database::get_current_random_seed()const
    {
       return get_property( last_random_seed_id ).as<fc::ripemd160>();
    }
 
-   oorder_record         chain_database::get_bid_record( const market_index_key&  key )const
+   oorder_record chain_database::get_bid_record( const market_index_key&  key )const
    {
       return my->_bid_db.fetch_optional(key);
    }
-   omarket_order   chain_database::get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) 
+
+   omarket_order chain_database::get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) 
    {
       omarket_order result;
       auto itr = my->_ask_db.lower_bound( market_index_key( price(0,quote_id,base_id) ) );
@@ -2089,15 +2092,17 @@ namespace bts { namespace blockchain {
       return result;
    }
 
-   oorder_record   chain_database::get_ask_record( const market_index_key&  key )const
+   oorder_record chain_database::get_ask_record( const market_index_key&  key )const
    {
       return my->_ask_db.fetch_optional(key);
    }
-   oorder_record    chain_database::get_short_record( const market_index_key& key )const
+
+   oorder_record chain_database::get_short_record( const market_index_key& key )const
    {
       return my->_short_db.fetch_optional(key);
    }
-   ocollateral_record    chain_database::get_collateral_record( const market_index_key& key )const
+
+   ocollateral_record chain_database::get_collateral_record( const market_index_key& key )const
    {
       return my->_collateral_db.fetch_optional(key);
    }
@@ -2109,6 +2114,7 @@ namespace bts { namespace blockchain {
       else
          my->_bid_db.store( key, order );
    }
+
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order ) 
    {
       wlog( "STORE ASK ${k} ${o}", ("k",key)("o",order) );
@@ -2117,6 +2123,7 @@ namespace bts { namespace blockchain {
       else
          my->_ask_db.store( key, order );
    }
+
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
    {
       if( order.is_null() )
@@ -2124,6 +2131,7 @@ namespace bts { namespace blockchain {
       else
          my->_short_db.store( key, order );
    }
+
    void chain_database::store_collateral_record( const market_index_key& key, const collateral_record& collateral ) 
    {
       if( collateral.is_null() )
@@ -2131,12 +2139,18 @@ namespace bts { namespace blockchain {
       else
          my->_collateral_db.store( key, collateral );
    }
-   string  chain_database::get_asset_symbol( asset_id_type asset_id )const
+
+   string chain_database::get_asset_symbol( asset_id_type asset_id )const
    { try {
       auto asset_rec = get_asset_record( asset_id );
       FC_ASSERT( asset_rec.valid(), "Unknown Asset ID: ${id}", ("asset_id",asset_id) );
       return asset_rec->symbol;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_id",asset_id) ) }
+
+   time_point_sec chain_database::get_genesis_timestamp()const
+   {
+       return get_asset_record( asset_id_type() )->registration_date;
+   }
 
    void chain_database::sanity_check()const
    { try {

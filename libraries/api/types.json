@@ -18,6 +18,11 @@
         "default_example" : "Bob"
       },
       {
+        "type_name" : "account_name_array",
+        "container_type": "array",
+        "contained_type": "account_name"
+      },
+      {
         "type_name" : "new_account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -542,8 +547,8 @@
           "cpp_return_type" : "std::map<bts::blockchain::transaction_id_type, fc::exception>"
       },
       {
-          "type_name" : "signature",
-          "cpp_return_type" : "fc::ecc::signature",
+          "type_name" : "compact_signature",
+          "cpp_return_type" : "fc::ecc::compact_signature",
           "cpp_include_file" : "fc/crypto/elliptic.hpp"
       },
       {

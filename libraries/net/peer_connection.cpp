@@ -9,6 +9,38 @@
 
 namespace bts { namespace net
   {
+    peer_connection::peer_connection(peer_connection_delegate* delegate) : 
+      _node(delegate),
+      _message_connection(this),
+      _total_queued_messages_size(0),
+      direction(peer_connection_direction::unknown),
+      is_firewalled(firewalled_state::unknown),
+      our_state(our_connection_state::disconnected),
+      they_have_requested_close(false),
+      their_state(their_connection_state::disconnected),
+      we_have_requested_close(false),
+      negotiation_status(connection_negotiation_status::disconnected),
+      number_of_unfetched_item_ids(0),
+      peer_needs_sync_items_from_us(true),
+      we_need_sync_items_from_peer(true),
+      last_block_number_delegate_has_seen(0),
+      transaction_fetching_inhibited_until(fc::time_point::min())
+    {
+    }
+
+    peer_connection_ptr peer_connection::make_shared(peer_connection_delegate* delegate)
+    {
+      // The lifetime of peer_connection objects is managed by shared_ptrs in node.  The peer_connection
+      // is responsible for notifying the node when it should be deleted, and the process of deleting it
+      // cleans up the peer connection's asynchronous tasks which are responsible for notifying the node
+      // when it should be deleted.
+      // To ease this vicious cycle, we slightly delay the execution of the destructor until the
+      // current task yields.  In the (not uncommon) case where it is the task executing 
+      // connect_to or read_loop, this allows the task to finish before the destructor is forced
+      // to cancel it.
+      return peer_connection_ptr(new peer_connection(delegate), [](peer_connection* peer_to_delete){ fc::async([peer_to_delete](){delete peer_to_delete;}); });
+    }
+
     peer_connection::~peer_connection()
     {
       if (_send_queued_messages_done.valid() && !_send_queued_messages_done.ready())

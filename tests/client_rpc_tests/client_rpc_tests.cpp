@@ -42,7 +42,7 @@ std::cerr << "Out: " << FORMAT << "\n"; \
 #define run_cmd( client, cmd ) \
 do { \
 std::cerr << "Command in " << #client << ": " << cmd << "\n"; \
-std::cerr << "Out: \n" << client->execute_command_line( cmd ) << "\n"; \
+std::cerr << "Out: \n" << client->debug_execute_command_line( cmd ) << "\n"; \
 } while (0)
 
 
@@ -121,11 +121,11 @@ struct WFixture
          {
             if( (even++)%2 )
             {
-          std::cerr << "client a key: "<< even<<" "<< clienta->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+          std::cerr << "client a key: "<< even<<" "<< clienta->debug_execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
             }
             else
             {
-          std::cerr << "client b key: "<< even<<" "<< clientb->execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
+          std::cerr << "client b key: "<< even<<" "<< clientb->debug_execute_command_line( "wallet_import_private_key " + key_to_wif( key  ) ) << "\n";
             }
             if( even >= 34 ) break;
          }

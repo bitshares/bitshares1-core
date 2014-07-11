@@ -66,7 +66,6 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_list_my_accounts" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "wallet_transfer 33 XTS delegate31 b-account first-memo" );
-   return;
    exec( clienta, "wallet_account_transaction_history delegate31" );
    exec( clienta, "wallet_account_transaction_history b-account" );
    exec( clienta, "wallet_account_transaction_history" );

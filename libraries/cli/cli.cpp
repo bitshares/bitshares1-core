@@ -658,7 +658,7 @@ namespace bts { namespace cli {
                   const auto& votes = result.as<account_vote_summary_type>();
                   *_out << pretty_vote_summary( votes );
               }
-              else if (method_name == "list_errors")
+              else if (method_name == "debug_list_errors")
               {
                   auto error_map = result.as<map<fc::time_point,fc::exception> >();
                   if (error_map.empty())
@@ -837,7 +837,7 @@ namespace bts { namespace cli {
                               *_out << std::setw(15) << tine.transaction_count
                                     << std::setw(10) << tine.size
                                     << std::setw(20) << pretty_timestamp(tine.timestamp)
-                                    << std::setw(10) << tine.latency
+                                    << std::setw(10) << tine.latency.to_seconds()
                                     << std::setw(8);
 
                               if (tine.is_valid.valid()) {

@@ -1,4 +1,4 @@
-default (unlocked) >>> filter_output_for_tests true
+default (unlocked) >>> debug_filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_account_create test
 "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
@@ -248,7 +248,7 @@ default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 default (unlocked) >>> wallet_account_balance delegate0
 delegate0:
     19,801,880.09801 XTS
-default (unlocked) >>> wait_block_interval 3
+default (unlocked) >>> debug_wait_block_interval 3
 OK
 default (unlocked) >>> wallet_account_balance delegate0
 delegate0:

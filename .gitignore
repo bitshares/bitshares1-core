@@ -16,6 +16,7 @@ Makefile
 
 libraries/api/bts_api_generator
 libraries/api/include/bts/api/common_api.hpp
+libraries/api/ruby_generator/output
 libraries/blockchain/genesis_json.cpp
 libraries/rpc_stubs
 libraries/utilities/git_revision.cpp
