@@ -1613,9 +1613,10 @@ config load_config( const fc::path& datadir )
 
     vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
                                                                                         uint32_t start_block_num,
-                                                                                        uint32_t end_block_num )const
+                                                                                        uint32_t end_block_num,
+                                                                                        const string& asset_symbol )const
     {
-      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num );
+      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
     }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
@@ -3105,6 +3106,16 @@ config load_config( const fc::path& datadir )
    fc::ecc::compact_signature client_impl::wallet_sign_hash(const string& signing_account, const fc::sha256& hash)
    {
       return _wallet->get_account_private_key(signing_account).sign_compact(hash);
+   }
+
+   std::string client_impl::wallet_login_start(const std::string &server_account)
+   {
+      return _wallet->login_start(server_account);
+   }
+
+   fc::variant client_impl::wallet_login_finish(const public_key_type &server_key, const public_key_type &client_key, const fc::ecc::compact_signature &client_signature)
+   {
+      return _wallet->login_finish(server_key, client_key, client_signature);
    }
 
    } // namespace detail

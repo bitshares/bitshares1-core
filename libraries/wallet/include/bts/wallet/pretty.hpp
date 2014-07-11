@@ -27,13 +27,12 @@ struct public_key_summary
 struct pretty_transaction
 {
     pretty_transaction()
-    :is_virtual(false),is_confirmed(false),block_num(0),trx_num(0),fees(0){}
+    :is_virtual(false),is_confirmed(false),block_num(0),fees(0){}
 
     bool                                        is_virtual;
     bool                                        is_confirmed;
     transaction_id_type                         trx_id;
     int32_t                                     block_num;
-    int32_t                                     trx_num;
     string                                      from_account;
     string                                      to_account;
     asset                                       amount;
@@ -179,7 +178,7 @@ struct pretty_remove_collateral_op
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
-FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_confirmed)(trx_id)(block_num)(trx_num)(from_account)(to_account)(amount)(fees)(memo_message)(created_time)(received_time) );
+FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_confirmed)(trx_id)(block_num)(from_account)(to_account)(amount)(fees)(memo_message)(created_time)(received_time) );
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
 FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));
