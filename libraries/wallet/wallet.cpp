@@ -3788,16 +3788,26 @@ namespace bts { namespace wallet {
         bid_op.domain_name = domain_name;
         bid_op.bid_amount = bid_amount;
         bid_op.bidder_address = get_new_address( owner_name );
+        trx.operations.push_back( bid_op );
 
         auto priority_fee = get_priority_fee().amount;
 
         if ( ! odomain_rec.valid() )
         {
             my->withdraw_to_transaction( bid_amount + priority_fee, 0, bidder_pubkey, trx, required_signatures );
-            trx.operations.push_back( bid_op );
         }
         else
         {
+            if (false) // TODO if I have the private key
+            {
+            }
+            else
+            {
+                FC_ASSERT(bid_amount >= odomain_rec->next_required_bid, "Did not bid high enough");
+                my->withdraw_to_transaction( bid_amount + priority_fee, 0, bidder_pubkey, trx, required_signatures);
+                trx.deposit( odomain_rec->owner, 
+                             asset(odomain_rec->price * (1-P2P_PENALTY_RATE), 0), 0);
+            }
         }
 
         if ( sign )

@@ -1,6 +1,9 @@
 #include <bts/blockchain/pending_chain_state.hpp>
+#include <bts/blockchain/config.hpp>
 
 #include <algorithm>
+
+#include <iostream> //todo debug only
 
 namespace bts { namespace blockchain {
 
@@ -36,21 +39,22 @@ namespace bts { namespace blockchain {
     */
    void pending_chain_state::apply_deterministic_updates()
    {
-      /** nothing to do for now... charge 5% inactivity fee? */
-      /** execute order matching */
-      auto domain_recs = vector<domain_record>();
-      for ( auto kv : domains )
+       auto k = 0;
+       auto max = 1;
+       auto prev_state = _prev_state.lock();
+       auto auctions = prev_state->get_domains_in_auction();
+       for(auto domain_rec : auctions)
       {
-        domain_recs.push_back(kv.second);
+          if (k >= max)
+              break;
+          domain_rec.time_in_top += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; // todo missed blocks
+          if (domain_rec.time_in_top > P2P_AUCTION_DURATION_SECS)
+          {
+              domain_rec.state = domain_record::owned;
+          }
+          store_domain_record( domain_rec );
+          k++;
       }
-/*
-      std::sort(domain_recs.begin(), domain_recs.end(),
-                [](const domain_record& a, const domain_record& b)
-      {
-          return a.last_bid > b.last_bid; // largest first
-      });
-*/
-       
    }
 
    /** polymorphically allcoate a new state */
@@ -314,13 +318,8 @@ namespace bts { namespace blockchain {
       if( domains.find( r.domain_name ) != domains.end() )
       {
           auto old_rec = domains[r.domain_name];
-          if( auctions.find( old_rec.get_auction_key() ) != auctions.end() )
-          {
-              auctions.erase( old_rec.get_auction_key() );
-          }
       }
       domains[r.domain_name] = r;
-      auctions[r.get_auction_key()] = r.domain_name;
    }
 
    vector<domain_record>   pending_chain_state::get_domain_records( const string& first_name,

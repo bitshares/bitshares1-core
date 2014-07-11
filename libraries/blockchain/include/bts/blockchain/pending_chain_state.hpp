@@ -119,7 +119,7 @@ namespace bts { namespace blockchain {
          map<time_point_sec, slot_record>                               slots;
 
          unordered_map< string, domain_record>                          domains;
-         map< auction_index_key, string >                               auctions;
+         //map< auction_index_key, string >                               auctions;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 

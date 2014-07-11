@@ -298,6 +298,7 @@ namespace bts { namespace blockchain {
 
           // DNS
           _domain_db.open( data_dir / "index/domain_db" );
+          _auction_db.open( data_dir / "index/auction_db" );
 
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
@@ -1115,6 +1116,7 @@ namespace bts { namespace blockchain {
       my->_collateral_db.close();
 
       my->_domain_db.close();
+      my->_auction_db.close();
 
       //my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1548,14 +1550,7 @@ namespace bts { namespace blockchain {
           my->_auction_db.remove( old_domain_rec.value().get_auction_key() );
       }
       my->_domain_db.store( rec.domain_name, rec );
-      if(   rec.update_type == domain_record::first_bid
-         || rec.update_type == domain_record::bid
-         || rec.update_type == domain_record::sell )
-            std::cerr << "storing a domain record in the chain db\n";
-          my->_auction_db.remove( old_domain_rec.value().get_auction_key() );
-      }
-      my->_domain_db.store( rec.domain_name, rec );
-      if( rec.state == domain_record::in_auction )
+      if( rec.get_true_state() == domain_record::in_auction )
       {
          my->_auction_db.store( rec.get_auction_key(), rec.domain_name );
       }

@@ -21,9 +21,10 @@ namespace bts { namespace blockchain {
         }
         friend bool operator < (const auction_index_key& a, const auction_index_key& b)
         {
-            if (a.price < b.price)
-                return true;
+            // most expensive first
             if (a.price > b.price)
+                return true;
+            if (a.price < b.price)
                 return false;
             return a.bid_time < b.bid_time;
         }

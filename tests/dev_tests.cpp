@@ -9,6 +9,34 @@ BOOST_AUTO_TEST_CASE( timetest )
   elog( "delta: ${d}", ("d", (block_time - now).to_seconds() ) );
 }
 
+
+BOOST_FIXTURE_TEST_CASE( wonky_dns, chain_fixture )
+{ try {
+    enable_logging();
+    exec( clienta, "scan 0 10" );
+    exec( clientb, "scan 0 10" );
+    exec( clienta, "wallet_list_my_accounts" );
+    exec( clienta, "wallet_delegate_set_block_production ALL true" );
+
+    exec( clientb, "wallet_list_my_accounts" );
+
+    produce_block( clienta );
+    produce_block( clienta );
+    produce_block( clienta );
+
+    exec(clientb, "wallet_account_balance" );
+    exec(clientb, "domain_bid name 10000 delegate30" );
+
+    for( int i = 0; i < 120; i++)
+    {
+        produce_block( clienta );
+    }
+
+    exec( clienta, "get_info" );
+    exec( clientb, "get_info" );
+} FC_LOG_AND_RETHROW() }
+
+
 BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 { try {
 //   disable_logging();
