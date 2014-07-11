@@ -6,7 +6,7 @@
 
 namespace bts{ namespace blockchain {
 
-   balance_record::balance_record( const address& owner, const asset& balance_arg, account_id_type delegate_id )
+   balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
    :genesis(false)
    {
       balance =  balance_arg.amount;

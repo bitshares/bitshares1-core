@@ -106,7 +106,7 @@ namespace bts { namespace blockchain {
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 
-          * be executed 
+          * be executed   map<QUOTE,BASE>
           */
          map<asset_id_type, asset_id_type>                              _dirty_markets;
 

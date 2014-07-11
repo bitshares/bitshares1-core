@@ -395,20 +395,24 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_bid_record( const market_index_key& key, const order_record& rec ) 
    {
       bids[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
 
    void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& rec ) 
    {
       asks[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
    void pending_chain_state::store_short_record( const market_index_key& key, const order_record& rec )
    {
       shorts[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
 
    void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& rec ) 
    {
       collateral[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
 
    void pending_chain_state::store_slot_record( const slot_record& r )

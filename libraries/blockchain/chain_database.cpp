@@ -745,23 +745,89 @@ namespace bts { namespace blockchain {
               // while highest_call < lowest short
               //    trade
            }
-           /* TODO: verify lower bound is working properly... fix get_bid/ask orders which also use lower bound 
-           auto bid_itr  = my->_bid_db.lower_bound( market_index_key( price( 0, market_pair.first,   market_pair.second) ) );
-           auto ask_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, market_pair.first+1, market_pair.second) ) );
+
+           auto bid_itr  = _bid_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
+           auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second+1) ) );
+           if( ask_itr.valid() ) --ask_itr; // last item..
+
+           market_order current_bid;
+           market_order current_ask;
+           if( bid_itr.valid() && ask_itr.valid() )
+           {
+               current_bid = market_order( bid_order, bid_itr.key(), bid_itr.value() );
+               current_ask = market_order( ask_order, ask_itr.key(), ask_itr.value() );
+           }
+
+           asset usd_fees_collected( 0, market_pair.first );
            while( bid_itr.valid() && ask_itr.valid() )
            {
-              ++bid_itr;
-              --ask_itr;
+              auto bid_key = bid_itr.key();
+              auto ask_key = ask_itr.key();
+              if( current_bid.get_price().quote_asset_id != market_pair.first || 
+                  current_bid.get_price().base_asset_id != market_pair.second ||
+                  current_ask.get_price().quote_asset_id != market_pair.first || 
+                  current_ask.get_price().base_asset_id != market_pair.second 
+                 )
+              {
+                 break;
+              }
+
+              if( bid_key.order_price >= ask_key.order_price )
+              {
+                  auto quantity = std::min( current_bid.get_quantity(), current_ask.get_quantity() );
+                 
+                  auto usd_paid_by_bid     = quantity * current_bid.get_price();
+                  auto usd_received_by_ask = quantity * current_ask.get_price();
+                  auto xts_paid_by_ask     = quantity;
+                  auto xts_received_by_bid = quantity;
+
+                  usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
+
+                  // fill ask, remove it 
+                  current_bid.state.balance -= usd_paid_by_bid.amount;
+                  current_ask.state.balance -= xts_paid_by_ask.amount;
+
+                  auto ask_payout = pending_state->get_balance_record( withdraw_condition( withdraw_with_signature(current_ask.market_index.owner), market_pair.first ).get_address() );
+                  if( !ask_payout )
+                     ask_payout = balance_record( current_ask.market_index.owner, asset(0,market_pair.first), 0 );
+                  ask_payout->balance += usd_received_by_ask.amount;
+
+                  auto bid_payout = pending_state->get_balance_record( withdraw_condition( withdraw_with_signature(current_bid.market_index.owner), market_pair.second ).get_address() );
+                  if( !bid_payout )
+                     bid_payout = balance_record( current_bid.market_index.owner, asset(0,market_pair.second), 0 );
+                  bid_payout->balance += xts_received_by_bid.amount;
+
+                  pending_state->store_balance_record( *ask_payout );
+                  pending_state->store_balance_record( *bid_payout );
+
+                  pending_state->store_ask_record( current_ask.market_index, current_ask.state );
+                  pending_state->store_bid_record( current_bid.market_index, current_bid.state );
+
+                  if( current_ask.state.balance == 0 )
+                  {
+                     ++ask_itr;
+                     if( ask_itr.valid() ) current_ask = market_order( ask_order, ask_itr.key(), ask_itr.value() );
+                     else break;
+                  }
+                  if( current_bid.state.balance == 0 )
+                  {
+                     ++bid_itr;
+                     if( bid_itr.valid() ) current_bid = market_order( bid_order, bid_itr.key(), bid_itr.value() );
+                     else break;
+                  }
+              }
+              else
+              {
+                 break;
+              }
            }
-           */
-
-           // while highest_bid > lowest_ask 
-           //    trade... 
-           // while highest_bid > lowest_short 
-           //    trade...
-
-           // if there are any fees collected other than XTS... 
-           //  try to match that order...
+           // now that I have some USD fees... I need to update the asset record to reflect the
+           // change in supply.
+           auto quote_record = pending_state->get_asset_record( market_pair.first );
+           FC_ASSERT( quote_record );
+           quote_record->collected_fees += usd_fees_collected.amount;
+           quote_record->current_share_supply -= usd_fees_collected.amount;
+           pending_state->store_asset_record( *quote_record );
         } 
       } FC_CAPTURE_AND_RETHROW() }
 
