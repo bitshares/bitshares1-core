@@ -51,7 +51,7 @@ namespace bts { namespace blockchain {
 
       define_delegate_slate_op_type = 18,
 
-      domain_bid_op_type       = 101
+      domain_bid_op_type       = 41
    };
 
    /**

@@ -1544,6 +1544,7 @@ namespace bts { namespace blockchain {
       auto old_domain_rec = my->_domain_db.find( rec.domain_name );
       if( old_domain_rec.valid() && my->_auction_db.find( old_domain_rec.value().get_auction_key() ).valid() )
       {
+            std::cerr << "storing a domain record in the chain db\n";
           my->_auction_db.remove( old_domain_rec.value().get_auction_key() );
       }
       my->_domain_db.store( rec.domain_name, rec );
