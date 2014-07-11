@@ -3104,6 +3104,16 @@ config load_config( const fc::path& datadir )
       return _wallet->get_account_private_key(signing_account).sign_compact(hash);
    }
 
+   std::string client_impl::wallet_login_start(const std::string &server_account)
+   {
+      return _wallet->login_start(server_account);
+   }
+
+   fc::variant client_impl::wallet_login_finish(const public_key_type &server_key, const public_key_type &client_key, const fc::ecc::compact_signature &client_signature)
+   {
+      return _wallet->login_finish(server_key, client_key, client_signature);
+   }
+
    } // namespace detail
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

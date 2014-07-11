@@ -1234,6 +1234,42 @@
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_login_start",
+         "description" : "Initiates the login procedure by providing a BitShares Login URL",
+         "return_type" : "string",
+         "parameters"  : [
+            {
+                "name" : "server_account",
+                "type" : "string",
+                "description" : "Name of the account of the server. The user will be shown this name as the site he is logging into."
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_login_finish",
+         "description" : "Completes the login procedure by finding the user's public account key and shared secret",
+         "return_type" : "variant",
+         "parameters"  : [
+            {
+                "name" : "server_key",
+                "type" : "public_key",
+                "description" : "The one-time public key from wallet_login_start."
+            },
+            {
+                "name" : "client_key",
+                "type" : "public_key",
+                "description" : "The client's one-time public key."
+            },
+            {
+                "name" : "client_signature",
+                "type" : "compact_signature",
+                "description" : "The client's signature of the shared secret."
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }
