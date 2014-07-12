@@ -2448,7 +2448,7 @@ config load_config( const fc::path& datadir )
        return _wallet->create_account( account_name, private_data );
     }
 
-    void client_impl::wallet_account_set_favorite(const string& account_name, bool is_favorite)
+    void client_impl::wallet_account_set_favorite( const string& account_name, bool is_favorite )
     {
         _wallet->account_set_favorite( account_name, is_favorite );
     }

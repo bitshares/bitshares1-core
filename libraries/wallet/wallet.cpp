@@ -1009,7 +1009,7 @@ namespace bts { namespace wallet {
                                       const bool is_favorite )
    {
        FC_ASSERT( is_open() );
-       FC_ASSERT( is_valid_account( account_name ) );
+       get_account( account_name ); /* Just to check input */
 
        auto judged_account = my->_wallet_db.lookup_account( account_name );
        judged_account->is_favorite = is_favorite;
