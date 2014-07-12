@@ -1133,7 +1133,7 @@ config load_config( const fc::path& datadir )
          FC_THROW_EXCEPTION(fc::key_not_found_exception, "I don't have the item you're looking for");
        }
 
-       string client_impl::debug_execute_command_line(const string& input) const
+       string client_impl::execute_command_line(const string& input) const
        {
            if (_cli)
            {
@@ -1605,10 +1605,7 @@ config load_config( const fc::path& datadir )
 
     wallet_account_record detail::client_impl::wallet_get_account(const string& account_name) const
     { try {
-      auto opt_account = _wallet->get_account(account_name);
-      if( opt_account.valid() )
-         return *opt_account;
-      FC_ASSERT(false, "Invalid Account Name: ${account_name}", ("account_name",account_name) );
+      return _wallet->get_account( account_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
     vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
@@ -1864,13 +1861,12 @@ config load_config( const fc::path& datadir )
 
     int64_t detail::client_impl::bitcoin_getbalance(const string& account_name)
     { try {
-
-       account_balance_summary_type balances = _wallet->get_account_balances();
+       const account_balance_summary_type balances = _wallet->get_account_balances();
        auto itr = balances.find( account_name );
        if( itr != balances.end() )
        {
-          auto bitr = itr->second.find( BTS_BLOCKCHAIN_SYMBOL );
-          if( bitr != itr->second.end() )
+          auto bitr = itr->second.first.find( BTS_BLOCKCHAIN_SYMBOL );
+          if( bitr != itr->second.first.end() )
              return bitr->second;
        }
        return 0;
@@ -1936,9 +1932,9 @@ config load_config( const fc::path& datadir )
        std::unordered_map< string, bts::blockchain::share_type > account_bts_balances;
        for ( auto account_blance : account_blances )
        {
-          if ( account_blance.second.find( BTS_BLOCKCHAIN_SYMBOL ) != account_blance.second.end() )
+          if ( account_blance.second.first.find( BTS_BLOCKCHAIN_SYMBOL ) != account_blance.second.first.end() )
           {
-             account_bts_balances[ account_blance.first ] = account_blance.second[ BTS_BLOCKCHAIN_SYMBOL ];
+             account_bts_balances[ account_blance.first ] = account_blance.second.first[ BTS_BLOCKCHAIN_SYMBOL ];
           }
        }
 
@@ -2452,7 +2448,7 @@ config load_config( const fc::path& datadir )
        return _wallet->create_account( account_name, private_data );
     }
 
-    void client_impl::wallet_account_set_favorite(const string& account_name, bool is_favorite)
+    void client_impl::wallet_account_set_favorite( const string& account_name, bool is_favorite )
     {
         _wallet->account_set_favorite( account_name, is_favorite );
     }
@@ -2747,15 +2743,6 @@ config load_config( const fc::path& datadir )
 
    account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      if( !account_name.empty() )
-      {
-         if( !_chain_db->is_valid_account_name( account_name ) )
-            FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
-
-         if( !_wallet->is_receive_account( account_name ) )
-            FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
-      }
-
       return _wallet->get_account_balances( account_name );
    }
 

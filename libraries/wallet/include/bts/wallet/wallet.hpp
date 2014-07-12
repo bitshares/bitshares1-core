@@ -15,13 +15,13 @@ namespace bts { namespace wallet {
    typedef function<void(uint32_t,uint32_t)> scan_progress_callback;
 
    typedef map<string, int64_t> account_vote_summary_type;
-   typedef map<string, map<string, share_type>> account_balance_summary_type;
+   typedef map<string, std::pair<map<string, share_type>, share_type>> account_balance_summary_type;
 
    enum delegate_status_flags
    {
-       any_delegate_status = 0x00,
-       enabled_delegate_status = 0x01,
-       active_delegate_status = 0x02,
+       any_delegate_status      = 0x00,
+       enabled_delegate_status  = 0x01,
+       active_delegate_status   = 0x02,
        disabled_delegate_status = 0x04,
        inactive_delegate_status = 0x08
    };
@@ -318,7 +318,7 @@ namespace bts { namespace wallet {
 
          signed_transaction  cancel_market_order( const address& owner_address );
 
-         owallet_account_record get_account( const string& account_name )const;
+         wallet_account_record get_account( const string& account_name )const;
 
          /**
           * if the active_key is null then the active key will be made the same as the master key.
