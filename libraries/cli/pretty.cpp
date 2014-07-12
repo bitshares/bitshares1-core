@@ -367,16 +367,16 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
     out << std::left;
 
     out << std::setw( 32 ) << "ACCOUNT";
-    out << std::setw( 24 ) << "BALANCE";
+    out << std::setw( 28 ) << "BALANCE";
 
-    out << pretty_line( 56 );
+    out << pretty_line( 60 );
 
     for( const auto& item : balances )
     {
         const auto& account_name = item.first;
-        bool first = true;
 
-        for( const auto& asset_balance : item.second )
+        bool first = true;
+        for( const auto& asset_balance : item.second.first )
         {
             if( first )
             {
@@ -389,9 +389,20 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
             }
 
             const auto balance = asset( asset_balance.second, client->get_chain()->get_asset_id( asset_balance.first ) );
-            out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( balance );
+            out << std::setw( 28 ) << client->get_chain()->to_pretty_asset( balance );
 
             out << "\n";
+        }
+
+        const auto& pay_balance = item.second.second;
+        if( pay_balance > 0 )
+        {
+            out << "\b";
+            out << std::setw( 32 ) << "";
+
+            std::stringstream ss;
+            ss << client->get_chain()->to_pretty_asset( asset( pay_balance ) ) << " (pay)";
+            out << std::setw( 28 ) << ss.str() << "\n";
         }
     }
 
