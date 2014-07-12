@@ -3118,6 +3118,11 @@ config load_config( const fc::path& datadir )
       return _wallet->login_finish(server_key, client_key, client_signature);
    }
 
+   vector<bts::blockchain::market_transaction> client_impl::blockchain_list_market_transactions( uint32_t block_num )const
+   {
+      return _chain_db->get_market_transactions( block_num );
+   }
+
    } // namespace detail
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

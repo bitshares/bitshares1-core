@@ -299,7 +299,11 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "blockchain_market_order_book USD XTS" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book USD XTS" );
+   exec( clienta, "info" );
    produce_block( clienta );
+   exec( clienta, "info" );
+   exec( clienta, "blockchain_list_market_transactions 127" );
+   exec( clienta, "blockchain_list_market_transactions 128" );
    exec( clienta, "blockchain_market_order_book USD XTS" );
    exec( clientb, "wallet_market_order_list USD XTS" );
    exec( clientb, "wallet_account_transaction_history" );

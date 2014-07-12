@@ -26,6 +26,7 @@ namespace bts { namespace blockchain {
       }
    };
 
+
    struct order_record 
    {
       order_record():balance(0){}
@@ -58,10 +59,26 @@ namespace bts { namespace blockchain {
       price             get_price()const;
       asset             get_quantity()const;
       asset             get_quote_quantity()const;
+      address           get_owner()const { return market_index.owner; }
 
       order_type_enum   type;
       market_index_key  market_index;
       order_record      state;
+   };
+
+   struct market_transaction
+   {
+      market_transaction(){}
+
+      address  bid_owner;
+      address  ask_owner;
+      price    bid_price;
+      price    ask_price;
+      asset    bid_paid;
+      asset    bid_received;
+      asset    ask_paid;
+      asset    ask_received;
+      asset    fees_collected;
    };
 
    typedef optional<market_order> omarket_order;
@@ -78,8 +95,20 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (bid_order)(ask_order)(short_order)(cover_order) );
+FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (bid_order)(ask_order)(short_order)(cover_order) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::order_record, (balance) )
-FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance) );
-FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state) );
+FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance) )
+FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state) )
+FC_REFLECT_TYPENAME( std::vector<bts::blockchain::market_transaction> )
+FC_REFLECT( bts::blockchain::market_transaction, 
+            (bid_owner)
+            (ask_owner)
+            (bid_price)
+            (ask_price)
+            (bid_paid)
+            (bid_received)
+            (ask_paid)
+            (ask_received)
+            (fees_collected) 
+          )

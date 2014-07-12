@@ -4,6 +4,7 @@
 #include <bts/blockchain/genesis_config.hpp>
 #include <bts/blockchain/genesis_json.hpp>
 #include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
 
@@ -158,6 +159,7 @@ namespace bts { namespace blockchain {
             bool                                                            _skip_signature_verification;
             share_type                                                      _priority_fee;
 
+            bts::db::level_map<uint32_t, std::vector<market_transaction> >  _market_transactions_db;
             bts::db::level_map<slate_id_type, delegate_slate >              _slate_db;
             bts::db::level_map<uint32_t, std::vector<block_id_type> >       _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>               _fork_db;
@@ -243,6 +245,7 @@ namespace bts { namespace blockchain {
           {
              FC_CAPTURE_AND_THROW( new_database_version, (database_version)(BTS_BLOCKCHAIN_DATABASE_VERSION) ); 
           }
+          _market_transactions_db.open( data_dir / "index/market_transactions_db" );
           _fork_number_db.open( data_dir / "index/fork_number_db" );
           _fork_db.open( data_dir / "index/fork_db" );
           _slate_db.open( data_dir / "index/slate_db" );
@@ -738,6 +741,7 @@ namespace bts { namespace blockchain {
         elog( "execute markets ${e}", ("e", pending_state->get_dirty_markets()) );
         map<asset_id_type,share_type> collected_fees;
 
+        vector<market_transaction> market_transactions;
         for( auto market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
@@ -804,6 +808,8 @@ namespace bts { namespace blockchain {
               if( bid_key.order_price >= ask_key.order_price )
               {
                   auto quote_quantity = std::min( current_bid.get_quote_quantity(), current_ask.get_quote_quantity() );
+
+                  market_transaction mtrx;
                  
                   auto usd_paid_by_bid     = quote_quantity;// * current_bid.get_price();
                   auto usd_received_by_ask = quote_quantity;// * current_ask.get_price();
@@ -811,6 +817,19 @@ namespace bts { namespace blockchain {
                   auto xts_received_by_bid = quote_quantity * current_bid.get_price();
 
                   xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
+
+                  mtrx.bid_owner       = current_bid.get_owner();
+                  mtrx.bid_price       = current_bid.get_price();
+                  mtrx.bid_paid        = usd_paid_by_bid;
+                  mtrx.bid_received    = xts_received_by_bid;
+                  mtrx.ask_owner       = current_ask.get_owner();
+                  mtrx.ask_price       = current_ask.get_price();
+                  mtrx.ask_paid        = xts_paid_by_ask;
+                  mtrx.ask_received    = usd_received_by_ask;
+                  mtrx.fees_collected  = xts_fees_collected;
+
+                  market_transactions.push_back(mtrx);
+                  
 
                   // fill ask, remove it 
                   current_bid.state.balance -= usd_paid_by_bid.amount;
@@ -865,6 +884,8 @@ namespace bts { namespace blockchain {
            collected_fees[market_pair.second] = xts_fees_collected.amount;
         } 
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
+        edump( (market_transactions) );
+        pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
 
       /**
@@ -1158,6 +1179,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::close()
    { try {
+      my->_market_transactions_db.close();
       my->_fork_number_db.close();
       my->_fork_db.close();
       my->_slate_db.close();
@@ -2492,6 +2514,27 @@ namespace bts { namespace blockchain {
    share_type chain_database::get_priority_fee()
    {
       return my->_priority_fee;
+   }
+
+   void chain_database::set_market_transactions( vector<market_transaction> trxs )
+   {
+      if( trxs.size() == 0 )
+      {
+         wlog( "set market block: ${h} trxs ${t}", ("t",trxs)("h",get_head_block_num() + 1 ) );
+         my->_market_transactions_db.remove( get_head_block_num() );
+      }
+      else
+      {
+         elog( "set market block: ${h} trxs ${t}", ("t",trxs)("h",get_head_block_num() + 1 ) );
+         my->_market_transactions_db.store( get_head_block_num()+1, trxs );
+      }
+   }
+
+   vector<market_transaction> chain_database::get_market_transactions( uint32_t block_num  )const
+   {
+      auto tmp = my->_market_transactions_db.fetch_optional(block_num);
+      if( tmp ) return *tmp;
+      return vector<market_transaction>();
    }
 
 } } // bts::blockchain

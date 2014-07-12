@@ -440,6 +440,20 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_list_market_transactions",
+        "description": "Returns a list of market transactions executed on a given block.",
+        "return_type": "market_transaction_array",
+        "parameters" : [
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
+              "description" : "Block to get market operations for."
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

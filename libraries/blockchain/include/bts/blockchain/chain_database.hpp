@@ -274,6 +274,9 @@ namespace bts { namespace blockchain {
          virtual void                       store_slot_record( const slot_record& r )override;
          virtual oslot_record               get_slot_record( const time_point_sec& start_time )const override;
 
+         virtual void                       set_market_transactions( vector<market_transaction> trxs );
+         vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;
+
       private:
          unique_ptr<detail::chain_database_impl> my;
    };

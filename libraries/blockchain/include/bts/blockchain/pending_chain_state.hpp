@@ -87,6 +87,10 @@ namespace bts { namespace blockchain {
 
          virtual uint32_t                   get_head_block_num()const override;
 
+         virtual void                       set_market_transactions( vector<market_transaction> trxs ) override;
+
+         vector<market_transaction>                                     market_transactions;
+
          unordered_map< asset_id_type, asset_record>                    assets;
          unordered_map< slate_id_type, delegate_slate>                  slates;
          unordered_map< account_id_type, account_record>                accounts;

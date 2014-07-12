@@ -555,6 +555,15 @@
           "type_name" : "sha256",
           "cpp_return_type" : "fc::sha256",
           "cpp_include_file" : "fc/crypto/sha256.hpp"
+      },
+      {
+          "type_name" : "market_transaction",
+          "cpp_return_type" : "bts::blockchain::market_transaction"
+      },
+      {
+        "type_name" : "market_transaction_array",
+        "container_type": "array",
+        "contained_type": "market_transaction"
       }
     ]
 }

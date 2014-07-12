@@ -62,6 +62,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : transactions )    prev_state->store_transaction( item.first, item.second );
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
       for( const auto& item : slots )           prev_state->store_slot_record( item.second );
+      prev_state->set_market_transactions( market_transactions );
    }
 
    otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
@@ -427,6 +428,10 @@ namespace bts { namespace blockchain {
       if( itr != slots.end() ) return itr->second;
       if( prev_state ) return prev_state->get_slot_record( start_time );
       return oslot_record();
+   }
+   void pending_chain_state::set_market_transactions( vector<market_transaction> trxs )
+   {
+      market_transactions = std::move(trxs); 
    }
 
 } } // bts::blockchain
