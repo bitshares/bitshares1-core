@@ -1,4 +1,4 @@
-BitShares  Development Toolkit
+BitShares Development Toolkit [![Build Status](https://travis-ci.org/vikramrajkumar/bitshares_toolkit.png)](https://travis-ci.org/vikramrajkumar/bitshares_toolkit)
 ===============================
 
 The BitShares development toolkit is a set of libraries used to facilitate
