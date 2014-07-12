@@ -79,6 +79,202 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
+            class market_engine
+            {
+               public:
+                  market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
+                  :_pending_state(ps),_db_impl(cdi){}
+
+                  void execute( asset_id_type quote_id, asset_id_type base_id )
+                  {
+                     _quote_id = quote_id;
+                     _base_id = base_id;
+                       // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
+                       // next market class and then back up one
+                       auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
+                       _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
+                       _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
+                       _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
+                       _cover_itr      = _db_impl._collateral_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
+
+                       if( _short_itr.valid() ) --_short_itr;
+                       else _short_itr = _db_impl._short_db.last();
+                       if( _bid_itr.valid() )   --_bid_itr;
+                       else _bid_itr = _db_impl._bid_db.last();
+
+
+                       asset xts_fees_collected(0,base_id);
+
+                       while( get_next_bid() && get_next_ask() )
+                       {
+                          if( _current_bid->get_price() < _current_ask->get_price() )
+                             break;
+                          auto quote_quantity = std::min( _current_bid->get_quote_quantity(), _current_ask->get_quote_quantity() );
+
+                          auto usd_paid_by_bid     = quote_quantity;
+                          auto usd_received_by_ask = quote_quantity;
+                          auto xts_paid_by_ask     = quote_quantity * _current_ask->get_price();
+                          auto xts_received_by_bid = quote_quantity * _current_bid->get_price();
+
+                          xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
+
+                          market_transaction mtrx;
+                          mtrx.bid_owner       = _current_bid->get_owner();
+                          mtrx.bid_price       = _current_bid->get_price();
+                          mtrx.bid_paid        = usd_paid_by_bid;
+                          mtrx.bid_received    = xts_received_by_bid;
+                          mtrx.ask_owner       = _current_ask->get_owner();
+                          mtrx.ask_price       = _current_ask->get_price();
+                          mtrx.ask_paid        = xts_paid_by_ask;
+                          mtrx.ask_received    = usd_received_by_ask;
+                          mtrx.fees_collected  = xts_fees_collected;
+
+                          _market_transactions.push_back(mtrx);
+
+                          if( _current_bid->type == bid_order )
+                          {
+                             _current_bid->state.balance -= usd_paid_by_bid.amount;
+
+                             auto bid_payout = _pending_state->get_balance_record( 
+                                                       withdraw_condition( withdraw_with_signature(_current_bid->get_owner()), base_id ).get_address() );
+                             if( !bid_payout )
+                                bid_payout = balance_record( _current_bid->get_owner(), asset(0,base_id), 0 );
+                             bid_payout->balance += xts_received_by_bid.amount;
+                             _pending_state->store_balance_record( *bid_payout );
+                             _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
+                          }
+                          else if( _current_bid->type == short_order )
+                          {
+                             // TODO: what if the amount paid is 0 for bid and ask due to rounding errors,
+                             // make sure this doesn't put us in an infinite loop.
+                             _current_bid->state.balance -= xts_paid_by_ask.amount;
+
+                             auto cover_price =  usd_received_by_ask / asset( (3*xts_received_by_bid.amount)/4, base_id );
+
+                             market_index_key cover_index( cover_price, _current_ask->get_owner() );
+                             auto ocover_record = _pending_state->get_collateral_record( cover_index );
+
+                             if( NOT ocover_record )
+                                ocover_record = collateral_record();
+
+                             ocover_record->collateral_balance += 2 * xts_received_by_bid.amount;
+                             ocover_record->payoff_balance += usd_received_by_ask.amount;
+
+                             _pending_state->store_collateral_record( cover_index, *ocover_record );
+                          }
+
+                          if( _current_ask->type == ask_order )
+                          {
+                             _current_ask->state.balance -= xts_paid_by_ask.amount;
+
+                             auto ask_balance_address = withdraw_condition( withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
+                             auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
+                             if( !ask_payout )
+                                ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
+                             ask_payout->balance += usd_received_by_ask.amount;
+
+                             _pending_state->store_balance_record( *ask_payout );
+                             _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
+                          }
+                          else if( _current_ask->type == cover_order )
+                          {
+                             _current_ask->state.balance -= usd_paid_by_bid.amount;
+                             
+                          }
+                       }
+                  }
+
+                  bool get_next_bid()
+                  {
+                     if( _current_bid && _current_bid->get_quantity().amount > 0 ) 
+                        return _current_bid.valid();
+
+                     _current_bid.reset();
+                     if( _bid_itr.valid() )
+                     {
+                        auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
+                        if( bid.get_price().quote_asset_id == _quote_id && 
+                            bid.get_price().base_asset_id == _base_id )
+                        {
+                            _current_bid = bid;
+                        }
+                     }
+
+                     if( _short_itr.valid() )
+                     {
+                        auto bid = market_order( short_order, _short_itr.key(), _short_itr.value() );
+                        wlog( "SHORT ITER VALID: ${o}", ("o",bid) );
+                        if( bid.get_price().quote_asset_id == _quote_id && 
+                            bid.get_price().base_asset_id == _base_id )
+                        {
+                            if( _current_bid && _current_bid->get_price() < bid.get_price() )
+                            {
+                               --_short_itr;
+                               _current_bid = bid;
+                               return _current_bid.valid();
+                            }
+                        }
+                     }
+                     else
+                     {
+                        wlog( "           No Shorts         ****   " );
+                     }
+                     if( _bid_itr.valid() ) --_bid_itr;
+                     return _current_bid.valid();
+                  }
+
+                  bool get_next_ask()
+                  {
+                     if( _current_ask && _current_ask->state.balance > 0 )
+                        return _current_ask.valid();
+                     _current_ask.reset();
+
+                     if( _ask_itr.valid() )
+                     {
+                        auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
+                        if( ask.get_price().quote_asset_id == _quote_id && 
+                            ask.get_price().base_asset_id == _base_id )
+                        {
+                            _current_ask = ask;
+                        }
+                     }
+
+                     if( _cover_itr.valid() )
+                     {
+                        auto ask = market_order( cover_order, _cover_itr.key(), order_record( _cover_itr.value().collateral_balance)  );
+                        if( ask.get_price().quote_asset_id == _quote_id && 
+                            ask.get_price().base_asset_id == _base_id )
+                        {
+                            if( _current_ask && _current_ask->get_price() > ask.get_price() )
+                            {
+                               ++_cover_itr;
+                               _current_ask = ask;
+                               _current_payoff_balance = _cover_itr.value().payoff_balance;
+                               return _current_ask.valid();
+                            }
+                        }
+                     }
+                     if( _ask_itr.valid() ) --_ask_itr;
+                     return _current_ask.valid();
+                  }
+
+                  pending_chain_state_ptr     _pending_state;
+                  chain_database_impl&        _db_impl;
+                  
+                  optional<market_order>      _current_bid;
+                  optional<market_order>      _current_ask;
+                  share_type                  _current_payoff_balance;
+                  asset_id_type               _quote_id;
+                  asset_id_type               _base_id;
+
+                  vector<market_transaction>  _market_transactions;
+
+                  bts::db::level_map< market_index_key, order_record >::iterator       _bid_itr;
+                  bts::db::level_map< market_index_key, order_record >::iterator       _ask_itr;
+                  bts::db::level_map< market_index_key, order_record >::iterator       _short_itr;
+                  bts::db::level_map< market_index_key, collateral_record >::iterator  _cover_itr;
+            };
+
             void                                        initialize_genesis(fc::optional<fc::path> genesis_file);
 
 
@@ -745,143 +941,9 @@ namespace bts { namespace blockchain {
         for( auto market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
-
-           // if( market_pair.first is market issued asset )
-           {
-              // while highest_call < lowest-ask
-              //    trade
-              // while highest_call < lowest short
-              //    trade
-           }
-
-           //auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
-
-           auto next_pair = market_pair.second+1 == market_pair.first ? price( 0, market_pair.first+1, 0) : price( 0, market_pair.first, market_pair.second+1 );
-           auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
-           auto bid_itr  = _bid_db.lower_bound( market_index_key( next_pair ) );
-           if( bid_itr.valid() ) --bid_itr; // last bid is the highest bid
-
-
-           /*
-           {
-              auto bid_itr  = _bid_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
-              auto ask_itr  = _ask_db.lower_bound( market_index_key( price( 0, market_pair.first, market_pair.second) ) );
-              while( bid_itr.valid() )
-              {
-                  auto current_bid = market_order( bid_order, bid_itr.key(), bid_itr.value() );
-                  ilog( "       BID:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_bid.get_quantity()))("p",current_bid.get_price() ) );
-                 ++bid_itr;
-              }
-              while( ask_itr.valid() )
-              {
-                 auto current_ask = market_order( ask_order, ask_itr.key(), ask_itr.value() );
-                  ilog( "       ASK:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_ask.get_quantity()))("p",current_ask.get_price() ) );
-                 ++ask_itr;
-              }
-           }
-           */
-
-           market_order current_bid;
-           market_order current_ask;
-           if( bid_itr.valid() && ask_itr.valid() )
-           {
-               current_bid = market_order( bid_order, bid_itr.key(), bid_itr.value() );
-               current_ask = market_order( ask_order, ask_itr.key(), ask_itr.value() );
-           }
-
-           asset xts_fees_collected( 0, market_pair.second );
-           while( bid_itr.valid() && ask_itr.valid() )
-           {
-              wlog( "CURRENT BID:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_bid.get_quantity()))("p",current_bid.get_price() ) );
-              wlog( "CURRENT ASK:  ${q} @ ${p}", ("q",self->to_pretty_asset(current_ask.get_quantity()))("p",current_ask.get_price() ) );
-              auto bid_key = bid_itr.key();
-              auto ask_key = ask_itr.key();
-              if( current_bid.get_price().quote_asset_id != market_pair.first || 
-                  current_bid.get_price().base_asset_id != market_pair.second ||
-                  current_ask.get_price().quote_asset_id != market_pair.first || 
-                  current_ask.get_price().base_asset_id != market_pair.second 
-                 )
-              {
-                 break;
-              }
-
-              if( bid_key.order_price >= ask_key.order_price )
-              {
-                  auto quote_quantity = std::min( current_bid.get_quote_quantity(), current_ask.get_quote_quantity() );
-
-                  market_transaction mtrx;
-                 
-                  auto usd_paid_by_bid     = quote_quantity;// * current_bid.get_price();
-                  auto usd_received_by_ask = quote_quantity;// * current_ask.get_price();
-                  auto xts_paid_by_ask     = quote_quantity * current_ask.get_price();
-                  auto xts_received_by_bid = quote_quantity * current_bid.get_price();
-
-                  xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
-
-                  mtrx.bid_owner       = current_bid.get_owner();
-                  mtrx.bid_price       = current_bid.get_price();
-                  mtrx.bid_paid        = usd_paid_by_bid;
-                  mtrx.bid_received    = xts_received_by_bid;
-                  mtrx.ask_owner       = current_ask.get_owner();
-                  mtrx.ask_price       = current_ask.get_price();
-                  mtrx.ask_paid        = xts_paid_by_ask;
-                  mtrx.ask_received    = usd_received_by_ask;
-                  mtrx.fees_collected  = xts_fees_collected;
-
-                  market_transactions.push_back(mtrx);
-                  
-
-                  // fill ask, remove it 
-                  current_bid.state.balance -= usd_paid_by_bid.amount;
-                  current_ask.state.balance -= xts_paid_by_ask.amount;
-
-                  auto ask_payout = pending_state->get_balance_record( withdraw_condition( withdraw_with_signature(current_ask.market_index.owner), market_pair.first ).get_address() );
-                  if( !ask_payout )
-                     ask_payout = balance_record( current_ask.market_index.owner, asset(0,market_pair.first), 0 );
-                  ask_payout->balance += usd_received_by_ask.amount;
-                  wlog( "      fill ${x} of ask", ("x",self->to_pretty_asset( xts_paid_by_ask ) ) );
-                  wlog( "      paying ${x} to asker", ("x",self->to_pretty_asset( usd_received_by_ask ) ) );
-
-                  auto bid_payout = pending_state->get_balance_record( withdraw_condition( withdraw_with_signature(current_bid.market_index.owner), market_pair.second ).get_address() );
-                  if( !bid_payout )
-                     bid_payout = balance_record( current_bid.market_index.owner, asset(0,market_pair.second), 0 );
-                  bid_payout->balance += xts_received_by_bid.amount;
-                  wlog( "      fill ${x} of bid", ("x",self->to_pretty_asset( usd_paid_by_bid ) ) );
-                  wlog( "      paying ${x} to bidder", ("x",self->to_pretty_asset( xts_received_by_bid ) ) );
-                  wlog( "      collected fees ${x}", ("x",self->to_pretty_asset( xts_fees_collected ) ) );
-
-                  pending_state->store_balance_record( *ask_payout );
-                  pending_state->store_balance_record( *bid_payout );
-
-                  pending_state->store_ask_record( current_ask.market_index, current_ask.state );
-                  pending_state->store_bid_record( current_bid.market_index, current_bid.state );
-
-                  if( current_ask.state.balance == 0 )
-                  {
-                     ++ask_itr;
-                     if( ask_itr.valid() ) current_ask = market_order( ask_order, ask_itr.key(), ask_itr.value() );
-                     else break;
-                  }
-                  if( current_bid.state.balance == 0 )
-                  {
-                     --bid_itr;
-                     if( bid_itr.valid() ) current_bid = market_order( bid_order, bid_itr.key(), bid_itr.value() );
-                     else break;
-                  }
-              }
-              else
-              {
-                 break;
-              }
-           }
-           // now that I have some USD fees... I need to update the asset record to reflect the
-           // change in supply.
-           auto quote_record = pending_state->get_asset_record( market_pair.second );
-           FC_ASSERT( quote_record );
-           quote_record->collected_fees += xts_fees_collected.amount;
-           quote_record->current_share_supply -= xts_fees_collected.amount;
-           pending_state->store_asset_record( *quote_record );
-           collected_fees[market_pair.second] = xts_fees_collected.amount;
+           market_engine engine( pending_state, *this );
+           engine.execute( market_pair.first, market_pair.second );
+           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
         } 
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
         edump( (market_transactions) );
