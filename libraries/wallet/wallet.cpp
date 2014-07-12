@@ -113,7 +113,66 @@ namespace bts { namespace wallet {
                   const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
                   const auto now = blockchain::now();
                   scan_block( summary.block_data.block_num, account_priv_keys, now );
+
+                  auto market_trxs = _blockchain->get_market_transactions( summary.block_data.block_num );
+                  for( uint32_t i = 0; i < market_trxs.size(); ++i )
+                  {
+                     scan_market_transaction( now, summary.block_data.block_num, i, market_trxs[i] );
+                  }
                }
+            }
+
+            void scan_market_transaction( time_point_sec block_time, uint32_t block_num, uint32_t trx_num, const market_transaction& trx )
+            {
+                auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
+                if( okey_bid && okey_bid->has_private_key() )
+                {
+                   auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
+
+                   // what did we pay
+                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4, 
+                                                        trx.bid_paid,
+                                                        "pay bid @ "+ _blockchain->to_pretty_price( trx.bid_price ),
+                                                        block_time,
+                                                        okey_bid->public_key,
+                                                        public_key_type(),
+                                                        trx.fees_collected.amount );
+
+
+                   // what did we receive
+                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4+1, 
+                                                        trx.bid_received,
+                                                        "fill bid @ "+ _blockchain->to_pretty_price( trx.bid_price ),
+                                                        block_time,
+                                                        okey_bid->public_key,
+                                                        bid_account_key->public_key,
+                                                        trx.fees_collected.amount );
+                }
+
+                auto okey_ask = _wallet_db.lookup_key( trx.ask_owner ); 
+                if( okey_ask && okey_ask->has_private_key() )
+                {
+                   auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
+
+                   // what did we pay
+                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4+2, 
+                                                        trx.ask_paid,
+                                                        "pay ask @ " + _blockchain->to_pretty_price( trx.ask_price ),
+                                                        block_time,
+                                                        okey_ask->public_key,
+                                                        public_key_type(),
+                                                        trx.fees_collected.amount );
+
+
+                   // what did we receive
+                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4+3, 
+                                                        trx.ask_received,
+                                                        "fill ask @ "+ _blockchain->to_pretty_price( trx.ask_price ),
+                                                        block_time,
+                                                        okey_ask->public_key,
+                                                        ask_account_key->public_key,
+                                                        trx.fees_collected.amount );
+                }
             }
 
             secret_hash_type get_secret( uint32_t block_num,
@@ -1505,6 +1564,31 @@ namespace bts { namespace wallet {
       }
 
       for( const auto& item : transactions )
+      {
+          const auto& tx_record = item.second;
+
+          if( tx_record.block_num < start_block_num ) continue;
+          if( end_block_num != -1 && tx_record.block_num > end_block_num ) continue;
+
+          if( !account_name.empty() )
+          {
+              bool match = false;
+              if( tx_record.from_account.valid() ) match |= get_key_label( *tx_record.from_account ) == account_name;
+              if( tx_record.to_account.valid() ) match |= get_key_label( *tx_record.to_account ) == account_name;
+              if( !match ) continue;
+          }
+
+          if( asset_id != 0 )
+          {
+              bool match = false;
+              match |= tx_record.amount.asset_id == asset_id;
+              match |= tx_record.memo_message.find( asset_symbol ) != string::npos;
+              if( !match ) continue;
+          }
+
+          history_records.push_back( tx_record );
+      }
+      for( const auto& item : my->_wallet_db.market_transactions )
       {
           const auto& tx_record = item.second;
 
@@ -3121,6 +3205,7 @@ namespace bts { namespace wallet {
 
       const auto trx_id = trx_rec.transaction_id;
       pretty_trx.is_virtual = trx_rec.is_virtual;
+      pretty_trx.is_market = trx_rec.is_market;
       pretty_trx.is_confirmed = trx_rec.is_confirmed;
       pretty_trx.trx_id = trx_id;
       pretty_trx.block_num = trx_rec.block_num;

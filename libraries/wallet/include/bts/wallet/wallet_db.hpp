@@ -45,6 +45,17 @@ namespace bts { namespace wallet {
          void cache_order( const bts::blockchain::market_order& );
          void remove_balance( const balance_id_type& balance_id );
 
+         void store_market_transaction( uint32_t block_num, 
+                                        uint32_t trx_num, 
+                                        const asset& amount,
+                                        const string& memo,
+                                        time_point_sec received,
+                                        const public_key_type& from_account,
+                                        const public_key_type& to_account,
+                                        share_type fees
+                                      );
+
+
          vector<wallet_transaction_record> get_pending_transactions()const;
          void                              clear_pending_transactions();
 
@@ -126,6 +137,8 @@ namespace bts { namespace wallet {
             return keys;
          }
 
+         // TODO: make this private
+         map< std::pair<uint32_t,uint32_t>, wallet_transaction_record >   market_transactions;
       private:
          optional<wallet_master_key_record>                               wallet_master_key;
          /** maps wallet_record_index to accounts */

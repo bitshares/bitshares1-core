@@ -148,14 +148,16 @@ namespace bts { namespace wallet {
    struct transaction_data
    {
        transaction_data()
-       :block_num(0),is_virtual(false),fees(0),is_confirmed(false),transmit_count(0){}
+       :block_num(0),trx_num(0),is_virtual(false),is_market(false),fees(0),is_confirmed(false),transmit_count(0){}
 
        transaction_data( const signed_transaction& t )
-       :block_num(0),is_virtual(false),trx(t),fees(0),is_confirmed(false),transmit_count(0){}
+       :block_num(0),trx_num(0),is_virtual(false),is_market(false),trx(t),fees(0),is_confirmed(false),transmit_count(0){}
 
        transaction_id_type       transaction_id; // TODO: Rename to transaction_index
        uint32_t                  block_num;
+       uint32_t                  trx_num; ///< the transaction number in the block
        bool                      is_virtual;
+       bool                      is_market;
        signed_transaction        trx;
        optional<public_key_type> from_account;
        optional<public_key_type> to_account;
