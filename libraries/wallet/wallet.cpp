@@ -2,6 +2,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/wallet/url.hpp>
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/exceptions.hpp>
@@ -49,6 +50,10 @@ namespace bts { namespace wallet {
              {
                 _wallet_thread = &fc::thread::current();
              }
+             ~wallet_impl()
+             {
+                _login_map_cleaner.cancel();
+             }
              fc::thread*                        _wallet_thread;
 
              wallet*                            self;
@@ -64,6 +69,16 @@ namespace bts { namespace wallet {
 
              fc::thread                         _wallet_scan_thread;
              float                              _wallet_scan_progress;
+
+             struct login_record
+             {
+                 fc::ecc::private_key key;
+                 fc::time_point_sec insertion_time;
+             };
+             std::map<public_key_type, login_record>  _login_map;
+             fc::future<void>                         _login_map_cleaner;
+             const static short                       _login_cleaner_interval_seconds = 60;
+             const static short                       _login_lifetime_seconds = 300;
 
              void reschedule_relocker();
              void cancel_relocker();
@@ -1127,18 +1142,23 @@ namespace bts { namespace wallet {
       return local_account;
    }
 
-   void  wallet::remove_contact_account( const string& account_name )
+   void wallet::remove_contact_account( const string& account_name )
    { try {
-      auto oaccount = my->_wallet_db.lookup_account( account_name );
-      FC_ASSERT( oaccount.valid() );
-      FC_ASSERT( is_unique_account(account_name), "Ambiguous name '${name}' could refer to multiple accounts. Rename one of them first." );
-      FC_ASSERT( ! my->_wallet_db.has_private_key(address(oaccount->owner_key)),
-              "you can only remove contact accounts" );
-      my->_wallet_db.remove_contact_account( account_name );
+      if( !is_valid_account( account_name ) )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
 
+      if( !is_unique_account(account_name) )
+          FC_THROW_EXCEPTION( duplicate_account_name,
+                              "Local account name conflicts with registered name. Please rename your local account first.", ("account_name",account_name) );
+
+      const auto oaccount = my->_wallet_db.lookup_account( account_name );
+      if( my->_wallet_db.has_private_key( address( oaccount->owner_key ) ) )
+          FC_THROW_EXCEPTION( not_contact_account, "You can only remove contact accounts!", ("account_name",account_name) );
+
+      my->_wallet_db.remove_contact_account( account_name );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
 
-   void  wallet::rename_account( const string& old_account_name, 
+   void wallet::rename_account( const string& old_account_name, 
                                  const string& new_account_name )
    { try {
       if( !is_valid_account_name( old_account_name ) )
@@ -1397,20 +1417,95 @@ namespace bts { namespace wallet {
       FC_ASSERT( key.valid() );
       FC_ASSERT( key->has_private_key() );
       return key->decrypt_private_key( my->_wallet_password );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
+     } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
+
+   std::string wallet::login_start(const std::string& account_name)
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      auto key = my->_wallet_db.lookup_key( get_account(account_name)->active_address() );
+      FC_ASSERT( key.valid() );
+      FC_ASSERT( key->has_private_key() );
+
+      fc::ecc::private_key one_time_key = fc::ecc::private_key::generate();
+      public_key_type one_time_public_key = one_time_key.get_public_key();
+      my->_login_map[one_time_public_key] = {one_time_key, fc::time_point::now()};
+
+      std::function<void()> cleaner = [this, &cleaner]{
+          std::vector<public_key_type> expired_records;
+          for( auto record : my->_login_map )
+            if( fc::time_point::now() - record.second.insertion_time >= fc::seconds(my->_login_lifetime_seconds) )
+              expired_records.push_back(record.first);
+          ilog("Purging ${count} expired records from login map.", ("count", expired_records.size()));
+          for( auto record : expired_records )
+            my->_login_map.erase(record);
+
+          if( !my->_login_map.empty() )
+            my->_login_map_cleaner = fc::thread::current().schedule(cleaner,
+                                                                    fc::time_point::now()
+                                                                    + fc::seconds(my->_login_cleaner_interval_seconds));
+          else
+            my->_login_map_cleaner = fc::future<void>();
+      };
+      if( !my->_login_map_cleaner.valid() )
+        my->_login_map_cleaner = fc::thread::current().schedule(cleaner,
+                                                                fc::time_point::now()
+                                                                + fc::seconds(my->_login_cleaner_interval_seconds));
+
+      auto signature = key->decrypt_private_key(my->_wallet_password)
+                          .sign_compact(fc::sha256::hash((char*)&one_time_public_key,
+                                                         sizeof(one_time_public_key)));
+
+      return CUSTOM_URL_SCHEME ":Login/" + variant(public_key_type(one_time_public_key)).as_string()
+                                         + "/" + fc::variant(signature).as_string() + "/";
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+   fc::variant wallet::login_finish(const public_key_type& server_key,
+                                    const public_key_type& client_key,
+                                    const fc::ecc::compact_signature& client_signature)
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( my->_login_map.find(server_key) != my->_login_map.end(), "Login session has expired. Generate a new login URL and try again." );
+
+      fc::ecc::private_key private_key = my->_login_map[server_key].key;
+      my->_login_map.erase(server_key);
+      auto secret = private_key.get_shared_secret( fc::ecc::public_key_data(client_key) );
+      auto user_account_key = fc::ecc::public_key(client_signature, fc::sha256::hash(secret.data(), sizeof(secret)));
+
+      fc::mutable_variant_object result;
+      result["user_account_key"] = public_key_type(user_account_key);
+      result["shared_secret"] = secret;
+      return result;
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("server_key",server_key)("client_key",client_key)("client_signature",client_signature) ) }
 
    /** 
     * @return the list of all transactions related to this wallet
     */
    vector<wallet_transaction_record> wallet::get_transaction_history( const string& account_name,
                                                                       uint32_t start_block_num,
-                                                                      uint32_t end_block_num )const
+                                                                      uint32_t end_block_num,
+                                                                      const string& asset_symbol )const
    { try {
       FC_ASSERT( is_open() );
       if( end_block_num != -1 ) FC_ASSERT( start_block_num <= end_block_num );
 
       vector<wallet_transaction_record> history_records;
       const auto& transactions = my->_wallet_db.get_transactions();
+
+      auto asset_id = 0;
+      if( !asset_symbol.empty() && asset_symbol != BTS_BLOCKCHAIN_SYMBOL )
+      {
+          try
+          {
+              asset_id = my->_blockchain->get_asset_id( asset_symbol );
+          }
+          catch( const fc::exception& )
+          {
+              FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("asset_symbol",asset_symbol) );
+          }
+      }
 
       for( const auto& item : transactions )
       {
@@ -1427,6 +1522,14 @@ namespace bts { namespace wallet {
               if( !match ) continue;
           }
 
+          if( asset_id != 0 )
+          {
+              bool match = false;
+              match |= tx_record.amount.asset_id == asset_id;
+              match |= tx_record.memo_message.find( asset_symbol ) != string::npos;
+              if( !match ) continue;
+          }
+
           history_records.push_back( tx_record );
       }
 
@@ -1435,9 +1538,10 @@ namespace bts { namespace wallet {
 
    vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name,
                                                                       uint32_t start_block_num,
-                                                                      uint32_t end_block_num )const
+                                                                      uint32_t end_block_num,
+                                                                      const string& asset_symbol )const
    { try {
-       const auto& history = get_transaction_history( account_name, start_block_num, end_block_num );
+       const auto& history = get_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
        vector<pretty_transaction> pretties;
        pretties.reserve( history.size() );
        for( const auto& item : history )
@@ -1448,7 +1552,6 @@ namespace bts { namespace wallet {
                   {
                      if( a.received_time != b.received_time) return a.received_time < b.received_time;
                      if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                     if( a.trx_num != b.trx_num ) return a.trx_num < b.trx_num;
                      if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account );
                      if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account );
                      return string( a.trx_id ).compare( string( b.trx_id ) );
@@ -1564,13 +1667,22 @@ namespace bts { namespace wallet {
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
-       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-       FC_ASSERT( is_receive_account( from_account_name ) );
-       FC_ASSERT( is_valid_account( to_account_name ) );
-       FC_ASSERT( is_unique_account( to_account_name ), 
-                  "Local account name conflicts with registered name, "
-                  "please rename your local account before attempting a transfer",
-                  ("to_account_name",to_account_name) );
+
+       if( !my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) )
+           FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("amount_to_transfer_symbol",amount_to_transfer_symbol) );
+
+       if( !is_receive_account( from_account_name ) )
+           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",from_account_name) );
+
+       if( !is_valid_account( to_account_name ) )
+           FC_THROW_EXCEPTION( unknown_receive_account, "Unknown receiving account name!", ("to_account_name",to_account_name) );
+
+       if( !is_unique_account(to_account_name) )
+           FC_THROW_EXCEPTION( duplicate_account_name,
+                               "Local account name conflicts with registered name. Please rename your local account first.", ("to_account_name",to_account_name) );
+
+       if( memo_message.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+           FC_THROW_EXCEPTION( memo_too_long, "Memo too long!", ("memo_message",memo_message) );
 
        auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
        FC_ASSERT( asset_rec.valid() );
@@ -1580,7 +1692,6 @@ namespace bts { namespace wallet {
        share_type amount_to_transfer((share_type)(real_amount_to_transfer * precision));
        asset asset_to_transfer( amount_to_transfer, asset_id );
 
-       FC_ASSERT( memo_message.size() <= BTS_BLOCKCHAIN_MAX_MEMO_SIZE );
        //FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ).amount );
 
        /**
@@ -1641,13 +1752,13 @@ namespace bts { namespace wallet {
              slate_id_type slate_id = 0;
              if( amount_to_deposit.asset_id == 0 )
              {
-                auto new_slate = select_delegate_vote();
-                slate_id = new_slate.id();
-
-                if( !my->_blockchain->get_delegate_slate( slate_id ) )
-                {
-                   trx.define_delegate_slate( new_slate );
-                }
+                 auto new_slate = select_delegate_vote();
+                 slate_id = new_slate.id();
+                 
+                 if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+                 {
+                    trx.define_delegate_slate( new_slate );
+                 }
              }
 
              if( amount_to_deposit.amount > 0 )
@@ -1689,8 +1800,9 @@ namespace bts { namespace wallet {
 
              if( sign )
              {
-                auto owner_private_key = get_private_key( balance_item.second.owner() );
-                trx.sign( owner_private_key, my->_blockchain->chain_id() );
+                unordered_set<address> required_signatures;
+                required_signatures.insert( balance_item.second.owner() );
+                sign_transaction( trx, required_signatures );
              }
 
              trxs.emplace_back( trx );
@@ -1968,22 +2080,31 @@ namespace bts { namespace wallet {
                               ("to_address_amounts",to_address_amounts)
                               ("memo_message",memo_message) ) }
    
-   signed_transaction   wallet::transfer_asset( double real_amount_to_transfer,
+   signed_transaction wallet::transfer_asset( double real_amount_to_transfer,
                                         const string& amount_to_transfer_symbol,
                                         const string& from_account_name,
                                         const string& to_account_name,
                                         const string& memo_message,
                                         bool sign )
    { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
-       FC_ASSERT( is_receive_account( from_account_name ) );
-       FC_ASSERT( is_valid_account( to_account_name ) );
-       FC_ASSERT( is_unique_account( to_account_name ), 
-                  "Local account name conflicts with registered name, "
-                  "please rename your local account before attempting a transfer",
-                  ("to_account_name",to_account_name) );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( !my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) )
+          FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("amount_to_transfer_symbol",amount_to_transfer_symbol) );
+
+      if( !is_receive_account( from_account_name ) )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",from_account_name) );
+
+      if( !is_valid_account( to_account_name ) )
+          FC_THROW_EXCEPTION( unknown_receive_account, "Unknown receiving account name!", ("to_account_name",to_account_name) );
+
+      if( !is_unique_account(to_account_name) )
+          FC_THROW_EXCEPTION( duplicate_account_name,
+                              "Local account name conflicts with registered name. Please rename your local account first.", ("to_account_name",to_account_name) );
+
+      if( memo_message.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+          FC_THROW_EXCEPTION( memo_too_long, "Memo too long!", ("memo_message",memo_message) );
 
       auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
       FC_ASSERT( asset_rec.valid() );
@@ -3006,12 +3127,6 @@ namespace bts { namespace wallet {
       pretty_trx.is_confirmed = trx_rec.is_confirmed;
       pretty_trx.trx_id = trx_id;
       pretty_trx.block_num = trx_rec.block_num;
-
-      if( !trx_rec.is_virtual && trx_rec.is_confirmed )
-      {
-          const auto loc = my->_blockchain->get_transaction( trx_id );
-          if( loc.valid() ) pretty_trx.trx_num = loc->chain_location.trx_num;
-      }
 
       if( trx_rec.from_account )
          pretty_trx.from_account = get_key_label( *trx_rec.from_account );

@@ -305,6 +305,12 @@
                "type" : "uint32_t",
                "description" : "the latest block to list transaction from; -1 to include all transactions ending at the head block",
                "default_value" : -1
+            },
+            {
+               "name" : "asset_symbol",
+               "type" : "string",
+               "description" : "only include transactions involving the specified asset, or \"\" to include all",
+               "default_value" : ""
             }
         ],
         "prerequisites" : ["wallet_open"],
@@ -1231,6 +1237,42 @@
                 "name" : "hash",
                 "type" : "sha256",
                 "description" : "SHA256 digest of the message to sign"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_login_start",
+         "description" : "Initiates the login procedure by providing a BitShares Login URL",
+         "return_type" : "string",
+         "parameters"  : [
+            {
+                "name" : "server_account",
+                "type" : "string",
+                "description" : "Name of the account of the server. The user will be shown this name as the site he is logging into."
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_login_finish",
+         "description" : "Completes the login procedure by finding the user's public account key and shared secret",
+         "return_type" : "variant",
+         "parameters"  : [
+            {
+                "name" : "server_key",
+                "type" : "public_key",
+                "description" : "The one-time public key from wallet_login_start."
+            },
+            {
+                "name" : "client_key",
+                "type" : "public_key",
+                "description" : "The client's one-time public key."
+            },
+            {
+                "name" : "client_signature",
+                "type" : "compact_signature",
+                "description" : "The client's signature of the shared secret."
             }
          ],
          "prerequisites" : ["wallet_unlocked"]

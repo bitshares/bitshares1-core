@@ -385,11 +385,13 @@ namespace bts { namespace wallet {
          vector<market_order_status>        get_market_orders( const string& quote, const string& base )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
-                                                                        uint32_t start_block_num = 0,
-                                                                        uint32_t end_block_num = -1 )const;
+                                                                     uint32_t start_block_num = 0,
+                                                                     uint32_t end_block_num = -1,
+                                                                     const string& asset_symbol = "" )const;
          vector<pretty_transaction>         get_pretty_transaction_history( const string& account_name = string(),
-                                                                               uint32_t start_block_num = 0,
-                                                                               uint32_t end_block_num = -1 )const;
+                                                                            uint32_t start_block_num = 0,
+                                                                            uint32_t end_block_num = -1,
+                                                                            const string& asset_symbol = "" )const;
 
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*
@@ -431,6 +433,11 @@ namespace bts { namespace wallet {
 
 
       private:
+         std::string           login_start( const std::string& account_name );
+
+         fc::variant login_finish(const public_key_type& server_key,
+                                            const public_key_type& client_key,
+                                            const fc::ecc::compact_signature& client_signature);
          unique_ptr<detail::wallet_impl> my;
    };
 
