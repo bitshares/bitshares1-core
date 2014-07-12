@@ -359,6 +359,12 @@ namespace bts { namespace wallet {
          const auto block = _blockchain->get_block( block_num );
          for( const auto& transaction : block.user_transactions )
              scan_transaction( transaction, block.block_num, block.timestamp, keys, received_time );
+
+         auto market_trxs = _blockchain->get_market_transactions( block_num );
+         for( uint32_t i = 0; i < market_trxs.size(); ++i )
+         {
+            scan_market_transaction( block.timestamp, block_num, i, market_trxs[i] );
+         }
       }
 
       void wallet_impl::scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
