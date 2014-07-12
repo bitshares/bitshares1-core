@@ -51,7 +51,11 @@ namespace bts { namespace blockchain {
 
       define_delegate_slate_op_type = 18,
 
-      domain_bid_op_type       = 41
+      domain_bid_op_type               = 101,
+      domain_update_info_op_type       = 102,
+      domain_sell_op_type              = 103,
+      domain_cancel_sell_op_type       = 104,
+      domain_buy_op_type               = 105
    };
 
    /**
@@ -124,6 +128,10 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (remove_collateral_op_type)
                  (define_delegate_slate_op_type)
                  (domain_bid_op_type)
+                 (domain_update_info_op_type)
+                 (domain_sell_op_type)
+                 (domain_cancel_sell_op_type)
+                 (domain_buy_op_type)
                )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

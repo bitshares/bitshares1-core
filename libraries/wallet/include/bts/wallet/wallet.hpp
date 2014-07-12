@@ -409,6 +409,13 @@ namespace bts { namespace wallet {
          void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
          private_key_type get_private_key( const address& addr )const;
 
+         std::string           login_start( const std::string& account_name );
+
+         fc::variant login_finish(const public_key_type& server_key,
+                                            const public_key_type& client_key,
+                                            const fc::ecc::compact_signature& client_signature);
+
+
 
          // DNS
          signed_transaction        domain_bid( const string& domain_name,
@@ -419,6 +426,13 @@ namespace bts { namespace wallet {
          signed_transaction        domain_sell( const string& domain_name,
                                                 const share_type& min_amount,
                                                 bool sign );
+
+         signed_transaction        domain_cancel_sell( const string& domain_name,
+                                                       bool sign );
+
+         signed_transaction        domain_buy( const string& domain_name,
+                                               const string& account_name,
+                                               bool sign );
 
          signed_transaction        domain_transfer( const string& domain_name,
                                                     const string& account_name,
@@ -433,11 +447,6 @@ namespace bts { namespace wallet {
 
 
       private:
-         std::string           login_start( const std::string& account_name );
-
-         fc::variant login_finish(const public_key_type& server_key,
-                                            const public_key_type& client_key,
-                                            const fc::ecc::compact_signature& client_signature);
          unique_ptr<detail::wallet_impl> my;
    };
 

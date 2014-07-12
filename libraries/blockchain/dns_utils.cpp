@@ -21,4 +21,8 @@ namespace bts { namespace blockchain {
         return true;
     }
 
+    bool is_valid_value( const variant& value )
+    {
+        return true; //TODO
+    }
 }} // bts::blockchain

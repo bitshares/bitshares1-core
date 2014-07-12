@@ -14,10 +14,9 @@ namespace bts { namespace blockchain {
     void domain_bid_operation::evaluate( transaction_evaluation_state& eval_state )
     {
         FC_ASSERT( is_valid_domain( this->domain_name ) );
-        auto now = eval_state._current_state->now().sec_since_epoch();
         auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
         /* If record is invalid, nobody has bid on it yet. You can bid if you exceed current minimum bid. */
-        if ( ! odomain_rec.valid() )
+        if ( ! odomain_rec.valid() || odomain_rec->get_true_state() == domain_record::unclaimed)
         {
             FC_ASSERT( this->bid_amount >= P2P_MIN_INITIAL_BID, "Initial bid does not exceed min required bid");
             eval_state.required_fees += asset(this->bid_amount, 0);
@@ -25,7 +24,7 @@ namespace bts { namespace blockchain {
             rec.domain_name = this->domain_name;
             rec.owner = this->bidder_address;
             rec.value = fc::variant("");
-            rec.last_update = fc::time_point::now().sec_since_epoch();
+            rec.last_update = eval_state._current_state->now().sec_since_epoch();
             rec.state = domain_record::in_auction;
             rec.price = this->bid_amount;
             rec.next_required_bid = P2P_NEXT_REQ_BID(0, this->bid_amount);
@@ -65,7 +64,7 @@ namespace bts { namespace blockchain {
                 FC_ASSERT(paid_to_previous_bidder >= to_last_bidder, "Did not pay back enough to previous bidder");
 
                 odomain_rec->owner = this->bidder_address;
-                odomain_rec->last_update = fc::time_point::now().sec_since_epoch();
+                odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
                 odomain_rec->price = this->bid_amount;
                 odomain_rec->next_required_bid = P2P_NEXT_REQ_BID( odomain_rec->next_required_bid, this->bid_amount );
                 odomain_rec->time_in_top = 0;
@@ -73,5 +72,78 @@ namespace bts { namespace blockchain {
             eval_state._current_state->store_domain_record( *odomain_rec );
         }
     }
+
+
+    void domain_sell_operation::evaluate( transaction_evaluation_state& eval_state )
+    {
+        auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
+        FC_ASSERT( odomain_rec.valid(), "Trying to sell domain which does not exist" );
+        FC_ASSERT( odomain_rec->get_true_state() == domain_record::owned
+                || odomain_rec->get_true_state() == domain_record::in_sale,
+                   "Attempting to sell a domain which is not in 'owned' or 'in_sale' state");
+        FC_ASSERT( eval_state.check_signature( odomain_rec->owner ), "Sale not signed by owner" );
+        FC_ASSERT( this->price > 0, "Price must be positive" );
+        odomain_rec->state = domain_record::in_sale;
+        odomain_rec->price = this->price;
+        odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
+        eval_state._current_state->store_domain_record( *odomain_rec );
+    }
+
+    void domain_cancel_sell_operation::evaluate( transaction_evaluation_state& eval_state )
+    {
+        auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
+        FC_ASSERT( odomain_rec.valid(), "Trying to cancel sale for domain which does not exist" );
+        FC_ASSERT( odomain_rec->get_true_state() == domain_record::in_sale,
+                   "Attempting to cancel sale for a domain which is not in 'in_sale' state");
+        FC_ASSERT( eval_state.check_signature( odomain_rec->owner ), "Cancel sale not signed by owner" );
+        odomain_rec->state = domain_record::owned;
+        odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
+        eval_state._current_state->store_domain_record( *odomain_rec );
+    }
+
+    void domain_buy_operation::evaluate( transaction_evaluation_state& eval_state )
+    {
+        auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
+        FC_ASSERT( odomain_rec.valid(), "Trying to buy a domain which does not exist" );
+        FC_ASSERT( odomain_rec->get_true_state() == domain_record::in_sale,
+                   "Attempting to buy a domain which is not in 'in_sale' state");
+        share_type paid_to_owner = 0;
+        for (auto op : eval_state.trx.operations)
+        {
+            if (op.type == operation_type_enum::deposit_op_type)
+            {
+                auto deposit = op.as<deposit_operation>();
+                if (deposit.condition.type == withdraw_condition_types::withdraw_signature_type)
+                {
+                    auto condition = deposit.condition.as<withdraw_with_signature>();
+                    if (condition.owner == odomain_rec->owner)
+                    {
+                        paid_to_owner += deposit.amount;
+                    }
+                }
+            }
+        }
+        FC_ASSERT( paid_to_owner >= odomain_rec->price, "Did not pay enough to previous owner" );
+        odomain_rec->state = domain_record::owned;
+        odomain_rec->owner = this->new_owner;
+        odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
+        eval_state._current_state->store_domain_record( *odomain_rec );
+    }
+
+
+    void domain_update_info_operation::evaluate( transaction_evaluation_state& eval_state )
+    {
+        auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
+        FC_ASSERT( odomain_rec.valid(), "Trying to update domain which does not exist" );
+        FC_ASSERT( odomain_rec->get_true_state() == domain_record::owned,
+                   "Attempting to update a domain which is not in 'owned' state");
+        FC_ASSERT( is_valid_value( this->value ), "Trying to update with invalid value" );
+        FC_ASSERT( eval_state.check_signature( odomain_rec->owner ), "Update not signed by owner" );
+        odomain_rec->value = this->value;
+        odomain_rec->owner = this->owner;
+        odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
+        eval_state._current_state->store_domain_record( *odomain_rec );
+    }
+
 
 }} // bts::blockchain
