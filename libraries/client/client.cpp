@@ -2681,14 +2681,18 @@ config load_config( const fc::path& datadir )
     wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
                                                                         const variant& public_data,
-                                                                        uint32_t delegate_pay_rate )
+                                                                        uint8_t delegate_pay_rate,
+                                                                        const string& new_active_key )
     {
-       FC_ASSERT( delegate_pay_rate <= 255 );
+       auto new_key = optional<public_key_type>();
+       if( !new_active_key.empty() ) new_key = public_key_type( new_active_key );
+
        auto trx = _wallet->update_registered_account( account_to_update,
                                                            pay_from_account,
                                                            public_data,
                                                            delegate_pay_rate,
-                                                           optional<public_key_type>(), true );
+                                                           new_key,
+                                                           true );
 
        network_broadcast_transaction( trx.trx );
        return trx;

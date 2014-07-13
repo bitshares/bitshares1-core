@@ -40,8 +40,7 @@ struct vote_del
    }
    friend bool operator < ( const vote_del& a, const vote_del& b )
    {
-      if( a.votes > b.votes ) return true;
-      if( a.votes < b.votes ) return false;
+      if( a.votes != b.votes ) return a.votes > b.votes; /* Reverse so maps sort in descending order */
       return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
    }
 };
