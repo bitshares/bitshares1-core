@@ -337,6 +337,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clienta );
    exec( clientb, "wallet_account_transaction_history" );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
+   exec( clientb, "balance" );
 
 
 //   exec( clientb, "wallet_account_transaction_history" );

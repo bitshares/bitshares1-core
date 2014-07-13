@@ -188,9 +188,7 @@ namespace bts { namespace blockchain {
                              auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
                              if( !ask_payout )
                                 ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
-                          ilog( "." );
                              ask_payout->balance += usd_received_by_ask.amount;
-                          ilog( "." );
 
                              _pending_state->store_balance_record( *ask_payout );
                              _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );

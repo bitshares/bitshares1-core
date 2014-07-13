@@ -2862,6 +2862,22 @@ config load_config( const fc::path& datadir )
       }
 
       auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
+      if( _chain_db->get_asset_id(base_symbol) == 0 )
+      {
+        auto covers = blockchain_market_list_covers(quote_symbol, limit);
+        asks.reserve(asks.size() + covers.size());
+        for( auto order : covers )
+          asks.push_back(order);
+
+        std::sort(asks.rbegin(), asks.rend(), [](const market_order& a, const market_order& b) -> bool {
+          return a.market_index < b.market_index;
+        });
+
+        if( asks.size() > limit )
+          asks.resize(limit);
+      }
+
+
       std::sort(asks.begin(), asks.end(), [](const market_order& a, const market_order& b) -> bool {
         return a.market_index < b.market_index;
       });

@@ -22,6 +22,9 @@ asset market_order::get_balance()const
      case short_order:
         asset_id = 0; // always base shares for shorts.
         break;
+     case cover_order:
+        asset_id = market_index.order_price.quote_asset_id; // always base shares for shorts.
+        break;
      default:
         FC_ASSERT( !"Not Implemented" );
   }
@@ -49,6 +52,10 @@ asset market_order::get_quantity()const
      {
         return get_balance();
      }
+     case cover_order:
+     {
+        return get_balance() * get_price();
+     }
      default:
         FC_ASSERT( !"Not Implemented" );
   }
@@ -69,6 +76,10 @@ asset market_order::get_quote_quantity()const
      case short_order:
      {
         return get_balance() * get_price();
+     }
+     case cover_order:
+     {
+        return get_balance();
      }
      default:
         FC_ASSERT( !"Not Implemented" );
