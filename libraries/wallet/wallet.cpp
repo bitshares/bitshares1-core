@@ -2441,14 +2441,16 @@ namespace bts { namespace wallet {
       auto payer_public_key = get_account_public_key( pay_from_account );
 
       auto account = my->_blockchain->get_account_record( account_to_update );
-      FC_ASSERT(account.valid(), "No such account: ${acct}", ("acct", account_to_update));
-      auto account_public_key = get_account_public_key( account_to_update );
+      if( !account.valid() )
+        FC_THROW_EXCEPTION( unknown_account, "Unknown account!", ("account_to_update",account_to_update) );
 
+      auto account_public_key = get_account_public_key( account_to_update );
       auto required_fees = get_priority_fee();
 
       if( account->is_delegate() )
       {
-         FC_ASSERT( delegate_pay_rate <= account->delegate_info->pay_rate );
+         if( delegate_pay_rate > account->delegate_info->pay_rate )
+            FC_THROW_EXCEPTION( invalid_pay_rate, "Pay rate can only be decreased!", ("delegate_pay_rate",delegate_pay_rate) );
       }
       else
       {
