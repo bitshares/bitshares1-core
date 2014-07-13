@@ -1545,7 +1545,7 @@ namespace bts { namespace blockchain {
    { try {
       // delete the old auction index if it exists
       auto old_domain_rec = my->_domain_db.find( rec.domain_name );
-      if( old_domain_rec.valid() && my->_auction_db.find( old_domain_rec.value().get_auction_key() ).valid() )
+      if( old_domain_rec.valid() && old_domain_rec.value().state == domain_record::in_auction )
       {
           my->_auction_db.remove( old_domain_rec.value().get_auction_key() );
       }

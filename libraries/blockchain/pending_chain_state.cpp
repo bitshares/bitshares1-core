@@ -48,7 +48,7 @@ namespace bts { namespace blockchain {
           if (k >= max)
               break;
           domain_rec.time_in_top += BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; // todo missed blocks
-          if (domain_rec.time_in_top > P2P_AUCTION_DURATION_SECS)
+          if (domain_rec.time_in_top >= P2P_AUCTION_DURATION_SECS)
           {
               domain_rec.state = domain_record::owned;
           }
@@ -315,10 +315,6 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_domain_record( const domain_record& r )
    {
-      if( domains.find( r.domain_name ) != domains.end() )
-      {
-          auto old_rec = domains[r.domain_name];
-      }
       domains[r.domain_name] = r;
    }
 

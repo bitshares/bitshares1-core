@@ -46,6 +46,20 @@
             "prerequisites": ["wallet_open", "wallet_unlocked"]
         },
         {
+            "method_name": "domain_cancel_sell",
+            "description": "Start an auction for a domain you own at a particular price.",
+            "return_type": "signed_transaction",
+            "parameters": 
+            [
+                {
+                    "name": "domain_name",
+                    "type": "string",
+                    "description": ""
+                }
+            ],
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
+        },
+        {
             "method_name": "domain_update",
             "description": "Update a domain's value.",
             "return_type": "signed_transaction",
@@ -76,7 +90,7 @@
                     "description": ""
                 },
                 {
-                    "name": "owner",
+                    "name": "to_account",
                     "type": "account_name",
                     "description": ""
                 }

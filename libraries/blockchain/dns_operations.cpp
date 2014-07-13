@@ -7,6 +7,9 @@
 #include <bts/blockchain/dns_utils.hpp>
 #include <bts/blockchain/dns_config.hpp>
 
+#include <bts/blockchain/extended_address.hpp> // TITAN
+#include <fc/crypto/aes.hpp>
+
 #include <iostream>
 
 namespace bts { namespace blockchain { 
@@ -130,6 +133,46 @@ namespace bts { namespace blockchain {
         eval_state._current_state->store_domain_record( *odomain_rec );
     }
 
+    void domain_transfer_operation::titan_transfer( const fc::ecc::private_key& one_time_private_key,
+                                                    const fc::ecc::public_key& to_public_key,
+                                                    const fc::ecc::private_key& from_private_key,
+                                                    const std::string& memo_message,
+                                                    const fc::ecc::public_key& memo_pub_key,
+                                                    memo_flags_enum memo_type )
+    {
+        memo = titan_memo();
+        auto secret = one_time_private_key.get_shared_secret( to_public_key );
+        auto ext_to_public_key = extended_public_key(to_public_key);
+        auto secret_ext_public_key = ext_to_public_key.child( fc::sha256::hash(secret) );
+        auto secret_public_key = secret_ext_public_key.get_pub_key();
+        owner = address( secret_public_key );
+
+        auto check_secret = from_private_key.get_shared_secret( secret_public_key );
+
+        memo_data memo_content;
+        memo_content.set_message( memo_message );
+        memo_content.from = memo_pub_key;
+        memo_content.from_signature = check_secret._hash[0];
+        memo_content.memo_flags = memo_type;
+
+        memo->one_time_key = one_time_private_key.get_public_key();
+
+        FC_ASSERT( memo.valid() );
+        memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
+    }
+
+
+    void domain_transfer_operation::evaluate( transaction_evaluation_state& eval_state )
+    {
+        auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
+        FC_ASSERT( odomain_rec.valid(), "Trying to update domain which does not exist" );
+        FC_ASSERT( odomain_rec->get_true_state() == domain_record::owned,
+                   "Attempting to update a domain which is not in 'owned' state");
+        FC_ASSERT( eval_state.check_signature( odomain_rec->owner ), "Update not signed by owner" );
+        odomain_rec->owner = this->owner;
+        odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
+        eval_state._current_state->store_domain_record( *odomain_rec );
+    }
 
     void domain_update_info_operation::evaluate( transaction_evaluation_state& eval_state )
     {
@@ -140,7 +183,6 @@ namespace bts { namespace blockchain {
         FC_ASSERT( is_valid_value( this->value ), "Trying to update with invalid value" );
         FC_ASSERT( eval_state.check_signature( odomain_rec->owner ), "Update not signed by owner" );
         odomain_rec->value = this->value;
-        odomain_rec->owner = this->owner;
         odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
         eval_state._current_state->store_domain_record( *odomain_rec );
     }

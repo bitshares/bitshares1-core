@@ -1,8 +1,10 @@
 #pragma once
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/withdraw_types.hpp> // titan
 #include <bts/blockchain/dns_record.hpp>
 #include <fc/io/enum_type.hpp>
+#include <fc/io/raw.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -42,41 +44,41 @@ namespace bts { namespace blockchain {
         string domain_name;
     };
 
+    struct domain_transfer_operation
+    {
+        static const operation_type_enum type;
+        void evaluate( transaction_evaluation_state& eval_state );
+
+        void titan_transfer( const fc::ecc::private_key& one_time_private_key,
+                             const fc::ecc::public_key& to_public_key,
+                             const fc::ecc::private_key& from_private_key,
+                             const std::string& memo_message,
+                             const fc::ecc::public_key& memo_pub_key,
+                             memo_flags_enum memo_type = from_memo );
+
+        string                      domain_name;
+        address                     owner;
+        fc::optional<titan_memo>    memo;
+
+    };
+
+
     struct domain_update_info_operation
     {
         static const operation_type_enum type;
         void evaluate( transaction_evaluation_state& eval_state );
 
         string domain_name;
-        address owner;
         variant value;
 
     };
 
 
-
-
-/*
-    struct update_domain_operation
-    {
-        update_domain_operation():domain_name(""){}
-
-        static const operation_type_enum type;
-
-        address                                                         owner;
-        string                                                          domain_name;
-        variant                                                         value;
-        fc::enum_type<uint8_t, domain_record::domain_state_type>        update_type;
-        share_type                                                      bid_amount;
-
-        void evaluate( transaction_evaluation_state& eval_state );
-    };
-*/
-
 }}; // bts::blockchain
 
 FC_REFLECT( bts::blockchain::domain_bid_operation, (domain_name)(bidder_address)(bid_amount) );
-FC_REFLECT( bts::blockchain::domain_update_info_operation, (domain_name)(owner)(value) );
+FC_REFLECT( bts::blockchain::domain_update_info_operation, (domain_name)(value) );
 FC_REFLECT( bts::blockchain::domain_sell_operation, (domain_name)(price) );
 FC_REFLECT( bts::blockchain::domain_cancel_sell_operation, (domain_name) );
 FC_REFLECT( bts::blockchain::domain_buy_operation, (domain_name)(new_owner) );
+FC_REFLECT( bts::blockchain::domain_transfer_operation, (domain_name)(owner)(memo) );

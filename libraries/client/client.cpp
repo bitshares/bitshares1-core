@@ -3129,6 +3129,14 @@ config load_config( const fc::path& datadir )
         return trx;
     }
 
+    signed_transaction        client_impl::domain_cancel_sell( const string& domain_name )
+    {
+        auto trx = _wallet->domain_cancel_sell( domain_name, true);
+        network_broadcast_transaction( trx );
+        return trx;
+    }
+
+
     signed_transaction        client_impl::domain_transfer( const string& domain_name,
                                                             const string& account_name )
     {

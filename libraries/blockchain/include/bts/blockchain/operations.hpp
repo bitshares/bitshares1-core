@@ -55,7 +55,8 @@ namespace bts { namespace blockchain {
       domain_update_info_op_type       = 102,
       domain_sell_op_type              = 103,
       domain_cancel_sell_op_type       = 104,
-      domain_buy_op_type               = 105
+      domain_buy_op_type               = 105,
+      domain_transfer_op_type          = 106
    };
 
    /**
@@ -132,6 +133,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (domain_sell_op_type)
                  (domain_cancel_sell_op_type)
                  (domain_buy_op_type)
+                 (domain_transfer_op_type)
                )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
