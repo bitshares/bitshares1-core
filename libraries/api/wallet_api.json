@@ -681,9 +681,15 @@
                },
                {
                   "name" : "delegate_pay_rate",
-                  "type" : "uint32_t",
-                  "description" : "percent to pay delegate, 0 to 100 or 255 if not a delegate",
+                  "type" : "uint8_t",
+                  "description" : "delegate pay rate: 0 to 100 if updating or upgrading to a delegate, and 255 for a normal account",
                   "default_value" : 255
+               },
+               {
+                  "name" : "new_active_key",
+                  "type" : "string",
+                  "description" : "update account's active key, or leave blank to leave current key in place",
+                  "default_value" : ""
                }
             ],
          "prerequisites" : ["wallet_unlocked"],

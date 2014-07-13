@@ -1,4 +1,4 @@
-default (unlocked) >>> help blockchain_list_blocks 
+default (unlocked) >>> help blockchain_list_blocks
 Usage:
 blockchain_list_blocks [first_block_number] [limit]                                                   Returns the block headers for blocks in a range
 Returns the block headers for blocks in a range
@@ -11,8 +11,16 @@ Returns:
   block_record_array
 
 aliases: list_blocks
-default (unlocked) >>> debug_wait 35
+default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
 OK
+default (unlocked) >>> blockchain_list_blocks
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
+-------------------------------------------------------------------------------------------------------------------
+5       [redacted]          [redacted]                      0       182     0.00000 XTS     [redacted][redacted]     
+4       [redacted]          [redacted]                      0       182     0.00000 XTS     [redacted][redacted]     
+3       [redacted]          [redacted]                      0       182     0.00000 XTS     [redacted][redacted]     
+2       [redacted]          [redacted]                      0       182     0.00000 XTS     [redacted][redacted]     
+1       [redacted]          [redacted]                      0       182     0.00000 XTS     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_blocks 1 3
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 -------------------------------------------------------------------------------------------------------------------

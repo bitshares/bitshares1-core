@@ -32,6 +32,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( duplicate_account_name,  bts::wallet::wallet_exception, 20025, "duplicate account name" );
   FC_DECLARE_DERIVED_EXCEPTION( not_contact_account,     bts::wallet::wallet_exception, 20026, "not contact account" );
   FC_DECLARE_DERIVED_EXCEPTION( memo_too_long,           bts::wallet::wallet_exception, 20027, "memo too long" );
+  FC_DECLARE_DERIVED_EXCEPTION( invalid_pay_rate,        bts::wallet::wallet_exception, 20028, "invalid pay rate" );
   // registered in wallet.cpp
 
 } } // bts::wallet
