@@ -109,92 +109,92 @@
       },
       {
         "method_name": "wallet_import_bitcoin",
-        "description": "Imports a bitcoin wallet",
+        "description": "Imports a Bitcoin Core or BitShares PTS wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the path to the bitcoin wallet you would like to import."
+              "description" : "the Bitcoin/PTS wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the bitcoin wallet's password, not your bitshares wallet password."
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet, you must create this account first if it does not exist."
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_armory",
-        "description": "Imports a armory wallet",
+        "description": "Imports an Armory wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the armory wallet"
+              "description" : "the Armory wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the wallet's password"
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_electrum",
-        "description": "Imports a electrum wallet",
+        "description": "Imports an Electrum wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the electrum wallet"
+              "description" : "the Electrum wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the wallet's password"
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_multibit",
-        "description": "Imports a multibit wallet",
+        "description": "Imports a Multibit wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the multibit wallet"
+              "description" : "the Multibit wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the wallet's password"
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
