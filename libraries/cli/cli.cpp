@@ -945,7 +945,7 @@ namespace bts { namespace cli {
                     {
                       *_out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
-                               : _client->get_chain()->to_pretty_asset(bid_itr->get_quantity()))
+                               : _client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
                             << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
                                : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))

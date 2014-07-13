@@ -47,7 +47,7 @@ asset market_order::get_quantity()const
      }
      case short_order:
      {
-        return get_balance() * get_price();
+        return get_balance();
      }
      default:
         FC_ASSERT( !"Not Implemented" );
@@ -68,7 +68,7 @@ asset market_order::get_quote_quantity()const
      }
      case short_order:
      {
-        return get_balance(); 
+        return get_balance() * get_price();
      }
      default:
         FC_ASSERT( !"Not Implemented" );

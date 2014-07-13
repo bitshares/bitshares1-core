@@ -114,23 +114,35 @@ namespace bts { namespace wallet {
                   const auto now = blockchain::now();
                   scan_block( summary.block_data.block_num, account_priv_keys, now );
 
+                  /*
                   auto market_trxs = _blockchain->get_market_transactions( summary.block_data.block_num );
                   for( uint32_t i = 0; i < market_trxs.size(); ++i )
                   {
                      scan_market_transaction( now, summary.block_data.block_num, i, market_trxs[i] );
                   }
+                  */
                }
             }
 
-            void scan_market_transaction( time_point_sec block_time, uint32_t block_num, uint32_t trx_num, const market_transaction& trx )
+            void scan_market_transaction( time_point_sec block_time, 
+                                          uint32_t block_num, 
+                                          uint32_t trx_num, 
+                                          const market_transaction& trx )
             {
+                idump( (block_num)(trx_num)(trx) );
                 auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
                 if( okey_bid && okey_bid->has_private_key() )
                 {
                    auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
+                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), trx.bid_price.base_asset_id ).get_address() );
+                   if( bal_rec ) _wallet_db.cache_balance( *bal_rec );
+
+                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), trx.ask_price.quote_asset_id ).get_address() );
+                   if( bal_rec ) _wallet_db.cache_balance( *bal_rec );
+
                    // what did we pay
-                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4, 
+                   _wallet_db.store_market_transaction( block_num, trx_num * 4, 
                                                         trx.bid_paid,
                                                         "pay bid @ "+ _blockchain->to_pretty_price( trx.bid_price ),
                                                         block_time,
@@ -140,7 +152,7 @@ namespace bts { namespace wallet {
 
 
                    // what did we receive
-                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4+1, 
+                   _wallet_db.store_market_transaction( block_num, trx_num * 4+1, 
                                                         trx.bid_received,
                                                         "fill bid @ "+ _blockchain->to_pretty_price( trx.bid_price ),
                                                         block_time,
@@ -154,8 +166,24 @@ namespace bts { namespace wallet {
                 {
                    auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
+                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.base_asset_id ).get_address() );
+                   if( bal_rec )
+                   {
+                      wdump( (bal_rec) );
+                      _wallet_db.cache_balance( *bal_rec );
+                   }
+
+                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.quote_asset_id ).get_address() );
+                   if( bal_rec ) 
+                   {
+                      _wallet_db.cache_balance( *bal_rec );
+                      wdump( (bal_rec) );
+                   }
+
                    // what did we pay
-                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4+2, 
+                   ilog( "pay ask @ ${p}" , ("p",_blockchain->to_pretty_price( trx.ask_price )) );
+
+                   _wallet_db.store_market_transaction( block_num, (trx_num * 4)+2, 
                                                         trx.ask_paid,
                                                         "pay ask @ " + _blockchain->to_pretty_price( trx.ask_price ),
                                                         block_time,
@@ -164,8 +192,9 @@ namespace bts { namespace wallet {
                                                         trx.fees_collected.amount );
 
 
+                   ilog( "fill ask @ ${p}" , ("p",_blockchain->to_pretty_price( trx.ask_price )) );
                    // what did we receive
-                   _wallet_db.store_market_transaction( block_num-1, trx_num * 4+3, 
+                   _wallet_db.store_market_transaction( block_num, (trx_num * 4)+3, 
                                                         trx.ask_received,
                                                         "fill ask @ "+ _blockchain->to_pretty_price( trx.ask_price ),
                                                         block_time,

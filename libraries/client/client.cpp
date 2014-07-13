@@ -2831,6 +2831,11 @@ config load_config( const fc::path& datadir )
    {
       return _chain_db->get_market_shorts( quote_symbol, limit );
    }
+   vector<market_order>    client_impl::blockchain_market_list_covers( const string& quote_symbol,
+                                                                       uint32_t limit  )
+   {
+      return _chain_db->get_market_covers( quote_symbol, limit );
+   }
 
    std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
                                                                                               const string& base_symbol,

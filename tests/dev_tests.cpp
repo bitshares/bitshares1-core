@@ -324,12 +324,19 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "short delegate30 30 5.43 BUSD" );
    exec( clientb, "short c-account 50 4.21 BUSD" );
    exec( clientb, "ask delegate30 4 XTS 5.41 BUSD" );
-   exec( clientb, "ask c-account 8 XTS 4.20 BUSD" );
+   exec( clientb, "ask delegate32 8 XTS 4.20 BUSD" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
+   exec( clientb, "wallet_account_transaction_history" );
    exec( clienta, "blockchain_market_list_shorts BUSD" );
+   exec( clientb, "blockchain_market_list_covers BUSD" );
+   exec( clientb, "balance" );
+   exec( clientb, "ask delegate30 3 XTS 5.42 BUSD" );
+   produce_block( clienta );
+   exec( clientb, "wallet_account_transaction_history" );
+   exec( clienta, "blockchain_market_order_book BUSD XTS" );
 
 
 //   exec( clientb, "wallet_account_transaction_history" );

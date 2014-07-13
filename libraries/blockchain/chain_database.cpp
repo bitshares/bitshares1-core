@@ -86,9 +86,9 @@ namespace bts { namespace blockchain {
                   :_pending_state(ps),_db_impl(cdi){}
 
                   void execute( asset_id_type quote_id, asset_id_type base_id )
-                  {
-                     _quote_id = quote_id;
-                     _base_id = base_id;
+                  { try {
+                       _quote_id = quote_id;
+                       _base_id = base_id;
                        // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
                        // next market class and then back up one
                        auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
@@ -97,8 +97,15 @@ namespace bts { namespace blockchain {
                        _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
                        _cover_itr      = _db_impl._collateral_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
 
+                       if( !_ask_itr.valid() )
+                       {
+                          wlog( "ask iter invalid..." );
+                          _ask_itr = _db_impl._ask_db.begin();
+                       }
+
                        if( _short_itr.valid() ) --_short_itr;
                        else _short_itr = _db_impl._short_db.last();
+
                        if( _bid_itr.valid() )   --_bid_itr;
                        else _bid_itr = _db_impl._bid_db.last();
 
@@ -107,15 +114,18 @@ namespace bts { namespace blockchain {
 
                        while( get_next_bid() && get_next_ask() )
                        {
+                          idump( (_current_bid)(_current_ask) );
                           if( _current_bid->get_price() < _current_ask->get_price() )
                              break;
-                          auto quote_quantity = std::min( _current_bid->get_quote_quantity(), _current_ask->get_quote_quantity() );
+                          auto quote_quantity = std::min( _current_bid->get_quote_quantity(), 
+                                                          _current_ask->get_quote_quantity() );
 
                           auto usd_paid_by_bid     = quote_quantity;
                           auto usd_received_by_ask = quote_quantity;
                           auto xts_paid_by_ask     = quote_quantity * _current_ask->get_price();
                           auto xts_received_by_bid = quote_quantity * _current_bid->get_price();
 
+                          idump( (xts_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quote_quantity) );
                           xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
 
                           market_transaction mtrx;
@@ -147,7 +157,10 @@ namespace bts { namespace blockchain {
                           {
                              // TODO: what if the amount paid is 0 for bid and ask due to rounding errors,
                              // make sure this doesn't put us in an infinite loop.
-                             _current_bid->state.balance -= xts_paid_by_ask.amount;
+                             if( quote_quantity == _current_bid->get_quote_quantity() )
+                                _current_bid->state.balance = 0;
+                             else
+                                _current_bid->state.balance -= xts_received_by_bid.amount;
 
                              auto cover_price =  usd_received_by_ask / asset( (3*xts_received_by_bid.amount)/4, base_id );
 
@@ -157,21 +170,28 @@ namespace bts { namespace blockchain {
                              if( NOT ocover_record )
                                 ocover_record = collateral_record();
 
-                             ocover_record->collateral_balance += 2 * xts_received_by_bid.amount;
+                             ocover_record->collateral_balance += ((usd_paid_by_bid * _current_bid->get_price()) + xts_paid_by_ask).amount;
                              ocover_record->payoff_balance += usd_received_by_ask.amount;
-
                              _pending_state->store_collateral_record( cover_index, *ocover_record );
+
+                             _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                           }
 
                           if( _current_ask->type == ask_order )
                           {
-                             _current_ask->state.balance -= xts_paid_by_ask.amount;
+                             /* rounding errors on price cause this not to go to 0 in some cases */
+                             if( quote_quantity == _current_ask->get_quote_quantity() )
+                                _current_ask->state.balance = 0; 
+                             else
+                                _current_ask->state.balance -= xts_paid_by_ask.amount;
 
                              auto ask_balance_address = withdraw_condition( withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
                              auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
                              if( !ask_payout )
                                 ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
+                          ilog( "." );
                              ask_payout->balance += usd_received_by_ask.amount;
+                          ilog( "." );
 
                              _pending_state->store_balance_record( *ask_payout );
                              _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
@@ -182,10 +202,11 @@ namespace bts { namespace blockchain {
                              
                           }
                        }
-                  }
+                       wlog( "done matching orders" );
+                  } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
 
                   bool get_next_bid()
-                  {
+                  { try {
                      if( _current_bid && _current_bid->get_quantity().amount > 0 ) 
                         return _current_bid.valid();
 
@@ -207,10 +228,11 @@ namespace bts { namespace blockchain {
                         if( bid.get_price().quote_asset_id == _quote_id && 
                             bid.get_price().base_asset_id == _base_id )
                         {
-                            if( _current_bid && _current_bid->get_price() < bid.get_price() )
+                            if( !_current_bid || _current_bid->get_price() < bid.get_price() )
                             {
                                --_short_itr;
                                _current_bid = bid;
+                               ilog( "returning ${v}", ("v",_current_bid.valid() ) );
                                return _current_bid.valid();
                             }
                         }
@@ -221,22 +243,30 @@ namespace bts { namespace blockchain {
                      }
                      if( _bid_itr.valid() ) --_bid_itr;
                      return _current_bid.valid();
-                  }
+                  } FC_CAPTURE_AND_RETHROW() }
 
                   bool get_next_ask()
-                  {
+                  { try {
                      if( _current_ask && _current_ask->state.balance > 0 )
+                     {
+                        wlog( "current ask" );
                         return _current_ask.valid();
+                     }
                      _current_ask.reset();
 
                      if( _ask_itr.valid() )
                      {
                         auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
+                        wlog( "ASK ITER VALID: ${o}", ("o",ask) );
                         if( ask.get_price().quote_asset_id == _quote_id && 
                             ask.get_price().base_asset_id == _base_id )
                         {
                             _current_ask = ask;
                         }
+                     }
+                     else
+                     {
+                        ilog( "ask iter is not valid" );
                      }
 
                      if( _cover_itr.valid() )
@@ -245,7 +275,7 @@ namespace bts { namespace blockchain {
                         if( ask.get_price().quote_asset_id == _quote_id && 
                             ask.get_price().base_asset_id == _base_id )
                         {
-                            if( _current_ask && _current_ask->get_price() > ask.get_price() )
+                            if( !_current_ask || _current_ask->get_price() > ask.get_price() )
                             {
                                ++_cover_itr;
                                _current_ask = ask;
@@ -254,9 +284,10 @@ namespace bts { namespace blockchain {
                             }
                         }
                      }
-                     if( _ask_itr.valid() ) --_ask_itr;
+                     ilog( "." );
+                     if( _ask_itr.valid() ) ++_ask_itr;
                      return _current_ask.valid();
-                  }
+                  } FC_CAPTURE_AND_RETHROW() }
 
                   pending_chain_state_ptr     _pending_state;
                   chain_database_impl&        _db_impl;
@@ -946,7 +977,6 @@ namespace bts { namespace blockchain {
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
         } 
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
-        edump( (market_transactions) );
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
 
@@ -2484,6 +2514,39 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
+   vector<market_order> chain_database::get_market_covers( const string& quote_symbol, uint32_t limit )
+   { try {
+       auto quote_asset_id = get_asset_id( quote_symbol );
+       auto base_asset_id  = 0;
+       if( base_asset_id >= quote_asset_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+
+       vector<market_order> results;
+
+       auto market_itr  = my->_collateral_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       while( market_itr.valid() )
+       {
+          auto key = market_itr.key();
+          if( key.order_price.quote_asset_id == quote_asset_id &&
+              key.order_price.base_asset_id == base_asset_id  )
+          {
+             results.push_back( {cover_order, 
+                                 key, 
+                                 order_record(market_itr.value().payoff_balance), 
+                                 market_itr.value().collateral_balance } );
+          }
+          else
+          {
+             break;
+          }
+
+          if( results.size() == limit ) 
+             return results;
+
+          ++market_itr;
+       }
+       return results;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
 
    optional<market_order> chain_database::get_market_ask( const market_index_key& key )const
@@ -2582,12 +2645,10 @@ namespace bts { namespace blockchain {
    {
       if( trxs.size() == 0 )
       {
-         wlog( "set market block: ${h} trxs ${t}", ("t",trxs)("h",get_head_block_num() + 1 ) );
          my->_market_transactions_db.remove( get_head_block_num() );
       }
       else
       {
-         elog( "set market block: ${h} trxs ${t}", ("t",trxs)("h",get_head_block_num() + 1 ) );
          my->_market_transactions_db.store( get_head_block_num()+1, trxs );
       }
    }
@@ -2598,5 +2659,6 @@ namespace bts { namespace blockchain {
       if( tmp ) return *tmp;
       return vector<market_transaction>();
    }
+
 
 } } // bts::blockchain
