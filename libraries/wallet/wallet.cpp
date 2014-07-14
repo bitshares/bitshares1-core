@@ -3181,11 +3181,109 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity) (quote_price)(quote_symbol)(sign) ) }
 
+   signed_transaction  wallet::cover_short( const string& from_account_name,
+                                          double real_quantity_usd,
+                                          const string& quote_symbol,
+                                          const address& owner_address,
+                                          bool sign  )
+   { try {
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+       if( NOT is_receive_account(from_account_name) )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
+       if( real_quantity_usd < 0 ) FC_CAPTURE_AND_THROW( negative_bid, (real_quantity_usd) );
+
+       auto     from_account_key = get_account_public_key( from_account_name );
+       address  from_address( from_account_key );
+
+
+       optional<market_order> order_to_cover;
+       auto covers = my->_blockchain->get_market_covers( quote_symbol );
+       for( auto order : covers )
+       {
+          if( owner_address == order.get_owner() )
+             order_to_cover = order;
+       }
+       FC_ASSERT( order_to_cover.valid() );
+
+       signed_transaction trx;
+       unordered_set<address>     required_signatures;
+       required_signatures.insert( order_to_cover->market_index.owner );
+
+       auto quote_asset_record = my->_blockchain->get_asset_record( order_to_cover->market_index.order_price.quote_asset_id );
+       FC_ASSERT( quote_asset_record.valid() );
+       asset amount_to_cover( real_quantity_usd * quote_asset_record->precision, quote_asset_record->id );
+       if( real_quantity_usd == 0 )
+       {
+          amount_to_cover.amount = order_to_cover->state.balance; 
+       }
+
+       my->withdraw_to_transaction( amount_to_cover.amount,
+                                    amount_to_cover.asset_id, 
+                                    from_address, 
+                                    trx, 
+                                    required_signatures );
+
+       auto required_fees = get_priority_fee();
+
+       trx.cover( amount_to_cover, order_to_cover->market_index );
+
+       bool fees_paid = false;
+       if( amount_to_cover.amount - order_to_cover->state.balance == 0 )
+       {
+          if( *order_to_cover->collateral > required_fees.amount )
+          {
+
+             slate_id_type slate_id = 0;
+
+             auto new_slate = select_delegate_vote();
+             slate_id = new_slate.id();
+             
+             if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+             {
+                trx.define_delegate_slate( new_slate );
+             }
+
+             trx.deposit( order_to_cover->market_index.owner, asset( *order_to_cover->collateral - required_fees.amount), slate_id );
+             fees_paid = true;
+          }
+          else
+          {
+             required_fees.amount -= *order_to_cover->collateral;
+          }
+       }
+       if( !fees_paid )
+       {
+             my->withdraw_to_transaction( required_fees.amount,
+                                          required_fees.asset_id, 
+                                          from_address, 
+                                          trx, 
+                                          required_signatures );
+       }
+
+       if( sign )
+       {
+           sign_transaction( trx, required_signatures );
+
+           const auto now = blockchain::now();
+           my->_wallet_db.cache_transaction( trx, amount_to_cover,
+                                            required_fees.amount,
+                                            "cover ORDER-" + variant( address(order_to_cover->get_owner()) ).as_string().substr(3,8),
+                                            from_account_key,
+                                            now,
+                                            now,
+                                            from_account_key,
+                                            vector<address>()//{to_address}
+                                            );
+       }
+       return trx;
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(owner_address)(sign) ) }
+
    void wallet::set_priority_fee( const asset& fee )
-   {
+   { try {
       FC_ASSERT( is_open () );
       my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
-   }
+   } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
    asset wallet::get_priority_fee()const
    { try {

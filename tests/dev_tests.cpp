@@ -346,6 +346,12 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
    exec( clienta, "wallet_market_order_list BUSD XTS" );
    exec( clientb, "wallet_market_order_list BUSD XTS" );
+   exec( clientb, "balance" );
+   exec( clienta, "balance" );
+   exec( clientb, "cover delegate32 10.1 BUSD XTSP8ZBZodbzPYh57Z8S4S6x2VqYNXo5MALy" );
+   produce_block( clienta );
+   exec( clientb, "wallet_market_order_list BUSD XTS" );
+   exec( clientb, "wallet_account_transaction_history" );
 
 
 //   exec( clientb, "wallet_account_transaction_history" );

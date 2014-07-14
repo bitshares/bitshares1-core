@@ -46,6 +46,8 @@ namespace bts { namespace blockchain {
    {
         static const operation_type_enum type; 
         cover_operation():amount(0){}
+        cover_operation( share_type a, const market_index_key& idx )
+        :amount(a),cover_index(idx){}
 
         asset            get_amount()const { return asset( amount, cover_index.order_price.quote_asset_id ); }
         share_type       amount;
