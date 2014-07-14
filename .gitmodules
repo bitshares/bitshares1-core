@@ -12,4 +12,4 @@
 	url = git@github.com:BitShares/web_wallet
 [submodule "programs/qt_wallet"]
 	path = programs/qt_wallet
-	url = git@github.com:BitShares/qt_wallet
+	url = https://github.com/BitShares/qt_wallet.git
