@@ -77,8 +77,8 @@
       },
       {
         "method_name": "wallet_import_private_key",
-        "description": "Loads the private key into the specified account",
-        "return_type": "void",
+        "description": "Loads the private key into the specified account. Returns which account it was actually imported to.",
+        "return_type": "account_name",
         "parameters" : [
            {
               "name" : "wif_key",

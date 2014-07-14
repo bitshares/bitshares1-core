@@ -1721,14 +1721,17 @@ config load_config( const fc::path& datadir )
         _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid);
     }
 
-    void detail::client_impl::wallet_import_private_key(const string& wif_key_to_import,
+    string detail::client_impl::wallet_import_private_key(const string& wif_key_to_import,
                                            const string& account_name,
                                            bool create_account,
                                            bool wallet_rescan_blockchain)
     {
-      _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
+      auto key = _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
+      auto oacct = _wallet->get_account_record( address( key ) );
+      FC_ASSERT( oacct.valid(), "just imported a key but now the key has no owner" );
+      return oacct->name;
     }
 
     string detail::client_impl::wallet_dump_private_key(const std::string& address_or_public_key)
