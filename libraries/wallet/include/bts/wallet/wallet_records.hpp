@@ -186,7 +186,7 @@ namespace bts { namespace wallet {
 
       bts::blockchain::market_order        order;
       share_type                           proceeds;
-      unordered_set<transaction_id_type>   transactions;
+      unordered_set<transaction_id_type>          transactions;
    };
 
    /* Used to store GUI preferences and such */

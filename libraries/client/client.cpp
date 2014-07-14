@@ -2885,7 +2885,7 @@ config load_config( const fc::path& datadir )
       return std::make_pair(bids, asks);
    }
 
-   vector<market_order_status>    client_impl::wallet_market_order_list( const string& quote_symbol,
+   vector<market_order>    client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                  const string& base_symbol,
                                                                  int64_t limit  )
    {

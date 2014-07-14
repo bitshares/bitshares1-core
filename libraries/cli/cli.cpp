@@ -677,14 +677,10 @@ namespace bts { namespace cli {
                   *_out << pretty_transaction_list( transactions, _client );
               }
               else if( method_name == "wallet_market_order_list" )
-              {
-                  const auto& market_order_statuses = result.as<vector<market_order_status>>();
-                  vector<market_order> market_orders;
-                  market_orders.reserve( market_order_statuses.size() );
-                  for( const auto& market_order_status : market_order_statuses )
-                      market_orders.push_back( market_order_status.order );
+              { try {
+                  const auto& market_orders = result.as<vector<market_order>>();
                   *_out << pretty_market_orders( market_orders, _client );
-              }
+              } FC_CAPTURE_AND_RETHROW() }
               else if( method_name == "blockchain_market_list_asks"
                        || method_name == "blockchain_market_list_bids"
                        || method_name == "blockchain_market_list_shorts" )

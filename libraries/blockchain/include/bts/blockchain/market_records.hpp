@@ -41,6 +41,7 @@ namespace bts { namespace blockchain {
 
    enum order_type_enum
    {
+      null_order,
       bid_order,
       ask_order,
       short_order,
@@ -55,7 +56,7 @@ namespace bts { namespace blockchain {
       :type(t),market_index(k),state(s),collateral(c){}
        
        
-      market_order(){}
+      market_order():type(null_order){}
 
       string            get_id()const;
       asset             get_balance()const; // funds available for this order
@@ -101,7 +102,7 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (bid_order)(ask_order)(short_order)(cover_order) )
+FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (null_order)(bid_order)(ask_order)(short_order)(cover_order) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::order_record, (balance) )
 FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance) )

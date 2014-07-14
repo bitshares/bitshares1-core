@@ -159,6 +159,7 @@ namespace bts { namespace wallet {
                                                         okey_bid->public_key,
                                                         bid_account_key->public_key,
                                                         trx.fees_collected.amount );
+
                 }
 
                 auto okey_ask = _wallet_db.lookup_key( trx.ask_owner ); 
@@ -2789,6 +2790,11 @@ namespace bts { namespace wallet {
            case short_order:
               trx.short_sell( -balance, order.order.market_index.order_price, owner_address );
               break;
+           case cover_order:
+              FC_ASSERT( !"You cannot cancel a cover order" );
+              break;
+            case null_order:
+              FC_ASSERT( !"Null Order Detected" );
         }
 
         asset deposit_amount = balance;
@@ -3987,21 +3993,39 @@ namespace bts { namespace wallet {
       return account_keys;
    }
 
-   vector<market_order_status>  wallet::get_market_orders( const string& quote, const string& base )const
+   vector<market_order>  wallet::get_market_orders( const string& quote_symbol, const string& base_symbol )const
    { try {
-      auto quote_asset_id = my->_blockchain->get_asset_id( quote );
-      auto base_asset_id  = my->_blockchain->get_asset_id( base );
+      auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
+      auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );
+      auto shorts = my->_blockchain->get_market_shorts( quote_symbol );
+      auto covers = my->_blockchain->get_market_covers( quote_symbol );
 
-      vector<market_order_status> results;
-      for( const auto& item : my->_wallet_db.get_market_orders() )
+      vector<market_order> result;
+
+      for( auto order : bids )
       {
-         if( item.second.order.market_index.order_price.quote_asset_id == quote_asset_id &&
-             item.second.order.market_index.order_price.base_asset_id  == base_asset_id  )
-         {
-            results.push_back( market_order_status( item.second ) );
-         }
+         if( my->_wallet_db.has_private_key( order.get_owner() ) )
+            result.push_back( order );
       }
-      return results;
-   } FC_CAPTURE_AND_RETHROW( (quote)(base) ) }
+
+      for( auto order : asks )
+      {
+         if( my->_wallet_db.has_private_key( order.get_owner() ) )
+            result.push_back( order );
+      }
+
+      for( auto order : shorts )
+      {
+         if( my->_wallet_db.has_private_key( order.get_owner() ) )
+            result.push_back( order );
+      }
+
+      for( auto order : covers )
+      {
+         if( my->_wallet_db.has_private_key( order.get_owner() ) )
+            result.push_back( order );
+      }
+      return result;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
 
 } } // bts::wallet

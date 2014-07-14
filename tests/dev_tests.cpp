@@ -139,7 +139,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_market_list_bids USD XTS" );
    exec( clientb, "wallet_market_order_list USD XTS" );
    auto result = clientb->wallet_market_order_list( "USD", "XTS" );
-   exec( clientb, "wallet_market_cancel_order " + string( result[0].order.market_index.owner ) );
+   exec( clientb, "wallet_market_cancel_order " + string( result[0].market_index.owner ) );
    exec( clienta, "blockchain_market_order_book USD XTS" );
    produce_block( clientb );
    exec( clientb, "wallet_market_order_list USD XTS" );
@@ -147,7 +147,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "balance" );
 
    result = clientb->wallet_market_order_list( "USD", "XTS" );
-   exec( clientb, "wallet_market_cancel_order " + string( result[0].order.market_index.owner ) );
+   exec( clientb, "wallet_market_cancel_order " + string( result[0].market_index.owner ) );
    produce_block( clientb );
    exec( clientb, "blockchain_market_list_bids USD XTS" );
    exec( clientb, "wallet_account_transaction_history" );
@@ -332,6 +332,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "blockchain_market_list_shorts BUSD" );
    exec( clientb, "blockchain_market_list_covers BUSD" );
    exec( clientb, "balance" );
+   exec( clienta, "wallet_market_order_list BUSD XTS" );
    exec( clientb, "ask delegate30 3 XTS 5.42 BUSD" );
    produce_block( clienta );
    exec( clientb, "wallet_account_transaction_history" );
@@ -340,8 +341,11 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "short c-account 50 3.11 BUSD" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
+   exec( clienta, "wallet_market_order_list BUSD XTS" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
+   exec( clienta, "wallet_market_order_list BUSD XTS" );
+   exec( clientb, "wallet_market_order_list BUSD XTS" );
 
 
 //   exec( clientb, "wallet_account_transaction_history" );
