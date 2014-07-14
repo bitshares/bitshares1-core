@@ -91,8 +91,8 @@ namespace bts { namespace blockchain {
 
    struct collateral_record
    {
-      collateral_record():collateral_balance(0),payoff_balance(0){}
-      bool is_null() const { return 0 == payoff_balance; }
+      collateral_record(share_type c = 0, share_type p = 0):collateral_balance(c),payoff_balance(p){}
+      bool is_null() const { return 0 == payoff_balance && 0 == collateral_balance; }
 
       share_type      collateral_balance;
       share_type      payoff_balance;

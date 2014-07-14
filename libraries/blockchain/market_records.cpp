@@ -84,7 +84,7 @@ asset market_order::get_quote_quantity()const
      }
      case cover_order:
      {
-        return get_quantity() * get_price();
+        return get_balance();
      }
      default:
         FC_ASSERT( !"Not Implemented" );

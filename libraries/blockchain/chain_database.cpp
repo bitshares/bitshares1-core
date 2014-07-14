@@ -171,10 +171,33 @@ namespace bts { namespace blockchain {
                           }
                           else if( _current_ask->type == cover_order )
                           {
-                             elog( "MATCHING COVER ORDER" );
-                             break;
+                             elog( "MATCHING COVER ORDER recv_usd: ${usd}  paid_collat: ${c}",
+                                   ("usd",usd_received_by_ask)("c",xts_paid_by_ask) );
+                             wlog( "current ask: ${c}", ("c",_current_ask) );
                              // we are in the margin call range... 
-                             _current_ask->state.balance -= usd_paid_by_bid.amount;
+                             _current_ask->state.balance  -= usd_received_by_ask.amount;
+                             *(_current_ask->collateral)  -= xts_paid_by_ask.amount;
+
+                             if( _current_ask->state.balance == 0 ) // no more USD left
+                             { // send collateral home to mommy & daddy
+                                   wlog( "            collateral balance is now 0!" ); 
+                                   auto ask_balance_address = withdraw_condition( 
+                                                                     withdraw_with_signature(_current_ask->get_owner()), 
+                                                                     base_id ).get_address();
+
+                                   auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
+                                   if( !ask_payout )
+                                      ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
+                                   ask_payout->balance += (*_current_ask->collateral);
+
+                                   _pending_state->store_balance_record( *ask_payout );
+                                   _current_ask->collateral = 0;
+
+                             }
+                             wlog( "storing collateral ${c}", ("c",_current_ask) );
+                             _pending_state->store_collateral_record( _current_ask->market_index, 
+                                                                      collateral_record( *_current_ask->collateral, 
+                                                                                         _current_ask->state.balance ) );
                           }
 
 
@@ -268,22 +291,10 @@ namespace bts { namespace blockchain {
                      }
                      _current_ask.reset();
 
-                     if( _ask_itr.valid() )
-                     {
-                        auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
-                        wlog( "ASK ITER VALID: ${o}", ("o",ask) );
-                        if( ask.get_price().quote_asset_id == _quote_id && 
-                            ask.get_price().base_asset_id == _base_id )
-                        {
-                            _current_ask = ask;
-                        }
-                     }
-                     else
-                     {
-                        ilog( "ask iter is not valid" );
-                     }
-
-                     if( _cover_itr.valid() )
+                     /**
+                      *  Margin calls take priority over all other ask orders
+                      */
+                     while( _cover_itr.valid() )
                      {
                         auto cover_ask = market_order( cover_order,
                                                  _cover_itr.key(), 
@@ -293,20 +304,46 @@ namespace bts { namespace blockchain {
                         if( cover_ask.get_price().quote_asset_id == _quote_id && 
                             cover_ask.get_price().base_asset_id == _base_id )
                         {
+                            if( _current_bid->get_price() < cover_ask.get_highest_cover_price()  )
+                            {
+                               // cover position has been blown out, current bid is not able to
+                               // cover the position, so it will sit until the price recovers 
+                               // enough to fill it.  
+                               //
+                               // The idea here is that the longs have agreed to a maximum 
+                               // protection equal to the collateral.  If they would like to
+                               // sell their USD for XTS this is the best price the short is
+                               // obligated to offer.  
+                               --_cover_itr;
+                               continue;
+                            }
+                            // max bid must be greater than call price
                             if( _current_bid && _current_bid->get_price() < cover_ask.get_price() )
                             {
-                               if( !_current_ask || _current_ask->get_price() > cover_ask.get_price() )
+                               if( _current_ask->get_price() > cover_ask.get_price() )
                                {
-                                  --_cover_itr;
                                   _current_ask = cover_ask;
                                   _current_payoff_balance = _cover_itr.value().payoff_balance;
+                                  --_cover_itr;
                                   return _current_ask.valid();
                                }
                             }
                         }
+                        break;
                      }
-                     ilog( "." );
-                     if( _ask_itr.valid() ) ++_ask_itr;
+
+                     if( _ask_itr.valid() )
+                     {
+                        auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
+                        wlog( "ASK ITER VALID: ${o}", ("o",ask) );
+                        if( ask.get_price().quote_asset_id == _quote_id && 
+                            ask.get_price().base_asset_id == _base_id )
+                        {
+                            _current_ask = ask;
+                        }
+                        ++_ask_itr;
+                        return true;
+                     }
                      return _current_ask.valid();
                   } FC_CAPTURE_AND_RETHROW() }
 
