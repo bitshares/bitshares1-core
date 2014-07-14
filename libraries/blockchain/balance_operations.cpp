@@ -88,8 +88,34 @@ namespace bts { namespace blockchain {
          case withdraw_signature_type:  
          {
             auto owner = current_balance_record->condition.as<withdraw_with_signature>().owner;
-            if( !eval_state.check_signature( owner ) )
-               FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+            if( claim_input_data.size() )
+            {
+               auto pts_sig = fc::raw::unpack<withdraw_with_pts>( claim_input_data );
+               fc::sha256::encoder enc;
+               fc::raw::pack( enc, eval_state._current_state->get_property( chain_property_enum::chain_id ).as<fc::ripemd160>() );
+               fc::raw::pack( enc, pts_sig.new_key );
+               auto digest = enc.result();
+               fc::ecc::public_key test_key( pts_sig.pts_signature, digest );
+               if( address(test_key) == owner ||
+                   address(pts_address(test_key,false,56) ) == owner ||
+                   address(pts_address(test_key,true,56) ) == owner ||
+                   address(pts_address(test_key,false,0) ) == owner ||
+                   address(pts_address(test_key,true,0) ) == owner )
+               {
+                  if( !eval_state.check_signature( pts_sig.new_key) )
+                     FC_CAPTURE_AND_THROW( missing_signature, (pts_sig) );
+                  break;
+               }
+               else
+               {
+                  FC_CAPTURE_AND_THROW( missing_signature, (owner)(pts_sig) );
+               }
+            }
+            else
+            {
+               if( !eval_state.check_signature( owner ) )
+                  FC_CAPTURE_AND_THROW( missing_signature, (owner) );
+            }
             break;
          }
 
