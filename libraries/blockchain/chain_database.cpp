@@ -148,7 +148,7 @@ namespace bts { namespace blockchain {
                           mtrx.ask_price       = ask_price;
                           mtrx.ask_paid        = xts_paid_by_ask;
                           mtrx.ask_received    = usd_received_by_ask;
-                          mtrx.fees_collected  = xts_fees_collected;
+                          mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
 
                           _market_transactions.push_back(mtrx);
 
@@ -2703,7 +2703,7 @@ namespace bts { namespace blockchain {
    {
       if( trxs.size() == 0 )
       {
-         my->_market_transactions_db.remove( get_head_block_num() );
+         my->_market_transactions_db.remove( get_head_block_num()+1 );
       }
       else
       {
