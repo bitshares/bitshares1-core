@@ -257,8 +257,21 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          PENDING   delegate0           testaccount2        10,000.00000 XTS      0.10000 XTS                                                 [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 5
 OK
+default (unlocked) >>> wallet_account_transaction_history
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                FEE                 MEMO                                    ID      
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+[redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS  0.00000 XTS         claim genesis balance                   [redacted]
+[redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS  0.00000 XTS         claim genesis balance                   [redacted]
+[redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS  0.00000 XTS         claim genesis balance                   [redacted]
+[redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS  0.00000 XTS         claim genesis balance                   [redacted]
+[redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS  0.00000 XTS         claim genesis balance                   [redacted]
+[redacted]          2         delegate0           testaccount1        100.00000 XTS         0.10000 XTS                                                 [redacted]
+[redacted]          3         delegate0           delegate0           0.00000 XTS           1.30961 XTS         create XMO (DIGITAL_DEVICE1)            [redacted]
+[redacted]          4         delegate0           testaccount1        10,000.00 XMO         0.10000 XTS         Sending some assets                     [redacted]
+[redacted]          6         testaccount1        ORDER-NewrSidD      1,500.00 XMO          0.10000 XTS         buy 500 XTS @ 3 XMO                     [redacted]
+[redacted]          7         delegate0           testaccount2        10,000.00000 XTS      0.10000 XTS                                                 [redacted]
 default (unlocked) >>> wallet_account_balance testaccount1
 ACCOUNT                         BALANCE                     
 ------------------------------------------------------------
