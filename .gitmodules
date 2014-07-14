@@ -4,6 +4,9 @@
 [submodule "libraries/fc"]
 	path = libraries/fc
 	url = https://github.com/InvictusInnovations/fc.git
-[submodule "programs/client/htdocs"]
-	path = programs/client/htdocs
+[submodule "programs/web_wallet"]
+	path = programs/web_wallet
 	url = https://github.com/BitShares/web_wallet.git
+[submodule "programs/qt_wallet"]
+	path = programs/qt_wallet
+	url = https://github.com/BitShares/qt_wallet.git
