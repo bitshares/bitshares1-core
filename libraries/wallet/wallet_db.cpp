@@ -680,16 +680,16 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
 
 
-   wallet_transaction_record wallet_db::cache_transaction( const signed_transaction& trx,
-                                      const asset&  amount,
-                                      share_type fees,
-                                      const string& memo_message,
-                                      const public_key_type& to,
-                                      time_point_sec created,
-                                      time_point_sec received,
-                                      public_key_type from,
-                                      const vector<address>& extra_addresses
-                                      )
+   wallet_transaction_record wallet_db::cache_transaction(
+           const signed_transaction& trx,
+           const asset& amount,
+           share_type fees,
+           const string& memo_message,
+           const public_key_type& to,
+           const time_point_sec& created,
+           const time_point_sec& received,
+           const public_key_type& from,
+           const vector<address>& extra_addresses )
    { try {
       auto trx_id = trx.id();
       auto itr = transactions.find( trx_id );

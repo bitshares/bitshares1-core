@@ -1405,6 +1405,22 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("req_sigs",req_sigs) ) }
 
+   void wallet::sign_and_cache_transaction(
+        signed_transaction& transaction,
+        const std::unordered_set<address>& required_signatures,
+        const asset& amount,
+        share_type fees,
+        const string& memo,
+        const public_key_type& to,
+        const public_key_type& from,
+        const vector<address>& extra_addresses )
+   { try {
+        sign_transaction( transaction, required_signatures );
+        my->_blockchain->store_pending_transaction( transaction, true );
+        const auto now = blockchain::now();
+        my->_wallet_db.cache_transaction( transaction, amount, fees, memo, to, now, now, from, extra_addresses );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
    private_key_type wallet::get_private_key( const address& addr )const
    { try {
       FC_ASSERT( is_open() );
@@ -1898,21 +1914,8 @@ namespace bts { namespace wallet {
 
        if( sign )
        {
-          delegate_account_record->delegate_info->pay_balance -= amount_to_withdraw;
-          // my->_wallet_db.cache_account( *delegate_account_record );
-          sign_transaction( trx, required_signatures );
-          my->_blockchain->store_pending_transaction( trx, true );
-
-          const auto now = blockchain::now();
-          my->_wallet_db.cache_transaction( trx, asset(amount_to_withdraw,0),
-                                           required_fees.amount,
-                                           memo_message,
-                                           receiver_public_key,
-                                           now,
-                                           now,
-                                           delegate_private_key.get_public_key(),
-                                           vector<address>()//{to_address}
-                                           );
+          sign_and_cache_transaction( trx, required_signatures, asset( amount_to_withdraw ), required_fees.amount,
+                                      memo_message, receiver_public_key, delegate_private_key.get_public_key() );
        }
        return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
@@ -1982,21 +1985,10 @@ namespace bts { namespace wallet {
 
       if( sign )
       {
-         sign_transaction( trx, required_signatures );
-         my->_blockchain->store_pending_transaction( trx, true );
-         const auto now = blockchain::now();
-         my->_wallet_db.cache_transaction( trx, asset_to_transfer,
-                                          required_fees.amount,
-                                          memo_message,
-                                          public_key_type(),
-                                          now,
-                                          now,
-                                          sender_public_key,
-                                          vector<address>{to_address}
-                                          );
+         sign_and_cache_transaction( trx, required_signatures, asset_to_transfer, required_fees.amount, memo_message,
+                                     public_key_type(), sender_public_key, vector<address>{ to_address } );
       }
       return trx;
-      
    } FC_RETHROW_EXCEPTIONS( warn, "",
                             ("real_amount_to_transfer",real_amount_to_transfer)
                             ("amount_to_transfer_symbol",amount_to_transfer_symbol)
@@ -2057,18 +2049,8 @@ namespace bts { namespace wallet {
          
          if( sign )
          {
-            sign_transaction( trx, required_signatures );
-            my->_blockchain->store_pending_transaction( trx, true );
-            const auto now = blockchain::now();
-            my->_wallet_db.cache_transaction( trx, total_asset_to_transfer,
-                                             required_fees.amount,
-                                             memo_message,
-                                             public_key_type(),
-                                             now,
-                                             now,
-                                             sender_public_key,
-                                             to_addresses
-                                             );
+            sign_and_cache_transaction( trx, required_signatures, total_asset_to_transfer, required_fees.amount,
+                                        memo_message, public_key_type(), sender_public_key, to_addresses );
          }
          return trx;
       } FC_RETHROW_EXCEPTIONS( warn, "",
@@ -2163,20 +2145,10 @@ namespace bts { namespace wallet {
         
       if( sign )
       {
-         sign_transaction( trx, required_signatures );
-         my->_blockchain->store_pending_transaction( trx, true );
-         const auto now = blockchain::now();
-         my->_wallet_db.cache_transaction( trx, asset_to_transfer,
-                                          required_fees.amount,
-                                          memo_message,
-                                          receiver_public_key,
-                                          now,
-                                          now,
-                                          sender_public_key
-                                          );
+         sign_and_cache_transaction( trx, required_signatures, asset_to_transfer, required_fees.amount,
+                                     memo_message, receiver_public_key, sender_public_key );
       }
       return trx;
-
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)
                              (amount_to_transfer_symbol)
                              (from_account_name)
@@ -2242,20 +2214,11 @@ namespace bts { namespace wallet {
 
       if( sign )
       {
-         sign_transaction( trx, required_signatures );
-         my->_blockchain->store_pending_transaction( trx, true );
-         const auto now = blockchain::now();
-         return my->_wallet_db.cache_transaction( trx, 
-                                                  asset(), 
-                                                  required_fees.amount, 
-                                                  "register " + account_to_register + (as_delegate? " as a delegate" : ""), 
-                                                  account_public_key,
-                                                  now,
-                                                  now,
-                                                  payer_public_key );
+         const auto memo = string( "register " + account_to_register + (as_delegate ? " as a delegate" : "") );
+         sign_and_cache_transaction( trx, required_signatures, asset(), required_fees.amount,
+                                     memo, account_public_key, payer_public_key );
       }
       return wallet_transaction_record(transaction_data(trx));
-
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
                                       ("public_data", public_data)
                                       ("pay_with_account_name", pay_with_account_name) 
@@ -2320,21 +2283,10 @@ namespace bts { namespace wallet {
 
       if( sign )
       {
-         sign_transaction( trx, required_signatures );
-         my->_blockchain->store_pending_transaction( trx, true );
-         const auto now = blockchain::now();
-         my->_wallet_db.cache_transaction( trx,
-                                  asset(),
-                                  required_fees.amount,
-                                  "create " + symbol + " (" + asset_name + ")",
-                                  from_account_address,
-                                  now,
-                                  now,
-                                  from_account_address
-                                );
-
+         const auto memo = string( "create " + symbol + " (" + asset_name + ")" );
+         sign_and_cache_transaction( trx, required_signatures, asset(), required_fees.amount,
+                                     memo, from_account_address, from_account_address );
       }
-
       return trx;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)
                                       ("name", asset_name )
@@ -2392,23 +2344,12 @@ namespace bts { namespace wallet {
 
       if( sign )
       {
-          sign_transaction( trx, required_signatures );
-          my->_blockchain->store_pending_transaction( trx, true );
-          const auto now = blockchain::now();
-          my->_wallet_db.cache_transaction( trx,
-                                            shares_to_issue,
-                                            required_fees.amount,
-                                            "issue " + my->_blockchain->to_pretty_asset(shares_to_issue),
-                                            receiver_public_key,
-                                            now,
-                                            now,
-                                            issuer->active_key()
-                                          );
+          const auto memo = string( "issue " + my->_blockchain->to_pretty_asset( shares_to_issue ) );
+          sign_and_cache_transaction( trx, required_signatures, shares_to_issue, required_fees.amount,
+                                      memo, receiver_public_key, issuer->active_key() );
       }
-
       return trx;
    }
-
 
    void wallet::update_account_private_data( const string& account_to_update,
                                              const variant& private_data )
@@ -2474,21 +2415,11 @@ namespace bts { namespace wallet {
        
       if (sign)
       {
-          sign_transaction( trx, required_signatures );
-          my->_blockchain->store_pending_transaction( trx, true );
-          const auto now = blockchain::now();
-          return my->_wallet_db.cache_transaction( trx, 
-                                                  asset(), 
-                                                  required_fees.amount, 
-                                                  "update " + account_to_update, 
-                                                  account_public_key,
-                                                  now,
-                                                  now,
-                                                  payer_public_key
-                                                );
+          const auto memo = string( "update " + account_to_update );
+          sign_and_cache_transaction( trx, required_signatures, asset(), required_fees.amount,
+                                      memo, account_public_key, payer_public_key );
       }
-      return wallet_transaction_record(transaction_data(trx));
-
+      return wallet_transaction_record( transaction_data( trx ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
                                       ("pay_from_account",pay_from_account)
                                       ("public_data",public_data)
@@ -2535,6 +2466,7 @@ namespace bts { namespace wallet {
       {
           sign_transaction( trx, required_signatures );
           my->_blockchain->store_pending_transaction( trx, true );
+           // TODO: cache transaction
       }
 
       return trx;

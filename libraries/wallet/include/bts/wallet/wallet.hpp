@@ -406,11 +406,20 @@ namespace bts { namespace wallet {
          */
 
          /** signs transaction with the specified keys for the specified addresses */
-         void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
+         void sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
+         void sign_and_cache_transaction(
+                 signed_transaction& transaction,
+                 const std::unordered_set<address>& required_signatures,
+                 const asset& amount,
+                 share_type fees,
+                 const string& memo,
+                 const public_key_type& to,
+                 const public_key_type& from = public_key_type(),
+                 const vector<address>& extra_addresses = vector<address>() );
+
          private_key_type get_private_key( const address& addr )const;
 
-         std::string           login_start( const std::string& account_name );
-
+         std::string login_start( const std::string& account_name );
          fc::variant login_finish(const public_key_type& server_key,
                                             const public_key_type& client_key,
                                             const fc::ecc::compact_signature& client_signature);
