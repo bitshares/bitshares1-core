@@ -30,12 +30,12 @@ void stcp_socket::do_key_exchange()
   fc::ecc::public_key_data rpub;
   _sock.read( (char*)&rpub, sizeof(rpub) );
 
-  auto shared_secret = _priv_key.get_shared_secret( rpub );
+  _shared_secret = _priv_key.get_shared_secret( rpub );
 //    ilog("shared secret ${s}", ("s", shared_secret) );
-  _send_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
-                  fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
-  _recv_aes.init( fc::sha256::hash( (char*)&shared_secret, sizeof(shared_secret) ), 
-                  fc::city_hash_crc_128((char*)&shared_secret,sizeof(shared_secret) ) );
+  _send_aes.init( fc::sha256::hash( (char*)&_shared_secret, sizeof(_shared_secret) ), 
+                  fc::city_hash_crc_128((char*)&_shared_secret,sizeof(_shared_secret) ) );
+  _recv_aes.init( fc::sha256::hash( (char*)&_shared_secret, sizeof(_shared_secret) ), 
+                  fc::city_hash_crc_128((char*)&_shared_secret,sizeof(_shared_secret) ) );
 }
 
 

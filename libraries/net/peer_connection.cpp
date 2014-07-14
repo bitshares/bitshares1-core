@@ -257,4 +257,9 @@ namespace bts { namespace net
       return transaction_fetching_inhibited_until > fc::time_point::now();
     }
 
+    fc::sha512 peer_connection::get_shared_secret() const
+    {
+      return _message_connection.get_shared_secret();
+    }
+
 } } // end namespace bts::net

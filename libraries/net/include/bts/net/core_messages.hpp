@@ -135,14 +135,15 @@ namespace bts { namespace net {
   {
     static const core_message_type_enum type;
 
-    std::string        user_agent;
-    uint32_t           core_protocol_version;
-    fc::ip::address    inbound_address;
-    uint16_t           inbound_port;
-    uint16_t           outbound_port;
-    node_id_t          node_id;
-    fc::sha256         chain_id;
-    fc::variant_object user_data;
+    std::string                user_agent;
+    uint32_t                   core_protocol_version;
+    fc::ip::address            inbound_address;
+    uint16_t                   inbound_port;
+    uint16_t                   outbound_port;
+    node_id_t                  node_id;
+    fc::ecc::compact_signature signed_shared_secret;
+    fc::sha256                 chain_id;
+    fc::variant_object         user_data;
 
     hello_message() {}
     hello_message(const std::string& user_agent, 
@@ -151,6 +152,7 @@ namespace bts { namespace net {
                   uint16_t inbound_port,
                   uint16_t outbound_port,
                   const node_id_t& node_id_arg, 
+                  const fc::ecc::compact_signature& signed_shared_secret,
                   const fc::sha256& chain_id_arg,
                   const fc::variant_object& user_data ) :
       user_agent(user_agent),
@@ -159,6 +161,7 @@ namespace bts { namespace net {
       inbound_port(inbound_port),
       outbound_port(outbound_port),
       node_id(node_id_arg),
+      signed_shared_secret(signed_shared_secret),
       chain_id(chain_id_arg),
       user_data(user_data)
     {}
@@ -176,7 +179,8 @@ namespace bts { namespace net {
                                      already_connected,
                                      connected_to_self,
                                      not_accepting_connections,
-                                     blocked };
+                                     blocked,
+                                     invalid_hello_message };
 
   struct connection_rejected_message
   {
@@ -348,6 +352,7 @@ FC_REFLECT( bts::net::hello_message, (user_agent)
                                      (inbound_port)
                                      (outbound_port)
                                      (node_id)
+                                     (signed_shared_secret)
                                      (chain_id)
                                      (user_data) )
 
@@ -357,7 +362,8 @@ FC_REFLECT_ENUM(bts::net::rejection_reason_code, (unspecified)
                                                  (already_connected)
                                                  (connected_to_self)
                                                  (not_accepting_connections)
-                                                 (blocked))
+                                                 (blocked)
+                                                 (invalid_hello_message))
 FC_REFLECT( bts::net::connection_rejected_message, (user_agent)
                                                    (core_protocol_version)
                                                    (remote_endpoint)

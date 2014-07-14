@@ -173,6 +173,7 @@ namespace bts { namespace net
       bool idle();
 
       bool is_transaction_fetching_inhibited() const;
+      fc::sha512 get_shared_secret() const;
     private:
       void send_queued_messages_task();
       void accept_connection_task();

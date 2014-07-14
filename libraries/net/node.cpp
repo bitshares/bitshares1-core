@@ -1279,6 +1279,12 @@ namespace bts { namespace net { namespace detail {
       // this check must come before we fill in peer data below
       bool already_connected_to_this_peer = is_already_connected_to_id( hello_message_received.node_id );
 
+      // validate the node id
+      fc::sha256::encoder shared_secret_encoder;
+      fc::sha512 shared_secret = originating_peer->get_shared_secret();
+      shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
+      fc::ecc::public_key expected_node_id(hello_message_received.signed_shared_secret, shared_secret_encoder.result());
+
       // store off the data provided in the hello message
       originating_peer->user_agent = hello_message_received.user_agent;
       originating_peer->node_id = hello_message_received.node_id;
@@ -1292,9 +1298,24 @@ namespace bts { namespace net { namespace detail {
       // now decide what to do with it
       if( originating_peer->their_state == peer_connection::their_connection_state::just_connected )
       {
+        if (hello_message_received.node_id != expected_node_id.serialize())
+        {
+          wlog("Invalid signature in hello message from peer ${peer}", ("peer", originating_peer->get_remote_endpoint()));
+          std::string rejection_message("Invalid signature in hello message");
+          connection_rejected_message connection_rejected( _user_agent_string, core_protocol_version, 
+                                                          originating_peer->get_socket().remote_endpoint(),
+                                                          rejection_reason_code::invalid_hello_message,
+                                                          rejection_message );
+
+          originating_peer->their_state = peer_connection::their_connection_state::connection_rejected;
+          originating_peer->send_message( message(connection_rejected ) );
+          // for this type of message, we're immediately disconnecting this peer
+          disconnect_from_peer( originating_peer, "Invalid signature in hello message" );
+          return;
+        }
         if( hello_message_received.chain_id != _chain_id )
         {
-          wlog(  "Recieved hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
+          wlog( "Received hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
           std::ostringstream rejection_message;
           rejection_message << "You're on a different chain than I am.  I'm on " << _chain_id.str() << 
                               " and you're on " << hello_message_received.chain_id.str();
@@ -2620,12 +2641,19 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       peer->negotiation_status = peer_connection::connection_negotiation_status::hello_sent;
-      hello_message hello( _user_agent_string, 
+      
+      fc::sha256::encoder shared_secret_encoder;
+      fc::sha512 shared_secret = peer->get_shared_secret();
+      shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
+      fc::ecc::compact_signature signature = _node_configuration.private_key.sign_compact(shared_secret_encoder.result());
+
+      hello_message hello(_user_agent_string, 
                           core_protocol_version, 
                           peer->inbound_address,
                           peer->inbound_port, 
                           peer->outbound_port,
-                          _node_id, 
+                          _node_id,
+                          signature,
                           _chain_id, 
                           generate_hello_user_data() );
 
