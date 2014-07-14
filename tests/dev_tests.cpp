@@ -342,10 +342,12 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
    exec( clienta, "wallet_market_order_list BUSD XTS" );
+   exec( clientb, "blockchain_market_order_history USD XTS" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
    exec( clienta, "wallet_market_order_list BUSD XTS" );
    exec( clientb, "wallet_market_order_list BUSD XTS" );
+
 
 
 //   exec( clientb, "wallet_account_transaction_history" );
