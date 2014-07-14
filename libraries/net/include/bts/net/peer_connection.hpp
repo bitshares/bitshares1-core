@@ -6,7 +6,17 @@
 #include <bts/net/stcp_socket.hpp>
 #include <bts/net/config.hpp>
 #include <bts/client/messages.hpp>
+
 #include <boost/tuple/tuple.hpp>
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/tag.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
 
 #include <queue>
 #include <deque>
@@ -132,7 +142,22 @@ namespace bts { namespace net
       /// non-synchronization state data
       /// @{
       std::unordered_set<item_id> inventory_peer_advertised_to_us;
-      std::unordered_set<item_id> inventory_advertised_to_peer; /// TODO: make this a map to the time/block# we advertised it so we can expire items off of the list
+      struct timestamped_item_id
+      {
+        item_id            item;
+        fc::time_point_sec timestamp;
+        timestamped_item_id(const item_id& item, const fc::time_point_sec& timestamp) :
+          item(item),
+          timestamp(timestamp)
+        {}
+      };
+      struct timestamp_index{};
+      typedef boost::multi_index_container<timestamped_item_id,
+                                           boost::multi_index::indexed_by<boost::multi_index::hashed_unique<boost::multi_index::member<timestamped_item_id, item_id, &timestamped_item_id::item>, 
+                                                                                                            std::hash<item_id> >,
+                                                                          boost::multi_index::ordered_non_unique<boost::multi_index::tag<timestamp_index>, 
+                                                                                                                 boost::multi_index::member<timestamped_item_id, fc::time_point_sec, &timestamped_item_id::timestamp> > > > timestamped_items_set_type;
+      timestamped_items_set_type inventory_advertised_to_peer; /// TODO: make this a map to the time/block# we advertised it so we can expire items off of the list
 
       item_to_time_map_type items_requested_from_peer;  /// items we've requested from this peer during normal operation.  fetch from another peer if this peer disconnects
       /// @}
@@ -174,6 +199,8 @@ namespace bts { namespace net
 
       bool is_transaction_fetching_inhibited() const;
       fc::sha512 get_shared_secret() const;
+      void clear_old_inventory_advertised_to_peer();
+      bool is_inventory_advertised_to_us_list_full() const;
     private:
       void send_queued_messages_task();
       void accept_connection_task();
