@@ -94,7 +94,7 @@ namespace bts { namespace blockchain {
                        _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
                        _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
                        _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
-                       _cover_itr      = _db_impl._collateral_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
+                       _cover_itr      = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
                        if( !_ask_itr.valid() )
                        {
@@ -108,20 +108,32 @@ namespace bts { namespace blockchain {
                        if( _bid_itr.valid() )   --_bid_itr;
                        else _bid_itr = _db_impl._bid_db.last();
 
+                       if( _cover_itr.valid() )   --_cover_itr;
+                       else _cover_itr = _db_impl._collateral_db.last();
+
 
                        asset xts_fees_collected(0,base_id);
 
                        while( get_next_bid() && get_next_ask() )
                        {
                           idump( (_current_bid)(_current_ask) );
-                          if( _current_bid->get_price() < _current_ask->get_price() )
+                          price ask_price = _current_ask->get_price();
+                          // this works for bids, asks, and shorts.... but in the case of a cover
+                          // the current ask can go lower than the call price in order to match 
+                          // the bid.... 
+                          if( _current_ask->type == cover_order )
+                          {
+                             ask_price = std::min( _current_bid->get_price(), _current_ask->get_highest_cover_price() );
+                          }
+
+                          if( _current_bid->get_price() < ask_price )
                              break;
                           auto quote_quantity = std::min( _current_bid->get_quote_quantity(), 
                                                           _current_ask->get_quote_quantity() );
 
                           auto usd_paid_by_bid     = quote_quantity;
                           auto usd_received_by_ask = quote_quantity;
-                          auto xts_paid_by_ask     = quote_quantity * _current_ask->get_price();
+                          auto xts_paid_by_ask     = quote_quantity * ask_price;
                           auto xts_received_by_bid = quote_quantity * _current_bid->get_price();
 
                           idump( (xts_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quote_quantity) );
@@ -133,12 +145,38 @@ namespace bts { namespace blockchain {
                           mtrx.bid_paid        = usd_paid_by_bid;
                           mtrx.bid_received    = xts_received_by_bid;
                           mtrx.ask_owner       = _current_ask->get_owner();
-                          mtrx.ask_price       = _current_ask->get_price();
+                          mtrx.ask_price       = ask_price;
                           mtrx.ask_paid        = xts_paid_by_ask;
                           mtrx.ask_received    = usd_received_by_ask;
                           mtrx.fees_collected  = xts_fees_collected;
 
                           _market_transactions.push_back(mtrx);
+
+                          if( _current_ask->type == ask_order )
+                          {
+                             /* rounding errors on price cause this not to go to 0 in some cases */
+                             if( quote_quantity == _current_ask->get_quote_quantity() )
+                                _current_ask->state.balance = 0; 
+                             else
+                                _current_ask->state.balance -= xts_paid_by_ask.amount;
+
+                             auto ask_balance_address = withdraw_condition( withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
+                             auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
+                             if( !ask_payout )
+                                ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
+                             ask_payout->balance += usd_received_by_ask.amount;
+
+                             _pending_state->store_balance_record( *ask_payout );
+                             _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
+                          }
+                          else if( _current_ask->type == cover_order )
+                          {
+                             elog( "MATCHING COVER ORDER" );
+                             break;
+                             // we are in the margin call range... 
+                             _current_ask->state.balance -= usd_paid_by_bid.amount;
+                          }
+
 
                           if( _current_bid->type == bid_order )
                           {
@@ -161,7 +199,8 @@ namespace bts { namespace blockchain {
                              else
                                 _current_bid->state.balance -= xts_received_by_bid.amount;
 
-                             auto cover_price =  usd_received_by_ask / asset( (3*xts_received_by_bid.amount)/4, base_id );
+                             auto collateral = ((usd_paid_by_bid * _current_bid->get_price()) + xts_paid_by_ask).amount;
+                             auto cover_price = usd_received_by_ask / asset( (3*collateral)/4, base_id );
 
                              market_index_key cover_index( cover_price, _current_ask->get_owner() );
                              auto ocover_record = _pending_state->get_collateral_record( cover_index );
@@ -169,35 +208,13 @@ namespace bts { namespace blockchain {
                              if( NOT ocover_record )
                                 ocover_record = collateral_record();
 
-                             ocover_record->collateral_balance += ((usd_paid_by_bid * _current_bid->get_price()) + xts_paid_by_ask).amount;
+                             ocover_record->collateral_balance += collateral;
                              ocover_record->payoff_balance += usd_received_by_ask.amount;
                              _pending_state->store_collateral_record( cover_index, *ocover_record );
 
                              _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                           }
 
-                          if( _current_ask->type == ask_order )
-                          {
-                             /* rounding errors on price cause this not to go to 0 in some cases */
-                             if( quote_quantity == _current_ask->get_quote_quantity() )
-                                _current_ask->state.balance = 0; 
-                             else
-                                _current_ask->state.balance -= xts_paid_by_ask.amount;
-
-                             auto ask_balance_address = withdraw_condition( withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
-                             auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
-                             if( !ask_payout )
-                                ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
-                             ask_payout->balance += usd_received_by_ask.amount;
-
-                             _pending_state->store_balance_record( *ask_payout );
-                             _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
-                          }
-                          else if( _current_ask->type == cover_order )
-                          {
-                             _current_ask->state.balance -= usd_paid_by_bid.amount;
-                             
-                          }
                        }
                        wlog( "done matching orders" );
                   } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
@@ -268,16 +285,23 @@ namespace bts { namespace blockchain {
 
                      if( _cover_itr.valid() )
                      {
-                        auto ask = market_order( cover_order, _cover_itr.key(), order_record( _cover_itr.value().collateral_balance)  );
-                        if( ask.get_price().quote_asset_id == _quote_id && 
-                            ask.get_price().base_asset_id == _base_id )
+                        auto cover_ask = market_order( cover_order,
+                                                 _cover_itr.key(), 
+                                                 order_record(_cover_itr.value().payoff_balance), 
+                                                 _cover_itr.value().collateral_balance  );
+
+                        if( cover_ask.get_price().quote_asset_id == _quote_id && 
+                            cover_ask.get_price().base_asset_id == _base_id )
                         {
-                            if( !_current_ask || _current_ask->get_price() > ask.get_price() )
+                            if( _current_bid && _current_bid->get_price() < cover_ask.get_price() )
                             {
-                               ++_cover_itr;
-                               _current_ask = ask;
-                               _current_payoff_balance = _cover_itr.value().payoff_balance;
-                               return _current_ask.valid();
+                               if( !_current_ask || _current_ask->get_price() > cover_ask.get_price() )
+                               {
+                                  --_cover_itr;
+                                  _current_ask = cover_ask;
+                                  _current_payoff_balance = _cover_itr.value().payoff_balance;
+                                  return _current_ask.valid();
+                               }
                             }
                         }
                      }
