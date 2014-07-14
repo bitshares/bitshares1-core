@@ -94,7 +94,7 @@ namespace bts { namespace blockchain {
                        _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
                        _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
                        _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
-                       _cover_itr      = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
+                       _collateral_itr      = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
                        if( !_ask_itr.valid() )
                        {
@@ -108,8 +108,8 @@ namespace bts { namespace blockchain {
                        if( _bid_itr.valid() )   --_bid_itr;
                        else _bid_itr = _db_impl._bid_db.last();
 
-                       if( _cover_itr.valid() )   --_cover_itr;
-                       else _cover_itr = _db_impl._collateral_db.last();
+                       if( _collateral_itr.valid() )   --_collateral_itr;
+                       else _collateral_itr = _db_impl._collateral_db.last();
 
 
                        asset xts_fees_collected(0,base_id);
@@ -294,12 +294,12 @@ namespace bts { namespace blockchain {
                      /**
                       *  Margin calls take priority over all other ask orders
                       */
-                     while( _cover_itr.valid() )
+                     while( _collateral_itr.valid() )
                      {
                         auto cover_ask = market_order( cover_order,
-                                                 _cover_itr.key(), 
-                                                 order_record(_cover_itr.value().payoff_balance), 
-                                                 _cover_itr.value().collateral_balance  );
+                                                 _collateral_itr.key(), 
+                                                 order_record(_collateral_itr.value().payoff_balance), 
+                                                 _collateral_itr.value().collateral_balance  );
 
                         if( cover_ask.get_price().quote_asset_id == _quote_id && 
                             cover_ask.get_price().base_asset_id == _base_id )
@@ -314,7 +314,7 @@ namespace bts { namespace blockchain {
                                // protection equal to the collateral.  If they would like to
                                // sell their USD for XTS this is the best price the short is
                                // obligated to offer.  
-                               --_cover_itr;
+                               --_collateral_itr;
                                continue;
                             }
                             // max bid must be greater than call price
@@ -323,8 +323,8 @@ namespace bts { namespace blockchain {
                                if( _current_ask->get_price() > cover_ask.get_price() )
                                {
                                   _current_ask = cover_ask;
-                                  _current_payoff_balance = _cover_itr.value().payoff_balance;
-                                  --_cover_itr;
+                                  _current_payoff_balance = _collateral_itr.value().payoff_balance;
+                                  --_collateral_itr;
                                   return _current_ask.valid();
                                }
                             }
@@ -361,7 +361,7 @@ namespace bts { namespace blockchain {
                   bts::db::level_map< market_index_key, order_record >::iterator       _bid_itr;
                   bts::db::level_map< market_index_key, order_record >::iterator       _ask_itr;
                   bts::db::level_map< market_index_key, order_record >::iterator       _short_itr;
-                  bts::db::level_map< market_index_key, collateral_record >::iterator  _cover_itr;
+                  bts::db::level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
             };
 
             void                                        initialize_genesis(fc::optional<fc::path> genesis_file);
