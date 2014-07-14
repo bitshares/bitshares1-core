@@ -1421,6 +1421,20 @@ namespace bts { namespace wallet {
         my->_wallet_db.cache_transaction( transaction, amount, fees, memo, to, now, now, from, extra_addresses );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id )
+   {
+       auto slate_id = slate_id_type( 0 );
+       if( deposit_asset_id == asset_id_type( 0 ) ) return slate_id;
+
+       const auto slate = select_delegate_vote();
+       slate_id = slate.id();
+
+       if( slate_id != slate_id_type( 0 ) && !my->_blockchain->get_delegate_slate( slate_id ).valid() )
+           transaction.define_delegate_slate( slate );
+
+       return slate_id;
+   }
+
    private_key_type wallet::get_private_key( const address& addr )const
    { try {
       FC_ASSERT( is_open() );
@@ -1762,17 +1776,7 @@ namespace bts { namespace wallet {
                 amount_to_deposit = from_balance;
              }
 
-             slate_id_type slate_id = 0;
-             if( amount_to_deposit.asset_id == 0 )
-             {
-                 auto new_slate = select_delegate_vote();
-                 slate_id = new_slate.id();
-                 
-                 if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
-                 {
-                    trx.define_delegate_slate( new_slate );
-                 }
-             }
+             const auto slate_id = select_slate( trx, amount_to_deposit.asset_id );
 
              if( amount_to_deposit.amount > 0 )
              {
@@ -1892,14 +1896,7 @@ namespace bts { namespace wallet {
 
        public_key_type  receiver_public_key = get_account_public_key( withdraw_to_account_name );
 
-       auto new_slate = select_delegate_vote();
-       auto slate_id = new_slate.id();
-       
-       if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
-       {
-          trx.define_delegate_slate( new_slate );
-       }
-
+       const auto slate_id = select_slate( trx );
        
        trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
        trx.deposit_to_account( receiver_public_key,
@@ -1933,11 +1930,11 @@ namespace bts { namespace wallet {
       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
       FC_ASSERT( is_receive_account( from_account_name ) );
       
-      auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+      const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
       FC_ASSERT( asset_rec.valid() );
-      auto asset_id = asset_rec->id;
+      const auto asset_id = asset_rec->id;
       
-      int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
+      const int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
       share_type amount_to_transfer = real_amount_to_transfer * precision;
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
@@ -1948,7 +1945,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
         
-      auto required_fees = get_priority_fee();
+      const auto required_fees = get_priority_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
@@ -1969,17 +1966,7 @@ namespace bts { namespace wallet {
                                       trx, required_signatures );
       }
 
-      slate_id_type slate_id = 0;
-      if( asset_id == 0 )
-      {
-         auto new_slate = select_delegate_vote();
-         slate_id = new_slate.id();
-
-         if( !my->_blockchain->get_delegate_slate( slate_id ) )
-         {
-            trx.define_delegate_slate( std::move(new_slate) );
-         }
-      }
+      const auto slate_id = select_slate( trx, asset_to_transfer.asset_id );
 
       trx.deposit( to_address, asset_to_transfer, slate_id);
 
@@ -2085,9 +2072,9 @@ namespace bts { namespace wallet {
       if( memo_message.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
           FC_THROW_EXCEPTION( memo_too_long, "Memo too long!", ("memo_message",memo_message) );
 
-      auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+      const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
       FC_ASSERT( asset_rec.valid() );
-      auto asset_id = asset_rec->id;
+      const auto asset_id = asset_rec->id;
       
       share_type amount_to_transfer = real_amount_to_transfer * asset_rec->get_precision();
       asset asset_to_transfer( amount_to_transfer, asset_id );
@@ -2100,7 +2087,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
         
-      auto required_fees = get_priority_fee();
+      const auto required_fees = get_priority_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
@@ -2121,18 +2108,8 @@ namespace bts { namespace wallet {
                                        trx, required_signatures );
       }
 
-      slate_id_type slate_id = 0;
-      if( asset_id == 0 )
-      {
-         auto new_slate = select_delegate_vote();
-         slate_id = new_slate.id();
-         
-         if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
-         {
-            trx.define_delegate_slate( new_slate );
-         }
-      }
-        
+      const auto slate_id = select_slate( trx, asset_to_transfer.asset_id );
+
       trx.deposit_to_account( receiver_public_key,
                               asset_to_transfer,
                               sender_private_key,

@@ -679,7 +679,6 @@ namespace bts { namespace wallet {
       transactions[ trx_to_store.transaction_id ] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
 
-
    wallet_transaction_record wallet_db::cache_transaction(
            const signed_transaction& trx,
            const asset& amount,

@@ -417,6 +417,8 @@ namespace bts { namespace wallet {
                  const public_key_type& from = public_key_type(),
                  const vector<address>& extra_addresses = vector<address>() );
 
+         slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ) );
+
          private_key_type get_private_key( const address& addr )const;
 
          std::string login_start( const std::string& account_name );
