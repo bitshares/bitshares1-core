@@ -140,6 +140,9 @@ namespace bts { namespace wallet {
             bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
             bool scan_short( wallet_transaction_record& trx_rec, const short_operation& op );
 
+            bool scan_domain_transfer( wallet_transaction_record& trx_rec, const domain_transfer_operation& op,
+                                       const private_keys& keys );
+
             bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
@@ -392,6 +395,10 @@ namespace bts { namespace wallet {
                       // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
                       break;
 
+                  case domain_transfer_op_type:
+                      cache_transaction |= scan_domain_transfer( *transaction_record, op.as<domain_transfer_operation>(), keys );
+                      break;
+
                   default:
                       FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type!", ("op",op) );
                       break;
@@ -620,6 +627,52 @@ namespace bts { namespace wallet {
         return cache_deposit;
 
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
+
+      
+       bool wallet_impl::scan_domain_transfer( wallet_transaction_record& trx_rec, const domain_transfer_operation& op,
+                                               const private_keys& keys )
+       { try {
+          bool cache_transfer = false; 
+        if( _wallet_db.has_private_key( op.owner ) )
+        {
+           cache_transfer = true;
+           _wallet_db.cache_domain( op.domain_name );
+        }
+        else if( op.memo )
+        {
+           _wallet_scan_thread.async( [&]() {
+              for( const auto& key : keys )
+              {
+                 omemo_status status = op.decrypt_memo_data( key );
+                 if( status.valid() )
+                 {
+                    _wallet_db.cache_memo( *status, key, _wallet_password );
+                    if( status->memo_flags == from_memo )
+                    {
+                       trx_rec.memo_message = status->get_message();
+                       trx_rec.from_account = status->from;
+                       trx_rec.to_account   = key.get_public_key();
+                       //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                    }
+                    else
+                    {
+                       //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                       //ilog( "op: ${op}", ("op",op) );
+                       trx_rec.memo_message = status->get_message();
+                       trx_rec.from_account = key.get_public_key();
+                       trx_rec.to_account   = status->from;
+                       //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                    }
+                    cache_transfer = true;
+                    _wallet_db.cache_domain( op.domain_name );
+                 }
+              }
+           } ).wait();
+        }
+        return cache_transfer;
+
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_domain_transfer
+
 
       bool wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
       {
