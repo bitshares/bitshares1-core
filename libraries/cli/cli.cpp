@@ -966,9 +966,12 @@ namespace bts { namespace cli {
 
                     if( ask_itr != bids_asks.second.end() )
                     {
-                      *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
-                            << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-                            << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                         if( !ask_itr->collateral )
+                         {
+                            *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                                  << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+                                  << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                         }
                       ++ask_itr;
                     }
                     *_out << "\n";
