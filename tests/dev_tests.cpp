@@ -369,7 +369,10 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_market_price_history BUSD XTS 20200101T000000 100000000 each_hour" );
    exec( clientb, "blockchain_market_price_history GLD XTS 20200101T000000 100000000 each_hour" );
    exec( clientb, "blockchain_market_price_history BUSD XTS 20200101T000000 100000000 each_day" );
-   exec( clientb, "blockchain_market_price_history GLD XTS 20200101T000000 100000000 each_day" );
+   exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_day" );
+   exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000" );
+   exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_hour" );
+   exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_day" );
 
 
 
