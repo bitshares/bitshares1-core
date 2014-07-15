@@ -239,7 +239,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     {
         out << std::setw( 20 ) << pretty_timestamp( transaction.received_time );
 
-        const auto is_pending = !transaction.is_virtual && !transaction.is_confirmed && !transaction.is_market;
+        const auto is_pending = !transaction.is_virtual && !transaction.is_confirmed;
         out << std::setw( 10 );
         if( !is_pending ) out << transaction.block_num;
         else if( errors.count( transaction.trx_id ) > 0 ) out << "ERROR";
@@ -258,7 +258,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
         out << std::setw( 8 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
-        else if( transaction.is_virtual || transaction.is_market ) out << "N/A";
+        else if( transaction.is_virtual ) out << "VIRTUAL";
         else out << string( transaction.trx_id ).substr( 0, 8 );
 
         out << "\n";

@@ -208,4 +208,26 @@ namespace bts { namespace blockchain {
       operations.push_back( cover_operation(cover_amount.amount, order_idx) );
    }
 
+   bool transaction::is_cancel()const
+   {
+      for( const auto& op : operations )
+      {
+          switch( operation_type_enum( op.type ) )
+          {
+              case bid_op_type:
+                  if( op.as<bid_operation>().amount < 0 ) return true;
+                  break;
+              case ask_op_type:
+                  if( op.as<ask_operation>().amount < 0 ) return true;
+                  break;
+              case short_op_type:
+                  if( op.as<short_operation>().amount < 0 ) return true;
+                  break;
+              default:
+                  break;
+          }
+      }
+      return false;
+   }
+
 } } // bts::blockchain 

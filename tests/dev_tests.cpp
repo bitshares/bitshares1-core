@@ -374,4 +374,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_day" );
    exec( clientb, "blockchain_market_order_history USD XTS" );
 
+   exec( clientb, "balance c-account" );
+   exec( clientb, "history c-account" );
+
 } FC_LOG_AND_RETHROW() }

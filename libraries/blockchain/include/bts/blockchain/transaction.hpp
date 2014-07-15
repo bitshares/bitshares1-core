@@ -107,6 +107,8 @@ namespace bts { namespace blockchain {
       void cover( const asset& quantity, 
                   const market_index_key& order_idx );
 
+      bool is_cancel()const;
+
    }; // transaction
 
    struct transaction_summary_details

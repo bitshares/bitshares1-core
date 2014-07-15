@@ -1715,19 +1715,14 @@ namespace bts { namespace wallet {
            auto from_me = false;
            from_me |= account_name.empty() && is_receive_account( trx.from_account );
            from_me |= account_name == trx.from_account;
-           if( from_me )
-           {
-               running_balances[ trx.amount.asset_id ] -= trx.amount;
-               running_balances[ asset_id_type( 0 ) ] -= asset( trx.fees );
-           }
+           if( from_me ) running_balances[ trx.amount.asset_id ] -= trx.amount;
+
+           if( from_me || trx.is_market_cancel ) running_balances[ asset_id_type( 0 ) ] -= asset( trx.fees );
 
            auto to_me = false;
            to_me |= account_name.empty() && is_receive_account( trx.to_account );
            to_me |= account_name == trx.to_account;
-           if( to_me )
-           {
-               running_balances[ trx.amount.asset_id ] += trx.amount;
-           }
+           if( to_me ) running_balances[ trx.amount.asset_id ] += trx.amount;
 
            trx.running_balances[ asset_id_type( 0 ) ] = running_balances[ asset_id_type( 0 ) ];
            trx.running_balances[ trx.amount.asset_id ] = running_balances[ trx.amount.asset_id ];
@@ -2760,7 +2755,6 @@ namespace bts { namespace wallet {
                                         required_signatures );
         }
 
-
         const auto memo = string( "cancel " + variant( owner_key_record->memo ).as_string() );
         sign_and_cache_transaction( trx, required_signatures, deposit_amount, required_fees.amount,
                                     memo, to_account_key, owner_key_record->public_key );
@@ -3213,6 +3207,7 @@ namespace bts { namespace wallet {
       const auto trx_id = trx_rec.transaction_id;
       pretty_trx.is_virtual = trx_rec.is_virtual;
       pretty_trx.is_market = trx_rec.is_market;
+      pretty_trx.is_market_cancel = trx_rec.trx.is_cancel();
       pretty_trx.is_confirmed = trx_rec.is_confirmed;
       pretty_trx.trx_id = trx_id;
       pretty_trx.block_num = trx_rec.block_num;
