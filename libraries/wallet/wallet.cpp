@@ -12,11 +12,13 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
+#include <boost/thread/mutex.hpp>
 #include <fc/io/json.hpp>
 #include <iostream>
 #include <sstream>
@@ -43,15 +45,14 @@ namespace bts { namespace wallet {
       {
          public:
              wallet_impl()
-             :_wallet_scan_thread( "wallet_scan" )
              {
-                _wallet_thread = &fc::thread::current();
+                 _scanner_thread.reset( new fc::thread( "wallet_scanner") );
              }
+
              ~wallet_impl()
              {
-                _login_map_cleaner.cancel();
+                 try { if( _scanner_thread ) _scanner_thread->quit(); } catch( ... ) {}
              }
-             fc::thread*                        _wallet_thread;
 
              wallet*                            self;
              wallet_db                          _wallet_db;
@@ -64,8 +65,9 @@ namespace bts { namespace wallet {
              bool                               _use_deterministic_one_time_keys;
              bool                               _delegate_scanning_enabled;
 
-             fc::thread                         _wallet_scan_thread;
-             float                              _wallet_scan_progress;
+             std::unique_ptr<fc::thread>        _scanner_thread;
+             boost::mutex                       _scan_lock;
+             float                              _scan_progress;
 
              struct login_record
              {
@@ -78,7 +80,6 @@ namespace bts { namespace wallet {
              const static short                       _login_lifetime_seconds = 300;
 
              void reschedule_relocker();
-             void cancel_relocker();
              void relocker();
 
              fc::ecc::private_key create_one_time_key()
@@ -656,35 +657,33 @@ namespace bts { namespace wallet {
                 }
                 else if( deposit.memo )
                 {
-                   _wallet_scan_thread.async( [&]() {
-                      for( const auto& key : keys )
+                   for( const auto& key : keys )
+                   {
+                      omemo_status status = deposit.decrypt_memo_data( key );
+                      if( status.valid() )
                       {
-                         omemo_status status = deposit.decrypt_memo_data( key );
-                         if( status.valid() )
+                         _wallet_db.cache_memo( *status, key, _wallet_password );
+                         if( status->memo_flags == from_memo )
                          {
-                            _wallet_db.cache_memo( *status, key, _wallet_password );
-                            if( status->memo_flags == from_memo )
-                            {
-                               trx_rec.memo_message = status->get_message();
-                               trx_rec.amount       = asset( op.amount, op.condition.asset_id );
-                               trx_rec.from_account = status->from;
-                               trx_rec.to_account   = key.get_public_key();
-                               //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
-                            }
-                            else
-                            {
-                               //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                               //ilog( "op: ${op}", ("op",op) );
-                               trx_rec.memo_message = status->get_message();
-                               trx_rec.from_account = key.get_public_key();
-                               trx_rec.to_account   = status->from;
-                               //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
-                            }
-                            cache_deposit = true;
-                            break;
+                            trx_rec.memo_message = status->get_message();
+                            trx_rec.amount       = asset( op.amount, op.condition.asset_id );
+                            trx_rec.from_account = status->from;
+                            trx_rec.to_account   = key.get_public_key();
+                            //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
                          }
+                         else
+                         {
+                            //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                            //ilog( "op: ${op}", ("op",op) );
+                            trx_rec.memo_message = status->get_message();
+                            trx_rec.from_account = key.get_public_key();
+                            trx_rec.to_account   = status->from;
+                            //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                         }
+                         cache_deposit = true;
+                         break;
                       }
-                   } ).wait();
+                   }
                    break;
                 }
                 break;
@@ -742,24 +741,6 @@ namespace bts { namespace wallet {
       {
         if( !_relocker_done.valid() || _relocker_done.ready() )
           _relocker_done = fc::async( [this](){ relocker(); } );
-      }
-
-      void wallet_impl::cancel_relocker()
-      {
-        if( _relocker_done.valid() && !_relocker_done.ready() )
-        {
-          ilog( "Canceling wallet relocker task..." );
-          _relocker_done.cancel();
-          try
-          {
-            _relocker_done.wait();
-          }
-          catch (const fc::canceled_exception&)
-          {
-            // this is expected
-          }
-          ilog( "Wallet relocker thread task" );
-        }
       }
 
       void wallet_impl::relocker()
@@ -937,10 +918,10 @@ namespace bts { namespace wallet {
 
    void wallet::close()
    { try {
-      my->cancel_relocker();
-      my->_wallet_password = fc::sha512();
-      my->_scheduled_lock_time = fc::optional<fc::time_point>();
-
+      lock();
+      ilog( "Canceling wallet relocker task..." );
+      try { my->_relocker_done.cancel_and_wait(); } catch( ... ) {}
+      ilog( "Wallet relocker task canceled" );
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
       my->_use_deterministic_one_time_keys = false;
@@ -1038,7 +1019,7 @@ namespace bts { namespace wallet {
 
    void wallet::lock()
    {
-      FC_ASSERT( is_open() );
+      try { my->_login_map_cleaner.cancel_and_wait(); } catch( ... ) {}
       my->_wallet_password     = fc::sha512();
       my->_scheduled_lock_time = fc::optional<fc::time_point>();
       wallet_lock_state_changed( true );
@@ -1402,6 +1383,15 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
+
+      if( !my->_scanner_thread->is_current() )
+      {
+          my->_scanner_thread->async( [this, start, end, progress_callback]()
+                                      { scan_chain( start, end, progress_callback ); } ).wait();
+          return;
+      }
+
+      fc::scoped_lock<boost::mutex> lock( my->_scan_lock );
       elog( "WALLET SCANNING CHAIN!" );
 
       const auto now = blockchain::now();
@@ -1422,7 +1412,7 @@ namespace bts { namespace wallet {
 
       try
       {
-        my->_wallet_scan_progress = 0;
+        my->_scan_progress = 0;
         auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
 
         for( auto block_num = start; block_num <= min_end; ++block_num )
@@ -1430,7 +1420,7 @@ namespace bts { namespace wallet {
            my->scan_block( block_num, account_priv_keys, now );
            if( progress_callback )
               progress_callback( block_num, min_end );
-           my->_wallet_scan_progress = float(block_num-start)/(min_end-start+1);
+           my->_scan_progress = float(block_num-start)/(min_end-start+1);
            my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
         }
 
@@ -1444,11 +1434,11 @@ namespace bts { namespace wallet {
                my->_wallet_db.cache_account( acct.second );
            }
         }
-        my->_wallet_scan_progress = 1;
+        my->_scan_progress = 1;
       }
       catch(...)
       {
-        my->_wallet_scan_progress = -1;
+        my->_scan_progress = -1;
         throw;
       }
 
@@ -1707,6 +1697,7 @@ namespace bts { namespace wallet {
                   {
                      if( a.received_time != b.received_time) return a.received_time < b.received_time;
                      if( a.block_num != b.block_num ) return a.block_num < b.block_num;
+                     // TODO: trx num and add running total to right column with error
                      if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account ) < 0;
                      if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account ) < 0;
                      return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
@@ -3972,7 +3963,7 @@ namespace bts { namespace wallet {
           if (my->_scheduled_lock_time)
             relock_time_in_sec = *my->_scheduled_lock_time;                                
           obj( "scheduled_lock_time", relock_time_in_sec);
-          obj( "wallet_scan_progress", my->_wallet_scan_progress );
+          obj( "scan_progress", my->_scan_progress );
        }
        else
        {
