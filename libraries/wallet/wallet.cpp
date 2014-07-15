@@ -1579,9 +1579,9 @@ namespace bts { namespace wallet {
                   {
                      if( a.received_time != b.received_time) return a.received_time < b.received_time;
                      if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                     if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account );
-                     if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account );
-                     return string( a.trx_id ).compare( string( b.trx_id ) );
+                     if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account ) < 0;
+                     if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account ) < 0;
+                     return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
                   } );
 
        return pretties;
