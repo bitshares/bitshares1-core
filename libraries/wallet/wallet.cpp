@@ -1834,6 +1834,7 @@ namespace bts { namespace wallet {
     *  secure.
     *
     */
+   // TODO: This is broken
    vector<signed_transaction> wallet::multipart_transfer( double  real_amount_to_transfer,
                                                 const string& amount_to_transfer_symbol,
                                                 const string& from_account_name,
@@ -2686,7 +2687,7 @@ namespace bts { namespace wallet {
     *         price_per_unit   = 1 / price_per_unit
     *  @endcode
     */
-   signed_transaction  wallet::cancel_market_order( const address& owner_address )
+   signed_transaction wallet::cancel_market_order( const address& owner_address )
    { try {
         if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
         if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -2758,39 +2759,22 @@ namespace bts { namespace wallet {
                                         trx, 
                                         required_signatures );
         }
-      
-        sign_transaction( trx, required_signatures );
 
-        // TODO: get quantity @ price for for memo
-        std::stringstream memoss;
-        memoss << "cancel " << variant(owner_key_record->memo).as_string(); //order " << string( variant( owner_addressowner_address).substr(3);
-        // real_quantity << " " << base_asset_record->symbol << " @ ";
-        // memoss << quote_price << " " << quote_asset_record->symbol;
 
-        auto memo_message = memoss.str();
-
-        my->_blockchain->store_pending_transaction( trx, true );
-
-        const auto now = blockchain::now();
-        my->_wallet_db.cache_transaction( trx, deposit_amount,
-                                          required_fees.amount,
-                                          memo_message, 
-                                          to_account_key, //from_account_key,
-                                          now,
-                                          now,
-                                          owner_key_record->public_key
-                                        );
-
+        const auto memo = string( "cancel " + variant( owner_key_record->memo ).as_string() );
+        sign_and_cache_transaction( trx, required_signatures, deposit_amount, required_fees.amount,
+                                    memo, to_account_key, owner_key_record->public_key );
 
         return trx;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
 
-   signed_transaction  wallet::submit_bid( const string& from_account_name,
-                                           double real_quantity, 
-                                           const string& quantity_symbol,
-                                           double quote_price,
-                                           const string& quote_symbol,
-                                           bool sign )
+   signed_transaction wallet::submit_bid(
+           const string& from_account_name,
+           double real_quantity, 
+           const string& quantity_symbol,
+           double quote_price,
+           const string& quote_symbol,
+           bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -2872,47 +2856,28 @@ namespace bts { namespace wallet {
 
        if( sign )
        {
-           sign_transaction( trx, required_signatures );
-           my->_blockchain->store_pending_transaction( trx, true );
-
-           std::stringstream memoss;
-           memoss << "buy " << real_quantity << " " << base_asset_record->symbol << " @ ";
-           memoss << quote_price << " " << quote_asset_record->symbol;
-
-           auto memo_message = memoss.str();
-
-           const auto now = blockchain::now();
-           my->_wallet_db.cache_transaction( trx, cost_shares,
-                                             required_fees.amount,
-                                             memo_message, 
-                                             order_key,
-                                             now,
-                                             now,
-                                             from_account_key
-                                           );
+           std::stringstream memo;
+           memo << "buy " << real_quantity << " " << base_asset_record->symbol << " @ ";
+           memo << quote_price << " " << quote_asset_record->symbol;
+           sign_and_cache_transaction( trx, required_signatures, cost_shares, required_fees.amount,
+                                       memo.str(), order_key, from_account_key );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
-
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
 
-
-
-
-
-
-
-   signed_transaction  wallet::submit_ask( const string& from_account_name,
-                                           double real_quantity, 
-                                           const string& quantity_symbol,
-                                           double quote_price,
-                                           const string& quote_symbol,
-                                           bool sign )
+   signed_transaction wallet::submit_ask(
+           const string& from_account_name,
+           double real_quantity, 
+           const string& quantity_symbol,
+           double quote_price,
+           const string& quote_symbol,
+           bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -2994,30 +2959,16 @@ namespace bts { namespace wallet {
 
        if( sign )
        {
-           sign_transaction( trx, required_signatures );
-           my->_blockchain->store_pending_transaction( trx, true );
-
-           std::stringstream memoss;
-           memoss << "sell " << real_quantity << " " << base_asset_record->symbol << " @ ";
-           memoss << quote_price << " " << quote_asset_record->symbol;
-
-           auto memo_message = memoss.str();
-
-           const auto now = blockchain::now();
-           my->_wallet_db.cache_transaction( trx, cost_shares,
-                                             required_fees.amount,
-                                             memo_message, 
-                                             order_key,
-                                             now,
-                                             now,
-                                             from_account_key
-                                           );
+           std::stringstream memo;
+           memo << "sell " << real_quantity << " " << base_asset_record->symbol << " @ ";
+           memo << quote_price << " " << quote_asset_record->symbol;
+           sign_and_cache_transaction( trx, required_signatures, cost_shares, required_fees.amount,
+                                       memo.str(), order_key, from_account_key );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
-
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
@@ -3031,11 +2982,12 @@ namespace bts { namespace wallet {
     *  @param from_account  - the account that will be providing  real_quantity / quote_price XTS to 
     *                         fund the transaction.
     */
-   signed_transaction  wallet::submit_short( const string& from_account_name,
-                                           double real_quantity, 
-                                           double quote_price,
-                                           const string& quote_symbol,
-                                           bool sign )
+   signed_transaction wallet::submit_short(
+           const string& from_account_name,
+           double real_quantity, 
+           double quote_price,
+           const string& quote_symbol,
+           bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -3091,24 +3043,11 @@ namespace bts { namespace wallet {
 
        if( sign )
        {
-           sign_transaction( trx, required_signatures );
-           my->_blockchain->store_pending_transaction( trx, true );
-
-           std::stringstream memoss;
-           memoss << "short " << real_quantity << " " << quote_asset_record->symbol << " @ ";
-           memoss << quote_price << " " << quote_asset_record->symbol << "/" BTS_BLOCKCHAIN_SYMBOL;
-
-           auto memo_message = memoss.str();
-
-           const auto now = blockchain::now();
-           my->_wallet_db.cache_transaction( trx, cost_shares,
-                                             required_fees.amount,
-                                             memo_message, 
-                                             order_key,
-                                             now,
-                                             now,
-                                             from_account_key
-                                           );
+           std::stringstream memo;
+           memo << "short " << real_quantity << " " << quote_asset_record->symbol << " @ ";
+           memo << quote_price << " " << quote_asset_record->symbol << "/" BTS_BLOCKCHAIN_SYMBOL;
+           sign_and_cache_transaction( trx, required_signatures, cost_shares, required_fees.amount,
+                                       memo.str(), order_key, from_account_key );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
@@ -3119,11 +3058,12 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity) (quote_price)(quote_symbol)(sign) ) }
 
-   signed_transaction  wallet::cover_short( const string& from_account_name,
-                                          double real_quantity_usd,
-                                          const string& quote_symbol,
-                                          const address& owner_address,
-                                          bool sign  )
+   signed_transaction wallet::cover_short(
+           const string& from_account_name,
+           double real_quantity_usd,
+           const string& quote_symbol,
+           const address& owner_address,
+           bool sign  )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -3201,18 +3141,9 @@ namespace bts { namespace wallet {
 
        if( sign )
        {
-           sign_transaction( trx, required_signatures );
-
-           const auto now = blockchain::now();
-           my->_wallet_db.cache_transaction( trx, amount_to_cover,
-                                            required_fees.amount,
-                                            "cover ORDER-" + variant( address(order_to_cover->get_owner()) ).as_string().substr(3,8),
-                                            get_private_key( order_to_cover->get_owner()).get_public_key(),
-                                            now,
-                                            now,
-                                            from_account_key,
-                                            vector<address>()//{to_address}
-                                            );
+           const auto memo = string( "cover ORDER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8) );
+           sign_and_cache_transaction( trx, required_signatures, amount_to_cover, required_fees.amount, memo,
+                                       get_private_key( order_to_cover->get_owner() ).get_public_key(), from_account_key );
        }
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(owner_address)(sign) ) }
