@@ -5,7 +5,7 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                              (106)
+#define BTS_BLOCKCHAIN_VERSION                              (107)
 #define BTS_WALLET_VERSION                                  (100)
 #define BTS_BLOCKCHAIN_DATABASE_VERSION                     (114)
 
@@ -118,9 +118,9 @@
     This constant defines the number of blocks a delegate must produce before
     they are expected to break even on registration costs with their earned income.
 
- *   Currently set to 2 weeks of active block production to break even.
+ *   Currently set to 2 hours of active block production to break even.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCKS_PER_DAY/12)
 
 /**
     If you are going to create an asset, you expect that it will be used in transactions.  We would
