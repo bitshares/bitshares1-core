@@ -714,6 +714,13 @@ namespace bts { namespace wallet {
       data.block_num       = block_num;
       data.trx_num         = trx_num;
 
+      ledger_entry ledge;
+      ledge.from_account = from_account;
+      ledge.to_account   = to_account;
+      ledge.amount       = amount;
+      ledge.memo_message = memo;
+      ledge.fees         = asset(fees,0);
+
       auto itr = market_transactions.find( std::make_pair(block_num,trx_num) );
       if( itr == market_transactions.end() )
           data.wallet_record_index = new_wallet_record_index();
