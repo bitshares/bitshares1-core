@@ -997,6 +997,7 @@ namespace bts { namespace cli {
                                   << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                                   << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
                                 *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
+                                *_out << "\n";
                          }
                         ++ask_itr;
                      }
