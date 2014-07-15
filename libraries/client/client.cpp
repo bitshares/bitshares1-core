@@ -140,6 +140,30 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
   return option_variables;
 }
 
+string extract_commands_from_log_stream(std::istream& log_stream)
+{
+  string command_list;
+  string line;
+  while (std::getline(log_stream,line))
+  {
+    //if line begins with a prompt, add to input buffer
+    size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
+    if (prompt_position != string::npos )
+    {
+      size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
+      command_list += line.substr(command_start_position);
+      command_list += "\n";
+    }
+  }
+  return command_list;
+}
+
+string extract_commands_from_log_file(fc::path test_file)
+{
+  std::ifstream test_input(test_file.string());
+  return extract_commands_from_log_stream(test_input);
+}
+
 
 void print_banner()
 {
@@ -1147,6 +1171,20 @@ config load_config( const fc::path& datadir )
            }
        }
 
+
+       void client_impl::execute_script(const fc::path& script_filename) const
+       {
+         if (_cli)
+         {
+           if (!fc::exists(script_filename))
+             FC_THROW_EXCEPTION(fc::file_not_found_exception, "Script file not found!");
+           string input_commands = extract_commands_from_log_file(script_filename);
+           std::stringstream input_stream(input_commands);
+           _cli->process_commands( &input_stream );
+           _cli->process_commands( &std::cin );
+         }
+       }
+
        fc::variants client_impl::batch( const std::string& method_name, 
                                         const std::vector<fc::variants>& parameters_list) const
        {
@@ -2129,31 +2167,6 @@ config load_config( const fc::path& datadir )
     }
 
     //JSON-RPC Method Implementations END
-
-
-    string extract_commands_from_log_stream(std::istream& log_stream)
-    {
-      string command_list;
-      string line;
-      while (std::getline(log_stream,line))
-      {
-        //if line begins with a prompt, add to input buffer
-        size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
-        if (prompt_position != string::npos )
-        {
-          size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
-          command_list += line.substr(command_start_position);
-          command_list += "\n";
-        }
-      }
-      return command_list;
-    }
-
-    string extract_commands_from_log_file(fc::path test_file)
-    {
-      std::ifstream test_input(test_file.string());
-      return extract_commands_from_log_stream(test_input);
-    }
 
     //RPC server and CLI configuration rules:
     //if daemon mode requested
