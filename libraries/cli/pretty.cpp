@@ -229,6 +229,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 20 ) << "FEE";
     out << std::setw( 40 ) << "MEMO";
     out << std::setw(  8 ) << "ID";
+    out << std::setw( 22 ) << "BALANCE";
 
     out << pretty_line( 160 );
 
@@ -253,6 +254,8 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
         else if( transaction.is_virtual ) out << "N/A";
         else out << string( transaction.trx_id ).substr( 0, 8 );
+
+        out << std::setw( 22 ) << client->get_chain()->to_pretty_asset( transaction.running_balances.at( asset_id_type( 0 ) ) );
 
         out << "\n";
     }

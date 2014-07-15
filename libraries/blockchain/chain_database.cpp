@@ -1082,7 +1082,7 @@ namespace bts { namespace blockchain {
         map<asset_id_type,share_type> collected_fees;
 
         vector<market_transaction> market_transactions;
-        for( auto market_pair : pending_state->get_dirty_markets() )
+        for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
            market_engine engine( pending_state, *this );

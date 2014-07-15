@@ -42,6 +42,7 @@ struct pretty_transaction
     string                                      memo_message;
     fc::time_point_sec                          created_time;
     fc::time_point_sec                          received_time;
+    map<asset_id_type, asset>                   running_balances;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }
@@ -180,7 +181,7 @@ struct pretty_remove_collateral_op
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
-FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_market)(is_confirmed)(trx_id)(block_num)(trx_num)(from_account)(to_account)(amount)(fees)(memo_message)(created_time)(received_time) );
+FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_market)(is_confirmed)(trx_id)(block_num)(trx_num)(from_account)(to_account)(amount)(fees)(memo_message)(created_time)(received_time)(running_balances) );
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
 FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));

@@ -1258,7 +1258,7 @@ namespace bts { namespace wallet {
       {
         //Find the wallet record that is not in the blockchain; or is, but under a different name
         auto wallet_accounts = my->_wallet_db.get_accounts();
-        for( auto wallet_account : wallet_accounts )
+        for( const auto& wallet_account : wallet_accounts )
         {
           if( wallet_account.second.name == old_account_name )
           {
@@ -1554,11 +1554,11 @@ namespace bts { namespace wallet {
 
       std::function<void()> cleaner = [this, &cleaner]{
           std::vector<public_key_type> expired_records;
-          for( auto record : my->_login_map )
+          for( const auto& record : my->_login_map )
             if( fc::time_point::now() - record.second.insertion_time >= fc::seconds(my->_login_lifetime_seconds) )
               expired_records.push_back(record.first);
           ilog("Purging ${count} expired records from login map.", ("count", expired_records.size()));
-          for( auto record : expired_records )
+          for( const auto& record : expired_records )
             my->_login_map.erase(record);
 
           if( !my->_login_map.empty() )
@@ -1702,6 +1702,31 @@ namespace bts { namespace wallet {
                      if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account ) < 0;
                      return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
                   } );
+
+       // TODO: Handle pagination
+
+       /* Tally up running balances */
+       auto running_balances = map<asset_id_type, asset>();
+       running_balances[ asset_id_type( 0 ) ] = asset();
+       for( auto& trx : pretties )
+       {
+           if( running_balances.count( trx.amount.asset_id ) <= 0 )
+               running_balances[ trx.amount.asset_id ] = asset( 0, trx.amount.asset_id );
+
+           if( is_receive_account( trx.from_account ) )
+           {
+               running_balances[ trx.amount.asset_id ] -= trx.amount;
+               running_balances[ asset_id_type( 0 ) ] -= asset( trx.fees );
+           }
+
+           if( is_receive_account( trx.to_account ) )
+           {
+               running_balances[ trx.amount.asset_id ] += trx.amount;
+           }
+
+           trx.running_balances[ asset_id_type( 0 ) ] = running_balances[ asset_id_type( 0 ) ];
+           trx.running_balances[ trx.amount.asset_id ] = running_balances[ trx.amount.asset_id ];
+       }
 
        return pretties;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -3107,7 +3132,7 @@ namespace bts { namespace wallet {
 
        optional<market_order> order_to_cover;
        auto covers = my->_blockchain->get_market_covers( quote_symbol );
-       for( auto order : covers )
+       for( const auto& order : covers )
        {
           if( owner_address == order.get_owner() )
              order_to_cover = order;
@@ -3690,9 +3715,8 @@ namespace bts { namespace wallet {
     */
    bool wallet::is_receive_account( const string& account_name )const
    {
-      if( !is_valid_account_name( account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
       FC_ASSERT( is_open() );
+      if( !is_valid_account_name( account_name ) ) return false;
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       if( !opt_account.valid() ) return false;
       auto opt_key = my->_wallet_db.lookup_key( opt_account->account_address );
@@ -4009,25 +4033,25 @@ namespace bts { namespace wallet {
 
       vector<market_order> result;
 
-      for( auto order : bids )
+      for( const auto& order : bids )
       {
          if( my->_wallet_db.has_private_key( order.get_owner() ) )
             result.push_back( order );
       }
 
-      for( auto order : asks )
+      for( const auto& order : asks )
       {
          if( my->_wallet_db.has_private_key( order.get_owner() ) )
             result.push_back( order );
       }
 
-      for( auto order : shorts )
+      for( const auto& order : shorts )
       {
          if( my->_wallet_db.has_private_key( order.get_owner() ) )
             result.push_back( order );
       }
 
-      for( auto order : covers )
+      for( const auto& order : covers )
       {
          if( my->_wallet_db.has_private_key( order.get_owner() ) )
             result.push_back( order );
