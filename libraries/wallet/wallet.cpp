@@ -3803,6 +3803,14 @@ namespace bts { namespace wallet {
       return my->_wallet_db.lookup_account( addr );
    }
 
+   owallet_account_record  wallet::get_account_for_address( address addr_in_account )
+   {
+       auto okey = my->_wallet_db.lookup_key( addr_in_account );
+       if (! okey.valid() )
+           return owallet_account_record();
+       return get_account_record( okey->account_address );
+   }
+
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    {
       unordered_map<account_id_type, int64_t> raw_votes;

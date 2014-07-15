@@ -270,11 +270,10 @@ namespace bts { namespace blockchain {
                              && last_key_itr.value() == new_record)) )
                          {
                            //...add a new entry to the history table.
-                           wlog("Adding new price point: ${key} ${rec}", ("key",key)("rec",new_record));
                            _pending_state->market_history[key] = new_record;
                          }
 
-                         fc::time_point_sec start_of_this_hour(timestamp.sec_since_epoch() % (60*60));
+                         fc::time_point_sec start_of_this_hour = timestamp - (timestamp.sec_since_epoch() % (60*60));
                          market_history_key old_key(quote_id, base_id, market_history_key::each_hour, start_of_this_hour);
                          if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
                          {
@@ -290,7 +289,7 @@ namespace bts { namespace blockchain {
                          else
                            _pending_state->market_history[old_key] = new_record;
 
-                         fc::time_point_sec start_of_this_day(timestamp.sec_since_epoch() % (60*60*24));
+                         fc::time_point_sec start_of_this_day = timestamp - (timestamp.sec_since_epoch() % (60*60*24));
                          old_key = market_history_key(quote_id, base_id, market_history_key::each_day, start_of_this_day);
                          if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
                          {

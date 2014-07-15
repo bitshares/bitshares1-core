@@ -147,6 +147,8 @@ namespace bts { namespace wallet {
 
          void     rename_account( const string& old_contact_name, 
                                   const string& new_contact_name );
+
+         owallet_account_record  get_account_for_address( address addr );
          ///@}  
          
          /** 
