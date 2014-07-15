@@ -2781,6 +2781,15 @@ config load_config( const fc::path& datadir )
       network_broadcast_transaction( trx );
       return trx;
    }
+   signed_transaction client_impl::wallet_market_cover( const string& from_account,
+                                                        double quantity,
+                                                        const string& quantity_symbol, 
+                                                        const address& order_id )
+   {
+      auto trx = _wallet->cover_short( from_account, quantity, quantity_symbol, order_id, true );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
 
    signed_transaction client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                  const string& to_account_name,

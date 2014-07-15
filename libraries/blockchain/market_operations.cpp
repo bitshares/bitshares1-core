@@ -166,6 +166,9 @@ namespace bts { namespace blockchain {
 
       asset delta_amount  = this->get_amount();
 
+      if( !eval_state.check_signature( cover_index.owner ) )
+         FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
+
       // subtract this from the transaction
       eval_state.sub_balance( address(), delta_amount );
 
