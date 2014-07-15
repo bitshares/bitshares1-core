@@ -1,4 +1,4 @@
-BitShares Development Toolkit [![Build Status](https://travis-ci.org/vikramrajkumar/bitshares_toolkit.png)](https://travis-ci.org/vikramrajkumar/bitshares_toolkit)
+BitShares Development Toolkit [![Build Status](https://travis-ci.org/dacsunlimited/bitshares_toolkit.png)](https://travis-ci.org/dacsunlimited/bitshares_toolkit)
 ===============================
 The BitShares development toolkit is a set of libraries used to facilitate
 the development of Decentralized Autonomous Companies (DACs).  It provides
