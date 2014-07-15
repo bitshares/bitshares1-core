@@ -36,7 +36,6 @@ struct vote_del
       return a.delegate_id < b.delegate_id; /* Lowest id wins in ties */
    }
 };
-FC_REFLECT( vote_del, (votes)(delegate_id) )
 
 struct fee_index
 {
@@ -54,7 +53,6 @@ struct fee_index
       return a._fees > b._fees; /* Reverse so that highest fee is placed first in sorted maps */
    }
 };
-FC_REFLECT( fee_index, (_fees)(_trx) )
 
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
 
@@ -114,6 +112,7 @@ namespace bts { namespace blockchain {
 
                        asset xts_fees_collected(0,base_id);
 
+                       get_next_ask();
                        while( get_next_bid() && get_next_ask() )
                        {
                           idump( (_current_bid)(_current_ask) );
@@ -239,6 +238,58 @@ namespace bts { namespace blockchain {
                           }
 
                        }
+
+                       if( _current_bid.valid() && _current_ask.valid() )
+                       {
+                         market_history_key key(quote_id, base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
+                         //FIXME: The 1 on the next line should be replaced by the trading volume for this block!
+                         market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), 1);
+                         //LevelDB iterators are dumb and don't support proper past-the-end semantics.
+                         //Insert the record so we're guaranteed to find something, then remove it if we don't want a new record.
+                         _db_impl._market_history_db.store(key, new_record);
+                         auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
+
+                         //Unless the previous record for this market is the same as ours...
+                         if( (!((--last_key_itr).valid()
+                             && last_key_itr.key().quote_id == quote_id
+                             && last_key_itr.key().base_id == base_id
+                             && last_key_itr.key().granularity == market_history_key::each_block
+                             && last_key_itr.value() == new_record)) )
+                         {
+                           //...add a new entry to the history table.
+                           _pending_state->market_history[key] = new_record;
+                         }
+                         else _db_impl._market_history_db.remove(key);
+
+                         fc::time_point_sec start_of_this_hour = fc::time_point::now();
+                         start_of_this_hour -= start_of_this_hour.sec_since_epoch() % (60*60);
+                         market_history_key old_key(quote_id, base_id, market_history_key::each_hour, start_of_this_hour);
+                         if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
+                         {
+                           auto old_record = *opt;
+                           if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
+                           {
+                             old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
+                             old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                             _pending_state->market_history[old_key] = old_record;
+                           }
+                         }
+
+                         fc::time_point_sec start_of_this_day = fc::time_point::now();
+                         start_of_this_hour -= start_of_this_hour.sec_since_epoch() % (60*60*24);
+                         old_key = market_history_key(quote_id, base_id, market_history_key::each_day, start_of_this_day);
+                         if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
+                         {
+                           auto old_record = *opt;
+                           if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
+                           {
+                             old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
+                             old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                             _pending_state->market_history[old_key] = old_record;
+                           }
+                         }
+                       }
+
                        wlog( "done matching orders" );
                   } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
 
@@ -294,14 +345,14 @@ namespace bts { namespace blockchain {
                      /**
                       *  Margin calls take priority over all other ask orders
                       */
-                     while( _collateral_itr.valid() )
+                     while( _current_bid && _collateral_itr.valid() )
                      {
                         auto cover_ask = market_order( cover_order,
                                                  _collateral_itr.key(), 
                                                  order_record(_collateral_itr.value().payoff_balance), 
                                                  _collateral_itr.value().collateral_balance  );
 
-                        if( cover_ask.get_price().quote_asset_id == _quote_id && 
+                        if( cover_ask.get_price().quote_asset_id == _quote_id &&
                             cover_ask.get_price().base_asset_id == _base_id )
                         {
                             if( _current_bid->get_price() < cover_ask.get_highest_cover_price()  )
@@ -318,7 +369,7 @@ namespace bts { namespace blockchain {
                                continue;
                             }
                             // max bid must be greater than call price
-                            if( _current_bid && _current_bid->get_price() < cover_ask.get_price() )
+                            if( _current_bid->get_price() < cover_ask.get_price() )
                             {
                              //  if( _current_ask->get_price() > cover_ask.get_price() )
                                {
@@ -491,6 +542,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map< market_index_key, order_record >            _short_db;
             bts::db::level_map< market_index_key, collateral_record >       _collateral_db;
 
+            bts::db::level_map< market_history_key, market_history_record>  _market_history_db;
+
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
 
@@ -564,6 +617,8 @@ namespace bts { namespace blockchain {
           _bid_db.open( data_dir / "index/bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
+
+          _market_history_db.open( data_dir / "index/market_history_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
@@ -1361,6 +1416,8 @@ namespace bts { namespace blockchain {
       my->_bid_db.close();
       my->_short_db.close();
       my->_collateral_db.close();
+
+      my->_market_history_db.close();
 
       //my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -2678,7 +2735,43 @@ namespace bts { namespace blockchain {
 
    oslot_record chain_database::get_slot_record( const time_point_sec& start_time )const
    {
-      return my->_slot_record_db.fetch_optional( start_time );
+     return my->_slot_record_db.fetch_optional( start_time );
+   }
+
+   void chain_database::store_market_history_record(const market_history_key& key, const market_history_record& record)
+   {
+     if( record.volume == 0 )
+       my->_market_history_db.remove( key );
+     else
+       my->_market_history_db.store( key, record );
+   }
+
+   omarket_history_record chain_database::get_market_history_record(const market_history_key& key) const
+   {
+     return my->_market_history_db.fetch_optional( key );
+   }
+
+   market_history_points chain_database::get_market_price_history( asset_id_type quote_id,
+                                                                   asset_id_type base_id,
+                                                                   const fc::time_point& start_time,
+                                                                   const fc::microseconds& duration,
+                                                                   market_history_key::time_granularity_enum granularity)
+   {
+      time_point_sec end_time = start_time + duration;
+      auto record_itr = my->_market_history_db.lower_bound( market_history_key(quote_id, base_id, granularity, start_time) );
+      market_history_points history;
+
+      while( record_itr.valid()
+             && record_itr.key().quote_id == quote_id
+             && record_itr.key().base_id == base_id
+             && record_itr.key().granularity == granularity
+             && record_itr.key().timestamp <= end_time )
+      {
+        history.push_back( std::make_pair(record_itr.key().timestamp, record_itr.value()) );
+        ++record_itr;
+      }
+
+      return history;
    }
 
    bool chain_database::is_known_transaction( const transaction_id_type& id )
@@ -2721,3 +2814,6 @@ namespace bts { namespace blockchain {
 
 
 } } // bts::blockchain
+
+FC_REFLECT( vote_del, (votes)(delegate_id) )
+FC_REFLECT( fee_index, (_fees)(_trx) )

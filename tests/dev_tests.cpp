@@ -364,6 +364,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "balance" );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
    exec( clientb, "wallet_account_transaction_history" );
+   exec( clientb, "blockchain_market_price_history BUSD XTS 20200101T000000 100000000" );
+   exec( clientb, "blockchain_market_price_history GLD XTS 20200101T000000 100000000" );
 
 
 

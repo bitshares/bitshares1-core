@@ -2937,6 +2937,17 @@ config load_config( const fc::path& datadir )
       return orders;
    }
 
+   market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
+                                                                       const std::string& base_symbol,
+                                                                       const fc::time_point& start_time,
+                                                                       const fc::microseconds& duration,
+                                                                       const market_history_key::time_granularity_enum& granularity ) const
+   {
+      return _chain_db->get_market_price_history( _chain_db->get_asset_id(quote_symbol),
+                                                  _chain_db->get_asset_id(base_symbol),
+                                                  start_time, duration, granularity );
+   }
+
    vector<market_order>    client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                   const string& base_symbol,
                                                                   int64_t limit  )
