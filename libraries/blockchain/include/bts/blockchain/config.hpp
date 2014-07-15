@@ -68,7 +68,10 @@
 /**
  *  The maximum amount that can be issued for user assets.
  *
- *  10^18 / 2^63 < 1
+ *  10^18 / 2^63 < 1  however, to support representing all share values as a double in
+ *  languages like java script, we must stay within the epsilon so 
+ *
+ *  10^15 / 2^53 < 1 allows all values to be represented as a double or an int64
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                           (1000*1000*1000ll*1000*1000ll)
 
