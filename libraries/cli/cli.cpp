@@ -1002,6 +1002,35 @@ namespace bts { namespace cli {
                      }
                   }
               }
+              else if (method_name == "blockchain_market_order_history")
+              {
+                  vector<market_transaction> orders = result.as<vector<market_transaction>>();
+                  if( orders.empty() )
+                  {
+                    *_out << "No Orders.\n";
+                    return;
+                  }
+
+                  *_out << std::setw(7) << "TYPE"
+                        << std::setw(20) << "PRICE"
+                        << std::setw(25) << "PAID"
+                        << std::setw(25) << "RECEIVED"
+                        << "\n" << std::string(77,'-') << "\n";
+
+                  for( market_transaction order : orders )
+                  {
+                    *_out << std::setw(7) << "Buy"
+                          << std::setw(20) << _client->get_chain()->to_pretty_price(order.bid_price)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_paid)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_received)
+                          << "\n"
+                          << std::setw(7) << "Sell"
+                          << std::setw(20) << _client->get_chain()->to_pretty_price(order.ask_price)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_paid)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_received)
+                          << "\n";
+                  }
+              }
               else if (method_name == "network_list_potential_peers")
               {
                   auto peers = result.as<std::vector<net::potential_peer_record>>();
