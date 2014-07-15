@@ -128,17 +128,22 @@ namespace bts { namespace wallet {
                                           uint32_t block_num, 
                                           uint32_t trx_num, 
                                           const market_transaction& trx )
-            {
+            { try {
                 idump( (block_num)(trx_num)(trx) );
                 auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
                 if( okey_bid && okey_bid->has_private_key() )
                 {
                    auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
-                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), trx.bid_price.base_asset_id ).get_address() );
+                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), 
+                                                                                       trx.bid_price.base_asset_id ).get_address() );
+                   wlog( "BAL RECORD ${R}", ("R", bal_rec) );
                    if( bal_rec ) _wallet_db.cache_balance( *bal_rec );
 
-                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), trx.ask_price.quote_asset_id ).get_address() );
+                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), 
+                                                                                  trx.ask_price.quote_asset_id ).get_address() );
+
+                   wlog( "BAL RECORD ${R}", ("R", bal_rec) );
                    if( bal_rec ) _wallet_db.cache_balance( *bal_rec );
 
                    // what did we pay
@@ -167,18 +172,20 @@ namespace bts { namespace wallet {
                 {
                    auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
-                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.base_asset_id ).get_address() );
+                   auto bal_rec = _blockchain->get_balance_record( 
+                                           withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.base_asset_id ).get_address() );
                    if( bal_rec )
                    {
-                      wdump( (bal_rec) );
+                      wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
                       _wallet_db.cache_balance( *bal_rec );
                    }
 
-                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.quote_asset_id ).get_address() );
+                   bal_rec = _blockchain->get_balance_record( 
+                                      withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.quote_asset_id ).get_address() );
                    if( bal_rec ) 
                    {
+                      wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
                       _wallet_db.cache_balance( *bal_rec );
-                      wdump( (bal_rec) );
                    }
 
                    // what did we pay
@@ -203,7 +210,8 @@ namespace bts { namespace wallet {
                                                         ask_account_key->public_key,
                                                         trx.fees_collected.amount );
                 }
-            }
+
+            } FC_CAPTURE_AND_RETHROW() }
 
             secret_hash_type get_secret( uint32_t block_num,
                                          const private_key_type& delegate_key )const;
@@ -3269,7 +3277,7 @@ namespace bts { namespace wallet {
            my->_wallet_db.cache_transaction( trx, amount_to_cover,
                                             required_fees.amount,
                                             "cover ORDER-" + variant( address(order_to_cover->get_owner()) ).as_string().substr(3,8),
-                                            from_account_key,
+                                            get_private_key( order_to_cover->get_owner()).get_public_key(),
                                             now,
                                             now,
                                             from_account_key,

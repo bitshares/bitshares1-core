@@ -333,24 +333,35 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_market_list_covers BUSD" );
    exec( clientb, "balance" );
    exec( clienta, "wallet_market_order_list BUSD XTS" );
+   exec( clientb, "balance" );
    exec( clientb, "ask delegate30 3 XTS 5.42 BUSD" );
    produce_block( clienta );
    exec( clientb, "wallet_account_transaction_history" );
+   exec( clientb, "balance" );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
    exec( clientb, "balance" );
    exec( clientb, "short c-account 50 3.11 BUSD" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
+   exec( clientb, "balance" );
    exec( clienta, "wallet_market_order_list BUSD XTS" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
+   exec( clientb, "balance" );
    exec( clienta, "wallet_market_order_list BUSD XTS" );
+   exec( clientb, "balance" );
    exec( clientb, "wallet_market_order_list BUSD XTS" );
    exec( clientb, "balance" );
-   exec( clienta, "balance" );
    exec( clientb, "cover delegate32 10.1 BUSD XTSP8ZBZodbzPYh57Z8S4S6x2VqYNXo5MALy" );
    produce_block( clienta );
+   exec( clientb, "wallet_account_transaction_history" );
    exec( clientb, "wallet_market_order_list BUSD XTS" );
+   exec( clienta, "blockchain_market_order_book BUSD XTS" );
+   exec( clientb, "balance" );
+   exec( clientb, "cover delegate32 19.899 BUSD XTSP8ZBZodbzPYh57Z8S4S6x2VqYNXo5MALy" );
+   produce_block( clienta );
+   exec( clientb, "balance" );
+   exec( clienta, "blockchain_market_order_book BUSD XTS" );
    exec( clientb, "wallet_account_transaction_history" );
 
 

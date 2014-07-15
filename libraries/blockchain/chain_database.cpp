@@ -187,7 +187,7 @@ namespace bts { namespace blockchain {
 
                                    auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
                                    if( !ask_payout )
-                                      ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
+                                      ask_payout = balance_record( _current_ask->get_owner(), asset(0,base_id), 0 );
                                    ask_payout->balance += (*_current_ask->collateral);
 
                                    _pending_state->store_balance_record( *ask_payout );
@@ -320,7 +320,7 @@ namespace bts { namespace blockchain {
                             // max bid must be greater than call price
                             if( _current_bid && _current_bid->get_price() < cover_ask.get_price() )
                             {
-                               if( _current_ask->get_price() > cover_ask.get_price() )
+                             //  if( _current_ask->get_price() > cover_ask.get_price() )
                                {
                                   _current_ask = cover_ask;
                                   _current_payoff_balance = _collateral_itr.value().payoff_balance;
@@ -1654,6 +1654,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
+       wlog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
           my->_balance_db.remove( r.id() );
