@@ -1729,8 +1729,8 @@ config load_config( const fc::path& datadir )
       auto key = _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
-      auto oacct = _wallet->get_account_record( address( key ) );
-      FC_ASSERT( oacct.valid(), "just imported a key but now the key has no owner" );
+      auto oacct = _wallet->get_account_for_address( address( key ) );
+      FC_ASSERT(oacct.valid(), "No account for a key we just imported" );
       return oacct->name;
     }
 
