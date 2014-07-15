@@ -145,6 +145,15 @@ namespace bts { namespace wallet {
        fc::ecc::private_key     decrypt_private_key( const fc::sha512& password )const;
    };
 
+   struct ledger_entry
+   {
+       optional<public_key_type> from_account;
+       optional<public_key_type> to_account;
+       asset                     amount;
+       asset                     fees;
+       std::string               memo_message;
+   };
+
    struct transaction_data
    {
        transaction_data()
@@ -159,6 +168,7 @@ namespace bts { namespace wallet {
        bool                      is_virtual;
        bool                      is_market;
        signed_transaction        trx;
+       vector<ledger_entry>      ledger_entries;
        optional<public_key_type> from_account;
        optional<public_key_type> to_account;
        asset                     amount;
@@ -246,6 +256,8 @@ FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
 FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
+FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(fees)(memo_message) );
+
 FC_REFLECT( bts::wallet::transaction_data, 
             (transaction_id)
             (block_num)
@@ -261,6 +273,7 @@ FC_REFLECT( bts::wallet::transaction_data,
             (received_time)
             (transmit_count)
             (extra_addresses)
+            (ledger_entries)
           )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 
