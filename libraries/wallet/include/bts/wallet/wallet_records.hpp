@@ -261,8 +261,11 @@ FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(fees)(
 FC_REFLECT( bts::wallet::transaction_data, 
             (transaction_id)
             (block_num)
+            (trx_num)
             (is_virtual)
+            (is_market)
             (trx)
+            (ledger_entries)
             (from_account)
             (to_account)
             (amount)
@@ -273,7 +276,6 @@ FC_REFLECT( bts::wallet::transaction_data,
             (received_time)
             (transmit_count)
             (extra_addresses)
-            (ledger_entries)
           )
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 
