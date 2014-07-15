@@ -74,6 +74,10 @@ NAME (* delegate)                  KEY                                          
 myaccount                          XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v           NO                    NO             0         
 wallet1 (unlocked) >>> wallet_set_setting t1 123456
 OK
+wallet1 (unlocked) >>> wallet_lock
+OK
+wallet1 (locked) >>> wallet_unlock 999 87654321
+OK
 wallet1 (unlocked) >>> wallet_close
 OK
 (wallet closed) >>> quit
