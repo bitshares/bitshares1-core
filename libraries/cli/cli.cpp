@@ -927,7 +927,7 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_market_order_book")
               {
                   auto bids_asks = result.as<std::pair<vector<market_order>,vector<market_order>>>();
-                  *_out << std::string(34, ' ') << "BIDS" 
+                  *_out << std::string(18, ' ') << "BIDS (* Short Order)" 
                         << std::string(38, ' ') << " | " 
                         << std::string(34, ' ') << "ASKS" 
                         << std::string(34, ' ') << "\n"
@@ -969,13 +969,38 @@ namespace bts { namespace cli {
                       *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
                             << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                             << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
-                      if( ask_itr->collateral )
-                          *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
                       ++ask_itr;
                     }
                     *_out << "\n";
                   }
-                  *_out << "\n* Short Order\n";
+
+                  *_out << std::string(175, '-') << "\n";
+                  *_out << std::string(38, ' ') << " " 
+                        << std::string(38, ' ') << "| " 
+                        << std::string(34, ' ') << "MARGIN" 
+                        << std::string(34, ' ') << "\n"
+                        << std::left << std::setw(26) << " " 
+                        << std::setw(20) << " " 
+                        << std::right << std::setw(30) << " "
+                        << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" <<"   COLLATERAL" << "\n"
+                        << std::string(175, '-') << "\n";
+
+                  {
+                     auto ask_itr = bids_asks.second.rbegin();
+                     while(  ask_itr != bids_asks.second.rend() )
+                     {
+                         if( ask_itr->collateral )
+                         {
+                             *_out << std::string(77, ' ');
+                             *_out << "| ";
+                             *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                                  << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+                                  << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                                *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
+                         }
+                        ++ask_itr;
+                     }
+                  }
               }
               else if (method_name == "network_list_potential_peers")
               {

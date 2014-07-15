@@ -2545,6 +2545,7 @@ config load_config( const fc::path& datadir )
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
       info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
+      info["blockchain_accumulated_fees"]                       = _chain_db->to_pretty_asset( asset(_chain_db->get_accumulated_fees()) );
 
       oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       share_type share_supply                                   = share_record ? share_record->current_share_supply : 0;
