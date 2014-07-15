@@ -159,7 +159,7 @@ namespace bts{ namespace blockchain {
 
    share_type  chain_interface::get_delegate_pay_rate()const
    {
-      return get_accumulated_fees() / (BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE);
+      return get_accumulated_fees() / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*14);
    }
 
    share_type  chain_interface::get_accumulated_fees()const
