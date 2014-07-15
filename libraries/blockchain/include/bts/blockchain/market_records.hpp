@@ -5,6 +5,8 @@
 
 #include <fc/time.hpp>
 
+#include <tuple>
+
 namespace bts { namespace blockchain {
 
    struct market_index_key
@@ -22,9 +24,7 @@ namespace bts { namespace blockchain {
       }
       friend bool operator < ( const market_index_key& a, const market_index_key& b )
       {
-         if( a.order_price < b.order_price ) return true;
-         if( a.order_price > b.order_price ) return false;
-         return  a.owner < b.owner;
+        return std::tie(a.order_price, a.owner) < std::tie(b.order_price, b.owner);
       }
    };
 
@@ -53,13 +53,7 @@ namespace bts { namespace blockchain {
 
        bool operator < ( const market_history_key& other ) const
        {
-          if( base_id < other.base_id ) return true;
-          if( base_id > other.base_id ) return false;
-          if( quote_id < other.quote_id ) return true;
-          if( quote_id > other.quote_id ) return false;
-          if( granularity < other.granularity ) return true;
-          if( granularity > other.granularity ) return false;
-          return timestamp < other.timestamp;
+         return std::tie(base_id, quote_id, granularity, timestamp) < std::tie(other.base_id, other.quote_id, other.granularity, other.timestamp);
        }
        bool operator == ( const market_history_key& other ) const
        {
