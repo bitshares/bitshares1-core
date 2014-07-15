@@ -985,19 +985,21 @@ namespace bts { namespace cli {
                         << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" <<"   COLLATERAL" << "\n"
                         << std::string(175, '-') << "\n";
 
-                  ask_itr = bids_asks.second.begin();
-                  while(  ask_itr != bids_asks.second.end() )
                   {
-                      if( ask_itr->collateral )
-                      {
-                          *_out << std::string(77, ' ');
-                          *_out << "| ";
-                          *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
-                               << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-                               << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
-                             *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
-                      }
-                     ++ask_itr;
+                     auto ask_itr = bids_asks.second.rbegin();
+                     while(  ask_itr != bids_asks.second.rend() )
+                     {
+                         if( ask_itr->collateral )
+                         {
+                             *_out << std::string(77, ' ');
+                             *_out << "| ";
+                             *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                                  << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+                                  << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                                *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
+                         }
+                        ++ask_itr;
+                     }
                   }
               }
               else if (method_name == "network_list_potential_peers")
