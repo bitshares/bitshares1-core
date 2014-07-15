@@ -28,10 +28,11 @@ class stcp_socket : public virtual fc::iostream
     virtual void     close();
 
     void             get( char& c ) { read( &c, 1 ); }
-
+    fc::sha512       get_shared_secret() const { return _shared_secret; }
   private:
     void do_key_exchange();
 
+    fc::sha512           _shared_secret;
     fc::ecc::private_key _priv_key;
     fc::array<char,8>    _buf;
     //uint32_t             _buf_len;

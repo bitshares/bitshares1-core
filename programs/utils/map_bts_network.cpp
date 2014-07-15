@@ -34,7 +34,7 @@ public:
   {}
 
   void start(const fc::ip::endpoint& endpoint_to_probe, 
-             const fc::ecc::public_key& my_node_id,
+             const fc::ecc::private_key& my_node_id,
              const bts::blockchain::digest_type& chain_id)
   {
     fc::future<void> connect_task = fc::async([=](){ _connection->connect_to(endpoint_to_probe); });
@@ -48,10 +48,17 @@ public:
       connect_task.cancel();
       throw;
     }
+
+    fc::sha256::encoder shared_secret_encoder;
+    fc::sha512 shared_secret = _connection->get_shared_secret();
+    shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
+    fc::ecc::compact_signature signature = my_node_id.sign_compact(shared_secret_encoder.result());
+
     bts::net::hello_message hello("map_bts_network", 
                                   BTS_NET_PROTOCOL_VERSION,
                                   fc::ip::address(), 0, 0,
-                                  my_node_id, 
+                                  my_node_id.get_public_key(), 
+                                  signature,
                                   chain_id,
                                   fc::variant_object());
     
@@ -196,7 +203,7 @@ int main(int argc, char** argv)
     try
     {
       probe.start(this_node_info.remote_endpoint, 
-                  my_node_id.get_public_key(),
+                  my_node_id,
                   chain_db->chain_id());
       probe.wait();
 
