@@ -248,8 +248,8 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         out << std::setw( 20 ) << pretty_shorten( transaction.from_account, 19 );
         out << std::setw( 20 ) << pretty_shorten( transaction.to_account, 19 );
         out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( transaction.amount );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( transaction.fees ) );
-        out << std::setw( 40 ) << pretty_shorten( transaction.memo_message, 39 );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( transaction.fee );
+        out << std::setw( 40 ) << pretty_shorten( transaction.memo, 39 );
 
         // TODO: Show other asset if there is one
         out << std::setw( 24 );

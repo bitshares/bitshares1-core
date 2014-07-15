@@ -45,36 +45,14 @@ namespace bts { namespace wallet {
          void cache_order( const bts::blockchain::market_order& );
          void remove_balance( const balance_id_type& balance_id );
 
-         void store_market_transaction( uint32_t block_num, 
-                                        uint32_t trx_num, 
-                                        const asset& amount,
-                                        const string& memo,
-                                        time_point_sec received,
-                                        const public_key_type& from_account,
-                                        const public_key_type& to_account,
-                                        share_type fees
-                                      );
-
-
          vector<wallet_transaction_record> get_pending_transactions()const;
          void                              clear_pending_transactions();
 
          void update_market_order( const address& owner, 
-                                   optional<bts::blockchain::market_order>& order,
+                                   const optional<bts::blockchain::market_order>& order,
                                    const transaction_id_type& trx_id );
 
-         wallet_transaction_record cache_transaction(
-                 const signed_transaction& trx,
-                 const asset& amount,
-                 share_type fees,
-                 const string& memo_message,
-                 const public_key_type& to,
-                 const time_point_sec& created = time_point_sec(),
-                 const time_point_sec& received = time_point_sec(),
-                 const public_key_type& from = public_key_type(),
-                 const vector<address>& extra_addresses = vector<address>() );
-
-         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
+         owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
          private_keys get_account_private_keys( const fc::sha512& password );
          string       get_account_name( const address& account_address )const;
@@ -138,8 +116,6 @@ namespace bts { namespace wallet {
             return keys;
          }
 
-         // TODO: make this private
-         map< std::pair<uint32_t,uint32_t>, wallet_transaction_record >   market_transactions;
       private:
          optional<wallet_master_key_record>                               wallet_master_key;
          /** maps wallet_record_index to accounts */

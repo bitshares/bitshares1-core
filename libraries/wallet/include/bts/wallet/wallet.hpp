@@ -333,7 +333,7 @@ namespace bts { namespace wallet {
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
           */
-         wallet_transaction_record register_account( const string& account_name,
+         signed_transaction register_account( const string& account_name,
                                               const variant& json_data,
                                               uint8_t delegate_pay_rate,
                                               const string& pay_with_account_name,
@@ -342,7 +342,7 @@ namespace bts { namespace wallet {
          void update_account_private_data( const string& account_to_update,
                                            const variant& private_data );
 
-         wallet_transaction_record update_registered_account( const string& account_name,
+         signed_transaction update_registered_account( const string& account_name,
                                       const string& pay_from_account,
                                       optional<variant> public_data,
                                       uint8_t delegate_pay_rate = 255,
@@ -369,7 +369,7 @@ namespace bts { namespace wallet {
 
 
          void      set_delegate_approval( const string& delegate_name, int approved );
-         int      get_delegate_approval( const string& delegate_name )const;
+         int       get_delegate_approval( const string& delegate_name )const;
 
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;
@@ -418,12 +418,7 @@ namespace bts { namespace wallet {
          void sign_and_cache_transaction(
                  signed_transaction& transaction,
                  const std::unordered_set<address>& required_signatures,
-                 const asset& amount,
-                 share_type fees,
-                 const string& memo,
-                 const public_key_type& to,
-                 const public_key_type& from = public_key_type(),
-                 const vector<address>& extra_addresses = vector<address>() );
+                 wallet_transaction_record& record );
 
          slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ) );
 

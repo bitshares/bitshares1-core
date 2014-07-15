@@ -479,21 +479,6 @@
         "prerequisites" : ["wallet_open"]
       },
       {
-        "method_name": "wallet_get_pretty_transaction",
-        "description": "Return a pretty JSON representation of a transaction",
-        "return_type": "pretty_transaction",
-        "parameters" : 
-          [
-            { 
-              "name" : "transaction", 
-              "type" : "signed_transaction", 
-              "description" : "the transaction to pretty-print"
-            }
-          ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
         "method_name": "wallet_multipart_transfer",
         "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
         "return_type": "signed_transaction_array",
@@ -610,7 +595,7 @@
       {
          "method_name" : "wallet_account_register",
          "description" : "Updates the data published about a given account",
-         "return_type" : "transaction_record",
+         "return_type" : "signed_transaction",
          "parameters"  : [
                {
                   "name" : "account_name",
@@ -661,7 +646,7 @@
       {
          "method_name" : "wallet_account_update_registration",
          "description" : "Updates the data published about a given account",
-         "return_type" : "transaction_record",
+         "return_type" : "signed_transaction",
          "parameters"  : [
                {
                   "name" : "account_name",

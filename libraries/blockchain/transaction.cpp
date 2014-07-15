@@ -126,12 +126,14 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
-   void transaction::register_account( const std::string& name, 
-                                   const fc::variant& public_data, 
-                                   const public_key_type& master, 
-                                   const public_key_type& active, uint8_t pro_fee  )
+   void transaction::register_account( const std::string& name,
+                                       const fc::variant& public_data, 
+                                       const public_key_type& master, 
+                                       const public_key_type& active,
+                                       uint8_t pay_rate )
    {
-      operations.push_back( register_account_operation( name, public_data, master, active, pro_fee ) );
+      const auto op = register_account_operation( name, public_data, master, active, pay_rate );
+      operations.push_back( op );
    }
 
    void transaction::update_account( account_id_type account_id, 
