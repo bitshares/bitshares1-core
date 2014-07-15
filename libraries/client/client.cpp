@@ -2894,9 +2894,63 @@ config load_config( const fc::path& datadir )
       return std::make_pair(bids, asks);
    }
 
+   std::vector<market_transaction> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
+                                                                                const std::string &base_symbol,
+                                                                                uint32_t skip_count,
+                                                                                uint32_t limit) const
+   {
+      auto head_block_num = _chain_db->get_head_block_num();
+      auto orders = _chain_db->get_market_transactions(head_block_num);
+
+      std::function<bool(const market_transaction&)> order_is_uninteresting =
+          [&quote_symbol,&base_symbol,this](const market_transaction& order) -> bool
+      {
+          if( order.ask_price.base_asset_id == _chain_db->get_asset_id(base_symbol)
+              && order.ask_price.quote_asset_id == _chain_db->get_asset_id(quote_symbol) )
+            return false;
+          return true;
+      };
+      //Filter out orders not in our current market of interest
+      orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
+
+      while( skip_count > 0 && head_block_num > 0 && orders.size() <= skip_count ) {
+        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", head_block_num));
+        skip_count -= orders.size();
+        orders = _chain_db->get_market_transactions(--head_block_num);
+        orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
+      }
+
+      if( skip_count > 0 )
+        orders.erase(orders.begin(), orders.begin() + skip_count);
+      ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
+
+      while( head_block_num > 0 && orders.size() < limit )
+      {
+        auto more_orders = _chain_db->get_market_transactions(--head_block_num);
+        more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
+        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", head_block_num));
+        std::move(more_orders.begin(), more_orders.end(), std::back_inserter(orders));
+      }
+
+      if( orders.size() > limit )
+        orders.resize(limit);
+      return orders;
+   }
+
+   market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
+                                                                       const std::string& base_symbol,
+                                                                       const fc::time_point& start_time,
+                                                                       const fc::microseconds& duration,
+                                                                       const market_history_key::time_granularity_enum& granularity ) const
+   {
+      return _chain_db->get_market_price_history( _chain_db->get_asset_id(quote_symbol),
+                                                  _chain_db->get_asset_id(base_symbol),
+                                                  start_time, duration, granularity );
+   }
+
    vector<market_order>    client_impl::wallet_market_order_list( const string& quote_symbol,
-                                                                 const string& base_symbol,
-                                                                 int64_t limit  )
+                                                                  const string& base_symbol,
+                                                                  int64_t limit  )
    {
       return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
    }

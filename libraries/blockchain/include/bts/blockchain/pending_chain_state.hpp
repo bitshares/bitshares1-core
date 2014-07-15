@@ -64,6 +64,10 @@ namespace bts { namespace blockchain {
          virtual void                 store_slot_record( const slot_record& r ) override;
          virtual oslot_record         get_slot_record( const time_point_sec& start_time )const override;
 
+         virtual void                       store_market_history_record( const market_history_key& key,
+                                                                  const market_history_record& record ) override;
+         virtual omarket_history_record     get_market_history_record( const market_history_key& key )const override;
+
          /**
           *  Based upon the current state of the database, calculate any updates that
           *  should be executed in a deterministic manner.
@@ -107,6 +111,7 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                           shorts; 
          map< market_index_key, collateral_record>                      collateral; 
          map<time_point_sec, slot_record>                               slots;
+         map<market_history_key, market_history_record>                 market_history;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 
