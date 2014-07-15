@@ -112,9 +112,16 @@ namespace bts { namespace wallet {
 
            void load_transaction_record( const wallet_transaction_record& rec, bool overwrite )
            { try {
-              auto itr = self->transactions.find( rec.transaction_id );
-              if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet" )
-              self->transactions[ rec.transaction_id ] = rec;
+              if( !rec.is_market )
+              {
+                 auto itr = self->transactions.find( rec.transaction_id );
+                 if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet" )
+                 self->transactions[ rec.transaction_id ] = rec;
+              }
+              else
+              {
+                 self->market_transactions[ std::make_pair( rec.block_num, rec.trx_num ) ] = rec;
+              }
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
 
            void load_asset_record( const wallet_asset_record& asset_rec, bool overwrite )
@@ -676,8 +683,45 @@ namespace bts { namespace wallet {
       if( trx_to_store.wallet_record_index == 0 )
          trx_to_store.wallet_record_index = new_wallet_record_index();
       store_record( trx_to_store );
-      transactions[ trx_to_store.transaction_id ] = trx_to_store;
+
+      if( trx_to_store.is_market )
+         market_transactions[ std::make_pair( trx_to_store.block_num, trx_to_store.trx_num ) ] = trx_to_store;
+      else
+         transactions[ trx_to_store.transaction_id ] = trx_to_store;
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
+
+   void wallet_db::store_market_transaction( uint32_t block_num, 
+                                        uint32_t trx_num, 
+                                        const asset& amount,
+                                        const string& memo,
+                                        time_point_sec received,
+                                        const public_key_type& from_account,
+                                        const public_key_type& to_account,
+                                        share_type fees
+                                      )
+   {
+      elog( "block_num: ${b}", ("b",block_num) );
+      wallet_transaction_record data;
+      data.is_market       = true;
+      data.amount          = amount;
+      data.fees            = fees;
+      data.memo_message    = memo;
+      data.received_time   = received;
+      if( to_account != public_key_type() )
+         data.to_account      = to_account;
+      data.from_account    = from_account;
+      data.block_num       = block_num;
+      data.trx_num         = trx_num;
+
+      auto itr = market_transactions.find( std::make_pair(block_num,trx_num) );
+      if( itr == market_transactions.end() )
+          data.wallet_record_index = new_wallet_record_index();
+      else
+          data.wallet_record_index = itr->second.wallet_record_index;
+
+      store_transaction( data );
+   }
 
    wallet_transaction_record wallet_db::cache_transaction(
            const signed_transaction& trx,

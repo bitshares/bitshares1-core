@@ -316,6 +316,12 @@ namespace bts { namespace wallet {
                                          const string& quote_symbol,
                                          bool sign = true );
 
+         signed_transaction  cover_short( const string& from_account_name,
+                                          double real_quantity_usd,
+                                          const string& quote_symbol,
+                                          const address& owner_address,
+                                          bool sign = true );
+
          signed_transaction  cancel_market_order( const address& owner_address );
 
          wallet_account_record get_account( const string& account_name )const;
@@ -382,7 +388,7 @@ namespace bts { namespace wallet {
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         vector<market_order_status>        get_market_orders( const string& quote, const string& base )const;
+         vector<market_order>               get_market_orders( const string& quote, const string& base )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
                                                                      uint32_t start_block_num = 0,

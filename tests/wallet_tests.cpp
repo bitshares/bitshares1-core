@@ -232,14 +232,14 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
    auto result = clientb->wallet_market_order_list( "USD", "XTS" );
-   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].order.market_index.owner ) ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].market_index.owner ) ) << "\n";
    produce_block( clientb );
    std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history" ) << "\n";
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    result = clientb->wallet_market_order_list( "USD", "XTS" );
-   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].order.market_index.owner ) ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].market_index.owner ) ) << "\n";
    produce_block( clientb );
    std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";

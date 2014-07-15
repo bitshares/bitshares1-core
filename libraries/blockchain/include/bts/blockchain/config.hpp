@@ -5,7 +5,7 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                              (105)
+#define BTS_BLOCKCHAIN_VERSION                              (107)
 #define BTS_WALLET_VERSION                                  (100)
 #define BTS_BLOCKCHAIN_DATABASE_VERSION                     (114)
 
@@ -22,6 +22,8 @@
 #define BTS_BLOCKCHAIN_PRECISION                            (100000)
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC   (60*60*2)
+
+#define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                (false)
 
 #define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE                 (10000) // XTS
 
@@ -66,7 +68,10 @@
 /**
  *  The maximum amount that can be issued for user assets.
  *
- *  10^18 / 2^63 < 1
+ *  10^18 / 2^63 < 1  however, to support representing all share values as a double in
+ *  languages like java script, we must stay within the epsilon so 
+ *
+ *  10^15 / 2^53 < 1 allows all values to be represented as a double or an int64
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                           (1000*1000*1000ll*1000*1000ll)
 

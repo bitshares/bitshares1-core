@@ -6,7 +6,7 @@
 
 namespace bts{ namespace blockchain {
 
-   balance_record::balance_record( const address& owner, const asset& balance_arg, account_id_type delegate_id )
+   balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
    :genesis(false)
    {
       balance =  balance_arg.amount;
@@ -46,10 +46,7 @@ namespace bts{ namespace blockchain {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( str[0] < 'a' || str[0] > 'z' ) return false;
-#if BTS_BLOCKCHAIN_VERSION > 105
-#warning HARDFORK invalid name
       if (str[str.size() - 1] == '-' ) return false;
-#endif
       for( const auto& c : str )
       {
           if( c >= 'a' && c <= 'z' ) continue;
@@ -158,6 +155,44 @@ namespace bts{ namespace blockchain {
          if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
             return false;
       return true;
+   }
+
+   share_type  chain_interface::get_delegate_pay_rate()const
+   {
+      return get_accumulated_fees() / BTS_BLOCKCHAIN_NUM_DELEGATES;
+   }
+
+   share_type  chain_interface::get_accumulated_fees()const
+   {
+      return get_property( accumulated_fees ).as_int64();
+   }
+
+   void  chain_interface::set_accumulated_fees( share_type fees )
+   {
+      set_property( accumulated_fees, variant(fees) );
+   }
+   share_type  chain_interface::get_fee_rate()const
+   {
+      return get_property( current_fee_rate ).as_int64();
+   }
+
+   void  chain_interface::set_fee_rate( share_type fees )
+   {
+      set_property( current_fee_rate, variant(fees) );
+   }
+
+   map<asset_id_type, asset_id_type>  chain_interface::get_dirty_markets()const
+   {
+      try{
+         return get_property( dirty_markets ).as<map<asset_id_type,asset_id_type> >();
+      } catch ( ... )
+      {
+         return map<asset_id_type,asset_id_type>();
+      }
+   }
+   void  chain_interface::set_dirty_markets( const map<asset_id_type,asset_id_type>& d )
+   {
+      set_property( dirty_markets, fc::variant(d) );
    }
 
 } } // bts::blockchain

@@ -239,7 +239,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         out << std::setw( 20 ) << pretty_timestamp( transaction.received_time );
 
         out << std::setw( 10 );
-        if( transaction.is_virtual || transaction.is_confirmed ) out << transaction.block_num;
+        if( transaction.is_virtual || transaction.is_confirmed || transaction.is_market ) out << transaction.block_num;
         else if( errors.count( transaction.trx_id ) > 0 ) out << "ERROR";
         else out << "PENDING";
 
@@ -436,7 +436,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes )
 }
 
 string pretty_market_orders( const vector<market_order>& market_orders, cptr client )
-{
+{ try {
     if( market_orders.empty() ) return "No market orders found.\n";
     FC_ASSERT( client != nullptr );
 
@@ -445,9 +445,10 @@ string pretty_market_orders( const vector<market_order>& market_orders, cptr cli
 
     out << std::setw( 12 ) << "TYPE";
     out << std::setw( 20 ) << "QUANTITY";
-    out << std::setw( 20 ) << "PRICE";
+    out << std::setw( 30 ) << "PRICE";
     out << std::setw( 20 ) << "BALANCE";
     out << std::setw( 20 ) << "COST";
+    out << std::setw( 20 ) << "COLLATERAL";
     out << std::setw( 36 ) << "ID";
 
     out << pretty_line( 128 );
@@ -456,16 +457,19 @@ string pretty_market_orders( const vector<market_order>& market_orders, cptr cli
     {
         out << std::setw( 12 ) << variant( order.type ).as_string();
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_price( order.get_price() );
+        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price() );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
-        //out << std::setw( 36 ) << order.get_id();
+        if( order.type != cover_order )
+           out << std::setw( 20 ) << "N/A";
+        else
+           out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( *order.collateral ) );
         out << std::setw( 36 ) << fc::variant( order.market_index.owner ).as_string();
 
         out << "\n";
     }
 
     return out.str();
-}
+} FC_CAPTURE_AND_RETHROW(  ) }
 
 } } // bts::cli

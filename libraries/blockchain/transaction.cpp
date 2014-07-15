@@ -202,5 +202,10 @@ namespace bts { namespace blockchain {
    {
       operations.push_back( issue_asset_operation( amount_to_issue ) );
    }
+   void transaction::cover( const asset& cover_amount, 
+                            const market_index_key& order_idx )
+   {
+      operations.push_back( cover_operation(cover_amount.amount, order_idx) );
+   }
 
 } } // bts::blockchain 

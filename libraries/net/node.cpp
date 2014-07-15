@@ -866,11 +866,12 @@ namespace bts { namespace net { namespace detail {
             // group the items we need to send by type, because we'll need to send one inventory message per type
             unsigned total_items_to_send_to_this_peer = 0;
             for( const item_id& item_to_advertise : inventory_to_advertise )
-              if( peer->inventory_advertised_to_peer.find(item_to_advertise ) == peer->inventory_advertised_to_peer.end() &&
+              if( peer->inventory_advertised_to_peer.find(item_to_advertise) == peer->inventory_advertised_to_peer.end() &&
                   peer->inventory_peer_advertised_to_us.find( item_to_advertise ) == peer->inventory_peer_advertised_to_us.end() )
               {
                 items_to_advertise_by_type[item_to_advertise.item_type].push_back( item_to_advertise.item_hash );
-                peer->inventory_advertised_to_peer.insert( item_to_advertise );
+                peer->clear_old_inventory_advertised_to_peer();
+                peer->inventory_advertised_to_peer.insert( peer_connection::timestamped_item_id(item_to_advertise, fc::time_point::now()) );
                 ++total_items_to_send_to_this_peer;
                 dlog( "advertising item ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash )("endpoint", peer->get_remote_endpoint() ) );
               }
@@ -1279,6 +1280,12 @@ namespace bts { namespace net { namespace detail {
       // this check must come before we fill in peer data below
       bool already_connected_to_this_peer = is_already_connected_to_id( hello_message_received.node_id );
 
+      // validate the node id
+      fc::sha256::encoder shared_secret_encoder;
+      fc::sha512 shared_secret = originating_peer->get_shared_secret();
+      shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
+      fc::ecc::public_key expected_node_id(hello_message_received.signed_shared_secret, shared_secret_encoder.result());
+
       // store off the data provided in the hello message
       originating_peer->user_agent = hello_message_received.user_agent;
       originating_peer->node_id = hello_message_received.node_id;
@@ -1292,9 +1299,24 @@ namespace bts { namespace net { namespace detail {
       // now decide what to do with it
       if( originating_peer->their_state == peer_connection::their_connection_state::just_connected )
       {
+        if (hello_message_received.node_id != expected_node_id.serialize())
+        {
+          wlog("Invalid signature in hello message from peer ${peer}", ("peer", originating_peer->get_remote_endpoint()));
+          std::string rejection_message("Invalid signature in hello message");
+          connection_rejected_message connection_rejected( _user_agent_string, core_protocol_version, 
+                                                          originating_peer->get_socket().remote_endpoint(),
+                                                          rejection_reason_code::invalid_hello_message,
+                                                          rejection_message );
+
+          originating_peer->their_state = peer_connection::their_connection_state::connection_rejected;
+          originating_peer->send_message( message(connection_rejected ) );
+          // for this type of message, we're immediately disconnecting this peer
+          disconnect_from_peer( originating_peer, "Invalid signature in hello message" );
+          return;
+        }
         if( hello_message_received.chain_id != _chain_id )
         {
-          wlog(  "Recieved hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
+          wlog( "Received hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
           std::ostringstream rejection_message;
           rejection_message << "You're on a different chain than I am.  I'm on " << _chain_id.str() << 
                               " and you're on " << hello_message_received.chain_id.str();
@@ -2046,7 +2068,7 @@ namespace bts { namespace net { namespace detail {
         }
 
         // if we have already advertised it to a peer, we must have it, no need to do anything else
-        if( !we_advertised_this_item_to_a_peer )
+        if( !we_advertised_this_item_to_a_peer && !originating_peer->is_inventory_advertised_to_us_list_full())
         {
           originating_peer->inventory_peer_advertised_to_us.insert( advertised_item_id );
           if( !we_requested_this_item_from_a_peer )
@@ -2364,7 +2386,8 @@ namespace bts { namespace net { namespace detail {
             // add it to the list of items we've offered them.  That will prevent us from offering them
             // the same item back (no reason to do that; we already know they have it)
             peer->inventory_peer_advertised_to_us.erase( iter );
-            peer->inventory_advertised_to_peer.insert( block_message_item_id );
+            peer->clear_old_inventory_advertised_to_peer();
+            peer->inventory_advertised_to_peer.insert( peer_connection::timestamped_item_id(block_message_item_id, fc::time_point::now()) );
           }
         }
         message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
@@ -2412,6 +2435,7 @@ namespace bts { namespace net { namespace detail {
         if( sync_item_iter != originating_peer->sync_items_requested_from_peer.end() )
         {
           originating_peer->sync_items_requested_from_peer.erase( sync_item_iter );
+          _active_sync_requests.erase(block_message_to_process.block_id);
           process_block_during_sync( originating_peer, block_message_to_process, message_hash );
           return;
         }
@@ -2620,12 +2644,19 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       peer->negotiation_status = peer_connection::connection_negotiation_status::hello_sent;
-      hello_message hello( _user_agent_string, 
+      
+      fc::sha256::encoder shared_secret_encoder;
+      fc::sha512 shared_secret = peer->get_shared_secret();
+      shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
+      fc::ecc::compact_signature signature = _node_configuration.private_key.sign_compact(shared_secret_encoder.result());
+
+      hello_message hello(_user_agent_string, 
                           core_protocol_version, 
                           peer->inbound_address,
                           peer->inbound_port, 
                           peer->outbound_port,
-                          _node_id, 
+                          _node_id,
+                          signature,
                           _chain_id, 
                           generate_hello_user_data() );
 

@@ -1092,9 +1092,38 @@
          "aliases" : [ "short" ]
       },
       {
+         "method_name" : "wallet_market_cover",
+         "description" : "Used to place a request to cover an existing short position",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to cover"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you are covering (ie: USD)"
+            },
+            {
+               "name" : "order_id",
+               "type" : "address",
+               "description" : "the order ID you would lick to cover"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "cover" ]
+      },
+      {
          "method_name" : "wallet_market_order_list",
          "description" : "List an order list of a specific market",
-         "return_type" : "market_order_status_array",
+         "return_type" : "market_order_array",
          "parameters"  : [
             {
                "name" : "quote_symbol",

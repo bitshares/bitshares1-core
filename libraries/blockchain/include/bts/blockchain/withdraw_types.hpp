@@ -128,6 +128,12 @@ namespace bts { namespace blockchain {
       optional<titan_memo>    memo;
    };
 
+   struct withdraw_with_pts
+   {
+      public_key_type             new_key;
+      fc::ecc::compact_signature  pts_signature;
+   };
+
    /**
     *  User A picks a random password and generates password_hash. 
     *  User A sends funds to user B which they may claim with the password + their signature, but
@@ -185,6 +191,7 @@ FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
+FC_REFLECT( bts::blockchain::withdraw_with_pts, (new_key)(pts_signature) )
 FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
 FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
 FC_REFLECT_DERIVED( bts::blockchain::memo_status, 
