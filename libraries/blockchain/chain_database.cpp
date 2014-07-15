@@ -111,10 +111,19 @@ namespace bts { namespace blockchain {
 
 
                        asset xts_fees_collected(0,base_id);
+                       asset trading_volume(0, base_id);
+
+                       price last_valid_bid;
+                       last_valid_bid.ratio = price::infinite();
+                       price last_valid_ask;
+                       last_valid_ask.ratio = price::infinite();
 
                        get_next_ask();
                        while( get_next_bid() && get_next_ask() )
                        {
+                          last_valid_bid = _current_bid->get_price();
+                          last_valid_ask = _current_ask->get_price();
+
                           idump( (_current_bid)(_current_ask) );
                           price ask_price = _current_ask->get_price();
                           // this works for bids, asks, and shorts.... but in the case of a cover
@@ -150,6 +159,7 @@ namespace bts { namespace blockchain {
                           mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
 
                           _market_transactions.push_back(mtrx);
+                          trading_volume += mtrx.bid_received;
 
                           if( _current_ask->type == ask_order )
                           {
@@ -239,18 +249,20 @@ namespace bts { namespace blockchain {
 
                        }
 
-                       if( _current_bid.valid() && _current_ask.valid() )
+                       if( last_valid_bid.ratio != price::infinite() && last_valid_ask.ratio != price::infinite() )
                        {
                          market_history_key key(quote_id, base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-                         //FIXME: The 1 on the next line should be replaced by the trading volume for this block!
-                         market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), 1);
+                         market_history_record new_record(last_valid_bid, last_valid_ask, trading_volume.amount);
                          //LevelDB iterators are dumb and don't support proper past-the-end semantics.
-                         //Insert the record so we're guaranteed to find something, then remove it if we don't want a new record.
-                         _db_impl._market_history_db.store(key, new_record);
+                         //Insert the record so we're guaranteed to find something, then remove it
                          auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
+                         if( !last_key_itr.valid() )
+                           last_key_itr = _db_impl._market_history_db.last();
+                         else
+                           --last_key_itr;
 
                          //Unless the previous record for this market is the same as ours...
-                         if( (!((--last_key_itr).valid()
+                         if( (!(last_key_itr.valid()
                              && last_key_itr.key().quote_id == quote_id
                              && last_key_itr.key().base_id == base_id
                              && last_key_itr.key().granularity == market_history_key::each_block
@@ -259,7 +271,6 @@ namespace bts { namespace blockchain {
                            //...add a new entry to the history table.
                            _pending_state->market_history[key] = new_record;
                          }
-                         else _db_impl._market_history_db.remove(key);
 
                          fc::time_point_sec start_of_this_hour = fc::time_point::now();
                          start_of_this_hour -= start_of_this_hour.sec_since_epoch() % (60*60);
@@ -267,6 +278,7 @@ namespace bts { namespace blockchain {
                          if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
                          {
                            auto old_record = *opt;
+                           old_record.volume += new_record.volume;
                            if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
                            {
                              old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
@@ -274,6 +286,8 @@ namespace bts { namespace blockchain {
                              _pending_state->market_history[old_key] = old_record;
                            }
                          }
+                         else
+                           _pending_state->market_history[old_key] = new_record;
 
                          fc::time_point_sec start_of_this_day = fc::time_point::now();
                          start_of_this_hour -= start_of_this_hour.sec_since_epoch() % (60*60*24);
@@ -281,6 +295,7 @@ namespace bts { namespace blockchain {
                          if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
                          {
                            auto old_record = *opt;
+                           old_record.volume += new_record.volume;
                            if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
                            {
                              old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
@@ -288,6 +303,8 @@ namespace bts { namespace blockchain {
                              _pending_state->market_history[old_key] = old_record;
                            }
                          }
+                         else
+                           _pending_state->market_history[old_key] = new_record;
                        }
 
                        wlog( "done matching orders" );
