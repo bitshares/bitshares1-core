@@ -1689,8 +1689,7 @@ namespace bts { namespace wallet {
        const auto& history = get_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
        vector<pretty_transaction> pretties;
        pretties.reserve( history.size() );
-       for( const auto& item : history )
-           pretties.push_back( to_pretty_trx( item ) );
+       for( const auto& item : history ) pretties.push_back( to_pretty_trx( item ) );
 
        std::sort( pretties.begin(), pretties.end(),
                   []( const pretty_transaction& a, const pretty_transaction& b ) -> bool
@@ -1713,13 +1712,19 @@ namespace bts { namespace wallet {
            if( running_balances.count( trx.amount.asset_id ) <= 0 )
                running_balances[ trx.amount.asset_id ] = asset( 0, trx.amount.asset_id );
 
-           if( is_receive_account( trx.from_account ) )
+           auto from_me = false;
+           from_me |= account_name.empty() && is_receive_account( trx.from_account );
+           from_me |= account_name == trx.from_account;
+           if( from_me )
            {
                running_balances[ trx.amount.asset_id ] -= trx.amount;
                running_balances[ asset_id_type( 0 ) ] -= asset( trx.fees );
            }
 
-           if( is_receive_account( trx.to_account ) )
+           auto to_me = false;
+           to_me |= account_name.empty() && is_receive_account( trx.to_account );
+           to_me |= account_name == trx.to_account;
+           if( to_me )
            {
                running_balances[ trx.amount.asset_id ] += trx.amount;
            }
