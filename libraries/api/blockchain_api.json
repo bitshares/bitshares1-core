@@ -274,6 +274,26 @@
         "aliases" : ["market_shorts"]
       },
       {
+        "method_name" : "blockchain_market_list_covers",
+        "description" : "Returns the covers side of the order book for a given market",
+        "return_type" : "market_order_array",
+        "parameters"  : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "the maximum number of items to return, -1 for all",
+              "default_value" : "-1"
+           }
+        ],
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["market_covers"]
+      },
+      {
         "method_name" : "blockchain_market_order_book",
         "description" : "Returns the long and short sides of the order book for a given market",
         "return_type" : "pair<market_order_array,market_order_array>",
@@ -297,6 +317,72 @@
         ],
         "prerequisites" : ["json_authenticated"],
         "aliases" : ["market_book"]
+      },
+      {
+        "method_name": "blockchain_market_order_history",
+        "description": "Returns a list of recently filled orders in a given market, in reverse order of execution.",
+        "return_type": "market_transaction_array",
+        "parameters" : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "the item being bought in this market"
+           },
+           {
+             "name" : "skip_count",
+             "type" : "uint32_t",
+             "description" : "Number of transactions before head block to skip in listing",
+             "default_value" : "0"
+           },
+           {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "The maximum number of transactions to list",
+              "default_value" : "20"
+           }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_market_price_history",
+        "description": "Returns a list of price spreads in the given timeframe for the specified market.",
+        "return_type": "market_history_points",
+        "parameters" : [
+           {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol name the market is quoted in"
+           },
+           {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "the item being bought in this market"
+           },
+           {
+             "name" : "start_time",
+             "type" : "timestamp",
+             "description" : "The time to begin getting price history for"
+           },
+           {
+              "name" : "duration",
+              "type" : "time_interval_in_seconds",
+              "description" : "The maximum time period to get price history for"
+           },
+           {
+              "name" : "granularity",
+              "type" : "market_history_key::time_granularity",
+              "description" : "The frequency of price updates (each_block, each_hour, or each_day)",
+              "default_value" : "each_block"
+           }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       },
       {
          "method_name" : "blockchain_list_active_delegates",
@@ -436,6 +522,20 @@
               "name" : "block_number",
               "type" : "uint32_t",
               "description" : "Block whose signing delegate to return"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_list_market_transactions",
+        "description": "Returns a list of market transactions executed on a given block.",
+        "return_type": "market_transaction_array",
+        "parameters" : [
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
+              "description" : "Block to get market operations for."
             }
         ],
         "is_const" : true,

@@ -55,6 +55,7 @@ namespace bts { namespace net {
       fc::time_point get_last_message_sent_time() const;
       fc::time_point get_last_message_received_time() const;
       fc::time_point get_connection_time() const { return _connected_time; }
+      fc::sha512 get_shared_secret() const;
     };
 
     message_oriented_connection_impl::message_oriented_connection_impl(message_oriented_connection* self, 
@@ -220,6 +221,11 @@ namespace bts { namespace net {
       return _last_message_received_time;
     }
 
+    fc::sha512 message_oriented_connection_impl::get_shared_secret() const
+    {
+      return _sock.get_shared_secret();
+    }
+
   } // end namespace bts::net::detail
 
 
@@ -284,6 +290,10 @@ namespace bts { namespace net {
   fc::time_point message_oriented_connection::get_connection_time() const
   {
     return my->get_connection_time();
+  }
+  fc::sha512 message_oriented_connection::get_shared_secret() const 
+  {
+    return my->get_shared_secret();
   }
 
 } } // end namespace bts::net

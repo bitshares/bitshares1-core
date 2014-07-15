@@ -209,10 +209,6 @@ namespace bts { namespace blockchain {
          /** return the timestamp from the head block */
          virtual time_point_sec         now()const override;
 
-         /** return the current fee rate in millishares */
-         virtual share_type                 get_fee_rate()const override;
-         virtual share_type                 get_delegate_pay_rate()const override;
-
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;
                                             
@@ -228,6 +224,8 @@ namespace bts { namespace blockchain {
 
          optional<market_order>             get_market_short( const market_index_key& )const;
          vector<market_order>               get_market_shorts( const string& quote_symbol, 
+                                                               uint32_t limit = uint32_t(-1) );
+         vector<market_order>               get_market_covers( const string& quote_symbol, 
                                                                uint32_t limit = uint32_t(-1) );
 
          virtual omarket_order              get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override; 
@@ -277,6 +275,17 @@ namespace bts { namespace blockchain {
 
          virtual void                       store_slot_record( const slot_record& r )override;
          virtual oslot_record               get_slot_record( const time_point_sec& start_time )const override;
+
+         virtual void                       store_market_history_record( const market_history_key &key, const market_history_record &record ) override;
+         virtual omarket_history_record     get_market_history_record( const market_history_key &key ) const override;
+         market_history_points              get_market_price_history(asset_id_type quote_id,
+                                                                      asset_id_type base_id,
+                                                                      const fc::time_point& start_time,
+                                                                      const fc::microseconds& duration,
+                                                                      market_history_key::time_granularity_enum granularity );
+
+         virtual void                       set_market_transactions( vector<market_transaction> trxs );
+         vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;
 
       private:
          unique_ptr<detail::chain_database_impl> my;

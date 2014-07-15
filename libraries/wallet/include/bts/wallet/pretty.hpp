@@ -27,9 +27,10 @@ struct public_key_summary
 struct pretty_transaction
 {
     pretty_transaction()
-    :is_virtual(false),is_confirmed(false),block_num(0),fees(0){}
+    :is_virtual(false),is_market(false),is_confirmed(false),block_num(0),fees(0){}
 
     bool                                        is_virtual;
+    bool                                        is_market;
     bool                                        is_confirmed;
     transaction_id_type                         trx_id;
     int32_t                                     block_num;
