@@ -1863,6 +1863,9 @@ namespace bts { namespace wallet {
        FC_ASSERT( delegate_account_record->is_delegate() );
 
        auto required_fees = get_priority_fee();
+       std::cout<<delegate_account_record->delegate_info->pay_balance<<std::endl;
+       std::cout<<amount_to_withdraw<<std::endl;
+       std::cout<<required_fees.amount<<std::endl;
        FC_ASSERT( delegate_account_record->delegate_info->pay_balance >= (amount_to_withdraw + required_fees.amount), "",
                   ("delegate_account_record",delegate_account_record));
 
