@@ -752,6 +752,15 @@ namespace bts { namespace wallet {
       data.memo_message    = memo_message;
       data.extra_addresses = extra_addresses;
 
+      ledger_entry ledge;
+      ledge.from_account = from;
+      ledge.to_account   = to;
+      ledge.amount       = amount;
+      ledge.memo_message = memo_message;
+      ledge.fees         = asset(fees,0);
+
+      data.ledger_entries.push_back(ledge);
+
       store_transaction( data );
       return data;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("memo_message",memo_message)("to",to) ) }
