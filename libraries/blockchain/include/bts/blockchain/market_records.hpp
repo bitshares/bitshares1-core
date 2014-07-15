@@ -54,8 +54,11 @@ namespace bts { namespace blockchain {
        bool operator < ( const market_history_key& other ) const
        {
           if( base_id < other.base_id ) return true;
+          if( base_id > other.base_id ) return false;
           if( quote_id < other.quote_id ) return true;
+          if( quote_id > other.quote_id ) return false;
           if( granularity < other.granularity ) return true;
+          if( granularity > other.granularity ) return false;
           return timestamp < other.timestamp;
        }
        bool operator == ( const market_history_key& other ) const
