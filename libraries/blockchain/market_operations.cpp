@@ -130,7 +130,13 @@ namespace bts { namespace blockchain {
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
-      FC_ASSERT( asset_to_short->issuer_account_id == asset_record::market_issued_asset, "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
+      FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
+
+      if( this->short_index.order_price > asset_to_short->maximum_xts_price || 
+          this->short_index.order_price < asset_to_short->minimum_xts_price )
+      {
+         FC_CAPTURE_AND_THROW( price_out_of_range, (asset_to_short)(short_index.order_price) );
+      }
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );

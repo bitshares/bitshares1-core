@@ -1014,13 +1014,22 @@ namespace bts { namespace cli {
                   }
 
                  auto status = _client->get_chain()->get_market_status( quote_id, base_id );
-                 if( status && status->last_error )
+                 if( status )
                  {
-                    *_out << "Last Error:\n";
-                    *_out << status->last_error->to_string() << "\n";
-                    *_out << "Details:\n";
-                    *_out << status->last_error->to_detail_string() << "\n";
+                    *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
+                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";
+                    if(  status->last_error )
+                    {
+                       *_out << "Last Error:  ";
+                       *_out << status->last_error->to_string() << "\n";
+                       if( status->last_error->code() != 37005 /* insufficient funds */ )
+                       {
+                          *_out << "Details:\n";
+                          *_out << status->last_error->to_detail_string() << "\n";
+                       }
+                    }
                  }
+
               }
               else if (method_name == "blockchain_market_order_history")
               {
