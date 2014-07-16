@@ -1099,7 +1099,7 @@
             {
                "name" : "order_id",
                "type" : "address",
-               "description" : "the order ID you would lick to cover"
+               "description" : "the order ID you would like to cover"
             }
          ],
          "prerequisites" : ["wallet_unlocked"],

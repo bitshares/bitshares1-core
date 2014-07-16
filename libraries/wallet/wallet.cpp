@@ -1697,9 +1697,6 @@ namespace bts { namespace wallet {
                   {
                      if( a.received_time != b.received_time) return a.received_time < b.received_time;
                      if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                     // TODO: Fix this
-                     //if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account ) < 0;
-                     //if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account ) < 0;
                      return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
                   } );
 
@@ -1708,29 +1705,40 @@ namespace bts { namespace wallet {
        /* Tally up running balances */
        auto running_balances = map<asset_id_type, asset>();
        //auto running_balances = map<string, map<asset_id_type, asset>>();
-       running_balances[ asset_id_type( 0 ) ] = asset();
        for( auto& trx : pretties )
        {
-       /*
-           if( running_balances.count( trx.amount.asset_id ) <= 0 )
-               running_balances[ trx.amount.asset_id ] = asset( 0, trx.amount.asset_id );
+           const auto fee_asset_id = trx.fee.asset_id;
+           if( running_balances.count( fee_asset_id ) <= 0 )
+               running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
 
-           auto from_me = false;
-           from_me |= account_name.empty() && is_receive_account( trx.from_account );
-           from_me |= account_name == trx.from_account;
-           if( from_me ) running_balances[ trx.amount.asset_id ] -= trx.amount;
+           auto any_from_me = false;
 
-           if( from_me || trx.is_market_cancel ) running_balances[ asset_id_type( 0 ) ] -= trx.fee;
-           else trx.fee = asset();
+           for( const auto& entry : trx.ledger_entries )
+           {
+               const auto amount_asset_id = entry.amount.asset_id;
+               if( running_balances.count( amount_asset_id ) <= 0 )
+                   running_balances[ amount_asset_id ] = asset( 0, amount_asset_id );
 
-           auto to_me = false;
-           to_me |= account_name.empty() && is_receive_account( trx.to_account );
-           to_me |= account_name == trx.to_account;
-           if( to_me ) running_balances[ trx.amount.asset_id ] += trx.amount;
+               auto from_me = false;
+               from_me |= account_name.empty() && is_receive_account( entry.from_account );
+               from_me |= account_name == entry.from_account;
+               if( from_me ) running_balances[ amount_asset_id ] -= entry.amount;
 
-       */
-           trx.running_balances[ asset_id_type( 0 ) ] = running_balances[ asset_id_type( 0 ) ];
-           //trx.running_balances[ trx.amount.asset_id ] = running_balances[ trx.amount.asset_id ];
+               auto to_me = false;
+               to_me |= account_name.empty() && is_receive_account( entry.to_account );
+               to_me |= account_name == entry.to_account;
+               if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
+
+               trx.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
+
+               any_from_me |= from_me;
+           }
+
+           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) running_balances[ trx.fee.asset_id ] -= trx.fee;
+           //if( any_from_me || trx.is_market_cancel ) running_balances[ fee_asset_id ] -= trx.fee;
+           //else trx.fee = asset(); /* Don't return fees we didn't pay */
+
+           trx.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
        }
 
        return pretties;
@@ -3180,7 +3188,6 @@ namespace bts { namespace wallet {
        auto     from_account_key = get_account_public_key( from_account_name );
        address  from_address( from_account_key );
 
-
        optional<market_order> order_to_cover;
        auto covers = my->_blockchain->get_market_covers( quote_symbol );
        for( const auto& order : covers )
@@ -3217,7 +3224,6 @@ namespace bts { namespace wallet {
        {
           if( *order_to_cover->collateral > required_fees.amount )
           {
-
              slate_id_type slate_id = 0;
 
              auto new_slate = select_delegate_vote();

@@ -12,10 +12,10 @@ namespace bts { namespace cli {
 
 bool FILTER_OUTPUT_FOR_TESTS = false;
 
-string pretty_line( int size )
+string pretty_line( int size, char c )
 {
     std::stringstream ss;
-    for( int i = 0; i < size; ++i ) ss << '-';
+    for( int i = 0; i < size; ++i ) ss << c;
     return ss.str();
 }
 
@@ -250,11 +250,12 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     const map<transaction_id_type, fc::exception>& errors = client->get_wallet()->get_pending_transaction_errors();
 
     auto group = false;
+    auto first = true;
     for( const auto& transaction : transactions )
     {
         const auto prev_group = group;
         group = transaction.ledger_entries.size() > 1;
-        if( group && !prev_group ) out << pretty_line( line_size + 2 ) << "\n";
+        if( group && !prev_group && !first ) out << pretty_line( line_size + 2, '-' ) << "\n";
 
         auto count = 0;
         for( const auto& entry : transaction.ledger_entries )
@@ -297,12 +298,13 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( entry.amount );
 
             out << std::setw( 20 );
-            if( !transaction.is_virtual ) out << client->get_chain()->to_pretty_asset( transaction.fee );
-            else out << client->get_chain()->to_pretty_asset( asset() );
+            //if( !transaction.is_virtual ) 
+                out << client->get_chain()->to_pretty_asset( transaction.fee );
+            //else out << client->get_chain()->to_pretty_asset( asset() );
 
             out << std::setw( 40 ) << pretty_shorten( entry.memo, 39 );
 
-            // TODO: Show other asset if there is one
+            // TODO: Show asset corresponding to ledger entry amount
             out << std::setw( 24 );
             if( !is_pending ) out << client->get_chain()->to_pretty_asset( transaction.running_balances.at( asset_id_type( 0 ) ) );
             else out << "N/A";
@@ -316,7 +318,9 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             out << "\n";
         }
 
-        if( group ) out << pretty_line( line_size + 2 ) << "\n";
+        if( group ) out << pretty_line( line_size + 2, '-' ) << "\n";
+
+        first = false;
     }
 
     return out.str();
