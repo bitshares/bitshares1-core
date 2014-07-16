@@ -1,6 +1,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/cli/pretty.hpp>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <iomanip>
@@ -225,12 +226,13 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 10 ) << "BLOCK";
     out << std::setw( 20 ) << "FROM";
     out << std::setw( 20 ) << "TO";
-    out << std::setw( 22 ) << "AMOUNT";
+    out << std::setw( 24 ) << "AMOUNT";
     out << std::setw( 20 ) << "FEE";
     out << std::setw( 40 ) << "MEMO";
+    out << std::setw( 24 ) << "BALANCE";
     out << std::setw(  8 ) << "ID";
 
-    out << pretty_line( 160 );
+    out << pretty_line( 186 );
 
     const map<transaction_id_type, fc::exception>& errors = client->get_wallet()->get_pending_transaction_errors();
 
@@ -238,20 +240,38 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     {
         out << std::setw( 20 ) << pretty_timestamp( transaction.received_time );
 
+        const auto is_pending = !transaction.is_virtual && !transaction.is_confirmed;
         out << std::setw( 10 );
-        if( transaction.is_virtual || transaction.is_confirmed ) out << transaction.block_num;
-        else if( errors.count( transaction.trx_id ) > 0 ) out << "ERROR";
-        else out << "PENDING";
+        if( !is_pending )
+        {
+            out << transaction.block_num;
+        }
+        else if( errors.count( transaction.trx_id ) > 0 )
+        {
+            auto name = string( errors.at( transaction.trx_id ).name() );
+            name = name.substr( 0, name.find( "_" ) );
+            boost::to_upper( name );
+            out << name.substr(0, 9 );
+        }
+        else
+        {
+            out << "PENDING";
+        }
 
         out << std::setw( 20 ) << pretty_shorten( transaction.from_account, 19 );
         out << std::setw( 20 ) << pretty_shorten( transaction.to_account, 19 );
-        out << std::setw( 22 ) << client->get_chain()->to_pretty_asset( transaction.amount );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( transaction.fees ) );
-        out << std::setw( 40 ) << pretty_shorten( transaction.memo_message, 39 );
+        out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( transaction.amount );
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( transaction.fee );
+        out << std::setw( 40 ) << pretty_shorten( transaction.memo, 39 );
+
+        // TODO: Show other asset if there is one
+        out << std::setw( 24 );
+        if( !is_pending ) out << client->get_chain()->to_pretty_asset( transaction.running_balances.at( asset_id_type( 0 ) ) );
+        else out << "N/A";
 
         out << std::setw( 8 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
-        else if( transaction.is_virtual ) out << "N/A";
+        else if( transaction.is_virtual ) out << "VIRTUAL";
         else out << string( transaction.trx_id ).substr( 0, 8 );
 
         out << "\n";
@@ -358,6 +378,7 @@ string pretty_account( const oaccount_record& record, cptr client )
     return out.str();
 }
 
+// TODO: Print total at the end so that can be compared to (history)
 string pretty_balances( const account_balance_summary_type& balances, cptr client )
 {
     if( balances.empty() ) return "No balances found.\n";
@@ -436,7 +457,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes )
 }
 
 string pretty_market_orders( const vector<market_order>& market_orders, cptr client )
-{
+{ try {
     if( market_orders.empty() ) return "No market orders found.\n";
     FC_ASSERT( client != nullptr );
 
@@ -445,9 +466,10 @@ string pretty_market_orders( const vector<market_order>& market_orders, cptr cli
 
     out << std::setw( 12 ) << "TYPE";
     out << std::setw( 20 ) << "QUANTITY";
-    out << std::setw( 20 ) << "PRICE";
+    out << std::setw( 30 ) << "PRICE";
     out << std::setw( 20 ) << "BALANCE";
     out << std::setw( 20 ) << "COST";
+    out << std::setw( 20 ) << "COLLATERAL";
     out << std::setw( 36 ) << "ID";
 
     out << pretty_line( 128 );
@@ -456,16 +478,19 @@ string pretty_market_orders( const vector<market_order>& market_orders, cptr cli
     {
         out << std::setw( 12 ) << variant( order.type ).as_string();
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_price( order.get_price() );
+        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price() );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
-        //out << std::setw( 36 ) << order.get_id();
+        if( order.type != cover_order )
+           out << std::setw( 20 ) << "N/A";
+        else
+           out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( *order.collateral ) );
         out << std::setw( 36 ) << fc::variant( order.market_index.owner ).as_string();
 
         out << "\n";
     }
 
     return out.str();
-}
+} FC_CAPTURE_AND_RETHROW(  ) }
 
 } } // bts::cli

@@ -236,8 +236,8 @@ namespace bts { namespace blockchain {
             asset r;
             r.amount    = result.to_int64();
             r.asset_id  = p.base_asset_id;
-            ilog( "r.amount = ${r}", ("r",r.amount) );
-            ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",r) );
+           // ilog( "r.amount = ${r}", ("r",r.amount) );
+           // ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",r) );
             return r;
         }
         FC_THROW_EXCEPTION( asset_type_mismatch, "type mismatch multiplying asset ${a} by price ${p}", 

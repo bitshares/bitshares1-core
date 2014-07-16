@@ -677,14 +677,10 @@ namespace bts { namespace cli {
                   *_out << pretty_transaction_list( transactions, _client );
               }
               else if( method_name == "wallet_market_order_list" )
-              {
-                  const auto& market_order_statuses = result.as<vector<market_order_status>>();
-                  vector<market_order> market_orders;
-                  market_orders.reserve( market_order_statuses.size() );
-                  for( const auto& market_order_status : market_order_statuses )
-                      market_orders.push_back( market_order_status.order );
+              { try {
+                  const auto& market_orders = result.as<vector<market_order>>();
                   *_out << pretty_market_orders( market_orders, _client );
-              }
+              } FC_CAPTURE_AND_RETHROW() }
               else if( method_name == "blockchain_market_list_asks"
                        || method_name == "blockchain_market_list_bids"
                        || method_name == "blockchain_market_list_shorts" )
@@ -869,7 +865,7 @@ namespace bts { namespace cli {
                           *_out << "REASONS FOR INVALID BLOCKS\n";
 
                           for( const auto& excuse : invalid_reasons )
-                              *_out << excuse.first << ": " << excuse.second << "\n";
+                              *_out << fc::variant(excuse.first).as_string() << ": " << excuse.second << "\n";
                       }
                   }
               }
@@ -931,25 +927,35 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_market_order_book")
               {
                   auto bids_asks = result.as<std::pair<vector<market_order>,vector<market_order>>>();
-                  *_out << std::string(31, ' ') << "BIDS" << std::string(31, ' ') << " | " << std::string(31, ' ') << "ASKS" << std::string(31, ' ') << "\n"
-                        << std::left << std::setw(26) << "TOTAL" << std::setw(20) << "QUANTITY" << std::right << std::setw(20) << "PRICE"
-                        << " | " << std::left << std::setw(17) << "PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" << "\n"
-                        << std::string(135, '-') << "\n";
+                  *_out << std::string(18, ' ') << "BIDS (* Short Order)" 
+                        << std::string(38, ' ') << " | " 
+                        << std::string(34, ' ') << "ASKS" 
+                        << std::string(34, ' ') << "\n"
+                        << std::left << std::setw(26) << "TOTAL" 
+                        << std::setw(20) << "QUANTITY" 
+                        << std::right << std::setw(30) << "PRICE"
+                        << " | " << std::left << std::setw(30) << "PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" <<"   COLLATERAL" << "\n"
+                        << std::string(175, '-') << "\n";
 
                   vector<market_order>::iterator bid_itr = bids_asks.first.begin();
                   auto ask_itr = bids_asks.second.begin();
+
+                  asset_id_type quote_id;
+                  asset_id_type base_id;
 
                   while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
                   {
                     if( bid_itr != bids_asks.first.end() )
                     {
+                     quote_id = bid_itr->get_price().quote_asset_id;
+                     base_id = bid_itr->get_price().base_asset_id;
                       *_out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
-                               : _client->get_chain()->to_pretty_asset(bid_itr->get_quantity()))
+                               : _client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
                             << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
                                : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
-                            << std::right << std::setw(20) << _client->get_chain()->to_pretty_price(bid_itr->get_price());
+                            << std::right << std::setw(30) << _client->get_chain()->to_pretty_price(bid_itr->get_price());
 
                       if( bid_itr->type == bts::blockchain::short_order )
                           *_out << '*';
@@ -959,20 +965,124 @@ namespace bts { namespace cli {
                       ++bid_itr;
                     }
                     else
-                      *_out << std::string(67, ' ');
+                      *_out << std::string(77, ' ');
 
                     *_out << "| ";
 
                     if( ask_itr != bids_asks.second.end() )
                     {
-                      *_out << std::left << std::setw(17) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
-                            << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_balance())
-                            << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_balance()*ask_itr->get_price());
+                      quote_id = ask_itr->get_price().quote_asset_id;
+                      base_id = ask_itr->get_price().base_asset_id;
+                      if( !ask_itr->collateral )
+                      {
+                         *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                               << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+                               << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                      }
                       ++ask_itr;
                     }
                     *_out << "\n";
                   }
-                  *_out << "\n* Short Order\n";
+
+                  *_out << std::string(175, '-') << "\n";
+                  *_out << std::string(38, ' ') << " " 
+                        << std::string(38, ' ') << "| " 
+                        << std::string(34, ' ') << "MARGIN" 
+                        << std::string(34, ' ') << "\n"
+                        << std::left << std::setw(26) << " " 
+                        << std::setw(20) << " " 
+                        << std::right << std::setw(30) << " "
+                        << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" <<"   COLLATERAL" << "\n"
+                        << std::string(175, '-') << "\n";
+
+                  {
+                     auto ask_itr = bids_asks.second.rbegin();
+                     while(  ask_itr != bids_asks.second.rend() )
+                     {
+                         if( ask_itr->collateral )
+                         {
+                             *_out << std::string(77, ' ');
+                             *_out << "| ";
+                             *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                                  << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+                                  << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                                *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
+                                *_out << "\n";
+                         }
+                        ++ask_itr;
+                     }
+                  }
+
+                 auto status = _client->get_chain()->get_market_status( quote_id, base_id );
+                 if( status )
+                 {
+                    *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
+                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";
+                    if(  status->last_error )
+                    {
+                       *_out << "Last Error:  ";
+                       *_out << status->last_error->to_string() << "\n";
+                       if( status->last_error->code() != 37005 /* insufficient funds */ )
+                       {
+                          *_out << "Details:\n";
+                          *_out << status->last_error->to_detail_string() << "\n";
+                       }
+                    }
+                 }
+
+              }
+              else if (method_name == "blockchain_market_order_history")
+              {
+                  vector<market_transaction> orders = result.as<vector<market_transaction>>();
+                  if( orders.empty() )
+                  {
+                    *_out << "No Orders.\n";
+                    return;
+                  }
+
+                  *_out << std::setw(7) << "TYPE"
+                        << std::setw(20) << "PRICE"
+                        << std::setw(25) << "PAID"
+                        << std::setw(25) << "RECEIVED"
+                        << "\n" << std::string(77,'-') << "\n";
+
+                  for( market_transaction order : orders )
+                  {
+                    *_out << std::setw(7) << "Buy"
+                          << std::setw(20) << _client->get_chain()->to_pretty_price(order.bid_price)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_paid)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_received)
+                          << "\n"
+                          << std::setw(7) << "Sell"
+                          << std::setw(20) << _client->get_chain()->to_pretty_price(order.ask_price)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_paid)
+                          << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_received)
+                          << "\n";
+                  }
+              }
+              else if (method_name == "blockchain_market_price_history")
+              {
+                  market_history_points points = result.as<market_history_points>();
+                  if( points.empty() )
+                  {
+                    *_out << "No price history.\n";
+                    return;
+                  }
+
+                  *_out << std::setw(20) << "TIME"
+                          << std::setw(20) << "HIGHEST BID"
+                          << std::setw(20) << "LOWEST ASK"
+                          << std::setw(20) << "TRADING VOLUME"
+                          << "\n" << std::string(80,'-') << "\n";
+
+                  for( auto point : points )
+                  {
+                    *_out << std::setw(20) << pretty_timestamp(point.timestamp)
+                          << std::setw(20) << point.highest_bid
+                          << std::setw(20) << point.lowest_ask
+                          << std::setw(20) << point.volume
+                          << "\n";
+                  }
               }
               else if (method_name == "network_list_potential_peers")
               {

@@ -77,8 +77,8 @@
       },
       {
         "method_name": "wallet_import_private_key",
-        "description": "Loads the private key into the specified account",
-        "return_type": "void",
+        "description": "Loads the private key into the specified account. Returns which account it was actually imported to.",
+        "return_type": "account_name",
         "parameters" : [
            {
               "name" : "wif_key",
@@ -109,92 +109,92 @@
       },
       {
         "method_name": "wallet_import_bitcoin",
-        "description": "Imports a bitcoin wallet",
+        "description": "Imports a Bitcoin Core or BitShares PTS wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the path to the bitcoin wallet you would like to import."
+              "description" : "the Bitcoin/PTS wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the bitcoin wallet's password, not your bitshares wallet password."
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet, you must create this account first if it does not exist."
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_armory",
-        "description": "Imports a armory wallet",
+        "description": "Imports an Armory wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the armory wallet"
+              "description" : "the Armory wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the wallet's password"
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_electrum",
-        "description": "Imports a electrum wallet",
+        "description": "Imports an Electrum wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the electrum wallet"
+              "description" : "the Electrum wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the wallet's password"
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_import_multibit",
-        "description": "Imports a multibit wallet",
+        "description": "Imports a Multibit wallet",
         "return_type": "void",
         "parameters" : [
            {
               "name" : "wallet_filename",
               "type" : "filename",
-              "description" : "the multibit wallet"
+              "description" : "the Multibit wallet file path"
            },
            {
               "name" : "passphrase",
               "type" : "passphrase",
-              "description" : "the wallet's password"
+              "description" : "the imported wallet's password"
            },
            {
               "name" : "account_name",
               "type" : "account_name",
-              "description" : "the account name to receive the contents of the wallet"
+              "description" : "the account to receive the contents of the wallet"
            }
         ],
         "prerequisites" : ["wallet_unlocked"]
@@ -479,21 +479,6 @@
         "prerequisites" : ["wallet_open"]
       },
       {
-        "method_name": "wallet_get_pretty_transaction",
-        "description": "Return a pretty JSON representation of a transaction",
-        "return_type": "pretty_transaction",
-        "parameters" : 
-          [
-            { 
-              "name" : "transaction", 
-              "type" : "signed_transaction", 
-              "description" : "the transaction to pretty-print"
-            }
-          ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
         "method_name": "wallet_multipart_transfer",
         "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
         "return_type": "signed_transaction_array",
@@ -610,7 +595,7 @@
       {
          "method_name" : "wallet_account_register",
          "description" : "Updates the data published about a given account",
-         "return_type" : "transaction_record",
+         "return_type" : "signed_transaction",
          "parameters"  : [
                {
                   "name" : "account_name",
@@ -661,7 +646,7 @@
       {
          "method_name" : "wallet_account_update_registration",
          "description" : "Updates the data published about a given account",
-         "return_type" : "transaction_record",
+         "return_type" : "signed_transaction",
          "parameters"  : [
                {
                   "name" : "account_name",
@@ -1092,9 +1077,38 @@
          "aliases" : [ "short" ]
       },
       {
+         "method_name" : "wallet_market_cover",
+         "description" : "Used to place a request to cover an existing short position",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "quantity",
+               "type" : "real_amount",
+               "description" : "the quantity of items you would like to cover"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you are covering (ie: USD)"
+            },
+            {
+               "name" : "order_id",
+               "type" : "address",
+               "description" : "the order ID you would lick to cover"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "cover" ]
+      },
+      {
          "method_name" : "wallet_market_order_list",
          "description" : "List an order list of a specific market",
-         "return_type" : "market_order_status_array",
+         "return_type" : "market_order_array",
          "parameters"  : [
             {
                "name" : "quote_symbol",

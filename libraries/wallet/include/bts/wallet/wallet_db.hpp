@@ -49,20 +49,10 @@ namespace bts { namespace wallet {
          void                              clear_pending_transactions();
 
          void update_market_order( const address& owner, 
-                                   optional<bts::blockchain::market_order>& order,
+                                   const optional<bts::blockchain::market_order>& order,
                                    const transaction_id_type& trx_id );
 
-         wallet_transaction_record cache_transaction( const signed_transaction& trx,
-                                 const asset&           amount, share_type fees,
-                                 const string&          memo_message,
-                                 const public_key_type& to,
-                                 time_point_sec         received = time_point_sec(),
-                                 time_point_sec         created = time_point_sec(),
-                                 public_key_type        from = public_key_type(),
-                                 const vector<address>& extra_addresses = vector<address>()
-                                 );
-
-         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
+         owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
          private_keys get_account_private_keys( const fc::sha512& password );
          string       get_account_name( const address& account_address )const;

@@ -27,19 +27,22 @@ struct public_key_summary
 struct pretty_transaction
 {
     pretty_transaction()
-    :is_virtual(false),is_confirmed(false),block_num(0),fees(0){}
+    :is_virtual(false),is_confirmed(false),is_market(false),is_market_cancel(false),block_num(0),fee(0){}
 
     bool                                        is_virtual;
     bool                                        is_confirmed;
+    bool                                        is_market;
+    bool                                        is_market_cancel;
     transaction_id_type                         trx_id;
-    int32_t                                     block_num;
+    uint32_t                                    block_num;
     string                                      from_account;
     string                                      to_account;
     asset                                       amount;
-    share_type                                  fees;
-    string                                      memo_message;
+    asset                                       fee;
+    string                                      memo;
     fc::time_point_sec                          created_time;
     fc::time_point_sec                          received_time;
+    map<asset_id_type, asset>                   running_balances;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }
@@ -178,7 +181,7 @@ struct pretty_remove_collateral_op
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
-FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_confirmed)(trx_id)(block_num)(from_account)(to_account)(amount)(fees)(memo_message)(created_time)(received_time) );
+FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_confirmed)(is_market)(is_market_cancel)(trx_id)(block_num)(from_account)(to_account)(amount)(fee)(memo)(created_time)(received_time)(running_balances) );
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
 FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));

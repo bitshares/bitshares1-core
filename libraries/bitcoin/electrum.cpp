@@ -247,7 +247,7 @@ public:
         }
         catch ( const fc::exception& e )
         {
-           wlog( "${e}", ("e",e.to_detail_string()) );
+           //wlog( "${e}", ("e",e.to_detail_string()) );
         }
      }
      else
@@ -269,8 +269,6 @@ std::vector<fc::ecc::private_key> import_electrum_wallet( const fc::path& wallet
   if( !wallet.ok() ) FC_THROW_EXCEPTION( fc::invalid_arg_exception, "invalid electrum wallet");
   wallet.derivekeys( passphrase );
   return wallet.keys();
-}
-FC_RETHROW_EXCEPTIONS( warn, "" )
-}
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 } } // bts::bitcoin

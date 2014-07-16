@@ -16,8 +16,6 @@ namespace bts { namespace blockchain {
          fc::ripemd160                get_current_random_seed()const override;
 
          virtual fc::time_point_sec   now()const override;
-         virtual share_type           get_fee_rate()const override;
-         virtual share_type           get_delegate_pay_rate()const override;
 
          virtual oasset_record        get_asset_record( asset_id_type id )const override;
          virtual obalance_record      get_balance_record( const balance_id_type& id )const override;
@@ -37,6 +35,9 @@ namespace bts { namespace blockchain {
 
          virtual oasset_record        get_asset_record( const string& symbol )const override;
          virtual oaccount_record      get_account_record( const string& name )const override;
+
+         virtual omarket_status             get_market_status( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual void                       store_market_status( const market_status& s ) override;
 
          virtual omarket_order        get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override;
          virtual oorder_record        get_bid_record( const market_index_key& )const override;
@@ -66,6 +67,10 @@ namespace bts { namespace blockchain {
          virtual void                 store_slot_record( const slot_record& r ) override;
          virtual oslot_record         get_slot_record( const time_point_sec& start_time )const override;
 
+         virtual void                       store_market_history_record( const market_history_key& key,
+                                                                  const market_history_record& record ) override;
+         virtual omarket_history_record     get_market_history_record( const market_history_key& key )const override;
+
          /**
           *  Based upon the current state of the database, calculate any updates that
           *  should be executed in a deterministic manner.
@@ -89,6 +94,10 @@ namespace bts { namespace blockchain {
 
          virtual uint32_t                   get_head_block_num()const override;
 
+         virtual void                       set_market_transactions( vector<market_transaction> trxs ) override;
+
+         vector<market_transaction>                                     market_transactions;
+
          unordered_map< asset_id_type, asset_record>                    assets;
          unordered_map< slate_id_type, delegate_slate>                  slates;
          unordered_map< account_id_type, account_record>                accounts;
@@ -105,10 +114,12 @@ namespace bts { namespace blockchain {
          map< market_index_key, order_record>                           shorts; 
          map< market_index_key, collateral_record>                      collateral; 
          map<time_point_sec, slot_record>                               slots;
+         map<market_history_key, market_history_record>                 market_history;
+         map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 
-          * be executed 
+          * be executed   map<QUOTE,BASE>
           */
          map<asset_id_type, asset_id_type>                              _dirty_markets;
 
@@ -121,4 +132,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots) )
+            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots)(market_statuses) )

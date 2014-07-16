@@ -62,6 +62,9 @@ namespace bts { namespace blockchain {
       for( const auto& item : transactions )    prev_state->store_transaction( item.first, item.second );
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
       for( const auto& item : slots )           prev_state->store_slot_record( item.second );
+      for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
+      for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
+      prev_state->set_market_transactions( market_transactions );
    }
 
    otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
@@ -176,6 +179,15 @@ namespace bts { namespace blockchain {
              undo_state->store_slot_record( invalid_slot_record );
          }
       }
+      for( const auto& item : market_statuses )
+      {
+         auto prev_value = prev_state->get_market_status( item.first.first, item.first.second );
+         if( prev_value ) undo_state->store_market_status( *prev_value );
+         else
+         {
+            undo_state->store_market_status( market_status() );
+         }
+      }
    }
 
    /** load the state from a variant */
@@ -212,22 +224,6 @@ namespace bts { namespace blockchain {
       else if( prev_state ) 
         return prev_state->get_asset_record( symbol );
       return oasset_record();
-   }
-
-   share_type pending_chain_state::get_fee_rate()const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state ) 
-        return prev_state->get_fee_rate();
-      FC_ASSERT( false, "No current fee rate set" );
-   }
-
-   share_type pending_chain_state::get_delegate_pay_rate()const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state ) 
-        return prev_state->get_delegate_pay_rate();
-      FC_ASSERT( false, "No current delegate_pay rate set" );
    }
 
    fc::time_point_sec pending_chain_state::now()const
@@ -411,20 +407,24 @@ namespace bts { namespace blockchain {
    void pending_chain_state::store_bid_record( const market_index_key& key, const order_record& rec ) 
    {
       bids[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
 
    void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& rec ) 
    {
       asks[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
    void pending_chain_state::store_short_record( const market_index_key& key, const order_record& rec )
    {
       shorts[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
 
    void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& rec ) 
    {
       collateral[key] = rec;
+      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
 
    void pending_chain_state::store_slot_record( const slot_record& r )
@@ -441,4 +441,33 @@ namespace bts { namespace blockchain {
       return oslot_record();
    }
 
+   void pending_chain_state::store_market_history_record(const market_history_key& key, const market_history_record& record)
+   {
+     market_history[key] = record;
+   }
+
+   omarket_history_record pending_chain_state::get_market_history_record(const market_history_key& key) const
+   {
+     if( market_history.find(key) != market_history.end() )
+       return market_history.find(key)->second;
+     return omarket_history_record();
+   }
+
+   void pending_chain_state::set_market_transactions( vector<market_transaction> trxs )
+   {
+      market_transactions = std::move(trxs); 
+   }
+
+   omarket_status    pending_chain_state::get_market_status( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      auto itr = market_statuses.find( std::make_pair(quote_id,base_id) );
+      if( itr != market_statuses.end() )
+         return itr->second;
+      chain_interface_ptr prev_state = _prev_state.lock();
+      return prev_state->get_market_status(quote_id,base_id);
+   }
+   void              pending_chain_state::store_market_status( const market_status& s ) 
+   {
+      market_statuses[std::make_pair(s.quote_id,s.base_id)] = s;
+   }
 } } // bts::blockchain

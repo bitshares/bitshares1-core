@@ -19,6 +19,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( asset_divide_by_zero, bts::blockchain::blockchain_exception, 30011, "asset divide by zero" ); 
    FC_DECLARE_DERIVED_EXCEPTION( new_database_version, bts::blockchain::blockchain_exception, 30012, "new database version" ); 
    FC_DECLARE_DERIVED_EXCEPTION( unlinkable_block, bts::blockchain::blockchain_exception, 30013, "unlinkable block" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( price_out_of_range, bts::blockchain::blockchain_exception, 30014, "price out of range" ); 
 
    FC_DECLARE_DERIVED_EXCEPTION( block_numbers_not_sequential, bts::blockchain::blockchain_exception, 30014, "block numbers not sequential" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_previous_block_id, bts::blockchain::blockchain_exception, 30015, "invalid previous block" );
@@ -88,5 +89,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( invalid_market,  bts::blockchain::evaluation_error, 37001, "invalid market" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_market_order,  bts::blockchain::evaluation_error, 37002, "unknown market order" );
    FC_DECLARE_DERIVED_EXCEPTION( shorting_base_shares,  bts::blockchain::evaluation_error, 37003, "shorting base shares" );
+   FC_DECLARE_DERIVED_EXCEPTION( insufficient_collateral,  bts::blockchain::evaluation_error, 37004, "insufficient collateral" );
+   FC_DECLARE_DERIVED_EXCEPTION( insufficient_depth,  bts::blockchain::evaluation_error, 37005, "insufficient depth" );
 
 } } // bts::blockchain

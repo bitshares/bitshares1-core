@@ -112,9 +112,9 @@ namespace bts { namespace wallet {
 
            void load_transaction_record( const wallet_transaction_record& rec, bool overwrite )
            { try {
-              auto itr = self->transactions.find( rec.transaction_id );
-              if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet" )
-              self->transactions[ rec.transaction_id ] = rec;
+              auto itr = self->transactions.find( rec.record_id );
+              if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet!" )
+              self->transactions[ rec.record_id ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
 
            void load_asset_record( const wallet_asset_record& asset_rec, bool overwrite )
@@ -320,9 +320,9 @@ namespace bts { namespace wallet {
       return owallet_account_record();
    }
 
-   owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& trx_id )const
+   owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& record_id )const
    {
-      auto itr = transactions.find(trx_id);
+      auto itr = transactions.find( record_id );
       if( itr != transactions.end() ) return itr->second;
       return owallet_transaction_record();
    }
@@ -412,7 +412,7 @@ namespace bts { namespace wallet {
        for( const auto& transaction_record : transaction_records )
        {
            my->_records.remove( transaction_record.wallet_record_index );
-           transactions.erase( transaction_record.transaction_id );
+           transactions.erase( transaction_record.record_id );
        }
    }
 
@@ -676,42 +676,9 @@ namespace bts { namespace wallet {
       if( trx_to_store.wallet_record_index == 0 )
          trx_to_store.wallet_record_index = new_wallet_record_index();
       store_record( trx_to_store );
-      transactions[ trx_to_store.transaction_id ] = trx_to_store;
+
+      transactions[ trx_to_store.record_id ] = trx_to_store;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
-
-
-   wallet_transaction_record wallet_db::cache_transaction( const signed_transaction& trx,
-                                      const asset&  amount,
-                                      share_type fees,
-                                      const string& memo_message,
-                                      const public_key_type& to,
-                                      time_point_sec created,
-                                      time_point_sec received,
-                                      public_key_type from,
-                                      const vector<address>& extra_addresses
-                                      )
-   { try {
-      auto trx_id = trx.id();
-      auto itr = transactions.find( trx_id );
-
-      wallet_transaction_record data;
-      if( itr != transactions.end() ) data = itr->second;
-      if( data.wallet_record_index == 0 ) data.wallet_record_index = new_wallet_record_index();
-
-      data.trx = trx;
-      data.transaction_id  = trx.id();
-      data.amount          = amount;
-      data.fees            = fees;
-      data.to_account      = to;
-      data.from_account    = from;
-      data.created_time    = created;
-      data.received_time   = received;
-      data.memo_message    = memo_message;
-      data.extra_addresses = extra_addresses;
-
-      store_transaction( data );
-      return data;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("memo_message",memo_message)("to",to) ) }
 
    void wallet_db::cache_account( const wallet_account_record& war )
    {
@@ -770,14 +737,11 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_db::update_market_order( const address& owner, 
-                                         optional<bts::blockchain::market_order>& order,
-                                         const transaction_id_type& trx_id )
+                                        const optional<bts::blockchain::market_order>& order,
+                                        const transaction_id_type& trx_id )
    {
-      if( order.valid() )
-         market_orders[ owner ].order = *order;
-      else
-         market_orders[ owner ].order.state.balance = 0;
-
+      if( order.valid() ) market_orders[ owner ].order = *order;
+      else market_orders[ owner ].order.state.balance = 0;
       market_orders[ owner ].transactions.insert( trx_id );
       store_record( market_orders[ owner ] );
    }

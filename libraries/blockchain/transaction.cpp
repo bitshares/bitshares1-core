@@ -126,12 +126,14 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
-   void transaction::register_account( const std::string& name, 
-                                   const fc::variant& public_data, 
-                                   const public_key_type& master, 
-                                   const public_key_type& active, uint8_t pro_fee  )
+   void transaction::register_account( const std::string& name,
+                                       const fc::variant& public_data, 
+                                       const public_key_type& master, 
+                                       const public_key_type& active,
+                                       uint8_t pay_rate )
    {
-      operations.push_back( register_account_operation( name, public_data, master, active, pro_fee ) );
+      const auto op = register_account_operation( name, public_data, master, active, pay_rate );
+      operations.push_back( op );
    }
 
    void transaction::update_account( account_id_type account_id, 
@@ -201,6 +203,33 @@ namespace bts { namespace blockchain {
    void transaction::issue( const asset& amount_to_issue )
    {
       operations.push_back( issue_asset_operation( amount_to_issue ) );
+   }
+   void transaction::cover( const asset& cover_amount, 
+                            const market_index_key& order_idx )
+   {
+      operations.push_back( cover_operation(cover_amount.amount, order_idx) );
+   }
+
+   bool transaction::is_cancel()const
+   {
+      for( const auto& op : operations )
+      {
+          switch( operation_type_enum( op.type ) )
+          {
+              case bid_op_type:
+                  if( op.as<bid_operation>().amount < 0 ) return true;
+                  break;
+              case ask_op_type:
+                  if( op.as<ask_operation>().amount < 0 ) return true;
+                  break;
+              case short_op_type:
+                  if( op.as<short_operation>().amount < 0 ) return true;
+                  break;
+              default:
+                  break;
+          }
+      }
+      return false;
    }
 
 } } // bts::blockchain 

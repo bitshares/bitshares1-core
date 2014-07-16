@@ -13,6 +13,8 @@ namespace bts { namespace blockchain {
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
    typedef std::weak_ptr<chain_interface> chain_interface_weak_ptr;
 
+   struct market_index_key;
+
    /**
     *  A transaction is a set of operations that are
     *  performed atomicly and must be internally consistant.
@@ -59,11 +61,11 @@ namespace bts { namespace blockchain {
                                 memo_flags_enum memo_type = from_memo );
 
 
-      void register_account( const string& name, 
-                         const variant& public_data, 
-                         const public_key_type& master, 
-                         const public_key_type& active,
-                         uint8_t pro_fee = 255 );
+      void register_account( const string& name,
+                             const variant& public_data, 
+                             const public_key_type& master, 
+                             const public_key_type& active,
+                             uint8_t pay_rate = 255 );
 
       void update_account( account_id_type account_id,
                         uint8_t delegate_pay_rate,
@@ -101,6 +103,11 @@ namespace bts { namespace blockchain {
       void short_sell( const asset& quantity, 
                 const price& price_per_unit, 
                 const address& owner );
+
+      void cover( const asset& quantity, 
+                  const market_index_key& order_idx );
+
+      bool is_cancel()const;
 
    }; // transaction
 

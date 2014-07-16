@@ -53,12 +53,6 @@ namespace bts { namespace blockchain {
      return std::max<uint64_t>(next_fee,BTS_BLOCKCHAIN_MIN_FEE);
    }
 
-   share_type block_header::next_delegate_pay( share_type current_pay, share_type block_fees )const
-   {
-     uint64_t next_pay = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*current_pay + (block_fees)) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
-     return next_pay;
-   }
-
    full_block::operator digest_block()const
    {
       digest_block db( (signed_block_header&)*this );
