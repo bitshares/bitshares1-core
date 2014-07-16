@@ -1,6 +1,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/cli/pretty.hpp>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <iomanip>
@@ -241,9 +242,21 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
         const auto is_pending = !transaction.is_virtual && !transaction.is_confirmed;
         out << std::setw( 10 );
-        if( !is_pending ) out << transaction.block_num;
-        else if( errors.count( transaction.trx_id ) > 0 ) out << "ERROR";
-        else out << "PENDING";
+        if( !is_pending )
+        {
+            out << transaction.block_num;
+        }
+        else if( errors.count( transaction.trx_id ) > 0 )
+        {
+            auto name = string( errors.at( transaction.trx_id ).name() );
+            name = name.substr( 0, name.find( "_" ) );
+            boost::to_upper( name );
+            out << name.substr(0, 9 );
+        }
+        else
+        {
+            out << "PENDING";
+        }
 
         out << std::setw( 20 ) << pretty_shorten( transaction.from_account, 19 );
         out << std::setw( 20 ) << pretty_shorten( transaction.to_account, 19 );
