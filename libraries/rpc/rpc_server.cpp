@@ -259,7 +259,7 @@ namespace bts { namespace rpc {
                       {
                           status = fc::http::reply::InternalServerError;
                           s.set_status( status );
-                          result["error"] = fc::mutable_variant_object( "message",e.to_detail_string() )("code",e.code());
+                          result["error"] = fc::mutable_variant_object("message",e.to_string())( "detail",e.to_detail_string() )("code",e.code());
                       }
                       //ilog( "${e}", ("e",result) );
                       auto reply = fc::json::to_string( result );
