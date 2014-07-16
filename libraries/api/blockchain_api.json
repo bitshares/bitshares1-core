@@ -540,6 +540,25 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_market_status",
+        "description": "Returns the status of a particular market, including any trading errors.",
+        "return_type": "market_status",
+        "parameters" : [
+            {
+              "name" : "quote_symbol",
+              "type" : "asset_symbol",
+              "description" : "quote symbol"
+            },
+            {
+              "name" : "base_symbol",
+              "type" : "asset_symbol",
+              "description" : "base symbol"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

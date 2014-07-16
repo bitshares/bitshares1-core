@@ -1,9 +1,10 @@
 #pragma once
-
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/asset.hpp>
 #include <bts/blockchain/types.hpp>
 
 #include <fc/time.hpp>
+#include <fc/exception/exception.hpp>
 
 #include <tuple>
 
@@ -170,10 +171,28 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<collateral_record> ocollateral_record;
 
+   struct market_status
+   {
+       market_status():bid_depth(-BTS_BLOCKCHAIN_MAX_SHARES),ask_depth(-BTS_BLOCKCHAIN_MAX_SHARES){}
+       market_status( asset_id_type quote, asset_id_type base, share_type biddepth, share_type askdepth )
+       :quote_id(quote),base_id(base),bid_depth(biddepth),ask_depth(askdepth){}
+
+       bool is_null()const { return bid_depth == ask_depth && bid_depth == -BTS_BLOCKCHAIN_MAX_SHARES; }
+
+       asset_id_type quote_id;
+       asset_id_type base_id;
+
+       share_type               bid_depth;
+       share_type               ask_depth;
+       optional<fc::exception>  last_error;
+   };
+   typedef optional<market_status> omarket_status;
+
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (null_order)(bid_order)(ask_order)(short_order)(cover_order) )
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
+FC_REFLECT( bts::blockchain::market_status,  (quote_id)(base_id)(bid_depth)(ask_depth)(last_error) );
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(volume) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )

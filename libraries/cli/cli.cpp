@@ -940,10 +940,15 @@ namespace bts { namespace cli {
                   vector<market_order>::iterator bid_itr = bids_asks.first.begin();
                   auto ask_itr = bids_asks.second.begin();
 
+                  asset_id_type quote_id;
+                  asset_id_type base_id;
+
                   while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
                   {
                     if( bid_itr != bids_asks.first.end() )
                     {
+                     quote_id = bid_itr->get_price().quote_asset_id;
+                     base_id = bid_itr->get_price().base_asset_id;
                       *_out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
                                : _client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
@@ -966,12 +971,14 @@ namespace bts { namespace cli {
 
                     if( ask_itr != bids_asks.second.end() )
                     {
-                         if( !ask_itr->collateral )
-                         {
-                            *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
-                                  << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-                                  << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
-                         }
+                      quote_id = ask_itr->get_price().quote_asset_id;
+                      base_id = ask_itr->get_price().base_asset_id;
+                      if( !ask_itr->collateral )
+                      {
+                         *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                               << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+                               << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                      }
                       ++ask_itr;
                     }
                     *_out << "\n";
@@ -1005,6 +1012,24 @@ namespace bts { namespace cli {
                         ++ask_itr;
                      }
                   }
+
+                 auto status = _client->get_chain()->get_market_status( quote_id, base_id );
+                 if( status )
+                 {
+                    *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
+                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";
+                    if(  status->last_error )
+                    {
+                       *_out << "Last Error:  ";
+                       *_out << status->last_error->to_string() << "\n";
+                       if( status->last_error->code() != 37005 /* insufficient funds */ )
+                       {
+                          *_out << "Details:\n";
+                          *_out << status->last_error->to_detail_string() << "\n";
+                       }
+                    }
+                 }
+
               }
               else if (method_name == "blockchain_market_order_history")
               {

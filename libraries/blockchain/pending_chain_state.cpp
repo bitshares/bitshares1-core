@@ -63,6 +63,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : slates )          prev_state->store_delegate_slate( item.first, item.second );
       for( const auto& item : slots )           prev_state->store_slot_record( item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
+      for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
       prev_state->set_market_transactions( market_transactions );
    }
 
@@ -176,6 +177,15 @@ namespace bts { namespace blockchain {
              invalid_slot_record.block_produced = true;
              invalid_slot_record.block_id = block_id_type();
              undo_state->store_slot_record( invalid_slot_record );
+         }
+      }
+      for( const auto& item : market_statuses )
+      {
+         auto prev_value = prev_state->get_market_status( item.first.first, item.first.second );
+         if( prev_value ) undo_state->store_market_status( *prev_value );
+         else
+         {
+            undo_state->store_market_status( market_status() );
          }
       }
    }
@@ -448,4 +458,16 @@ namespace bts { namespace blockchain {
       market_transactions = std::move(trxs); 
    }
 
+   omarket_status    pending_chain_state::get_market_status( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      auto itr = market_statuses.find( std::make_pair(quote_id,base_id) );
+      if( itr != market_statuses.end() )
+         return itr->second;
+      chain_interface_ptr prev_state = _prev_state.lock();
+      return prev_state->get_market_status(quote_id,base_id);
+   }
+   void              pending_chain_state::store_market_status( const market_status& s ) 
+   {
+      market_statuses[std::make_pair(s.quote_id,s.base_id)] = s;
+   }
 } } // bts::blockchain

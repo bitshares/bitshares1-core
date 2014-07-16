@@ -276,6 +276,8 @@ namespace bts { namespace blockchain {
          virtual void                       store_slot_record( const slot_record& r )override;
          virtual oslot_record               get_slot_record( const time_point_sec& start_time )const override;
 
+         virtual omarket_status             get_market_status( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual void                       store_market_status( const market_status& s ) override;
          virtual void                       store_market_history_record( const market_history_key &key, const market_history_record &record ) override;
          virtual omarket_history_record     get_market_history_record( const market_history_key &key ) const override;
          market_history_points              get_market_price_history(asset_id_type quote_id,

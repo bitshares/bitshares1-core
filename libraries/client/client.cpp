@@ -2505,6 +2505,8 @@ config load_config( const fc::path& datadir )
        info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
        info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
        info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+       // TODO: move to_prety_asset to cli pretty print and just return raw shares 
+       info["min_market_depth"]                     = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT, 0) );
 
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
@@ -3200,6 +3202,17 @@ config load_config( const fc::path& datadir )
    vector<bts::blockchain::market_transaction> client_impl::blockchain_list_market_transactions( uint32_t block_num )const
    {
       return _chain_db->get_market_transactions( block_num );
+   }
+
+   bts::blockchain::market_status client_impl::blockchain_market_status( const std::string& quote, 
+                                                                         const std::string& base )const
+   {
+      auto qrec = _chain_db->get_asset_record(quote);
+      auto brec = _chain_db->get_asset_record(base);
+      FC_ASSERT( qrec && brec );
+      auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
+      FC_ASSERT( oresult );
+      return *oresult;
    }
 
    } // namespace detail
