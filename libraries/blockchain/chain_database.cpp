@@ -2158,6 +2158,10 @@ namespace bts { namespace blockchain {
          rec.current_share_supply = 0;
          rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
          rec.collected_fees = 0;
+         // need to transform the min_price according the precision
+         // 1 XTS = price USD, which means 1 satoshi_XTS = (price * usd_precision / xts_precsion) satoshi_USD
+         rec.minimum_xts_price = price( ( asset.min_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
+         rec.maximum_xts_price = price( ( asset.max_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
          self->store_asset_record( rec );
       }
 
