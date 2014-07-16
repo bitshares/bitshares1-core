@@ -86,7 +86,15 @@ namespace bts { namespace blockchain {
        }
    };
    typedef fc::optional<market_history_record> omarket_history_record;
-   typedef std::vector<std::pair<time_point_sec, market_history_record>> market_history_points;
+
+   struct market_history_point
+   {
+       fc::time_point_sec timestamp;
+       double highest_bid;
+       double lowest_ask;
+       share_type volume;
+   };
+   typedef vector<market_history_point> market_history_points;
 
 
    struct order_record 
@@ -169,6 +177,7 @@ FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (ea
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(volume) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
+FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(volume) )
 FC_REFLECT( bts::blockchain::order_record, (balance) )
 FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance) )
 FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral) )

@@ -1035,6 +1035,30 @@ namespace bts { namespace cli {
                           << "\n";
                   }
               }
+              else if (method_name == "blockchain_market_price_history")
+              {
+                  market_history_points points = result.as<market_history_points>();
+                  if( points.empty() )
+                  {
+                    *_out << "No price history.\n";
+                    return;
+                  }
+
+                  *_out << std::setw(20) << "TIME"
+                          << std::setw(20) << "HIGHEST BID"
+                          << std::setw(20) << "LOWEST ASK"
+                          << std::setw(20) << "TRADING VOLUME"
+                          << "\n" << std::string(80,'-') << "\n";
+
+                  for( auto point : points )
+                  {
+                    *_out << std::setw(20) << pretty_timestamp(point.timestamp)
+                          << std::setw(20) << point.highest_bid
+                          << std::setw(20) << point.lowest_ask
+                          << std::setw(20) << point.volume
+                          << "\n";
+                  }
+              }
               else if (method_name == "network_list_potential_peers")
               {
                   auto peers = result.as<std::vector<net::potential_peer_record>>();
