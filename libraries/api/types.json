@@ -574,6 +574,10 @@
         "type_name" : "market_history_key::time_granularity",
         "cpp_return_type" : "bts::blockchain::market_history_key::time_granularity_enum",
         "cpp_include_file" : "bts/blockchain/market_records.hpp"
+      },
+      {
+        "type_name" : "market_status",
+        "cpp_return_type" : "bts::blockchain::market_status"
       }
     ]
 }

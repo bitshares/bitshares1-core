@@ -120,7 +120,7 @@ namespace bts { namespace blockchain {
                          asset consumed_ask_depth(0,base_id);
                    
                    
-                         asset xts_fees_collected(0,base_id);
+                         asset usd_fees_collected(0,base_id);
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
@@ -150,22 +150,27 @@ namespace bts { namespace blockchain {
                                  FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
                             }
                    
-                            auto quote_quantity = std::min( _current_bid->get_quote_quantity(), 
-                                                            _current_ask->get_quote_quantity() );
+                            auto quantity = std::min( _current_bid->get_quantity(), 
+                                                            _current_ask->get_quantity() );
                    
-                            auto usd_paid_by_bid     = quote_quantity;
-                            auto usd_received_by_ask = quote_quantity;
-                            auto xts_paid_by_ask     = quote_quantity * ask_price;
-                            auto xts_received_by_bid = quote_quantity * _current_bid->get_price();
+                            auto usd_paid_by_bid     = quantity * _current_bid->get_price();
+                            auto usd_received_by_ask = quantity * _current_ask->get_price();
+                            auto xts_paid_by_ask     = quantity;
+                            auto xts_received_by_bid = quantity;
                    
-                            consumed_bid_depth += xts_received_by_bid;
-                            consumed_ask_depth += xts_paid_by_ask;
+                            consumed_bid_depth += quantity;
+                            consumed_ask_depth += quantity;
+
+                            if( _current_bid->type == short_order )
+                            {
+                               usd_paid_by_bid = usd_received_by_ask;
+                            }
                    
                             // sanity check to keep supply from growing without bound
                             FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset)  )
                    
-                            idump( (xts_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quote_quantity) );
-                            xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
+                            usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
+                            idump( (usd_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quantity) );
                    
                             market_transaction mtrx;
                             mtrx.bid_owner       = _current_bid->get_owner();
@@ -185,7 +190,7 @@ namespace bts { namespace blockchain {
                             if( _current_ask->type == ask_order )
                             {
                                /* rounding errors on price cause this not to go to 0 in some cases */
-                               if( quote_quantity == _current_ask->get_quote_quantity() )
+                               if( quantity == _current_ask->get_quantity() )
                                   _current_ask->state.balance = 0; 
                                else
                                   _current_ask->state.balance -= xts_paid_by_ask.amount;
@@ -198,7 +203,6 @@ namespace bts { namespace blockchain {
                    
                                _pending_state->store_balance_record( *ask_payout );
                                _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
-                   
                             }
                             else if( _current_ask->type == cover_order )
                             {
@@ -251,12 +255,12 @@ namespace bts { namespace blockchain {
                    
                                // TODO: what if the amount paid is 0 for bid and ask due to rounding errors,
                                // make sure this doesn't put us in an infinite loop.
-                               if( quote_quantity == _current_bid->get_quote_quantity() )
+                               if( quantity == _current_bid->get_quantity() )
                                   _current_bid->state.balance = 0;
                                else
                                   _current_bid->state.balance -= xts_received_by_bid.amount;
                    
-                               auto collateral = ((usd_paid_by_bid * _current_bid->get_price()) + xts_paid_by_ask).amount;
+                               auto collateral = (xts_paid_by_ask + xts_received_by_bid).amount;
                                auto cover_price = usd_received_by_ask / asset( (3*collateral)/4, base_id );
                    
                                market_index_key cover_index( cover_price, _current_ask->get_owner() );
@@ -271,7 +275,7 @@ namespace bts { namespace blockchain {
                    
                                _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                             }
-                         }
+                         } // while bid && ask 
                    
                          if( quote_asset->is_market_issued() )
                          {

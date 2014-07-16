@@ -3205,6 +3205,17 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_transactions( block_num );
    }
 
+   bts::blockchain::market_status client_impl::blockchain_market_status( const std::string& quote, 
+                                                                         const std::string& base )const
+   {
+      auto qrec = _chain_db->get_asset_record(quote);
+      auto brec = _chain_db->get_asset_record(base);
+      FC_ASSERT( qrec && brec );
+      auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
+      FC_ASSERT( oresult );
+      return *oresult;
+   }
+
    } // namespace detail
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
