@@ -120,7 +120,7 @@ namespace bts { namespace blockchain {
                          asset consumed_ask_depth(0,base_id);
                    
                    
-                         asset usd_fees_collected(0,base_id);
+                         asset usd_fees_collected(0,quote_id);
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
