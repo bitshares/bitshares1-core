@@ -19,6 +19,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( asset_divide_by_zero, bts::blockchain::blockchain_exception, 30011, "asset divide by zero" ); 
    FC_DECLARE_DERIVED_EXCEPTION( new_database_version, bts::blockchain::blockchain_exception, 30012, "new database version" ); 
    FC_DECLARE_DERIVED_EXCEPTION( unlinkable_block, bts::blockchain::blockchain_exception, 30013, "unlinkable block" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( price_out_of_range, bts::blockchain::blockchain_exception, 30014, "price out of range" ); 
 
    FC_DECLARE_DERIVED_EXCEPTION( block_numbers_not_sequential, bts::blockchain::blockchain_exception, 30014, "block numbers not sequential" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_previous_block_id, bts::blockchain::blockchain_exception, 30015, "invalid previous block" );

@@ -2506,6 +2506,8 @@ config load_config( const fc::path& datadir )
        info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
        info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
        info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
+       // TODO: move to_prety_asset to cli pretty print and just return raw shares 
+       info["min_market_depth"]                     = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT, 0) );
 
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
