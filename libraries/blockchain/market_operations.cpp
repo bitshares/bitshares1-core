@@ -161,7 +161,7 @@ namespace bts { namespace blockchain {
 
       if( !market_stat )
          market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
-      market_stat->ask_depth += delta_amount.amount;
+      market_stat->bid_depth += delta_amount.amount;
 
       eval_state._current_state->store_market_status( *market_stat );
 
