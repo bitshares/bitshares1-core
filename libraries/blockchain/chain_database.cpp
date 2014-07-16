@@ -57,7 +57,6 @@ struct fee_index
 
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
 
-
 namespace bts { namespace blockchain {
 
    // register exceptions here so it doesn't get optimized out by the linker
@@ -68,10 +67,8 @@ namespace bts { namespace blockchain {
                           (asset_type_mismatch)
                           (unsupported_chain_operation) )
 
-
    namespace detail
    {
-
       class chain_database_impl
       {
          public:
@@ -150,8 +147,7 @@ namespace bts { namespace blockchain {
                                  FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
                             }
                    
-                            auto quantity = std::min( _current_bid->get_quantity(), 
-                                                            _current_ask->get_quantity() );
+                            auto quantity = std::min( _current_bid->get_quantity(), _current_ask->get_quantity() );
                    
                             auto usd_paid_by_bid     = quantity * _current_bid->get_price();
                             auto usd_received_by_ask = quantity * _current_ask->get_price();
@@ -174,13 +170,15 @@ namespace bts { namespace blockchain {
                    
                             market_transaction mtrx;
                             mtrx.bid_owner       = _current_bid->get_owner();
+                            mtrx.ask_owner       = _current_ask->get_owner();
                             mtrx.bid_price       = _current_bid->get_price();
+                            mtrx.ask_price       = ask_price;
                             mtrx.bid_paid        = usd_paid_by_bid;
                             mtrx.bid_received    = xts_received_by_bid;
-                            mtrx.ask_owner       = _current_ask->get_owner();
-                            mtrx.ask_price       = ask_price;
                             mtrx.ask_paid        = xts_paid_by_ask;
                             mtrx.ask_received    = usd_received_by_ask;
+                            mtrx.bid_type        = _current_bid->type;
+                            mtrx.ask_type        = _current_ask->type;
                             mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
                    
                             _market_transactions.push_back(mtrx);

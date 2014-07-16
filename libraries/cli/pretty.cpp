@@ -298,9 +298,8 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( entry.amount );
 
             out << std::setw( 20 );
-            //if( !transaction.is_virtual ) 
-                out << client->get_chain()->to_pretty_asset( transaction.fee );
-            //else out << client->get_chain()->to_pretty_asset( asset() );
+            if( count == 1 ) out << client->get_chain()->to_pretty_asset( transaction.fee );
+            else out << "";
 
             out << std::setw( 40 ) << pretty_shorten( entry.memo, 39 );
 
@@ -310,9 +309,16 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             else out << "N/A";
 
             out << std::setw( 7 );
-            if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
-            else if( transaction.is_virtual ) out << "VIRTUAL";
-            else out << string( transaction.trx_id ).substr( 0, 7 );
+            if( count == 1 )
+            {
+                if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+                else if( transaction.is_virtual ) out << "VIRTUAL";
+                else out << string( transaction.trx_id ).substr( 0, 7 );
+            }
+            else
+            {
+                out << "";
+            }
 
             if( group ) out << "|";
             out << "\n";

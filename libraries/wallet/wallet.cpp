@@ -147,25 +147,28 @@ namespace bts { namespace wallet {
                        _wallet_db.cache_balance( *bal_rec );
                    }
 
+                   const auto is_short = ( trx.bid_type == short_order );
+                   const auto type_str = string( !is_short ? "bid" : "short" );
+
                    /* What we paid */
                    auto out_entry = ledger_entry();
                    out_entry.from_account = bid_account_key->public_key;
                    out_entry.to_account = okey_bid->public_key;
                    out_entry.amount = trx.bid_paid;
-                   out_entry.memo = "pay bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   out_entry.memo = "pay " + type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
                    in_entry.from_account = okey_bid->public_key;
-                   in_entry.to_account = bid_account_key->public_key;
+                   in_entry.to_account = !is_short ? bid_account_key->public_key : okey_bid->public_key;
                    in_entry.amount = trx.bid_received;
-                   in_entry.memo = "fill bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   in_entry.memo = "fill " + type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
 
                    std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_bid->public_key );
+                   id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
 
                    auto record = wallet_transaction_record();
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "0" );
+                   record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
                    record.ledger_entries.push_back( out_entry );
@@ -199,24 +202,27 @@ namespace bts { namespace wallet {
                       _wallet_db.cache_balance( *bal_rec );
                    }
 
+                   const auto is_cover = ( trx.ask_type == cover_order );
+                   const auto type_str = string( !is_cover ? "ask" : "cover" );
+
                    /* What we paid */
                    auto out_entry = ledger_entry();
                    out_entry.from_account = okey_ask->public_key;
                    out_entry.amount = trx.ask_paid;
-                   out_entry.memo = "pay ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+                   out_entry.memo = "pay " + type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
                    in_entry.from_account = okey_ask->public_key;
                    in_entry.to_account = ask_account_key->public_key;
                    in_entry.amount = trx.ask_received;
-                   in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+                   in_entry.memo = "fill " + type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
 
                    std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_ask->public_key );
+                   id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
 
                    auto record = wallet_transaction_record();
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "1" );
+                   record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
                    record.ledger_entries.push_back( out_entry );
@@ -3147,8 +3153,8 @@ namespace bts { namespace wallet {
        if( sign )
        {
            std::stringstream memo;
-           memo << "short " << real_quantity << " " << quote_asset_record->symbol << " @ ";
-           memo << quote_price << " " << quote_asset_record->symbol << "/" BTS_BLOCKCHAIN_SYMBOL;
+           memo << "short " << my->_blockchain->to_pretty_asset( cost_shares )
+                << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
            auto entry = ledger_entry();
            entry.from_account = from_account_key;
