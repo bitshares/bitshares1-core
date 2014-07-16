@@ -1726,6 +1726,7 @@ namespace bts { namespace wallet {
            if( from_me ) running_balances[ trx.amount.asset_id ] -= trx.amount;
 
            if( from_me || trx.is_market_cancel ) running_balances[ asset_id_type( 0 ) ] -= trx.fee;
+           else trx.fee = asset();
 
            auto to_me = false;
            to_me |= account_name.empty() && is_receive_account( trx.to_account );
