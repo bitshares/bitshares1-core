@@ -36,6 +36,9 @@ namespace bts { namespace blockchain {
          virtual oasset_record        get_asset_record( const string& symbol )const override;
          virtual oaccount_record      get_account_record( const string& name )const override;
 
+         virtual omarket_status             get_market_status( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual void                       store_market_status( const market_status& s ) override;
+
          virtual omarket_order        get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override;
          virtual oorder_record        get_bid_record( const market_index_key& )const override;
          virtual oorder_record        get_ask_record( const market_index_key& )const override;
@@ -112,6 +115,7 @@ namespace bts { namespace blockchain {
          map< market_index_key, collateral_record>                      collateral; 
          map<time_point_sec, slot_record>                               slots;
          map<market_history_key, market_history_record>                 market_history;
+         map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 
@@ -128,4 +132,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots) )
+            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots)(market_statuses) )

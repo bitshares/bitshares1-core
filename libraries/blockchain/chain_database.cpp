@@ -81,12 +81,16 @@ namespace bts { namespace blockchain {
             {
                public:
                   market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
-                  :_pending_state(ps),_db_impl(cdi){}
+                  :_pending_state(ps),_db_impl(cdi)
+                  {
+                      _pending_state = std::make_shared<pending_chain_state>( ps );
+                  }
 
                   void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
                   { try {
                        _quote_id = quote_id;
                        _base_id = base_id;
+                       auto quote_asset = _pending_state->get_asset_record( _quote_id );
                        // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
                        // next market class and then back up one
                        auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
@@ -110,12 +114,18 @@ namespace bts { namespace blockchain {
                        if( _collateral_itr.valid() )   --_collateral_itr;
                        else _collateral_itr = _db_impl._collateral_db.last();
 
+                       asset consumed_bid_depth(0,base_id);
+                       asset consumed_ask_depth(0,base_id);
+
 
                        asset xts_fees_collected(0,base_id);
                        asset trading_volume(0, base_id);
 
+                       omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+
                        while( get_next_bid() && get_next_ask() )
                        {
+
                           idump( (_current_bid)(_current_ask) );
                           price ask_price = _current_ask->get_price();
                           // this works for bids, asks, and shorts.... but in the case of a cover
@@ -128,6 +138,16 @@ namespace bts { namespace blockchain {
 
                           if( _current_bid->get_price() < ask_price )
                              break;
+
+                          if( quote_asset->is_market_issued() )
+                          {
+                             if( !market_stat || 
+                                 market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 ||
+                                 market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 
+                               )
+                               FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
+                          }
+
                           auto quote_quantity = std::min( _current_bid->get_quote_quantity(), 
                                                           _current_ask->get_quote_quantity() );
 
@@ -135,6 +155,12 @@ namespace bts { namespace blockchain {
                           auto usd_received_by_ask = quote_quantity;
                           auto xts_paid_by_ask     = quote_quantity * ask_price;
                           auto xts_received_by_bid = quote_quantity * _current_bid->get_price();
+
+                          consumed_bid_depth += xts_received_by_bid;
+                          consumed_ask_depth += xts_paid_by_ask;
+
+                          // sanity check to keep supply from growing without bound
+                          FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset)  )
 
                           idump( (xts_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quote_quantity) );
                           xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
@@ -153,6 +179,7 @@ namespace bts { namespace blockchain {
                           _market_transactions.push_back(mtrx);
                           trading_volume += mtrx.bid_received;
 
+                          market_stat->ask_depth -= xts_paid_by_ask.amount;
                           if( _current_ask->type == ask_order )
                           {
                              /* rounding errors on price cause this not to go to 0 in some cases */
@@ -169,6 +196,7 @@ namespace bts { namespace blockchain {
 
                              _pending_state->store_balance_record( *ask_payout );
                              _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
+
                           }
                           else if( _current_ask->type == cover_order )
                           {
@@ -213,9 +241,12 @@ namespace bts { namespace blockchain {
                              bid_payout->balance += xts_received_by_bid.amount;
                              _pending_state->store_balance_record( *bid_payout );
                              _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
+
                           }
                           else if( _current_bid->type == short_order )
                           {
+                             market_stat->bid_depth -= xts_received_by_bid.amount;
+
                              // TODO: what if the amount paid is 0 for bid and ask due to rounding errors,
                              // make sure this doesn't put us in an infinite loop.
                              if( quote_quantity == _current_bid->get_quote_quantity() )
@@ -239,6 +270,16 @@ namespace bts { namespace blockchain {
                              _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                           }
                        }
+
+                       if( quote_asset->is_market_issued() )
+                       {
+                          if( !market_stat || 
+                              market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 ||
+                              market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 
+                            )
+                            FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
+                       }
+                       _pending_state->store_market_status( *market_stat );
 
                        if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
                        {
@@ -298,7 +339,13 @@ namespace bts { namespace blockchain {
                        }
 
                        wlog( "done matching orders" );
-                  } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
+                       _pending_state->apply_changes();
+                  } 
+                  catch( const fc::exception& e )
+                  {
+                     wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
+                  }
+                  } // execute(...)
 
                   bool get_next_bid()
                   { try {
@@ -372,6 +419,7 @@ namespace bts { namespace blockchain {
                                // protection equal to the collateral.  If they would like to
                                // sell their USD for XTS this is the best price the short is
                                // obligated to offer.  
+                               FC_CAPTURE_AND_THROW( insufficient_collateral, (_current_bid)(cover_ask)(cover_ask.get_highest_cover_price()));
                                --_collateral_itr;
                                continue;
                             }
@@ -549,7 +597,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map< market_index_key, order_record >            _short_db;
             bts::db::level_map< market_index_key, collateral_record >       _collateral_db;
 
-            bts::db::level_map< market_history_key, market_history_record>  _market_history_db;
+            bts::db::level_map< std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
+            bts::db::level_map< market_history_key, market_history_record>             _market_history_db;
 
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
@@ -625,6 +674,7 @@ namespace bts { namespace blockchain {
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
 
+          _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
@@ -1425,6 +1475,7 @@ namespace bts { namespace blockchain {
       my->_collateral_db.close();
 
       my->_market_history_db.close();
+      my->_market_status_db.close();
 
       //my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -2758,6 +2809,21 @@ namespace bts { namespace blockchain {
      return my->_market_history_db.fetch_optional( key );
    }
 
+   omarket_status chain_database::get_market_status( asset_id_type quote_id, asset_id_type base_id )
+   {
+      return my->_market_status_db.fetch_optional( std::make_pair(quote_id,base_id) );
+   }
+   void           chain_database::store_market_status( const market_status& s )
+   {
+      if( s.is_null() )
+      {
+         my->_market_status_db.remove( std::make_pair( s.quote_id, s.base_id ) );
+      }
+      else
+      {
+         my->_market_status_db.store( std::make_pair( s.quote_id, s.base_id ), s );
+      }
+   }
    market_history_points chain_database::get_market_price_history( asset_id_type quote_id,
                                                                    asset_id_type base_id,
                                                                    const fc::time_point& start_time,

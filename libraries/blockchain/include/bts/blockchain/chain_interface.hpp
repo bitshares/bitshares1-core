@@ -86,6 +86,9 @@ namespace bts { namespace blockchain {
          virtual void                       set_property( chain_property_enum property_id, 
                                                           const fc::variant& property_value )       = 0;
 
+         virtual omarket_status             get_market_status( asset_id_type quote_id, asset_id_type base_id ) = 0;
+         virtual void                       store_market_status( const market_status& s ) = 0;
+
          virtual omarket_order              get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) = 0;
          virtual oorder_record              get_bid_record( const market_index_key& )const          = 0;
          virtual oorder_record              get_ask_record( const market_index_key& )const          = 0;

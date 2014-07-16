@@ -88,5 +88,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( invalid_market,  bts::blockchain::evaluation_error, 37001, "invalid market" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_market_order,  bts::blockchain::evaluation_error, 37002, "unknown market order" );
    FC_DECLARE_DERIVED_EXCEPTION( shorting_base_shares,  bts::blockchain::evaluation_error, 37003, "shorting base shares" );
+   FC_DECLARE_DERIVED_EXCEPTION( insufficient_collateral,  bts::blockchain::evaluation_error, 37004, "insufficient collateral" );
+   FC_DECLARE_DERIVED_EXCEPTION( insufficient_depth,  bts::blockchain::evaluation_error, 37005, "insufficient depth" );
 
 } } // bts::blockchain
