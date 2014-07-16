@@ -169,7 +169,7 @@ namespace bts { namespace wallet {
                    record.received_time = received_time;
 
                    // TODO: These entries should both be in a single transaction together
-                   auto id_ss = std::stringstream();
+                   std::stringstream id_ss;
                    id_ss << block_num << self->get_key_label( okey_bid->public_key );
                    record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.ledger_entries.push_back( out_entry );
@@ -224,7 +224,7 @@ namespace bts { namespace wallet {
                    record.received_time = received_time;
 
                    // TODO: These entries should both be in a single transaction together
-                   auto id_ss = std::stringstream();
+                   std::stringstream id_ss;
                    id_ss << block_num << self->get_key_label( okey_ask->public_key );
                    record.record_id = fc::ripemd160::hash( id_ss.str() + "2" );
                    record.ledger_entries.push_back( out_entry );
