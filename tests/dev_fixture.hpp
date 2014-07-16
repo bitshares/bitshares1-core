@@ -194,7 +194,7 @@ struct chain_fixture
       int even = 0;
       for( auto key : delegate_private_keys )
       {
-         if( even >= 30 )
+         if( even >= 20 )
          {
             if( (even++)%2 )
             {
