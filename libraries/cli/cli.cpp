@@ -865,7 +865,7 @@ namespace bts { namespace cli {
                           *_out << "REASONS FOR INVALID BLOCKS\n";
 
                           for( const auto& excuse : invalid_reasons )
-                              *_out << excuse.first << ": " << excuse.second << "\n";
+                              *_out << fc::variant(excuse.first).as_string() << ": " << excuse.second << "\n";
                       }
                   }
               }
