@@ -373,18 +373,9 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_hour" );
    exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_day" );
    exec( clientb, "blockchain_market_order_history USD XTS" );
-
-
-
-//   exec( clientb, "wallet_account_transaction_history" );
-//   exec( clientb, "blockchain_get_transaction 6f28bd04" );
-//   exec( clientb, "blockchain_list_current_round_active_delegates" );
-//   exec( clientb, "blockchain_list_blocks" );
-
-
+   exec( clientb, "balance b-account" );
+   exec( clientb, "history b-account" );
+   exec( clientb, "balance c-account" );
+   exec( clientb, "history c-account" );
 
 } FC_LOG_AND_RETHROW() }
-
-
-
-

@@ -7,6 +7,7 @@
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
+#include <bts/blockchain/config.hpp>
 
 #include <fc/thread/mutex.hpp>
 #include <fc/thread/unique_lock.hpp>
@@ -113,17 +114,8 @@ namespace bts { namespace blockchain {
                        asset xts_fees_collected(0,base_id);
                        asset trading_volume(0, base_id);
 
-                       price last_valid_bid;
-                       last_valid_bid.ratio = price::infinite();
-                       price last_valid_ask;
-                       last_valid_ask.ratio = price::infinite();
-
-                       get_next_ask();
                        while( get_next_bid() && get_next_ask() )
                        {
-                          last_valid_bid = _current_bid->get_price();
-                          last_valid_ask = _current_ask->get_price();
-
                           idump( (_current_bid)(_current_ask) );
                           price ask_price = _current_ask->get_price();
                           // this works for bids, asks, and shorts.... but in the case of a cover
@@ -246,13 +238,12 @@ namespace bts { namespace blockchain {
 
                              _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                           }
-
                        }
 
-                       if( trading_volume.amount > 0 && last_valid_bid.ratio != price::infinite() && last_valid_ask.ratio != price::infinite() )
+                       if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
                        {
                          market_history_key key(quote_id, base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-                         market_history_record new_record(last_valid_bid, last_valid_ask, trading_volume.amount);
+                         market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
                          //LevelDB iterators are dumb and don't support proper past-the-end semantics.
                          auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
                          if( !last_key_itr.valid() )
@@ -1098,7 +1089,7 @@ namespace bts { namespace blockchain {
         map<asset_id_type,share_type> collected_fees;
 
         vector<market_transaction> market_transactions;
-        for( auto market_pair : pending_state->get_dirty_markets() )
+        for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
            market_engine engine( pending_state, *this );
@@ -2776,6 +2767,10 @@ namespace bts { namespace blockchain {
       time_point_sec end_time = start_time + duration;
       auto record_itr = my->_market_history_db.lower_bound( market_history_key(quote_id, base_id, granularity, start_time) );
       market_history_points history;
+      auto base = get_asset_record(base_id);
+      auto quote = get_asset_record(quote_id);
+
+      FC_ASSERT( base && quote );
 
       while( record_itr.valid()
              && record_itr.key().quote_id == quote_id
@@ -2783,7 +2778,12 @@ namespace bts { namespace blockchain {
              && record_itr.key().granularity == granularity
              && record_itr.key().timestamp <= end_time )
       {
-        history.push_back( std::make_pair(record_itr.key().timestamp, record_itr.value()) );
+        history.push_back( {
+                             record_itr.key().timestamp,
+                             fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+                             fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+                             record_itr.value().volume
+                           } );
         ++record_itr;
       }
 

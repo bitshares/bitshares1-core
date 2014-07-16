@@ -61,11 +61,11 @@ namespace bts { namespace blockchain {
                                 memo_flags_enum memo_type = from_memo );
 
 
-      void register_account( const string& name, 
-                         const variant& public_data, 
-                         const public_key_type& master, 
-                         const public_key_type& active,
-                         uint8_t pro_fee = 255 );
+      void register_account( const string& name,
+                             const variant& public_data, 
+                             const public_key_type& master, 
+                             const public_key_type& active,
+                             uint8_t pay_rate = 255 );
 
       void update_account( account_id_type account_id,
                         uint8_t delegate_pay_rate,
@@ -106,6 +106,8 @@ namespace bts { namespace blockchain {
 
       void cover( const asset& quantity, 
                   const market_index_key& order_idx );
+
+      bool is_cancel()const;
 
    }; // transaction
 

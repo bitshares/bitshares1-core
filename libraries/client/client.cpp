@@ -140,6 +140,30 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
   return option_variables;
 }
 
+string extract_commands_from_log_stream(std::istream& log_stream)
+{
+  string command_list;
+  string line;
+  while (std::getline(log_stream,line))
+  {
+    //if line begins with a prompt, add to input buffer
+    size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
+    if (prompt_position != string::npos )
+    {
+      size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
+      command_list += line.substr(command_start_position);
+      command_list += "\n";
+    }
+  }
+  return command_list;
+}
+
+string extract_commands_from_log_file(fc::path test_file)
+{
+  std::ifstream test_input(test_file.string());
+  return extract_commands_from_log_stream(test_input);
+}
+
 
 void print_banner()
 {
@@ -1147,6 +1171,20 @@ config load_config( const fc::path& datadir )
            }
        }
 
+
+       void client_impl::execute_script(const fc::path& script_filename) const
+       {
+         if (_cli)
+         {
+           if (!fc::exists(script_filename))
+             FC_THROW_EXCEPTION(fc::file_not_found_exception, "Script file not found!");
+           string input_commands = extract_commands_from_log_file(script_filename);
+           std::stringstream input_stream(input_commands);
+           _cli->process_commands( &input_stream );
+           _cli->process_commands( &std::cin );
+         }
+       }
+
        fc::variants client_impl::batch( const std::string& method_name, 
                                         const std::vector<fc::variants>& parameters_list) const
        {
@@ -1465,6 +1503,8 @@ config load_config( const fc::path& datadir )
                                                        const string& to_account_name,
                                                        const string& memo_message)
     {
+        // TODO: Broken in wallet
+        /*
          auto trxs = _wallet->multipart_transfer( amount_to_transfer, asset_symbol,
                                                   from_account_name, to_account_name,
                                                   memo_message, true );
@@ -1474,6 +1514,8 @@ config load_config( const fc::path& datadir )
          }
 
          return trxs;
+         */
+        return vector<signed_transaction>();
     }
 
     signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer,
@@ -1490,13 +1532,6 @@ config load_config( const fc::path& datadir )
 
          return trx;
     }
-
-
-    bts::wallet::pretty_transaction detail::client_impl::wallet_get_pretty_transaction(const bts::blockchain::signed_transaction& transaction) const
-    {
-      return _wallet->to_pretty_trx(wallet_transaction_record(transaction));
-    }
-
 
     bts::blockchain::signed_transaction detail::client_impl::wallet_asset_create(const string& symbol,
                                                                     const string& asset_name,
@@ -2130,31 +2165,6 @@ config load_config( const fc::path& datadir )
 
     //JSON-RPC Method Implementations END
 
-
-    string extract_commands_from_log_stream(std::istream& log_stream)
-    {
-      string command_list;
-      string line;
-      while (std::getline(log_stream,line))
-      {
-        //if line begins with a prompt, add to input buffer
-        size_t prompt_position = line.find(CLI_PROMPT_SUFFIX);
-        if (prompt_position != string::npos )
-        {
-          size_t command_start_position = prompt_position + strlen(CLI_PROMPT_SUFFIX);
-          command_list += line.substr(command_start_position);
-          command_list += "\n";
-        }
-      }
-      return command_list;
-    }
-
-    string extract_commands_from_log_file(fc::path test_file)
-    {
-      std::ifstream test_input(test_file.string());
-      return extract_commands_from_log_stream(test_input);
-    }
-
     //RPC server and CLI configuration rules:
     //if daemon mode requested
     //  start RPC server only (no CLI input)
@@ -2651,25 +2661,16 @@ config load_config( const fc::path& datadir )
         return state;
     }
 
-    wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
-                                                        const string& pay_with_account,
-                                                        const fc::variant& data,
-                                                        uint32_t delegate_pay_rate )
-    {
-      try {
-        // bool sign = (flag != do_not_sign);
+    signed_transaction client_impl::wallet_account_register( const string& account_name,
+                                                             const string& pay_with_account,
+                                                             const fc::variant& data,
+                                                             uint32_t delegate_pay_rate )
+    { try {
         FC_ASSERT( delegate_pay_rate <= 255 );
-        auto trx = _wallet->register_account(account_name, data, delegate_pay_rate, pay_with_account);//sign);
-        network_broadcast_transaction( trx.trx );
-        /*
-        if( flag == sign_and_broadcast )
-        {
-            network_broadcast_transaction(trx);
-        }
-        */
+        const auto trx = _wallet->register_account(account_name, data, delegate_pay_rate, pay_with_account);
+        network_broadcast_transaction( trx );
         return trx;
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data))
-    }
+    } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data)) }
 
     variant_object client_impl::wallet_get_info()
     {
@@ -2682,7 +2683,7 @@ config load_config( const fc::path& datadir )
        _wallet->update_account_private_data(account_to_update, private_data);
     }
 
-    wallet_transaction_record client_impl::wallet_account_update_registration( const string& account_to_update,
+    signed_transaction client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
                                                                         const variant& public_data,
                                                                         uint8_t delegate_pay_rate,
@@ -2691,14 +2692,14 @@ config load_config( const fc::path& datadir )
        auto new_key = optional<public_key_type>();
        if( !new_active_key.empty() ) new_key = public_key_type( new_active_key );
 
-       auto trx = _wallet->update_registered_account( account_to_update,
-                                                           pay_from_account,
-                                                           public_data,
-                                                           delegate_pay_rate,
-                                                           new_key,
-                                                           true );
+       const auto trx = _wallet->update_registered_account( account_to_update,
+                                                            pay_from_account,
+                                                            public_data,
+                                                            delegate_pay_rate,
+                                                            new_key,
+                                                            true );
 
-       network_broadcast_transaction( trx.trx );
+       network_broadcast_transaction( trx );
        return trx;
     }
 
