@@ -1706,11 +1706,12 @@ namespace bts { namespace wallet {
                      return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
                   } );
 
+       if( account_name.empty() ) return pretties;
+
        // TODO: Handle pagination
 
        /* Tally up running balances */
        auto running_balances = map<asset_id_type, asset>();
-       //auto running_balances = map<string, map<asset_id_type, asset>>();
        for( auto& trx : pretties )
        {
            const auto fee_asset_id = trx.fee.asset_id;
@@ -1741,8 +1742,7 @@ namespace bts { namespace wallet {
            }
 
            if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) running_balances[ trx.fee.asset_id ] -= trx.fee;
-           //if( any_from_me || trx.is_market_cancel ) running_balances[ fee_asset_id ] -= trx.fee;
-           //else trx.fee = asset(); /* Don't return fees we didn't pay */
+           else trx.fee = asset(); /* Don't return fees we didn't pay */
 
            trx.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
        }

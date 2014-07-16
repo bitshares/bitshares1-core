@@ -426,6 +426,9 @@ BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
    produce_block(clienta);
    exec(clienta, "blockchain_market_order_book BUSD XTS");
 
+   exec(clientb, "balance");
+   exec(clientb, "history");
+
    exec(clientb, "balance delegate22");
    exec(clientb, "history delegate22");
 

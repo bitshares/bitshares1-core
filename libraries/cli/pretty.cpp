@@ -221,6 +221,8 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     if( transactions.empty() ) return "No transactions found.\n";
     FC_ASSERT( client != nullptr );
 
+    const auto is_filtered = !transactions.front().running_balances.empty();
+
     auto any_group = false;
     for( const auto& transaction : transactions )
         any_group |= transaction.ledger_entries.size() > 1;
@@ -230,24 +232,24 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
     if( any_group ) out << " ";
 
-    out << std::setw( 20 ) << "RECEIVED"
-        << std::setw( 10 ) << "BLOCK"
-        << std::setw( 20 ) << "FROM"
-        << std::setw( 20 ) << "TO"
-        << std::setw( 24 ) << "AMOUNT"
-        << std::setw( 20 ) << "FEE"
-        << std::setw( 40 ) << "MEMO"
-        << std::setw( 24 ) << "BALANCE"
-        << std::setw(  7 ) << "ID"
-        << "\n";
+    out << std::setw( 20 ) << "RECEIVED";
+    out << std::setw( 10 ) << "BLOCK";
+    out << std::setw( 20 ) << "FROM";
+    out << std::setw( 20 ) << "TO";
+    out << std::setw( 24 ) << "AMOUNT";
+    out << std::setw( 20 ) << "FEE";
+    out << std::setw( 40 ) << "MEMO";
+    if( is_filtered ) out << std::setw( 24 ) << "BALANCE";
+    out << std::setw(  7 ) << "ID";
+    out << "\n";
 
     if( any_group ) out << " ";
 
-    const auto line_size = 185;
+    const auto line_size = !is_filtered ? 161 : 185;
     out << pretty_line( line_size )
         << "\n";
 
-    const map<transaction_id_type, fc::exception>& errors = client->get_wallet()->get_pending_transaction_errors();
+    const auto errors = client->get_wallet()->get_pending_transaction_errors();
 
     auto group = false;
     auto first = true;
@@ -303,10 +305,14 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
             out << std::setw( 40 ) << pretty_shorten( entry.memo, 39 );
 
-            // TODO: Show asset corresponding to ledger entry amount
-            out << std::setw( 24 );
-            if( !is_pending ) out << client->get_chain()->to_pretty_asset( transaction.running_balances.at( asset_id_type( 0 ) ) );
-            else out << "N/A";
+            if( is_filtered )
+            {
+                out << std::setw( 24 );
+                if( !is_pending )
+                    out << client->get_chain()->to_pretty_asset( transaction.running_balances.at( entry.amount.asset_id ) );
+                else
+                    out << "N/A";
+            }
 
             out << std::setw( 7 );
             if( count == 1 )
