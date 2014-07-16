@@ -107,7 +107,6 @@ namespace bts { namespace wallet {
        bool              is_favorite;
    };
 
-
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
    struct wallet_record : public base_record<RecordTypeNumber>, public RecordTypeName
    {
@@ -115,7 +114,6 @@ namespace bts { namespace wallet {
       wallet_record( const RecordTypeName& rec, int32_t wallet_record_index = 0 )
       :base_record<RecordTypeNumber>(wallet_record_index),RecordTypeName(rec){}
    };
-
 
    struct master_key
    {
@@ -151,7 +149,7 @@ namespace bts { namespace wallet {
        optional<public_key_type> to_account;
        asset                     amount;
        asset                     fee;
-       std::string               memo;
+       string                    memo;
    };
 
    struct transaction_data

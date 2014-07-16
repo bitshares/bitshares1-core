@@ -149,7 +149,8 @@ namespace bts { namespace wallet {
 
                    /* What we paid */
                    auto out_entry = ledger_entry();
-                   out_entry.from_account = okey_bid->public_key;
+                   out_entry.from_account = bid_account_key->public_key;
+                   out_entry.to_account = okey_bid->public_key;
                    out_entry.amount = trx.bid_paid;
                    out_entry.fee = trx.fees_collected;
                    out_entry.memo = "pay bid @ " + _blockchain->to_pretty_price( trx.bid_price );
@@ -162,22 +163,18 @@ namespace bts { namespace wallet {
                    in_entry.fee = trx.fees_collected;
                    in_entry.memo = "fill bid @ " + _blockchain->to_pretty_price( trx.bid_price );
 
+                   std::stringstream id_ss;
+                   id_ss << block_num << self->get_key_label( okey_bid->public_key );
+
                    auto record = wallet_transaction_record();
+                   record.record_id = fc::ripemd160::hash( id_ss.str() + "0" );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
+                   record.ledger_entries.push_back( out_entry );
+                   record.ledger_entries.push_back( in_entry );
                    record.created_time = block_time;
                    record.received_time = received_time;
 
-                   // TODO: These entries should both be in a single transaction together
-                   std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_bid->public_key );
-                   record.record_id = fc::ripemd160::hash( id_ss.str() );
-                   record.ledger_entries.push_back( out_entry );
-                   _wallet_db.store_transaction( record );
-
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "1" );
-                   record.ledger_entries.clear();
-                   record.ledger_entries.push_back( in_entry );
                    _wallet_db.store_transaction( record );
                 }
 
@@ -186,16 +183,17 @@ namespace bts { namespace wallet {
                 {
                    auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
-                   auto bal_rec = _blockchain->get_balance_record( 
-                                           withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.base_asset_id ).get_address() );
+                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
+                                                                                       trx.ask_price.base_asset_id ).get_address() );
                    if( bal_rec )
                    {
                       //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
                       _wallet_db.cache_balance( *bal_rec );
                    }
 
-                   bal_rec = _blockchain->get_balance_record( 
-                                      withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.quote_asset_id ).get_address() );
+                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
+                                                                                  trx.ask_price.quote_asset_id ).get_address() );
+
                    if( bal_rec ) 
                    {
                       //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
@@ -217,22 +215,18 @@ namespace bts { namespace wallet {
                    in_entry.fee = trx.fees_collected;
                    in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
 
+                   std::stringstream id_ss;
+                   id_ss << block_num << self->get_key_label( okey_ask->public_key );
+
                    auto record = wallet_transaction_record();
+                   record.record_id = fc::ripemd160::hash( id_ss.str() + "1" );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
+                   record.ledger_entries.push_back( out_entry );
+                   record.ledger_entries.push_back( in_entry );
                    record.created_time = block_time;
                    record.received_time = received_time;
 
-                   // TODO: These entries should both be in a single transaction together
-                   std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_ask->public_key );
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "2" );
-                   record.ledger_entries.push_back( out_entry );
-                   _wallet_db.store_transaction( record );
-
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "3" );
-                   record.ledger_entries.clear();
-                   record.ledger_entries.push_back( in_entry );
                    _wallet_db.store_transaction( record );
                 }
             } FC_CAPTURE_AND_RETHROW() }
@@ -1705,8 +1699,9 @@ namespace bts { namespace wallet {
                   {
                      if( a.received_time != b.received_time) return a.received_time < b.received_time;
                      if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                     if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account ) < 0;
-                     if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account ) < 0;
+                     // TODO: Fix this
+                     //if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account ) < 0;
+                     //if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account ) < 0;
                      return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
                   } );
 
@@ -1714,9 +1709,11 @@ namespace bts { namespace wallet {
 
        /* Tally up running balances */
        auto running_balances = map<asset_id_type, asset>();
+       //auto running_balances = map<string, map<asset_id_type, asset>>();
        running_balances[ asset_id_type( 0 ) ] = asset();
        for( auto& trx : pretties )
        {
+       /*
            if( running_balances.count( trx.amount.asset_id ) <= 0 )
                running_balances[ trx.amount.asset_id ] = asset( 0, trx.amount.asset_id );
 
@@ -1733,8 +1730,9 @@ namespace bts { namespace wallet {
            to_me |= account_name == trx.to_account;
            if( to_me ) running_balances[ trx.amount.asset_id ] += trx.amount;
 
+       */
            trx.running_balances[ asset_id_type( 0 ) ] = running_balances[ asset_id_type( 0 ) ];
-           trx.running_balances[ trx.amount.asset_id ] = running_balances[ trx.amount.asset_id ];
+           //trx.running_balances[ trx.amount.asset_id ] = running_balances[ trx.amount.asset_id ];
        }
 
        return pretties;
@@ -3336,23 +3334,27 @@ namespace bts { namespace wallet {
       pretty_trx.trx_id = trx_rec.record_id;
       pretty_trx.block_num = trx_rec.block_num;
 
-      if( !trx_rec.ledger_entries.empty() )
+      for( const auto& entry : trx_rec.ledger_entries )
       {
-          if( trx_rec.ledger_entries.front().from_account )
-             pretty_trx.from_account = get_key_label( *trx_rec.ledger_entries.front().from_account );
+          auto pretty_entry = pretty_ledger_entry();
+
+          if( entry.from_account.valid() )
+             pretty_entry.from_account = get_key_label( *entry.from_account );
           else if( trx_rec.is_virtual && trx_rec.block_num <= 0 )
-             pretty_trx.from_account = "GENESIS";
+             pretty_entry.from_account = "GENESIS";
           else 
-             pretty_trx.from_account = "UNKNOWN"; /* Account ids are all lower, so we use UPPER to make it clear */
+             pretty_entry.from_account = "UNKNOWN";
 
-          if( trx_rec.ledger_entries.front().to_account )
-             pretty_trx.to_account = get_key_label( *trx_rec.ledger_entries.front().to_account );
+          if( entry.to_account.valid() )
+             pretty_entry.to_account = get_key_label( *entry.to_account );
           else
-             pretty_trx.to_account = "UNKNOWN"; 
+             pretty_entry.to_account = "UNKNOWN";
 
-          pretty_trx.amount = trx_rec.ledger_entries.front().amount;
-          pretty_trx.fee = trx_rec.ledger_entries.front().fee;
-          pretty_trx.memo = trx_rec.ledger_entries.front().memo;
+          pretty_entry.amount = entry.amount;
+          pretty_entry.fee = entry.fee;
+          pretty_entry.memo = entry.memo;
+
+          pretty_trx.ledger_entries.push_back( pretty_entry );
       }
 
       pretty_trx.created_time = trx_rec.created_time;

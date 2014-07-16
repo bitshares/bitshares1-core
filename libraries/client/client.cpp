@@ -1647,9 +1647,9 @@ config load_config( const fc::path& datadir )
                                                                                         uint32_t start_block_num,
                                                                                         uint32_t end_block_num,
                                                                                         const string& asset_symbol )const
-    {
+    { try {
       return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
-    }
+    } FC_RETHROW_EXCEPTIONS( warn, "") }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
@@ -1910,7 +1910,6 @@ config load_config( const fc::path& datadir )
        return 0;
 
     } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
 
     digest_block detail::client_impl::bitcoin_getblock( const block_id_type& block_id )const
     {
