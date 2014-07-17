@@ -124,7 +124,9 @@ namespace bts { namespace wallet {
                     const time_point_sec& received_time
                     )
             { try {
-                //idump( (block_num)(trx_num)(trx) );
+                const auto bid_is_short = ( trx.bid_type == short_order );
+                const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
+
                 auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
                 if( okey_bid && okey_bid->has_private_key() )
                 {
@@ -149,23 +151,22 @@ namespace bts { namespace wallet {
 
                    /* What we paid */
                    auto out_entry = ledger_entry();
-                   out_entry.from_account = bid_account_key->public_key;
-                   out_entry.to_account = okey_bid->public_key;
+                   out_entry.from_account = okey_bid->public_key;
                    out_entry.amount = trx.bid_paid;
-                   out_entry.memo = "pay bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   out_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.bid_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
                    in_entry.from_account = okey_bid->public_key;
-                   in_entry.to_account = bid_account_key->public_key;
+                   in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
                    in_entry.amount = trx.bid_received;
-                   in_entry.memo = "fill bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   in_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
 
                    std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_bid->public_key );
+                   id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
 
                    auto record = wallet_transaction_record();
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "0" );
+                   record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
                    record.ledger_entries.push_back( out_entry );
@@ -203,7 +204,7 @@ namespace bts { namespace wallet {
                    auto out_entry = ledger_entry();
                    out_entry.from_account = okey_ask->public_key;
                    out_entry.amount = trx.ask_paid;
-                   out_entry.memo = "pay ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+                   out_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
@@ -213,10 +214,10 @@ namespace bts { namespace wallet {
                    in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
 
                    std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_ask->public_key );
+                   id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
 
                    auto record = wallet_transaction_record();
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "1" );
+                   record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
                    record.ledger_entries.push_back( out_entry );
@@ -1702,9 +1703,11 @@ namespace bts { namespace wallet {
 
        // TODO: Handle pagination
 
+       /* Don't care if not filtering by account */
+       if( account_name.empty() ) return pretties;
+
        /* Tally up running balances */
        auto running_balances = map<asset_id_type, asset>();
-       //auto running_balances = map<string, map<asset_id_type, asset>>();
        for( auto& trx : pretties )
        {
            const auto fee_asset_id = trx.fee.asset_id;
@@ -1735,8 +1738,7 @@ namespace bts { namespace wallet {
            }
 
            if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) running_balances[ trx.fee.asset_id ] -= trx.fee;
-           //if( any_from_me || trx.is_market_cancel ) running_balances[ fee_asset_id ] -= trx.fee;
-           //else trx.fee = asset(); /* Don't return fees we didn't pay */
+           else trx.fee = asset(); /* Don't return fees we didn't pay */
 
            trx.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
        }
@@ -3147,8 +3149,8 @@ namespace bts { namespace wallet {
        if( sign )
        {
            std::stringstream memo;
-           memo << "short " << real_quantity << " " << quote_asset_record->symbol << " @ ";
-           memo << quote_price << " " << quote_asset_record->symbol << "/" BTS_BLOCKCHAIN_SYMBOL;
+           memo << "short " << my->_blockchain->to_pretty_asset( cost_shares )
+                << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
            auto entry = ledger_entry();
            entry.from_account = from_account_key;

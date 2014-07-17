@@ -47,8 +47,7 @@ struct pretty_transaction
     asset                                       fee;
     fc::time_point_sec                          created_time;
     fc::time_point_sec                          received_time;
-    map<asset_id_type, asset>      running_balances;
-    //map<string, map<asset_id_type, asset>>      running_balances;
+    map<asset_id_type, asset>                   running_balances;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }

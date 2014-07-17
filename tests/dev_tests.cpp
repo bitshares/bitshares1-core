@@ -362,14 +362,16 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clienta );
    exec( clientb, "balance" );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
-   exec( clientb, "wallet_account_transaction_history" );
 
-//   exec( clientb, "wallet_account_transaction_history" );
-//   exec( clientb, "blockchain_get_transaction 6f28bd04" );
-//   exec( clientb, "blockchain_list_current_round_active_delegates" );
-//   exec( clientb, "blockchain_list_blocks" );
+   exec(clientb, "balance");
+   exec(clientb, "history");
+
+   exec(clientb, "balance b-account");
+   exec(clientb, "history b-account");
+
+   exec(clientb, "balance c-account");
+   exec(clientb, "history c-account");
 } FC_LOG_AND_RETHROW() }
-
 
 BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
 { try {
@@ -429,5 +431,14 @@ BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
    exec(clienta, "blockchain_market_order_book BUSD XTS");
    produce_block(clienta);
    exec(clienta, "blockchain_market_order_book BUSD XTS");
+
+   exec(clientb, "balance");
+   exec(clientb, "history");
+
+   exec(clientb, "balance delegate22");
+   exec(clientb, "history delegate22");
+
+   exec(clientb, "balance delegate32");
+   exec(clientb, "history delegate32");
 
 } FC_LOG_AND_RETHROW() }

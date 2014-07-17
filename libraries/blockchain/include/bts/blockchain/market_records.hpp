@@ -1,10 +1,12 @@
 #pragma once
-#include <bts/blockchain/config.hpp>
+
 #include <bts/blockchain/asset.hpp>
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/types.hpp>
 
-#include <fc/time.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/io/enum_type.hpp>
+#include <fc/time.hpp>
 
 #include <tuple>
 
@@ -97,7 +99,6 @@ namespace bts { namespace blockchain {
    };
    typedef vector<market_history_point> market_history_points;
 
-
    struct order_record 
    {
       order_record():balance(0){}
@@ -123,9 +124,9 @@ namespace bts { namespace blockchain {
    {
       market_order( order_type_enum t, market_index_key k, order_record s )
       :type(t),market_index(k),state(s){}
+
       market_order( order_type_enum t, market_index_key k, order_record s, share_type c )
       :type(t),market_index(k),state(s),collateral(c){}
-       
        
       market_order():type(null_order){}
 
@@ -143,22 +144,22 @@ namespace bts { namespace blockchain {
       optional<share_type>  collateral; 
    };
 
-
    struct market_transaction
    {
       market_transaction(){}
 
-      address  bid_owner;
-      address  ask_owner;
-      price    bid_price;
-      price    ask_price;
-      asset    bid_paid;
-      asset    bid_received;
-      asset    ask_paid;
-      asset    ask_received;
-      asset    fees_collected;
+      address                                   bid_owner;
+      address                                   ask_owner;
+      price                                     bid_price;
+      price                                     ask_price;
+      asset                                     bid_paid;
+      asset                                     bid_received;
+      asset                                     ask_paid;
+      asset                                     ask_received;
+      fc::enum_type<uint8_t, order_type_enum>   bid_type;
+      fc::enum_type<uint8_t, order_type_enum>   ask_type;
+      asset                                     fees_collected;
    };
-
    typedef optional<market_order> omarket_order;
 
    struct collateral_record
@@ -211,5 +212,7 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (bid_received)
             (ask_paid)
             (ask_received)
+            (bid_type)
+            (ask_type)
             (fees_collected) 
           )
