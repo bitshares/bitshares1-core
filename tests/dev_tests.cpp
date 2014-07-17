@@ -92,8 +92,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    wlog( "------------------  CLIENT A  -----------------------------------" );
    exec( clienta, "wallet_set_delegate_trust b-account true" );
    // TODO: this should throw an exception from the wallet regarding delegate_vote_limit, but it produces
-   // the transaction anyway.   
-   // TODO: before fixing the wallet production side to include multiple outputs and spread the vote, 
+   // the transaction anyway.
+   // TODO: before fixing the wallet production side to include multiple outputs and spread the vote,
    // the transaction history needs to show the transaction as an 'error' rather than 'pending' and
    // properly display the reason for the user.
    // TODO: provide a way to cancel transactions that are pending.
@@ -362,20 +362,83 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clienta );
    exec( clientb, "balance" );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
-   exec( clientb, "wallet_account_transaction_history" );
-   exec( clientb, "blockchain_market_price_history BUSD XTS 20200101T000000 100000000" );
-   exec( clientb, "blockchain_market_price_history GLD XTS 20200101T000000 100000000" );
-   exec( clientb, "blockchain_market_price_history BUSD XTS 20200101T000000 100000000 each_hour" );
-   exec( clientb, "blockchain_market_price_history GLD XTS 20200101T000000 100000000 each_hour" );
-   exec( clientb, "blockchain_market_price_history BUSD XTS 20200101T000000 100000000 each_day" );
-   exec( clientb, "blockchain_market_price_history GLD XTS 20200101T000000 100000000 each_day" );
-   exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000" );
-   exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_hour" );
-   exec( clientb, "blockchain_market_price_history USD XTS 20200101T000000 100000000 each_day" );
-   exec( clientb, "blockchain_market_order_history USD XTS" );
-   exec( clientb, "balance b-account" );
-   exec( clientb, "history b-account" );
-   exec( clientb, "balance c-account" );
-   exec( clientb, "history c-account" );
+
+   exec(clientb, "balance");
+   exec(clientb, "history");
+
+   exec(clientb, "balance b-account");
+   exec(clientb, "history b-account");
+
+   exec(clientb, "balance c-account");
+   exec(clientb, "history c-account");
+} FC_LOG_AND_RETHROW() }
+
+BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
+{ try {
+   exec( clienta, "wallet_list_my_accounts" );
+   exec( clienta, "wallet_account_balance" );
+   exec( clienta, "unlock 999999999 masterpassword" );
+   exec( clienta, "scan 0 100" );
+   exec( clienta, "wallet_delegate_set_block_production delegate31 true" );
+   exec( clienta, "wallet_delegate_set_block_production delegate33 true" );
+   exec( clientb, "unlock 999999999 masterpassword" );
+   exec( clientb, "wallet_delegate_set_block_production delegate30 true" );
+   exec( clientb, "wallet_delegate_set_block_production delegate32 true" );
+   exec( clientb, "wallet_account_create b-account" );
+   exec( clientb, "wallet_account_balance b-account" );
+   exec( clientb, "wallet_asset_create BUSD BitUSD delegate30 \"paper bucks\" null 1000000000 1000 true" );
+   produce_block(clienta);
+
+   exec(clienta, "wallet_account_balance");
+   exec(clientb, "wallet_account_balance");
+
+   exec(clienta, "ask delegate21 18000000 XTS 1000000 BUSD");
+   exec(clientb, "short delegate20 18000000 1 BUSD");
+   exec(clienta, "ask delegate23 18000000 XTS 1000000 BUSD");
+   exec(clientb, "short delegate22 18000000 1 BUSD");
+   exec(clienta, "ask delegate25 18000000 XTS 1000000 BUSD");
+   exec(clientb, "short delegate24 18000000 1 BUSD");
+   exec(clienta, "ask delegate27 18000000 XTS 1000000 BUSD");
+   exec(clientb, "short delegate26 18000000 1 BUSD");
+   exec(clienta, "ask delegate29 18000000 XTS 1000000 BUSD");
+   exec(clientb, "short delegate28 18000000 1 BUSD");
+   exec(clienta, "ask delegate31 18000000 XTS 1.05 BUSD");
+   exec(clientb, "short delegate30 18000000 1 BUSD");
+
+   exec(clienta, "ask delegate33 100 XTS .001 BUSD");
+   exec(clientb, "short delegate32 100000000 1000000000 BUSD");
+
+   exec(clienta, "wallet_account_balance");
+   exec(clientb, "wallet_account_balance");
+
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clienta, "wallet_account_balance");
+   exec(clientb, "wallet_account_balance");
+
+   exec(clienta, "bid delegate23 1000000 XTS 5 BUSD");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+
+   exec(clienta, "ask delegate31 100 XTS 4 BUSD");
+
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+
+   exec(clientb, "balance");
+   exec(clientb, "history");
+
+   exec(clientb, "balance delegate22");
+   exec(clientb, "history delegate22");
+
+   exec(clientb, "balance delegate32");
+   exec(clientb, "history delegate32");
 
 } FC_LOG_AND_RETHROW() }

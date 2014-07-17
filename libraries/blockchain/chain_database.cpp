@@ -57,7 +57,6 @@ struct fee_index
 
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
 
-
 namespace bts { namespace blockchain {
 
    // register exceptions here so it doesn't get optimized out by the linker
@@ -68,10 +67,8 @@ namespace bts { namespace blockchain {
                           (asset_type_mismatch)
                           (unsupported_chain_operation) )
 
-
    namespace detail
    {
-
       class chain_database_impl
       {
          public:
@@ -93,6 +90,11 @@ namespace bts { namespace blockchain {
                          _quote_id = quote_id;
                          _base_id = base_id;
                          auto quote_asset = _pending_state->get_asset_record( _quote_id );
+
+                         // DISABLE MARKET ISSUED ASSETS
+                         //if( quote_asset->is_market_issued() )
+                         //   return; // don't execute anything.
+
                          // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
                          // next market class and then back up one
                          auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
@@ -120,7 +122,7 @@ namespace bts { namespace blockchain {
                          asset consumed_ask_depth(0,base_id);
                    
                    
-                         asset xts_fees_collected(0,base_id);
+                         asset usd_fees_collected(0,quote_id);
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
@@ -150,32 +152,50 @@ namespace bts { namespace blockchain {
                                  FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
                             }
                    
-                            auto quote_quantity = std::min( _current_bid->get_quote_quantity(), 
-                                                            _current_ask->get_quote_quantity() );
+                            auto quantity = std::min( _current_bid->get_quantity(), _current_ask->get_quantity() );
                    
-                            auto usd_paid_by_bid     = quote_quantity;
-                            auto usd_received_by_ask = quote_quantity;
-                            auto xts_paid_by_ask     = quote_quantity * ask_price;
-                            auto xts_received_by_bid = quote_quantity * _current_bid->get_price();
-                   
-                            consumed_bid_depth += xts_received_by_bid;
-                            consumed_ask_depth += xts_paid_by_ask;
+                            auto usd_paid_by_bid     = quantity * _current_bid->get_price();
+                            auto usd_received_by_ask = quantity * _current_ask->get_price();
+                            auto xts_paid_by_ask     = quantity;
+                            auto xts_received_by_bid = quantity;
+
+                            consumed_bid_depth += quantity;
+                            consumed_ask_depth += quantity;
+
+                            if( _current_bid->type == short_order )
+                            {
+                               usd_paid_by_bid = usd_received_by_ask;
+                            }
+
+                            if( _current_ask->type == cover_order )
+                            {
+                                usd_received_by_ask = usd_paid_by_bid;
+                            }
+
+                            FC_ASSERT( usd_paid_by_bid.amount >= 0 );
+                            FC_ASSERT( xts_paid_by_ask.amount >= 0 );
+                            FC_ASSERT( usd_received_by_ask.amount >= 0 );
+                            FC_ASSERT( xts_received_by_bid.amount >= 0 );
+                            FC_ASSERT( usd_paid_by_bid >= usd_received_by_ask );
+                            FC_ASSERT( xts_paid_by_ask >= xts_received_by_bid );
                    
                             // sanity check to keep supply from growing without bound
                             FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset)  )
                    
-                            idump( (xts_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quote_quantity) );
-                            xts_fees_collected += xts_paid_by_ask - xts_received_by_bid;
+                            usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
+                            idump( (usd_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quantity) );
                    
                             market_transaction mtrx;
                             mtrx.bid_owner       = _current_bid->get_owner();
+                            mtrx.ask_owner       = _current_ask->get_owner();
                             mtrx.bid_price       = _current_bid->get_price();
+                            mtrx.ask_price       = ask_price;
                             mtrx.bid_paid        = usd_paid_by_bid;
                             mtrx.bid_received    = xts_received_by_bid;
-                            mtrx.ask_owner       = _current_ask->get_owner();
-                            mtrx.ask_price       = ask_price;
                             mtrx.ask_paid        = xts_paid_by_ask;
                             mtrx.ask_received    = usd_received_by_ask;
+                            mtrx.bid_type        = _current_bid->type;
+                            mtrx.ask_type        = _current_ask->type;
                             mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
                    
                             _market_transactions.push_back(mtrx);
@@ -185,10 +205,12 @@ namespace bts { namespace blockchain {
                             if( _current_ask->type == ask_order )
                             {
                                /* rounding errors on price cause this not to go to 0 in some cases */
-                               if( quote_quantity == _current_ask->get_quote_quantity() )
+                               if( quantity == _current_ask->get_quantity() )
                                   _current_ask->state.balance = 0; 
                                else
                                   _current_ask->state.balance -= xts_paid_by_ask.amount;
+
+                               FC_ASSERT( _current_ask->state.balance >= 0 );
                    
                                auto ask_balance_address = withdraw_condition( withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
                                auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
@@ -198,7 +220,6 @@ namespace bts { namespace blockchain {
                    
                                _pending_state->store_balance_record( *ask_payout );
                                _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
-                   
                             }
                             else if( _current_ask->type == cover_order )
                             {
@@ -209,6 +230,9 @@ namespace bts { namespace blockchain {
                                _current_ask->state.balance  -= usd_received_by_ask.amount;
                                *(_current_ask->collateral)  -= xts_paid_by_ask.amount;
                    
+                               FC_ASSERT( _current_ask->state.balance >= 0 );
+                               FC_ASSERT( *_current_ask->collateral >= 0 );
+
                                if( _current_ask->state.balance == 0 ) // no more USD left
                                { // send collateral home to mommy & daddy
                                      wlog( "            collateral balance is now 0!" ); 
@@ -235,6 +259,7 @@ namespace bts { namespace blockchain {
                             if( _current_bid->type == bid_order )
                             {
                                _current_bid->state.balance -= usd_paid_by_bid.amount;
+                               FC_ASSERT( _current_bid->state.balance >= 0 );
                    
                                auto bid_payout = _pending_state->get_balance_record( 
                                                          withdraw_condition( withdraw_with_signature(_current_bid->get_owner()), base_id ).get_address() );
@@ -251,12 +276,13 @@ namespace bts { namespace blockchain {
                    
                                // TODO: what if the amount paid is 0 for bid and ask due to rounding errors,
                                // make sure this doesn't put us in an infinite loop.
-                               if( quote_quantity == _current_bid->get_quote_quantity() )
+                               if( quantity == _current_bid->get_quantity() )
                                   _current_bid->state.balance = 0;
                                else
                                   _current_bid->state.balance -= xts_received_by_bid.amount;
+                               FC_ASSERT( _current_bid->state.balance >= 0 );
                    
-                               auto collateral = ((usd_paid_by_bid * _current_bid->get_price()) + xts_paid_by_ask).amount;
+                               auto collateral = (xts_paid_by_ask + xts_received_by_bid).amount;
                                auto cover_price = usd_received_by_ask / asset( (3*collateral)/4, base_id );
                    
                                market_index_key cover_index( cover_price, _current_ask->get_owner() );
@@ -271,7 +297,7 @@ namespace bts { namespace blockchain {
                    
                                _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                             }
-                         }
+                         } // while bid && ask 
                    
                          if( quote_asset->is_market_issued() )
                          {

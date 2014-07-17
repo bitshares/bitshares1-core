@@ -1647,9 +1647,9 @@ config load_config( const fc::path& datadir )
                                                                                         uint32_t start_block_num,
                                                                                         uint32_t end_block_num,
                                                                                         const string& asset_symbol )const
-    {
+    { try {
       return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
-    }
+    } FC_RETHROW_EXCEPTIONS( warn, "") }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
@@ -1910,7 +1910,6 @@ config load_config( const fc::path& datadir )
        return 0;
 
     } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
 
     digest_block detail::client_impl::bitcoin_getblock( const block_id_type& block_id )const
     {
@@ -3203,6 +3202,17 @@ config load_config( const fc::path& datadir )
    vector<bts::blockchain::market_transaction> client_impl::blockchain_list_market_transactions( uint32_t block_num )const
    {
       return _chain_db->get_market_transactions( block_num );
+   }
+
+   bts::blockchain::market_status client_impl::blockchain_market_status( const std::string& quote, 
+                                                                         const std::string& base )const
+   {
+      auto qrec = _chain_db->get_asset_record(quote);
+      auto brec = _chain_db->get_asset_record(base);
+      FC_ASSERT( qrec && brec );
+      auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
+      FC_ASSERT( oresult );
+      return *oresult;
    }
 
    } // namespace detail

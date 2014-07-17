@@ -124,7 +124,9 @@ namespace bts { namespace wallet {
                     const time_point_sec& received_time
                     )
             { try {
-                //idump( (block_num)(trx_num)(trx) );
+                const auto bid_is_short = ( trx.bid_type == short_order );
+                const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
+
                 auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
                 if( okey_bid && okey_bid->has_private_key() )
                 {
@@ -151,33 +153,28 @@ namespace bts { namespace wallet {
                    auto out_entry = ledger_entry();
                    out_entry.from_account = okey_bid->public_key;
                    out_entry.amount = trx.bid_paid;
-                   out_entry.fee = trx.fees_collected;
-                   out_entry.memo = "pay bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   out_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.bid_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
                    in_entry.from_account = okey_bid->public_key;
-                   in_entry.to_account = bid_account_key->public_key;
+                   in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
                    in_entry.amount = trx.bid_received;
-                   in_entry.fee = trx.fees_collected;
-                   in_entry.memo = "fill bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   in_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
+
+                   std::stringstream id_ss;
+                   id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
 
                    auto record = wallet_transaction_record();
+                   record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
+                   record.ledger_entries.push_back( out_entry );
+                   record.ledger_entries.push_back( in_entry );
+                   record.fee = trx.fees_collected;
                    record.created_time = block_time;
                    record.received_time = received_time;
 
-                   // TODO: These entries should both be in a single transaction together
-                   std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_bid->public_key );
-                   record.record_id = fc::ripemd160::hash( id_ss.str() );
-                   record.ledger_entries.push_back( out_entry );
-                   _wallet_db.store_transaction( record );
-
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "1" );
-                   record.ledger_entries.clear();
-                   record.ledger_entries.push_back( in_entry );
                    _wallet_db.store_transaction( record );
                 }
 
@@ -186,16 +183,17 @@ namespace bts { namespace wallet {
                 {
                    auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
-                   auto bal_rec = _blockchain->get_balance_record( 
-                                           withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.base_asset_id ).get_address() );
+                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
+                                                                                       trx.ask_price.base_asset_id ).get_address() );
                    if( bal_rec )
                    {
                       //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
                       _wallet_db.cache_balance( *bal_rec );
                    }
 
-                   bal_rec = _blockchain->get_balance_record( 
-                                      withdraw_condition( withdraw_with_signature(trx.ask_owner), trx.ask_price.quote_asset_id ).get_address() );
+                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
+                                                                                  trx.ask_price.quote_asset_id ).get_address() );
+
                    if( bal_rec ) 
                    {
                       //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
@@ -206,33 +204,28 @@ namespace bts { namespace wallet {
                    auto out_entry = ledger_entry();
                    out_entry.from_account = okey_ask->public_key;
                    out_entry.amount = trx.ask_paid;
-                   out_entry.fee = trx.fees_collected;
-                   out_entry.memo = "pay ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+                   out_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
                    in_entry.from_account = okey_ask->public_key;
                    in_entry.to_account = ask_account_key->public_key;
                    in_entry.amount = trx.ask_received;
-                   in_entry.fee = trx.fees_collected;
                    in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
 
+                   std::stringstream id_ss;
+                   id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
+
                    auto record = wallet_transaction_record();
+                   record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
                    record.is_virtual = record.is_market = true;
+                   record.ledger_entries.push_back( out_entry );
+                   record.ledger_entries.push_back( in_entry );
+                   record.fee = trx.fees_collected;
                    record.created_time = block_time;
                    record.received_time = received_time;
 
-                   // TODO: These entries should both be in a single transaction together
-                   std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_ask->public_key );
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "2" );
-                   record.ledger_entries.push_back( out_entry );
-                   _wallet_db.store_transaction( record );
-
-                   record.record_id = fc::ripemd160::hash( id_ss.str() + "3" );
-                   record.ledger_entries.clear();
-                   record.ledger_entries.push_back( in_entry );
                    _wallet_db.store_transaction( record );
                 }
             } FC_CAPTURE_AND_RETHROW() }
@@ -1549,7 +1542,7 @@ namespace bts { namespace wallet {
    slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id )
    {
        auto slate_id = slate_id_type( 0 );
-       if( deposit_asset_id == asset_id_type( 0 ) ) return slate_id;
+       if( deposit_asset_id != asset_id_type( 0 ) ) return slate_id;
 
        const auto slate = select_delegate_vote();
        slate_id = slate.id();
@@ -1705,35 +1698,49 @@ namespace bts { namespace wallet {
                   {
                      if( a.received_time != b.received_time) return a.received_time < b.received_time;
                      if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                     if( a.from_account != b.from_account ) return a.from_account.compare( b.from_account ) < 0;
-                     if( a.to_account != b.to_account ) return a.to_account.compare( b.to_account ) < 0;
                      return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
                   } );
 
        // TODO: Handle pagination
 
+       /* Don't care if not filtering by account */
+       if( account_name.empty() ) return pretties;
+
        /* Tally up running balances */
        auto running_balances = map<asset_id_type, asset>();
-       running_balances[ asset_id_type( 0 ) ] = asset();
        for( auto& trx : pretties )
        {
-           if( running_balances.count( trx.amount.asset_id ) <= 0 )
-               running_balances[ trx.amount.asset_id ] = asset( 0, trx.amount.asset_id );
+           const auto fee_asset_id = trx.fee.asset_id;
+           if( running_balances.count( fee_asset_id ) <= 0 )
+               running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
 
-           auto from_me = false;
-           from_me |= account_name.empty() && is_receive_account( trx.from_account );
-           from_me |= account_name == trx.from_account;
-           if( from_me ) running_balances[ trx.amount.asset_id ] -= trx.amount;
+           auto any_from_me = false;
 
-           if( from_me || trx.is_market_cancel ) running_balances[ asset_id_type( 0 ) ] -= trx.fee;
+           for( const auto& entry : trx.ledger_entries )
+           {
+               const auto amount_asset_id = entry.amount.asset_id;
+               if( running_balances.count( amount_asset_id ) <= 0 )
+                   running_balances[ amount_asset_id ] = asset( 0, amount_asset_id );
 
-           auto to_me = false;
-           to_me |= account_name.empty() && is_receive_account( trx.to_account );
-           to_me |= account_name == trx.to_account;
-           if( to_me ) running_balances[ trx.amount.asset_id ] += trx.amount;
+               auto from_me = false;
+               from_me |= account_name.empty() && is_receive_account( entry.from_account );
+               from_me |= account_name == entry.from_account;
+               if( from_me ) running_balances[ amount_asset_id ] -= entry.amount;
 
-           trx.running_balances[ asset_id_type( 0 ) ] = running_balances[ asset_id_type( 0 ) ];
-           trx.running_balances[ trx.amount.asset_id ] = running_balances[ trx.amount.asset_id ];
+               auto to_me = false;
+               to_me |= account_name.empty() && is_receive_account( entry.to_account );
+               to_me |= account_name == entry.to_account;
+               if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
+
+               trx.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
+
+               any_from_me |= from_me;
+           }
+
+           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) running_balances[ trx.fee.asset_id ] -= trx.fee;
+           else trx.fee = asset(); /* Don't return fees we didn't pay */
+
+           trx.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
        }
 
        return pretties;
@@ -2071,11 +2078,11 @@ namespace bts { namespace wallet {
           entry.from_account = delegate_private_key.get_public_key();
           entry.to_account = receiver_public_key;
           entry.amount = asset( amount_to_withdraw );
-          entry.fee = required_fees;
           entry.memo = memo_message;
 
           auto record = wallet_transaction_record();
           record.ledger_entries.push_back( entry );
+          record.fee = required_fees;
 
           sign_and_cache_transaction( trx, required_signatures, record );
        }
@@ -2140,11 +2147,11 @@ namespace bts { namespace wallet {
          auto entry = ledger_entry();
          entry.from_account = sender_public_key;
          entry.amount = asset_to_transfer;
-         entry.fee = required_fees;
          entry.memo = memo_message;
 
          auto record = wallet_transaction_record();
          record.ledger_entries.push_back( entry );
+         record.fee = required_fees;
          record.extra_addresses.push_back( to_address );
       }
       return trx;
@@ -2211,11 +2218,11 @@ namespace bts { namespace wallet {
             auto entry = ledger_entry();
             entry.from_account = sender_public_key;
             entry.amount = total_asset_to_transfer;
-            entry.fee = required_fees;
             entry.memo = memo_message;
 
             auto record = wallet_transaction_record();
             record.ledger_entries.push_back( entry );
+            record.fee = required_fees;
             record.extra_addresses = to_addresses;
 
             sign_and_cache_transaction( trx, required_signatures, record );
@@ -2307,11 +2314,11 @@ namespace bts { namespace wallet {
          entry.from_account = sender_public_key;
          entry.to_account = receiver_public_key;
          entry.amount = asset_to_transfer;
-         entry.fee = required_fees;
          entry.memo = memo_message;
 
          auto record = wallet_transaction_record();
          record.ledger_entries.push_back( entry );
+         record.fee = required_fees;
 
          sign_and_cache_transaction( trx, required_signatures, record );
       }
@@ -2385,11 +2392,11 @@ namespace bts { namespace wallet {
          auto entry = ledger_entry();
          entry.from_account = payer_public_key;
          entry.to_account = account_public_key;
-         entry.fee = required_fees;
          entry.memo = "register " + account_to_register + (as_delegate ? " as a delegate" : "");
 
          auto record = wallet_transaction_record();
          record.ledger_entries.push_back( entry );
+         record.fee = required_fees;
 
          sign_and_cache_transaction( trx, required_signatures, record );
       }
@@ -2461,11 +2468,11 @@ namespace bts { namespace wallet {
          auto entry = ledger_entry();
          entry.from_account = from_account_address;
          entry.to_account = from_account_address;
-         entry.fee = required_fees;
          entry.memo = "create " + symbol + " (" + asset_name + ")";
 
          auto record = wallet_transaction_record();
          record.ledger_entries.push_back( entry );
+         record.fee = required_fees;
 
          sign_and_cache_transaction( trx, required_signatures, record );
       }
@@ -2530,11 +2537,11 @@ namespace bts { namespace wallet {
           entry.from_account = issuer->active_key();
           entry.to_account = receiver_public_key;
           entry.amount = shares_to_issue;
-          entry.fee = required_fees;
           entry.memo = "issue " + my->_blockchain->to_pretty_asset( shares_to_issue );
 
           auto record = wallet_transaction_record();
           record.ledger_entries.push_back( entry );
+          record.fee = required_fees;
 
           sign_and_cache_transaction( trx, required_signatures, record );
       }
@@ -2607,11 +2614,11 @@ namespace bts { namespace wallet {
           auto entry = ledger_entry();
           entry.from_account = payer_public_key;
           entry.to_account = account_public_key;
-          entry.fee = required_fees;
           entry.memo = "update " + account_to_update;
 
           auto record = wallet_transaction_record();
           record.ledger_entries.push_back( entry );
+          record.fee = required_fees;
 
           sign_and_cache_transaction( trx, required_signatures, record );
       }
@@ -2833,12 +2840,12 @@ namespace bts { namespace wallet {
         entry.from_account = owner_key_record->public_key;
         entry.to_account = to_account_key;
         entry.amount = deposit_amount;
-        entry.fee = required_fees;
         entry.memo = "cancel " + variant( owner_key_record->memo ).as_string();
 
         auto record = wallet_transaction_record();
         record.is_market = true;
         record.ledger_entries.push_back( entry );
+        record.fee = required_fees;
 
         sign_and_cache_transaction( trx, required_signatures, record );
         return trx;
@@ -2940,12 +2947,12 @@ namespace bts { namespace wallet {
            entry.from_account = from_account_key;
            entry.to_account = order_key;
            entry.amount = cost_shares;
-           entry.fee = required_fees;
            entry.memo = memo.str();
 
            auto record = wallet_transaction_record();
            record.is_market = true;
            record.ledger_entries.push_back( entry );
+           record.fee = required_fees;
 
            sign_and_cache_transaction( trx, required_signatures, record );
 
@@ -3054,12 +3061,12 @@ namespace bts { namespace wallet {
            entry.from_account = from_account_key;
            entry.to_account = order_key;
            entry.amount = cost_shares;
-           entry.fee = required_fees;
            entry.memo = memo.str();
 
            auto record = wallet_transaction_record();
            record.is_market = true;
            record.ledger_entries.push_back( entry );
+           record.fee = required_fees;
 
            sign_and_cache_transaction( trx, required_signatures, record );
 
@@ -3142,19 +3149,19 @@ namespace bts { namespace wallet {
        if( sign )
        {
            std::stringstream memo;
-           memo << "short " << real_quantity << " " << quote_asset_record->symbol << " @ ";
-           memo << quote_price << " " << quote_asset_record->symbol << "/" BTS_BLOCKCHAIN_SYMBOL;
+           memo << "short " << my->_blockchain->to_pretty_asset( cost_shares )
+                << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
            auto entry = ledger_entry();
            entry.from_account = from_account_key;
            entry.to_account = order_key;
            entry.amount = cost_shares;
-           entry.fee = required_fees;
            entry.memo = memo.str();
 
            auto record = wallet_transaction_record();
            record.is_market = true;
            record.ledger_entries.push_back( entry );
+           record.fee = required_fees;
 
            sign_and_cache_transaction( trx, required_signatures, record );
 
@@ -3182,7 +3189,6 @@ namespace bts { namespace wallet {
 
        auto     from_account_key = get_account_public_key( from_account_name );
        address  from_address( from_account_key );
-
 
        optional<market_order> order_to_cover;
        auto covers = my->_blockchain->get_market_covers( quote_symbol );
@@ -3220,7 +3226,6 @@ namespace bts { namespace wallet {
        {
           if( *order_to_cover->collateral > required_fees.amount )
           {
-
              slate_id_type slate_id = 0;
 
              auto new_slate = select_delegate_vote();
@@ -3254,12 +3259,12 @@ namespace bts { namespace wallet {
            entry.from_account = from_account_key;
            entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
            entry.amount = amount_to_cover;
-           entry.fee = required_fees;
            entry.memo = "cover ORDER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
 
            auto record = wallet_transaction_record();
            record.is_market = true;
            record.ledger_entries.push_back( entry );
+           record.fee = required_fees;
 
            sign_and_cache_transaction( trx, required_signatures, record );
        }
@@ -3335,25 +3340,29 @@ namespace bts { namespace wallet {
       pretty_trx.trx_id = trx_rec.record_id;
       pretty_trx.block_num = trx_rec.block_num;
 
-      if( !trx_rec.ledger_entries.empty() )
+      for( const auto& entry : trx_rec.ledger_entries )
       {
-          if( trx_rec.ledger_entries.front().from_account )
-             pretty_trx.from_account = get_key_label( *trx_rec.ledger_entries.front().from_account );
+          auto pretty_entry = pretty_ledger_entry();
+
+          if( entry.from_account.valid() )
+             pretty_entry.from_account = get_key_label( *entry.from_account );
           else if( trx_rec.is_virtual && trx_rec.block_num <= 0 )
-             pretty_trx.from_account = "GENESIS";
+             pretty_entry.from_account = "GENESIS";
           else 
-             pretty_trx.from_account = "UNKNOWN"; /* Account ids are all lower, so we use UPPER to make it clear */
+             pretty_entry.from_account = "UNKNOWN";
 
-          if( trx_rec.ledger_entries.front().to_account )
-             pretty_trx.to_account = get_key_label( *trx_rec.ledger_entries.front().to_account );
+          if( entry.to_account.valid() )
+             pretty_entry.to_account = get_key_label( *entry.to_account );
           else
-             pretty_trx.to_account = "UNKNOWN"; 
+             pretty_entry.to_account = "UNKNOWN";
 
-          pretty_trx.amount = trx_rec.ledger_entries.front().amount;
-          pretty_trx.fee = trx_rec.ledger_entries.front().fee;
-          pretty_trx.memo = trx_rec.ledger_entries.front().memo;
+          pretty_entry.amount = entry.amount;
+          pretty_entry.memo = entry.memo;
+
+          pretty_trx.ledger_entries.push_back( pretty_entry );
       }
 
+      pretty_trx.fee = trx_rec.fee;
       pretty_trx.created_time = trx_rec.created_time;
       pretty_trx.received_time = trx_rec.received_time;
 
