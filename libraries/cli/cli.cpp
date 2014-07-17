@@ -77,10 +77,14 @@ namespace bts { namespace cli {
                   if (_command_script)
                     process_commands(_command_script);
                   if (_daemon_mode)
+                  {
                     _rpc_server->wait_till_rpc_server_shutdown();
+                    return;
+                  }
                   else if (!_quit)
                     process_commands(&std::cin);
-                  _rpc_server->shutdown_rpc_server();
+                  if( _rpc_server )
+                     _rpc_server->shutdown_rpc_server();
                 }
                 catch ( const fc::exception& e)
                 {
@@ -1586,7 +1590,9 @@ namespace bts { namespace cli {
   void cli::wait_till_cli_shutdown()
   {
      ilog( "waiting on server to quit" );
+     my->_rpc_server->close();
      my->_rpc_server->wait_till_rpc_server_shutdown();
+     ilog( "rpc server shut down" );
   }
 
   void cli::enable_output(bool enable_output)

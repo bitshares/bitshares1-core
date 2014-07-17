@@ -90,6 +90,11 @@ namespace bts { namespace blockchain {
                          _quote_id = quote_id;
                          _base_id = base_id;
                          auto quote_asset = _pending_state->get_asset_record( _quote_id );
+
+                         // DISABLE MARKET ISSUED ASSETS
+                         //if( quote_asset->is_market_issued() )
+                         //   return; // don't execute anything.
+
                          // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
                          // next market class and then back up one
                          auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
@@ -153,7 +158,7 @@ namespace bts { namespace blockchain {
                             auto usd_received_by_ask = quantity * _current_ask->get_price();
                             auto xts_paid_by_ask     = quantity;
                             auto xts_received_by_bid = quantity;
-                   
+
                             consumed_bid_depth += quantity;
                             consumed_ask_depth += quantity;
 
@@ -161,6 +166,18 @@ namespace bts { namespace blockchain {
                             {
                                usd_paid_by_bid = usd_received_by_ask;
                             }
+
+                            if( _current_ask->type == cover_order )
+                            {
+                                usd_received_by_ask = usd_paid_by_bid;
+                            }
+
+                            FC_ASSERT( usd_paid_by_bid.amount >= 0 );
+                            FC_ASSERT( xts_paid_by_ask.amount >= 0 );
+                            FC_ASSERT( usd_received_by_ask.amount >= 0 );
+                            FC_ASSERT( xts_received_by_bid.amount >= 0 );
+                            FC_ASSERT( usd_paid_by_bid >= usd_received_by_ask );
+                            FC_ASSERT( xts_paid_by_ask >= xts_received_by_bid );
                    
                             // sanity check to keep supply from growing without bound
                             FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset)  )
@@ -192,6 +209,8 @@ namespace bts { namespace blockchain {
                                   _current_ask->state.balance = 0; 
                                else
                                   _current_ask->state.balance -= xts_paid_by_ask.amount;
+
+                               FC_ASSERT( _current_ask->state.balance >= 0 );
                    
                                auto ask_balance_address = withdraw_condition( withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
                                auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
@@ -211,6 +230,9 @@ namespace bts { namespace blockchain {
                                _current_ask->state.balance  -= usd_received_by_ask.amount;
                                *(_current_ask->collateral)  -= xts_paid_by_ask.amount;
                    
+                               FC_ASSERT( _current_ask->state.balance >= 0 );
+                               FC_ASSERT( *_current_ask->collateral >= 0 );
+
                                if( _current_ask->state.balance == 0 ) // no more USD left
                                { // send collateral home to mommy & daddy
                                      wlog( "            collateral balance is now 0!" ); 
@@ -237,6 +259,7 @@ namespace bts { namespace blockchain {
                             if( _current_bid->type == bid_order )
                             {
                                _current_bid->state.balance -= usd_paid_by_bid.amount;
+                               FC_ASSERT( _current_bid->state.balance >= 0 );
                    
                                auto bid_payout = _pending_state->get_balance_record( 
                                                          withdraw_condition( withdraw_with_signature(_current_bid->get_owner()), base_id ).get_address() );
@@ -257,6 +280,7 @@ namespace bts { namespace blockchain {
                                   _current_bid->state.balance = 0;
                                else
                                   _current_bid->state.balance -= xts_received_by_bid.amount;
+                               FC_ASSERT( _current_bid->state.balance >= 0 );
                    
                                auto collateral = (xts_paid_by_ask + xts_received_by_bid).amount;
                                auto cover_price = usd_received_by_ask / asset( (3*collateral)/4, base_id );

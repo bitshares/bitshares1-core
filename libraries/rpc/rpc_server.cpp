@@ -735,7 +735,9 @@ namespace bts { namespace rpc {
     {
       // wait until a quit has been signalled
       if ( !my->_on_quit_promise->ready() )
+      {
         my->_on_quit_promise->wait();
+      }
 
       // if we were running a TCP server, also wait for it to shut down
       if (my->_tcp_serv && my->_accept_loop_complete.valid() )

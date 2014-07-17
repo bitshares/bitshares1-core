@@ -1542,7 +1542,7 @@ namespace bts { namespace wallet {
    slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id )
    {
        auto slate_id = slate_id_type( 0 );
-       if( deposit_asset_id == asset_id_type( 0 ) ) return slate_id;
+       if( deposit_asset_id != asset_id_type( 0 ) ) return slate_id;
 
        const auto slate = select_delegate_vote();
        slate_id = slate.id();
