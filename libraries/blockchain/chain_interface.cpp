@@ -141,7 +141,7 @@ namespace bts{ namespace blockchain {
       }
       else
       {
-         return fc::to_pretty_string( amount ) + " ???";
+         return fc::to_pretty_string( a.amount ) + " ???";
       }
    }
 
