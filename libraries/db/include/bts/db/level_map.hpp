@@ -146,6 +146,8 @@ namespace bts { namespace db {
 
         iterator find( const Key& key )
         { try {
+           FC_ASSERT(is_open(), "Database is not open!");
+
            ldb::Slice key_slice;
 
            /** avoid dynamic memory allocation at this step if possible, most 
