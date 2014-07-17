@@ -969,7 +969,7 @@ namespace bts { namespace cli {
 
                     *_out << "| ";
 
-                    if( ask_itr != bids_asks.second.end() )
+                    while( ask_itr != bids_asks.second.end() )
                     {
                       quote_id = ask_itr->get_price().quote_asset_id;
                       base_id = ask_itr->get_price().base_asset_id;
@@ -978,6 +978,8 @@ namespace bts { namespace cli {
                          *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
                                << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                                << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                          ++ask_itr;
+                          break;
                       }
                       ++ask_itr;
                     }
