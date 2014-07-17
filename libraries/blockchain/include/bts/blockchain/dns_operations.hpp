@@ -55,6 +55,9 @@ namespace bts { namespace blockchain {
                              const std::string& memo_message,
                              const fc::ecc::public_key& memo_pub_key,
                              memo_flags_enum memo_type = from_memo );
+        // TODO all titan crypto ops should be factored out of here
+        omemo_status    decrypt_memo_data( const fc::ecc::private_key& receiver_key ) const;
+        memo_data    decrypt_memo_data( const fc::sha512& secret ) const;
 
         string                      domain_name;
         address                     owner;

@@ -636,7 +636,7 @@ namespace bts { namespace wallet {
         if( _wallet_db.has_private_key( op.owner ) )
         {
            cache_transfer = true;
-           _wallet_db.cache_domain( op.domain_name );
+           //_wallet_db.cache_domain( op.domain_name );
         }
         else if( op.memo )
         {
@@ -664,7 +664,7 @@ namespace bts { namespace wallet {
                        //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
                     }
                     cache_transfer = true;
-                    _wallet_db.cache_domain( op.domain_name );
+                    //_wallet_db.cache_domain( op.domain_name );
                  }
               }
            } ).wait();

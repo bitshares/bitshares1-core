@@ -19,7 +19,9 @@ namespace bts { namespace wallet {
       balance_record_type        = 6,
       property_record_type       = 7,
       market_order_record_type   = 8,
-      setting_record_type        = 9
+      setting_record_type        = 9,
+
+      domain_record_type         = 51
    };
 
    struct generic_wallet_record
@@ -208,6 +210,13 @@ namespace bts { namespace wallet {
    typedef wallet_record< wallet_property,                 property_record_type    >  wallet_property_record;
    typedef wallet_record< market_order_status,             market_order_record_type>  wallet_market_order_status_record;
    typedef wallet_record< setting,                         setting_record_type     >  wallet_setting_record;
+
+
+   // a domain record is just a domain name - we always look it up from the blockchain
+    typedef wallet_record< string, domain_record_type>      wallet_domain_record;
+    typedef optional< wallet_domain_record>                 owallet_domain_record;
+
+
 
    typedef optional< wallet_transaction_record >            owallet_transaction_record;
    typedef optional< wallet_master_key_record >             owallet_master_key_record;

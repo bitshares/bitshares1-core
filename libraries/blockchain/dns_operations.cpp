@@ -174,6 +174,48 @@ namespace bts { namespace blockchain {
         eval_state._current_state->store_domain_record( *odomain_rec );
     }
 
+    omemo_status domain_transfer_operation::decrypt_memo_data( const fc::ecc::private_key& receiver_key ) const
+    { try {
+        FC_ASSERT( memo.valid() );
+//      ilog( "receiver_key: ${r}", ("r",receiver_key) );
+        auto secret = receiver_key.get_shared_secret( memo->one_time_key );
+//      ilog( "secret: ${secret}", ("secret",secret) );
+        extended_private_key ext_receiver_key(receiver_key);
+ //     ilog( "ext_receiver_key: ${key}",("key",ext_receiver_key) );
+      
+        fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret), 
+                                                                          extended_private_key::public_derivation );
+   //   ilog( "secret_private_key: ${k}", ("k",secret_private_key)  );
+        auto secret_public_key = secret_private_key.get_public_key();
+    //  ilog( "secret_public_key: ${k}", ("k",secret_public_key)  );
+
+        if( owner != address(secret_public_key) )
+            return omemo_status();
+
+     // ilog( "owner: ${o} == ${address}", ("o",owner)("address",address(secret_public_key)) );
+        auto memo = decrypt_memo_data( secret );
+
+        bool has_valid_signature = false;
+        if( memo.memo_flags == from_memo )
+        {
+            auto check_secret = secret_private_key.get_shared_secret( memo.from );
+            has_valid_signature = check_secret._hash[0] == memo.from_signature;
+        }
+        else
+        {
+            has_valid_signature = true;
+        }
+
+        return memo_status( memo, has_valid_signature, secret_private_key );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   memo_data domain_transfer_operation::decrypt_memo_data( const fc::sha512& secret ) const
+   { try {
+      FC_ASSERT( memo.valid() );
+      return fc::raw::unpack<memo_data>( fc::aes_decrypt( secret, memo->encrypted_memo_data ) );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+
     void domain_update_info_operation::evaluate( transaction_evaluation_state& eval_state )
     {
         auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
