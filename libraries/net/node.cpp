@@ -67,8 +67,6 @@
       } \
     } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
 
-#define P2P_IN_DEDICATED_THREAD
-
 namespace bts { namespace net { 
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
