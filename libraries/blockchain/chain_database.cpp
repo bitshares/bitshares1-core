@@ -92,8 +92,8 @@ namespace bts { namespace blockchain {
                          auto quote_asset = _pending_state->get_asset_record( _quote_id );
 
                          // DISABLE MARKET ISSUED ASSETS
-                         //if( quote_asset->is_market_issued() )
-                         //   return; // don't execute anything.
+                         if( quote_asset->is_market_issued() )
+                            return; // don't execute anything.
 
                          // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
                          // next market class and then back up one
@@ -293,6 +293,8 @@ namespace bts { namespace blockchain {
                    
                                ocover_record->collateral_balance += collateral;
                                ocover_record->payoff_balance += usd_received_by_ask.amount;
+                               FC_ASSERT( ocover_record->payoff_balance >= 0 );
+                               FC_ASSERT( ocover_record->collateral_balance >= 0 );
                                _pending_state->store_collateral_record( cover_index, *ocover_record );
                    
                                _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
