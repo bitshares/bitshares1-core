@@ -67,7 +67,7 @@
       } \
     } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
 
-//#define P2P_IN_DEDICATED_THREAD
+#define P2P_IN_DEDICATED_THREAD
 
 namespace bts { namespace net { 
 
@@ -3367,12 +3367,10 @@ namespace bts { namespace net { namespace detail {
 
   node::~node()
   {
-     ilog( "... " );
-     /*
-     if( my->_thread )
-        my->_thread->quit();
-        */
-     ilog( "... " );
+     //ilog( "... " );
+     //if( my->_thread )
+     //   my->_thread->quit();
+     //ilog( "... " );
   }
 
   void node::set_node_delegate( node_delegate* del )
@@ -3511,6 +3509,8 @@ namespace bts { namespace net { namespace detail {
 
   void node::close()
   {
+     wlog( ".... WARNING NOT DOING ANYTHING WHEN I SHOULD ......" );
+     return;
     my->close();
   }
 
