@@ -722,7 +722,8 @@ namespace bts { namespace rpc {
 
   void rpc_server::close()
   {
-    my->_on_quit_promise->set_value();
+    if( my->_on_quit_promise )
+       my->_on_quit_promise->set_value();
     if (my->_tcp_serv)
       my->_tcp_serv->close();
     if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
@@ -752,7 +753,10 @@ namespace bts { namespace rpc {
   {
     // shutdown the server.  add a little delay to give the response to the "stop" method call a chance
     // to make it to the caller
-    my->_thread->async([=]() { fc::usleep(fc::milliseconds(10)); close(); });
+    // my->_thread->async([=]() { fc::usleep(fc::milliseconds(10)); close(); });
+    // Because we never waited on the above call we would crash... when rpc_server is
+    // deleted before it can execute.
+    close();
   }
 
   std::string rpc_server::help(const std::string& command_name) const
