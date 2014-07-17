@@ -68,6 +68,7 @@ namespace bts { namespace net {
     }
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
+      ilog( "..." );
       if (_read_loop_done.valid() && !_read_loop_done.ready())
       {
         _read_loop_done.cancel();

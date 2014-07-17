@@ -15,6 +15,9 @@ endif()
 
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
 
+# Set to ON to run network code in a dedicated thread; OFF to keep in bitshares thread
+set (THREADED_P2P OFF)
+
 #set (ENABLE_INSTALLER 1)
 #set (USE_PCH 1)
 

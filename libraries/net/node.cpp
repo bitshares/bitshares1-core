@@ -67,8 +67,6 @@
       } \
     } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
 
-#define P2P_IN_DEDICATED_THREAD
-
 namespace bts { namespace net { 
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
@@ -573,6 +571,7 @@ namespace bts { namespace net { namespace detail {
     node_impl::~node_impl()
     {
       VERIFY_CORRECT_THREAD();
+      ilog( "cleaning up node" );
       for( const peer_connection_ptr& active_peer : _active_connections )
       {
         potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
@@ -582,12 +581,14 @@ namespace bts { namespace net { namespace detail {
 
       try
       {
+        ilog( "close" );
         close();
       }
       catch ( const fc::exception& e )
       {
         wlog( "unexpected exception on close ${e}", ("e", e.to_detail_string() ) );
       }
+        ilog( "done" );
     }
 
     void node_impl::save_node_configuration()
@@ -905,7 +906,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::terminate_inactive_connections_loop()
     {
       VERIFY_CORRECT_THREAD();
-      while( !_terminate_inactive_connections_loop_done.canceled() )
+      //while( !_terminate_inactive_connections_loop_done.canceled() )
       {
         std::list<peer_connection_ptr> peers_to_disconnect_gently;
         std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
@@ -1033,20 +1034,27 @@ namespace bts { namespace net { namespace detail {
           peer->send_message(current_time_request_message());
         peers_to_send_keep_alive.clear();
 
-        fc::usleep( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) );
       } // while( !canceled  )
+      if( !_terminate_inactive_connections_loop_done.canceled() )
+         _terminate_inactive_connections_loop_done = fc::schedule( [=](){ terminate_inactive_connections_loop(); }, 
+                                                                   fc::time_point::now() + 
+                                                                   ( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) ) );
     }
 
     void node_impl::fetch_updated_peer_lists_loop()
     {
       VERIFY_CORRECT_THREAD();
-      while (!_fetch_updated_peer_lists_loop_done.canceled())
-      {
-        fc::usleep(fc::minutes(15));
+
+      //while (!_fetch_updated_peer_lists_loop_done.canceled())
+      //{
+      //  fc::usleep(fc::minutes(15));
 
         for( const peer_connection_ptr& active_peer : _active_connections )
           active_peer->send_message(address_request_message());
-      }
+      //}
+      if( !_fetch_updated_peer_lists_loop_done.canceled() )
+         _fetch_updated_peer_lists_loop_done = fc::schedule( [=](){ fetch_updated_peer_lists_loop(); }, 
+                                                             fc::time_point::now() + fc::minutes(15) );
     }
     void node_impl::update_bandwidth_data(uint32_t usage_this_second)
     {
@@ -1071,9 +1079,9 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       fc::time_point_sec last_update_time = fc::time_point::now();
-      while (!_bandwidth_monitor_loop_done.canceled())
+      //while (!_bandwidth_monitor_loop_done.canceled())
       {
-        fc::usleep(fc::seconds(1));
+       // fc::usleep(fc::seconds(1));
         fc::time_point_sec current_time = fc::time_point::now();
         uint32_t seconds_since_last_update = current_time.sec_since_epoch() - last_update_time.sec_since_epoch();
         seconds_since_last_update = std::max(UINT32_C(1), seconds_since_last_update);
@@ -1083,6 +1091,8 @@ namespace bts { namespace net { namespace detail {
         update_bandwidth_data(usage_this_second);
         last_update_time = current_time;
       }
+      _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); }, 
+                                                   fc::time_point::now() + fc::seconds(1) );
     }
 
     void node_impl::dump_node_status_task()
@@ -2578,13 +2588,21 @@ namespace bts { namespace net { namespace detail {
     void node_impl::close()
     {
       VERIFY_CORRECT_THREAD();
-      _tcp_server.close();
-      if( _accept_loop_complete.valid() )
+      try {
+         _tcp_server.close();
+
+         if( _accept_loop_complete.valid() )
+         {
+           _accept_loop_complete.cancel();
+           _accept_loop_complete.wait();
+         }
+      } catch ( const fc::exception& e )
       {
-        _accept_loop_complete.cancel();
-        _accept_loop_complete.wait();
+         wlog( "${e}", ("e",e.to_detail_string() ) );
       }
+
       
+      ilog( "." );
       _p2p_network_connect_loop_done.cancel();
       _fetch_sync_items_loop_done.cancel();
       _fetch_item_loop_done.cancel();
@@ -2592,17 +2610,49 @@ namespace bts { namespace net { namespace detail {
       _terminate_inactive_connections_loop_done.cancel();
       _fetch_updated_peer_lists_loop_done.cancel();
       _bandwidth_monitor_loop_done.cancel();
-      if (_dump_node_status_task_done.valid())
-        _dump_node_status_task_done.cancel();
+      ilog( "." );
+       _dump_node_status_task_done.cancel();
 
-      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch (...){}
-      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch (...) {}
-      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(...){}
-      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch (...){}
+      if( _retrigger_fetch_sync_items_loop_promise )
+         _retrigger_fetch_sync_items_loop_promise->cancel();
+
+      if( _retrigger_fetch_item_loop_promise )
+          _retrigger_fetch_item_loop_promise->cancel();
+
+      if( _retrigger_advertise_inventory_loop_promise )
+          _retrigger_advertise_inventory_loop_promise->cancel();
+
+      if( _retrigger_connect_loop_promise )
+         _retrigger_connect_loop_promise->cancel();
+
+      if( _retrigger_connect_loop_promise )
+         _retrigger_connect_loop_promise->cancel();
+
+      ilog( "." );
       try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (...){}
+      ilog( "." );
       try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (...){}
+      ilog( "." );
       try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (...){}
+      ilog( "." );
       try { if (_dump_node_status_task_done.valid()) _dump_node_status_task_done.wait(); } catch (...){}
+      ilog( "." );
+      /*
+      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch (...){}
+      ilog( "." );
+      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch (...) {}
+      ilog( "." );
+      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(...){}
+      ilog( "." );
+      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch (...){}
+      */
+
+      ilog( "." );
+      _handshaking_connections.clear();
+      ilog( "." );
+      _active_connections.clear();
+      ilog( "." );
+      _closing_connections.clear();
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
@@ -3315,6 +3365,10 @@ namespace bts { namespace net { namespace detail {
 
   node::~node()
   {
+     //ilog( "... " );
+     //if( my->_thread )
+     //   my->_thread->quit();
+     //ilog( "... " );
   }
 
   void node::set_node_delegate( node_delegate* del )
@@ -3453,6 +3507,8 @@ namespace bts { namespace net { namespace detail {
 
   void node::close()
   {
+     wlog( ".... WARNING NOT DOING ANYTHING WHEN I SHOULD ......" );
+     return;
     my->close();
   }
 
