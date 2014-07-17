@@ -195,7 +195,6 @@ namespace bts { namespace blockchain {
                             mtrx.ask_paid        = xts_paid_by_ask;
                             mtrx.ask_received    = usd_received_by_ask;
                             mtrx.bid_type        = _current_bid->type;
-                            mtrx.ask_type        = _current_ask->type;
                             mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
                    
                             _market_transactions.push_back(mtrx);
