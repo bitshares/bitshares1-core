@@ -99,7 +99,6 @@ namespace bts { namespace blockchain {
    };
    typedef vector<market_history_point> market_history_points;
 
-
    struct order_record 
    {
       order_record():balance(0){}

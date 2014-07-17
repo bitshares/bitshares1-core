@@ -124,7 +124,9 @@ namespace bts { namespace wallet {
                     const time_point_sec& received_time
                     )
             { try {
-                //idump( (block_num)(trx_num)(trx) );
+                const auto bid_is_short = ( trx.bid_type == short_order );
+                const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
+
                 auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
                 if( okey_bid && okey_bid->has_private_key() )
                 {
@@ -147,22 +149,18 @@ namespace bts { namespace wallet {
                        _wallet_db.cache_balance( *bal_rec );
                    }
 
-                   const auto is_short = ( trx.bid_type == short_order );
-                   const auto type_str = string( !is_short ? "bid" : "short" );
-
                    /* What we paid */
                    auto out_entry = ledger_entry();
-                   out_entry.from_account = bid_account_key->public_key;
-                   out_entry.to_account = okey_bid->public_key;
+                   out_entry.from_account = okey_bid->public_key;
                    out_entry.amount = trx.bid_paid;
-                   out_entry.memo = "pay " + type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   out_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.bid_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
                    in_entry.from_account = okey_bid->public_key;
-                   in_entry.to_account = !is_short ? bid_account_key->public_key : okey_bid->public_key;
+                   in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
                    in_entry.amount = trx.bid_received;
-                   in_entry.memo = "fill " + type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
+                   in_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
 
                    std::stringstream id_ss;
                    id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
@@ -202,21 +200,18 @@ namespace bts { namespace wallet {
                       _wallet_db.cache_balance( *bal_rec );
                    }
 
-                   const auto is_cover = ( trx.ask_type == cover_order );
-                   const auto type_str = string( !is_cover ? "ask" : "cover" );
-
                    /* What we paid */
                    auto out_entry = ledger_entry();
                    out_entry.from_account = okey_ask->public_key;
                    out_entry.amount = trx.ask_paid;
-                   out_entry.memo = "pay " + type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
+                   out_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
 
                    /* What we received */
                    auto in_entry = ledger_entry();
                    in_entry.from_account = okey_ask->public_key;
                    in_entry.to_account = ask_account_key->public_key;
                    in_entry.amount = trx.ask_received;
-                   in_entry.memo = "fill " + type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
+                   in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
 
                    std::stringstream id_ss;
                    id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
@@ -1706,9 +1701,10 @@ namespace bts { namespace wallet {
                      return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
                   } );
 
-       if( account_name.empty() ) return pretties;
-
        // TODO: Handle pagination
+
+       /* Don't care if not filtering by account */
+       if( account_name.empty() ) return pretties;
 
        /* Tally up running balances */
        auto running_balances = map<asset_id_type, asset>();
