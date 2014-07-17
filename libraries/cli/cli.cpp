@@ -71,7 +71,7 @@ namespace bts { namespace cli {
             void process_commands(std::istream* input_stream);
 
             void start()
-              {
+            {
                 try
                 {
                   if (_command_script)
@@ -92,7 +92,7 @@ namespace bts { namespace cli {
                     elog( "${e}", ("e",e.to_detail_string() ) );
                     _rpc_server->shutdown_rpc_server();
                 }
-              }
+            }
 
             string get_prompt()const
             {
