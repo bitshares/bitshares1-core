@@ -96,7 +96,11 @@
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
 //#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/100)
-#warning [TEST] Revert market depth requirement before launching!
+#ifdef _MSC_VER
+# pragma message("[TEST] Revert market depth requirement before launching!")
+#else
+# warning [TEST] Revert market depth requirement before launching!
+#endif
 #define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/10000)
 
 /**
