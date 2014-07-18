@@ -217,6 +217,7 @@ namespace bts { namespace blockchain {
                                if( !ask_payout )
                                   ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
                                ask_payout->balance += usd_received_by_ask.amount;
+                               ask_payout->last_update = _pending_state->now();
                    
                                _pending_state->store_balance_record( *ask_payout );
                                _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
@@ -244,6 +245,7 @@ namespace bts { namespace blockchain {
                                      if( !ask_payout )
                                         ask_payout = balance_record( _current_ask->get_owner(), asset(0,base_id), 0 );
                                      ask_payout->balance += (*_current_ask->collateral);
+                                     ask_payout->last_update = _pending_state->now();
                    
                                      _pending_state->store_balance_record( *ask_payout );
                                      _current_ask->collateral = 0;
@@ -266,6 +268,7 @@ namespace bts { namespace blockchain {
                                if( !bid_payout )
                                   bid_payout = balance_record( _current_bid->get_owner(), asset(0,base_id), 0 );
                                bid_payout->balance += xts_received_by_bid.amount;
+                               bid_payout->last_update = _pending_state->now();
                                _pending_state->store_balance_record( *bid_payout );
                                _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
                    
