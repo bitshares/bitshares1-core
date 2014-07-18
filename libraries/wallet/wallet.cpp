@@ -12,13 +12,11 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
-#include <fc/thread/scoped_lock.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
-#include <boost/thread/mutex.hpp>
 #include <fc/io/json.hpp>
 #include <iostream>
 #include <sstream>
@@ -66,7 +64,6 @@ namespace bts { namespace wallet {
              bool                               _delegate_scanning_enabled;
 
              std::unique_ptr<fc::thread>        _scanner_thread;
-             boost::mutex                       _scan_lock;
              float                              _scan_progress;
 
              struct login_record
@@ -701,36 +698,39 @@ namespace bts { namespace wallet {
                 }
                 else if( deposit.memo )
                 {
-                   for( const auto& key : keys )
+                   _scanner_thread->async( [&]()
                    {
-                       // TODO: see how we can optimize this
-                      omemo_status status = deposit.decrypt_memo_data( key );
-                      if( status.valid() )
-                      {
-                         _wallet_db.cache_memo( *status, key, _wallet_password );
-                         auto entry = ledger_entry();
-                         if( status->memo_flags == from_memo )
-                         {
-                            entry.from_account = status->from;
-                            entry.to_account = key.get_public_key();
-                            entry.amount = asset( op.amount, op.condition.asset_id );
-                            entry.memo = status->get_message();
-                            //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
-                         }
-                         else
-                         {
-                            //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                            //ilog( "op: ${op}", ("op",op) );
-                            entry.from_account = key.get_public_key();
-                            entry.to_account = status->from;
-                            entry.memo = status->get_message();
-                            //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
-                         }
-                         trx_rec.ledger_entries.push_back( entry );
-                         cache_deposit = true;
-                         break;
-                      }
-                   }
+                       for( const auto& key : keys )
+                       {
+                           // TODO: see how we can optimize this
+                          omemo_status status = deposit.decrypt_memo_data( key );
+                          if( status.valid() )
+                          {
+                             _wallet_db.cache_memo( *status, key, _wallet_password );
+                             auto entry = ledger_entry();
+                             if( status->memo_flags == from_memo )
+                             {
+                                entry.from_account = status->from;
+                                entry.to_account = key.get_public_key();
+                                entry.amount = asset( op.amount, op.condition.asset_id );
+                                entry.memo = status->get_message();
+                                //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                             }
+                             else
+                             {
+                                //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                                //ilog( "op: ${op}", ("op",op) );
+                                entry.from_account = key.get_public_key();
+                                entry.to_account = status->from;
+                                entry.memo = status->get_message();
+                                //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                             }
+                             trx_rec.ledger_entries.push_back( entry );
+                             cache_deposit = true;
+                             break;
+                          }
+                       }
+                   } ).wait();
                    break;
                 }
                 break;
@@ -1431,15 +1431,6 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-
-      if( !my->_scanner_thread->is_current() )
-      {
-          my->_scanner_thread->async( [this, start, end, progress_callback]()
-                                      { scan_chain( start, end, progress_callback ); } ).wait();
-          return;
-      }
-
-      fc::scoped_lock<boost::mutex> lock( my->_scan_lock );
       elog( "WALLET SCANNING CHAIN!" );
 
       const auto now = blockchain::now();
