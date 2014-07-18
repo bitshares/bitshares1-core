@@ -3,6 +3,15 @@
   "methods" :
     [
       {
+        "method_name": "blockchain_is_synced",
+        "description": "Returns true if the local blockchain is synced with the network; false otherwise",
+        "return_type": "bool",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["synced"]
+      },
+      {
         "method_name": "blockchain_get_blockhash",
         "description": "Returns hash of block in best-block-chain at index provided",
         "return_type": "block_id_type",

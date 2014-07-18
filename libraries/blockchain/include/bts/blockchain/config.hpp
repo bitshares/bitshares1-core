@@ -5,9 +5,9 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                              (107)
+#define BTS_BLOCKCHAIN_VERSION                              (109)
 #define BTS_WALLET_VERSION                                  (100)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (114)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (115)
 
 /**
  *  The address prepended to string representation of
@@ -95,7 +95,7 @@
  *
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
-#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT     (BTS_BLOCKCHAIN_INITIAL_SHARES/100) 
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/100)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
@@ -113,8 +113,8 @@
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
 #define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
-#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (10) 
-#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
+#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (1) // (10) 
+#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (5) // (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
 
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       (BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )

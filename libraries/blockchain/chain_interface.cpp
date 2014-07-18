@@ -7,7 +7,6 @@
 namespace bts{ namespace blockchain {
 
    balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
-   :genesis(false)
    {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
@@ -126,17 +125,23 @@ namespace bts{ namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
 
-   string  chain_interface::to_pretty_asset( const asset& a )const
+   string chain_interface::to_pretty_asset( const asset& a )const
    {
-      auto oasset = get_asset_record( a.asset_id );
-      if( oasset )
+      const auto oasset = get_asset_record( a.asset_id );
+      const auto amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
+      if( oasset.valid() )
       {
-         string decimal = fc::to_string(oasset->get_precision() + a.amount%oasset->get_precision());
+         const auto precision = oasset->get_precision();
+         string decimal = fc::to_string( precision + ( amount % precision ) );
          decimal[0] = '.';
-         return fc::to_pretty_string( a.amount / oasset->get_precision()) +  decimal + " " + oasset->symbol;
+         const auto str = fc::to_pretty_string( amount / precision ) + decimal + " " + oasset->symbol;
+         if( a.amount < 0 ) return "-" + str;
+         return str;
       }
       else
+      {
          return fc::to_pretty_string( a.amount ) + " ???";
+      }
    }
 
    int64_t   chain_interface::get_required_confirmations()const

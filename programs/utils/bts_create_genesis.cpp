@@ -47,7 +47,7 @@ int main( int argc, char** argv )
    {
       keys.push_back( fc::ecc::private_key::generate() );
       config.names[i].name = "init"+fc::to_string(i);
-      config.names[i].is_delegate = true;
+      config.names[i].delegate_pay_rate = 100;
       config.names[i].owner = keys[i].get_public_key().serialize();
       /*
       config.balances[i].first = pts_address( keys[i].get_public_key() );

@@ -250,31 +250,31 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     cfg.appenders.push_back(fc::appender_config( "p2p", "file", fc::variant(ac_p2p)));
 
     fc::logger_config dlc;
-    dlc.level = fc::log_level::debug;
+    dlc.level = fc::log_level::warn;
     dlc.name = "default";
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_client;
-    dlc_client.level = fc::log_level::debug;
+    dlc_client.level = fc::log_level::warn;
     dlc_client.name = "client";
     dlc_client.appenders.push_back("default");
     dlc_client.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_rpc;
-    dlc_rpc.level = fc::log_level::debug;
+    dlc_rpc.level = fc::log_level::warn;
     dlc_rpc.name = "rpc";
     dlc_rpc.appenders.push_back("rpc");
 
     fc::logger_config dlc_blockchain;
-    dlc_blockchain.level = fc::log_level::debug;
+    dlc_blockchain.level = fc::log_level::warn;
     dlc_blockchain.name = "blockchain";
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::debug;
+    dlc_p2p.level = fc::log_level::warn;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -488,10 +488,18 @@ config load_config( const fc::path& datadir )
                 try {
                   _chain_db = std::make_shared<chain_database>();
                 } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
+
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl() override 
             { 
+               try {
+                  if( _rebroadcast_pending_loop.valid() )
+                  {
+                     _rebroadcast_pending_loop.cancel();
+                     _rebroadcast_pending_loop.wait();
+                  }
+               } catch (...){}
               delete _cli;
             }
 
@@ -504,6 +512,8 @@ config load_config( const fc::path& datadir )
             void start_delegate_loop();
             void cancel_delegate_loop();
             void delegate_loop();
+            void rebroadcast_pending();
+            fc::future<void> _rebroadcast_pending_loop;
 
             void configure_rpc_server(config& cfg, 
                                       const program_options::variables_map& option_variables);
@@ -566,6 +576,7 @@ config load_config( const fc::path& datadir )
             logging_exception_db                                        _exception_db;
 
             uint32_t                                                    _min_delegate_connection_count;
+            bool                                                        _sync_mode;
 
             rpc_server_config                                           _tmp_rpc_config;
             //-------------------------------------------------- JSON-RPC Method Implementations
@@ -839,6 +850,28 @@ config load_config( const fc::path& datadir )
          return trxs;
        }
 
+       void client_impl::rebroadcast_pending()
+       {
+           if( !_sync_mode )
+           {
+              wlog( "rebroadcasting... " );
+              try {
+               auto pending = blockchain_get_pending_transactions();
+               for( auto trx : pending )
+               {
+                  network_broadcast_transaction( trx );
+               }
+              } 
+              catch ( const fc::exception& e )
+              {
+                 wlog( "error rebroadcasting transacation: ${e}", ("e",e.to_detail_string() ) );
+              }
+           }
+           _rebroadcast_pending_loop = fc::schedule( [=](){ 
+                         rebroadcast_pending();
+                     }, fc::time_point::now() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3) );
+       }
+
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
@@ -848,6 +881,7 @@ config load_config( const fc::path& datadir )
        {
          try
          {
+            _sync_mode = sync_mode;
             try
             {
               FC_ASSERT( !_simulate_disconnect );
@@ -871,13 +905,6 @@ config load_config( const fc::path& datadir )
                       FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
                    ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
 
-                   if( !sync_mode )
-                   {
-                     // rebroadcast for good measure
-                     auto pending = blockchain_get_pending_transactions();
-                     for( auto trx : pending )
-                        network_broadcast_transaction( trx );
-                   }
 
                    auto now = blockchain::now();
                    if (_cli
@@ -911,6 +938,10 @@ config load_config( const fc::path& datadir )
           try {
               // throws exception if invalid trx, don't override limits
               return !!_chain_db->store_pending_transaction(trx, false);
+          }
+          catch ( const duplicate_transaction& e )
+          {
+             throw;
           }
           catch ( const fc::exception& e )
           {
@@ -1266,6 +1297,8 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
+       my->_sync_mode = true;
+       my->rebroadcast_pending();
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
@@ -1352,6 +1385,8 @@ config load_config( const fc::path& datadir )
         }
         my->_p2p_node->set_node_delegate(my.get());
 
+        //start rebroadcast pending loop
+        my->rebroadcast_pending();
 
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
@@ -1391,8 +1426,8 @@ config load_config( const fc::path& datadir )
       // ilog("broadcasting transaction: ${id} ", ("id", transaction_to_broadcast.id()));
 
       // p2p doesn't send messages back to the originator
-      on_new_transaction(transaction_to_broadcast);
       _p2p_node->broadcast(trx_message(transaction_to_broadcast));
+      on_new_transaction(transaction_to_broadcast);
       return transaction_to_broadcast.id();
     }
 
@@ -1647,9 +1682,9 @@ config load_config( const fc::path& datadir )
                                                                                         uint32_t start_block_num,
                                                                                         uint32_t end_block_num,
                                                                                         const string& asset_symbol )const
-    {
+    { try {
       return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
-    }
+    } FC_RETHROW_EXCEPTIONS( warn, "") }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
@@ -1764,6 +1799,7 @@ config load_config( const fc::path& datadir )
       auto key = _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
+
       auto oacct = _wallet->get_account_for_address( address( key ) );
       FC_ASSERT(oacct.valid(), "No account for a key we just imported" );
       return oacct->name;
@@ -1910,7 +1946,6 @@ config load_config( const fc::path& datadir )
        return 0;
 
     } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
 
     digest_block detail::client_impl::bitcoin_getblock( const block_id_type& block_id )const
     {
@@ -2512,6 +2547,7 @@ config load_config( const fc::path& datadir )
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
        info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
+       info["priority_fee"]                         = _wallet->is_open() ? _chain_db->to_pretty_asset( _wallet->get_priority_fee() ) : variant();
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        const auto delegate_reg_fee                  = _chain_db->get_delegate_registration_fee();
@@ -2688,17 +2724,12 @@ config load_config( const fc::path& datadir )
     signed_transaction client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
                                                                         const variant& public_data,
-                                                                        uint8_t delegate_pay_rate,
-                                                                        const string& new_active_key )
+                                                                        uint8_t delegate_pay_rate )
     {
-       auto new_key = optional<public_key_type>();
-       if( !new_active_key.empty() ) new_key = public_key_type( new_active_key );
-
        const auto trx = _wallet->update_registered_account( account_to_update,
                                                             pay_from_account,
                                                             public_data,
                                                             delegate_pay_rate,
-                                                            new_key,
                                                             true );
 
        network_broadcast_transaction( trx );
@@ -2822,6 +2853,11 @@ config load_config( const fc::path& datadir )
       }
       return _wallet->get_priority_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
+
+   bool client_impl::blockchain_is_synced() const
+   {
+     return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+   }
 
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {

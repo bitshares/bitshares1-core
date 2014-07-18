@@ -2,7 +2,21 @@
 project( BitShares )
 cmake_minimum_required( VERSION 2.8.12 )
 
+# http://stackoverflow.com/a/18369825
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7)
+        message(FATAL_ERROR "GCC version must be at least 4.7!")
+    endif()
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.3)
+        message(FATAL_ERROR "Clang version must be at least 3.3!")
+    endif()
+endif()
+
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
+
+# Set to ON to run network code in a dedicated thread; OFF to keep in bitshares thread
+set (THREADED_P2P OFF)
 
 #set (ENABLE_INSTALLER 1)
 #set (USE_PCH 1)

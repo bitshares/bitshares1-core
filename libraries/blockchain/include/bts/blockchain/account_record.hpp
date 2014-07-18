@@ -14,12 +14,12 @@ namespace bts { namespace blockchain {
 
    struct delegate_stats
    {
-      delegate_stats()
+      delegate_stats( uint8_t pay_rate = 100 )
       :votes_for(0),
        blocks_produced(0),
        blocks_missed(0),
        last_block_num_produced(0),
-       pay_rate(100),
+       pay_rate(pay_rate),
        pay_balance(0){}
 
       share_type                     votes_for;

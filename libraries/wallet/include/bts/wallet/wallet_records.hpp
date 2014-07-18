@@ -107,7 +107,6 @@ namespace bts { namespace wallet {
        bool              is_favorite;
    };
 
-
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
    struct wallet_record : public base_record<RecordTypeNumber>, public RecordTypeName
    {
@@ -115,7 +114,6 @@ namespace bts { namespace wallet {
       wallet_record( const RecordTypeName& rec, int32_t wallet_record_index = 0 )
       :base_record<RecordTypeNumber>(wallet_record_index),RecordTypeName(rec){}
    };
-
 
    struct master_key
    {
@@ -150,8 +148,7 @@ namespace bts { namespace wallet {
        optional<public_key_type> from_account;
        optional<public_key_type> to_account;
        asset                     amount;
-       asset                     fee;
-       std::string               memo;
+       string                    memo;
    };
 
    struct transaction_data
@@ -162,7 +159,7 @@ namespace bts { namespace wallet {
        /*
         * record_id
         * - non-virtual transactions: trx.id()
-        * - virtual genesis claims: genesis_balance_record.id().addr
+        * - virtual genesis claims: fc::ripemd160::hash( owner_account_name )
         * - virtual market transactions: fc::ripemd160::hash( block_num + get_key_label( owner ) + N )
         */
        transaction_id_type       record_id;
@@ -172,6 +169,7 @@ namespace bts { namespace wallet {
        bool                      is_market;
        signed_transaction        trx;
        vector<ledger_entry>      ledger_entries;
+       asset                     fee;
        fc::time_point_sec        created_time;
        fc::time_point_sec        received_time;
        vector<address>           extra_addresses;
@@ -251,8 +249,8 @@ FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
 FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
-FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(fee)(memo) );
 
+FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(memo) );
 FC_REFLECT( bts::wallet::transaction_data, 
             (record_id)
             (block_num)
@@ -261,16 +259,15 @@ FC_REFLECT( bts::wallet::transaction_data,
             (is_market)
             (trx)
             (ledger_entries)
+            (fee)
             (created_time)
             (received_time)
             (extra_addresses)
           )
-FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 
+FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 FC_REFLECT( bts::wallet::setting, (name)(value) )
-
-
 
 /**
  *  Implement generic reflection for wallet record types

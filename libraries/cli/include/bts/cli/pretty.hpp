@@ -19,7 +19,7 @@ using namespace bts::wallet;
 
 typedef bts::client::client const * const cptr;
 
-string pretty_line( int size );
+string pretty_line( int size, char c = '=' );
 string pretty_shorten( const string& str, size_t max_size );
 string pretty_timestamp( const time_point_sec& timestamp );
 string pretty_age( const time_point_sec& timestamp );

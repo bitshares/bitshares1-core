@@ -669,12 +669,6 @@
                   "type" : "uint8_t",
                   "description" : "delegate pay rate: 0 to 100 if updating or upgrading to a delegate, and 255 for a normal account",
                   "default_value" : 255
-               },
-               {
-                  "name" : "new_active_key",
-                  "type" : "string",
-                  "description" : "update account's active key, or leave blank to leave current key in place",
-                  "default_value" : ""
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1000,12 +994,12 @@
                "description" : "the type of items you would like to buy"
             },
             {
-               "name" : "quote_price",
+               "name" : "base_price",
                "type" : "real_amount",
                "description" : "the price you would like to pay"
             },
             {
-               "name" : "quote_symbol",
+               "name" : "base_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to pay with"
             }
@@ -1034,12 +1028,12 @@
                "description" : "the type of items you would like to sell"
             },
             {
-               "name" : "quote_price",
+               "name" : "base_price",
                "type" : "real_amount",
                "description" : "the price you would like to sell"
             },
             {
-               "name" : "quote_symbol",
+               "name" : "base_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to be paid"
             }
@@ -1063,12 +1057,12 @@
                "description" : "the quantity of items you would like to sell"
             },
             {
-               "name" : "quote_price",
+               "name" : "base_price",
                "type" : "real_amount",
                "description" : "the price you would like to sell"
             },
             {
-               "name" : "quote_symbol",
+               "name" : "base_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to be paid"
             }
@@ -1099,7 +1093,7 @@
             {
                "name" : "order_id",
                "type" : "address",
-               "description" : "the order ID you would lick to cover"
+               "description" : "the order ID you would like to cover"
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1111,14 +1105,14 @@
          "return_type" : "market_order_array",
          "parameters"  : [
             {
-               "name" : "quote_symbol",
-               "type" : "asset_symbol",
-               "description" : "the quote symbol of the market"
-            },
-            {
                "name" : "base_symbol",
                "type" : "asset_symbol",
                "description" : "the base symbol of the market"
+            },
+            {
+               "name" : "quote_symbol",
+               "type" : "asset_symbol",
+               "description" : "the quote symbol of the market"
             },
             {
                "name" : "limit",
@@ -1152,7 +1146,7 @@
          {
             "name" : "address_or_public_key",
             "type" : "string",
-            "description" : "a public key or address (based on hash of public key) of the private key"
+            "description" : "a public key or address (quoted on hash of public key) of the private key"
          }
          ],
          "prerequisites" : ["wallet_unlocked"],

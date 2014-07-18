@@ -43,6 +43,9 @@ namespace bts { namespace net
 
     peer_connection::~peer_connection()
     {
+       try {
+         close_connection();
+       } catch ( ... ) {}
       if (_send_queued_messages_done.valid() && !_send_queued_messages_done.ready())
       {
         _send_queued_messages_done.cancel();
@@ -198,8 +201,9 @@ namespace bts { namespace net
         return;
       }
 
+      if( _send_queued_messages_done.valid() ) FC_ASSERT( !_send_queued_messages_done.canceled() );
       if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
-        _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
+           _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
     }
 
     void peer_connection::close_connection()
