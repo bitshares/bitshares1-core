@@ -1682,10 +1682,10 @@ namespace bts { namespace wallet {
 
           if( tx_record.block_num < start_block_num ) continue;
           if( end_block_num != -1 && tx_record.block_num > end_block_num ) continue;
+          if( tx_record.ledger_entries.empty() ) continue; /* TODO: Temporary */
 
           if( !account_name.empty() )
           {
-              if( tx_record.ledger_entries.empty() ) continue; /* TODO: Temporary */
               bool match = false;
               if( tx_record.ledger_entries.front().from_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().from_account ) == account_name;
               if( tx_record.ledger_entries.front().to_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().to_account ) == account_name;
@@ -1694,7 +1694,6 @@ namespace bts { namespace wallet {
 
           if( asset_id != 0 )
           {
-              if( tx_record.ledger_entries.empty() ) continue; /* TODO: Temporary */
               bool match = false;
               match |= tx_record.ledger_entries.front().amount.asset_id == asset_id;
               match |= tx_record.ledger_entries.front().memo.find( asset_symbol ) != string::npos; /* TODO: This is dumb */
@@ -1734,13 +1733,9 @@ namespace bts { namespace wallet {
        auto running_balances = map<asset_id_type, asset>();
        for( auto& trx : pretties )
        {
-           const auto fee_asset_id = trx.fee.asset_id;
-           if( running_balances.count( fee_asset_id ) <= 0 )
-               running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
-
            auto any_from_me = false;
 
-           for( const auto& entry : trx.ledger_entries )
+           for( auto& entry : trx.ledger_entries )
            {
                const auto amount_asset_id = entry.amount.asset_id;
                if( running_balances.count( amount_asset_id ) <= 0 )
@@ -1756,15 +1751,27 @@ namespace bts { namespace wallet {
                to_me |= account_name == entry.to_account;
                if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
 
-               trx.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
+               entry.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
 
                any_from_me |= from_me;
            }
 
-           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) running_balances[ trx.fee.asset_id ] -= trx.fee;
-           else trx.fee = asset(); /* Don't return fees we didn't pay */
+           /* Subtract fee from running balances */
+           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) )
+           {
+               const auto fee_asset_id = trx.fee.asset_id;
+               for( auto& entry : trx.ledger_entries )
+               {
+                   if( entry.running_balances.count( fee_asset_id ) <= 0 )
+                       entry.running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
 
-           trx.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
+                   entry.running_balances[ fee_asset_id ] -= trx.fee;
+               }
+           }
+           else /* Don't return fees we didn't pay */
+           {
+               trx.fee = asset();
+           }
        }
 
        return pretties;
