@@ -739,11 +739,11 @@ namespace bts { namespace wallet {
    void wallet_db::cache_domain( const wallet_domain_record& rec )
    {
         domains[string(rec)] = rec;
-        store_record( rec );
+        //store_record( rec );
    }
    void wallet_db::remove_domain( const wallet_domain_record& rec )
    {
-        remove_item( rec.wallet_record_index );
+        //remove_item( rec.wallet_record_index );
         domains.erase( string(rec) );
    }
 

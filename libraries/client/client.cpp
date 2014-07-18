@@ -3116,6 +3116,11 @@ config load_config( const fc::path& datadir )
 
     /* DNS methods */
 
+    vector<domain_record>     client_impl::domain_list_mine()
+    {
+        return _wallet->domain_list_mine();
+    }
+
     signed_transaction        client_impl::domain_bid( const string& domain_name,
                                                        const share_type& bid_amount,
                                                        const string& owner_name )

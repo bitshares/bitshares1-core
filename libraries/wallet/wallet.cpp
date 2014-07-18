@@ -143,6 +143,8 @@ namespace bts { namespace wallet {
             bool scan_domain_transfer( wallet_transaction_record& trx_rec, const domain_transfer_operation& op,
                                        const private_keys& keys );
 
+            bool scan_domain_modify( wallet_transaction_record& trx_rec, const operation& op );
+
             bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
@@ -399,12 +401,12 @@ namespace bts { namespace wallet {
                       cache_transaction |= scan_domain_transfer( *transaction_record, op.as<domain_transfer_operation>(), keys );
                       break;
 
-
                   case domain_bid_op_type:
                   case domain_update_info_op_type:
                   case domain_sell_op_type:
                   case domain_cancel_sell_op_type:
                   case domain_buy_op_type:
+                      cache_transaction |= scan_domain_modify( *transaction_record, op );
                       break;
 
                   default:
@@ -636,6 +638,51 @@ namespace bts { namespace wallet {
 
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
+
+
+       bool wallet_impl::scan_domain_modify( wallet_transaction_record& trx_rec, const operation& op )
+       { try {
+           auto domains = _wallet_db.get_domains();
+           bool cache_trx = false;
+           string existing_domain_name;
+           switch( operation_type_enum( op.type ) )
+           {
+              case domain_bid_op_type:
+                  existing_domain_name = op.as<domain_bid_operation>().domain_name;
+                  break;
+              case domain_update_info_op_type:
+                  existing_domain_name = op.as<domain_update_info_operation>().domain_name;
+                  break;
+              case domain_sell_op_type:
+                  existing_domain_name = op.as<domain_sell_operation>().domain_name;
+                  break;
+              case domain_cancel_sell_op_type:
+                  existing_domain_name = op.as<domain_cancel_sell_operation>().domain_name;
+                  break;
+              case domain_buy_op_type:
+                  existing_domain_name = op.as<domain_buy_operation>().domain_name;
+                  break;
+              default:
+                FC_ASSERT(!"in scan_domain_modify but its an op type we don't expect");
+           }
+           
+           if ( domains.find(existing_domain_name) != domains.end() )
+           {
+               // we owned this domain prior to this op so we should cache the transaction 
+               // (e.g. filled sell or transfer)
+               cache_trx |= true;
+           }
+           auto existing_domain_rec = _blockchain->get_domain_record(existing_domain_name);
+           if ( existing_domain_rec.valid() )
+           {
+               if ( _wallet_db.has_private_key( existing_domain_rec->owner ) )
+               {
+                   _wallet_db.cache_domain( existing_domain_rec->domain_name ); //wallet_domain_record is just string
+                   cache_trx |= true;
+               }
+           }
+          return cache_trx;
+       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_domain_modify
       
        bool wallet_impl::scan_domain_transfer( wallet_transaction_record& trx_rec, const domain_transfer_operation& op,
                                                const private_keys& keys )
@@ -3953,6 +4000,18 @@ namespace bts { namespace wallet {
 
     // DNS
 
+    vector<domain_record> wallet::domain_list_mine()
+    {
+        vector<domain_record> result;
+        for( auto wallet_domain_rec : my->_wallet_db.get_domains() )
+        {
+            auto rec = my->_blockchain->get_domain_record( wallet_domain_rec.first );
+            FC_ASSERT(rec.valid(), "a domain is in your wallet but not in the blockchain");
+            if (rec->get_true_state() != domain_record::unclaimed) //expired
+                result.push_back(*rec);
+        }
+        return result;
+    }
    
     signed_transaction wallet::domain_bid( const string& domain_name,
                                            const share_type& bid_amount,

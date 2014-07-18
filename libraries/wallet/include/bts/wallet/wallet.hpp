@@ -418,6 +418,9 @@ namespace bts { namespace wallet {
 
 
          // DNS
+            
+         vector<domain_record>     domain_list_mine();
+
          signed_transaction        domain_bid( const string& domain_name,
                                                const share_type& bid_amount,
                                                const string& owner_name,
