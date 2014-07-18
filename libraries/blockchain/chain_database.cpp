@@ -2139,11 +2139,7 @@ namespace bts { namespace blockchain {
          /* In case of redundant balances */
          auto cur = self->get_balance_record( initial_balance.id() );
          if( cur.valid() ) initial_balance.balance += cur->balance;
-
-         /* Mark as BTC or PTS address */
-         if( string( addr )[0] == '1' ) initial_balance.genesis_info = genesis_record( false, 0 );
-         else initial_balance.genesis_info = genesis_record( true, 56 );
-
+         initial_balance.genesis_info = genesis_record( initial_balance.get_balance(), string( addr ) );
          initial_balance.last_update = config.timestamp;
          self->store_balance_record( initial_balance );
       }

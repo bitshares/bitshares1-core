@@ -237,17 +237,14 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 20 ) << "FROM";
     out << std::setw( 20 ) << "TO";
     out << std::setw( 24 ) << "AMOUNT";
-    out << std::setw( 20 ) << "FEE";
     out << std::setw( 44 ) << "MEMO";
     if( is_filtered ) out << std::setw( 24 ) << "BALANCE";
+    out << std::setw( 20 ) << "FEE";
     out << std::setw(  7 ) << "ID";
     out << "\n";
 
-    if( any_group ) out << " ";
-
     const auto line_size = !is_filtered ? 165 : 189;
-    out << pretty_line( line_size )
-        << "\n";
+    out << pretty_line( !any_group ? line_size : line_size + 2 ) << "\n";
 
     const auto errors = client->get_wallet()->get_pending_transaction_errors();
 
@@ -298,9 +295,6 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             out << std::setw( 20 ) << pretty_shorten( entry.to_account, 19 );
             out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( entry.amount );
 
-            out << std::setw( 20 );
-            out << client->get_chain()->to_pretty_asset( transaction.fee );
-
             out << std::setw( 44 ) << pretty_shorten( entry.memo, 43 );
 
             if( is_filtered )
@@ -312,10 +306,21 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                     out << "N/A";
             }
 
-            out << std::setw( 7 );
-            if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
-            else if( transaction.is_virtual ) out << "VIRTUAL";
-            else out << string( transaction.trx_id ).substr( 0, 7 );
+            if( count == 1 )
+            {
+                out << std::setw( 20 );
+                out << client->get_chain()->to_pretty_asset( transaction.fee );
+
+                out << std::setw( 7 );
+                if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+                else if( transaction.is_virtual ) out << "VIRTUAL";
+                else out << string( transaction.trx_id ).substr( 0, 7 );
+            }
+            else
+            {
+                out << std::setw( 20 ) << "";
+                out << std::setw( 7 ) << "";
+            }
 
             if( group ) out << "|";
             out << "\n";

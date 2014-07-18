@@ -9,11 +9,11 @@ namespace bts { namespace blockchain {
    {
       genesis_record(){}
 
-      genesis_record( bool c, uint8_t v )
-      :compressed(c), version(v){}
+      genesis_record( const asset& b, const string& a )
+      :initial_balance(b),claim_addr(a){}
 
-      bool compressed = true;
-      uint8_t version = 56;
+      asset     initial_balance;
+      string    claim_addr;
    };
    typedef fc::optional<genesis_record> ogenesis_record;
 
@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
       /** condition.get_address() */
       balance_id_type            id()const { return condition.get_address(); }
       asset                      get_balance()const;
-      bool                       is_null()const    { return balance == 0; }
+      bool                       is_null()const    { return balance == 0 && !genesis_info.valid(); } /* I'm sorry */
       balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
       asset_id_type              asset_id()const { return condition.asset_id; }
       slate_id_type              delegate_slate_id()const { return condition.delegate_slate_id; }
@@ -39,6 +39,7 @@ namespace bts { namespace blockchain {
 
       share_type                 balance = share_type( 0 );
       withdraw_condition         condition;
+      // TODO: We can do better than this
       ogenesis_record            genesis_info;
       fc::time_point_sec         last_update;
    };
@@ -46,5 +47,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::genesis_record, (compressed)(version) )
+FC_REFLECT( bts::blockchain::genesis_record, (initial_balance)(claim_addr) )
 FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(genesis_info)(last_update) )
