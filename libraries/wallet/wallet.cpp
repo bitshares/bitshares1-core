@@ -812,7 +812,7 @@ namespace bts { namespace wallet {
    {
       my->self = this;
       my->_delegate_scanning_enabled = false;
-      my->_use_deterministic_one_time_keys = false;
+      my->_use_deterministic_one_time_keys = true;
       my->_blockchain = blockchain;
       my->_blockchain->add_observer( my.get() );
    }

@@ -113,8 +113,8 @@
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
 #define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
-#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (10) 
-#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
+#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (1) // (10) 
+#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (5) // (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
 
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       (BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
