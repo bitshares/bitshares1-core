@@ -62,6 +62,7 @@ namespace bts { namespace wallet {
              fc::future<void>                   _relocker_done;
              bool                               _use_deterministic_one_time_keys;
              bool                               _delegate_scanning_enabled;
+             fc::future<void>                   _scan_in_progress;
 
              std::unique_ptr<fc::thread>        _scanner_thread;
              float                              _scan_progress;
@@ -1440,6 +1441,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       elog( "WALLET SCANNING CHAIN!" );
 
+
       const auto now = blockchain::now();
 
       if( start == 0 )
@@ -1454,39 +1456,50 @@ namespace bts { namespace wallet {
          return;
       }
 
-      auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
-
-      try
+      // cancel the current scan...
+      if( my->_scan_in_progress.valid() )
       {
-        my->_scan_progress = 0;
-        auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+         my->_scan_in_progress.cancel();
+         try {
+            my->_scan_in_progress.wait();
+         } catch ( ... ) {}
+      }
 
-        for( auto block_num = start; block_num <= min_end; ++block_num )
-        {
-           my->scan_block( block_num, account_priv_keys, now );
-           if( progress_callback )
-              progress_callback( block_num, min_end );
-           my->_scan_progress = float(block_num-start)/(min_end-start+1);
-           my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
-        }
+      my->_scan_in_progress = fc::async( [=](){ 
+         auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
 
-        for( auto acct : my->_wallet_db.get_accounts() )
-        {
-           auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
-           if (blockchain_acct_rec.valid())
+         try
+         {
+           my->_scan_progress = 0;
+           auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+
+           for( auto block_num = start; !my->_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
-               blockchain::account_record& brec = acct.second;
-               brec = *blockchain_acct_rec;
-               my->_wallet_db.cache_account( acct.second );
+              my->scan_block( block_num, account_priv_keys, now );
+              if( progress_callback )
+                 progress_callback( block_num, min_end );
+              my->_scan_progress = float(block_num-start)/(min_end-start+1);
+              my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
            }
-        }
-        my->_scan_progress = 1;
-      }
-      catch(...)
-      {
-        my->_scan_progress = -1;
-        throw;
-      }
+
+           for( auto acct : my->_wallet_db.get_accounts() )
+           {
+              auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
+              if (blockchain_acct_rec.valid())
+              {
+                  blockchain::account_record& brec = acct.second;
+                  brec = *blockchain_acct_rec;
+                  my->_wallet_db.cache_account( acct.second );
+              }
+           }
+           my->_scan_progress = 1;
+         }
+         catch(...)
+         {
+           my->_scan_progress = -1;
+           throw;
+         }
+      } );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
