@@ -7,11 +7,11 @@ namespace bts { namespace blockchain {
 
   struct name_config
   {
-     name_config():is_delegate(false){}
+     name_config():delegate_pay_rate(255){}
 
      std::string        name;
      public_key_type    owner;
-     bool               is_delegate;
+     int                delegate_pay_rate;
   };
 
   struct asset_config // these are all market-issued assets
@@ -39,6 +39,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::name_config, (name)(owner)(is_delegate) )
+FC_REFLECT( bts::blockchain::name_config, (name)(owner)(delegate_pay_rate) )
 FC_REFLECT( bts::blockchain::asset_config, (symbol)(name)(description)(precision)(min_price)(max_price) )
 FC_REFLECT( bts::blockchain::genesis_block_config, (timestamp)(market_assets)(names)(balances) )

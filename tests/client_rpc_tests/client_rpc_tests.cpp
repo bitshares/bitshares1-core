@@ -88,7 +88,7 @@ struct WFixture
          delegate_private_keys.push_back( fc::ecc::private_key::generate() );
          auto delegate_public_key = delegate_private_keys.back().get_public_key();
          delegate_account.owner = delegate_public_key;
-         delegate_account.is_delegate = true;
+         delegate_account.delegate_pay_rate = 100;
          
          config.names.push_back(delegate_account);
          config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );

@@ -159,7 +159,7 @@ struct chain_fixture
          delegate_account.name = "delegate" + fc::to_string(i);
          auto delegate_public_key = delegate_private_keys[i].get_public_key();
          delegate_account.owner = delegate_public_key;
-         delegate_account.is_delegate = true;
+         delegate_account.delegate_pay_rate = 100;
          
          config.names.push_back(delegate_account);
          config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), 
