@@ -26,10 +26,10 @@ struct public_key_summary
 
 struct pretty_ledger_entry
 {
-   string   from_account;
-   string   to_account;
-   asset    amount;
-   string   memo;
+   string                       from_account;
+   string                       to_account;
+   asset                        amount;
+   string                       memo;
 };
 
 struct pretty_transaction
@@ -37,17 +37,17 @@ struct pretty_transaction
     pretty_transaction()
     :is_virtual(false),is_confirmed(false),is_market(false),is_market_cancel(false),block_num(0){}
 
-    bool                                        is_virtual;
-    bool                                        is_confirmed;
-    bool                                        is_market;
-    bool                                        is_market_cancel;
-    transaction_id_type                         trx_id;
-    uint32_t                                    block_num;
-    vector<pretty_ledger_entry>                 ledger_entries;
-    asset                                       fee;
-    fc::time_point_sec                          created_time;
-    fc::time_point_sec                          received_time;
-    map<asset_id_type, asset>                   running_balances;
+    bool                        is_virtual;
+    bool                        is_confirmed;
+    bool                        is_market;
+    bool                        is_market_cancel;
+    transaction_id_type         trx_id;
+    uint32_t                    block_num;
+    vector<pretty_ledger_entry> ledger_entries;
+    asset                       fee;
+    fc::time_point_sec          created_time;
+    fc::time_point_sec          received_time;
+    map<asset_id_type, asset>   running_balances;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }

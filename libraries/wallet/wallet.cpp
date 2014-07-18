@@ -12,13 +12,11 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
-#include <fc/thread/scoped_lock.hpp>
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
-#include <boost/thread/mutex.hpp>
 #include <fc/io/json.hpp>
 #include <iostream>
 #include <sstream>
@@ -64,9 +62,9 @@ namespace bts { namespace wallet {
              fc::future<void>                   _relocker_done;
              bool                               _use_deterministic_one_time_keys;
              bool                               _delegate_scanning_enabled;
+             fc::future<void>                   _scan_in_progress;
 
              std::unique_ptr<fc::thread>        _scanner_thread;
-             boost::mutex                       _scan_lock;
              float                              _scan_progress;
 
              struct login_record
@@ -238,10 +236,9 @@ namespace bts { namespace wallet {
             void scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
                                    const vector<private_key_type>& keys, const time_point_sec& received_time );
 
-            bool scan_withdraw( const withdraw_operation& op );
+            bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec );
 
-            bool scan_deposit( wallet_transaction_record& trx_rec, const deposit_operation& op, 
-                               const private_keys& keys );
+            bool scan_deposit( const deposit_operation& op, const private_keys& keys, wallet_transaction_record& trx_rec );
 
             bool scan_register_account( const register_account_operation& op );
             bool scan_update_account( const update_account_operation& op );
@@ -281,33 +278,52 @@ namespace bts { namespace wallet {
 
       void wallet_impl::scan_balances( const time_point_sec& received_time )
       {
+         /* Delete ledger entries for any genesis balances before we can reconstruct them */
+          /*
+         const auto my_accounts = self->list_my_accounts();
+         for( const auto& account : my_accounts )
+         {
+             const auto record_id = fc::ripemd160::hash( account.name );
+             auto transaction_record = _wallet_db.lookup_transaction( record_id );
+             if( transaction_record.valid() )
+             {
+                 transaction_record->ledger_entries.clear();
+                 _wallet_db.store_transaction( *transaction_record );
+             }
+         }
+         */
+
          _blockchain->scan_balances( [&]( const balance_record& bal_rec )
          {
-              const auto key_rec =_wallet_db.lookup_key( bal_rec.owner() );
+              const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
                 _wallet_db.cache_balance( bal_rec );
 
-                if( bal_rec.genesis ) /* Create virtual transaction for genesis claims */
+                if( bal_rec.genesis_info.valid() ) /* Create virtual transactions for genesis claims */
                 {
-                    const auto record_id = bal_rec.id().addr; /* I'm sorry */
+                    const auto public_key = key_rec->public_key;
+                    //const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
+                    const auto record_id = bal_rec.id().addr;
                     auto transaction_record = _wallet_db.lookup_transaction( record_id );
-                    if( !transaction_record.valid() ) /* Should only be updated once */
+                    if( !transaction_record.valid() )
                     {
                         transaction_record = wallet_transaction_record();
                         transaction_record->record_id = record_id;
                         transaction_record->is_virtual = true;
-
-                        auto entry = ledger_entry();
-                        entry.to_account = key_rec->public_key;
-                        entry.amount = asset( bal_rec.balance );
-                        entry.memo = "claim genesis balance";
-
-                        transaction_record->ledger_entries.push_back( entry );
                         transaction_record->created_time = _blockchain->get_genesis_timestamp();
                         transaction_record->received_time = received_time;
-                        _wallet_db.store_transaction( *transaction_record );
+
+                    auto entry = ledger_entry();
+                    entry.to_account = public_key;
+                    //entry.amount = bal_rec.genesis_info->initial_balance;
+                    entry.amount = bal_rec.get_balance();
+                    entry.memo = "claim " + bal_rec.genesis_info->claim_addr;
+
+                    transaction_record->ledger_entries.push_back( entry );
+                    _wallet_db.store_transaction( *transaction_record );
                     }
+
                 }
               }
          } );
@@ -429,7 +445,7 @@ namespace bts { namespace wallet {
           const auto record_id = transaction.id();
           auto transaction_record = _wallet_db.lookup_transaction( record_id );
           auto is_duplicate = transaction_record.valid();
-          if( !transaction_record.valid() ) /* If new transaction */
+          if( !is_duplicate ) /* If new transaction */
           {
               transaction_record = wallet_transaction_record();
               transaction_record->record_id = record_id;
@@ -440,9 +456,10 @@ namespace bts { namespace wallet {
 
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
+          //transaction_record->ledger_entries.clear(); /* Reconstruct ledger entries each time; sorry memo */
           if( is_duplicate ) _wallet_db.store_transaction( *transaction_record );
 
-          auto store_record = false;
+          auto store_record = is_duplicate;
           for( const auto& op : transaction.operations )
           {
               switch( operation_type_enum( op.type ) )
@@ -452,10 +469,10 @@ namespace bts { namespace wallet {
                       break;
 
                   case withdraw_op_type:
-                      store_record |= scan_withdraw( op.as<withdraw_operation>() );
+                      store_record |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record );
                       break;
                   case deposit_op_type:
-                      store_record |= scan_deposit( *transaction_record, op.as<deposit_operation>(), keys );
+                      store_record |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record );
                       break;
 
                   case register_account_op_type:
@@ -518,17 +535,30 @@ namespace bts { namespace wallet {
               }
           }
 
+          // TODO: link matching withdraws and deposits, but do it in to_pretty_trx
           if( store_record && !is_duplicate ) _wallet_db.store_transaction( *transaction_record );
       }
 
-      bool wallet_impl::scan_withdraw( const withdraw_operation& op )
+      bool wallet_impl::scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec )
       {
-         auto current_balance = _wallet_db.lookup_balance( op.balance_id );
-         if( current_balance.valid() )
+         auto bal_rec = _wallet_db.lookup_balance( op.balance_id );
+         if( bal_rec.valid() )
          {
+            // TODO: Only if withdraw by signature or by name
+            /*
+            const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
+
+            auto entry = ledger_entry();
+            if( key_rec.valid() ) entry.from_account = key_rec->public_key;
+            entry.amount = asset( op.amount, bal_rec->condition.asset_id );
+
+            trx_rec.ledger_entries.push_back( entry );
+            */
             sync_balance_with_blockchain( op.balance_id );
+
+            return true;
          }
-         return current_balance.valid();
+         return false;
       }
 
       bool wallet_impl::scan_register_account( const register_account_operation& op )
@@ -657,9 +687,8 @@ namespace bts { namespace wallet {
           return false;
       } FC_CAPTURE_AND_RETHROW( (short_op) ) } 
 
-      bool wallet_impl::scan_deposit( wallet_transaction_record& trx_rec, 
-                                      const deposit_operation& op, 
-                                      const private_keys& keys )
+      bool wallet_impl::scan_deposit( const deposit_operation& op, const private_keys& keys,
+                                      wallet_transaction_record& trx_rec )
       { try {
           bool cache_deposit = false; 
           switch( (withdraw_condition_types) op.condition.type )
@@ -678,35 +707,39 @@ namespace bts { namespace wallet {
                 }
                 else if( deposit.memo )
                 {
-                   for( const auto& key : keys )
+                   _scanner_thread->async( [&]()
                    {
-                      omemo_status status = deposit.decrypt_memo_data( key );
-                      if( status.valid() )
-                      {
-                         _wallet_db.cache_memo( *status, key, _wallet_password );
-                         auto entry = ledger_entry();
-                         if( status->memo_flags == from_memo )
-                         {
-                            entry.from_account = status->from;
-                            entry.to_account = key.get_public_key();
-                            entry.amount = asset( op.amount, op.condition.asset_id );
-                            entry.memo = status->get_message();
-                            //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
-                         }
-                         else
-                         {
-                            //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
-                            //ilog( "op: ${op}", ("op",op) );
-                            entry.from_account = key.get_public_key();
-                            entry.to_account = status->from;
-                            entry.memo = status->get_message();
-                            //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
-                         }
-                         trx_rec.ledger_entries.push_back( entry );
-                         cache_deposit = true;
-                         break;
-                      }
-                   }
+                       for( const auto& key : keys )
+                       {
+                           // TODO: see how we can optimize this
+                          omemo_status status = deposit.decrypt_memo_data( key );
+                          if( status.valid() )
+                          {
+                             _wallet_db.cache_memo( *status, key, _wallet_password );
+                             auto entry = ledger_entry();
+                             if( status->memo_flags == from_memo )
+                             {
+                                entry.from_account = status->from;
+                                entry.to_account = key.get_public_key();
+                                entry.amount = asset( op.amount, op.condition.asset_id );
+                                entry.memo = status->get_message();
+                                //ilog( "FROM MEMO... ${msg}", ("msg",trx_rec.memo_message) );
+                             }
+                             else
+                             {
+                                //ilog( "TO MEMO OLD STATE: ${s}",("s",trx_rec) );
+                                //ilog( "op: ${op}", ("op",op) );
+                                entry.from_account = key.get_public_key();
+                                entry.to_account = status->from;
+                                entry.memo = status->get_message();
+                                //ilog( "TO MEMO NEW STATE: ${s}",("s",trx_rec) );
+                             }
+                             trx_rec.ledger_entries.push_back( entry );
+                             cache_deposit = true;
+                             break;
+                          }
+                       }
+                   } ).wait();
                    break;
                 }
                 break;
@@ -941,6 +974,13 @@ namespace bts { namespace wallet {
 
    void wallet::close()
    { try {
+      if( my->_scan_in_progress.valid() )
+      {
+         my->_scan_in_progress.cancel();
+         try {
+            my->_scan_in_progress.wait();
+         } catch ( ... ) {}
+      }
       lock();
       ilog( "Canceling wallet relocker task..." );
       try { my->_relocker_done.cancel_and_wait(); } catch( ... ) {}
@@ -1407,16 +1447,8 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
-
-      if( !my->_scanner_thread->is_current() )
-      {
-          my->_scanner_thread->async( [this, start, end, progress_callback]()
-                                      { scan_chain( start, end, progress_callback ); } ).wait();
-          return;
-      }
-
-      fc::scoped_lock<boost::mutex> lock( my->_scan_lock );
       elog( "WALLET SCANNING CHAIN!" );
+
 
       const auto now = blockchain::now();
 
@@ -1432,39 +1464,50 @@ namespace bts { namespace wallet {
          return;
       }
 
-      auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
-
-      try
+      // cancel the current scan...
+      if( my->_scan_in_progress.valid() )
       {
-        my->_scan_progress = 0;
-        auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+         my->_scan_in_progress.cancel();
+         try {
+            my->_scan_in_progress.wait();
+         } catch ( ... ) {}
+      }
 
-        for( auto block_num = start; block_num <= min_end; ++block_num )
-        {
-           my->scan_block( block_num, account_priv_keys, now );
-           if( progress_callback )
-              progress_callback( block_num, min_end );
-           my->_scan_progress = float(block_num-start)/(min_end-start+1);
-           my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
-        }
+      my->_scan_in_progress = fc::async( [=](){ 
+         auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
 
-        for( auto acct : my->_wallet_db.get_accounts() )
-        {
-           auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
-           if (blockchain_acct_rec.valid())
+         try
+         {
+           my->_scan_progress = 0;
+           auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+
+           for( auto block_num = start; !my->_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
-               blockchain::account_record& brec = acct.second;
-               brec = *blockchain_acct_rec;
-               my->_wallet_db.cache_account( acct.second );
+              my->scan_block( block_num, account_priv_keys, now );
+              if( progress_callback )
+                 progress_callback( block_num, min_end );
+              my->_scan_progress = float(block_num-start)/(min_end-start+1);
+              my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
            }
-        }
-        my->_scan_progress = 1;
-      }
-      catch(...)
-      {
-        my->_scan_progress = -1;
-        throw;
-      }
+
+           for( auto acct : my->_wallet_db.get_accounts() )
+           {
+              auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
+              if (blockchain_acct_rec.valid())
+              {
+                  blockchain::account_record& brec = acct.second;
+                  brec = *blockchain_acct_rec;
+                  my->_wallet_db.cache_account( acct.second );
+              }
+           }
+           my->_scan_progress = 1;
+         }
+         catch(...)
+         {
+           my->_scan_progress = -1;
+           throw;
+         }
+      } );
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
@@ -1658,10 +1701,10 @@ namespace bts { namespace wallet {
 
           if( tx_record.block_num < start_block_num ) continue;
           if( end_block_num != -1 && tx_record.block_num > end_block_num ) continue;
+          if( tx_record.ledger_entries.empty() ) continue; /* TODO: Temporary */
 
           if( !account_name.empty() )
           {
-              if( tx_record.ledger_entries.empty() ) continue; /* TODO: Temporary */
               bool match = false;
               if( tx_record.ledger_entries.front().from_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().from_account ) == account_name;
               if( tx_record.ledger_entries.front().to_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().to_account ) == account_name;
@@ -1670,7 +1713,6 @@ namespace bts { namespace wallet {
 
           if( asset_id != 0 )
           {
-              if( tx_record.ledger_entries.empty() ) continue; /* TODO: Temporary */
               bool match = false;
               match |= tx_record.ledger_entries.front().amount.asset_id == asset_id;
               match |= tx_record.ledger_entries.front().memo.find( asset_symbol ) != string::npos; /* TODO: This is dumb */
@@ -1711,12 +1753,12 @@ namespace bts { namespace wallet {
        for( auto& trx : pretties )
        {
            const auto fee_asset_id = trx.fee.asset_id;
-           if( running_balances.count( fee_asset_id ) <= 0 )
-               running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
+           if( trx.running_balances.count( fee_asset_id ) <= 0 )
+                trx.running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
 
            auto any_from_me = false;
 
-           for( const auto& entry : trx.ledger_entries )
+           for( auto& entry : trx.ledger_entries )
            {
                const auto amount_asset_id = entry.amount.asset_id;
                if( running_balances.count( amount_asset_id ) <= 0 )
@@ -1737,10 +1779,9 @@ namespace bts { namespace wallet {
                any_from_me |= from_me;
            }
 
-           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) running_balances[ trx.fee.asset_id ] -= trx.fee;
+           /* Subtract fee from running balances */
+           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) trx.running_balances[ fee_asset_id ] -= trx.fee;
            else trx.fee = asset(); /* Don't return fees we didn't pay */
-
-           trx.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
        }
 
        return pretties;
@@ -1834,8 +1875,8 @@ namespace bts { namespace wallet {
       auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
-      header.sign( delegate_key );
-      FC_ASSERT( header.validate_signee( delegate_pub_key ) );
+      header.sign( delegate_key, my->_blockchain->chain_id() );
+      FC_ASSERT( header.validate_signee( delegate_pub_key, my->_blockchain->chain_id() ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
    /**
@@ -2562,7 +2603,6 @@ namespace bts { namespace wallet {
                                                                 const string& pay_from_account,
                                                                 optional<variant> public_data,
                                                                 uint8_t delegate_pay_rate,
-                                                                optional<public_key_type> new_active_key,
                                                                 bool sign )
    { try {
       if( !is_valid_account_name( account_to_update ) )
@@ -2607,7 +2647,7 @@ namespace bts { namespace wallet {
      
       required_signatures.insert( account->active_key() ); 
     
-      trx.update_account( account->id, delegate_pay_rate, public_data, new_active_key );
+      trx.update_account( account->id, delegate_pay_rate, public_data, optional<public_key_type>() );
        
       if (sign)
       {
@@ -2626,7 +2666,6 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
                                       ("pay_from_account",pay_from_account)
                                       ("public_data",public_data)
-                                      ("new_active_key",new_active_key)
                                       ("sign",sign) ) }
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
@@ -3873,11 +3912,12 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    /**
-    *  Randomly select a slate of delegates from those supported by this wallet.
-    *  The slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
+    *  Randomly select a slate of BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates from those approved
+    *  by this wallet. The slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
     */
    delegate_slate wallet::select_delegate_vote()const
    {
+      FC_ASSERT( BTS_BLOCKCHAIN_MAX_SLATE_SIZE <= BTS_BLOCKCHAIN_NUM_DELEGATES );
       vector<account_id_type> for_candidates;
 
       for( const auto& acct_rec : my->_wallet_db.get_accounts() )
@@ -3885,23 +3925,17 @@ namespace bts { namespace wallet {
          if( acct_rec.second.approved )
              for_candidates.push_back( acct_rec.second.id );
       }
-      std::sort( for_candidates.begin(), for_candidates.end() );
+      std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
-      delegate_slate result;
-      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
+      auto slate = delegate_slate();
+      if( for_candidates.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
+          slate.supported_delegates = for_candidates;
+      else
+          slate.supported_delegates = vector<account_id_type>( for_candidates.begin(), for_candidates.begin() + BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
 
-      for( uint32_t i = 0; i < delegates_to_select; ++i )
-      {
-         auto d = rand() % for_candidates.size();
-         if( for_candidates[d] != 0 )
-         {
-            result.supported_delegates.push_back( for_candidates[d] ); 
-            for_candidates[d] = 0;
-         }
-      }
-
-      std::sort( result.supported_delegates.begin(), result.supported_delegates.end() );
-      return result;
+      FC_ASSERT( slate.supported_delegates.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
+      std::sort( slate.supported_delegates.begin(), slate.supported_delegates.end() );
+      return slate;
    }
 
    void wallet::set_delegate_approval( const string& delegate_name, int approved )

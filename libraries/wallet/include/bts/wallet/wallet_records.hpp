@@ -159,7 +159,7 @@ namespace bts { namespace wallet {
        /*
         * record_id
         * - non-virtual transactions: trx.id()
-        * - virtual genesis claims: genesis_balance_record.id().addr
+        * - virtual genesis claims: fc::ripemd160::hash( owner_account_name )
         * - virtual market transactions: fc::ripemd160::hash( block_num + get_key_label( owner ) + N )
         */
        transaction_id_type       record_id;

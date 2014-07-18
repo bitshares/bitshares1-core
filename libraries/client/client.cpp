@@ -279,7 +279,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_p2p.appenders.push_back("p2p");
 
     fc::logger_config dlc_user;
-    dlc_user.level = fc::log_level::warn;
+    dlc_user.level = fc::log_level::debug;
     dlc_user.name = "user";
     dlc_user.appenders.push_back("user");
 
@@ -1799,6 +1799,7 @@ config load_config( const fc::path& datadir )
       auto key = _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
       if (wallet_rescan_blockchain)
         _wallet->scan_chain(0);
+
       auto oacct = _wallet->get_account_for_address( address( key ) );
       FC_ASSERT(oacct.valid(), "No account for a key we just imported" );
       return oacct->name;
@@ -2546,7 +2547,7 @@ config load_config( const fc::path& datadir )
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
        info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       info["priority_fee"]                         = _chain_db->to_pretty_asset( _wallet->get_priority_fee() );
+       info["priority_fee"]                         = _wallet->is_open() ? _chain_db->to_pretty_asset( _wallet->get_priority_fee() ) : variant();
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        const auto delegate_reg_fee                  = _chain_db->get_delegate_registration_fee();
@@ -2723,17 +2724,12 @@ config load_config( const fc::path& datadir )
     signed_transaction client_impl::wallet_account_update_registration( const string& account_to_update,
                                                                         const string& pay_from_account,
                                                                         const variant& public_data,
-                                                                        uint8_t delegate_pay_rate,
-                                                                        const string& new_active_key )
+                                                                        uint8_t delegate_pay_rate )
     {
-       auto new_key = optional<public_key_type>();
-       if( !new_active_key.empty() ) new_key = public_key_type( new_active_key );
-
        const auto trx = _wallet->update_registered_account( account_to_update,
                                                             pay_from_account,
                                                             public_data,
                                                             delegate_pay_rate,
-                                                            new_key,
                                                             true );
 
        network_broadcast_transaction( trx );

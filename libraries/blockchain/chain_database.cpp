@@ -195,7 +195,6 @@ namespace bts { namespace blockchain {
                             mtrx.ask_paid        = xts_paid_by_ask;
                             mtrx.ask_received    = usd_received_by_ask;
                             mtrx.bid_type        = _current_bid->type;
-                            mtrx.ask_type        = _current_ask->type;
                             mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
                    
                             _market_transactions.push_back(mtrx);
@@ -1062,7 +1061,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( NOT block_data.validate_signee( expected_delegate.active_key() ) )
+            if( NOT block_data.validate_signee( expected_delegate.active_key(), _chain_id ) )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
@@ -2134,16 +2133,17 @@ namespace bts { namespace blockchain {
          initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
          initial /= total_unscaled;
 
-         balance_record initial_balance( item.first,
+         const auto addr = item.first;
+         balance_record initial_balance( addr,
                                          asset( share_type( initial.low_bits() ), 0 ),
-                                         0 /** not voting for anyone */
+                                         0 /* Not voting for anyone */
                                        );
 
-         // in case of redundant balances
+         /* In case of redundant balances */
          auto cur = self->get_balance_record( initial_balance.id() );
          if( cur.valid() ) initial_balance.balance += cur->balance;
-         initial_balance.genesis                    = true;
-         initial_balance.last_update                = config.timestamp;
+         initial_balance.genesis_info = genesis_record( initial_balance.get_balance(), string( addr ) );
+         initial_balance.last_update = config.timestamp;
          self->store_balance_record( initial_balance );
       }
 

@@ -157,7 +157,6 @@ namespace bts { namespace blockchain {
       asset                                     ask_paid;
       asset                                     ask_received;
       fc::enum_type<uint8_t, order_type_enum>   bid_type;
-      fc::enum_type<uint8_t, order_type_enum>   ask_type;
       asset                                     fees_collected;
    };
    typedef optional<market_order> omarket_order;
@@ -213,6 +212,5 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (ask_paid)
             (ask_received)
             (bid_type)
-            (ask_type)
             (fees_collected) 
           )
