@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "rpc"
+
 #include <bts/wallet/exceptions.hpp>
 #include <bts/rpc/exceptions.hpp>
 #include <bts/rpc/rpc_server.hpp>
@@ -103,8 +105,9 @@ namespace bts { namespace rpc {
          void handle_request( const fc::http::request& r, const fc::http::server::response& s )
          {
              fc::time_point begin_time = fc::time_point::now();
-             fc_ilog( fc::logger::get("rpc"), "Started ${path} ${method} at ${time}", ("path",r.path)("method",r.method)("time",begin_time));
-             elog( "${r}", ("r",r.path) );
+             // WARNING: logging RPC calls can capture passwords and private keys
+             //fc_ilog( fc::logger::get("rpc"), "Started ${path} ${method} at ${time}", ("path",r.path)("method",r.method)("time",begin_time));
+            // dlog( "${r}", ("r",r.path) );
              fc::http::reply::status_code status = fc::http::reply::OK;
 
              s.add_header( "Connection", "close" );
@@ -112,7 +115,7 @@ namespace bts { namespace rpc {
              try {
                 if( _config.rpc_user.size() )
                 {
-                   wlog( "CHECKING AUTH" );
+              //     dlog( "CHECKING AUTH" );
                    auto auth_value = r.get_header( "Authorization" );
                    std::string username, password;
                    if( auth_value.size() )
@@ -124,12 +127,13 @@ namespace bts { namespace rpc {
                       password    = userpass.substr( split + 1 );
                    }
 
-                   ilog( "\n\n\n  username: ${user}  password ${password}", ("path",r.path)("user",username)("password", password));
+               //    ilog( "\n\n\n  username: ${user}  password ${password}", ("path",r.path)("user",username)("password", password));
                    if( _config.rpc_user     != username ||
                        _config.rpc_password != password )
                    {
                       //fc_ilog( fc::logger::get("rpc"), "Unauthorized ${path}, username: ${user}", ("path",r.path)("user",username));
-                      elog( "\n\n\n Unauthorized ${path}, username: ${user}  password ${password}", ("path",r.path)("user",username)("password", password));
+                   // WARNING: logging RPC calls can capture passwords and private keys
+                //      elog( "\n\n\n Unauthorized ${path}, username: ${user}  password ${password}", ("path",r.path)("user",username)("password", password));
                       s.add_header( "WWW-Authenticate", "Basic realm=\"bts wallet\"" );
                       std::string message = "Unauthorized";
 
@@ -141,12 +145,12 @@ namespace bts { namespace rpc {
                    }
                    else
                    {
-                    wlog( "NOT CHECKING AUTH" );
+                    //wlog( "NOT CHECKING AUTH" );
                    }
                 }
-                ilog( "rpc_user.size: ${config}", ("config",_config.rpc_user.size() ) );
+                //ilog( "rpc_user.size: ${config}", ("config",_config.rpc_user.size() ) );
 
-                wlog( "providing data anyway???" );
+               // wlog( "providing data anyway???" );
 
                 fc::string path = r.path;
                 auto pos = path.find( '?' );
@@ -160,7 +164,8 @@ namespace bts { namespace rpc {
                 auto filename = _config.htdocs / path.substr(1,std::string::npos);
                 if( r.path == fc::path("/rpc") )
                 {
-                    elog( "RPC ${r}", ("r",r.path) );
+                   // WARNING: logging RPC calls can capture passwords and private keys
+                  //  dlog( "RPC ${r}", ("r",r.path) );
                     status = handle_http_rpc( r, s );
                 }
                 else if( _http_file_callback )
