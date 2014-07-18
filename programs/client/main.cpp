@@ -6,7 +6,6 @@
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/utilities/git_revision.hpp>
-#include <bts/utilities/key_conversion.hpp>
 #include <fc/filesystem.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/log/file_appender.hpp>
@@ -27,7 +26,6 @@
 int main( int argc, char** argv )
 {
    try {
-      std::cout << "Here, have a shiny new private key: " << bts::utilities::key_to_wif(fc::ecc::private_key::generate());
       bts::client::client_ptr client = std::make_shared<bts::client::client>();
       client->configure_from_command_line(argc,argv);
       client->start().wait();
