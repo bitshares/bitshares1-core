@@ -3911,11 +3911,12 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    /**
-    *  Randomly select a slate of delegates from those supported by this wallet.
-    *  The slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
+    *  Randomly select a slate of BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates from those approved
+    *  by this wallet. The slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
     */
    delegate_slate wallet::select_delegate_vote()const
    {
+      FC_ASSERT( BTS_BLOCKCHAIN_MAX_SLATE_SIZE <= BTS_BLOCKCHAIN_NUM_DELEGATES );
       vector<account_id_type> for_candidates;
 
       for( const auto& acct_rec : my->_wallet_db.get_accounts() )
@@ -3923,23 +3924,17 @@ namespace bts { namespace wallet {
          if( acct_rec.second.approved )
              for_candidates.push_back( acct_rec.second.id );
       }
-      std::sort( for_candidates.begin(), for_candidates.end() );
+      std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
-      delegate_slate result;
-      uint32_t delegates_to_select = std::min<uint32_t>( for_candidates.size(), BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
+      auto slate = delegate_slate();
+      if( for_candidates.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
+          slate.supported_delegates = for_candidates;
+      else
+          slate.supported_delegates = vector<account_id_type>( for_candidates.begin(), for_candidates.begin() + BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
 
-      for( uint32_t i = 0; i < delegates_to_select; ++i )
-      {
-         auto d = rand() % for_candidates.size();
-         if( for_candidates[d] != 0 )
-         {
-            result.supported_delegates.push_back( for_candidates[d] ); 
-            for_candidates[d] = 0;
-         }
-      }
-
-      std::sort( result.supported_delegates.begin(), result.supported_delegates.end() );
-      return result;
+      FC_ASSERT( slate.supported_delegates.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
+      std::sort( slate.supported_delegates.begin(), slate.supported_delegates.end() );
+      return slate;
    }
 
    void wallet::set_delegate_approval( const string& delegate_name, int approved )
