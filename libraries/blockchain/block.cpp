@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
       fc::raw::pack( enc, *this );
       fc::raw::pack( enc, chain_id );
 
-      return fc::ecc::public_key( delegate_signature, enc.result() ) == expected_signee;
+      return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
    }
 
    public_key_type signed_block_header::signee()const
@@ -36,7 +36,7 @@ namespace bts { namespace blockchain {
       fc::sha256::encoder enc;
       fc::raw::pack( enc, *this );
       fc::raw::pack( enc, chain_id );
-      delegate_signature = signer.sign_compact( enc.result() );
+      delegate_signature = signer.sign_compact( digest() );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    size_t full_block::block_size()const
