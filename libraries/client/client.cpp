@@ -2544,6 +2544,7 @@ config load_config( const fc::path& datadir )
        info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
        info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
        info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
+       info["priority_fee"]                         = _chain_db->to_pretty_asset( _wallet->get_priority_fee() );
 
        info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
        const auto delegate_reg_fee                  = _chain_db->get_delegate_registration_fee();
