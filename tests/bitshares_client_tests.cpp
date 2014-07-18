@@ -346,7 +346,7 @@ void bts_client_launcher_fixture::create_delegates_and_genesis_block()
   for (unsigned i = 0; i < BTS_BLOCKCHAIN_NUM_DELEGATES; ++i)
   {
     bts::blockchain::name_config delegate_config;
-    delegate_config.is_delegate = true;
+    delegate_config.delegate_pay_rate = 100;
     std::ostringstream delegate_name;
     delegate_name << "delegate-" << i;
     delegate_config.name = delegate_name.str();

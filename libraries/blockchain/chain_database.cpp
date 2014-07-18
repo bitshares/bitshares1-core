@@ -2091,7 +2091,7 @@ namespace bts { namespace blockchain {
       std::vector<name_config> delegate_config;
       for( const auto& item : config.names )
       {
-         if( item.is_delegate ) delegate_config.push_back( item );
+         if( item.delegate_pay_rate <= 100 ) delegate_config.push_back( item );
       }
 
       FC_ASSERT( delegate_config.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
@@ -2113,9 +2113,9 @@ namespace bts { namespace blockchain {
          rec.set_active_key( timestamp, name.owner );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
-         if( name.is_delegate )
+         if( name.delegate_pay_rate <= 100 )
          {
-            rec.delegate_info = delegate_stats();
+            rec.delegate_info = delegate_stats( name.delegate_pay_rate );
             delegate_ids.push_back( account_id );
          }
          self->store_account_record( rec );
