@@ -279,7 +279,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_p2p.appenders.push_back("p2p");
 
     fc::logger_config dlc_user;
-    dlc_user.level = fc::log_level::warn;
+    dlc_user.level = fc::log_level::debug;
     dlc_user.name = "user";
     dlc_user.appenders.push_back("user");
 
