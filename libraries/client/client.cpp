@@ -488,10 +488,16 @@ config load_config( const fc::path& datadir )
                 try {
                   _chain_db = std::make_shared<chain_database>();
                 } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
+
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl() override 
             { 
+               if( _rebroadcast_pending_loop.valid() )
+               {
+                  _rebroadcast_pending_loop.cancel();
+                  _rebroadcast_pending_loop.wait();
+               }
               delete _cli;
             }
 
@@ -504,6 +510,8 @@ config load_config( const fc::path& datadir )
             void start_delegate_loop();
             void cancel_delegate_loop();
             void delegate_loop();
+            void rebroadcast_pending();
+            fc::future<void> _rebroadcast_pending_loop;
 
             void configure_rpc_server(config& cfg, 
                                       const program_options::variables_map& option_variables);
@@ -566,6 +574,7 @@ config load_config( const fc::path& datadir )
             logging_exception_db                                        _exception_db;
 
             uint32_t                                                    _min_delegate_connection_count;
+            bool                                                        _sync_mode;
 
             rpc_server_config                                           _tmp_rpc_config;
             //-------------------------------------------------- JSON-RPC Method Implementations
@@ -839,6 +848,28 @@ config load_config( const fc::path& datadir )
          return trxs;
        }
 
+       void client_impl::rebroadcast_pending()
+       {
+           if( !_sync_mode )
+           {
+              wlog( "rebroadcasting... " );
+              try {
+               auto pending = blockchain_get_pending_transactions();
+               for( auto trx : pending )
+               {
+                  network_broadcast_transaction( trx );
+               }
+              } 
+              catch ( const fc::exception& e )
+              {
+                 wlog( "error rebroadcasting transacation: ${e}", ("e",e.to_detail_string() ) );
+              }
+           }
+           _rebroadcast_pending_loop = fc::schedule( [=](){ 
+                         rebroadcast_pending();
+                     }, fc::time_point::now() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3) );
+       }
+
        ///////////////////////////////////////////////////////
        // Implement chain_client_delegate                   //
        ///////////////////////////////////////////////////////
@@ -848,6 +879,7 @@ config load_config( const fc::path& datadir )
        {
          try
          {
+            _sync_mode = sync_mode;
             try
             {
               FC_ASSERT( !_simulate_disconnect );
@@ -871,13 +903,6 @@ config load_config( const fc::path& datadir )
                       FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
                    ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
 
-                   if( !sync_mode )
-                   {
-                     // rebroadcast for good measure
-                     auto pending = blockchain_get_pending_transactions();
-                     for( auto trx : pending )
-                        network_broadcast_transaction( trx );
-                   }
 
                    auto now = blockchain::now();
                    if (_cli
@@ -911,6 +936,10 @@ config load_config( const fc::path& datadir )
           try {
               // throws exception if invalid trx, don't override limits
               return !!_chain_db->store_pending_transaction(trx, false);
+          }
+          catch ( const duplicate_transaction& e )
+          {
+             throw;
           }
           catch ( const fc::exception& e )
           {
@@ -1266,6 +1295,8 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
+       my->_sync_mode = true;
+       my->rebroadcast_pending();
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
@@ -1352,6 +1383,8 @@ config load_config( const fc::path& datadir )
         }
         my->_p2p_node->set_node_delegate(my.get());
 
+        //start rebroadcast pending loop
+        my->rebroadcast_pending();
 
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
@@ -1391,8 +1424,8 @@ config load_config( const fc::path& datadir )
       // ilog("broadcasting transaction: ${id} ", ("id", transaction_to_broadcast.id()));
 
       // p2p doesn't send messages back to the originator
-      on_new_transaction(transaction_to_broadcast);
       _p2p_node->broadcast(trx_message(transaction_to_broadcast));
+      on_new_transaction(transaction_to_broadcast);
       return transaction_to_broadcast.id();
     }
 
