@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "p2p"
+
 #include <sstream>
 #include <iomanip>
 #include <deque>
@@ -42,10 +44,6 @@
 #include <bts/net/peer_connection.hpp>
 #include <bts/net/exceptions.hpp>
 
-#ifdef DEFAULT_LOGGER
-# undef DEFAULT_LOGGER
-#endif
-#define DEFAULT_LOGGER "p2p"
 
 #define INVOCATION_COUNTER(name) \
     static unsigned total_ ## name ## _counter = 0; \
@@ -66,8 +64,6 @@
         dlog("NEWDEBUG: Leaving " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
       } \
     } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
-
-#define P2P_IN_DEDICATED_THREAD
 
 namespace bts { namespace net { 
 
