@@ -973,6 +973,13 @@ namespace bts { namespace wallet {
 
    void wallet::close()
    { try {
+      if( my->_scan_in_progress.valid() )
+      {
+         my->_scan_in_progress.cancel();
+         try {
+            my->_scan_in_progress.wait();
+         } catch ( ... ) {}
+      }
       lock();
       ilog( "Canceling wallet relocker task..." );
       try { my->_relocker_done.cancel_and_wait(); } catch( ... ) {}
@@ -1867,8 +1874,8 @@ namespace bts { namespace wallet {
       auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
-      header.sign( delegate_key );
-      FC_ASSERT( header.validate_signee( delegate_pub_key ) );
+      header.sign( delegate_key, my->_blockchain->chain_id() );
+      FC_ASSERT( header.validate_signee( delegate_pub_key, my->_blockchain->chain_id() ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
    /**

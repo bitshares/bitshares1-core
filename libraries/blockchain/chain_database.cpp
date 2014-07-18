@@ -1061,7 +1061,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( NOT block_data.validate_signee( expected_delegate.active_key() ) )
+            if( NOT block_data.validate_signee( expected_delegate.active_key(), _chain_id ) )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 

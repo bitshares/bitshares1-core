@@ -24,9 +24,9 @@ namespace bts { namespace blockchain {
    struct signed_block_header : public block_header
    {
        block_id_type    id()const;
-       bool             validate_signee( const fc::ecc::public_key& expected_signee )const;
+       bool             validate_signee( const fc::ecc::public_key& expected_signee, digest_type chain_id )const;
        public_key_type  signee()const;
-       void             sign( const fc::ecc::private_key& signeer );
+       void             sign( const fc::ecc::private_key& signeer, digest_type chain_id );
 
        signature_type delegate_signature;
    };

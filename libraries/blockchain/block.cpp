@@ -17,9 +17,13 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee )const
+   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee, digest_type chain_id )const
    { 
-      return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
+      fc::sha256::encoder enc;
+      fc::raw::pack( enc, *this );
+      fc::raw::pack( enc, chain_id );
+
+      return fc::ecc::public_key( delegate_signature, enc.result() ) == expected_signee;
    }
 
    public_key_type signed_block_header::signee()const
@@ -27,9 +31,12 @@ namespace bts { namespace blockchain {
       return fc::ecc::public_key( delegate_signature, digest() );
    }
 
-   void signed_block_header::sign( const fc::ecc::private_key& signer )
+   void signed_block_header::sign( const fc::ecc::private_key& signer, digest_type chain_id )
    { try {
-      delegate_signature = signer.sign_compact( digest() );
+      fc::sha256::encoder enc;
+      fc::raw::pack( enc, *this );
+      fc::raw::pack( enc, chain_id );
+      delegate_signature = signer.sign_compact( enc.result() );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    size_t full_block::block_size()const
