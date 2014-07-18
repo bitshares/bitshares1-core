@@ -493,11 +493,13 @@ config load_config( const fc::path& datadir )
 
             virtual ~client_impl() override 
             { 
-               if( _rebroadcast_pending_loop.valid() )
-               {
-                  _rebroadcast_pending_loop.cancel();
-                  _rebroadcast_pending_loop.wait();
-               }
+               try {
+                  if( _rebroadcast_pending_loop.valid() )
+                  {
+                     _rebroadcast_pending_loop.cancel();
+                     _rebroadcast_pending_loop.wait();
+                  }
+               } catch (...){}
               delete _cli;
             }
 
