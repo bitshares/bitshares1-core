@@ -247,6 +247,7 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
                    (property_record_type)
                    (market_order_record_type)
                    (setting_record_type)
+                   (domain_record_type)
                 )
 
 FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
@@ -274,7 +275,7 @@ FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (ac
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 FC_REFLECT( bts::wallet::setting, (name)(value) )
 
-
+FC_REFLECT( bts::wallet::wallet_domain_record, BOOST_PP_SEQ_NIL);
 
 /**
  *  Implement generic reflection for wallet record types

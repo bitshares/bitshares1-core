@@ -39,6 +39,8 @@ namespace bts { namespace wallet {
          void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );
          void cache_account( const wallet_account_record& );
+         void cache_domain( const wallet_domain_record& );
+         void remove_domain( const wallet_domain_record& );
          void cache_memo( const memo_status& memo, 
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
@@ -126,6 +128,11 @@ namespace bts { namespace wallet {
             return keys;
          }
 
+         const map< string, wallet_domain_record>& get_domains()const
+         {
+            return domains;
+         }
+
       private:
          optional<wallet_master_key_record>                               wallet_master_key;
          /** maps wallet_record_index to accounts */
@@ -137,6 +144,8 @@ namespace bts { namespace wallet {
          map<property_enum, wallet_property_record>                       properties;
          unordered_map<address,wallet_market_order_status_record>         market_orders;
          map< string, wallet_setting_record >                             settings;
+
+         map< string, wallet_domain_record >                              domains;
 
          unordered_map< address, address >                                btc_to_bts_address;
          unordered_map< address, int32_t >                                address_to_account_wallet_record_index;

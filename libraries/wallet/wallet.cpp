@@ -399,6 +399,14 @@ namespace bts { namespace wallet {
                       cache_transaction |= scan_domain_transfer( *transaction_record, op.as<domain_transfer_operation>(), keys );
                       break;
 
+
+                  case domain_bid_op_type:
+                  case domain_update_info_op_type:
+                  case domain_sell_op_type:
+                  case domain_cancel_sell_op_type:
+                  case domain_buy_op_type:
+                      break;
+
                   default:
                       FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type!", ("op",op) );
                       break;

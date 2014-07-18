@@ -57,6 +57,9 @@ namespace bts { namespace wallet {
                    case setting_record_type:
                        load_setting_record( record.as<wallet_setting_record>(), overwrite );
                        break;
+                   case domain_record_type:
+                       load_domain_record( record.as<wallet_domain_record>(), overwrite );
+                       break;
                    default:
                        FC_ASSERT( !"unknown wallet_db record type!", "", ("type",record.type) );
                        break;
@@ -151,6 +154,14 @@ namespace bts { namespace wallet {
            { try {
               self->settings[rec.name] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec", rec) ) }
+
+
+           void load_domain_record( const wallet_domain_record& rec, bool overwrite )
+           { try {
+              self->domains[string(rec)] = rec;
+           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec", rec) ) }
+
+          
      };
 
    } // namespace detail
@@ -722,6 +733,18 @@ namespace bts { namespace wallet {
          name_to_account_wallet_record_index[war.name] = war.wallet_record_index;
       }
       store_record( war );
+   }
+
+    // domain record is just a string for now
+   void wallet_db::cache_domain( const wallet_domain_record& rec )
+   {
+        domains[string(rec)] = rec;
+        store_record( rec );
+   }
+   void wallet_db::remove_domain( const wallet_domain_record& rec )
+   {
+        remove_item( rec.wallet_record_index );
+        domains.erase( string(rec) );
    }
 
    void wallet_db::remove_item( int32_t index )
