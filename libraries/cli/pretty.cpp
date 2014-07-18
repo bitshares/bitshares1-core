@@ -221,7 +221,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     if( transactions.empty() ) return "No transactions found.\n";
     FC_ASSERT( client != nullptr );
 
-    const auto is_filtered = !transactions.front().ledger_entries.front().running_balances.empty();
+    const auto is_filtered = !transactions.front().running_balances.empty();
 
     auto any_group = false;
     for( const auto& transaction : transactions )
@@ -301,7 +301,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             {
                 out << std::setw( 24 );
                 if( !is_pending )
-                    out << client->get_chain()->to_pretty_asset( entry.running_balances.at( entry.amount.asset_id ) );
+                    out << client->get_chain()->to_pretty_asset( transaction.running_balances.at( entry.amount.asset_id ) );
                 else
                     out << "N/A";
             }
