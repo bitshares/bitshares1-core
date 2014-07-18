@@ -2593,7 +2593,6 @@ namespace bts { namespace wallet {
                                                                 const string& pay_from_account,
                                                                 optional<variant> public_data,
                                                                 uint8_t delegate_pay_rate,
-                                                                optional<public_key_type> new_active_key,
                                                                 bool sign )
    { try {
       if( !is_valid_account_name( account_to_update ) )
@@ -2638,7 +2637,7 @@ namespace bts { namespace wallet {
      
       required_signatures.insert( account->active_key() ); 
     
-      trx.update_account( account->id, delegate_pay_rate, public_data, new_active_key );
+      trx.update_account( account->id, delegate_pay_rate, public_data, optional<public_key_type>() );
        
       if (sign)
       {
@@ -2657,7 +2656,6 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
                                       ("pay_from_account",pay_from_account)
                                       ("public_data",public_data)
-                                      ("new_active_key",new_active_key)
                                       ("sign",sign) ) }
 
    signed_transaction wallet::create_proposal( const string& delegate_account_name,

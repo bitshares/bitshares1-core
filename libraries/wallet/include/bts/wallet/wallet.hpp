@@ -346,7 +346,6 @@ namespace bts { namespace wallet {
                                       const string& pay_from_account,
                                       optional<variant> public_data,
                                       uint8_t delegate_pay_rate = 255,
-                                      optional<public_key_type> active = optional<public_key_type>(),
                                       bool sign = true );
 
          signed_transaction create_proposal( const string& delegate_account_name,
