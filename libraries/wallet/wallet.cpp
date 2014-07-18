@@ -288,26 +288,29 @@ namespace bts { namespace wallet {
               {
                 _wallet_db.cache_balance( bal_rec );
 
-                if( bal_rec.genesis ) /* Create virtual transaction for genesis claims */
+                if( bal_rec.genesis_info.valid() ) /* Create virtual transaction for genesis claims */
                 {
-                    const auto record_id = bal_rec.id().addr; /* I'm sorry */
+                    const auto public_key = key_rec->public_key;
+                    const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
                     auto transaction_record = _wallet_db.lookup_transaction( record_id );
-                    if( !transaction_record.valid() ) /* Should only be updated once */
+                    if( !transaction_record.valid() )
                     {
                         transaction_record = wallet_transaction_record();
                         transaction_record->record_id = record_id;
                         transaction_record->is_virtual = true;
-
-                        auto entry = ledger_entry();
-                        entry.to_account = key_rec->public_key;
-                        entry.amount = asset( bal_rec.balance );
-                        entry.memo = "claim genesis balance";
-
-                        transaction_record->ledger_entries.push_back( entry );
                         transaction_record->created_time = _blockchain->get_genesis_timestamp();
                         transaction_record->received_time = received_time;
-                        _wallet_db.store_transaction( *transaction_record );
                     }
+
+                    const auto addr = pts_address( public_key, bal_rec.genesis_info->compressed, bal_rec.genesis_info->version );
+
+                    auto entry = ledger_entry();
+                    entry.to_account = public_key;
+                    entry.amount = bal_rec.get_balance();
+                    entry.memo = "claim " + string( addr );
+
+                    transaction_record->ledger_entries.push_back( entry );
+                    _wallet_db.store_transaction( *transaction_record );
                 }
               }
          } );

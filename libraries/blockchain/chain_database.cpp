@@ -2130,16 +2130,21 @@ namespace bts { namespace blockchain {
          initial *= fc::uint128(int64_t(BTS_BLOCKCHAIN_INITIAL_SHARES));
          initial /= total_unscaled;
 
-         balance_record initial_balance( item.first,
+         const auto addr = item.first;
+         balance_record initial_balance( addr,
                                          asset( share_type( initial.low_bits() ), 0 ),
-                                         0 /** not voting for anyone */
+                                         0 /* Not voting for anyone */
                                        );
 
-         // in case of redundant balances
+         /* In case of redundant balances */
          auto cur = self->get_balance_record( initial_balance.id() );
          if( cur.valid() ) initial_balance.balance += cur->balance;
-         initial_balance.genesis                    = true;
-         initial_balance.last_update                = config.timestamp;
+
+         /* Mark as BTC or PTS address */
+         if( string( addr )[0] == '1' ) initial_balance.genesis_info = genesis_record( false, 0 );
+         else initial_balance.genesis_info = genesis_record( true, 56 );
+
+         initial_balance.last_update = config.timestamp;
          self->store_balance_record( initial_balance );
       }
 

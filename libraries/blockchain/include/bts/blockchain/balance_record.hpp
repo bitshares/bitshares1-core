@@ -5,14 +5,24 @@
 
 namespace bts { namespace blockchain {
 
-   /**
-    */
+   struct genesis_record
+   {
+      genesis_record(){}
+
+      genesis_record( bool c, uint8_t v )
+      :compressed(c), version(v){}
+
+      bool compressed = true;
+      uint8_t version = 56;
+   };
+   typedef fc::optional<genesis_record> ogenesis_record;
+
    struct balance_record
    {
-      balance_record()
-      :balance(0),genesis(false){}
+      balance_record(){}
+
       balance_record( const withdraw_condition& c )
-      :balance(0),condition(c),genesis(false){}
+      :condition(c){}
 
       balance_record( const address& owner, const asset& balance, slate_id_type delegate_id );
 
@@ -27,13 +37,14 @@ namespace bts { namespace blockchain {
       /** if condition is signature or by name, return the owner */
       address                    owner()const;
 
-      share_type                 balance;
+      share_type                 balance = share_type( 0 );
       withdraw_condition         condition;
-      bool                       genesis;
+      ogenesis_record            genesis_info;
       fc::time_point_sec         last_update;
    };
    typedef fc::optional<balance_record> obalance_record;
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(genesis)(last_update) )
+FC_REFLECT( bts::blockchain::genesis_record, (compressed)(version) )
+FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(genesis_info)(last_update) )

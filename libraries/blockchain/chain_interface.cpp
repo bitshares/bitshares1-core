@@ -7,7 +7,6 @@
 namespace bts{ namespace blockchain {
 
    balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
-   :genesis(false)
    {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
