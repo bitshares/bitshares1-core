@@ -250,36 +250,36 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     cfg.appenders.push_back(fc::appender_config( "p2p", "file", fc::variant(ac_p2p)));
 
     fc::logger_config dlc;
-    dlc.level = fc::log_level::debug;
+    dlc.level = fc::log_level::warn;
     dlc.name = "default";
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_client;
-    dlc_client.level = fc::log_level::debug;
+    dlc_client.level = fc::log_level::warn;
     dlc_client.name = "client";
     dlc_client.appenders.push_back("default");
     dlc_client.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_rpc;
-    dlc_rpc.level = fc::log_level::debug;
+    dlc_rpc.level = fc::log_level::warn;
     dlc_rpc.name = "rpc";
     dlc_rpc.appenders.push_back("rpc");
 
     fc::logger_config dlc_blockchain;
-    dlc_blockchain.level = fc::log_level::debug;
+    dlc_blockchain.level = fc::log_level::warn;
     dlc_blockchain.name = "blockchain";
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::debug;
+    dlc_p2p.level = fc::log_level::warn;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
     fc::logger_config dlc_user;
-    dlc_user.level = fc::log_level::debug;
+    dlc_user.level = fc::log_level::warn;
     dlc_user.name = "user";
     dlc_user.appenders.push_back("user");
 
