@@ -2822,6 +2822,11 @@ config load_config( const fc::path& datadir )
       return _wallet->get_priority_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
+   bool client_impl::blockchain_is_synced() const
+   {
+     return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+   }
+
    vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
    {
       return _chain_db->get_proposals( first, count );
