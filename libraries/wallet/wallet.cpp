@@ -279,7 +279,6 @@ namespace bts { namespace wallet {
       void wallet_impl::scan_balances( const time_point_sec& received_time )
       {
          /* Delete ledger entries for any genesis balances before we can reconstruct them */
-          /*
          const auto my_accounts = self->list_my_accounts();
          for( const auto& account : my_accounts )
          {
@@ -291,7 +290,6 @@ namespace bts { namespace wallet {
                  _wallet_db.store_transaction( *transaction_record );
              }
          }
-         */
 
          _blockchain->scan_balances( [&]( const balance_record& bal_rec )
          {
@@ -312,17 +310,15 @@ namespace bts { namespace wallet {
                         transaction_record->is_virtual = true;
                         transaction_record->created_time = _blockchain->get_genesis_timestamp();
                         transaction_record->received_time = received_time;
+                    }
 
                     auto entry = ledger_entry();
                     entry.to_account = public_key;
-                    //entry.amount = bal_rec.genesis_info->initial_balance;
-                    entry.amount = bal_rec.get_balance();
+                    entry.amount = bal_rec.genesis_info->initial_balance;
                     entry.memo = "claim " + bal_rec.genesis_info->claim_addr;
 
                     transaction_record->ledger_entries.push_back( entry );
                     _wallet_db.store_transaction( *transaction_record );
-                    }
-
                 }
               }
          } );
@@ -455,8 +451,7 @@ namespace bts { namespace wallet {
 
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
-          //transaction_record->ledger_entries.clear(); /* Reconstruct ledger entries each time; sorry memo */
-          if( is_duplicate ) _wallet_db.store_transaction( *transaction_record );
+          transaction_record->ledger_entries.clear(); /* Reconstruct ledger entries each time; sorry memo */
 
           auto store_record = is_duplicate;
           for( const auto& op : transaction.operations )
@@ -535,7 +530,7 @@ namespace bts { namespace wallet {
           }
 
           // TODO: link matching withdraws and deposits, but do it in to_pretty_trx
-          if( store_record && !is_duplicate ) _wallet_db.store_transaction( *transaction_record );
+          if( store_record ) _wallet_db.store_transaction( *transaction_record );
       }
 
       bool wallet_impl::scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec )
@@ -544,7 +539,6 @@ namespace bts { namespace wallet {
          if( bal_rec.valid() )
          {
             // TODO: Only if withdraw by signature or by name
-            /*
             const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
 
             auto entry = ledger_entry();
@@ -552,7 +546,6 @@ namespace bts { namespace wallet {
             entry.amount = asset( op.amount, bal_rec->condition.asset_id );
 
             trx_rec.ledger_entries.push_back( entry );
-            */
             sync_balance_with_blockchain( op.balance_id );
 
             return true;
@@ -1751,10 +1744,6 @@ namespace bts { namespace wallet {
        auto running_balances = map<asset_id_type, asset>();
        for( auto& trx : pretties )
        {
-           const auto fee_asset_id = trx.fee.asset_id;
-           if( trx.running_balances.count( fee_asset_id ) <= 0 )
-                trx.running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
-
            auto any_from_me = false;
 
            for( auto& entry : trx.ledger_entries )
@@ -1773,14 +1762,27 @@ namespace bts { namespace wallet {
                to_me |= account_name == entry.to_account;
                if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
 
-               trx.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
+               entry.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
 
                any_from_me |= from_me;
            }
 
            /* Subtract fee from running balances */
-           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) ) trx.running_balances[ fee_asset_id ] -= trx.fee;
-           else trx.fee = asset(); /* Don't return fees we didn't pay */
+           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) )
+           {
+               const auto fee_asset_id = trx.fee.asset_id;
+               for( auto& entry : trx.ledger_entries )
+               {
+                   if( entry.running_balances.count( fee_asset_id ) <= 0 )
+                       entry.running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
+
+                   entry.running_balances[ fee_asset_id ] -= trx.fee;
+               }
+           }
+           else /* Don't return fees we didn't pay */
+           {
+               trx.fee = asset();
+           }
        }
 
        return pretties;
