@@ -1274,11 +1274,11 @@ namespace bts { namespace cli {
                         {
                             // TODO: This needs to be through the blockchain, not the wallet
                             auto approval = _client->get_wallet()->get_delegate_approval( acct.name );
-                            *_out << std::setw( 15 ) << approval;
+                            *_out << std::setw( 15 ) << ( approval > 0 );
                         }
                         catch( ... )
                         {
-                            *_out << std::setw(15) << "???";
+                            *_out << std::setw(15) << false;
                         }
                     }
                     else
