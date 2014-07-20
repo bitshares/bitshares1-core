@@ -1,8 +1,8 @@
-BitShares X [![Build Status](https://travis-ci.org/bitsharex/bitshares_toolkit.png)](https://travis-ci.org/bitsharesx/bitshares_toolkit)
+BitShares X [![Build Status](https://travis-ci.org/dacsunlimited/bitsharesx.png)](https://travis-ci.org/dacsunlimited/bitsharesx)
 ===============================
 A DAC build with [Bitshares toolkit](https://github.com/BitShares/bitshares_toolkit)
 
-Latest Stabel Downloads
+Latest Stabe Downloads
 ------------------
 [version 0.2.1](https://github.com/dacsunlimited/bitsharesx/releases/tag/0.2.1)
 
