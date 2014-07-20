@@ -5,9 +5,9 @@
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
-#define BTS_BLOCKCHAIN_VERSION                              (105)
+#define BTS_BLOCKCHAIN_VERSION                              (109)
 #define BTS_WALLET_VERSION                                  (100)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (114)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (115)
 
 /**
  *  The address prepended to string representation of
@@ -22,6 +22,8 @@
 #define BTS_BLOCKCHAIN_PRECISION                           (100000)
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC      (60*60*24*2)
 #define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC  (60*60*2)
+
+#define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                (false)
 
 #define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE    (10000) // P2P
 
@@ -66,7 +68,10 @@
 /**
  *  The maximum amount that can be issued for user assets.
  *
- *  10^18 / 2^63 < 1
+ *  10^18 / 2^63 < 1  however, to support representing all share values as a double in
+ *  languages like java script, we must stay within the epsilon so 
+ *
+ *  10^15 / 2^53 < 1 allows all values to be represented as a double or an int64
  */
 #define BTS_BLOCKCHAIN_MAX_SHARES                           (1000*1000*1000ll*1000*1000ll)
 
@@ -75,6 +80,22 @@
  * by 100 so that new shares may be issued without exceeding BTS_BLOCKCHAIN_MAX_SHARES
  */
 #define BTS_BLOCKCHAIN_INITIAL_SHARES                       (BTS_BLOCKCHAIN_MAX_SHARES / 5)
+
+/**
+ *   How much XTS must be allocated between the short/ask sides of the market before
+ *   trading can begin.   The purpose of this is to prevent trading shorts/asks/covers
+ *   when there is not enough depth to represent meaningful consensus.  
+ *
+ *   In theory someone with BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT shares could cause
+ *   a bitasset to start at any price they like.  If they start the price too low then
+ *   the asset will never be able to track.   The assumption is that when a new DAC is
+ *   launched anyone with 1% or more has no financial interest in attacking and if they
+ *   did their stake could be removed and the chain relaunched or a new BitAsset could
+ *   be created.  
+ *
+ *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
+ */
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/100)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
@@ -92,8 +113,8 @@
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
 
 #define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
-#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (10) 
-#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
+#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (1) // (10) 
+#define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (5) // (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
 
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       (BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
@@ -113,9 +134,9 @@
     This constant defines the number of blocks a delegate must produce before
     they are expected to break even on registration costs with their earned income.
 
- *   Currently set to 2 weeks of active block production to break even.
+ *   Currently set to 2 hours of active block production to break even.
  */
-#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+#define BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE            (BTS_BLOCKCHAIN_BLOCKS_PER_DAY/12)
 
 /**
     If you are going to create an asset, you expect that it will be used in transactions.  We would

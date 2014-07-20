@@ -17,8 +17,12 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
-   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee )const
+   bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee, digest_type chain_id )const
    { 
+      fc::sha256::encoder enc;
+      fc::raw::pack( enc, *this );
+      fc::raw::pack( enc, chain_id );
+
       return fc::ecc::public_key( delegate_signature, digest() ) == expected_signee;
    }
 
@@ -27,8 +31,11 @@ namespace bts { namespace blockchain {
       return fc::ecc::public_key( delegate_signature, digest() );
    }
 
-   void signed_block_header::sign( const fc::ecc::private_key& signer )
+   void signed_block_header::sign( const fc::ecc::private_key& signer, digest_type chain_id )
    { try {
+      fc::sha256::encoder enc;
+      fc::raw::pack( enc, *this );
+      fc::raw::pack( enc, chain_id );
       delegate_signature = signer.sign_compact( digest() );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -51,12 +58,6 @@ namespace bts { namespace blockchain {
      uint64_t next_fee_base = block_size * current_fee / BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
      uint64_t next_fee = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*current_fee + next_fee_base) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
      return std::max<uint64_t>(next_fee,BTS_BLOCKCHAIN_MIN_FEE);
-   }
-
-   share_type block_header::next_delegate_pay( share_type current_pay, share_type block_fees )const
-   {
-     uint64_t next_pay = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*current_pay + (block_fees)) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
-     return next_pay;
    }
 
    full_block::operator digest_block()const

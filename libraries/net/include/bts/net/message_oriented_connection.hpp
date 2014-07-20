@@ -35,6 +35,7 @@ namespace bts { namespace net {
     fc::time_point get_last_message_sent_time() const;
     fc::time_point get_last_message_received_time() const;
     fc::time_point get_connection_time() const;
+    fc::sha512 get_shared_secret() const;
   private:
     std::unique_ptr<detail::message_oriented_connection_impl> my;
   };

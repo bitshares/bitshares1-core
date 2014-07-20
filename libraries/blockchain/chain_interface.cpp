@@ -6,8 +6,7 @@
 
 namespace bts{ namespace blockchain {
 
-   balance_record::balance_record( const address& owner, const asset& balance_arg, account_id_type delegate_id )
-   :genesis(false)
+   balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
    {
       balance =  balance_arg.amount;
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
@@ -46,10 +45,7 @@ namespace bts{ namespace blockchain {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( str[0] < 'a' || str[0] > 'z' ) return false;
-#if BTS_BLOCKCHAIN_VERSION > 105
-#warning HARDFORK invalid name
       if (str[str.size() - 1] == '-' ) return false;
-#endif
       for( const auto& c : str )
       {
           if( c >= 'a' && c <= 'z' ) continue;
@@ -129,17 +125,23 @@ namespace bts{ namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
 
-   string  chain_interface::to_pretty_asset( const asset& a )const
+   string chain_interface::to_pretty_asset( const asset& a )const
    {
-      auto oasset = get_asset_record( a.asset_id );
-      if( oasset )
+      const auto oasset = get_asset_record( a.asset_id );
+      const auto amount = ( a.amount >= 0 ) ? a.amount : -a.amount;
+      if( oasset.valid() )
       {
-         string decimal = fc::to_string(oasset->get_precision() + a.amount%oasset->get_precision());
+         const auto precision = oasset->get_precision();
+         string decimal = fc::to_string( precision + ( amount % precision ) );
          decimal[0] = '.';
-         return fc::to_pretty_string( a.amount / oasset->get_precision()) +  decimal + " " + oasset->symbol;
+         const auto str = fc::to_pretty_string( amount / precision ) + decimal + " " + oasset->symbol;
+         if( a.amount < 0 ) return "-" + str;
+         return str;
       }
       else
+      {
          return fc::to_pretty_string( a.amount ) + " ???";
+      }
    }
 
    int64_t   chain_interface::get_required_confirmations()const
@@ -158,6 +160,44 @@ namespace bts{ namespace blockchain {
          if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
             return false;
       return true;
+   }
+
+   share_type  chain_interface::get_delegate_pay_rate()const
+   {
+      return get_accumulated_fees() / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*14);
+   }
+
+   share_type  chain_interface::get_accumulated_fees()const
+   {
+      return get_property( accumulated_fees ).as_int64();
+   }
+
+   void  chain_interface::set_accumulated_fees( share_type fees )
+   {
+      set_property( accumulated_fees, variant(fees) );
+   }
+   share_type  chain_interface::get_fee_rate()const
+   {
+      return get_property( current_fee_rate ).as_int64();
+   }
+
+   void  chain_interface::set_fee_rate( share_type fees )
+   {
+      set_property( current_fee_rate, variant(fees) );
+   }
+
+   map<asset_id_type, asset_id_type>  chain_interface::get_dirty_markets()const
+   {
+      try{
+         return get_property( dirty_markets ).as<map<asset_id_type,asset_id_type> >();
+      } catch ( ... )
+      {
+         return map<asset_id_type,asset_id_type>();
+      }
+   }
+   void  chain_interface::set_dirty_markets( const map<asset_id_type,asset_id_type>& d )
+   {
+      set_property( dirty_markets, fc::variant(d) );
    }
 
 } } // bts::blockchain

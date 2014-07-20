@@ -147,6 +147,8 @@ namespace bts { namespace wallet {
 
          void     rename_account( const string& old_contact_name, 
                                   const string& new_contact_name );
+
+         owallet_account_record  get_account_for_address( address addr );
          ///@}  
          
          /** 
@@ -316,6 +318,12 @@ namespace bts { namespace wallet {
                                          const string& quote_symbol,
                                          bool sign = true );
 
+         signed_transaction  cover_short( const string& from_account_name,
+                                          double real_quantity_usd,
+                                          const string& quote_symbol,
+                                          const address& owner_address,
+                                          bool sign = true );
+
          signed_transaction  cancel_market_order( const address& owner_address );
 
          wallet_account_record get_account( const string& account_name )const;
@@ -325,7 +333,7 @@ namespace bts { namespace wallet {
           * if the name already exists then it will be updated if this wallet controls the active key
           * or master key
           */
-         wallet_transaction_record register_account( const string& account_name,
+         signed_transaction register_account( const string& account_name,
                                               const variant& json_data,
                                               uint8_t delegate_pay_rate,
                                               const string& pay_with_account_name,
@@ -334,11 +342,10 @@ namespace bts { namespace wallet {
          void update_account_private_data( const string& account_to_update,
                                            const variant& private_data );
 
-         wallet_transaction_record update_registered_account( const string& account_name,
+         signed_transaction update_registered_account( const string& account_name,
                                       const string& pay_from_account,
                                       optional<variant> public_data,
                                       uint8_t delegate_pay_rate = 255,
-                                      optional<public_key_type> active = optional<public_key_type>(),
                                       bool sign = true );
 
          signed_transaction create_proposal( const string& delegate_account_name,
@@ -361,7 +368,7 @@ namespace bts { namespace wallet {
 
 
          void      set_delegate_approval( const string& delegate_name, int approved );
-         int      get_delegate_approval( const string& delegate_name )const;
+         int       get_delegate_approval( const string& delegate_name )const;
 
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;
@@ -382,7 +389,7 @@ namespace bts { namespace wallet {
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         vector<market_order_status>        get_market_orders( const string& quote, const string& base )const;
+         vector<market_order>               get_market_orders( const string& quote, const string& base )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
                                                                      uint32_t start_block_num = 0,
@@ -406,11 +413,17 @@ namespace bts { namespace wallet {
          */
 
          /** signs transaction with the specified keys for the specified addresses */
-         void             sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
+         void sign_transaction( signed_transaction& trx, const unordered_set<address>& req_sigs );
+         void sign_and_cache_transaction(
+                 signed_transaction& transaction,
+                 const std::unordered_set<address>& required_signatures,
+                 wallet_transaction_record& record );
+
+         slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ) );
+
          private_key_type get_private_key( const address& addr )const;
 
-         std::string           login_start( const std::string& account_name );
-
+         std::string login_start( const std::string& account_name );
          fc::variant login_finish(const public_key_type& server_key,
                                             const public_key_type& client_key,
                                             const fc::ecc::compact_signature& client_signature);

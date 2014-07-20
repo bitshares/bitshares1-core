@@ -46,8 +46,10 @@ namespace bts { namespace blockchain {
    {
         static const operation_type_enum type; 
         cover_operation():amount(0){}
+        cover_operation( share_type a, const market_index_key& idx )
+        :amount(a),cover_index(idx){}
 
-        asset            get_amount()const { return asset( amount, cover_index.order_price.base_asset_id ); }
+        asset            get_amount()const { return asset( amount, cover_index.order_price.quote_asset_id ); }
         share_type       amount;
         market_index_key cover_index;
 
@@ -59,8 +61,9 @@ namespace bts { namespace blockchain {
         static const operation_type_enum type; 
         add_collateral_operation():amount(0){}
 
-        share_type   amount;
-        address      owner;
+        asset            get_amount()const { return asset( amount, cover_index.order_price.base_asset_id ); }
+        share_type       amount;
+        market_index_key cover_index;
 
         void evaluate( transaction_evaluation_state& eval_state );
    };
@@ -82,5 +85,5 @@ FC_REFLECT( bts::blockchain::bid_operation, (amount)(bid_index))
 FC_REFLECT( bts::blockchain::ask_operation, (amount)(ask_index))
 FC_REFLECT( bts::blockchain::short_operation, (amount)(short_index))
 FC_REFLECT( bts::blockchain::cover_operation, (amount)(cover_index))
-FC_REFLECT( bts::blockchain::add_collateral_operation, (amount)(owner))
+FC_REFLECT( bts::blockchain::add_collateral_operation, (amount)(cover_index))
 FC_REFLECT( bts::blockchain::remove_collateral_operation, (amount)(owner))

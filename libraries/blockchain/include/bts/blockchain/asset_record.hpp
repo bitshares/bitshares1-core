@@ -39,10 +39,24 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply;
       share_type          maximum_share_supply;
       share_type          collected_fees;
+
+      /**
+       *  Setting these values to a reasonable range helps the 
+       *  market filter out garbage data that could result in
+       *  very large ratios.   For example, assume a min
+       *  market cap for XTS of $1 Million and a maximum
+       *  market cap of $1 Trillion that gives us a trading
+       *  range of $0.0005 and $500 for the price.  
+       */
+      price               minimum_xts_price; // in this asset
+      price               maximum_xts_price; // in this asset
    };
    typedef fc::optional<asset_record> oasset_record;
 
 } } // bts::blockchain 
 
 FC_REFLECT( bts::blockchain::asset_record,
-            (id)(symbol)(name)(description)(public_data)(issuer_account_id)(precision)(current_share_supply)(maximum_share_supply)(collected_fees)(registration_date) )
+            (id)(symbol)(name)(description)(public_data)(issuer_account_id)(precision)(current_share_supply)
+            (maximum_share_supply)(collected_fees)(registration_date)(minimum_xts_price)(maximum_xts_price) 
+          )
+

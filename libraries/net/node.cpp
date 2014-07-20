@@ -1,3 +1,5 @@
+#define DEFAULT_LOGGER "p2p"
+
 #include <sstream>
 #include <iomanip>
 #include <deque>
@@ -42,10 +44,6 @@
 #include <bts/net/peer_connection.hpp>
 #include <bts/net/exceptions.hpp>
 
-#ifdef DEFAULT_LOGGER
-# undef DEFAULT_LOGGER
-#endif
-#define DEFAULT_LOGGER "p2p"
 
 #define INVOCATION_COUNTER(name) \
     static unsigned total_ ## name ## _counter = 0; \
@@ -66,8 +64,6 @@
         dlog("NEWDEBUG: Leaving " #name ", now ${total} total calls, ${active} active calls", ("total", *total)("active", *active)); \
       } \
     } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
-
-#define P2P_IN_DEDICATED_THREAD
 
 namespace bts { namespace net { 
 
@@ -573,6 +569,7 @@ namespace bts { namespace net { namespace detail {
     node_impl::~node_impl()
     {
       VERIFY_CORRECT_THREAD();
+      ilog( "cleaning up node" );
       for( const peer_connection_ptr& active_peer : _active_connections )
       {
         potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
@@ -582,12 +579,14 @@ namespace bts { namespace net { namespace detail {
 
       try
       {
+        ilog( "close" );
         close();
       }
       catch ( const fc::exception& e )
       {
         wlog( "unexpected exception on close ${e}", ("e", e.to_detail_string() ) );
       }
+        ilog( "done" );
     }
 
     void node_impl::save_node_configuration()
@@ -866,11 +865,12 @@ namespace bts { namespace net { namespace detail {
             // group the items we need to send by type, because we'll need to send one inventory message per type
             unsigned total_items_to_send_to_this_peer = 0;
             for( const item_id& item_to_advertise : inventory_to_advertise )
-              if( peer->inventory_advertised_to_peer.find(item_to_advertise ) == peer->inventory_advertised_to_peer.end() &&
+              if( peer->inventory_advertised_to_peer.find(item_to_advertise) == peer->inventory_advertised_to_peer.end() &&
                   peer->inventory_peer_advertised_to_us.find( item_to_advertise ) == peer->inventory_peer_advertised_to_us.end() )
               {
                 items_to_advertise_by_type[item_to_advertise.item_type].push_back( item_to_advertise.item_hash );
-                peer->inventory_advertised_to_peer.insert( item_to_advertise );
+                peer->clear_old_inventory_advertised_to_peer();
+                peer->inventory_advertised_to_peer.insert( peer_connection::timestamped_item_id(item_to_advertise, fc::time_point::now()) );
                 ++total_items_to_send_to_this_peer;
                 dlog( "advertising item ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash )("endpoint", peer->get_remote_endpoint() ) );
               }
@@ -904,7 +904,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::terminate_inactive_connections_loop()
     {
       VERIFY_CORRECT_THREAD();
-      while( !_terminate_inactive_connections_loop_done.canceled() )
+      //while( !_terminate_inactive_connections_loop_done.canceled() )
       {
         std::list<peer_connection_ptr> peers_to_disconnect_gently;
         std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
@@ -1032,20 +1032,27 @@ namespace bts { namespace net { namespace detail {
           peer->send_message(current_time_request_message());
         peers_to_send_keep_alive.clear();
 
-        fc::usleep( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) );
       } // while( !canceled  )
+      if( !_terminate_inactive_connections_loop_done.canceled() )
+         _terminate_inactive_connections_loop_done = fc::schedule( [=](){ terminate_inactive_connections_loop(); }, 
+                                                                   fc::time_point::now() + 
+                                                                   ( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) ) );
     }
 
     void node_impl::fetch_updated_peer_lists_loop()
     {
       VERIFY_CORRECT_THREAD();
-      while (!_fetch_updated_peer_lists_loop_done.canceled())
-      {
-        fc::usleep(fc::minutes(15));
+
+      //while (!_fetch_updated_peer_lists_loop_done.canceled())
+      //{
+      //  fc::usleep(fc::minutes(15));
 
         for( const peer_connection_ptr& active_peer : _active_connections )
           active_peer->send_message(address_request_message());
-      }
+      //}
+      if( !_fetch_updated_peer_lists_loop_done.canceled() )
+         _fetch_updated_peer_lists_loop_done = fc::schedule( [=](){ fetch_updated_peer_lists_loop(); }, 
+                                                             fc::time_point::now() + fc::minutes(15) );
     }
     void node_impl::update_bandwidth_data(uint32_t usage_this_second)
     {
@@ -1070,9 +1077,9 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       fc::time_point_sec last_update_time = fc::time_point::now();
-      while (!_bandwidth_monitor_loop_done.canceled())
+      //while (!_bandwidth_monitor_loop_done.canceled())
       {
-        fc::usleep(fc::seconds(1));
+       // fc::usleep(fc::seconds(1));
         fc::time_point_sec current_time = fc::time_point::now();
         uint32_t seconds_since_last_update = current_time.sec_since_epoch() - last_update_time.sec_since_epoch();
         seconds_since_last_update = std::max(UINT32_C(1), seconds_since_last_update);
@@ -1082,6 +1089,8 @@ namespace bts { namespace net { namespace detail {
         update_bandwidth_data(usage_this_second);
         last_update_time = current_time;
       }
+      _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); }, 
+                                                   fc::time_point::now() + fc::seconds(1) );
     }
 
     void node_impl::dump_node_status_task()
@@ -1279,6 +1288,12 @@ namespace bts { namespace net { namespace detail {
       // this check must come before we fill in peer data below
       bool already_connected_to_this_peer = is_already_connected_to_id( hello_message_received.node_id );
 
+      // validate the node id
+      fc::sha256::encoder shared_secret_encoder;
+      fc::sha512 shared_secret = originating_peer->get_shared_secret();
+      shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
+      fc::ecc::public_key expected_node_id(hello_message_received.signed_shared_secret, shared_secret_encoder.result());
+
       // store off the data provided in the hello message
       originating_peer->user_agent = hello_message_received.user_agent;
       originating_peer->node_id = hello_message_received.node_id;
@@ -1292,9 +1307,24 @@ namespace bts { namespace net { namespace detail {
       // now decide what to do with it
       if( originating_peer->their_state == peer_connection::their_connection_state::just_connected )
       {
+        if (hello_message_received.node_id != expected_node_id.serialize())
+        {
+          wlog("Invalid signature in hello message from peer ${peer}", ("peer", originating_peer->get_remote_endpoint()));
+          std::string rejection_message("Invalid signature in hello message");
+          connection_rejected_message connection_rejected( _user_agent_string, core_protocol_version, 
+                                                          originating_peer->get_socket().remote_endpoint(),
+                                                          rejection_reason_code::invalid_hello_message,
+                                                          rejection_message );
+
+          originating_peer->their_state = peer_connection::their_connection_state::connection_rejected;
+          originating_peer->send_message( message(connection_rejected ) );
+          // for this type of message, we're immediately disconnecting this peer
+          disconnect_from_peer( originating_peer, "Invalid signature in hello message" );
+          return;
+        }
         if( hello_message_received.chain_id != _chain_id )
         {
-          wlog(  "Recieved hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
+          wlog( "Received hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
           std::ostringstream rejection_message;
           rejection_message << "You're on a different chain than I am.  I'm on " << _chain_id.str() << 
                               " and you're on " << hello_message_received.chain_id.str();
@@ -2046,7 +2076,7 @@ namespace bts { namespace net { namespace detail {
         }
 
         // if we have already advertised it to a peer, we must have it, no need to do anything else
-        if( !we_advertised_this_item_to_a_peer )
+        if( !we_advertised_this_item_to_a_peer && !originating_peer->is_inventory_advertised_to_us_list_full())
         {
           originating_peer->inventory_peer_advertised_to_us.insert( advertised_item_id );
           if( !we_requested_this_item_from_a_peer )
@@ -2364,7 +2394,8 @@ namespace bts { namespace net { namespace detail {
             // add it to the list of items we've offered them.  That will prevent us from offering them
             // the same item back (no reason to do that; we already know they have it)
             peer->inventory_peer_advertised_to_us.erase( iter );
-            peer->inventory_advertised_to_peer.insert( block_message_item_id );
+            peer->clear_old_inventory_advertised_to_peer();
+            peer->inventory_advertised_to_peer.insert( peer_connection::timestamped_item_id(block_message_item_id, fc::time_point::now()) );
           }
         }
         message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
@@ -2412,6 +2443,7 @@ namespace bts { namespace net { namespace detail {
         if( sync_item_iter != originating_peer->sync_items_requested_from_peer.end() )
         {
           originating_peer->sync_items_requested_from_peer.erase( sync_item_iter );
+          _active_sync_requests.erase(block_message_to_process.block_id);
           process_block_during_sync( originating_peer, block_message_to_process, message_hash );
           return;
         }
@@ -2554,13 +2586,21 @@ namespace bts { namespace net { namespace detail {
     void node_impl::close()
     {
       VERIFY_CORRECT_THREAD();
-      _tcp_server.close();
-      if( _accept_loop_complete.valid() )
+      try {
+         _tcp_server.close();
+
+         if( _accept_loop_complete.valid() )
+         {
+           _accept_loop_complete.cancel();
+           _accept_loop_complete.wait();
+         }
+      } catch ( const fc::exception& e )
       {
-        _accept_loop_complete.cancel();
-        _accept_loop_complete.wait();
+         wlog( "${e}", ("e",e.to_detail_string() ) );
       }
+
       
+      ilog( "." );
       _p2p_network_connect_loop_done.cancel();
       _fetch_sync_items_loop_done.cancel();
       _fetch_item_loop_done.cancel();
@@ -2568,17 +2608,49 @@ namespace bts { namespace net { namespace detail {
       _terminate_inactive_connections_loop_done.cancel();
       _fetch_updated_peer_lists_loop_done.cancel();
       _bandwidth_monitor_loop_done.cancel();
-      if (_dump_node_status_task_done.valid())
-        _dump_node_status_task_done.cancel();
+      ilog( "." );
+       _dump_node_status_task_done.cancel();
 
-      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch (...){}
-      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch (...) {}
-      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(...){}
-      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch (...){}
+      if( _retrigger_fetch_sync_items_loop_promise )
+         _retrigger_fetch_sync_items_loop_promise->cancel();
+
+      if( _retrigger_fetch_item_loop_promise )
+          _retrigger_fetch_item_loop_promise->cancel();
+
+      if( _retrigger_advertise_inventory_loop_promise )
+          _retrigger_advertise_inventory_loop_promise->cancel();
+
+      if( _retrigger_connect_loop_promise )
+         _retrigger_connect_loop_promise->cancel();
+
+      if( _retrigger_connect_loop_promise )
+         _retrigger_connect_loop_promise->cancel();
+
+      ilog( "." );
       try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (...){}
+      ilog( "." );
       try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (...){}
+      ilog( "." );
       try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (...){}
+      ilog( "." );
       try { if (_dump_node_status_task_done.valid()) _dump_node_status_task_done.wait(); } catch (...){}
+      ilog( "." );
+      /*
+      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch (...){}
+      ilog( "." );
+      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch (...) {}
+      ilog( "." );
+      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(...){}
+      ilog( "." );
+      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch (...){}
+      */
+
+      ilog( "." );
+      _handshaking_connections.clear();
+      ilog( "." );
+      _active_connections.clear();
+      ilog( "." );
+      _closing_connections.clear();
     }
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
@@ -2620,12 +2692,19 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       peer->negotiation_status = peer_connection::connection_negotiation_status::hello_sent;
-      hello_message hello( _user_agent_string, 
+      
+      fc::sha256::encoder shared_secret_encoder;
+      fc::sha512 shared_secret = peer->get_shared_secret();
+      shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
+      fc::ecc::compact_signature signature = _node_configuration.private_key.sign_compact(shared_secret_encoder.result());
+
+      hello_message hello(_user_agent_string, 
                           core_protocol_version, 
                           peer->inbound_address,
                           peer->inbound_port, 
                           peer->outbound_port,
-                          _node_id, 
+                          _node_id,
+                          signature,
                           _chain_id, 
                           generate_hello_user_data() );
 
@@ -3284,6 +3363,10 @@ namespace bts { namespace net { namespace detail {
 
   node::~node()
   {
+     //ilog( "... " );
+     //if( my->_thread )
+     //   my->_thread->quit();
+     //ilog( "... " );
   }
 
   void node::set_node_delegate( node_delegate* del )
@@ -3422,6 +3505,8 @@ namespace bts { namespace net { namespace detail {
 
   void node::close()
   {
+     wlog( ".... WARNING NOT DOING ANYTHING WHEN I SHOULD ......" );
+     return;
     my->close();
   }
 

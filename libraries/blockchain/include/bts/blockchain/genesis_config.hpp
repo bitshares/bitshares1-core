@@ -7,11 +7,11 @@ namespace bts { namespace blockchain {
 
   struct name_config
   {
-     name_config():is_delegate(false){}
+     name_config():delegate_pay_rate(255){}
 
      std::string        name;
      public_key_type    owner;
-     bool               is_delegate;
+     int                delegate_pay_rate;
   };
 
   struct asset_config // these are all market-issued assets
@@ -20,6 +20,13 @@ namespace bts { namespace blockchain {
      std::string       name;
      std::string       description;
      uint64_t          precision;
+     /**
+      * min_price is the minimal price of 1 XTS in this asset, e.g. for USD
+      * which means 1 XTS = min_price USD, considered the precision of assets
+      * for max_price which means the max price of 1 XTS in this asset is max_price USD, 1 XTS = max_price USD
+      */
+     double            min_price;
+     double            max_price;
   };
   
   struct genesis_block_config
@@ -32,6 +39,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::name_config, (name)(owner)(is_delegate) )
-FC_REFLECT( bts::blockchain::asset_config, (symbol)(name)(description)(precision) )
+FC_REFLECT( bts::blockchain::name_config, (name)(owner)(delegate_pay_rate) )
+FC_REFLECT( bts::blockchain::asset_config, (symbol)(name)(description)(precision)(min_price)(max_price) )
 FC_REFLECT( bts::blockchain::genesis_block_config, (timestamp)(market_assets)(names)(balances) )

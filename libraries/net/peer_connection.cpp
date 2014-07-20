@@ -43,6 +43,9 @@ namespace bts { namespace net
 
     peer_connection::~peer_connection()
     {
+       try {
+         close_connection();
+       } catch ( ... ) {}
       if (_send_queued_messages_done.valid() && !_send_queued_messages_done.ready())
       {
         _send_queued_messages_done.cancel();
@@ -198,8 +201,9 @@ namespace bts { namespace net
         return;
       }
 
+      if( _send_queued_messages_done.valid() ) FC_ASSERT( !_send_queued_messages_done.canceled() );
       if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
-        _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
+           _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
     }
 
     void peer_connection::close_connection()
@@ -257,4 +261,21 @@ namespace bts { namespace net
       return transaction_fetching_inhibited_until > fc::time_point::now();
     }
 
+    fc::sha512 peer_connection::get_shared_secret() const
+    {
+      return _message_connection.get_shared_secret();
+    }
+
+    void peer_connection::clear_old_inventory_advertised_to_peer()
+    {
+      fc::time_point_sec oldest_inventory_to_keep(fc::time_point::now() - fc::minutes(BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES));
+      auto oldest_inventory_to_keep_iter = inventory_advertised_to_peer.get<timestamp_index>().lower_bound(oldest_inventory_to_keep);
+      auto begin_iter = inventory_advertised_to_peer.get<timestamp_index>().begin();
+      //unsigned number_of_elements_to_discard = std::distance(begin_iter, oldest_inventory_to_keep_iter);
+      inventory_advertised_to_peer.get<timestamp_index>().erase(begin_iter, oldest_inventory_to_keep_iter);
+    }
+    bool peer_connection::is_inventory_advertised_to_us_list_full() const
+    {
+      return inventory_peer_advertised_to_us.size() > BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60;
+    }
 } } // end namespace bts::net

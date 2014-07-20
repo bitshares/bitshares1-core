@@ -1,159 +1,203 @@
 {
-    "timestamp" : "20140707T000000",
+    "timestamp" : "20140717T000001",
     "market_assets": [
         {
             "symbol": "PTS",
-            "name": "BitShares PTS"
-            "description": "1 PTS"
-            "precision": 100000000
+            "name": "BitShares PTS",
+            "description": "1 PTS",
+            "precision": 100000000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "PPC",
-            "name": "Peercoin"
-            "description": "1 peercoin"
-            "precision": 100000000
+            "name": "Peercoin",
+            "description": "1 peercoin",
+            "precision": 100000000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "LTC",
-            "name": "Litecoin"
-            "description": "1 litecoin"
-            "precision": 100000000
+            "name": "Litecoin",
+            "description": "1 litecoin",
+            "precision": 100000000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "BTC",
             "name": "Bitcoin",
             "description": "1 bitcoin",
-            "precision": 100000000
+            "precision": 100000000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "WTI",
             "name": "Light Sweet Crude Oil",
             "description": "1 barrel light sweet crude oil",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "SLV",
             "name": "Silver",
             "description": "1 troy ounce .999 fine silver",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "GLD",
             "name": "Gold",
             "description": "1 troy ounce .999 fine gold",
-            "precision": 1000000
+            "precision": 1000000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "TRY",
             "name": "Turkish Lira",
             "description": "1 Turkish lira",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "SGD",
             "name": "Singapore Dollar"
             "description": "1 Singapore dollar",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "HKD",
             "name": "Hong Kong Dollar"
             "description": "1 Hong Kong dollar",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "RUB",
             "name": "Russian Ruble"
             "description": "1 Russian ruble",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "SEK",
             "name": "Swedish Krona"
             "description": "1 Swedish krona",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "NZD",
             "name": "New Zealand Dollar"
             "description": "1 New Zealand dollar",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "CNY",
             "name": "Chinese Yuan"
             "description": "1 Chinese yuan",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "MXN",
             "name": "Mexican Peso"
             "description": "1 Mexican peso",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "CAD",
             "name": "Canadian Dollar",
             "description": "1 Canadian dollar",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "CHF",
             "name": "Swiss Franc",
             "description": "1 Swiss franc",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "AUD",
             "name": "Australian Dollar"
             "description": "1 Australian dollar",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "GBP",
             "name": "Pound sterling",
             "description": "1 pound sterling",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "JPY",
             "name": "Japanese Yen",
             "description": "1 Japanese yen",
-            "precision": 100
+            "precision": 100,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "EUR",
             "name": "Euro",
             "description": "1 euro",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         },
         {
             "symbol": "USD",
             "name": "United States Dollar",
             "description": "1 United States dollar",
-            "precision": 10000
+            "precision": 10000,
+            "min_price": 0.000001,
+            "max_price": 1000000
         }
     ],
      "names": [
     {
       "name": "init0",
-      "is_delegate": true,
+      "delegate_pay_rate": 100,
       "owner": "P2P6e6aBm2BMrMJNqgE9Atkw71f54eTf9moKCULtNf4SSqvzSXoc1"
     },{
       "name": "init1",
-      "is_delegate": true,
+      "delegate_pay_rate": 100,
       "owner": "P2P63VonyH7ZjmehZJozbFpsviDJoDxG6LCgC1p1YcTbEE3uv3MCS"
     },{
       "name": "init2",
-      "is_delegate": true,
+      "delegate_pay_rate": 100,
       "owner": "P2P6FRFZpy1124PEMni9EoJj4yqmD9xDKQzntcS7fRNd4ML4gDyoZ"
     },{
       "name": "init3",
-      "is_delegate": true,
+      "delegate_pay_rate": 100,
       "owner": "P2P8P4GsvrnhjBecwVwWSgfpfx662ic65BuYM8fJHuoCSs4x8q4zT"
     },{
       "name": "init4",
-      "is_delegate": true,
+      "delegate_pay_rate": 100,
       "owner": "P2P5mEe7uFhBjxSMveDPrQaU512d6hjQFahcKK8VnmoTUKP2enM5g"
     }
     ],

@@ -12,12 +12,7 @@ namespace bts { namespace blockchain {
    struct delegate_slate
    {
       slate_id_type         id()const;
-#if BTS_BLOCKCHAIN_VERSION > 105 
       vector<signed_int>    supported_delegates;
-#warning [HARDFORK] Remove below deprecated member
-#else
-      vector<unsigned_int>  supported_delegates;
-#endif
    };
    typedef optional<delegate_slate> odelegate_slate;
 

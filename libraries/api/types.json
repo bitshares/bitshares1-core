@@ -556,6 +556,29 @@
           "cpp_return_type" : "fc::sha256",
           "cpp_include_file" : "fc/crypto/sha256.hpp"
       },
+      {
+          "type_name" : "market_transaction",
+          "cpp_return_type" : "bts::blockchain::market_transaction"
+      },
+      {
+        "type_name" : "market_transaction_array",
+        "container_type": "array",
+        "contained_type": "market_transaction"
+      },
+      {
+        "type_name" : "market_history_points",
+        "cpp_return_type" : "bts::blockchain::market_history_points",
+        "cpp_include_file" : "bts/blockchain/market_records.hpp"
+      },
+      {
+        "type_name" : "market_history_key::time_granularity",
+        "cpp_return_type" : "bts::blockchain::market_history_key::time_granularity_enum",
+        "cpp_include_file" : "bts/blockchain/market_records.hpp"
+      },
+      {
+        "type_name" : "market_status",
+        "cpp_return_type" : "bts::blockchain::market_status"
+      },
 
       {
         "type_name" : "domain_record",
@@ -565,6 +588,7 @@
         "type_name" : "domain_record_array",
         "container_type" : "array",
         "contained_type" : "domain_record"
+
       }
     ]
 }

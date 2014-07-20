@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( master_test )
       delegate_private_keys.push_back( fc::ecc::private_key::generate() );
       auto delegate_public_key = delegate_private_keys.back().get_public_key();
       delegate_account.owner = delegate_public_key;
-      delegate_account.is_delegate = true;
+      delegate_account.delegate_pay_rate = 100;
 
       config.names.push_back(delegate_account);
       config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );
@@ -232,14 +232,14 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
    auto result = clientb->wallet_market_order_list( "USD", "XTS" );
-   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].order.market_index.owner ) ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].market_index.owner ) ) << "\n";
    produce_block( clientb );
    std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history" ) << "\n";
    std::cerr << clientb->execute_command_line( "balance" ) << "\n";
    result = clientb->wallet_market_order_list( "USD", "XTS" );
-   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].order.market_index.owner ) ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_market_cancel_order " + string( result[0].market_index.owner ) ) << "\n";
    produce_block( clientb );
    std::cerr << clientb->execute_command_line( "wallet_market_order_list USD XTS" ) << "\n";
    std::cerr << clientb->execute_command_line( "blockchain_market_list_bids USD XTS" ) << "\n";
@@ -414,7 +414,7 @@ void create_genesis_block(fc::path genesis_json_file)
       
       auto delegate_public_key =delegate_private_key.get_public_key();
       delegate_account.owner = delegate_public_key;
-      delegate_account.is_delegate = true;
+      delegate_account.delegate_pay_rate = 100;
 
       config.names.push_back(delegate_account);
       config.balances.push_back( std::make_pair( pts_address(fc::ecc::public_key_data(delegate_account.owner)), BTS_BLOCKCHAIN_INITIAL_SHARES/BTS_BLOCKCHAIN_NUM_DELEGATES) );

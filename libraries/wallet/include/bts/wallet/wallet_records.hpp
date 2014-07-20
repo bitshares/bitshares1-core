@@ -109,7 +109,6 @@ namespace bts { namespace wallet {
        bool              is_favorite;
    };
 
-
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
    struct wallet_record : public base_record<RecordTypeNumber>, public RecordTypeName
    {
@@ -117,7 +116,6 @@ namespace bts { namespace wallet {
       wallet_record( const RecordTypeName& rec, int32_t wallet_record_index = 0 )
       :base_record<RecordTypeNumber>(wallet_record_index),RecordTypeName(rec){}
    };
-
 
    struct master_key
    {
@@ -147,28 +145,35 @@ namespace bts { namespace wallet {
        fc::ecc::private_key     decrypt_private_key( const fc::sha512& password )const;
    };
 
-   struct transaction_data
+   struct ledger_entry
    {
-       transaction_data()
-       :block_num(0),is_virtual(false),fees(0),is_confirmed(false),transmit_count(0){}
-
-       transaction_data( const signed_transaction& t )
-       :block_num(0),is_virtual(false),trx(t),fees(0),is_confirmed(false),transmit_count(0){}
-
-       transaction_id_type       transaction_id; // TODO: Rename to transaction_index
-       uint32_t                  block_num;
-       bool                      is_virtual;
-       signed_transaction        trx;
        optional<public_key_type> from_account;
        optional<public_key_type> to_account;
        asset                     amount;
-       share_type                fees;
-       std::string               memo_message;
+       string                    memo;
+   };
+
+   struct transaction_data
+   {
+       transaction_data()
+       :block_num(0),is_virtual(false),is_confirmed(false),is_market(false){}
+
+       /*
+        * record_id
+        * - non-virtual transactions: trx.id()
+        * - virtual genesis claims: fc::ripemd160::hash( owner_account_name )
+        * - virtual market transactions: fc::ripemd160::hash( block_num + get_key_label( owner ) + N )
+        */
+       transaction_id_type       record_id;
+       uint32_t                  block_num;
+       bool                      is_virtual;
        bool                      is_confirmed;
+       bool                      is_market;
+       signed_transaction        trx;
+       vector<ledger_entry>      ledger_entries;
+       asset                     fee;
        fc::time_point_sec        created_time;
        fc::time_point_sec        received_time;
-       /** the number of times this transaction has been transmitted */
-       uint32_t                  transmit_count;
        vector<address>           extra_addresses;
    };
 
@@ -186,7 +191,7 @@ namespace bts { namespace wallet {
 
       bts::blockchain::market_order        order;
       share_type                           proceeds;
-      unordered_set<transaction_id_type>   transactions;
+      unordered_set<transaction_id_type>          transactions;
    };
 
    /* Used to store GUI preferences and such */
@@ -254,24 +259,23 @@ FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
 FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
+
+FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(memo) );
 FC_REFLECT( bts::wallet::transaction_data, 
-            (transaction_id)
+            (record_id)
             (block_num)
             (is_virtual)
-            (trx)
-            (from_account)
-            (to_account)
-            (amount)
-            (fees)
-            (memo_message)
             (is_confirmed)
+            (is_market)
+            (trx)
+            (ledger_entries)
+            (fee)
             (created_time)
             (received_time)
-            (transmit_count)
             (extra_addresses)
           )
-FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 
+FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 FC_REFLECT( bts::wallet::setting, (name)(value) )
 

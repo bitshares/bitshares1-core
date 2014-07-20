@@ -34,7 +34,10 @@ namespace bts { namespace blockchain {
        *  are on the minority chain.
        */
       confirmation_requirement = 6,
-      database_version         = 7 // database version, to know when we need to upgrade
+      database_version         = 7, // database version, to know when we need to upgrade
+      current_fee_rate         = 8, // database version, to know when we need to upgrade
+      accumulated_fees         = 9, // database version, to know when we need to upgrade
+      dirty_markets            = 10
    };
    typedef uint32_t chain_property_type;
 
@@ -63,9 +66,14 @@ namespace bts { namespace blockchain {
 
          virtual fc::ripemd160              get_current_random_seed()const                          = 0;
 
+         share_type                         get_delegate_pay_rate()const;
+         share_type                         get_accumulated_fees()const;
+         void                               set_accumulated_fees( share_type fees );
+
+         share_type                         get_fee_rate()const;
+         void                               set_fee_rate( share_type fees );
+
          /** return the current fee rate in millishares */
-         virtual share_type                 get_fee_rate()const                                     = 0;
-         virtual share_type                 get_delegate_pay_rate()const                            = 0;
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const             = 0;
          virtual void                       store_delegate_slate( slate_id_type id, 
                                                                   const delegate_slate& slate )     = 0;
@@ -78,6 +86,9 @@ namespace bts { namespace blockchain {
          virtual fc::variant                get_property( chain_property_enum property_id )const    = 0;
          virtual void                       set_property( chain_property_enum property_id, 
                                                           const fc::variant& property_value )       = 0;
+
+         virtual omarket_status             get_market_status( asset_id_type quote_id, asset_id_type base_id ) = 0;
+         virtual void                       store_market_status( const market_status& s ) = 0;
 
          virtual omarket_order              get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) = 0;
          virtual oorder_record              get_bid_record( const market_index_key& )const          = 0;
@@ -154,6 +165,15 @@ namespace bts { namespace blockchain {
 
          virtual void                       store_slot_record( const slot_record& r )               = 0;
          virtual oslot_record               get_slot_record( const time_point_sec& start_time )const= 0;
+
+         virtual void                       store_market_history_record( const market_history_key& key,
+                                                                  const market_history_record& record ) = 0;
+         virtual omarket_history_record     get_market_history_record( const market_history_key& key ) const = 0;
+
+         virtual map<asset_id_type, asset_id_type>  get_dirty_markets()const;
+         virtual void                               set_dirty_markets( const map<asset_id_type,asset_id_type>& );
+
+         virtual void                       set_market_transactions( vector<market_transaction> trxs ) = 0;
    };
    typedef std::shared_ptr<chain_interface> chain_interface_ptr;
 
@@ -167,4 +187,9 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (chain_id)
                  (confirmation_requirement)
                  (active_delegate_list_id)
-                 (database_version) )
+                 (database_version) 
+                 (current_fee_rate)
+                 (accumulated_fees)
+                 (dirty_markets)
+               )
+

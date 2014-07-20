@@ -146,6 +146,8 @@ namespace bts { namespace db {
 
         iterator find( const Key& key )
         { try {
+           FC_ASSERT(is_open(), "Database is not open!");
+
            ldb::Slice key_slice;
 
            /** avoid dynamic memory allocation at this step if possible, most 
@@ -183,12 +185,15 @@ namespace bts { namespace db {
 
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->Seek( key_slice );
-           if( itr.valid()  )
-           {
-              return itr;
-           }
-           return iterator();
+           return itr;
         } FC_RETHROW_EXCEPTIONS( warn, "error finding ${key}", ("key",key) ) }
+
+        iterator last( )const
+        { try {
+           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           itr._it->SeekToLast();
+           return itr;
+        } FC_RETHROW_EXCEPTIONS( warn, "error finding last" ) }
 
         bool last( Key& k )
         {

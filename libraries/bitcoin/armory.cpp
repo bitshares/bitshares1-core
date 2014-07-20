@@ -1,16 +1,15 @@
 #include <bts/bitcoin/armory.hpp>
-#include <fc/exception/exception.hpp>
-#include <fc/crypto/aes.hpp>
-#include <fc/io/fstream.hpp>
 #include <bts/blockchain/pts_address.hpp>
 
-//disable codet till romix files get committed
-//#include <fc/crypto/romix.hpp>
+#include <fc/crypto/aes.hpp>
+#include <fc/crypto/romix.hpp>
+#include <fc/exception/exception.hpp>
+#include <fc/io/fstream.hpp>
 
 namespace bts { namespace bitcoin {
+
 std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_dat, const std::string& passphrase )
 {
-#if 0
     if( !fc::exists( wallet_dat ) )
         FC_THROW( ("Unable to open wallet: file \"" + wallet_dat.to_native_ansi_path() + "\" not found!").c_str() );
 
@@ -53,21 +52,21 @@ std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_d
     isWallet.read( (char*)kdfData, 44 );
     check( kdfData, 44 );
 
-    u_int64_t mem = 0;
-    mem += (u_int64_t)kdfData[0] << (0 * 8);
-    mem += (u_int64_t)kdfData[1] << (1 * 8);
-    mem += (u_int64_t)kdfData[2] << (2 * 8);
-    mem += (u_int64_t)kdfData[3] << (3 * 8);
-    mem += (u_int64_t)kdfData[4] << (4 * 8);
-    mem += (u_int64_t)kdfData[5] << (5 * 8);
-    mem += (u_int64_t)kdfData[6] << (6 * 8);
-    mem += (u_int64_t)kdfData[7] << (7 * 8);
+    uint64_t mem = 0;
+    mem += (uint64_t)kdfData[0] << (0 * 8);
+    mem += (uint64_t)kdfData[1] << (1 * 8);
+    mem += (uint64_t)kdfData[2] << (2 * 8);
+    mem += (uint64_t)kdfData[3] << (3 * 8);
+    mem += (uint64_t)kdfData[4] << (4 * 8);
+    mem += (uint64_t)kdfData[5] << (5 * 8);
+    mem += (uint64_t)kdfData[6] << (6 * 8);
+    mem += (uint64_t)kdfData[7] << (7 * 8);
 
-    u_int32_t nIter = 0;
-    nIter += (u_int32_t)kdfData[ 8] << (0 * 8);
-    nIter += (u_int32_t)kdfData[ 9] << (1 * 8);
-    nIter += (u_int32_t)kdfData[10] << (2 * 8);
-    nIter += (u_int32_t)kdfData[11] << (3 * 8);
+    uint32_t nIter = 0;
+    nIter += (uint32_t)kdfData[ 8] << (0 * 8);
+    nIter += (uint32_t)kdfData[ 9] << (1 * 8);
+    nIter += (uint32_t)kdfData[10] << (2 * 8);
+    nIter += (uint32_t)kdfData[11] << (3 * 8);
 
     std::string salt( (char*)&kdfData[12], 32 );
 
@@ -103,7 +102,7 @@ std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_d
             unsigned char type;
             isWallet.read( (char*)&type, 1 );
 
-            u_int16_t len = 0;
+            uint16_t len = 0;
             switch( type )
             {
             case WLT_DATATYPE_KEYDATA:
@@ -155,7 +154,7 @@ std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_d
                 if (buf[0] == 4)
                 {
                     // uncompressed pubkey (bitcoin?)
-                    fc::public_key_point_data publicKey;
+                    fc::ecc::public_key_point_data publicKey;
                     publicKey.at(0) = buf[0];
 
                     isWallet.read( &publicKey.at(1), 64 );
@@ -168,7 +167,7 @@ std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_d
                 else
                 {
                     // compressed pubkey
-                    fc::public_key_data publicKey;
+                    fc::ecc::public_key_data publicKey;
                     publicKey.at(0) = buf[0];
 
                     isWallet.read( &publicKey.at(1), 32 );
@@ -220,8 +219,6 @@ std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_d
     }
 
     return output;
-#endif //if 0
-    return std::vector<fc::ecc::private_key>();
 }
 
 } } // bts::bitcoin
