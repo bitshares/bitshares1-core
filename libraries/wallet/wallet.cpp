@@ -303,8 +303,7 @@ namespace bts { namespace wallet {
                 if( bal_rec.genesis_info.valid() ) /* Create virtual transactions for genesis claims */
                 {
                     const auto public_key = key_rec->public_key;
-                    //const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
-                    const auto record_id = bal_rec.id().addr;
+                    const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
                     auto transaction_record = _wallet_db.lookup_transaction( record_id );
                     if( !transaction_record.valid() )
                     {
