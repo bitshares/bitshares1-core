@@ -314,7 +314,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 out << std::setw( 7 );
                 if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
                 else if( transaction.is_virtual ) out << "VIRTUAL";
-                else out << string( transaction.trx_id ).substr( 0, 7 );
+                else out << string( transaction.trx_id ).substr( 0, 8 );
             }
             else
             {
