@@ -1515,9 +1515,9 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
     }
 
-    void detail::client_impl::wallet_clear_pending_transactions()
+    void detail::client_impl::wallet_hide_pending_transactions()
     {
-      _wallet->clear_pending_transactions();
+      _wallet->hide_pending_transactions();
     }
 
     map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const

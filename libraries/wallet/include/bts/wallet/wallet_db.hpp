@@ -46,7 +46,7 @@ namespace bts { namespace wallet {
          void remove_balance( const balance_id_type& balance_id );
 
          vector<wallet_transaction_record> get_pending_transactions()const;
-         void                              clear_pending_transactions();
+         void                              hide_pending_transactions();
 
          void update_market_order( const address& owner, 
                                    const optional<bts::blockchain::market_order>& order,
