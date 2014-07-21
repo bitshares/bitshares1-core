@@ -545,6 +545,12 @@
               "type" : "string", 
               "description" : "a memo to store with the transaction",
               "default_value" : ""
+            },
+            {
+              "name" : "vote_method", 
+              "type" : "vote_selection_method", 
+              "description" : "enumeration [vote_none | vote_all | vote_random] ",
+              "default_value" : "vote_random"
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
