@@ -7,407 +7,407 @@
   "base_description": "Stake in future BitShares X chains",
   "names": [{
       "name": "delegate0",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z"
     },{
       "name": "delegate1",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54"
     },{
       "name": "delegate2",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6dvBki8EnzCY796an4p2DTwA5bqyrY2xHH9nm9rQVALGgFdn33"
     },{
       "name": "delegate3",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU"
     },{
       "name": "delegate4",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5DxgyVA5DzSVj9SznZeNyi7xktjW74A2oZ2LB6EFqVTCzq984t"
     },{
       "name": "delegate5",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7qqpmyKANmLr8T1eQDpZFnJqTSzQkGAkz3wvzo1RBSCBQge2CG"
     },{
       "name": "delegate6",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8Xpna9Y9ZEDnByFYC5ZqBDCsDvV2F2NwkjnKxEunYZbszAxsko"
     },{
       "name": "delegate7",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7FyFKgqAouufC2VgDgkjEuexfAxkvxWoCZSh6VRnVsT44NeTdv"
     },{
       "name": "delegate8",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6gXH5ZX6csAqhDSyGBExFmBgjdjiLiVQwQqNPpAcDgPo9Kwb11"
     },{
       "name": "delegate9",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8diKNyR2cpJxAuKhKSjmgRdXjrm8NJ8Q3v1Bbj2XSknqxTk8XY"
     },{
       "name": "delegate10",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we"
     },{
       "name": "delegate11",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ"
     },{
       "name": "delegate12",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7tiuERuqKUprGXxmsxW2vir3pJYvA38paRsFL1UCUs34pirbA3"
     },{
       "name": "delegate13",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8A2zrUcWsAatWNa11tv58eBZeWAWTmhfDZmZmGkY3WEPdgEubt"
     },{
       "name": "delegate14",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8HeYR6kw8zfvm1tWw1zKyPUGu38AiDpA5r2ZhsUVLX4uzZ33uM"
     },{
       "name": "delegate15",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6ZS5L2szhzQmGztoQAwTxeLRsNext9Pfp3fktDn3ZJN7Ct54Yj"
     },{
       "name": "delegate16",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS64mncWuqqWPwY8um8DhGvwKtVjdMgeKHE5DXAYV4v5p7petzU7"
     },{
       "name": "delegate17",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8TAYx3Zxfg64UHpWTuJ4sperVgxVE6JkUAADxTMsHzND4UgsKE"
     },{
       "name": "delegate18",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8QPbn7KFnnTPEHoq8HfsimCUBQ7RQPG5PKCkMpgfcQKtV2vMkA"
     },{
       "name": "delegate19",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5Xt5yFu2NVsvQzjNwMfaUEVKN3s9YgTsyi22a27tNDJBWuyh5g"
     },{
       "name": "delegate20",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6Pmsu9reduDgwRFybHejPAcjsNQQnWmzEJdRFhp3f6q8wG9u13"
     },{
       "name": "delegate21",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6PbFVthhitWwbRUuZXerti2aQBvgKQj6FmZWH9UxGRcE1Aw2E3"
     },{
       "name": "delegate22",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5R2tbsxSvgfD3gUzmUVFVWoLRXGbuC1uPHdxEDagR6XiGtoQbw"
     },{
       "name": "delegate23",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8FA6Cvd19PeG8cuvLsF8qPGcfccUypXCv2arXYqpUc43CGFTs5"
     },{
       "name": "delegate24",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8W4L9GNvTR31kaQD1iaWoH75mWpwisPP4CazhxoHp977uvWrvS"
     },{
       "name": "delegate25",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5VWxNgabK1nv47GoYJjv8JSUTP2s6nurBT6rwdcHJY8QE3ez5s"
     },{
       "name": "delegate26",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5W2YJZsZtp4CitW6L1AtWmX7ogu7SdJSMmJJSnHdoAEB8kN1LP"
     },{
       "name": "delegate27",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7sj4XpKSG1u36xJgG9nyWJwMrdcvtKKyxZTh74UX7Te8vqNXFM"
     },{
       "name": "delegate28",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS67CoLLohu5vVH13gKb9KYEPfiQ6LZrDjPBT4c7cALz4iBxXUP4"
     },{
       "name": "delegate29",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5dAUYdxrdAQYm91hLfg1UDiJZENk1XxNaGSUU59ocDDFjb6Gh9"
     },{
       "name": "delegate30",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8bKmwsGuPTJJ6nabDqCPN4zCBga5oWaWsgBhmCA1E2vjBxVj42"
     },{
       "name": "delegate31",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS532i1KPDmdp5XNHD5bP2EPwXxCACbi6PeU2uYfZLwfJmKEB9Eo"
     },{
       "name": "delegate32",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6oASQPHcEUHF6k9B8ohB1ycgcce4xWfsF1YsycT7uvFcP9GLcp"
     },{
       "name": "delegate33",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS76CHU7uPKBaWhPejWb5io99u5eFg2xWsP9fsLQKntbbjAeGTWr"
     },{
       "name": "delegate34",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7VvH4BS8yQkBXekBJ3QjrFKm8zQf1MXvrg8UoRHYTn4omJmAS1"
     },{
       "name": "delegate35",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS63fdrCkJWnnrW2BGv14hVFka3fEcP7XN1sRPe98JUYje8UK1fB"
     },{
       "name": "delegate36",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6m74rw5Us2NaFz48EqqCJNDp2MUnX2gJnfmvbicz6CH65HzdFs"
     },{
       "name": "delegate37",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS87TP8uVBzzXJyF5qZeqekihUdAAXMSwNfrhXH6PGMCRKH2jWJU"
     },{
       "name": "delegate38",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8HDHZcdpGc5uZpMQNsa5c46XYJGeFNJWtQBi9HN3chrnWqv3wV"
     },{
       "name": "delegate39",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6DBBnNZTc5GhwqWJj4REzY9utZfryLjXHbRSSeDCDxBbof9VHL"
     },{
       "name": "delegate40",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8EPgousmfRqfH4HLQdxkLPLMtYXQyqYihbuPR3XBUqkvQ1Dpis"
     },{
       "name": "delegate41",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw"
     },{
       "name": "delegate42",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv"
     },{
       "name": "delegate43",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F"
     },{
       "name": "delegate44",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1"
     },{
       "name": "delegate45",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6p5x8Hezh3bBHptmFq8wCT5ZK53a548R2sY8MKHor5WF1Xij6N"
     },{
       "name": "delegate46",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5u5YQF3k2YTxNs33QgugbmJSYf2ZnhBCoXimzZ62SnPwo8xQui"
     },{
       "name": "delegate47",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6sGPRw2wCRtBhFVq3r5f6jYgEMniBGkNS327KPwXHGm5HPvnuJ"
     },{
       "name": "delegate48",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6F9xvTqUvSSzqJABVyg3QNHveHrViDAiAiWXiCKpeCkSRA9d64"
     },{
       "name": "delegate49",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6cwrKpbQHZYbvjEgWrUrZsZj9uAunYnowtR86tUZjpCQEPMVFv"
     },{
       "name": "delegate50",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8XH6nATM7Z9YuaVHyfbGTZBUCrPjyt9S3uxpebecCGiijSxBUa"
     },{
       "name": "delegate51",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5Q1vVwmSwYi2zqEdkYUPnLpyzH2DPhuiAJhgFWLbpte2jyHev5"
     },{
       "name": "delegate52",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5mXXa7QbX43Ad9QYWjQSeA7LWekcTjjBuLjrRz998jMa4YggMC"
     },{
       "name": "delegate53",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7C3u8AL6FY8kjKNvqpZJHrXotvPuEPRFEed2Dh3AW9rfbsrHNa"
     },{
       "name": "delegate54",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5nox8VX18R1YtP2VyyzifS9wK3T5eY7QMwKHza56CA9Ktmg24t"
     },{
       "name": "delegate55",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6shynV3nfqkEBu4m66LzUJghMbaAsuiDpkMEfM2rohzBugepFg"
     },{
       "name": "delegate56",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7A6SmGG5KcHzJBjRhyZoiTyBVCmuGfHatw3NFMhJ4EAkEmGmZw"
     },{
       "name": "delegate57",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5nzTn9Ys3xe87BSqcLvZsVnUeB1dciJMB48fCKTEyoVW1B5Xz3"
     },{
       "name": "delegate58",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS51SA8CjYtde8hgwVSReUbZVqHj6cWjMpX1K1DetYaNjD97dQN1"
     },{
       "name": "delegate59",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7K2z9uz2Xe98Xskm2RvyVn7evEFP1n4Y2qNPGTTa9pcw9jKms5"
     },{
       "name": "delegate60",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5mPJs2UwnVPWirg91EzTg8jMpBxPk8J3AL5WtxffiybTnZ16gP"
     },{
       "name": "delegate61",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6jSgSE9ymYMNfypKwira3Z5n5HocCHM6RuM6tEYK8m4AZq2YsM"
     },{
       "name": "delegate62",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS64BaCqo2MofGMz22AGFErnGQxoSoEWCjy5H9F2mNCgp1PTcErK"
     },{
       "name": "delegate63",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS55RZjqAaRV8aF7tBVu58g88uZq3HKCLM7NLHS4DW4vzkm6KpiY"
     },{
       "name": "delegate64",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5afbTiwzxmAoZbfEaTBjpyDTDbAAFzy3eLouQMopGYKR7U3zf9"
     },{
       "name": "delegate65",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6WqxJNy2PofLWgS8Sfq35Fee3xpAuJvD2JEBYFe1peeSDr8iWF"
     },{
       "name": "delegate66",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6Cwr98hiNT1R5ogh1RdKfyeZY6nxfukEsqmyz81He4sEoW9H1A"
     },{
       "name": "delegate67",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6fwBfcpii4yCNQBk9YUgXjThhBP9wafkjGJgqaQJqQnGfJ8U3s"
     },{
       "name": "delegate68",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5Nj2R2vRAVf9faLqA3AUc86MWPtj5F5fbXFkpN66M3sHHyQWJL"
     },{
       "name": "delegate69",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS83CFdeYK4XrEA1gYoCmdmifjEnTdDzHJSUQM5zjUn4wHPPxHhh"
     },{
       "name": "delegate70",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6qYzqYepR6VgsPjfLNiUurLmnEKUxcd1X7ZMyQmkFg5owgVYVL"
     },{
       "name": "delegate71",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5V3inret4XzoUg5QuakyyyzWFCVp6bCb99cxVKvdWvd7q7KfDX"
     },{
       "name": "delegate72",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8UmJGf9kxHAgqCWv3FnpDVe1Weuh9yx9XxdNFEHmvKCJYDPYUd"
     },{
       "name": "delegate73",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8CnJjiWePpPSbJ7kz2H8YoACn6udKoTTTDLYMe2v2TQgViNEB8"
     },{
       "name": "delegate74",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS73JEFG3SKaL3BUXN5eUHUCBZGHGhrUMeRZnhmMZhZvzSRoWByR"
     },{
       "name": "delegate75",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6vfncDfbrRu5ew5EGArwJxj1vrP3vGwhXLg1XGf2Tiupmdm1Un"
     },{
       "name": "delegate76",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8U5YQZox32Pu7suZASCrnNopaEt1fWfWk4oEUdVcuzF6Ux9rma"
     },{
       "name": "delegate77",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS64buf7GDt7vg6qj3E8J5SQaDCS3ANHXbAXyCRjaCNanXHrbHHV"
     },{
       "name": "delegate78",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS57M2Tgy8cARastsAjdiJjQz9Qodv99NmmQU6oyAhfUhrhKxTcd"
     },{
       "name": "delegate79",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8bfUFtarRaY4ceHAaAZjhhHGh5YUe4eyJKC5XCuXf5EJJa1bPi"
     },{
       "name": "delegate80",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS55TXnA9vvh8hsAmkWy2mxZjzXNMLhsgnsVvvWe83QJvSqWpWmM"
     },{
       "name": "delegate81",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS72CDS8wjoVDCGXvVcWvxNxYZCJBbMLn8dAWF1n1ap6Nk21uzdZ"
     },{
       "name": "delegate82",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5vg1iP93DwDTWVhS1R6c4G14EdnUJy2mr6ww5FoPd8EvZiNkDX"
     },{
       "name": "delegate83",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5uiKwt1SU4kpCk5HUMHbZz8wEmNsZL64PfbABc3aQqud9VzEA2"
     },{
       "name": "delegate84",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6Hw6PP5EtHdSP31nM7r5YWTUBRwYMaNPLFQ5HHk5tmgXKt8HGr"
     },{
       "name": "delegate85",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8LrAYkQBVL1GGLFJcH5Z2yVhxKUdkeQsx8uvJFLG6QhmpxF2aB"
     },{
       "name": "delegate86",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5tMQELkRQYQsTvSWn2wzNiS7qXApnhXhPpxzP7bf6amaoQQin7"
     },{
       "name": "delegate87",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8NvHDJnPRUKbm7BbBWPQRvRJM7i1EEJZQgixE8aMf2zM2t1iP5"
     },{
       "name": "delegate88",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8cvx34Hk1N6MvDwKWkC8erbYHbfR6oeasq8Tz2CDipAW2UFEPb"
     },{
       "name": "delegate89",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS59ShtZoyWUPZvD1r6t1PCVhpf8NV7eMbYPNbSpfE93KPyUgMKB"
     },{
       "name": "delegate90",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7wd9uDd9ZipHpq7szNXZbDX6dWRZUiPCs4sEKAvHDAcsaGpp4E"
     },{
       "name": "delegate91",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6ZkK1qpfxnYo89LCEavaJgBiQ38RBN8rHHiHwnLf459ouy6rwG"
     },{
       "name": "delegate92",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6PSJQd6ChLT336xQzi2YPFUKayWBVacAwWx9hiV4tc7iYyq1bg"
     },{
       "name": "delegate93",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7B59R833TqfArVZeDTMFT7wz2HToLx178NoJLNHXZBsV9uEd7T"
     },{
       "name": "delegate94",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6rw7EEz5LiepCLvtAnFKsuBLHCJzdhw1ARmDC27gk8bu7Epqgy"
     },{
       "name": "delegate95",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS8R8pGXK5VN6GKRBW9ccf3JUZ9DZ7M9ZSCrfHgbL9apXTuo9NR3"
     },{
       "name": "delegate96",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7y7NEDHFeTAyUquo3aPP8eGb6YpjVi8ShQ5xeWkTWL8j6AgGno"
     },{
       "name": "delegate97",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS7pUEhLJ3EqrBa7g6Y9gUGt6T1wEavniodXfZq7S1eZG4DVCN5v"
     },{
       "name": "delegate98",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS6MTa2sthDUAsvBggmAsJrk1XsTZy7BTve1V7voShdSKvZbMjdA"
     },{
       "name": "delegate99",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS79NNeLPbqYTbznELs271Y4rezpwzfxKR7DEbrSnDWEigoK1WU6"
     },{
       "name": "delegate100",
-      "is_delegate": true,
+      "delegate_pay_rate": "100",
       "owner": "XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy"
     }
   ],
