@@ -85,11 +85,17 @@ namespace bts { namespace blockchain {
                 || odomain_rec->get_true_state() == domain_record::in_sale,
                    "Attempting to sell a domain which is not in 'owned' or 'in_sale' state");
         FC_ASSERT( eval_state.check_signature( odomain_rec->owner ), "Sale not signed by owner" );
-        FC_ASSERT( this->price > 0, "Price must be positive" );
-        odomain_rec->state = domain_record::in_sale;
-        odomain_rec->price = this->price;
-        odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
-        eval_state._current_state->store_domain_record( *odomain_rec );
+        if ( false ) //if there are any offers
+        {
+        }
+        else
+        {
+            FC_ASSERT( this->price > 0, "Price must be positive" );
+            odomain_rec->state = domain_record::in_sale;
+            odomain_rec->price = this->price;
+            odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
+            eval_state._current_state->store_domain_record( *odomain_rec );
+        }
     }
 
     void domain_cancel_sell_operation::evaluate( transaction_evaluation_state& eval_state )
@@ -108,29 +114,38 @@ namespace bts { namespace blockchain {
     {
         auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
         FC_ASSERT( odomain_rec.valid(), "Trying to buy a domain which does not exist" );
-        FC_ASSERT( odomain_rec->get_true_state() == domain_record::in_sale,
-                   "Attempting to buy a domain which is not in 'in_sale' state");
-        share_type paid_to_owner = 0;
-        for (auto op : eval_state.trx.operations)
+
+        /* If this is a real "buy" and not just an offer
+         */
+        if ( odomain_rec->get_true_state() == domain_record::in_sale 
+           && this->price > odomain_rec->price )
         {
-            if (op.type == operation_type_enum::deposit_op_type)
+            share_type paid_to_owner = 0;
+            for (auto op : eval_state.trx.operations)
             {
-                auto deposit = op.as<deposit_operation>();
-                if (deposit.condition.type == withdraw_condition_types::withdraw_signature_type)
+                if (op.type == operation_type_enum::deposit_op_type)
                 {
-                    auto condition = deposit.condition.as<withdraw_with_signature>();
-                    if (condition.owner == odomain_rec->owner)
+                    auto deposit = op.as<deposit_operation>();
+                    if (deposit.condition.type == withdraw_condition_types::withdraw_signature_type)
                     {
-                        paid_to_owner += deposit.amount;
+                        auto condition = deposit.condition.as<withdraw_with_signature>();
+                        if (condition.owner == odomain_rec->owner)
+                        {
+                            paid_to_owner += deposit.amount;
+                        }
                     }
                 }
             }
+            FC_ASSERT( paid_to_owner >= odomain_rec->price, "Did not pay enough to previous owner" );
+            odomain_rec->state = domain_record::owned;
+            odomain_rec->owner = this->new_owner;
+            odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
+            eval_state._current_state->store_domain_record( *odomain_rec );
+        } 
+        else // Otherwise this is just an offer
+        {
+            FC_ASSERT(!"unimplemented buying a domain that is not for sale");
         }
-        FC_ASSERT( paid_to_owner >= odomain_rec->price, "Did not pay enough to previous owner" );
-        odomain_rec->state = domain_record::owned;
-        odomain_rec->owner = this->new_owner;
-        odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
-        eval_state._current_state->store_domain_record( *odomain_rec );
     }
 
     void domain_transfer_operation::titan_transfer( const fc::ecc::private_key& one_time_private_key,

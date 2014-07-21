@@ -8,6 +8,28 @@
 
 namespace bts { namespace blockchain {
 
+    struct offer_index_key
+    {
+        string domain_name;
+        share_type price;
+        uint32_t offer_time;
+        address       owner;
+
+        friend bool operator == (const offer_index_key& a, const offer_index_key& b)
+        {
+            return a.price == b.price;
+        }
+        friend bool operator < (const offer_index_key& a, const offer_index_key& b)
+        {
+            // most expensive first
+            if (a.price > b.price)
+                return true;
+            if (a.price < b.price)
+                return false;
+            return a.offer_time < b.offer_time;
+        }
+
+    };
 
     struct auction_index_key
     {
@@ -68,12 +90,13 @@ namespace bts { namespace blockchain {
             auto key = auction_index_key();
             key.domain_name = this->domain_name;
             key.price = this->price;
-            key.price = this->last_update;
+            key.bid_time = this->last_update;
             return key;
         }
     };
 
-    typedef fc::optional<domain_record> odomain_record;
+
+    typedef fc::optional<domain_record>           odomain_record;
 
 }}; // bts::blockchain
 
@@ -82,3 +105,4 @@ namespace bts { namespace blockchain {
 FC_REFLECT_ENUM( bts::blockchain::domain_record::domain_state_type, (unclaimed)(in_auction)(in_sale)(owned) );
 FC_REFLECT( bts::blockchain::domain_record, (domain_name)(owner)(value)(last_update)(state)(price)(next_required_bid)(time_in_top) );
 FC_REFLECT( bts::blockchain::auction_index_key, (domain_name)(price)(bid_time) );
+FC_REFLECT( bts::blockchain::offer_index_key, (domain_name)(price)(offer_time) );

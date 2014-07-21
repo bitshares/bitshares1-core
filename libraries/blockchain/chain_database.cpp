@@ -662,6 +662,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map< string, domain_record >                         _domain_db;
             // an ordered cache of what is in auction
             bts::db::level_map< auction_index_key, string >                     _auction_db;
+            bts::db::level_map< offer_index_key, string >                       _domain_offer_db;
 
             // END DNS
 
@@ -744,6 +745,7 @@ namespace bts { namespace blockchain {
           // DNS
           _domain_db.open( data_dir / "index/domain_db" );
           _auction_db.open( data_dir / "index/auction_db" );
+          _domain_offer_db.open( data_dir / "index/domain_offer_db" );
 
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
@@ -1564,6 +1566,7 @@ namespace bts { namespace blockchain {
 
       my->_domain_db.close();
       my->_auction_db.close();
+      my->_domain_offer_db.close();
 
       //my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
