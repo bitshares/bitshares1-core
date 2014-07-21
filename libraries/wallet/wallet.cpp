@@ -2495,7 +2495,7 @@ namespace bts { namespace wallet {
          required_signatures.insert( address( from_account_address ) );
          trx.create_asset( symbol, asset_name,
                            description, data,
-                           oname_rec->id, max_share_supply, precision );
+                           oname_rec->id, max_share_supply_in_internal_units, precision );
       }
       else
       {
