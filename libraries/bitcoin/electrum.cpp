@@ -21,7 +21,6 @@
 #include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
-#include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_stl.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
@@ -78,11 +77,12 @@ struct parser final : qi::grammar<It, python_dict_type_t(), ascii::space_type>
      pairs = -(pair % ',') ;
      pair = key >> ':' >> val;
      key %= qstring | string;
-     val %= qstring | string | array | dict;
+     val %= qstring | string | array | tuple | dict;
      array %= '[' >> arrayvals >> ']';
+     tuple %= '(' >> arrayvals >> ')';
      arrayvals = -(val % ',');
-     string = +(~qi::char_("{[]}:',"));
-     qstring = '\'' >> qcontents >> '\'';
+     string = +(~qi::char_("{[()]}:',"));
+     qstring = -qi::char_('u') >> '\'' >> qcontents >> '\'';
      qcontents = *(esc | ~qi::char_("'"));
      esc = '\\' >> qi::char_("'");
   }
@@ -92,6 +92,7 @@ private:
   qi::rule<It, std::vector<python_dict_elem_type_t>(), ascii::space_type> pairs;
   qi::rule<It, python_dict_elem_type_t(), ascii::space_type> pair;
   qi::rule<It, python_dict_array_type_t(), ascii::space_type> array;
+  qi::rule<It, python_dict_array_type_t(), ascii::space_type> tuple;
   qi::rule<It, std::vector<python_dict_val_t>(), ascii::space_type> arrayvals;
   qi::rule<It, python_dict_val_t(), ascii::space_type> val;
   qi::rule<It, std::string(), ascii::space_type> key, string, qstring, qcontents, esc;
