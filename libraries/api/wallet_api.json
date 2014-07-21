@@ -318,8 +318,8 @@
         "aliases" : ["history"]
       },
       {
-        "method_name": "wallet_clear_pending_transactions",
-        "description": "Clear \"stuck\" pending transactions from the wallet.",
+        "method_name": "wallet_hide_pending_transactions",
+        "description": "Hide \"stuck\" pending transactions from the wallet.  Internal: Do not call this.",
         "return_type": "void",
         "parameters" : [],
         "prerequisites" : ["wallet_open"],
@@ -545,6 +545,12 @@
               "type" : "string", 
               "description" : "a memo to store with the transaction",
               "default_value" : ""
+            },
+            {
+              "name" : "vote_method", 
+              "type" : "vote_selection_method", 
+              "description" : "enumeration [vote_none | vote_all | vote_random] ",
+              "default_value" : "vote_random"
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
@@ -586,9 +592,15 @@
               "type" : "string",
               "description" : "a memo to store with the transaction",
               "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random] ",
+              "default_value" : "vote_random"
             }
           ],
-        "prerequisites" : ["wallet_unlocked"],
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_rescan_blockchain",

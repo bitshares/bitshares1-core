@@ -251,7 +251,7 @@ namespace bts { namespace wallet {
             bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
-            void clear_pending_transactions();
+            void hide_pending_transactions();
 
             void scan_balances( const time_point_sec& received_time );
             void scan_registered_accounts();
@@ -271,9 +271,9 @@ namespace bts { namespace wallet {
           return _wallet_db.get_pending_transactions();
       }
 
-      void wallet_impl::clear_pending_transactions()
+      void wallet_impl::hide_pending_transactions()
       {
-          _wallet_db.clear_pending_transactions();
+          _wallet_db.hide_pending_transactions();
       }
 
       void wallet_impl::scan_balances( const time_point_sec& received_time )
@@ -1582,12 +1582,12 @@ namespace bts { namespace wallet {
         my->_wallet_db.store_transaction( record );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id )
+   slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id, vote_selection_method selection_method)
    {
        auto slate_id = slate_id_type( 0 );
        if( deposit_asset_id != asset_id_type( 0 ) ) return slate_id;
 
-       const auto slate = select_delegate_vote();
+       const auto slate = select_delegate_vote( selection_method );
        slate_id = slate.id();
 
        if( slate_id != slate_id_type( 0 ) && !my->_blockchain->get_delegate_slate( slate_id ).valid() )
@@ -2136,6 +2136,7 @@ namespace bts { namespace wallet {
                                                           const string& from_account_name,
                                                           const address& to_address,
                                                           const string& memo_message,
+                                                          vote_selection_method selection_method, 
                                                           bool sign )
    { try {
       FC_ASSERT( is_open() );
@@ -2179,7 +2180,7 @@ namespace bts { namespace wallet {
                                       trx, required_signatures );
       }
 
-      const auto slate_id = select_slate( trx, asset_to_transfer.asset_id );
+      const auto slate_id = select_slate( trx, asset_to_transfer.asset_id, selection_method );
 
       trx.deposit( to_address, asset_to_transfer, slate_id);
 
@@ -2281,6 +2282,7 @@ namespace bts { namespace wallet {
                                         const string& from_account_name,
                                         const string& to_account_name,
                                         const string& memo_message,
+                                        vote_selection_method selection_method, 
                                         bool sign )
    { try {
       FC_ASSERT( is_open() );
@@ -2341,7 +2343,7 @@ namespace bts { namespace wallet {
                                        trx, required_signatures );
       }
 
-      const auto slate_id = select_slate( trx, asset_to_transfer.asset_id );
+      const auto slate_id = select_slate( trx, asset_to_transfer.asset_id, selection_method );
 
       private_key_type sender_private_key = get_account_private_key( from_account_name );
       public_key_type sender_public_key = sender_private_key.get_public_key();
@@ -3778,9 +3780,9 @@ namespace bts { namespace wallet {
        return my->get_pending_transactions();
    }
 
-   void wallet::clear_pending_transactions()
+   void wallet::hide_pending_transactions()
    {
-      my->clear_pending_transactions();
+      my->hide_pending_transactions();
       auto tmp_balances = my->_wallet_db.get_balances();
       for( const auto& item : tmp_balances )
          my->sync_balance_with_blockchain( item.first );
@@ -3922,8 +3924,11 @@ namespace bts { namespace wallet {
     *  Randomly select a slate of BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates from those approved
     *  by this wallet. The slate will be no more than BTS_BLOCKCHAIN_NUM_DELEGATES.
     */
-   delegate_slate wallet::select_delegate_vote()const
+   delegate_slate wallet::select_delegate_vote( vote_selection_method selection_method )const
    {
+      if( selection_method == vote_none ) 
+         return delegate_slate();
+
       FC_ASSERT( BTS_BLOCKCHAIN_MAX_SLATE_SIZE <= BTS_BLOCKCHAIN_NUM_DELEGATES );
       vector<account_id_type> for_candidates;
 
@@ -3935,10 +3940,15 @@ namespace bts { namespace wallet {
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
       auto slate = delegate_slate();
-      if( for_candidates.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
+      if( selection_method == vote_all )
+      {
           slate.supported_delegates = for_candidates;
-      else
-          slate.supported_delegates = vector<account_id_type>( for_candidates.begin(), for_candidates.begin() + BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
+          slate.supported_delegates.resize( std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE, slate.supported_delegates.size() ) );
+      }
+      if( selection_method == vote_random )
+      {
+          slate.supported_delegates = vector<account_id_type>( for_candidates.begin(), for_candidates.begin() + BTS_BLOCKCHAIN_MAX_SLATE_SIZE/3 );
+      }
 
       FC_ASSERT( slate.supported_delegates.size() <= BTS_BLOCKCHAIN_MAX_SLATE_SIZE );
       std::sort( slate.supported_delegates.begin(), slate.supported_delegates.end() );
