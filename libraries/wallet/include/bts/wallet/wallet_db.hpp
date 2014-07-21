@@ -43,7 +43,9 @@ namespace bts { namespace wallet {
                           const fc::ecc::private_key& account_key,
                           const fc::sha512& password );
          void cache_order( const bts::blockchain::market_order& );
+
          void remove_balance( const balance_id_type& balance_id );
+         void remove_transaction( const transaction_id_type& record_id );
 
          vector<wallet_transaction_record> get_pending_transactions()const;
          void                              hide_pending_transactions();

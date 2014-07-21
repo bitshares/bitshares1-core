@@ -752,4 +752,12 @@ namespace bts { namespace wallet {
       balances.erase(balance_id);
    }
 
+   void wallet_db::remove_transaction( const transaction_id_type& record_id )
+   {
+      const auto rec = lookup_transaction( record_id );
+      if( !rec.valid() ) return;
+      remove_item( rec->wallet_record_index );
+      transactions.erase( record_id );
+   }
+
 } } // bts::wallet

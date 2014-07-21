@@ -1708,6 +1708,11 @@ config load_config( const fc::path& datadir )
       return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
     } FC_RETHROW_EXCEPTIONS( warn, "") }
 
+    void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
+    { try {
+       _wallet->remove_transaction_record( transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
+
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
       try

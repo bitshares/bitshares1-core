@@ -414,6 +414,8 @@ namespace bts { namespace wallet {
                                                                             uint32_t end_block_num = -1,
                                                                             const string& asset_symbol = "" )const;
 
+         void                               remove_transaction_record( const string& record_id );
+
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*
          optional<address>                  get_owning_address( const balance_id_type& id )const;

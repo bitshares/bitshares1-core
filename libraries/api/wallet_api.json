@@ -318,8 +318,23 @@
         "aliases" : ["history"]
       },
       {
+        "method_name": "wallet_remove_transaction",
+        "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "transaction_id",
+              "type" : "string",
+              "description" : "the id (or id prefix) of the transaction record"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : [""]
+      },
+      {
         "method_name": "wallet_hide_pending_transactions",
-        "description": "Hide \"stuck\" pending transactions from the wallet.  Internal: Do not call this.",
+        "description": "Hide \"stuck\" pending transactions from the wallet. Internal: Do not call this.",
         "return_type": "void",
         "parameters" : [],
         "prerequisites" : ["wallet_open"],
