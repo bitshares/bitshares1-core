@@ -1561,6 +1561,25 @@ config load_config( const fc::path& datadir )
     {
          auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
                                                   from_account_name, to_account_name,
+                                                  to_account_name,
+                                                  memo_message, true );
+
+         network_broadcast_transaction( trx );
+
+         return trx;
+    }
+
+    signed_transaction detail::client_impl::wallet_transfer_from(double amount_to_transfer,
+                                                       const string& asset_symbol,
+                                                       const string& paying_account_name,
+                                                       const string& from_account_name,
+                                                       const string& to_account_name,
+                                                       const string& memo_message)
+    {
+         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
+                                                  paying_account_name,
+                                                  from_account_name, to_account_name,
+                                                  to_account_name,
                                                   memo_message, true );
 
          network_broadcast_transaction( trx );

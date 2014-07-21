@@ -480,7 +480,7 @@
       },
       {
         "method_name": "wallet_multipart_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
+        "description": "Sends given amount to the given address.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
         "return_type": "signed_transaction_array",
         "parameters" : 
           [
@@ -497,7 +497,7 @@
             {
               "name" : "from_account_name", 
               "type" : "sending_account_name", 
-              "description" : "the source account(s) to draw the shares from"
+              "description" : "the source account to draw the shares from"
             },
             {
               "name" : "to_account_name", 
@@ -516,7 +516,7 @@
       },
       {
         "method_name": "wallet_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+        "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
         "return_type": "signed_transaction",
         "parameters" : 
           [
@@ -533,7 +533,7 @@
             {
               "name" : "from_account_name", 
               "type" : "sending_account_name", 
-              "description" : "the source account(s) to draw the shares from"
+              "description" : "the source account to draw the shares from"
             },
             {
               "name" : "to_account_name", 
@@ -549,6 +549,46 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer"]
+      },
+      {
+        "method_name": "wallet_transfer_from",
+        "description": "Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+        "return_type": "signed_transaction",
+        "parameters" :
+          [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "sending_account_name",
+              "description" : "the account to show the recipient as being the sender (requires account's private key to be in wallet). Leave empty to send anonymously."
+            },
+            {
+              "name" : "to_account_name",
+              "type" : "receive_account_name",
+              "description" : "the account to transfer the shares to"
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
       },
       {
         "method_name": "wallet_rescan_blockchain",

@@ -254,8 +254,9 @@ namespace bts { namespace wallet {
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output.
           */
-         signed_transaction  transfer_asset( double real_amount_to_transfer,
+         signed_transaction  transfer_asset(double real_amount_to_transfer,
                                               const string& amount_to_transfer_symbol,
+                                              const string& paying_account_name,
                                               const string& from_account_name,
                                               const string& to_account_name,
                                               const string& memo_message,
