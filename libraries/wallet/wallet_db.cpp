@@ -406,13 +406,13 @@ namespace bts { namespace wallet {
        return transaction_records;
    }
 
-   void wallet_db::clear_pending_transactions()
+   void wallet_db::hide_pending_transactions()
    {
-       const auto transaction_records = get_pending_transactions();
-       for( const auto& transaction_record : transaction_records )
+       auto transaction_records = get_pending_transactions();
+       for( auto& transaction_record : transaction_records )
        {
-           my->_records.remove( transaction_record.wallet_record_index );
-           transactions.erase( transaction_record.record_id );
+           transaction_record.is_hidden = true;   
+           store_transaction( transaction_record );
        }
    }
 

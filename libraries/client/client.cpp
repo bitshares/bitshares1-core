@@ -1515,9 +1515,9 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
     }
 
-    void detail::client_impl::wallet_clear_pending_transactions()
+    void detail::client_impl::wallet_hide_pending_transactions()
     {
-      _wallet->clear_pending_transactions();
+      _wallet->hide_pending_transactions();
     }
 
     map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const
@@ -1557,11 +1557,13 @@ config load_config( const fc::path& datadir )
                                                        const string& asset_symbol,
                                                        const string& from_account_name,
                                                        const string& to_account_name,
-                                                       const string& memo_message)
+                                                       const string& memo_message,
+                                                       const vote_selection_method& selection_method
+                                                       )
     {
          auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
                                                   from_account_name, to_account_name,
-                                                  memo_message, true );
+                                                  memo_message, selection_method, true );
 
          network_broadcast_transaction( trx );
 
@@ -2050,7 +2052,7 @@ config load_config( const fc::path& datadir )
        try {
           auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
                                                          fromaccount, toaddress,
-                                                         comment, true );
+                                                         comment, vote_random,true );
 
           network_broadcast_transaction( trx );
 
@@ -2688,7 +2690,7 @@ config load_config( const fc::path& datadir )
         state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
         if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
-            && participation_rate > 90)
+            && participation_rate > 80)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::green;
         }

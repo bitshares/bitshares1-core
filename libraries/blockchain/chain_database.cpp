@@ -1018,7 +1018,8 @@ namespace bts { namespace blockchain {
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply += pay;
+            FC_ASSERT( pay_rate >= pay );
+            base_asset_record->current_share_supply -= (pay_rate - pay);
             pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 

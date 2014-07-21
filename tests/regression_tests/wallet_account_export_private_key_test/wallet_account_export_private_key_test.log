@@ -1,0 +1,19 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
+default (unlocked) >>> wallet_delegate_set_transaction_scanning true
+OK
+default (unlocked) >>> wallet_account_create test
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> help wallet_account_export_private_key
+Usage:
+wallet_account_export_private_key <account_name>                                                      returns the private key for this account in WIF format
+returns the private key for this account in WIF format
+
+Parameters:
+  account_name (account_name, required): the name of the account key to export
+
+Returns:
+  string
+default (unlocked) >>> wallet_account_export_private_key test
+"5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
+default (unlocked) >>> quit
