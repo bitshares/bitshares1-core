@@ -1035,13 +1035,13 @@ namespace bts { namespace blockchain {
       void chain_database_impl::verify_header( const full_block& block_data )
       { try {
             // validate preliminaries:
-            if( block_data.block_num != _head_block_header.block_num + 1 )
+            if( block_data.block_num > 1 && block_data.block_num != _head_block_header.block_num + 1 )
                FC_CAPTURE_AND_THROW( block_numbers_not_sequential, (block_data)(_head_block_header) );
             if( block_data.previous  != _head_block_id )
                FC_CAPTURE_AND_THROW( invalid_previous_block_id, (block_data)(_head_block_id) );
             if( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC != 0 )
                FC_CAPTURE_AND_THROW( invalid_block_time );
-            if( block_data.timestamp <= _head_block_header.timestamp )
+            if( block_data.block_num > 1 && block_data.timestamp <= _head_block_header.timestamp )
                FC_CAPTURE_AND_THROW( time_in_past, (block_data.timestamp)(_head_block_header.timestamp) );
 
             fc::time_point_sec now = bts::blockchain::now();
