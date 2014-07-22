@@ -1117,8 +1117,12 @@ config load_config( const fc::path& datadir )
                 boost::reverse(fork_history);
                 try
                 {
+                  if( last_non_fork_block == block_id_type() )
+                     return synopsis;
                   non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-                  FC_ASSERT(non_fork_high_block_num > 0);
+                  FC_ASSERT(non_fork_high_block_num > 0, "", 
+                            ("non_fork_high_block_num",non_fork_high_block_num)
+                            ("last_non_fork_block",last_non_fork_block) );
                 }
                 catch (const fc::key_not_found_exception&)
                 {
@@ -1132,7 +1136,8 @@ config load_config( const fc::path& datadir )
                 // unable to get fork history for some reason.  maybe not linked?
                 // we can't return a synopsis of its chain
                 elog("Unable to construct a blockchain synopsis for reference hash ${hash}: ${exception}", ("hash", reference_point)("exception", e));
-                return synopsis;
+                throw; //FC_RETHROW_EXCEPTIONS( e ); //throw;
+                //return synopsis;
               }
             }
           }
