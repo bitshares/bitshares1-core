@@ -112,6 +112,7 @@ namespace bts { namespace wallet {
                   const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
                   const auto now = blockchain::now();
                   scan_block( summary.block_data.block_num, account_priv_keys, now );
+                  _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( summary.block_data.block_num ) );
                }
             }
 
@@ -236,14 +237,15 @@ namespace bts { namespace wallet {
             void scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
                                    const vector<private_key_type>& keys, const time_point_sec& received_time );
 
-            bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec );
+            bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
-            bool scan_deposit( const deposit_operation& op, const private_keys& keys, wallet_transaction_record& trx_rec );
+            bool scan_deposit( const deposit_operation& op, const private_keys& keys, wallet_transaction_record& trx_rec, asset& total_fee );
 
-            bool scan_register_account( const register_account_operation& op );
-            bool scan_update_account( const update_account_operation& op );
-            bool scan_create_asset( wallet_transaction_record& trx_rec, const create_asset_operation& op );
-            bool scan_issue_asset( wallet_transaction_record& trx_rec, const issue_asset_operation& op );
+            bool scan_register_account( const register_account_operation& op, wallet_transaction_record& trx_rec );
+            bool scan_update_account( const update_account_operation& op, wallet_transaction_record& trx_rec );
+            bool scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec );
+            bool scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec );
             bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
             bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
             bool scan_short( wallet_transaction_record& trx_rec, const short_operation& op );
@@ -300,6 +302,9 @@ namespace bts { namespace wallet {
 
                 if( bal_rec.genesis_info.valid() ) /* Create virtual transactions for genesis claims */
                 {
+                    /* TODO: This is temporary to remove old wallet version genesis claim records */
+                    self->remove_transaction_record( string( bal_rec.id().addr ) );
+
                     const auto public_key = key_rec->public_key;
                     const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
                     auto transaction_record = _wallet_db.lookup_transaction( record_id );
@@ -436,7 +441,7 @@ namespace bts { namespace wallet {
 
       void wallet_impl::scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
                                           const vector<private_key_type>& keys, const time_point_sec& received_time )
-      {
+      { try {
           const auto record_id = transaction.id();
           auto transaction_record = _wallet_db.lookup_transaction( record_id );
           auto is_duplicate = transaction_record.valid();
@@ -456,7 +461,41 @@ namespace bts { namespace wallet {
           for( auto& entry : transaction_record->ledger_entries )
               entry.amount.amount = 0;
 
+
           auto store_record = is_duplicate;
+
+          // Assume fees = withdrawals - deposits
+          auto total_fee = asset( 0, 0 ); // Assume all fees paid in base asset
+
+          // Force scanning all withdrawals first because ledger reconstruction assumes such an ordering
+          for( const auto& op : transaction.operations )
+          {
+              switch( operation_type_enum( op.type ) )
+              {
+                  case withdraw_op_type:
+                      store_record |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record, total_fee );
+                      break;
+                  case withdraw_pay_op_type:
+                      store_record |= scan_withdraw_pay( op.as<withdraw_pay_operation>(), *transaction_record, total_fee );
+                      break;
+                  default:
+                      break;
+              }
+          }
+
+          // Force scanning all deposits next because ledger reconstruction assumes such an ordering
+          for( const auto& op : transaction.operations )
+          {
+              switch( operation_type_enum( op.type ) )
+              {
+                  case deposit_op_type:
+                      store_record |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
+                      break;
+                  default:
+                      break;
+              }
+          }
+
           for( const auto& op : transaction.operations )
           {
               switch( operation_type_enum( op.type ) )
@@ -465,31 +504,31 @@ namespace bts { namespace wallet {
                       FC_THROW_EXCEPTION( invalid_operation, "Null operation type!", ("op",op) );
                       break;
 
-                  case withdraw_op_type:
-                      store_record |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record );
+                  case withdraw_op_type: /* Done above */
+                      //store_record |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record );
                       break;
-                  case deposit_op_type:
-                      store_record |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record );
+                  case withdraw_pay_op_type: /* Done above */
+                      //FC_THROW( "withdraw_pay_op_type not implemented!" );
+                      break;
+                  case deposit_op_type: /* Done above */
+                      //store_record |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
                       break;
 
                   case register_account_op_type:
-                      store_record |= scan_register_account( op.as<register_account_operation>() );
+                      store_record |= scan_register_account( op.as<register_account_operation>(), *transaction_record );
                       break;
                   case update_account_op_type:
-                      store_record |= scan_update_account( op.as<update_account_operation>() );
-                      break;
-                  case withdraw_pay_op_type:
-                      // TODO: FC_THROW( "withdraw_pay_op_type not implemented!" );
+                      store_record |= scan_update_account( op.as<update_account_operation>(), *transaction_record );
                       break;
 
                   case create_asset_op_type:
-                      store_record |= scan_create_asset( *transaction_record, op.as<create_asset_operation>() );
+                      store_record |= scan_create_asset( op.as<create_asset_operation>(), *transaction_record );
                       break;
                   case update_asset_op_type:
                       // TODO: FC_THROW( "update_asset_op_type not implemented!" );
                       break;
                   case issue_asset_op_type:
-                      store_record |= scan_issue_asset( *transaction_record, op.as<issue_asset_operation>() );
+                      store_record |= scan_issue_asset( op.as<issue_asset_operation>(), *transaction_record );
                       break;
 
                   case fire_delegate_op_type:
@@ -532,15 +571,16 @@ namespace bts { namespace wallet {
               }
           }
 
-          // TODO: link matching withdraws and deposits, but do it in to_pretty_trx
+          transaction_record->fee = total_fee;
           if( store_record ) _wallet_db.store_transaction( *transaction_record );
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-      bool wallet_impl::scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec )
-      {
+      bool wallet_impl::scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      { try {
          auto bal_rec = _wallet_db.lookup_balance( op.balance_id );
          if( bal_rec.valid() )
          {
+            const auto amount = asset( op.amount, bal_rec->condition.asset_id );
             // TODO: Only if withdraw by signature or by name
             const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
             if( key_rec.valid() ) /* If we own this balance */
@@ -553,7 +593,11 @@ namespace bts { namespace wallet {
                         && self->get_key_label( *entry.from_account ) == self->get_key_label( key_rec->public_key ) )
                     {
                         new_entry = false;
-                        entry.amount -= asset( op.amount, bal_rec->condition.asset_id );
+                        // TODO: We should probably really have a map of asset ids to amounts per ledger entry
+                        if( entry.amount.asset_id == amount.asset_id )
+                            entry.amount += amount;
+                        else if( entry.amount.amount == 0 )
+                            entry.amount = amount;
                         break;
                     }
                 }
@@ -561,18 +605,62 @@ namespace bts { namespace wallet {
                 {
                     auto entry = ledger_entry();
                     entry.from_account = key_rec->public_key;
-                    entry.amount = -asset( op.amount, bal_rec->condition.asset_id );
+                    entry.amount = amount;
                     trx_rec.ledger_entries.push_back( entry );
                 }
             }
             sync_balance_with_blockchain( op.balance_id );
 
+            if( amount.asset_id == total_fee.asset_id )
+                total_fee += amount;
+
             return true;
          }
          return false;
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-      bool wallet_impl::scan_register_account( const register_account_operation& op )
+      // TODO: Refactor this -- almost identical to scan_withdraw
+      bool wallet_impl::scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      { try {
+         const auto account_rec = _blockchain->get_account_record( op.account_id );
+         FC_ASSERT( account_rec.valid() );
+         const auto key_rec =_wallet_db.lookup_key( account_rec->owner_key );
+         if( key_rec.valid() ) /* If we own this account */
+         {
+             const auto amount = asset( op.amount ); // Always base asset
+             // TODO: Refactor this
+             auto new_entry = true;
+             for( auto& entry : trx_rec.ledger_entries )
+             {
+                 if( entry.from_account.valid()
+                     && self->get_key_label( *entry.from_account ) == self->get_key_label( key_rec->public_key ) )
+                 {
+                     new_entry = false;
+                     // TODO: We should probably really have a map of asset ids to amounts per ledger entry
+                     if( entry.amount.asset_id == amount.asset_id )
+                         entry.amount += amount;
+                     else if( entry.amount.amount == 0 )
+                         entry.amount = amount;
+                     break;
+                 }
+             }
+             if( new_entry )
+             {
+                 auto entry = ledger_entry();
+                 entry.from_account = key_rec->public_key;
+                 entry.amount = amount;
+                 trx_rec.ledger_entries.push_back( entry );
+             }
+
+             if( amount.asset_id == total_fee.asset_id )
+                 total_fee += amount;
+
+             return true;
+         }
+         return false;
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+      bool wallet_impl::scan_register_account( const register_account_operation& op, wallet_transaction_record& trx_rec )
       {
           auto opt_key_rec = _wallet_db.lookup_key( op.owner_key );
 
@@ -594,10 +682,27 @@ namespace bts { namespace wallet {
           tmp = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
-          return false;
+          // TODO: Refactor this
+          for( auto& entry : trx_rec.ledger_entries )
+          {
+              if( !entry.to_account.valid() )
+              {
+                  entry.to_account = op.owner_key;
+                  entry.amount = asset( 0 ); // Assume scan_withdraw came first
+                  entry.memo = "register " + account_name_rec->name; // Can't tell if initially registered as a delegate
+                  break;
+              }
+              else if( entry.to_account == op.owner_key )
+              {
+                  entry.amount = asset( 0 ); // Assume scan_withdraw came first
+                  break;
+              }
+          }
+
+          return true;
       }
 
-      bool wallet_impl::scan_update_account( const update_account_operation& op )
+      bool wallet_impl::scan_update_account( const update_account_operation& op, wallet_transaction_record& trx_rec )
       { try {
           auto oaccount =  _blockchain->get_account_record( op.account_id ); 
           FC_ASSERT( oaccount.valid() );
@@ -619,44 +724,71 @@ namespace bts { namespace wallet {
           tmp = *account_name_rec; 
           _wallet_db.cache_account( *opt_account );
 
-          return false;
+          // TODO: Refactor this
+          for( auto& entry : trx_rec.ledger_entries )
+          {
+              if( !entry.to_account.valid() )
+              {
+                  entry.to_account = oaccount->owner_key;
+                  entry.amount = asset( 0 ); // Assume scan_withdraw came first
+                  entry.memo = "update " + oaccount->name;
+                  break;
+              }
+              else if( entry.to_account == oaccount->owner_key )
+              {
+                  entry.amount = asset( 0 ); // Assume scan_withdraw came first
+                  break;
+              }
+          }
+
+          return true;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
 
-      bool wallet_impl::scan_create_asset( wallet_transaction_record& trx_rec, 
-                                           const create_asset_operation& op )
+      bool wallet_impl::scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec )
       {
-         //wlog( "${op}", ("op",op) );
          if( op.issuer_account_id != asset_record::market_issued_asset )
          {
-            auto oissuer =  _blockchain->get_account_record( op.issuer_account_id );
+            auto oissuer = _blockchain->get_account_record( op.issuer_account_id );
             FC_ASSERT( oissuer.valid() );
             auto opt_key_rec = _wallet_db.lookup_key( oissuer->owner_key );
             if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
             {
-               auto entry = ledger_entry();
-               entry.from_account = oissuer->owner_key;
-               entry.to_account = oissuer->owner_key;
-               entry.memo = "create " + op.symbol + " (" + op.name + ")";
-               trx_rec.ledger_entries.push_back( entry );
-               return true;
+               // TODO: Refactor this
+               for( auto& entry : trx_rec.ledger_entries )
+               {
+                   if( !entry.to_account.valid() )
+                   {
+                       entry.to_account = oissuer->owner_key;
+                       entry.amount = asset( 0 ); // Assume scan_withdraw came first
+                       entry.memo = "create " + op.symbol + " (" + op.name + ")";
+                       return true;
+                   }
+                   else if( entry.to_account == oissuer->owner_key )
+                   {
+                       entry.amount = asset( 0 ); // Assume scan_withdraw came first
+                       return true;
+                   }
+               }
             }
          }
          return false;
       }
 
-      bool wallet_impl::scan_issue_asset( wallet_transaction_record& trx_rec, 
-                                          const issue_asset_operation& op )
+      bool wallet_impl::scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec )
       {
-         //wlog( "${op}", ("op",op) );
-         auto asset_rec = _blockchain->get_asset_record( op.amount.asset_id );
-         if( asset_rec.valid() )
+         // TODO: Refactor this
+         for( auto& entry : trx_rec.ledger_entries )
          {
-             auto entry = ledger_entry();
-             auto issuer = _blockchain->get_account_record( asset_rec->issuer_account_id );
-             if( issuer.valid() ) entry.from_account = issuer->active_key();
-             entry.memo = "issue " + _blockchain->to_pretty_asset( op.amount );
-             trx_rec.ledger_entries.push_back( entry );
-             // TODO: Return true here if this wallet contains the issuer
+             if( entry.from_account.valid() )
+             {
+                 const auto opt_key_rec = _wallet_db.lookup_key( *entry.from_account );
+                 if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
+                 {
+                     entry.amount = op.amount;
+                     entry.memo = "issue " + _blockchain->to_pretty_asset( op.amount );
+                     return true;
+                 }
+             }
          }
          return false;
       }
@@ -700,7 +832,7 @@ namespace bts { namespace wallet {
 
       // TODO: optimize
       bool wallet_impl::scan_deposit( const deposit_operation& op, const private_keys& keys,
-                                      wallet_transaction_record& trx_rec )
+                                      wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           bool cache_deposit = false; 
           switch( (withdraw_condition_types) op.condition.type )
@@ -735,10 +867,13 @@ namespace bts { namespace wallet {
                                 for( auto& entry : trx_rec.ledger_entries )
                                 {
                                     if( entry.from_account.valid()
-                                        && self->get_key_label( *entry.from_account ) == self->get_key_label( key.get_public_key() ) )
+                                        && self->get_key_label( *entry.from_account ) == self->get_key_label( status->from ) )
                                     {
                                         new_entry = false;
-                                        entry.amount += asset( op.amount, op.condition.asset_id );
+                                        entry.from_account = status->from;
+                                        entry.to_account = key.get_public_key();
+                                        entry.amount = asset( op.amount, op.condition.asset_id );
+                                        entry.memo = status->get_message();
                                         break;
                                     }
                                 }
@@ -761,7 +896,10 @@ namespace bts { namespace wallet {
                                         && self->get_key_label( *entry.from_account ) == self->get_key_label( key.get_public_key() ) )
                                     {
                                         new_entry = false;
-                                        entry.amount += asset( op.amount, op.condition.asset_id );
+                                        entry.from_account = key.get_public_key();
+                                        entry.to_account = status->from;
+                                        entry.amount = asset( op.amount, op.condition.asset_id );
+                                        entry.memo = status->get_message();
                                         break;
                                     }
                                 }
@@ -775,6 +913,9 @@ namespace bts { namespace wallet {
                                     trx_rec.ledger_entries.push_back( entry );
                                 }
                              }
+
+                             if( op.condition.asset_id == total_fee.asset_id )
+                                 total_fee -= asset( op.amount, op.condition.asset_id );
 
                              cache_deposit = true;
                              break;
@@ -2482,8 +2623,9 @@ namespace bts { namespace wallet {
         as_delegate = true;
       }
 
-      auto size_fee = fc::raw::pack_size( public_data );
-      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+      // No longer needed I believe
+      //auto size_fee = fc::raw::pack_size( public_data );
+      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursively'
@@ -2531,13 +2673,14 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursively'
       auto required_fees = get_priority_fee();
 
-      auto size_fee = fc::raw::pack_size( data );
-      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+      // No longer necessary I believe
+      //auto size_fee = fc::raw::pack_size( data );
+      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+
       required_fees += asset(my->_blockchain->get_asset_registration_fee(),0);
 
       if( !is_valid_account_name( issuer_account_name ) )
@@ -2545,7 +2688,6 @@ namespace bts { namespace wallet {
       auto from_account_address = get_account_public_key( issuer_account_name );
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
       FC_ASSERT( oname_rec.valid() );
-
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -2702,8 +2844,9 @@ namespace bts { namespace wallet {
          }
       }
 
-      auto size_fee = fc::raw::pack_size( public_data );
-      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+      // No longer necessary I believe
+      //auto size_fee = fc::raw::pack_size( public_data );
+      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,
@@ -2719,7 +2862,7 @@ namespace bts { namespace wallet {
           auto entry = ledger_entry();
           entry.from_account = payer_public_key;
           entry.to_account = account_public_key;
-          entry.memo = "update " + account_to_update;
+          entry.memo = "update " + account_to_update; // TODO: Note if upgrading to delegate
 
           auto record = wallet_transaction_record();
           record.ledger_entries.push_back( entry );

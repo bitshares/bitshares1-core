@@ -312,9 +312,20 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 out << client->get_chain()->to_pretty_asset( transaction.fee );
 
                 out << std::setw( 8 );
-                if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
-                //else if( transaction.is_virtual ) out << "VIRTUAL";
-                else out << string( transaction.trx_id ).substr( 0, 8 );
+                if( FILTER_OUTPUT_FOR_TESTS )
+                {
+                    out << "[redacted]";
+                }
+                else if( transaction.is_virtual )
+                {
+                    std::stringstream ss;
+                    ss << "[" << string( transaction.trx_id ).substr( 0, 6 ) << "]";
+                    out << ss.str();
+                }
+                else
+                {
+                    out << string( transaction.trx_id ).substr( 0, 8 );
+                }
             }
             else
             {
