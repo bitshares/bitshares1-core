@@ -57,7 +57,7 @@ namespace bts { namespace blockchain {
       auto memo = decrypt_memo_data( secret );
 
       bool has_valid_signature = false;
-      if( memo.memo_flags == from_memo )
+      if( memo.memo_flags == from_memo && !( memo.from == public_key_type() && memo.from_signature == 0 ) )
       {
          auto check_secret = secret_private_key.get_shared_secret( memo.from );
          has_valid_signature = check_secret._hash[0] == memo.from_signature;
@@ -89,7 +89,9 @@ namespace bts { namespace blockchain {
       owner = address( secret_public_key );
  //     ilog( "owner: ${owner}", ("owner",owner) );
 
-      auto check_secret = from_private_key.get_shared_secret( secret_public_key );
+      fc::sha512 check_secret;
+      if( from_private_key.get_secret() != fc::ecc::private_key().get_secret() )
+        check_secret = from_private_key.get_shared_secret( secret_public_key );
 
       memo_data memo_content;
       memo_content.set_message( memo_message );
