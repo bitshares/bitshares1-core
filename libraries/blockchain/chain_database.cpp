@@ -1005,11 +1005,12 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_block_signee( block_id ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            auto pay_rate = delegate_record->delegate_info->pay_rate; 
-            FC_ASSERT( pay_rate <= 100 );
-            auto pay = (pay_rate*pending_state->get_delegate_pay_rate())/100;
+            const auto pay_percent = delegate_record->delegate_info->pay_rate;
+            FC_ASSERT( pay_percent <= 100 );
+            const auto pending_pay = pending_state->get_delegate_pay_rate();
+            const auto pay = ( pay_percent * pending_pay ) / 100;
 
-            auto prev_accumulated_fees = pending_state->get_accumulated_fees();
+            const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
             pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
 
             delegate_record->delegate_info->pay_balance += pay;
@@ -1018,8 +1019,7 @@ namespace bts { namespace blockchain {
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
-            FC_ASSERT( pay_rate >= pay );
-            base_asset_record->current_share_supply -= (pay_rate - pay);
+            base_asset_record->current_share_supply -= (pending_pay - pay);
             pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
