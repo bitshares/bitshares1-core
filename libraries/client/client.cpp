@@ -1307,7 +1307,7 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-
+      my->rebroadcast_pending();
     }
 
     void client::simulate_disconnect( bool state )
@@ -1385,10 +1385,6 @@ config load_config( const fc::path& datadir )
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-
-        //start rebroadcast pending loop
-        my->rebroadcast_pending();
-
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
     client::~client()
