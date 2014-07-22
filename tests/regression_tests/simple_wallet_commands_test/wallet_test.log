@@ -42,8 +42,6 @@ wallet1 (unlocked) >>> wallet_dump_private_key XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5e
 "5KXkrnm5jb5eq75pieMohVxT3YR3b9V6r9mAc9pFKSG9yM1vdXJ"
 wallet1 (unlocked) >>> wallet_change_passphrase 87654321
 OK
-wallet1 (unlocked) >>> wallet_clear_pending_transactions 
-OK
 wallet1 (unlocked) >>> wallet_export_to_json wallet1.json
 OK
 wallet1 (unlocked) >>> wallet_get_name 
