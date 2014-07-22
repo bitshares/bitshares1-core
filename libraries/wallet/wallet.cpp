@@ -1980,8 +1980,8 @@ namespace bts { namespace wallet {
                    running_balances[ amount_asset_id ] = asset( 0, amount_asset_id );
 
                auto from_me = false;
-               from_me |= account_name.empty() && is_receive_account( entry.from_account );
                from_me |= account_name == entry.from_account;
+               from_me |= ( entry.from_account.find( account_name + " " ) == 0 ); /* If payer != sender */
                if( from_me )
                {
                    /* Special check to ignore asset issuing */
@@ -1994,8 +1994,8 @@ namespace bts { namespace wallet {
                any_from_me |= from_me;
 
                auto to_me = false;
-               to_me |= account_name.empty() && is_receive_account( entry.to_account );
                to_me |= account_name == entry.to_account;
+               to_me |= ( entry.to_account.find( account_name + " " ) == 0 ); /* If payer != sender */
                if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
 
                entry.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
