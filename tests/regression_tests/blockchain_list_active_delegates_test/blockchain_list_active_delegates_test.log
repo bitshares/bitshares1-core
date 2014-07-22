@@ -13,7 +13,7 @@ Returns:
 aliases: blockchain_get_active_delegates
 (wallet closed) >>> blockchain_list_active_delegates 1
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 2     delegate1                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 3     delegate2                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
@@ -36,7 +36,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 20    delegate19                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 (wallet closed) >>> blockchain_list_active_delegates 2
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 2     delegate1                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 3     delegate2                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 4     delegate3                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
@@ -59,7 +59,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 21    delegate20                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 (wallet closed) >>> blockchain_get_active_delegates
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 2     delegate1                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 3     delegate2                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
@@ -82,7 +82,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 20    delegate19                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 (wallet closed) >>> blockchain_get_active_delegates 0
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 2     delegate1                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 3     delegate2                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
@@ -105,7 +105,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 20    delegate19                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 (wallet closed) >>> blockchain_get_active_delegates 1
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 2     delegate1                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 3     delegate2                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
@@ -128,7 +128,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 20    delegate19                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 (wallet closed) >>> blockchain_get_active_delegates 1 2
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 2     delegate1                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 (wallet closed) >>> quit
