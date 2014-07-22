@@ -2482,6 +2482,7 @@ namespace bts { namespace wallet {
    
    signed_transaction wallet::transfer_asset( double real_amount_to_transfer,
                                         const string& amount_to_transfer_symbol,
+                                        const string& paying_account_name,
                                         const string& from_account_name,
                                         const string& to_account_name,
                                         const string& memo_message,
@@ -2493,6 +2494,9 @@ namespace bts { namespace wallet {
 
       if( !my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) )
           FC_THROW_EXCEPTION( invalid_asset_symbol, "Invalid asset symbol!", ("amount_to_transfer_symbol",amount_to_transfer_symbol) );
+
+      if( !is_receive_account( paying_account_name ) )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown paying account name!", ("paying_account_name",paying_account_name) );
 
       if( !is_receive_account( from_account_name ) )
           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",from_account_name) );
@@ -2515,9 +2519,9 @@ namespace bts { namespace wallet {
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
       public_key_type  receiver_public_key = get_account_public_key( to_account_name );
-      private_key_type sender_private_key  = get_account_private_key( from_account_name );
-      public_key_type  sender_public_key   = sender_private_key.get_public_key();
-      address          sender_account_address( sender_private_key.get_public_key() );
+      private_key_type payer_private_key  = get_account_private_key( paying_account_name );
+      public_key_type  payer_public_key   = payer_private_key.get_public_key();
+      address          payer_account_address( payer_private_key.get_public_key() );
         
       signed_transaction     trx;
       unordered_set<address> required_signatures;
@@ -2527,30 +2531,33 @@ namespace bts { namespace wallet {
       {
          my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
                                        required_fees.asset_id,
-                                       sender_account_address,
+                                       payer_account_address,
                                        trx, required_signatures );
       }
       else
       {
          my->withdraw_to_transaction( asset_to_transfer.amount,
                                        asset_to_transfer.asset_id,
-                                       sender_account_address,
+                                       payer_account_address,
                                        trx, required_signatures );
          
          my->withdraw_to_transaction( required_fees.amount,
                                        required_fees.asset_id,
-                                       sender_account_address,
+                                       payer_account_address,
                                        trx, required_signatures );
       }
 
       const auto slate_id = select_slate( trx, asset_to_transfer.asset_id, selection_method );
+
+      private_key_type sender_private_key = get_account_private_key( from_account_name );
+      public_key_type sender_public_key = sender_private_key.get_public_key();
 
       trx.deposit_to_account( receiver_public_key,
                               asset_to_transfer,
                               sender_private_key,
                               memo_message,
                               slate_id,
-                              sender_private_key.get_public_key(),
+                              sender_public_key,
                               my->create_one_time_key(),
                               from_memo
                               );
@@ -2558,7 +2565,7 @@ namespace bts { namespace wallet {
       if( sign )
       {
          auto entry = ledger_entry();
-         entry.from_account = sender_public_key;
+         entry.from_account = payer_public_key;
          entry.to_account = receiver_public_key;
          entry.amount = asset_to_transfer;
          entry.memo = memo_message;
