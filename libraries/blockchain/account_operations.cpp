@@ -95,7 +95,7 @@ namespace bts { namespace blockchain {
                 FC_CAPTURE_AND_THROW( unknown_parent_account_name, (parent_name) );
 
              bool verified = false;
-             while( parent_record.valid() )
+             while( !verified && parent_record.valid() )
              {
                 if( parent_record->is_retracted() )
                    FC_CAPTURE_AND_THROW( parent_account_retracted, (parent_name) );
