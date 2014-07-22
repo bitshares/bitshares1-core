@@ -2498,7 +2498,7 @@ namespace bts { namespace wallet {
       if( !is_receive_account( paying_account_name ) )
           FC_THROW_EXCEPTION( unknown_account, "Unknown paying account name!", ("paying_account_name",paying_account_name) );
 
-      if( !is_receive_account( from_account_name ) )
+      if( !from_account_name.empty() && !is_receive_account( from_account_name ) )
           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",from_account_name) );
 
       if( !is_valid_account( to_account_name ) )
@@ -2549,8 +2549,13 @@ namespace bts { namespace wallet {
 
       const auto slate_id = select_slate( trx, asset_to_transfer.asset_id, selection_method );
 
-      private_key_type sender_private_key = get_account_private_key( from_account_name );
-      public_key_type sender_public_key = sender_private_key.get_public_key();
+      private_key_type sender_private_key;
+      public_key_type sender_public_key;
+      if( !from_account_name.empty() )
+      {
+        sender_private_key = get_account_private_key( from_account_name );
+        sender_public_key = sender_private_key.get_public_key();
+      }
 
       trx.deposit_to_account( receiver_public_key,
                               asset_to_transfer,
@@ -3551,6 +3556,9 @@ namespace bts { namespace wallet {
    
    string wallet::get_key_label( const public_key_type& key )const
    { try {
+       if( key == public_key_type() )
+         return "ANONYMOUS";
+
        auto acct_record = my->_wallet_db.lookup_account( key );
        if (acct_record)
        {
