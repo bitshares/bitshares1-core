@@ -2866,7 +2866,17 @@ namespace bts { namespace wallet {
                                    payer_public_key,
                                    trx, required_signatures );
      
-      required_signatures.insert( account->active_key() ); 
+      //Either this account or any parent may authorize this action. Find a key that can do it.
+      oaccount_record authority(account);
+      owallet_key_record oauthority_key = my->_wallet_db.lookup_key(authority->active_address());
+      while( !oauthority_key.valid() || !oauthority_key->has_private_key() )
+      {
+        auto dot = authority->name.find('.');
+        FC_ASSERT( dot != string::npos, "Cannot authorize account update; do not have private key of account to update or a parent" );
+        authority = my->_blockchain->get_account_record( authority->name.substr(dot+1) );
+        oauthority_key = my->_wallet_db.lookup_key(authority->active_address());
+      }
+      required_signatures.insert( authority->active_key() );
     
       trx.update_account( account->id, delegate_pay_rate, public_data, optional<public_key_type>() );
        
