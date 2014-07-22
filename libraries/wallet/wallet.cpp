@@ -164,10 +164,13 @@ namespace bts { namespace wallet {
                    std::stringstream id_ss;
                    id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
 
+                   // TODO: Don't blow away memo, etc.
                    auto record = wallet_transaction_record();
                    record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
-                   record.is_virtual = record.is_market = true;
+                   record.is_virtual = true;
+                   record.is_confirmed = true;
+                   record.is_market = true;
                    record.ledger_entries.push_back( out_entry );
                    record.ledger_entries.push_back( in_entry );
                    record.fee = trx.fees_collected;
@@ -215,10 +218,13 @@ namespace bts { namespace wallet {
                    std::stringstream id_ss;
                    id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
 
+                   // TODO: Don't blow away memo, etc.
                    auto record = wallet_transaction_record();
                    record.record_id = fc::ripemd160::hash( id_ss.str() );
                    record.block_num = block_num;
-                   record.is_virtual = record.is_market = true;
+                   record.is_virtual = true;
+                   record.is_confirmed = true;
+                   record.is_market = true;
                    record.ledger_entries.push_back( out_entry );
                    record.ledger_entries.push_back( in_entry );
                    record.fee = trx.fees_collected;
@@ -311,8 +317,6 @@ namespace bts { namespace wallet {
                     if( !transaction_record.valid() )
                     {
                         transaction_record = wallet_transaction_record();
-                        transaction_record->record_id = record_id;
-                        transaction_record->is_virtual = true;
                         transaction_record->created_time = _blockchain->get_genesis_timestamp();
                         transaction_record->received_time = received_time;
                     }
@@ -322,6 +326,9 @@ namespace bts { namespace wallet {
                     entry.amount = bal_rec.genesis_info->initial_balance;
                     entry.memo = "claim " + bal_rec.genesis_info->claim_addr;
 
+                    transaction_record->record_id = record_id;
+                    transaction_record->is_virtual = true;
+                    transaction_record->is_confirmed = true;
                     transaction_record->ledger_entries.push_back( entry );
                     _wallet_db.store_transaction( *transaction_record );
                 }
@@ -448,21 +455,20 @@ namespace bts { namespace wallet {
           if( !is_duplicate ) /* If new transaction */
           {
               transaction_record = wallet_transaction_record();
-              transaction_record->record_id = record_id;
-              transaction_record->trx = transaction;
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
           }
 
+          transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
+          transaction_record->trx = transaction;
+
+          auto store_record = is_duplicate;
 
           /* Clear amounts and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
               entry.amount.amount = 0;
-
-
-          auto store_record = is_duplicate;
 
           // Assume fees = withdrawals - deposits
           auto total_fee = asset( 0, 0 ); // Assume all fees paid in base asset
@@ -641,6 +647,9 @@ namespace bts { namespace wallet {
                          entry.amount += amount;
                      else if( entry.amount.amount == 0 )
                          entry.amount = amount;
+
+                     if( entry.memo.empty() )
+                         entry.memo = "withdraw pay";
                      break;
                  }
              }
@@ -649,6 +658,7 @@ namespace bts { namespace wallet {
                  auto entry = ledger_entry();
                  entry.from_account = key_rec->public_key;
                  entry.amount = amount;
+                 entry.memo = "withdraw pay";
                  trx_rec.ledger_entries.push_back( entry );
              }
 
@@ -844,10 +854,8 @@ namespace bts { namespace wallet {
              }
              case withdraw_signature_type:
              {
-                 // TODO: Handle fees right here
-
                 auto deposit = op.condition.as<withdraw_with_signature>();
-                // TODO: lookup cached key and work with it only below
+                // TODO: lookup if cached key and work with it only
                 // if( _wallet_db.has_private_key( deposit.owner ) )
                 if( deposit.memo )
                 {
@@ -856,7 +864,7 @@ namespace bts { namespace wallet {
                        for( const auto& key : keys )
                        {
                           omemo_status status = deposit.decrypt_memo_data( key );
-                          if( status.valid() )
+                          if( status.valid() ) /* If I've successfully decrypted then it's for me */
                           {
                              _wallet_db.cache_memo( *status, key, _wallet_password );
 
@@ -1920,9 +1928,16 @@ namespace bts { namespace wallet {
        std::sort( pretties.begin(), pretties.end(),
                   []( const pretty_transaction& a, const pretty_transaction& b ) -> bool
                   {
-                     if( a.received_time != b.received_time) return a.received_time < b.received_time;
-                     if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                     return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
+                     if( a.is_confirmed == b.is_confirmed )
+                     {
+                         if( a.block_num != b.block_num ) return a.block_num < b.block_num;
+                         if( a.received_time != b.received_time) return a.received_time < b.received_time;
+                         return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
+                     }
+                     else
+                     {
+                        return a.is_confirmed;
+                     }
                   } );
 
        // TODO: Handle pagination
@@ -1934,8 +1949,11 @@ namespace bts { namespace wallet {
        auto running_balances = map<asset_id_type, asset>();
        for( auto& trx : pretties )
        {
-           auto any_from_me = false;
+           const auto fee_asset_id = trx.fee.asset_id;
+           if( running_balances.count( fee_asset_id ) <= 0 )
+               running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
 
+           auto any_from_me = false;
            for( auto& entry : trx.ledger_entries )
            {
                const auto amount_asset_id = entry.amount.asset_id;
@@ -1945,7 +1963,16 @@ namespace bts { namespace wallet {
                auto from_me = false;
                from_me |= account_name.empty() && is_receive_account( entry.from_account );
                from_me |= account_name == entry.from_account;
-               if( from_me ) running_balances[ amount_asset_id ] -= entry.amount;
+               if( from_me )
+               {
+                   /* Special check to ignore asset issuing */
+                   if( ( running_balances[ amount_asset_id ] - entry.amount ) >= asset( 0, amount_asset_id ) )
+                       running_balances[ amount_asset_id ] -= entry.amount;
+
+                   if( !trx.is_virtual && ( !any_from_me || trx.is_market_cancel ) )
+                       running_balances[ fee_asset_id ] -= trx.fee;
+               }
+               any_from_me |= from_me;
 
                auto to_me = false;
                to_me |= account_name.empty() && is_receive_account( entry.to_account );
@@ -1953,23 +1980,11 @@ namespace bts { namespace wallet {
                if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
 
                entry.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
-
-               any_from_me |= from_me;
+               entry.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
            }
 
-           /* Subtract fee from running balances */
-           if( !trx.is_virtual && (any_from_me || trx.is_market_cancel) )
-           {
-               const auto fee_asset_id = trx.fee.asset_id;
-               for( auto& entry : trx.ledger_entries )
-               {
-                   if( entry.running_balances.count( fee_asset_id ) <= 0 )
-                       entry.running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
-
-                   entry.running_balances[ fee_asset_id ] -= trx.fee;
-               }
-           }
-           else /* Don't return fees we didn't pay */
+           /* Don't return fees we didn't pay */
+           if( trx.is_virtual || ( !any_from_me && !trx.is_market_cancel ) )
            {
                trx.fee = asset();
            }
@@ -3641,6 +3656,7 @@ namespace bts { namespace wallet {
 
       if( trx_rec.is_virtual ) return pretty_trx;
 
+      // TODO: What is this stuff?
       auto trx = trx_rec.trx;
       for( const auto& op : trx.operations )
       {
