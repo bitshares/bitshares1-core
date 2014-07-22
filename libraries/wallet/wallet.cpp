@@ -2604,7 +2604,9 @@ namespace bts { namespace wallet {
       if( sign )
       {
          auto entry = ledger_entry();
-         entry.from_account = payer_public_key;
+         if( payer_public_key != sender_public_key )
+           entry.payer_account = payer_public_key;
+         entry.from_account = sender_public_key;
          entry.to_account = receiver_public_key;
          entry.amount = asset_to_transfer;
          entry.memo = memo_message;
@@ -3652,7 +3654,12 @@ namespace bts { namespace wallet {
           auto pretty_entry = pretty_ledger_entry();
 
           if( entry.from_account.valid() )
-             pretty_entry.from_account = get_key_label( *entry.from_account );
+          {
+            if( entry.payer_account.valid() )
+              pretty_entry.from_account = get_key_label( *entry.payer_account ) + " as " + get_key_label( *entry.from_account );
+            else
+              pretty_entry.from_account = get_key_label( *entry.from_account );
+          }
           else if( trx_rec.is_virtual && trx_rec.block_num <= 0 )
              pretty_entry.from_account = "GENESIS";
           else 

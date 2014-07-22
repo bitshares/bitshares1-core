@@ -145,6 +145,7 @@ namespace bts { namespace wallet {
 
    struct ledger_entry
    {
+       optional<public_key_type> payer_account;
        optional<public_key_type> from_account;
        optional<public_key_type> to_account;
        asset                     amount;
@@ -251,7 +252,7 @@ FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
 
-FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(memo) );
+FC_REFLECT( bts::wallet::ledger_entry, (payer_account)(from_account)(to_account)(amount)(memo) );
 FC_REFLECT( bts::wallet::transaction_data, 
             (record_id)
             (block_num)
