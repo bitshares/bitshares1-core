@@ -2579,6 +2579,7 @@ namespace bts { namespace wallet {
       return trx;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)
                              (amount_to_transfer_symbol)
+                             (paying_account_name)
                              (from_account_name)
                              (to_account_name)
                              (memo_message ) ) }

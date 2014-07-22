@@ -1562,7 +1562,7 @@ config load_config( const fc::path& datadir )
                                                        )
     {
          auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                  from_account_name, to_account_name,
+                                                  from_account_name, from_account_name,
                                                   to_account_name,
                                                   memo_message, selection_method, true );
 
