@@ -1,5 +1,3 @@
-#define DEFAULT_LOGGER "p2p"
-
 #include <sstream>
 #include <iomanip>
 #include <deque>
@@ -44,6 +42,12 @@
 #include <bts/net/peer_connection.hpp>
 #include <bts/net/exceptions.hpp>
 
+#ifdef DEFAULT_LOGGER
+# undef DEFAULT_LOGGER
+#endif
+#define DEFAULT_LOGGER "p2p"
+
+// #define P2P_IN_DEDICATED_THREAD 1
 
 #define INVOCATION_COUNTER(name) \
     static unsigned total_ ## name ## _counter = 0; \
@@ -330,7 +334,7 @@ namespace bts { namespace net { namespace detail {
       std::unordered_set<peer_connection_ptr>                     _handshaking_connections;
       /** stores fully established connections we're either syncing with or in normal operation with */
       std::unordered_set<peer_connection_ptr>                     _active_connections;
-      /** stores connections we've closed, but are still waiting for the remote end to close before we delete them */
+      /** stores connections we've closed, but ar_p2p_network_connect_loop_donee still waiting for the remote end to close before we delete them */
       std::unordered_set<peer_connection_ptr>                     _closing_connections;
       
       boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted (currently tuned to the max number of connections)
@@ -1723,7 +1727,7 @@ namespace bts { namespace net { namespace detail {
       std::unique_ptr<std::vector<item_hash_t> > original_ids_of_items_to_get(new std::vector<item_hash_t>(peer->ids_of_items_to_get.begin(), peer->ids_of_items_to_get.end()));
       
       std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
-      FC_ASSERT( reference_point == item_hash_t() || !synopsis.empty() );
+      assert(reference_point == item_hash_t() || !synopsis.empty());
       
 #if 0 // I have no idea why this code was here .. bad merge?
       // if we passed in a reference point, we believe it is one the client has already accepted and should
@@ -1746,7 +1750,7 @@ namespace bts { namespace net { namespace detail {
           low_block_num += ( (true_high_block_num - low_block_num + 2 ) / 2 );
         }
         while ( low_block_num <= true_high_block_num );
-        FC_ASSERT( synopsis.back() == original_ids_of_items_to_get->back() );
+        assert(synopsis.back() == original_ids_of_items_to_get->back());
       }
       return synopsis;
     }
@@ -2586,70 +2590,197 @@ namespace bts { namespace net { namespace detail {
     void node_impl::close()
     {
       VERIFY_CORRECT_THREAD();
-      try {
-         _tcp_server.close();
 
-         if( _accept_loop_complete.valid() )
-         {
-           _accept_loop_complete.cancel();
-           _accept_loop_complete.wait();
-         }
-      } catch ( const fc::exception& e )
+      try
       {
-         wlog( "${e}", ("e",e.to_detail_string() ) );
+        _tcp_server.close();
+        dlog("P2P TCP server closed");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while closing P2P TCP server, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while closing P2P TCP server, ignoring" );
       }
 
+      try 
+      {
+        _accept_loop_complete.cancel_and_wait();
+        dlog("P2P accept loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("P2P accept loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating P2P accept loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating P2P accept loop, ignoring" );
+      }
       
-      ilog( "." );
-      _p2p_network_connect_loop_done.cancel();
-      _fetch_sync_items_loop_done.cancel();
-      _fetch_item_loop_done.cancel();
-      _advertise_inventory_loop_done.cancel();
-      _terminate_inactive_connections_loop_done.cancel();
-      _fetch_updated_peer_lists_loop_done.cancel();
-      _bandwidth_monitor_loop_done.cancel();
-      ilog( "." );
-       _dump_node_status_task_done.cancel();
+      try 
+      {
+        _p2p_network_connect_loop_done.cancel();
+        // cancel() is currently broken, so we need to wake up the task to allow it to finish
+        trigger_p2p_network_connect_loop();
+        _p2p_network_connect_loop_done.wait();
+        dlog("P2P connect loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("P2P connect loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating P2P connect loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating P2P connect loop, ignoring" );
+      }
 
-      if( _retrigger_fetch_sync_items_loop_promise )
-         _retrigger_fetch_sync_items_loop_promise->cancel();
+      try 
+      {
+        _fetch_sync_items_loop_done.cancel();
+        // cancel() is currently broken, so we need to wake up the task to allow it to finish
+        trigger_fetch_sync_items_loop();
+        _fetch_sync_items_loop_done.wait();
+        dlog("Fetch sync items loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Fetch sync items loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Fetch sync items loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Fetch sync items loop, ignoring" );
+      }
 
-      if( _retrigger_fetch_item_loop_promise )
-          _retrigger_fetch_item_loop_promise->cancel();
+      try 
+      {
+        _fetch_item_loop_done.cancel();
+        // cancel() is currently broken, so we need to wake up the task to allow it to finish
+        trigger_fetch_items_loop();
+        _fetch_item_loop_done.wait();
+        dlog("Fetch items loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Fetch items loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Fetch items loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Fetch items loop, ignoring" );
+      }
 
-      if( _retrigger_advertise_inventory_loop_promise )
-          _retrigger_advertise_inventory_loop_promise->cancel();
+      try 
+      {
+        _advertise_inventory_loop_done.cancel();
+        // cancel() is currently broken, so we need to wake up the task to allow it to finish
+        trigger_advertise_inventory_loop();
+        _advertise_inventory_loop_done.wait();
+        dlog("Advertise inventory loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Advertise inventory loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Advertise inventory loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Advertise inventory loop, ignoring" );
+      }
 
-      if( _retrigger_connect_loop_promise )
-         _retrigger_connect_loop_promise->cancel();
+      try 
+      {
+        _terminate_inactive_connections_loop_done.cancel_and_wait();
+        dlog("Terminate inactive connections loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Terminate inactive connections loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Terminate inactive connections loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Terminate inactive connections loop, ignoring" );
+      }
 
-      if( _retrigger_connect_loop_promise )
-         _retrigger_connect_loop_promise->cancel();
+      try 
+      {
+        _fetch_updated_peer_lists_loop_done.cancel_and_wait();
+        dlog("Fetch updated peer lists loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Fetch updated peer lists loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Fetch updated peer lists loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Fetch updated peer lists loop, ignoring" );
+      }
 
-      ilog( "." );
-      try { if (_terminate_inactive_connections_loop_done.valid()) _terminate_inactive_connections_loop_done.wait(); } catch (...){}
-      ilog( "." );
-      try { if (_fetch_updated_peer_lists_loop_done.valid()) _fetch_updated_peer_lists_loop_done.wait(); } catch (...){}
-      ilog( "." );
-      try { if (_bandwidth_monitor_loop_done.valid()) _bandwidth_monitor_loop_done.wait(); } catch (...){}
-      ilog( "." );
-      try { if (_dump_node_status_task_done.valid()) _dump_node_status_task_done.wait(); } catch (...){}
-      ilog( "." );
-      /*
-      try { if (_p2p_network_connect_loop_done.valid()) _p2p_network_connect_loop_done.wait(); } catch (...){}
-      ilog( "." );
-      try { if (_fetch_sync_items_loop_done.valid()) _fetch_sync_items_loop_done.wait(); } catch (...) {}
-      ilog( "." );
-      try { if (_fetch_item_loop_done.valid()) _fetch_item_loop_done.wait(); } catch(...){}
-      ilog( "." );
-      try { if (_advertise_inventory_loop_done.valid()) _advertise_inventory_loop_done.wait(); } catch (...){}
-      */
+      try 
+      {
+        _bandwidth_monitor_loop_done.cancel_and_wait();
+        dlog("Bandwidth monitor loop terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Bandwidth monitor loop terminated");
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Bandwidth monitor loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Bandwidth monitor loop, ignoring" );
+      }
 
-      ilog( "." );
+      try 
+      {
+        _dump_node_status_task_done.cancel_and_wait();
+        dlog("Dump node status task terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Dump node status task terminated");
+      } 
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Dump node status task, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Dump node status task, ignoring" );
+      }
+
       _handshaking_connections.clear();
-      ilog( "." );
       _active_connections.clear();
-      ilog( "." );
       _closing_connections.clear();
     }
 
@@ -2911,7 +3042,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::connect_to_p2p_network()
     {
       VERIFY_CORRECT_THREAD();
-      FC_ASSERT( _node_id != fc::ecc::public_key_data() );
+      assert(_node_id != fc::ecc::public_key_data());
 
       _accept_loop_complete = fc::async( [=](){ accept_loop(); } );
 
@@ -3363,10 +3494,6 @@ namespace bts { namespace net { namespace detail {
 
   node::~node()
   {
-     //ilog( "... " );
-     //if( my->_thread )
-     //   my->_thread->quit();
-     //ilog( "... " );
   }
 
   void node::set_node_delegate( node_delegate* del )
@@ -3512,15 +3639,17 @@ namespace bts { namespace net { namespace detail {
 
   void simulated_network::broadcast( const message& item_to_broadcast  )
   {
-      for( node_delegate* network_node : network_nodes )
+    for( node_delegate* network_node : network_nodes )
+    {
+      try 
       {
-         try {
-            network_node->handle_message( item_to_broadcast, false );
-         } catch ( const fc::exception& e )
-         {
-            elog( "${r}", ("r",e.to_detail_string() ) );
-         }
+        network_node->handle_message( item_to_broadcast, false );
+      } 
+      catch ( const fc::exception& e )
+      {
+        elog( "${r}", ("r",e.to_detail_string() ) );
       }
+    }
   }
 
   void simulated_network::add_node_delegate( node_delegate* node_delegate_to_add )
