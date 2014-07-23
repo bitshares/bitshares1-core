@@ -497,7 +497,7 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
     return out.str();
 }
 
-string pretty_vote_summary( const account_vote_summary_type& votes )
+string pretty_vote_summary( cptr client, const account_vote_summary_type& votes )
 {
     if( votes.empty() ) return "No votes found.\n";
 
