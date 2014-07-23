@@ -658,7 +658,7 @@ namespace bts { namespace cli {
               else if( method_name == "wallet_account_vote_summary" )
               {
                   const auto& votes = result.as<account_vote_summary_type>();
-                  *_out << pretty_vote_summary( _client, votes );
+                  *_out << pretty_vote_summary( votes, _client );
               }
               else if (method_name == "debug_list_errors")
               {
@@ -673,9 +673,14 @@ namespace bts { namespace cli {
                        (*_out) << "\n";
                     }
               }
+              else if( method_name == "get_info" )
+              {
+                  const auto& info = result.as<variant_object>();
+                  *_out << pretty_info( info, _client );
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
-                  const auto& transactions  = result.as<vector<pretty_transaction>>();
+                  const auto& transactions = result.as<vector<pretty_transaction>>();
                   *_out << pretty_transaction_list( transactions, _client );
               }
               else if( method_name == "wallet_market_order_list" )
