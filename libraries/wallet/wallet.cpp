@@ -4213,18 +4213,18 @@ namespace bts { namespace wallet {
       }
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
-      auto slate = delegate_slate();
       size_t slate_size = 0;
       if( selection_method == vote_all )
       {
-          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE, slate.supported_delegates.size() );
+          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE, for_candidates.size() );
       }
       else if( selection_method == vote_random )
       {
-          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE / 3, slate.supported_delegates.size() );
+          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE / 3, for_candidates.size() );
           slate_size = rand() % ( slate_size + 1 );
       }
 
+      auto slate = delegate_slate();
       slate.supported_delegates = for_candidates;
       slate.supported_delegates.resize( slate_size );
 
