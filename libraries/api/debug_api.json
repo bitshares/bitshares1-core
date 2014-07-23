@@ -225,6 +225,22 @@
               } ],
           "prerequisites" : ["no_prerequisites"],
           "aliases" : ["clear_errors"]
+      },
+      {
+        "method_name" : "debug_update_logging_config",
+        "description" : "updates logging configuration (level, etc) based on settings in config.json",
+        "return_type" : "void",
+        "parameters"  : [],
+        "aliases"     : [],
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "debug_get_call_statistics",
+        "description": "Returns call timings for node_delegate callbacks",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }

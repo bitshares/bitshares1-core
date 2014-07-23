@@ -416,6 +416,7 @@ namespace bts { namespace wallet {
                                                                             const string& asset_symbol = "" )const;
 
          void                               remove_transaction_record( const string& record_id );
+         signed_transaction                 publish_slate( const string& account, bool sign = true );
 
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*
