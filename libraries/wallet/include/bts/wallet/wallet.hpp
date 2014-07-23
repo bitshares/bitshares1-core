@@ -32,9 +32,10 @@ namespace bts { namespace wallet {
     */
    enum vote_selection_method
    {
-      vote_none   = 0,
-      vote_all    = 1,
-      vote_random = 2
+      vote_none        = 0,
+      vote_all         = 1,
+      vote_random      = 2,
+      vote_recommended = 3
    };
 
    class wallet

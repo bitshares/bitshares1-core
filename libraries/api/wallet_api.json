@@ -562,8 +562,8 @@
             {
               "name" : "vote_method", 
               "type" : "vote_selection_method", 
-              "description" : "enumeration [vote_none | vote_all | vote_random] ",
-              "default_value" : "vote_random"
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
@@ -609,8 +609,8 @@
             {
               "name" : "vote_method",
               "type" : "vote_selection_method",
-              "description" : "enumeration [vote_none | vote_all | vote_random] ",
-              "default_value" : "vote_random"
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
             }
           ],
         "prerequisites" : ["wallet_unlocked"]
