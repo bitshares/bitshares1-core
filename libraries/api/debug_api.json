@@ -225,6 +225,14 @@
               } ],
           "prerequisites" : ["no_prerequisites"],
           "aliases" : ["clear_errors"]
+      },
+      {
+        "method_name" : "debug_update_logging_config",
+        "description" : "updates logging configuration (level, etc) based on settings in config.json",
+        "return_type" : "void",
+        "parameters"  : [],
+        "aliases"     : [],
+        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }

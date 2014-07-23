@@ -2566,6 +2566,12 @@ config load_config( const fc::path& datadir )
       _cli->filter_output_for_tests(enable_flag);
     }
 
+    void client_impl::debug_update_logging_config()
+    {
+      config temp_config   = load_config(_data_dir);
+      fc::configure_logging( temp_config.logging );
+    }
+
     fc::variant_object client_impl::about() const
     {
       return bts::client::version_info();
