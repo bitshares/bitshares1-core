@@ -233,7 +233,7 @@ namespace bts { namespace net {
         std::vector<potential_peer_record> get_potential_peers()const;
 
         void disable_peer_advertising();
-
+        fc::variant_object get_call_statistics() const;
       private:
 //        std::unique_ptr<detail::node_impl, detail::node_impl_deleter> my;
           detail::node_impl* my;

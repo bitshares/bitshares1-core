@@ -658,7 +658,7 @@ namespace bts { namespace cli {
               else if( method_name == "wallet_account_vote_summary" )
               {
                   const auto& votes = result.as<account_vote_summary_type>();
-                  *_out << pretty_vote_summary( votes );
+                  *_out << pretty_vote_summary( _client, votes );
               }
               else if (method_name == "debug_list_errors")
               {

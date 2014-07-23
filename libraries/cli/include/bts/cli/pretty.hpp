@@ -37,7 +37,7 @@ string pretty_account( const oaccount_record& record, cptr client );
 
 string pretty_balances( const account_balance_summary_type& balances, cptr client );
 
-string pretty_vote_summary( const account_vote_summary_type& votes );
+string pretty_vote_summary( cptr client, const account_vote_summary_type& votes );
 
 string pretty_market_orders( const vector<market_order>& market_orders, cptr client );
 
