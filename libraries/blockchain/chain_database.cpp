@@ -1428,7 +1428,7 @@ namespace bts { namespace blockchain {
              my->open_database( data_dir );
              my->initialize_genesis(genesis_file);
 
-             std::cout << "Please be patient, this could take a few minutes.\n\rRe-indexing database... [/]" << std::flush;
+             std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
 
              const char spinner[] = "-\\|/";
              int blocks_indexed = 0;
