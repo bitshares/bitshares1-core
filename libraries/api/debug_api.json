@@ -14,7 +14,8 @@
             }
         ],
         "is_const" : false,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["start_simulated_time"]
       },
       {
         "method_name": "debug_advance_time",
@@ -34,7 +35,8 @@
             }
         ],
         "is_const" : false,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["advance_time"]
       },
       {
         "method_name": "debug_wait",
@@ -49,7 +51,8 @@
             }
           ],
         "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["wait"]
       },
       {
         "method_name": "debug_wait_for_block_by_number",
@@ -69,7 +72,8 @@
             }
         ],
         "is_const" : false,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["wait_for_block_by_number"]
       },
       {
         "method_name": "debug_wait_block_interval",
@@ -84,7 +88,8 @@
             }
           ],
         "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["wait_block_interval"]
       },
       {
         "method_name": "debug_enable_output",
@@ -99,7 +104,8 @@
             }
           ],
         "is_const"   : false,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["enable_output"]
       },
       {
         "method_name": "debug_filter_output_for_tests",
@@ -114,7 +120,8 @@
             }
           ],
         "is_const"   : false,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["filter_output_for_tests"]
       },
       {
           "method_name" : "debug_list_errors",
@@ -141,8 +148,8 @@
                }
         ],
         "is_const"   : true,
-        "aliases"    : ["errors"],
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["errors, list_errors"]
       },
       {
           "method_name" : "debug_list_errors_brief",
@@ -168,7 +175,8 @@
                   "default_value" : ""
                } ],
         "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["list_errors_brief, errors_brief"]
       },
       {
           "method_name" : "debug_write_errors_to_file",
@@ -189,7 +197,8 @@
                } 
         ],
         "is_const"   : true,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["write_errors_to_file, write_errors"]
       },
       {
         "method_name" : "debug_clear_errors",
@@ -214,8 +223,8 @@
                  "type" : "uint32_t",
                  "default_value" : "20"
               } ],
-          "aliases"    : [],
-          "prerequisites" : ["no_prerequisites"]
+          "prerequisites" : ["no_prerequisites"],
+          "aliases" : ["clear_errors"]
       }
     ]
 }

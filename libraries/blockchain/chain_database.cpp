@@ -745,17 +745,13 @@ namespace bts { namespace blockchain {
 
          _pending_fee_index.clear();
 
-         if( _revalidate_pending.valid() ) 
-         {
-            try {
-            _revalidate_pending.cancel();
-            _revalidate_pending.wait();
-            } catch ( ... ) {}
-         }
-         // schedule the revalidating of pending transactions for 1 second in the future so that we don't hold
-         // up block validation / propagation
-         //revalidate_pending();
-         _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );//, fc::time_point::now() + fc::seconds(1) );
+         // this schedules the revalidate-pending-transactions task to execute in this thread 
+         // as soon as this current task (probably pushing a block) gets around to yielding.
+         // This was changed from waiting on the old _revalidate_pending to prevent yielding
+         // during the middle of pushing a block.  If that happens, the database is in an
+         // inconsistent state and it confuses the p2p network code.
+         if( !_revalidate_pending.valid() || _revalidate_pending.ready() ) 
+           _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       }
@@ -1005,11 +1001,12 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_block_signee( block_id ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            auto pay_rate = delegate_record->delegate_info->pay_rate; 
-            FC_ASSERT( pay_rate <= 100 );
-            auto pay = (pay_rate*pending_state->get_delegate_pay_rate())/100;
+            const auto pay_percent = delegate_record->delegate_info->pay_rate;
+            FC_ASSERT( pay_percent <= 100 );
+            const auto pending_pay = pending_state->get_delegate_pay_rate();
+            const auto pay = ( pay_percent * pending_pay ) / 100;
 
-            auto prev_accumulated_fees = pending_state->get_accumulated_fees();
+            const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
             pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
 
             delegate_record->delegate_info->pay_balance += pay;
@@ -1018,7 +1015,7 @@ namespace bts { namespace blockchain {
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply += pay;
+            base_asset_record->current_share_supply -= (pending_pay - pay);
             pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
@@ -1034,13 +1031,13 @@ namespace bts { namespace blockchain {
       void chain_database_impl::verify_header( const full_block& block_data )
       { try {
             // validate preliminaries:
-            if( block_data.block_num != _head_block_header.block_num + 1 )
+            if( block_data.block_num > 1 && block_data.block_num != _head_block_header.block_num + 1 )
                FC_CAPTURE_AND_THROW( block_numbers_not_sequential, (block_data)(_head_block_header) );
             if( block_data.previous  != _head_block_id )
                FC_CAPTURE_AND_THROW( invalid_previous_block_id, (block_data)(_head_block_id) );
             if( block_data.timestamp.sec_since_epoch() % BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC != 0 )
                FC_CAPTURE_AND_THROW( invalid_block_time );
-            if( block_data.timestamp <= _head_block_header.timestamp )
+            if( block_data.block_num > 1 && block_data.timestamp <= _head_block_header.timestamp )
                FC_CAPTURE_AND_THROW( time_in_past, (block_data.timestamp)(_head_block_header.timestamp) );
 
             fc::time_point_sec now = bts::blockchain::now();
@@ -1431,7 +1428,7 @@ namespace bts { namespace blockchain {
              my->open_database( data_dir );
              my->initialize_genesis(genesis_file);
 
-             std::cout << "Please be patient, this could take a few minutes.\n\rRe-indexing database... [/]" << std::flush;
+             std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
 
              const char spinner[] = "-\\|/";
              int blocks_indexed = 0;

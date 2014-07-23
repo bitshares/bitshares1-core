@@ -21,7 +21,7 @@ Active Key History:
 - XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 (wallet closed) >>> get_account delegate0
@@ -33,7 +33,7 @@ Active Key History:
 - XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 (wallet closed) >>> blockchain_get_account deleg
@@ -47,7 +47,7 @@ Active Key History:
 - XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 11    delegate10                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 (wallet closed) >>> blockchain_get_account delegate11
@@ -59,7 +59,7 @@ Active Key History:
 - XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 12    delegate11                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 (wallet closed) >>> quit
