@@ -136,6 +136,8 @@ namespace bts { namespace wallet {
          void      scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id );
          void      scan_transactions( uint32_t block_num, const string& transaction_id_prefix );
 
+         vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
+
          ///@{ account management
          public_key_type  create_account( const string& account_name, 
                                           const variant& private_data = variant() );

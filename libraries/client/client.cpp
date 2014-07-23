@@ -1710,6 +1710,17 @@ config load_config( const fc::path& datadir )
        _wallet->remove_transaction_record( transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
+    { try {
+       const auto records = _wallet->get_transactions( transaction_id );
+       for( const auto& record : records )
+       {
+           if( record.is_virtual ) continue;
+           _p2p_node->broadcast( trx_message( record.trx ) );
+           std::cout << "Rebroadcasted transaction: " << string( record.trx.id() ) << "\n";
+       }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
+
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
       try

@@ -1759,6 +1759,23 @@ namespace bts { namespace wallet {
                               ("block_num",block_num)("transaction_id_prefix",transaction_id_prefix) );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   vector<wallet_transaction_record> wallet::get_transactions( const string& transaction_id_prefix )
+   { try {
+      FC_ASSERT( is_open() );
+
+      if( transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+          FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+
+      auto transactions = vector<wallet_transaction_record>();
+      for( const auto& record : my->_wallet_db.get_transactions() )
+      {
+          const auto transaction_id = string( record.first );
+          if( string( transaction_id ).find( transaction_id_prefix ) != 0 ) continue;
+          transactions.push_back( record.second );
+      }
+      return transactions;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
    void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
       trx.expiration = bts::blockchain::now() + BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC;

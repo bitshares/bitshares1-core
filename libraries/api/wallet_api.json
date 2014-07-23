@@ -330,7 +330,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : [""]
+        "aliases" : ["remove_transaction"]
       },
       {
         "method_name": "wallet_get_pending_transaction_errors",
@@ -650,6 +650,21 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["scan_transaction"]
+      },
+      {
+        "method_name": "wallet_rebroadcast_transaction",
+        "description": "Rebroadcasts the specified transaction",
+        "return_type": "void",
+        "parameters" : 
+          [
+            {
+              "name" : "transaction_id", 
+              "type" : "string", 
+              "description" : "the id (or id prefix) of the transaction"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases" : ["rebroadcast"]
       },
       {
          "method_name" : "wallet_account_register",
