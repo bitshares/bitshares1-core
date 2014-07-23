@@ -333,14 +333,6 @@
         "aliases" : [""]
       },
       {
-        "method_name": "wallet_hide_pending_transactions",
-        "description": "Hide \"stuck\" pending transactions from the wallet. Internal: Do not call this.",
-        "return_type": "void",
-        "parameters" : [],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : []
-      },
-      {
         "method_name": "wallet_get_pending_transaction_errors",
         "description": "Return any errors for your currently pending transactions",
         "return_type": "map<transaction_id_type, fc::exception>",

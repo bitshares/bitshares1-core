@@ -259,7 +259,6 @@ namespace bts { namespace wallet {
             bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
-            void hide_pending_transactions();
 
             void scan_balances( const time_point_sec& received_time );
             void scan_registered_accounts();
@@ -277,11 +276,6 @@ namespace bts { namespace wallet {
       vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
       {
           return _wallet_db.get_pending_transactions();
-      }
-
-      void wallet_impl::hide_pending_transactions()
-      {
-          _wallet_db.hide_pending_transactions();
       }
 
       void wallet_impl::scan_balances( const time_point_sec& received_time )
@@ -4044,14 +4038,6 @@ namespace bts { namespace wallet {
    vector<wallet_transaction_record> wallet::get_pending_transactions()const
    {
        return my->get_pending_transactions();
-   }
-
-   void wallet::hide_pending_transactions()
-   {
-      my->hide_pending_transactions();
-      auto tmp_balances = my->_wallet_db.get_balances();
-      for( const auto& item : tmp_balances )
-         my->sync_balance_with_blockchain( item.first );
    }
 
    map<transaction_id_type, fc::exception> wallet::get_pending_transaction_errors()const

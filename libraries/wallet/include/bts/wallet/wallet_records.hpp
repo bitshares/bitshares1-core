@@ -155,7 +155,7 @@ namespace bts { namespace wallet {
    struct transaction_data
    {
        transaction_data()
-       :block_num(0),is_virtual(false),is_confirmed(false),is_market(false),is_hidden(false){}
+       :block_num(0),is_virtual(false),is_confirmed(false),is_market(false){}
 
        /*
         * record_id
@@ -168,7 +168,6 @@ namespace bts { namespace wallet {
        bool                      is_virtual;
        bool                      is_confirmed;
        bool                      is_market;
-       bool                      is_hidden;
        signed_transaction        trx;
        vector<ledger_entry>      ledger_entries;
        asset                     fee;
@@ -259,7 +258,6 @@ FC_REFLECT( bts::wallet::transaction_data,
             (is_virtual)
             (is_confirmed)
             (is_market)
-            (is_hidden)
             (trx)
             (ledger_entries)
             (fee)

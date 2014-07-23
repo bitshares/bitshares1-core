@@ -126,7 +126,6 @@ namespace bts { namespace wallet {
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
 
          vector<wallet_transaction_record>          get_pending_transactions()const;
-         void                                       hide_pending_transactions();
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
          void      scan_state( const time_point_sec& received_time );
