@@ -1550,6 +1550,13 @@ config load_config( const fc::path& datadir )
         return vector<signed_transaction>();
     }
 
+    signed_transaction detail::client_impl::wallet_publish_slate( const string& account_name )
+    {
+       auto trx = _wallet->publish_slate( account_name );
+       network_broadcast_transaction( trx );
+
+       return trx;
+    }
     signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer,
                                                        const string& asset_symbol,
                                                        const string& from_account_name,

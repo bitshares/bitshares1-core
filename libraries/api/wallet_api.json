@@ -1364,6 +1364,19 @@
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_publish_slate",
+         "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "The account to publish the slate ID under"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }

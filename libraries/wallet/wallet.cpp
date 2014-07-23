@@ -2132,6 +2132,67 @@ namespace bts { namespace wallet {
       FC_ASSERT( header.validate_signee( delegate_pub_key, my->_blockchain->chain_id() ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
+   signed_transaction wallet::publish_slate( const string& account_to_publish_under, bool sign )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       if( !is_receive_account( account_to_publish_under ) )
+           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",account_to_publish_under) );
+      
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
+      FC_ASSERT( current_account );
+      auto payer_public_key = get_account_public_key( account_to_publish_under );
+
+
+      auto slate_id = select_slate( trx, 0, vote_all );
+
+      fc::mutable_variant_object public_data;
+      if( current_account->public_data.is_object()  )
+          public_data = current_account->public_data.get_object();
+
+      public_data["slate_id"] = slate_id;
+
+      trx.update_account( current_account->id, 
+                          current_account->delegate_pay_rate(), 
+                          fc::variant_object(public_data), 
+                          optional<public_key_type>() );
+
+      auto required_fees = get_priority_fee();
+      auto size_fee = fc::raw::pack_size( trx );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+
+      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      {
+        // withdraw delegate pay... 
+        trx.withdraw_pay( current_account->id, required_fees.amount );
+      }
+      else
+      {
+         my->withdraw_to_transaction( required_fees.amount,
+                                      required_fees.asset_id,
+                                      payer_public_key,
+                                      trx, required_signatures );
+      }
+      if (sign)
+      {
+          auto entry = ledger_entry();
+          entry.from_account = payer_public_key;
+          entry.to_account = payer_public_key;
+          entry.memo = "publish slate " + fc::variant(slate_id).as_string(); 
+
+          auto record = wallet_transaction_record();
+          record.ledger_entries.push_back( entry );
+          record.fee = required_fees;
+
+          sign_and_cache_transaction( trx, required_signatures, record );
+          my->_blockchain->store_pending_transaction( trx );
+      }
+      return trx;
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under) ) }
+
    /**
     *  This method assumes that fees can be paid in the same asset type as the 
     *  asset being transferred so that the account can be kept private and 
@@ -2908,9 +2969,8 @@ namespace bts { namespace wallet {
          }
       }
 
-      // No longer necessary I believe
-      //auto size_fee = fc::raw::pack_size( public_data );
-      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+      auto size_fee = fc::raw::pack_size( public_data );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       my->withdraw_to_transaction( required_fees.amount,
                                    required_fees.asset_id,

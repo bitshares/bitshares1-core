@@ -55,6 +55,11 @@ namespace bts { namespace blockchain {
       void           set_active_key( time_point_sec now, 
                                      const public_key_type& new_key );
       public_key_type active_key()const;
+      uint8_t        delegate_pay_rate()const
+      {
+         if( is_delegate() ) return delegate_info->pay_rate;
+         return 255;
+      }
 
       account_id_type                        id;
       std::string                            name;
