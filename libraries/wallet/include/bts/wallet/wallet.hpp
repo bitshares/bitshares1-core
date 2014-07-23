@@ -126,7 +126,6 @@ namespace bts { namespace wallet {
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
 
          vector<wallet_transaction_record>          get_pending_transactions()const;
-         void                                       hide_pending_transactions();
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
          void      scan_state( const time_point_sec& received_time );
@@ -136,6 +135,8 @@ namespace bts { namespace wallet {
 
          void      scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id );
          void      scan_transactions( uint32_t block_num, const string& transaction_id_prefix );
+
+         vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
          ///@{ account management
          public_key_type  create_account( const string& account_name, 

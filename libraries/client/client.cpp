@@ -1117,8 +1117,12 @@ config load_config( const fc::path& datadir )
                 boost::reverse(fork_history);
                 try
                 {
+                  if( last_non_fork_block == block_id_type() )
+                     return synopsis;
                   non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-                  FC_ASSERT(non_fork_high_block_num > 0);
+                  FC_ASSERT(non_fork_high_block_num > 0, "", 
+                            ("non_fork_high_block_num",non_fork_high_block_num)
+                            ("last_non_fork_block",last_non_fork_block) );
                 }
                 catch (const fc::key_not_found_exception&)
                 {
@@ -1132,7 +1136,8 @@ config load_config( const fc::path& datadir )
                 // unable to get fork history for some reason.  maybe not linked?
                 // we can't return a synopsis of its chain
                 elog("Unable to construct a blockchain synopsis for reference hash ${hash}: ${exception}", ("hash", reference_point)("exception", e));
-                return synopsis;
+                throw; //FC_RETHROW_EXCEPTIONS( e ); //throw;
+                //return synopsis;
               }
             }
           }
@@ -1307,7 +1312,7 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-
+      my->rebroadcast_pending();
     }
 
     void client::simulate_disconnect( bool state )
@@ -1385,10 +1390,6 @@ config load_config( const fc::path& datadir )
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-
-        //start rebroadcast pending loop
-        my->rebroadcast_pending();
-
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
     client::~client()
@@ -1514,11 +1515,6 @@ config load_config( const fc::path& datadir )
     {
       _wallet->change_passphrase(new_password);
       reschedule_delegate_loop();
-    }
-
-    void detail::client_impl::wallet_hide_pending_transactions()
-    {
-      _wallet->hide_pending_transactions();
     }
 
     map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const
@@ -1712,6 +1708,17 @@ config load_config( const fc::path& datadir )
     void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
     { try {
        _wallet->remove_transaction_record( transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
+
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
+    { try {
+       const auto records = _wallet->get_transactions( transaction_id );
+       for( const auto& record : records )
+       {
+           if( record.is_virtual ) continue;
+           _p2p_node->broadcast( trx_message( record.trx ) );
+           std::cout << "Rebroadcasted transaction: " << string( record.trx.id() ) << "\n";
+       }
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
