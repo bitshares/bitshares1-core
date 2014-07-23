@@ -2786,11 +2786,13 @@ namespace bts { namespace net { namespace detail {
       shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
       fc::ecc::compact_signature signature = _node_configuration.private_key.sign_compact(shared_secret_encoder.result());
 
+      fc::ip::endpoint local_endpoint(peer->get_socket().local_endpoint());
+
       hello_message hello(_user_agent_string, 
                           core_protocol_version, 
-                          peer->inbound_address,
-                          peer->inbound_port, 
-                          peer->outbound_port,
+                          local_endpoint.get_address(),
+                          _actual_listening_endpoint.port(), 
+                          local_endpoint.port(),
                           _node_id,
                           signature,
                           _chain_id, 
