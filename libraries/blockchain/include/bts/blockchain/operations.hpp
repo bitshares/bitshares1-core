@@ -51,7 +51,7 @@ namespace bts { namespace blockchain {
 
       define_delegate_slate_op_type = 18,
 
-      update_feed                   = 19
+      update_feed_op_type          = 19
    };
 
    /**

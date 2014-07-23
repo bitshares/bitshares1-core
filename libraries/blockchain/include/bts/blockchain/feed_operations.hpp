@@ -38,7 +38,7 @@ namespace bts { namespace blockchain {
    */
   struct update_feed_operation
   {
-//      static const operation_type_enum type; 
+      static const operation_type_enum type; 
       feed_index   feed;
       fc::variant  value;
 
