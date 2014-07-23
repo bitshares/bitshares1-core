@@ -289,6 +289,8 @@ namespace bts { namespace blockchain {
          virtual void                       set_market_transactions( vector<market_transaction> trxs );
          vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;
 
+         virtual void                       set_feed( const feed_record&  ) override;
+         virtual ofeed_record               get_feed( const feed_index& )const override;
       private:
          unique_ptr<detail::chain_database_impl> my;
    };

@@ -49,7 +49,9 @@ namespace bts { namespace blockchain {
       add_collateral_op_type      = 16,
       remove_collateral_op_type   = 17,
 
-      define_delegate_slate_op_type = 18
+      define_delegate_slate_op_type = 18,
+
+      update_feed                   = 19
    };
 
    /**

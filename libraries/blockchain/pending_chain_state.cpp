@@ -64,6 +64,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : slots )           prev_state->store_slot_record( item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
+      for( const auto& item : feeds )           prev_state->set_feed( item.second );
       prev_state->set_market_transactions( market_transactions );
    }
 
@@ -187,6 +188,12 @@ namespace bts { namespace blockchain {
          {
             undo_state->store_market_status( market_status() );
          }
+      }
+      for( auto const& item : feeds )
+      {
+         auto prev_value = prev_state->get_feed( item.first );
+         if( prev_value ) undo_state->set_feed( *prev_value );
+         else undo_state->set_feed( feed_record{item.first} );
       }
    }
 
@@ -469,5 +476,18 @@ namespace bts { namespace blockchain {
    void              pending_chain_state::store_market_status( const market_status& s ) 
    {
       market_statuses[std::make_pair(s.quote_id,s.base_id)] = s;
+   }
+   void            pending_chain_state::set_feed( const feed_record& r ) 
+   {
+      feeds[r.feed] = r;
+   }
+
+   ofeed_record    pending_chain_state::get_feed( const feed_index& i )const 
+   {
+      auto itr = feeds.find(i);
+      if( itr != feeds.end() ) return itr->second;
+
+      chain_interface_ptr prev_state = _prev_state.lock();
+      return prev_state->get_feed(i);
    }
 } } // bts::blockchain

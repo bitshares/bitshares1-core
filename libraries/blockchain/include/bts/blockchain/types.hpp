@@ -27,6 +27,7 @@ namespace bts { namespace blockchain {
    typedef address                            balance_id_type;
    typedef fc::signed_int                     asset_id_type;
    typedef fc::signed_int                     account_id_type;
+   typedef fc::signed_int                     feed_id_type;
    typedef fc::signed_int                     proposal_id_type;
    typedef uint32_t                           tapos_type; 
    typedef int64_t                            share_type;

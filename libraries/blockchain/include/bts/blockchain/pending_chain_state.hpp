@@ -15,6 +15,10 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160                get_current_random_seed()const override;
 
+
+         virtual void                 set_feed( const feed_record&  ) override;
+         virtual ofeed_record         get_feed( const feed_index& )const override;
+
          virtual fc::time_point_sec   now()const override;
 
          virtual oasset_record        get_asset_record( asset_id_type id )const override;
@@ -116,6 +120,7 @@ namespace bts { namespace blockchain {
          map<time_point_sec, slot_record>                               slots;
          map<market_history_key, market_history_record>                 market_history;
          map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
+         map<feed_index, feed_record>                                   feeds;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 
@@ -132,4 +137,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots)(market_statuses) )
+            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds) )

@@ -640,9 +640,11 @@ namespace bts { namespace blockchain {
             bts::db::level_map< market_index_key, order_record >            _bid_db;
             bts::db::level_map< market_index_key, order_record >            _short_db;
             bts::db::level_map< market_index_key, collateral_record >       _collateral_db;
+            bts::db::level_map< feed_index, feed_record>                    _feed_db;
 
             bts::db::level_map< std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::level_map< market_history_key, market_history_record>             _market_history_db;
+
 
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
@@ -717,6 +719,7 @@ namespace bts { namespace blockchain {
           _bid_db.open( data_dir / "index/bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
+          _feed_db.open( data_dir / "index/feed_db" );
 
           _market_status_db.open( data_dir / "index/market_status_db" );
           _market_history_db.open( data_dir / "index/market_history_db" );
@@ -1518,6 +1521,7 @@ namespace bts { namespace blockchain {
       my->_bid_db.close();
       my->_short_db.close();
       my->_collateral_db.close();
+      my->_feed_db.close();
 
       my->_market_history_db.close();
       my->_market_status_db.close();
@@ -2942,6 +2946,15 @@ namespace bts { namespace blockchain {
       auto tmp = my->_market_transactions_db.fetch_optional(block_num);
       if( tmp ) return *tmp;
       return vector<market_transaction>();
+   }
+   void             chain_database::set_feed( const feed_record& r )
+   {
+      my->_feed_db.store( r.feed, r );
+   }
+
+   ofeed_record     chain_database::get_feed( const feed_index& i )const
+   { 
+      return my->_feed_db.fetch_optional( i );
    }
 
 
