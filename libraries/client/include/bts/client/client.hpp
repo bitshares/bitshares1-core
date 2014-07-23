@@ -53,18 +53,26 @@ namespace bts { namespace client {
     struct config
     {
        config( ) : 
-          default_peers(vector<string>{"178.62.50.61:", "178.62.50.61:", "178.62.50.61:", "80.240.133.79:", "80.240.133.79:"}),
+          default_peers(vector<string>{
+                  "178.62.50.61:1776", 
+                  "178.62.50.61:1777", 
+                  "178.62.50.61:1778", 
+                  "80.240.133.79:1776", 
+                  "80.240.133.79:1777",
+                  "5.101.106.138:1777",
+                  "5.101.106.138:1778",
+                  "128.199.137.122:1776",
+                  "128.199.137.122:1777",
+                  "95.85.33.16:8764",
+                  "180.153.142.120:1777",
+                  "84.238.140.192:42577"
+                  }),
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
           delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
           default_delegate_peers( vector<string>({"178.62.50.61:9988"}) )
           {
-             default_peers[0]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT );
-             default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+1 );
-             default_peers[2]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+2 );
-             default_peers[3]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT );
-             default_peers[4]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+1 );
              logging = fc::logging_config::default_config();
           }
 
