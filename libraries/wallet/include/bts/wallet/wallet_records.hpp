@@ -149,12 +149,13 @@ namespace bts { namespace wallet {
        optional<public_key_type> to_account;
        asset                     amount;
        string                    memo;
+       optional<public_key_type> memo_from_account;
    };
 
    struct transaction_data
    {
        transaction_data()
-       :block_num(0),is_virtual(false),is_confirmed(false),is_market(false),is_hidden(false){}
+       :block_num(0),is_virtual(false),is_confirmed(false),is_market(false){}
 
        /*
         * record_id
@@ -167,7 +168,6 @@ namespace bts { namespace wallet {
        bool                      is_virtual;
        bool                      is_confirmed;
        bool                      is_market;
-       bool                      is_hidden;
        signed_transaction        trx;
        vector<ledger_entry>      ledger_entries;
        asset                     fee;
@@ -251,14 +251,13 @@ FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
 FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
 
-FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(memo) );
+FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(memo)(memo_from_account) );
 FC_REFLECT( bts::wallet::transaction_data, 
             (record_id)
             (block_num)
             (is_virtual)
             (is_confirmed)
             (is_market)
-            (is_hidden)
             (trx)
             (ledger_entries)
             (fee)

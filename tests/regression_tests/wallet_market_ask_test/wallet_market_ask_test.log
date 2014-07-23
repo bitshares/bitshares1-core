@@ -56,7 +56,7 @@ default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79601 XTS     
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> debug_wait 1
@@ -65,16 +65,16 @@ default (unlocked) >>> blockchain_list_assets XMO
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79501 XTS     
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> blockchain_list_assets XTS
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79501 XTS     
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79501 XTS     
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> help wallet_market_submit_ask
 Usage:
 wallet_market_submit_ask <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol>   Used to place a request to sell a quantity of assets at a price specified in another asset
@@ -98,7 +98,7 @@ default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
   "operations": [{
       "type": "withdraw_op_type",
       "data": {
-        "balance_id": "XTS6V83PmxfqWRvQRUpLyEJywaka1vRyGcK9",
+        "balance_id": "XTSKm6QmzZ6HJqp1i2NA2zEX399GJPk4sS7N",
         "amount": 10010000,
         "claim_input_data": ""
       }
@@ -118,8 +118,8 @@ default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b91f1c191c52c1346cd389a1f4245f25b3a97ca70685e927cc9bdebed74c6642e3",
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00d426bf920127deb81479671b12c2054fbe5d05de5f4c84e115c8b81eac5dac93"
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9cbb5e5e568ac93d9ba8c0177d8793d7353506da946aca072d628f77071db9c1f",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f004ac03b83308ce15745dd3d2082deb839eac39a7a5f46ae2c22ae89992c87487b"
   ]
 }
 default (unlocked) >>> balance testaccount2
@@ -134,25 +134,22 @@ default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79501 XTS     
+0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> wallet_account_transaction_history
- RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-========================================================================================================================================================================
- [redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|[redacted]          2         delegate0           testaccount2        10,000.10000 XTS                                                    0.10000 XTS         [redacted]|
-|                              testaccount2        testaccount2        10,000.00000 XTS                                                                                |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [redacted]          3         delegate0           delegate0           0.10000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
- [redacted]          5         testaccount2        ORDER-NewrSidD      100.10000 XTS           sell 100 XTS @ 4 XMO                        100.10000 XTS       [redacted]
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
+[redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.10000 XTS         [redacted]
+[redacted]          3         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
+[redacted]          5         testaccount2        ORDER-NewrSidD      0.00000 XTS             sell 100 XTS @ 4 XMO                        100.10000 XTS       [redacted]
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -162,19 +159,16 @@ OK
 default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> wallet_account_transaction_history
- RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-========================================================================================================================================================================
- [redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
- [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|[redacted]          2         delegate0           testaccount2        10,000.10000 XTS                                                    0.10000 XTS         [redacted]|
-|                              testaccount2        testaccount2        10,000.00000 XTS                                                                                |
-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [redacted]          3         delegate0           delegate0           0.10000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
- [redacted]          5         testaccount2        ORDER-NewrSidD      100.10000 XTS           sell 100 XTS @ 4 XMO                        100.10000 XTS       [redacted]
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
+[redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
+[redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.10000 XTS         [redacted]
+[redacted]          3         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
+[redacted]          5         testaccount2        ORDER-NewrSidD      0.00000 XTS             sell 100 XTS @ 4 XMO                        100.10000 XTS       [redacted]
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
