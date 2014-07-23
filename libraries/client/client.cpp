@@ -2566,6 +2566,12 @@ config load_config( const fc::path& datadir )
       _cli->filter_output_for_tests(enable_flag);
     }
 
+    void client_impl::debug_update_logging_config()
+    {
+      config temp_config   = load_config(_data_dir);
+      fc::configure_logging( temp_config.logging );
+    }
+
     fc::variant_object client_impl::about() const
     {
       return bts::client::version_info();
@@ -3167,6 +3173,11 @@ config load_config( const fc::path& datadir )
          fileout << fc::json::to_pretty_string( result );
       }
    }
+
+  fc::variant_object client_impl::debug_get_call_statistics() const
+  {
+    return _p2p_node->get_call_statistics();
+  }
 
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
    {

@@ -92,8 +92,8 @@
             { 
               "name" : "script", 
               "type" : "filename", 
-              "description" : "Name of a file containing CLI commands to execute"
-			  "example" : "/path/to/script_file.log"
+              "description" : "Name of a file containing CLI commands to execute",
+	      "example" : "/path/to/script_file.log"
             }
           ],
         "is_const"   : true,
@@ -158,7 +158,7 @@
           ],
         "is_const"   : false,
         "prerequisites" : ["no_prerequisites"]
-      }
+      },
       {
         "method_name" : "rpc_start_server",
         "description" : "Set the port and start rpc server.",
@@ -174,7 +174,7 @@
           ],
         "is_const"   : false,
         "prerequisites" : ["no_prerequisites"]
-      }
+      },
       {
         "method_name" : "http_start_server",
         "description" : "Set the port and start http server.",
