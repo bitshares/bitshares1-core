@@ -505,10 +505,11 @@ string pretty_vote_summary( const account_vote_summary_type& votes )
     out << std::left;
 
     out << std::setw( 32 ) << "DELEGATE";
-    out << std::setw( 16 ) << "VOTES";
+    out << std::setw( 20 ) << "VOTES";
+    out << std::setw( 10 ) << "APPROVED";
     out << "\n";
 
-    out << pretty_line( 48 );
+    out << pretty_line( 64 );
     out << "\n";
 
     for( const auto& vote : votes )
@@ -517,7 +518,8 @@ string pretty_vote_summary( const account_vote_summary_type& votes )
         const auto votes_for = vote.second;
 
         out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
-        out << std::setw( 16 ) << votes_for;
+        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset(votes_for,0 ) );
+        out << std::setw( 16 ) << (client->get_wallet()->get_delegate_approval( delegate_name ) ? "YES" : "NO");
 
         out << "\n";
     }
