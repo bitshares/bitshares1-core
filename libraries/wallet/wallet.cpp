@@ -1502,6 +1502,10 @@ namespace bts { namespace wallet {
           FC_THROW_EXCEPTION( invalid_name, "Invalid new account name!", ("new_account_name",new_account_name) );
 
       FC_ASSERT( is_open() );
+      auto registered_account = my->_blockchain->get_account_record( old_account_name );
+      FC_ASSERT( !registered_account, "You cannot rename a registered account" );
+      registered_account = my->_blockchain->get_account_record( new_account_name );
+      FC_ASSERT( !registered_account, "Your new account name is already registered" );
 
       auto old_account = my->_wallet_db.lookup_account( old_account_name );
       FC_ASSERT( old_account.valid() );
