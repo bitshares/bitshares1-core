@@ -259,7 +259,6 @@ namespace bts { namespace wallet {
             bool sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
-            void hide_pending_transactions();
 
             void scan_balances( const time_point_sec& received_time );
             void scan_registered_accounts();
@@ -277,11 +276,6 @@ namespace bts { namespace wallet {
       vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
       {
           return _wallet_db.get_pending_transactions();
-      }
-
-      void wallet_impl::hide_pending_transactions()
-      {
-          _wallet_db.hide_pending_transactions();
       }
 
       void wallet_impl::scan_balances( const time_point_sec& received_time )
@@ -1521,6 +1515,10 @@ namespace bts { namespace wallet {
           FC_THROW_EXCEPTION( invalid_name, "Invalid new account name!", ("new_account_name",new_account_name) );
 
       FC_ASSERT( is_open() );
+      auto registered_account = my->_blockchain->get_account_record( old_account_name );
+      FC_ASSERT( !registered_account, "You cannot rename a registered account" );
+      registered_account = my->_blockchain->get_account_record( new_account_name );
+      FC_ASSERT( !registered_account, "Your new account name is already registered" );
 
       auto old_account = my->_wallet_db.lookup_account( old_account_name );
       FC_ASSERT( old_account.valid() );
@@ -1763,6 +1761,23 @@ namespace bts { namespace wallet {
       if( !found )
           FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!",
                               ("block_num",block_num)("transaction_id_prefix",transaction_id_prefix) );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   vector<wallet_transaction_record> wallet::get_transactions( const string& transaction_id_prefix )
+   { try {
+      FC_ASSERT( is_open() );
+
+      if( transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+          FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+
+      auto transactions = vector<wallet_transaction_record>();
+      for( const auto& record : my->_wallet_db.get_transactions() )
+      {
+          const auto transaction_id = string( record.first );
+          if( string( transaction_id ).find( transaction_id_prefix ) != 0 ) continue;
+          transactions.push_back( record.second );
+      }
+      return transactions;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
@@ -4044,14 +4059,6 @@ namespace bts { namespace wallet {
    vector<wallet_transaction_record> wallet::get_pending_transactions()const
    {
        return my->get_pending_transactions();
-   }
-
-   void wallet::hide_pending_transactions()
-   {
-      my->hide_pending_transactions();
-      auto tmp_balances = my->_wallet_db.get_balances();
-      for( const auto& item : tmp_balances )
-         my->sync_balance_with_blockchain( item.first );
    }
 
    map<transaction_id_type, fc::exception> wallet::get_pending_transaction_errors()const

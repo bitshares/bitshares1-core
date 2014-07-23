@@ -1517,11 +1517,6 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
     }
 
-    void detail::client_impl::wallet_hide_pending_transactions()
-    {
-      _wallet->hide_pending_transactions();
-    }
-
     map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const
     {
       const auto& errors = _wallet->get_pending_transaction_errors();
@@ -1703,16 +1698,40 @@ config load_config( const fc::path& datadir )
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
     vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
+                                                                                        const string& asset_symbol,
+                                                                                        int32_t limit,
                                                                                         uint32_t start_block_num,
-                                                                                        uint32_t end_block_num,
-                                                                                        const string& asset_symbol )const
+                                                                                        uint32_t end_block_num )const
     { try {
-      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
+      const auto history = _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
+      if( limit == 0 || abs( limit ) >= history.size() )
+      {
+          return history;
+      }
+      else if( limit > 0 )
+      {
+          return vector<pretty_transaction>( history.begin(), history.begin() + limit );
+      }
+      else
+      {
+          return vector<pretty_transaction>( history.end() - abs( limit ), history.end() );
+      }
     } FC_RETHROW_EXCEPTIONS( warn, "") }
 
     void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
     { try {
        _wallet->remove_transaction_record( transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
+
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
+    { try {
+       const auto records = _wallet->get_transactions( transaction_id );
+       for( const auto& record : records )
+       {
+           if( record.is_virtual ) continue;
+           _p2p_node->broadcast( trx_message( record.trx ) );
+           std::cout << "Rebroadcasted transaction: " << string( record.trx.id() ) << "\n";
+       }
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
