@@ -745,17 +745,13 @@ namespace bts { namespace blockchain {
 
          _pending_fee_index.clear();
 
-         if( _revalidate_pending.valid() ) 
-         {
-            try {
-            _revalidate_pending.cancel();
-            _revalidate_pending.wait();
-            } catch ( ... ) {}
-         }
-         // schedule the revalidating of pending transactions for 1 second in the future so that we don't hold
-         // up block validation / propagation
-         //revalidate_pending();
-         _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );//, fc::time_point::now() + fc::seconds(1) );
+         // this schedules the revalidate-pending-transactions task to execute in this thread 
+         // as soon as this current task (probably pushing a block) gets around to yielding.
+         // This was changed from waiting on the old _revalidate_pending to prevent yielding
+         // during the middle of pushing a block.  If that happens, the database is in an
+         // inconsistent state and it confuses the p2p network code.
+         if( !_revalidate_pending.valid() || _revalidate_pending.ready() ) 
+           _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       }
