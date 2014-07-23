@@ -295,6 +295,18 @@
               "default_value" : ""
             },
             {
+               "name" : "asset_symbol",
+               "type" : "string",
+               "description" : "only include transactions involving the specified asset, or \"\" to include all",
+               "default_value" : ""
+            },
+            {
+               "name" : "limit",
+               "type" : "int32_t",
+               "description" : "limit the number of returned transactions; negative for most recent and positive for least recent. 0 does not limit",
+               "default_value" : 0
+            },
+            {
                "name" : "start_block_num",
                "type" : "uint32_t",
                "description" : "the earliest block number to list transactions from; 0 to include all transactions starting from genesis",
@@ -305,12 +317,6 @@
                "type" : "uint32_t",
                "description" : "the latest block to list transaction from; -1 to include all transactions ending at the head block",
                "default_value" : -1
-            },
-            {
-               "name" : "asset_symbol",
-               "type" : "string",
-               "description" : "only include transactions involving the specified asset, or \"\" to include all",
-               "default_value" : ""
             }
         ],
         "prerequisites" : ["wallet_open"],
