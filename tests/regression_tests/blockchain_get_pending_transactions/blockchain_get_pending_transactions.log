@@ -1,25 +1,23 @@
 default (unlocked) >>> debug_filter_output_for_tests true
 OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
 default (unlocked) >>> wallet_account_create test
 "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_account_balance test
+No balances found.
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
-default (unlocked) >>> debug_wait_block_interval 1
-OK
-default (unlocked) >>> wallet_account_balance test
-No balances found.
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,801,880.09801 XTS        
 default (unlocked) >>> wallet_account_balance test
 No balances found.
-default (unlocked) >>> wallet_account_balance delegate0
-ACCOUNT                         BALANCE                     
-============================================================
-delegate0                       19,801,880.09801 XTS        
 default (unlocked) >>> help blockchain_get_pending_transactions
 Usage:
 blockchain_get_pending_transactions                                                                   Return a list of transactions that are not yet in a block.
@@ -31,11 +29,17 @@ Parameters:
 Returns:
   signed_transaction_array
 default (unlocked) >>> blockchain_get_pending_transactions
+    TXN ID      SIZE          OPERATION COUNT          SIGNATURE COUNT
+----------------------------------------------------------------------
+[redacted]       244                        2                        1
+default (unlocked) >>> debug_wait_block_interval 1
+OK
+default (unlocked) >>> blockchain_get_pending_transactions
 No pending transactions.
-default (unlocked) >>> wallet_account_balance test
-No balances found.
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,801,880.09801 XTS        
+default (unlocked) >>> wallet_account_balance test
+No balances found.
 default (unlocked) >>> quit
