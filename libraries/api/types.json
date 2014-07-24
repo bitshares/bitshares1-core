@@ -579,7 +579,10 @@
         "type_name" : "market_status",
         "cpp_return_type" : "bts::blockchain::market_status"
       },
-
+      {
+        "type_name" : "vote_selection_method",
+        "cpp_return_type" : "bts::wallet::vote_selection_method"
+      },
       {
         "type_name" : "domain_record",
         "cpp_return_type" : "bts::blockchain::domain_record"
@@ -588,7 +591,6 @@
         "type_name" : "domain_record_array",
         "container_type" : "array",
         "contained_type" : "domain_record"
-
       }
     ]
 }

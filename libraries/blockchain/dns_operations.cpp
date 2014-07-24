@@ -147,7 +147,6 @@ namespace bts { namespace blockchain {
         {
             FC_ASSERT(this->price > 0, "Price must be greater than 0 when you offer" );
             auto balance_rec = balance_record();
-            balance_rec.owner = this->new_owner;
             FC_ASSERT(!" TODO unimplemented domain offer");
         }
     }

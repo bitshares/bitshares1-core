@@ -417,16 +417,6 @@ namespace bts { namespace wallet {
        return transaction_records;
    }
 
-   void wallet_db::clear_pending_transactions()
-   {
-       const auto transaction_records = get_pending_transactions();
-       for( const auto& transaction_record : transaction_records )
-       {
-           my->_records.remove( transaction_record.wallet_record_index );
-           transactions.erase( transaction_record.record_id );
-       }
-   }
-
    void wallet_db::export_to_json( const path& filename )const
    {
       FC_ASSERT( !fc::exists( filename ) );
@@ -773,6 +763,14 @@ namespace bts { namespace wallet {
    {
       remove_item( balances[balance_id].wallet_record_index );
       balances.erase(balance_id);
+   }
+
+   void wallet_db::remove_transaction( const transaction_id_type& record_id )
+   {
+      const auto rec = lookup_transaction( record_id );
+      if( !rec.valid() ) return;
+      remove_item( rec->wallet_record_index );
+      transactions.erase( record_id );
    }
 
 } } // bts::wallet

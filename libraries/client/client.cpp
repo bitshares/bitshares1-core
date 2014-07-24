@@ -3,6 +3,7 @@
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
+#include <bts/cli/pretty.hpp>
 #include <bts/net/node.hpp>
 #include <bts/net/exceptions.hpp>
 #include <bts/net/upnp.hpp>
@@ -1116,8 +1117,12 @@ config load_config( const fc::path& datadir )
                 boost::reverse(fork_history);
                 try
                 {
+                  if( last_non_fork_block == block_id_type() )
+                     return synopsis;
                   non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-                  FC_ASSERT(non_fork_high_block_num > 0);
+                  FC_ASSERT(non_fork_high_block_num > 0, "", 
+                            ("non_fork_high_block_num",non_fork_high_block_num)
+                            ("last_non_fork_block",last_non_fork_block) );
                 }
                 catch (const fc::key_not_found_exception&)
                 {
@@ -1131,7 +1136,8 @@ config load_config( const fc::path& datadir )
                 // unable to get fork history for some reason.  maybe not linked?
                 // we can't return a synopsis of its chain
                 elog("Unable to construct a blockchain synopsis for reference hash ${hash}: ${exception}", ("hash", reference_point)("exception", e));
-                return synopsis;
+                throw; //FC_RETHROW_EXCEPTIONS( e ); //throw;
+                //return synopsis;
               }
             }
           }
@@ -1306,7 +1312,7 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-
+      my->rebroadcast_pending();
     }
 
     void client::simulate_disconnect( bool state )
@@ -1384,10 +1390,6 @@ config load_config( const fc::path& datadir )
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-
-        //start rebroadcast pending loop
-        my->rebroadcast_pending();
-
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
     client::~client()
@@ -1515,11 +1517,6 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
     }
 
-    void detail::client_impl::wallet_clear_pending_transactions()
-    {
-      _wallet->clear_pending_transactions();
-    }
-
     map<transaction_id_type, fc::exception> detail::client_impl::wallet_get_pending_transaction_errors( const string& filename )const
     {
       const auto& errors = _wallet->get_pending_transaction_errors();
@@ -1557,11 +1554,33 @@ config load_config( const fc::path& datadir )
                                                        const string& asset_symbol,
                                                        const string& from_account_name,
                                                        const string& to_account_name,
-                                                       const string& memo_message)
+                                                       const string& memo_message,
+                                                       const vote_selection_method& selection_method
+                                                       )
     {
          auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
+                                                  from_account_name, from_account_name,
+                                                  to_account_name,
+                                                  memo_message, selection_method, true );
+
+         network_broadcast_transaction( trx );
+
+         return trx;
+    }
+
+    signed_transaction detail::client_impl::wallet_transfer_from(double amount_to_transfer,
+                                                       const string& asset_symbol,
+                                                       const string& paying_account_name,
+                                                       const string& from_account_name,
+                                                       const string& to_account_name,
+                                                       const string& memo_message,
+                                                       const vote_selection_method& selection_method
+                                                       )
+    {
+         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
+                                                  paying_account_name,
                                                   from_account_name, to_account_name,
-                                                  memo_message, true );
+                                                  memo_message, selection_method, true );
 
          network_broadcast_transaction( trx );
 
@@ -1679,12 +1698,41 @@ config load_config( const fc::path& datadir )
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
     vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
+                                                                                        const string& asset_symbol,
+                                                                                        int32_t limit,
                                                                                         uint32_t start_block_num,
-                                                                                        uint32_t end_block_num,
-                                                                                        const string& asset_symbol )const
+                                                                                        uint32_t end_block_num )const
     { try {
-      return _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
+      const auto history = _wallet->get_pretty_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
+      if( limit == 0 || abs( limit ) >= history.size() )
+      {
+          return history;
+      }
+      else if( limit > 0 )
+      {
+          return vector<pretty_transaction>( history.begin(), history.begin() + limit );
+      }
+      else
+      {
+          return vector<pretty_transaction>( history.end() - abs( limit ), history.end() );
+      }
     } FC_RETHROW_EXCEPTIONS( warn, "") }
+
+    void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
+    { try {
+       _wallet->remove_transaction_record( transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
+
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
+    { try {
+       const auto records = _wallet->get_transactions( transaction_id );
+       for( const auto& record : records )
+       {
+           if( record.is_virtual ) continue;
+           _p2p_node->broadcast( trx_message( record.trx ) );
+           std::cout << "Rebroadcasted transaction: " << string( record.trx.id() ) << "\n";
+       }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
     oaccount_record detail::client_impl::blockchain_get_account( const string& account )const
     {
@@ -2045,7 +2093,7 @@ config load_config( const fc::path& datadir )
        try {
           auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
                                                          fromaccount, toaddress,
-                                                         comment, true );
+                                                         comment, vote_random,true );
 
           network_broadcast_transaction( trx );
 
@@ -2589,15 +2637,15 @@ config load_config( const fc::path& datadir )
           info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
       }
 
-      info["blockchain_average_delegate_participation"]         = _chain_db->get_average_delegate_participation();
-      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
+      info["blockchain_average_delegate_participation"]         = cli::pretty_percent( _chain_db->get_average_delegate_participation(), 100 );
+      info["blockchain_delegate_pay_rate"]                      = _chain_db->to_pretty_asset( asset( _chain_db->get_delegate_pay_rate() ) );
       info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
-      info["blockchain_accumulated_fees"]                       = _chain_db->to_pretty_asset( asset(_chain_db->get_accumulated_fees()) );
+      info["blockchain_accumulated_fees"]                       = _chain_db->to_pretty_asset( asset( _chain_db->get_accumulated_fees() ) );
 
       oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       share_type share_supply                                   = share_record ? share_record->current_share_supply : 0;
-      info["blockchain_share_supply"]                           = share_supply;
+      info["blockchain_share_supply"]                           = _chain_db->to_pretty_asset( asset( share_supply ) );
       info["blockchain_random_seed"]                            = _chain_db->get_current_random_seed();
 
       info["blockchain_database_version"]                       = BTS_BLOCKCHAIN_DATABASE_VERSION;
@@ -2683,7 +2731,7 @@ config load_config( const fc::path& datadir )
         state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
         if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
-            && participation_rate > 90)
+            && participation_rate > 80)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::green;
         }

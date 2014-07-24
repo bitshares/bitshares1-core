@@ -26,6 +26,17 @@ namespace bts { namespace wallet {
        inactive_delegate_status = 0x08
    };
 
+   /**
+    *  The vote selection method helps enhance user privacy by
+    *  not tying their accounts together.
+    */
+   enum vote_selection_method
+   {
+      vote_none   = 0,
+      vote_all    = 1,
+      vote_random = 2
+   };
+
    class wallet
    {
       public:
@@ -91,7 +102,7 @@ namespace bts { namespace wallet {
           *  @name Utility Methods
           */
          ///@{ 
-         delegate_slate select_delegate_vote()const;
+         delegate_slate select_delegate_vote( vote_selection_method selection = vote_random )const;
 
          bool is_receive_account( const string& account_name )const;
          bool is_valid_account( const string& account_name )const;
@@ -115,7 +126,6 @@ namespace bts { namespace wallet {
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
 
          vector<wallet_transaction_record>          get_pending_transactions()const;
-         void                                       clear_pending_transactions();
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
          void      scan_state( const time_point_sec& received_time );
@@ -125,6 +135,8 @@ namespace bts { namespace wallet {
 
          void      scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id );
          void      scan_transactions( uint32_t block_num, const string& transaction_id_prefix );
+
+         vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
          ///@{ account management
          public_key_type  create_account( const string& account_name, 
@@ -240,6 +252,7 @@ namespace bts { namespace wallet {
                                           const string& from_account_name,
                                           const address& to_address,
                                           const string& memo_message,
+                                          vote_selection_method selection_method, 
                                           bool sign );
          /**
           * This transfer works like a bitcoin sendmany transaction combining multiple inputs
@@ -254,11 +267,13 @@ namespace bts { namespace wallet {
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output.
           */
-         signed_transaction  transfer_asset( double real_amount_to_transfer,
+         signed_transaction  transfer_asset(double real_amount_to_transfer,
                                               const string& amount_to_transfer_symbol,
+                                              const string& paying_account_name,
                                               const string& from_account_name,
                                               const string& to_account_name,
                                               const string& memo_message,
+                                              vote_selection_method m, 
                                               bool sign );
 
          signed_transaction  withdraw_delegate_pay( const string& delegate_name,
@@ -400,6 +415,8 @@ namespace bts { namespace wallet {
                                                                             uint32_t end_block_num = -1,
                                                                             const string& asset_symbol = "" )const;
 
+         void                               remove_transaction_record( const string& record_id );
+
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*
          optional<address>                  get_owning_address( const balance_id_type& id )const;
@@ -419,7 +436,7 @@ namespace bts { namespace wallet {
                  const std::unordered_set<address>& required_signatures,
                  wallet_transaction_record& record );
 
-         slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ) );
+         slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );
 
          private_key_type get_private_key( const address& addr )const;
 
@@ -469,3 +486,5 @@ namespace bts { namespace wallet {
    typedef shared_ptr<wallet> wallet_ptr;
 
 } } // bts::wallet
+
+FC_REFLECT_ENUM( bts::wallet::vote_selection_method, (vote_none)(vote_all)(vote_random) )

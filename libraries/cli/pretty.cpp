@@ -221,7 +221,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     if( transactions.empty() ) return "No transactions found.\n";
     FC_ASSERT( client != nullptr );
 
-    const auto is_filtered = !transactions.front().running_balances.empty();
+    const auto is_filtered = !transactions.front().ledger_entries.front().running_balances.empty();
 
     auto any_group = false;
     for( const auto& transaction : transactions )
@@ -240,10 +240,10 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 44 ) << "MEMO";
     if( is_filtered ) out << std::setw( 24 ) << "BALANCE";
     out << std::setw( 20 ) << "FEE";
-    out << std::setw(  7 ) << "ID";
+    out << std::setw(  8 ) << "ID";
     out << "\n";
 
-    const auto line_size = !is_filtered ? 165 : 189;
+    const auto line_size = !is_filtered ? 166 : 190;
     out << pretty_line( !any_group ? line_size : line_size + 2 ) << "\n";
 
     const auto errors = client->get_wallet()->get_pending_transaction_errors();
@@ -301,7 +301,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             {
                 out << std::setw( 24 );
                 if( !is_pending )
-                    out << client->get_chain()->to_pretty_asset( transaction.running_balances.at( entry.amount.asset_id ) );
+                    out << client->get_chain()->to_pretty_asset( entry.running_balances.at( entry.amount.asset_id ) );
                 else
                     out << "N/A";
             }
@@ -311,15 +311,26 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 out << std::setw( 20 );
                 out << client->get_chain()->to_pretty_asset( transaction.fee );
 
-                out << std::setw( 7 );
-                if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
-                else if( transaction.is_virtual ) out << "VIRTUAL";
-                else out << string( transaction.trx_id ).substr( 0, 7 );
+                out << std::setw( 8 );
+                if( FILTER_OUTPUT_FOR_TESTS )
+                {
+                    out << "[redacted]";
+                }
+                else if( transaction.is_virtual )
+                {
+                    std::stringstream ss;
+                    ss << "[" << string( transaction.trx_id ).substr( 0, 6 ) << "]";
+                    out << ss.str();
+                }
+                else
+                {
+                    out << string( transaction.trx_id ).substr( 0, 8 );
+                }
             }
             else
             {
                 out << std::setw( 20 ) << "";
-                out << std::setw( 7 ) << "";
+                out << std::setw( 8 ) << "";
             }
 
             if( group ) out << "|";
