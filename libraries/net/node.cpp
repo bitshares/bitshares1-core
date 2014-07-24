@@ -23,6 +23,18 @@
 #include <boost/range/algorithm_ext/push_back.hpp>
 #include <boost/range/numeric.hpp>
 
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/accumulators/statistics/min.hpp>
+#include <boost/accumulators/statistics/max.hpp>
+#include <boost/accumulators/statistics/sum.hpp>
+#include <boost/accumulators/statistics/count.hpp>
+
+#include <boost/preprocessor/seq/for_each.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/stringize.hpp>
+
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/log/logger.hpp>
@@ -244,6 +256,81 @@ namespace bts { namespace net { namespace detail {
     };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    class statistics_gathering_node_delegate_wrapper : public node_delegate
+    {
+    private:
+      node_delegate *_node_delegate;
+
+      typedef boost::accumulators::accumulator_set<int64_t, boost::accumulators::stats<boost::accumulators::tag::min,
+                                                                                       boost::accumulators::tag::rolling_mean,
+                                                                                       boost::accumulators::tag::max,
+                                                                                       boost::accumulators::tag::sum,
+                                                                                       boost::accumulators::tag::count> > call_stats_accumulator;
+#define NODE_DELEGATE_METHOD_NAMES (has_item) \
+                                   (handle_message) \
+                                   (get_item_ids) \
+                                   (get_item) \
+                                   (get_chain_id) \
+                                   (get_blockchain_synopsis) \
+                                   (sync_status) \
+                                   (connection_count_changed) \
+                                   (get_block_number) \
+                                   (get_block_time) \
+                                   (get_blockchain_now) \
+                                   (error_encountered)
+
+#define DECLARE_ACCUMULATOR(r, data, method_name) \
+      mutable call_stats_accumulator BOOST_PP_CAT(_, BOOST_PP_CAT(method_name, _accumulator));
+      BOOST_PP_SEQ_FOR_EACH(DECLARE_ACCUMULATOR, unused, NODE_DELEGATE_METHOD_NAMES)
+#undef DECLARE_ACCUMULATOR
+
+      class call_statistics_collector
+      {
+      private:
+        fc::time_point _start_time; 
+        const char* _method_name;
+        call_stats_accumulator* _accumulator;
+      public:
+        call_statistics_collector(const char* method_name, call_stats_accumulator* accumulator) :        
+          _start_time(fc::time_point::now()),
+          _method_name(method_name),
+          _accumulator(accumulator)
+        {}
+        ~call_statistics_collector()
+        {
+          fc::time_point end_time(fc::time_point::now());
+          fc::microseconds duration(end_time - _start_time);
+          (*_accumulator)(duration.count());
+          if (duration > fc::milliseconds(500))
+            wlog("Call to method node_delegate::${method} took ${duration}us, longer than our target maximum of 500ms", 
+                 ("method", _method_name)("duration", duration.count()));
+        }
+      };
+    public:
+      statistics_gathering_node_delegate_wrapper(node_delegate* delegate);
+
+      fc::variant_object get_call_statistics();
+
+      bool has_item( const net::item_id& id ) override;
+      bool handle_message( const message&, bool sync_mode ) override;
+      std::vector<item_hash_t> get_item_ids(uint32_t item_type,
+                                            const std::vector<item_hash_t>& blockchain_synopsis,
+                                            uint32_t& remaining_item_count,
+                                            uint32_t limit = 2000) override;
+      message get_item( const item_id& id ) override;
+      fc::sha256 get_chain_id() const override;
+      std::vector<item_hash_t> get_blockchain_synopsis(uint32_t item_type, 
+                                                       const bts::net::item_hash_t& reference_point = bts::net::item_hash_t(), 
+                                                       uint32_t number_of_blocks_after_reference_point = 0) override;
+      void     sync_status( uint32_t item_type, uint32_t item_count ) override;
+      void     connection_count_changed( uint32_t c ) override;
+      uint32_t get_block_number(const item_hash_t& block_id) override;
+      fc::time_point_sec get_block_time(const item_hash_t& block_id) override;
+      fc::time_point_sec get_blockchain_now() override;
+      void error_encountered(const std::string& message, const fc::oexception& error) override;
+    };
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     class node_impl : public peer_connection_delegate
     {
@@ -251,7 +338,7 @@ namespace bts { namespace net { namespace detail {
 #ifdef P2P_IN_DEDICATED_THREAD
       std::shared_ptr<fc::thread> _thread;
 #endif // P2P_IN_DEDICATED_THREAD
-      node_delegate*       _delegate;
+      std::unique_ptr<statistics_gathering_node_delegate_wrapper> _delegate;
       fc::sha256           _chain_id;
 
 #define NODE_CONFIGURATION_FILENAME      "node_config.json"
@@ -511,6 +598,7 @@ namespace bts { namespace net { namespace detail {
       void                       clear_peer_database();
       void                       set_total_bandwidth_limit( uint32_t upload_bytes_per_second, uint32_t download_bytes_per_second );
       void                       disable_peer_advertising();
+      fc::variant_object         get_call_statistics() const;
 
       fc::variant_object         network_get_info() const;
       fc::variant_object         network_get_usage_stats() const;
@@ -542,7 +630,7 @@ namespace bts { namespace net { namespace detail {
 #ifdef P2P_IN_DEDICATED_THREAD
       _thread(std::make_shared<fc::thread>("p2p")),
 #endif // P2P_IN_DEDICATED_THREAD
-      _delegate( nullptr ),
+      _delegate(nullptr),
       _potential_peer_database_updated(false),
       _sync_items_to_fetch_updated(false),
       _items_to_fetch_updated(false),
@@ -2698,11 +2786,13 @@ namespace bts { namespace net { namespace detail {
       shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
       fc::ecc::compact_signature signature = _node_configuration.private_key.sign_compact(shared_secret_encoder.result());
 
+      fc::ip::endpoint local_endpoint(peer->get_socket().local_endpoint());
+
       hello_message hello(_user_agent_string, 
                           core_protocol_version, 
-                          peer->inbound_address,
-                          peer->inbound_port, 
-                          peer->outbound_port,
+                          local_endpoint.get_address(),
+                          _actual_listening_endpoint.port(), 
+                          local_endpoint.port(),
                           _node_id,
                           signature,
                           _chain_id, 
@@ -2768,7 +2858,9 @@ namespace bts { namespace net { namespace detail {
     void node_impl::set_node_delegate( node_delegate* del )
     {
       VERIFY_CORRECT_THREAD();
-      _delegate = del;
+      _delegate.reset();
+      if (del)
+        _delegate.reset(new statistics_gathering_node_delegate_wrapper(del));
       if( _delegate )
         _chain_id = del->get_chain_id();
     }
@@ -3320,6 +3412,12 @@ namespace bts { namespace net { namespace detail {
       _peer_advertising_disabled = true;
     }
 
+    fc::variant_object node_impl::get_call_statistics() const
+    {
+      VERIFY_CORRECT_THREAD();
+      return _delegate->get_call_statistics();
+    }
+
     fc::variant_object node_impl::network_get_info() const
     {
       VERIFY_CORRECT_THREAD();
@@ -3493,6 +3591,11 @@ namespace bts { namespace net { namespace detail {
     INVOKE_IN_IMPL(disable_peer_advertising);
   }
 
+  fc::variant_object node::get_call_statistics() const
+  {
+    INVOKE_IN_IMPL(get_call_statistics);
+  }
+
   fc::variant_object node::network_get_info() const
   {
     INVOKE_IN_IMPL(network_get_info);
@@ -3603,6 +3706,110 @@ namespace bts { namespace net { namespace detail {
       INVOKE_IN_DELEGATE_THREAD(error_encountered, message, error);
     }
 #undef INVOKE_IN_DELEGATE_THREAD
+
+#define ROLLING_WINDOW_SIZE 1000
+#define INITIALIZE_ACCUMULATOR(r, data, method_name) \
+      , BOOST_PP_CAT(_, BOOST_PP_CAT(method_name, _accumulator))(boost::accumulators::tag::rolling_window::window_size = ROLLING_WINDOW_SIZE)
+
+    statistics_gathering_node_delegate_wrapper::statistics_gathering_node_delegate_wrapper(node_delegate* delegate) :
+      _node_delegate(delegate)
+      BOOST_PP_SEQ_FOR_EACH(INITIALIZE_ACCUMULATOR, unused, NODE_DELEGATE_METHOD_NAMES)
+    {}
+#undef INITIALIZE_ACCUMULATOR
+
+    fc::variant_object statistics_gathering_node_delegate_wrapper::get_call_statistics()
+    {
+      fc::mutable_variant_object statistics;
+      std::ostringstream note;
+      note << "All times are in microseconds, mean is the average of the last " << ROLLING_WINDOW_SIZE << " call times"; 
+      statistics["_note"] = note.str();
+
+#define ADD_STATISTICS_FOR_METHOD(r, data, method_name) \
+      fc::mutable_variant_object BOOST_PP_CAT(method_name, _stats); \
+      BOOST_PP_CAT(method_name, _stats)["min"] = boost::accumulators::min(BOOST_PP_CAT(_, BOOST_PP_CAT(method_name, _accumulator))); \
+      BOOST_PP_CAT(method_name, _stats)["mean"] = boost::accumulators::rolling_mean(BOOST_PP_CAT(_, BOOST_PP_CAT(method_name, _accumulator))); \
+      BOOST_PP_CAT(method_name, _stats)["max"] = boost::accumulators::max(BOOST_PP_CAT(_, BOOST_PP_CAT(method_name, _accumulator))); \
+      BOOST_PP_CAT(method_name, _stats)["sum"] = boost::accumulators::sum(BOOST_PP_CAT(_, BOOST_PP_CAT(method_name, _accumulator))); \
+      BOOST_PP_CAT(method_name, _stats)["count"] = boost::accumulators::count(BOOST_PP_CAT(_, BOOST_PP_CAT(method_name, _accumulator))); \
+      statistics[BOOST_PP_STRINGIZE(method_name)] = BOOST_PP_CAT(method_name, _stats);
+
+      BOOST_PP_SEQ_FOR_EACH(ADD_STATISTICS_FOR_METHOD, unused, NODE_DELEGATE_METHOD_NAMES)
+#undef ADD_STATISTICS_FOR_METHOD
+
+      return statistics;
+    }
+
+#define INVOKE_AND_COLLECT_STATISTICS(method_name, ...) \
+    call_statistics_collector statistics_collector(#method_name, &_ ## method_name ## _accumulator); \
+    return _node_delegate->method_name(__VA_ARGS__)
+    
+    bool statistics_gathering_node_delegate_wrapper::has_item( const net::item_id& id )
+    {
+      INVOKE_AND_COLLECT_STATISTICS(has_item, id);
+    }
+
+    bool statistics_gathering_node_delegate_wrapper::handle_message( const message& message_to_handle, bool sync_mode )
+    {
+      INVOKE_AND_COLLECT_STATISTICS(handle_message, message_to_handle, sync_mode);
+    }
+
+    std::vector<item_hash_t> statistics_gathering_node_delegate_wrapper::get_item_ids(uint32_t item_type,
+                                                                                  const std::vector<item_hash_t>& blockchain_synopsis,
+                                                                                  uint32_t& remaining_item_count,
+                                                                                  uint32_t limit /* = 2000 */)
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_item_ids, item_type, blockchain_synopsis, remaining_item_count, limit);
+    }
+
+    message statistics_gathering_node_delegate_wrapper::get_item( const item_id& id )
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_item, id);
+    }
+
+    fc::sha256 statistics_gathering_node_delegate_wrapper::get_chain_id() const
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_chain_id);
+    }
+
+    std::vector<item_hash_t> statistics_gathering_node_delegate_wrapper::get_blockchain_synopsis(uint32_t item_type, 
+                                                                                             const bts::net::item_hash_t& reference_point /* = bts::net::item_hash_t() */, 
+                                                                                             uint32_t number_of_blocks_after_reference_point /* = 0 */)
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_blockchain_synopsis, item_type, reference_point, number_of_blocks_after_reference_point);
+    }
+
+    void statistics_gathering_node_delegate_wrapper::sync_status( uint32_t item_type, uint32_t item_count )
+    {
+      INVOKE_AND_COLLECT_STATISTICS(sync_status, item_type, item_count);
+    }
+
+    void statistics_gathering_node_delegate_wrapper::connection_count_changed( uint32_t c )
+    {
+      INVOKE_AND_COLLECT_STATISTICS(connection_count_changed, c);
+    }
+
+    uint32_t statistics_gathering_node_delegate_wrapper::get_block_number(const item_hash_t& block_id)
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_block_number, block_id);
+    }
+    fc::time_point_sec statistics_gathering_node_delegate_wrapper::get_block_time(const item_hash_t& block_id)
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_block_time, block_id);
+    }
+
+    /** returns bts::blockchain::now() */
+    fc::time_point_sec statistics_gathering_node_delegate_wrapper::get_blockchain_now()
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_blockchain_now);
+    }
+
+    void statistics_gathering_node_delegate_wrapper::error_encountered(const std::string& message, const fc::oexception& error)
+    {
+      INVOKE_AND_COLLECT_STATISTICS(error_encountered, message, error);
+    }
+
+#undef INVOKE_AND_COLLECT_STATISTICS
+
   } // end namespace detail
 
 } } // end namespace bts::net

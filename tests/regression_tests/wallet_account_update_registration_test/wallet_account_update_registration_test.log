@@ -5,14 +5,14 @@ OK
 default (unlocked) >>> wallet_account_create test
 "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                FEE                 MEMO                                    ID      
-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-[redacted]          PENDING   delegate0           test                100.00000 XTS         0.10000 XTS                                                 [redacted]
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
 default (unlocked) >>> debug_wait_block_interval 1
 OK
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
-------------------------------------------------------------
+============================================================
 test                            100.00000 XTS               
 default (unlocked) >>>  debug_enable_output false
 >>>  wallet_account_register test test null 100
@@ -33,12 +33,12 @@ Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> help wallet_account_update_registration
 Usage:
-wallet_account_update_registration <account_name> <pay_from_account> [public_data] [delegate_pay_rate] [new_active_key]   Updates the data published about a given account
+wallet_account_update_registration <account_name> <pay_from_account> [public_data] [delegate_pay_rate]   Updates the data published about a given account
 Updates the data published about a given account
 
 Parameters:
@@ -46,10 +46,9 @@ Parameters:
   pay_from_account (account_name, required): the account from which fees will be paid
   public_data (json_variant, optional, defaults to null): public data about the account
   delegate_pay_rate (uint8_t, optional, defaults to 255): delegate pay rate: 0 to 100 if updating or upgrading to a delegate, and 255 for a normal account
-  new_active_key (string, optional, defaults to ""): update account's active key, or leave blank to leave current key in place
 
 Returns:
-  transaction_record
+  signed_transaction
 
 aliases: update_registration
 default (unlocked) >>>  debug_enable_output false
@@ -67,16 +66,15 @@ Last Updated: [redacted]
 Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
-- XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 102   test                            0.0000000000 % 0        0        N/A           10 %     0.00000 XTS         NONE      
 
 default (unlocked) >>>  blockchain_list_accounts test
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
-test *                             XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55           [redacted]            0              0              
+test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
 default (unlocked) >>> blockchain_list_accounts delegate0 1
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -90,7 +88,7 @@ Active Key History:
 - XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>>  debug_enable_output false
@@ -114,7 +112,7 @@ Active Key History:
 - XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-----------------------------------------------------------------------------------------------------------------------------
+============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> quit

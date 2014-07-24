@@ -44,17 +44,30 @@ namespace bts{ namespace blockchain {
    {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
-      if( str[0] < 'a' || str[0] > 'z' ) return false;
-      if (str[str.size() - 1] == '-' ) return false;
-      for( const auto& c : str )
+      if( !isalpha(str[0]) ) return false;
+      if ( !isalnum(str[str.size()-1]) ) return false;
+
+      std::string subname(str);
+      std::string supername;
+      int dot = str.find('.');
+      if( dot != std::string::npos )
       {
-          if( c >= 'a' && c <= 'z' ) continue;
-          else if( c >= '0' && c <= '9' ) continue;
+        subname = str.substr(0, dot);
+        //There is definitely a remainder; we checked above that the last character is not a dot
+        supername = str.substr(dot+1);
+      }
+
+      if ( !isalnum(subname[subname.size()-1]) ) return false;
+      for( const auto& c : subname )
+      {
+          if( isalnum(c) ) continue;
           else if( c == '-' ) continue;
-          else if( c == '.' ) continue;
           else return false;
       }
-      return true;
+
+      if( supername.empty() )
+        return true;
+      return is_valid_account_name(supername);
    }
 
    asset_id_type chain_interface::last_asset_id()const

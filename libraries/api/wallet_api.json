@@ -295,6 +295,18 @@
               "default_value" : ""
             },
             {
+               "name" : "asset_symbol",
+               "type" : "string",
+               "description" : "only include transactions involving the specified asset, or \"\" to include all",
+               "default_value" : ""
+            },
+            {
+               "name" : "limit",
+               "type" : "int32_t",
+               "description" : "limit the number of returned transactions; negative for most recent and positive for least recent. 0 does not limit",
+               "default_value" : 0
+            },
+            {
                "name" : "start_block_num",
                "type" : "uint32_t",
                "description" : "the earliest block number to list transactions from; 0 to include all transactions starting from genesis",
@@ -305,12 +317,6 @@
                "type" : "uint32_t",
                "description" : "the latest block to list transaction from; -1 to include all transactions ending at the head block",
                "default_value" : -1
-            },
-            {
-               "name" : "asset_symbol",
-               "type" : "string",
-               "description" : "only include transactions involving the specified asset, or \"\" to include all",
-               "default_value" : ""
             }
         ],
         "prerequisites" : ["wallet_open"],
@@ -318,12 +324,19 @@
         "aliases" : ["history"]
       },
       {
-        "method_name": "wallet_clear_pending_transactions",
-        "description": "Clear \"stuck\" pending transactions from the wallet.",
+        "method_name": "wallet_remove_transaction",
+        "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
         "return_type": "void",
-        "parameters" : [],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : []
+        "parameters" :
+          [
+            {
+              "name" : "transaction_id",
+              "type" : "string",
+              "description" : "the id (or id prefix) of the transaction record"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["remove_transaction"]
       },
       {
         "method_name": "wallet_get_pending_transaction_errors",
@@ -480,7 +493,7 @@
       },
       {
         "method_name": "wallet_multipart_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
+        "description": "Sends given amount to the given address.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
         "return_type": "signed_transaction_array",
         "parameters" : 
           [
@@ -497,7 +510,7 @@
             {
               "name" : "from_account_name", 
               "type" : "sending_account_name", 
-              "description" : "the source account(s) to draw the shares from"
+              "description" : "the source account to draw the shares from"
             },
             {
               "name" : "to_account_name", 
@@ -516,7 +529,7 @@
       },
       {
         "method_name": "wallet_transfer",
-        "description": "Sends given amount to the given address, assumes shares in DAC.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+        "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
         "return_type": "signed_transaction",
         "parameters" : 
           [
@@ -533,7 +546,7 @@
             {
               "name" : "from_account_name", 
               "type" : "sending_account_name", 
-              "description" : "the source account(s) to draw the shares from"
+              "description" : "the source account to draw the shares from"
             },
             {
               "name" : "to_account_name", 
@@ -545,10 +558,62 @@
               "type" : "string", 
               "description" : "a memo to store with the transaction",
               "default_value" : ""
+            },
+            {
+              "name" : "vote_method", 
+              "type" : "vote_selection_method", 
+              "description" : "enumeration [vote_none | vote_all | vote_random] ",
+              "default_value" : "vote_random"
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer"]
+      },
+      {
+        "method_name": "wallet_transfer_from",
+        "description": "Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+        "return_type": "signed_transaction",
+        "parameters" :
+          [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "sending_account_name",
+              "description" : "the account to show the recipient as being the sender (requires account's private key to be in wallet). Leave empty to send anonymously."
+            },
+            {
+              "name" : "to_account_name",
+              "type" : "receive_account_name",
+              "description" : "the account to transfer the shares to"
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random] ",
+              "default_value" : "vote_random"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_rescan_blockchain",
@@ -591,6 +656,21 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["scan_transaction"]
+      },
+      {
+        "method_name": "wallet_rebroadcast_transaction",
+        "description": "Rebroadcasts the specified transaction",
+        "return_type": "void",
+        "parameters" : 
+          [
+            {
+              "name" : "transaction_id", 
+              "type" : "string", 
+              "description" : "the id (or id prefix) of the transaction"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases" : ["rebroadcast"]
       },
       {
          "method_name" : "wallet_account_register",
@@ -1287,6 +1367,19 @@
                 "name" : "client_signature",
                 "type" : "compact_signature",
                 "description" : "The client's signature of the shared secret."
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_publish_slate",
+         "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "The account to publish the slate ID under"
             }
          ],
          "prerequisites" : ["wallet_unlocked"]

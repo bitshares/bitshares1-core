@@ -22,8 +22,10 @@ typedef bts::client::client const * const cptr;
 string pretty_line( int size, char c = '=' );
 string pretty_shorten( const string& str, size_t max_size );
 string pretty_timestamp( const time_point_sec& timestamp );
-string pretty_age( const time_point_sec& timestamp );
+string pretty_age( const time_point_sec& timestamp, bool from_now = false, const string& suffix = string() );
 string pretty_percent( double part, double whole, int precision = 2 );
+
+string pretty_info( fc::mutable_variant_object info, cptr client );
 
 string pretty_delegate_list( const vector<account_record>& delegate_records, cptr client );
 
@@ -37,7 +39,7 @@ string pretty_account( const oaccount_record& record, cptr client );
 
 string pretty_balances( const account_balance_summary_type& balances, cptr client );
 
-string pretty_vote_summary( const account_vote_summary_type& votes );
+string pretty_vote_summary( const account_vote_summary_type& votes, cptr client );
 
 string pretty_market_orders( const vector<market_order>& market_orders, cptr client );
 
