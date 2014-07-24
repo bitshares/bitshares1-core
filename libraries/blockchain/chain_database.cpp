@@ -93,7 +93,10 @@ namespace bts { namespace blockchain {
 
                          // DISABLE MARKET ISSUED ASSETS
                          if( quote_asset->is_market_issued() )
+                         {
+
                             return; // don't execute anything.
+                         }
 
                          // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
                          // next market class and then back up one
@@ -126,6 +129,9 @@ namespace bts { namespace blockchain {
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+                         FC_ASSERT( market_stat, "market status should have been set when the order is created" );
+                         price max_bid = market_stat->maximum_bid();
+                         price min_ask = market_stat->minimum_ask();
                    
                          while( get_next_bid() && get_next_ask() )
                          {
@@ -165,11 +171,21 @@ namespace bts { namespace blockchain {
                             if( _current_bid->type == short_order )
                             {
                                usd_paid_by_bid = usd_received_by_ask;
+                               if( _current_bid->get_price() > max_bid )
+                               {
+                                  _current_bid.reset();
+                                  continue;
+                               }
                             }
 
                             if( _current_ask->type == cover_order )
                             {
-                                usd_received_by_ask = usd_paid_by_bid;
+                               usd_received_by_ask = usd_paid_by_bid;
+                               if( _current_ask->get_price() < min_ask )
+                               {
+                                  _current_ask.reset();
+                                  continue;
+                               }
                             }
 
                             FC_ASSERT( usd_paid_by_bid.amount >= 0 );
@@ -302,6 +318,14 @@ namespace bts { namespace blockchain {
                                _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                             }
                          } // while bid && ask 
+
+                         if( _current_bid && _current_ask )
+                         {
+                            market_stat->avg_price_24h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1);
+                            market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
+                            market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
+                            market_stat->avg_price_24h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY+1);
+                         }
                    
                          if( quote_asset->is_market_issued() )
                          {
