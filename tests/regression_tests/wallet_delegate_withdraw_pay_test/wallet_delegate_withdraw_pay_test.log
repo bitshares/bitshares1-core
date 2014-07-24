@@ -1,29 +1,223 @@
 default (unlocked) >>> debug_filter_output_for_tests true
 OK
-default (unlocked) >>> wallet_delegate_set_transaction_scanning true
-OK
-default (unlocked) >>> wallet_account_create testaccount
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                FEE                 MEMO                                    ID      
-----------------------------------------------------------------------------------------------------------------------------------------------------------------
-[redacted]          PENDING   delegate0           testaccount         100.00000 XTS         0.10000 XTS                                                 [redacted]
-default (unlocked) >>> debug_wait_block_interval 1
-OK
-default (unlocked) >>> wallet_account_balance testaccount
-ACCOUNT                         BALANCE                     
-------------------------------------------------------------
-testaccount                     100.00000 XTS               
-default (unlocked) >>>  debug_enable_output false
->>> wallet_account_register testaccount testaccount null 100
->>> debug_wait_block_interval 1
->>> debug_enable_output true
-OK
-default (unlocked) >>> blockchain_list_accounts testaccount 10
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
--------------------------------------------------------------------------------------------------------------------------------------------------------
-testaccount *                      XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
-default (unlocked) >>> wallet_delegate_withdraw_pay delegate0 testaccount 10 "Withdrawing some amount to testaccount" 
+default (unlocked) >>> wallet_set_priority_fee 100000
+100,000.00000 XTS
+default (unlocked) >>> wallet_asset_create XBC ASSET1 delegate0 "CREATING ASSET1" null 500 100
+{
+  "expiration": "20140620T164000",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 10000000000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "create_asset_op_type",
+      "data": {
+        "symbol": "XBC",
+        "name": "ASSET1",
+        "description": "CREATING ASSET1",
+        "public_data": null,
+        "issuer_account_id": 1,
+        "maximum_share_supply": 50000,
+        "precision": 100
+      }
+    }
+  ],
+  "signatures": [
+    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e44292c0696e8a3cd66dd16516e6a908122e40acff95e2900fb7d196e229502bc",
+    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c3417fc8bd6a8ee02bd2d76813593f4ed154d3bbae489e948e697c59d70e32959"
+  ]
+}
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
+default (unlocked) >>> debug_wait 2 
+OK
+default (unlocked) >>> wallet_asset_create XCD ASSET2 delegate0 "CREATING ASSET2" null 500 100
+{
+  "expiration": "20140620T164010",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 19999884160,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "create_asset_op_type",
+      "data": {
+        "symbol": "XCD",
+        "name": "ASSET2",
+        "description": "CREATING ASSET2",
+        "public_data": null,
+        "issuer_account_id": 1,
+        "maximum_share_supply": 50000,
+        "precision": 100
+      }
+    }
+  ],
+  "signatures": [
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d91b43ed13a9c470af4a7e292858287ddc2327a0dbd2091ab14a3de3867e615895",
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749600a1fd04131b5ac309668fbb856484336b657f1b03699ca42beb2e31de2d6c0ff"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2 
+OK
+default (unlocked) >>> wallet_asset_create XDE ASSET3  delegate0 "CREATING ASSET3" null 500 100
+{
+  "expiration": "20140620T164020",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 39999773440,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "create_asset_op_type",
+      "data": {
+        "symbol": "XDE",
+        "name": "ASSET3",
+        "description": "CREATING ASSET3",
+        "public_data": null,
+        "issuer_account_id": 1,
+        "maximum_share_supply": 50000,
+        "precision": 100
+      }
+    }
+  ],
+  "signatures": [
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bf991bf0ea7e8eb6618415c598c2f945bfa832b9c136a9c054ea596b12338b206",
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c044ee07ae0eb0b93e9f29808e15f150dd256de7d1400d6533bb7367847e4e659d"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2 
+OK
+default (unlocked) >>> wallet_asset_create XEF ASSET4 delegate0 "CREATING ASSET4" null 500 100
+{
+  "expiration": "20140620T164030",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 79999310080,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "create_asset_op_type",
+      "data": {
+        "symbol": "XEF",
+        "name": "ASSET4",
+        "description": "CREATING ASSET4",
+        "public_data": null,
+        "issuer_account_id": 1,
+        "maximum_share_supply": 50000,
+        "precision": 100
+      }
+    }
+  ],
+  "signatures": [
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00893d8be72491fa02105fe5b4ad46756b0e870250a3b0a3618a9bcd15f4841533",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66e61d48115d78ea123b83163ec4f3008cbd494cb5f0afeb2b964863f0d17ad810"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2 
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_set_priority_fee .1
+0.10000 XTS
+default (unlocked) >>> wallet_account_create test
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> blockchain_list_blocks
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
+===================================================================================================================
+6       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+5       [redacted]          [redacted]                      1       381     799,993.10080 XTS[redacted][redacted]     
+4       [redacted]          [redacted]                      1       381     399,997.73440 XTS[redacted][redacted]     
+3       [redacted]          [redacted]                      1       381     199,998.84160 XTS[redacted][redacted]     
+2       [redacted]          [redacted]                      1       381     100,000.00000 XTS[redacted][redacted]     
+1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+default (unlocked) >>> blockchain_get_account delegate41 
+Name: delegate41
+Registered: Genesis (Keyhotee Founder)
+Last Updated: [redacted]
+Owner Key: XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw
+Active Key History:
+- XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+42    delegate41                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+
+default (unlocked) >>> blockchain_get_account delegate41 
+Name: delegate41
+Registered: Genesis (Keyhotee Founder)
+Last Updated: [redacted]
+Owner Key: XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw
+Active Key History:
+- XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+42    delegate41                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+
+default (unlocked) >>> blockchain_get_account delegate43 
+Name: delegate43
+Registered: Genesis (Keyhotee Founder)
+Last Updated: [redacted]
+Owner Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
+Active Key History:
+- XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+44    delegate43                      0.0000002896 % 1        0        100.00 %      100 %    5.78698 XTS         5         
+
+default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
+{
+  "expiration": "20140620T164050",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_pay_op_type",
+      "data": {
+        "amount": 20000,
+        "account_id": 45
+      }
+    },{
+      "type": "deposit_op_type",
+      "data": {
+        "amount": 10000,
+        "condition": {
+          "asset_id": 0,
+          "delegate_slate_id": 0,
+          "type": "withdraw_signature_type",
+          "data": {
+            "owner": "XTS5RGH3r7HjkmRanTFLGRh6nkzsXbo8ZNSe",
+            "memo": {
+              "one_time_key": "XTS64mncWuqqWPwY8um8DhGvwKtVjdMgeKHE5DXAYV4v5p7petzU7",
+              "encrypted_memo_data": "4d09e66d65f3370a7829f3bba16dd5b553ce877d8cbe14ba9f4725739c5675d3370ca7c6a48610d5f04d3bff857d4430b5a2d5192f1fcadd5ce4e592e96cf297"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "signatures": [
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96fbe91397252bfbf1abb76b3aeed170ba7157d4320d20e72142dfbb875c512e7a7"
+  ]
+}
 default (unlocked) >>> quit
