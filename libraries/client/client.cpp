@@ -2588,47 +2588,44 @@ config load_config( const fc::path& datadir )
 
     variant_object client_impl::blockchain_get_config() const
     {
-       fc::mutable_variant_object info;
-       info["blockchain_id"]                        = _chain_db->chain_id();
+       fc::mutable_variant_object config;
+       config["blockchain_id"]              = _chain_db->chain_id();
 
-       info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
-       info["name"]                                 = BTS_BLOCKCHAIN_NAME;
-       info["version"]                              = BTS_BLOCKCHAIN_VERSION;
-       info["genesis_timestamp"]                    = _chain_db->get_genesis_timestamp();
+       config["symbol"]                     = BTS_BLOCKCHAIN_SYMBOL;
+       config["name"]                       = BTS_BLOCKCHAIN_NAME;
+       config["version"]                    = BTS_BLOCKCHAIN_VERSION;
+       config["genesis_timestamp"]          = _chain_db->get_genesis_timestamp();
 
-       info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["target_block_size"]                    = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-       info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
-       // TODO: move to_prety_asset to cli pretty print and just return raw shares 
-       info["min_market_depth"]                     = _chain_db->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT, 0) );
+       config["block_interval"]             = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       config["target_block_size"]          = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       config["max_block_size"]             = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       config["max_blockchain_size"]        = BTS_BLOCKCHAIN_MAX_SIZE;
 
-       info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
-       info["min_block_fee"]                        = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
-       info["inactivity_fee_apr"]                   = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       info["priority_fee"]                         = _wallet->is_open() ? _chain_db->to_pretty_asset( _wallet->get_priority_fee() ) : variant();
+       config["address_prefix"]             = BTS_ADDRESS_PREFIX;
+       config["min_block_fee"]              = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
+       config["inactivity_fee_apr"]         = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
+       config["priority_fee"]               = _chain_db->get_priority_fee();
 
-       info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       const auto delegate_reg_fee                  = _chain_db->get_delegate_registration_fee();
-       info["delegate_reg_fee"]                     = _chain_db->to_pretty_asset( asset( delegate_reg_fee ) );
+       config["delegate_num"]               = BTS_BLOCKCHAIN_NUM_DELEGATES;
+       config["delegate_reg_fee"]           = _chain_db->get_delegate_registration_fee();
 
-       info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-       info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
-       info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+       config["name_size_max"]              = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       config["memo_size_max"]              = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+       config["data_size_max"]              = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
 
-       info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
-       info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-       const auto asset_reg_fee                     = _chain_db->get_asset_registration_fee();
-       info["asset_reg_fee"]                        = _chain_db->to_pretty_asset( asset( asset_reg_fee ) );
-       info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
+       config["symbol_size_max"]            = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
+       config["symbol_size_min"]            = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
+       config["asset_reg_fee"]              = _chain_db->get_asset_registration_fee();
+       config["asset_shares_max"]           = BTS_BLOCKCHAIN_MAX_SHARES;
 
-       info["proposal_vote_message_max"]            = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
+       config["min_market_depth"]           = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
 
-       info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
-       info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
+       config["proposal_vote_message_max"]  = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
 
-       return info;
+       config["max_pending_queue_size"]     = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
+       config["max_trx_per_second"]         = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
+       return config;
     }
 
     variant_object client_impl::get_info()const
