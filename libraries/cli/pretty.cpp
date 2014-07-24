@@ -131,7 +131,39 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         }
     }
 
-    out << fc::json::to_pretty_string( info );
+    out << fc::json::to_pretty_string( info ) << "\n";
+    return out.str();
+}
+
+string pretty_blockchain_config( fc::mutable_variant_object config, cptr client )
+{
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    const auto timestamp = config["genesis_timestamp"].as<time_point_sec>();
+    config["genesis_timestamp"] = pretty_timestamp( timestamp );
+
+    const auto min_fee = config["min_block_fee"].as<share_type>();
+    config["min_block_fee"] = client->get_chain()->to_pretty_asset( asset( min_fee ) );
+
+    const auto inactivity_fee = config["inactivity_fee_apr"].as<share_type>();
+    config["inactivity_fee_apr"] = client->get_chain()->to_pretty_asset( asset( inactivity_fee ) );
+
+    const auto priority_fee = config["priority_fee"].as<share_type>();
+    config["priority_fee"] = client->get_chain()->to_pretty_asset( asset( priority_fee ) );
+
+    const auto delegate_reg_fee = config["delegate_reg_fee"].as<share_type>();
+    config["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
+
+    const auto asset_reg_fee = config["asset_reg_fee"].as<share_type>();
+    config["asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( asset_reg_fee ) );
+
+    const auto min_market_depth = config["min_market_depth"].as<share_type>();
+    config["min_market_depth"] = client->get_chain()->to_pretty_asset( asset( min_market_depth ) );
+
+    out << fc::json::to_pretty_string( config ) << "\n";
     return out.str();
 }
 
