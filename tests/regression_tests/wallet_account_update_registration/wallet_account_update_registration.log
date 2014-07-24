@@ -14,17 +14,17 @@ default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
 test                            100.00000 XTS               
-default (unlocked) >>>  debug_enable_output false
+default (unlocked) >>> debug_enable_output false
 >>>  wallet_account_register test test null 100
 >>>  debug_enable_output true
 OK
 default (unlocked) >>> debug_wait_block_interval 1
 OK
-default (unlocked) >>>  blockchain_list_accounts test
+default (unlocked) >>> blockchain_list_accounts test
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
-default (unlocked) >>>  blockchain_get_account test
+default (unlocked) >>> blockchain_get_account test
 Name: test
 Registered: [redacted]
 Last Updated: [redacted]
@@ -51,15 +51,15 @@ Returns:
   signed_transaction
 
 aliases: update_registration
-default (unlocked) >>>  debug_enable_output false
->>> wallet_account_update_registration  test test null 10 XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55
+default (unlocked) >>> debug_enable_output false
+>>> wallet_account_update_registration test test null 10 XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55
 >>> debug_enable_output true
 OK
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 10
 OK
-default (unlocked) >>>  blockchain_get_account test
+default (unlocked) >>> blockchain_get_account test
 Name: test
 Registered: [redacted]
 Last Updated: [redacted]
@@ -71,7 +71,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ============================================================================================================================
 102   test                            0.0000000000 % 0        0        N/A           10 %     0.00000 XTS         NONE      
 
-default (unlocked) >>>  blockchain_list_accounts test
+default (unlocked) >>> blockchain_list_accounts test
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
@@ -79,7 +79,7 @@ default (unlocked) >>> blockchain_list_accounts delegate0 1
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            0              0              
-default (unlocked) >>>  blockchain_get_account delegate0
+default (unlocked) >>> blockchain_get_account delegate0
 Name: delegate0
 Registered: Genesis (Keyhotee Founder)
 Last Updated: [redacted]
@@ -91,7 +91,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
-default (unlocked) >>>  debug_enable_output false
+default (unlocked) >>> debug_enable_output false
 >>> wallet_account_update_registration  delegate0 delegate0 null 10  XTS75VFyFThZbSj9vwnfhDR6pcttquMtUPxTwKBgVJfWEt9UdRtmM
 >>> debug_enable_output true
 OK
@@ -103,7 +103,7 @@ default (unlocked) >>> blockchain_list_accounts delegate0 1
 NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            0              0              
-default (unlocked) >>>  blockchain_get_account delegate0
+default (unlocked) >>> blockchain_get_account delegate0
 Name: delegate0
 Registered: Genesis (Keyhotee Founder)
 Last Updated: [redacted]

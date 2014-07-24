@@ -1,7 +1,7 @@
 default (unlocked) >>> debug_filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_account_create test
-"XTS5kmVHDwLN9zsxa18jKFrLn6yPJkBsxJJHmFeRygEpUaBWCqcb4"
+"XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -12,7 +12,7 @@ default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
-  "expiration": "20140620T164010",
+  "expiration": "20140620T164000",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -35,8 +35,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22ae70db576a423649aa3cb4964ecc62004c5e58d99561e2d2ab1f7f070358e43a",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bc15584a2802b11a2a1c5523f7bdc3977e2c7f9fffda579136a83a6848f2802cb"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749603e7439ce23d2466deee2d12ab18d0c527e6498601210b5f8e819c8f60a391d72",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22f374f47f8d016ef4eeb4d77078ed4d210162e0891f5ae191c88bda38fe5a411f"
   ]
 }
 default (unlocked) >>> wallet_account_balance test
@@ -50,9 +50,8 @@ OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 ===================================================================================================================
-3       [redacted]          [redacted]                      1       392     0.10000 XTS     [redacted][redacted]     
-2       [redacted]          [redacted]                      1       410     0.10000 XTS     [redacted][redacted]     
-1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+2       [redacted]          [redacted]                      1       392     0.10000 XTS     [redacted][redacted]     
+1       [redacted]          [redacted]                      1       410     0.10000 XTS     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
@@ -60,7 +59,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
 {
-  "expiration": "20140620T164020",
+  "expiration": "20140620T164010",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -86,10 +85,10 @@ default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
           "delegate_slate_id": 0,
           "type": "withdraw_signature_type",
           "data": {
-            "owner": "XTS2UYQDzrV1WxqZxo1rsCZBxaZAsjMBmnWg",
+            "owner": "XTSEQsyyiZNVUvyMGxk3JZFiJHntmuom87Yy",
             "memo": {
-              "one_time_key": "XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ",
-              "encrypted_memo_data": "e465255c8bca471b4107dac9b3d06aa72b4f8eeb6077067edf9258b71f686b9d0e4f44a98e3c9c2e8c32c14bab9c73498273bec4997334703a7264119bad00d1"
+              "one_time_key": "XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we",
+              "encrypted_memo_data": "435d19f622257718d24c607eae8aab0f24ed6c6e8d87f4aa1a7234cbee31cb8ce42f1d992a9906343ee61d791ca9b2f4f368941d2a58277170a2b23f360ada2b"
             }
           }
         }
@@ -97,8 +96,8 @@ default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0059acda7a1219bf023b3948481f2dd83f1549a2855b9d9ef6f87d4085f5810678",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66c20348c09ca0d92ea0b975d1856a16cd73554c9ca6f8b0ac77cf5822d2497b12"
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9b029cebc47982962b2b0f47d6a8639fee7a0654b684e823fb7c886bc9a100346",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f003bcd40d69ef15b951f218fdfe46ef37305412e145cc9d2336c5ee0209b0bf980"
   ]
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
