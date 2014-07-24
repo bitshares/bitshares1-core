@@ -678,6 +678,11 @@ namespace bts { namespace cli {
                   const auto& info = result.as<variant_object>();
                   *_out << pretty_info( info, _client );
               }
+              else if( method_name == "blockchain_get_config" )
+              {
+                  const auto& config = result.as<variant_object>();
+                  *_out << pretty_blockchain_config( config, _client );
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
                   const auto& transactions = result.as<vector<pretty_transaction>>();
