@@ -27,6 +27,8 @@ string pretty_percent( double part, double whole, int precision = 2 );
 
 string pretty_info( fc::mutable_variant_object info, cptr client );
 
+string pretty_blockchain_config( fc::mutable_variant_object config, cptr client );
+
 string pretty_delegate_list( const vector<account_record>& delegate_records, cptr client );
 
 string pretty_block_list( const vector<block_record>& block_records, cptr client );
