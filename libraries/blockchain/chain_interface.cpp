@@ -60,7 +60,7 @@ namespace bts{ namespace blockchain {
       if ( !isalnum(subname[subname.size()-1]) || isupper(subname[subname.size()-1]) ) return false;
       for( const auto& c : subname )
       {
-          if( isalnum(c) && islower(c) ) continue;
+          if( isalnum(c) && !isupper(c) ) continue;
           else if( c == '-' ) continue;
           else return false;
       }
