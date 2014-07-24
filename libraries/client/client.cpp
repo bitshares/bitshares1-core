@@ -1859,32 +1859,32 @@ config load_config( const fc::path& datadir )
       return oacct->name;
     }
 
-    string detail::client_impl::wallet_dump_private_key(const std::string& address_or_public_key)
+    string detail::client_impl::wallet_dump_private_key( const std::string& input )
     {
-      try {
-          // TODO is_valid should not throw, should return false...
-         bool is_address = true;
-         try {
-            is_address = address::is_valid(address_or_public_key);
-         }
-         catch (...)
-         {
-            is_address = false;
-         }
-         if (is_address)
-         {
-             address addr = address(address_or_public_key);
-             auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(addr) );
-             return wif_private_key;
-         }
-         else
-         {
-              public_key_type pubkey = public_key_type(address_or_public_key);
-              address addr = address(pubkey);
-              auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(addr) );
-              return wif_private_key;
-         }
-    } FC_CAPTURE_AND_RETHROW( (address_or_public_key) ) }
+      try
+      {
+          return utilities::key_to_wif( _wallet->get_account_private_key( input ) );
+      }
+      catch( ... )
+      {
+          try
+          {
+             return utilities::key_to_wif( _wallet->get_private_key( address( input ) ) );
+          }
+          catch( ... )
+          {
+              try
+              {
+                 return utilities::key_to_wif( _wallet->get_private_key( address( public_key_type( input ) ) ) );
+              }
+              catch( ... )
+              {
+              }
+          }
+      }
+
+      return "key not found";
+    }
 
     vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t count) const
     {
@@ -3048,9 +3048,9 @@ config load_config( const fc::path& datadir )
                                                   start_time, duration, granularity );
    }
 
-   vector<market_order>    client_impl::wallet_market_order_list( const string& quote_symbol,
-                                                                  const string& base_symbol,
-                                                                  int64_t limit  )
+   vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
+                                                               const string& base_symbol,
+                                                               int64_t limit  )
    {
       return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
    }
@@ -3068,11 +3068,6 @@ config load_config( const fc::path& datadir )
           FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
       return _wallet->get_account_vote_summary( account_name );
-   }
-
-   string client_impl::wallet_account_export_private_key( const string& account_name )
-   {
-      return utilities::key_to_wif( _wallet->get_account_private_key( account_name ) );
    }
 
    map<transaction_id_type, transaction_record> client_impl::blockchain_get_block_transactions( const string& block )const
