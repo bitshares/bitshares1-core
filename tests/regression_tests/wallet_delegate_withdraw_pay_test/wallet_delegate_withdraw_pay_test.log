@@ -187,6 +187,23 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ============================================================================================================================
 44    delegate43                      0.0000002896 % 1        0        100.00 %      100 %    5.78698 XTS         5         
 
+default (unlocked) >>> balance delegate44
+ACCOUNT                         BALANCE                     
+============================================================
+delegate44                      19,801,980.19801 XTS        
+                                12.40063 XTS (pay)          
+default (unlocked) >>> blockchain_get_account delegate44
+Name: delegate44
+Registered: Genesis (Keyhotee Founder)
+Last Updated: [redacted]
+Owner Key: XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1
+Active Key History:
+- XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+45    delegate44                      0.0000006205 % 1        0        100.00 %      100 %    12.40063 XTS        6         
+
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
 {
   "expiration": "20140620T164050",
@@ -220,4 +237,39 @@ default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw
     "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96fbe91397252bfbf1abb76b3aeed170ba7157d4320d20e72142dfbb875c512e7a7"
   ]
 }
+default (unlocked) >>> balance delegate44
+ACCOUNT                         BALANCE                     
+============================================================
+delegate44                      19,801,980.19801 XTS        
+                                12.20063 XTS (pay)          
+default (unlocked) >>> blockchain_get_account delegate44
+Name: delegate44
+Registered: Genesis (Keyhotee Founder)
+Last Updated: [redacted]
+Owner Key: XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1
+Active Key History:
+- XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+45    delegate44                      0.0000006205 % 1        0        100.00 %      100 %    12.40063 XTS        6         
+
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> balance test
+No balances found.
+default (unlocked) >>> wallet_delegate_set_block_production ALL false
+OK
+default (unlocked) >>> wallet_rescan_blockchain
+Rescanning blockchain...
+Scan complete.
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            0.10000 XTS                 
 default (unlocked) >>> quit
