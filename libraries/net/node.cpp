@@ -620,6 +620,8 @@ namespace bts { namespace net { namespace detail {
         std::shared_ptr<fc::thread> impl_thread(impl_to_delete->_thread);
         weak_thread = impl_thread;
         impl_thread->async([impl_to_delete](){ delete impl_to_delete; }).wait();
+        dlog("sleeping to allow destructors to execute in the p2p thread");
+        fc::usleep(fc::milliseconds(10));
         dlog("deleting the p2p thread");
       }
       if (weak_thread.expired())
