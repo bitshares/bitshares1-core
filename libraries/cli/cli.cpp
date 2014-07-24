@@ -902,8 +902,12 @@ namespace bts { namespace cli {
 
                       for( const auto& transaction : transactions )
                       {
-                          *_out << std::setw(10) << transaction.id().str().substr(0, 8)
-                                << std::setw(10) << transaction.data_size()
+                          if( FILTER_OUTPUT_FOR_TESTS )
+                              *_out << std::setw(10) << "[redacted]";
+                          else
+                              *_out << std::setw(10) << transaction.id().str().substr(0, 8);
+
+                          *_out << std::setw(10) << transaction.data_size()
                                 << std::setw(25) << transaction.operations.size()
                                 << std::setw(25) << transaction.signatures.size()
                                 << "\n";
