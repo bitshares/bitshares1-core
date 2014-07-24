@@ -45,7 +45,7 @@ namespace bts{ namespace blockchain {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
       if( !isalpha(str[0]) ) return false;
-      if ( !isalnum(str[str.size()-1]) || isupper(str[str.size()]) ) return false;
+      if ( !isalnum(str[str.size()-1]) || isupper(str[str.size()-1]) ) return false;
 
       std::string subname(str);
       std::string supername;
