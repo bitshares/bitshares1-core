@@ -1556,6 +1556,12 @@ config load_config( const fc::path& datadir )
 
        return trx;
     }
+
+    int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
+    {
+      return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
+    }
+
     signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer,
                                                        const string& asset_symbol,
                                                        const string& from_account_name,

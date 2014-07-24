@@ -1383,6 +1383,25 @@
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_recover_accounts",
+         "description" : "Attempts to recover accounts created after last backup was taken and returns number of successful recoveries. Use if you have restored from backup and are missing accounts.",
+         "return_type" : "int32_t",
+         "parameters"  : [
+            {
+                "name" : "accounts_to_recover",
+                "type" : "int32_t",
+                "description" : "The number of accounts to attept to recover"
+            },
+            {
+                "name" : "maximum_number_of_attempts",
+                "type" : "int32_t",
+                "description" : "The maximum number of keys to generate trying to recover accounts",
+                "default_value" : 1000
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }

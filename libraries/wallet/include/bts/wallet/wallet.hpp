@@ -418,6 +418,8 @@ namespace bts { namespace wallet {
          void                               remove_transaction_record( const string& record_id );
          signed_transaction                 publish_slate( const string& account, bool sign = true );
 
+         int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
+
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*
          optional<address>                  get_owning_address( const balance_id_type& id )const;
