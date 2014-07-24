@@ -322,11 +322,11 @@ namespace bts { namespace blockchain {
    vector<domain_record>   pending_chain_state::get_domain_records( const string& first_name,
                                                                 uint32_t count )const
    {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(!"unimplemented pending_state get_domain_records");
    }
    vector<domain_record>   pending_chain_state::get_domains_in_auction()const
    {
-        FC_ASSERT(!"unimplemented");
+        FC_ASSERT(!"unimplemented pending_state get_domains_in_auction");
    }
 
 

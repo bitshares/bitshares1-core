@@ -28,6 +28,14 @@ namespace bts { namespace blockchain {
         share_type       price;
     };
 
+    struct domain_cancel_buy_operation
+    {
+        static const operation_type_enum type;
+        void evaluate( transaction_evaluation_state& eval_state );
+
+        address          offer_address;
+    };
+
     struct domain_sell_operation
     {
         static const operation_type_enum type;
@@ -86,3 +94,4 @@ FC_REFLECT( bts::blockchain::domain_sell_operation, (domain_name)(price) );
 FC_REFLECT( bts::blockchain::domain_cancel_sell_operation, (domain_name) );
 FC_REFLECT( bts::blockchain::domain_buy_operation, (domain_name)(price)(new_owner) );
 FC_REFLECT( bts::blockchain::domain_transfer_operation, (domain_name)(owner)(memo) );
+FC_REFLECT( bts::blockchain::domain_cancel_buy_operation, (offer_address) );

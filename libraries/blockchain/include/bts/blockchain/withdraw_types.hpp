@@ -169,6 +169,16 @@ namespace bts { namespace blockchain {
       price                strike_price;
    };
 
+
+    struct withdraw_domain_offer
+    {
+        static const uint8_t type;
+       
+        address         owner; 
+        share_type      price;
+        string          domain_name;
+    };
+
 } } // bts::blockchain
 
 namespace fc {

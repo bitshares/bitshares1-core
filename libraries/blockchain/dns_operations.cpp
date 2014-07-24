@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
         {
             FC_ASSERT( odomain_rec->get_true_state() == domain_record::in_auction,
                        "Trying to bid on a domain that is not in auction" );
-            if (false) // TODO if signed by owner
+            if (false) // TODO if signed by owner, allow adjusting bid
             {
             }
             else
@@ -97,7 +97,7 @@ namespace bts { namespace blockchain {
             eval_state._current_state->store_domain_record( *odomain_rec );
         }
     }
-
+ 
     void domain_cancel_sell_operation::evaluate( transaction_evaluation_state& eval_state )
     {
         auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
@@ -110,15 +110,14 @@ namespace bts { namespace blockchain {
         eval_state._current_state->store_domain_record( *odomain_rec );
     }
 
+
     void domain_buy_operation::evaluate( transaction_evaluation_state& eval_state )
     {
-        auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
-        FC_ASSERT( odomain_rec.valid(), "Trying to buy a domain which does not exist" );
+        FC_ASSERT( is_valid_domain( this->domain_name ), "Trying to buy an invalid domain name" );
 
-        /* If this is a real "buy" and not just an offer
-         */
-        if ( odomain_rec->get_true_state() == domain_record::in_sale 
-           && this->price > odomain_rec->price )
+        auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
+        /* If it already exists and hasn't expired */
+        if( odomain_rec.valid() && odomain_rec->get_true_state() == domain_record::in_sale )
         {
             share_type paid_to_owner = 0;
             for (auto op : eval_state.trx.operations)
@@ -141,12 +140,24 @@ namespace bts { namespace blockchain {
             odomain_rec->owner = this->new_owner;
             odomain_rec->last_update = eval_state._current_state->now().sec_since_epoch();
             eval_state._current_state->store_domain_record( *odomain_rec );
-        } 
-        else // Otherwise this is just an offer
+            return;
+        }
+        /* Domain does not exist or is not for sale, so this is an offer */
+        else
         {
-            FC_ASSERT(!"unimplemented buying a domain that is not for sale");
+            FC_ASSERT(this->price > 0, "Price must be greater than 0 when you offer" );
+            auto balance_rec = balance_record();
+            balance_rec.owner = this->new_owner;
+            FC_ASSERT(!" TODO unimplemented domain offer");
         }
     }
+
+
+    void domain_cancel_buy_operation::evaluate( transaction_evaluation_state& eval_state )
+    {
+        FC_ASSERT(!" TODO unimplemented offer cancel");
+    }
+
 
     void domain_transfer_operation::titan_transfer( const fc::ecc::private_key& one_time_private_key,
                                                     const fc::ecc::public_key& to_public_key,

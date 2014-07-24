@@ -52,6 +52,41 @@ namespace bts { namespace blockchain {
         }
     };
 
+    struct offer_index_key
+    {
+        string        domain_name; 
+        share_type    price;
+        address       offer_address;
+        uint32_t      offer_time;
+
+        friend bool operator == (const offer_index_key& a, const offer_index_key& b)
+        {
+            return a.domain_name == b.domain_name 
+                && a.offer_address == b.offer_address
+                && a.price == b.price;
+        }
+        friend bool operator < (const offer_index_key& a, const offer_index_key& b)
+        {
+            if (a.domain_name < b.domain_name)
+                return true;
+            if (a.domain_name > b.domain_name)
+                return false;
+            // most expensive first
+            if (a.price > b.price)
+                return true;
+            if (a.price < b.price)
+                return false;
+            if (a.offer_time > b.offer_time)
+                return true;
+            if (a.offer_time < b.offer_time)
+                return false;
+
+            return a.offer_address < b.offer_address;
+        }
+
+    };
+
+
     struct domain_record
     {
         domain_record():domain_name(""),value(variant("")),last_update(0),time_in_top(0){};
