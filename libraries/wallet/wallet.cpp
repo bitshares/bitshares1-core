@@ -2204,7 +2204,7 @@ namespace bts { namespace wallet {
 
      while( recoveries < number_of_accounts && attempts++ < max_number_of_attempts )
      {
-        fc::ecc::private_key new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
+        fc::ecc::private_key new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password, address(), false );
         fc::ecc::public_key new_pub_key = new_priv_key.get_public_key();
         auto recovered_account = my->_blockchain->get_account_record(new_pub_key);
 
