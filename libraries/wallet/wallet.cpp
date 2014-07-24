@@ -604,7 +604,7 @@ namespace bts { namespace wallet {
          {
             // TODO: Only if withdraw by signature or by name
             const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
-            if( key_rec.valid() ) /* If we own this balance */
+            if( key_rec.valid() && key_rec->has_private_key() ) /* If we own this balance */
             {
                 // TODO: Refactor this
                 auto new_entry = true;
@@ -648,7 +648,7 @@ namespace bts { namespace wallet {
          const auto account_rec = _blockchain->get_account_record( op.account_id );
          FC_ASSERT( account_rec.valid() );
          const auto key_rec =_wallet_db.lookup_key( account_rec->owner_key );
-         if( key_rec.valid() ) /* If we own this account */
+         if( key_rec.valid() && key_rec->has_private_key() ) /* If we own this account */
          {
              // TODO: Refactor this
              auto new_entry = true;
@@ -687,7 +687,7 @@ namespace bts { namespace wallet {
       {
           auto opt_key_rec = _wallet_db.lookup_key( op.owner_key );
 
-          if( !opt_key_rec.valid() ) 
+          if( !opt_key_rec.valid() || !opt_key_rec->has_private_key() )
              return false;
 
           auto opt_account = _wallet_db.lookup_account( address( op.owner_key ) );
@@ -730,7 +730,7 @@ namespace bts { namespace wallet {
           auto oaccount =  _blockchain->get_account_record( op.account_id ); 
           FC_ASSERT( oaccount.valid() );
           auto opt_key_rec = _wallet_db.lookup_key( oaccount->owner_key );
-          if( !opt_key_rec.valid() ) 
+          if( !opt_key_rec.valid() || !opt_key_rec->has_private_key() )
              return false;
 
           auto opt_account = _wallet_db.lookup_account( address( oaccount->owner_key ) );
@@ -1445,6 +1445,7 @@ namespace bts { namespace wallet {
       else
       {
          auto account_key = my->_wallet_db.lookup_key( address(key) );
+         // TODO: Throw exception here
          FC_ASSERT( !account_key.valid(), "Provided key belongs to another account." );
          if( current_registered_account.valid() )
          {
@@ -3338,6 +3339,7 @@ namespace bts { namespace wallet {
            sign_and_cache_transaction( trx, required_signatures, record );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
+           FC_ASSERT( key_rec.valid() );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
@@ -3452,6 +3454,7 @@ namespace bts { namespace wallet {
            sign_and_cache_transaction( trx, required_signatures, record );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
+           FC_ASSERT( key_rec.valid() );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
@@ -3547,6 +3550,7 @@ namespace bts { namespace wallet {
            sign_and_cache_transaction( trx, required_signatures, record );
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
+           FC_ASSERT( key_rec.valid() );
            key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
@@ -3694,7 +3698,6 @@ namespace bts { namespace wallet {
            else
            {
               auto key_rec  = my->_wallet_db.lookup_key( key );
-              //wdump( (key_rec) );
               if(  key_rec )
               {
                  if( key_rec->memo )
@@ -3925,7 +3928,7 @@ namespace bts { namespace wallet {
          import_private_key( key, account_name );
 
       scan_chain( 0, 1 );
-      std::cout << "Successfully imported " << keys.size() << " keys from: " << wallet_dat.filename().string() << "\n";
+      ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename() ) );
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
@@ -3945,7 +3948,7 @@ namespace bts { namespace wallet {
          import_private_key( key, account_name );
 
       scan_chain( 0, 1 );
-      std::cout << "Successfully imported " << keys.size() << " keys from: " << wallet_dat.filename().string() << "\n";
+      ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename() ) );
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}", 
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
@@ -4013,13 +4016,13 @@ namespace bts { namespace wallet {
        return wallets;
    }
 
-   bool  wallet::is_sending_address( const address& addr )const
+   bool wallet::is_sending_address( const address& addr )const
    { try {
       return !is_receive_address( addr );
    } FC_CAPTURE_AND_RETHROW() }
 
 
-   bool  wallet::is_receive_address( const address& addr )const
+   bool wallet::is_receive_address( const address& addr )const
    {  try {
       auto key_rec = my->_wallet_db.lookup_key( addr );
       if( key_rec.valid() )
@@ -4167,7 +4170,7 @@ namespace bts { namespace wallet {
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       if( !opt_account.valid() ) return false;
       auto opt_key = my->_wallet_db.lookup_key( opt_account->account_address );
-      if( !opt_key.valid()  ) return false;
+      if( !opt_key.valid() ) return false;
       return opt_key->has_private_key();
    }
 
@@ -4273,18 +4276,18 @@ namespace bts { namespace wallet {
       }
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
-      auto slate = delegate_slate();
       size_t slate_size = 0;
       if( selection_method == vote_all )
       {
-          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE, slate.supported_delegates.size() );
+          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE, for_candidates.size() );
       }
       else if( selection_method == vote_random )
       {
-          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE / 3, slate.supported_delegates.size() );
+          slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE / 3, for_candidates.size() );
           slate_size = rand() % ( slate_size + 1 );
       }
 
+      auto slate = delegate_slate();
       slate.supported_delegates = for_candidates;
       slate.supported_delegates.resize( slate_size );
 
@@ -4327,7 +4330,7 @@ namespace bts { namespace wallet {
       return my->_wallet_db.lookup_account( addr );
    }
 
-   owallet_account_record  wallet::get_account_for_address( address addr_in_account )
+   owallet_account_record wallet::get_account_for_address( address addr_in_account )
    {
        auto okey = my->_wallet_db.lookup_key( addr_in_account );
        if (! okey.valid() )

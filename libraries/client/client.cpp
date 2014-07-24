@@ -3,7 +3,6 @@
 #include <bts/client/client.hpp>
 #include <bts/client/messages.hpp>
 #include <bts/cli/cli.hpp>
-#include <bts/cli/pretty.hpp>
 #include <bts/net/node.hpp>
 #include <bts/net/exceptions.hpp>
 #include <bts/net/upnp.hpp>
@@ -2587,7 +2586,6 @@ config load_config( const fc::path& datadir )
       return _rpc_server->meta_help();
     }
 
-
     variant_object client_impl::blockchain_get_config() const
     {
        fc::mutable_variant_object info;
@@ -2645,16 +2643,17 @@ config load_config( const fc::path& datadir )
       info["blockchain_head_block_timestamp"]                   = variant();
       if( head_block_num > 0 )
       {
-          fc::time_point_sec head_block_timestamp                   = _chain_db->now();
-          info["blockchain_head_block_age"]                         = fc::get_approximate_relative_time_string( head_block_timestamp, now, " old" );
-          info["blockchain_head_block_timestamp"]                   = head_block_timestamp;
+          fc::time_point_sec head_block_timestamp              = _chain_db->now();
+          info["blockchain_head_block_age"]                    = ( now - head_block_timestamp ).to_seconds();
+          info["blockchain_head_block_timestamp"]              = head_block_timestamp;
       }
 
-      info["blockchain_average_delegate_participation"]         = cli::pretty_percent( _chain_db->get_average_delegate_participation(), 100 );
-      info["blockchain_delegate_pay_rate"]                      = _chain_db->to_pretty_asset( asset( _chain_db->get_delegate_pay_rate() ) );
+      const auto participation                                  = _chain_db->get_average_delegate_participation();
+      info["blockchain_average_delegate_participation"]         = participation <= 100 ? participation : 0;
+      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
       info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
-      info["blockchain_accumulated_fees"]                       = _chain_db->to_pretty_asset( asset( _chain_db->get_accumulated_fees() ) );
+      info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
 
       oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       share_type share_supply                                   = share_record ? share_record->current_share_supply : 0;
@@ -2698,7 +2697,7 @@ config load_config( const fc::path& datadir )
         optional<time_point_sec> unlocked_until                 = _wallet->unlocked_until();
         if( unlocked_until )
         {
-          info["wallet_unlocked_until"]                         = fc::get_approximate_relative_time_string( *unlocked_until, now );
+          info["wallet_unlocked_until"]                         = ( *unlocked_until - now ).to_seconds();
           info["wallet_unlocked_until_timestamp"]               = *unlocked_until;
 
           vector<wallet_account_record> enabled_delegates       = _wallet->get_my_delegates( enabled_delegate_status );
@@ -2710,7 +2709,7 @@ config load_config( const fc::path& datadir )
             optional<time_point_sec> next_block_time            = _wallet->get_next_producible_block_timestamp( enabled_delegates );
             if( next_block_time )
             {
-              info["wallet_next_block_production_time"]         = fc::get_approximate_relative_time_string( *next_block_time, now );
+              info["wallet_next_block_production_time"]         = ( *next_block_time - now ).to_seconds();
               info["wallet_next_block_production_timestamp"]    = *next_block_time;
             }
           }
