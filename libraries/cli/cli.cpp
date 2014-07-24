@@ -172,7 +172,10 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::exception& e )
                 {
-                  *_out << e.to_detail_string() << "\n";
+                  if( FILTER_OUTPUT_FOR_TESTS )
+                    *_out << "Command failed with exception: " << e.to_string() << "\n";
+                  else
+                    *_out << e.to_detail_string() << "\n";
                 }
               }
             } //parse_and_execute_interactive_command
