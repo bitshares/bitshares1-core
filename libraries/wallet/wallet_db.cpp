@@ -406,16 +406,6 @@ namespace bts { namespace wallet {
        return transaction_records;
    }
 
-   void wallet_db::hide_pending_transactions()
-   {
-       auto transaction_records = get_pending_transactions();
-       for( auto& transaction_record : transaction_records )
-       {
-           transaction_record.is_hidden = true;   
-           store_transaction( transaction_record );
-       }
-   }
-
    void wallet_db::export_to_json( const path& filename )const
    {
       FC_ASSERT( !fc::exists( filename ) );

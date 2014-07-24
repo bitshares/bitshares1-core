@@ -295,6 +295,18 @@
               "default_value" : ""
             },
             {
+               "name" : "asset_symbol",
+               "type" : "string",
+               "description" : "only include transactions involving the specified asset, or \"\" to include all",
+               "default_value" : ""
+            },
+            {
+               "name" : "limit",
+               "type" : "int32_t",
+               "description" : "limit the number of returned transactions; negative for most recent and positive for least recent. 0 does not limit",
+               "default_value" : 0
+            },
+            {
                "name" : "start_block_num",
                "type" : "uint32_t",
                "description" : "the earliest block number to list transactions from; 0 to include all transactions starting from genesis",
@@ -305,12 +317,6 @@
                "type" : "uint32_t",
                "description" : "the latest block to list transaction from; -1 to include all transactions ending at the head block",
                "default_value" : -1
-            },
-            {
-               "name" : "asset_symbol",
-               "type" : "string",
-               "description" : "only include transactions involving the specified asset, or \"\" to include all",
-               "default_value" : ""
             }
         ],
         "prerequisites" : ["wallet_open"],
@@ -330,15 +336,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : [""]
-      },
-      {
-        "method_name": "wallet_hide_pending_transactions",
-        "description": "Hide \"stuck\" pending transactions from the wallet. Internal: Do not call this.",
-        "return_type": "void",
-        "parameters" : [],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : []
+        "aliases" : ["remove_transaction"]
       },
       {
         "method_name": "wallet_get_pending_transaction_errors",
@@ -658,6 +656,21 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["scan_transaction"]
+      },
+      {
+        "method_name": "wallet_rebroadcast_transaction",
+        "description": "Rebroadcasts the specified transaction",
+        "return_type": "void",
+        "parameters" : 
+          [
+            {
+              "name" : "transaction_id", 
+              "type" : "string", 
+              "description" : "the id (or id prefix) of the transaction"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases" : ["rebroadcast"]
       },
       {
          "method_name" : "wallet_account_register",
@@ -1354,6 +1367,19 @@
                 "name" : "client_signature",
                 "type" : "compact_signature",
                 "description" : "The client's signature of the shared secret."
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_publish_slate",
+         "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "The account to publish the slate ID under"
             }
          ],
          "prerequisites" : ["wallet_unlocked"]

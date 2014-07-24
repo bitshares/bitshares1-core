@@ -125,6 +125,7 @@ namespace bts { namespace db {
 
         iterator begin() const
         { try {
+           FC_ASSERT( is_open(), "Database is not open!");
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->SeekToFirst();
 
