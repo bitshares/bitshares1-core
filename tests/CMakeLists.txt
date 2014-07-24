@@ -17,6 +17,10 @@ file(GLOB regression_tests_register_accounts_as_delegate_files "${CMAKE_CURRENT_
                                                                "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/register_accounts_as_delegate_test/*.log")
 source_group("Regression Tests\\Register Accounts as Delegates" FILES ${regression_tests_register_accounts_as_delegate_files})
 
+file(GLOB regression_tests_invalid_names_test_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/invalid_names_test/test.config"
+                                             "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/invalid_names_test/*.log")
+source_group("Regression Tests\\Invalid Names Test" FILES ${regression_tests_invalid_names_test_files})
+
 file(GLOB regression_tests_simple_test_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/simple_test/test.config"
                                              "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/simple_test/*.log")
 source_group("Regression Tests\\Simple Test" FILES ${regression_tests_simple_test_files})
@@ -40,6 +44,7 @@ source_group("Regression Tests\\Wallet Asset Test" FILES ${regression_tests_wall
 set(regression_test_files ${regression_tests_common_logs_files}
                           ${regression_tests_titan_test_files}
                           ${regression_tests_register_accounts_as_delegate_files}
+                          ${regression_tests_invalid_name_test_files}
                           ${regression_tests_simple_test_files}
                           ${regression_tests_transfer_test_files}
                           ${regression_tests_two_client_test_files}

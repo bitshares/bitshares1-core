@@ -172,7 +172,10 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::exception& e )
                 {
-                  *_out << e.to_detail_string() << "\n";
+                  if( FILTER_OUTPUT_FOR_TESTS )
+                    *_out << "Command failed with exception: " << e.to_string() << "\n";
+                  else
+                    *_out << e.to_detail_string() << "\n";
                 }
               }
             } //parse_and_execute_interactive_command
@@ -678,6 +681,11 @@ namespace bts { namespace cli {
                   const auto& info = result.as<variant_object>();
                   *_out << pretty_info( info, _client );
               }
+              else if( method_name == "blockchain_get_config" )
+              {
+                  const auto& config = result.as<variant_object>();
+                  *_out << pretty_blockchain_config( config, _client );
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
                   const auto& transactions = result.as<vector<pretty_transaction>>();
@@ -894,8 +902,12 @@ namespace bts { namespace cli {
 
                       for( const auto& transaction : transactions )
                       {
-                          *_out << std::setw(10) << transaction.id().str().substr(0, 8)
-                                << std::setw(10) << transaction.data_size()
+                          if( FILTER_OUTPUT_FOR_TESTS )
+                              *_out << std::setw(10) << "[redacted]";
+                          else
+                              *_out << std::setw(10) << transaction.id().str().substr(0, 8);
+
+                          *_out << std::setw(10) << transaction.data_size()
                                 << std::setw(25) << transaction.operations.size()
                                 << std::setw(25) << transaction.signatures.size()
                                 << "\n";
