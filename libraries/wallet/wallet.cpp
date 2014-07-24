@@ -4297,9 +4297,20 @@ namespace bts { namespace wallet {
             if( !candidate_record->public_data.is_object()
                 || !candidate_record->public_data.get_object().contains("slate_id"))
               continue;
+            if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
+            {
+              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
+              set_delegate_approval(candidate_record->name, -1);
+              continue;
+            }
 
             odelegate_slate recomendations = my->_blockchain->get_delegate_slate(candidate_record->public_data.get_object()["slate_id"].as<slate_id_type>());
-            FC_ASSERT( recomendations.valid() );
+            if( !recomendations.valid() )
+            {
+              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
+              set_delegate_approval(candidate_record->name, -1);
+              continue;
+            }
 
             for( account_id_type recommended_candidate : recomendations->supported_delegates )
               ++recommended_candidate_ranks[recommended_candidate];
