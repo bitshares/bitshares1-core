@@ -1,0 +1,73 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
+default (unlocked) >>> help blockchain_get_blockhash
+Usage:
+blockchain_get_blockhash <block_number>                                                               Returns hash of block in best-block-chain at index provided
+Returns hash of block in best-block-chain at index provided
+
+Parameters:
+  block_number (uint32_t, required): index of the block
+
+Returns:
+  block_id_type
+
+aliases: getblockhash
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+OK
+default (unlocked) >>> blockchain_get_blockhash 1
+"42adde8e1f6ee28dd7436229e29e500e98862188"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+OK
+default (unlocked) >>> blockchain_get_blockhash 2
+"f66283f14cbd04f7ac5027e042fc8dfcbb9b458a"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
+OK
+default (unlocked) >>> blockchain_get_blockhash 3
+"38ce30ba421b18cde281f2f27fc8a2fe06cbc8be"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+OK
+default (unlocked) >>> blockchain_get_blockhash 4
+"32f75807d12db377b2978646485b3ac02f719411"
+default (unlocked) >>> wallet_account_create testaccount
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           testaccount         100.00000 XTS                                                       0.10000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> balance testaccount
+No balances found.
+default (unlocked) >>> wallet_delegate_set_block_production ALL false
+OK
+default (unlocked) >>> wallet_rescan_blockchain
+Rescanning blockchain...
+Scan complete.
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
+OK
+default (unlocked) >>> balance testaccount
+ACCOUNT                         BALANCE                     
+============================================================
+testaccount                     100.00000 XTS               
+default (unlocked) >>> blockchain_get_blockhash 5
+"b5748a9b8d59d469a81338ee954d2d6b7d58c190"
+default (unlocked) >>> quit
