@@ -385,7 +385,7 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
   master_wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
     master_wallet->import_private_key(delegate_keys[i], "delegatekeys");
-  master_wallet->scan_state(bts::blockchain::now());
+  master_wallet->scan_state();
 
   // master wallet is created and ready to go.  Fill it with the desired number of blocks
   uint32_t current_block_count = 0;
@@ -417,13 +417,13 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
     client_processes[client_index].wallet->unlock(WALLET_PASSPHRASE, UINT32_MAX);
     client_processes[client_index].wallet->create_account("delegatekeys");
     client_processes[client_index].wallet->import_private_key(delegate_keys[client_index], "delegatekeys");
-    client_processes[client_index].wallet->scan_state(bts::blockchain::now());
+    client_processes[client_index].wallet->scan_state();
 
     for (unsigned delegate_index = 0; delegate_index < delegate_keys.size(); ++delegate_index)
       if (delegate_index % client_processes.size() == client_index)
       {
         client_processes[client_index].wallet->import_private_key(delegate_keys[delegate_index], "delegatekeys");
-        client_processes[client_index].wallet->scan_state(bts::blockchain::now());
+        client_processes[client_index].wallet->scan_state();
       }
 
     // this client's wallet and blockchain are initialized.  Now give it some blocks from the master blockchain
@@ -471,7 +471,7 @@ void bts_client_launcher_fixture::create_forked_wallets()
   first_client.wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
     first_client.wallet->import_private_key(delegate_keys[i], "delegatekeys");
-  first_client.wallet->scan_state(bts::blockchain::now());
+  first_client.wallet->scan_state();
 
   uint32_t current_block_count = 0;
   for (current_block_count = 0; current_block_count < initial_block_count; ++current_block_count)

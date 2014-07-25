@@ -365,7 +365,7 @@ config load_config( const fc::path& datadir )
          cfg = fc::json::from_file( config_file ).as<config>();
 
          int merged_peer_count = 0;
-         for( auto peer : default_peers )
+         for( const auto& peer : default_peers )
            if( std::find(cfg.default_peers.begin(), cfg.default_peers.end(), peer) == cfg.default_peers.end() )
            {
              ++merged_peer_count;
@@ -1755,7 +1755,7 @@ config load_config( const fc::path& datadir )
        for( const auto& record : records )
        {
            if( record.is_virtual ) continue;
-           _p2p_node->broadcast( trx_message( record.trx ) );
+           network_broadcast_transaction( record.trx );
            std::cout << "Rebroadcasted transaction: " << string( record.trx.id() ) << "\n";
        }
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }

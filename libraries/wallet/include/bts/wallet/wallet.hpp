@@ -129,7 +129,7 @@ namespace bts { namespace wallet {
          vector<wallet_transaction_record>          get_pending_transactions()const;
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
-         void      scan_state( const time_point_sec& received_time );
+         void      scan_state();
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
                                const scan_progress_callback& progress_callback = scan_progress_callback() );
          uint32_t  get_last_scanned_block_number()const;

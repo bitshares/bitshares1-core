@@ -260,7 +260,7 @@ namespace bts { namespace wallet {
 
             vector<wallet_transaction_record> get_pending_transactions()const;
 
-            void scan_balances( const time_point_sec& received_time );
+            void scan_balances();
             void scan_registered_accounts();
             void withdraw_to_transaction( share_type amount,
                                           asset_id_type asset_id,
@@ -278,7 +278,7 @@ namespace bts { namespace wallet {
           return _wallet_db.get_pending_transactions();
       }
 
-      void wallet_impl::scan_balances( const time_point_sec& received_time )
+      void wallet_impl::scan_balances()
       {
          /* Delete ledger entries for any genesis balances before we can reconstruct them */
          const auto my_accounts = self->list_my_accounts();
@@ -293,6 +293,7 @@ namespace bts { namespace wallet {
              }
          }
 
+         const auto timestamp = _blockchain->get_genesis_timestamp();
          _blockchain->scan_balances( [&]( const balance_record& bal_rec )
          {
               const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
@@ -311,8 +312,8 @@ namespace bts { namespace wallet {
                     if( !transaction_record.valid() )
                     {
                         transaction_record = wallet_transaction_record();
-                        transaction_record->created_time = _blockchain->get_genesis_timestamp();
-                        transaction_record->received_time = received_time;
+                        transaction_record->created_time = timestamp;
+                        transaction_record->received_time = timestamp;
                     }
 
                     auto entry = ledger_entry();
@@ -1652,7 +1653,7 @@ namespace bts { namespace wallet {
 
       if( start == 0 )
       {
-         scan_state( my->_blockchain->get_genesis_timestamp() );
+         scan_state();
          ++start;
       }
 
@@ -2127,8 +2128,8 @@ namespace bts { namespace wallet {
       auto next_secret = my->get_secret( my->_blockchain->get_head_block_num() + 1, delegate_key );
       header.next_secret_hash = fc::ripemd160::hash( next_secret );
 
-      header.sign( delegate_key, my->_blockchain->chain_id() );
-      FC_ASSERT( header.validate_signee( delegate_pub_key, my->_blockchain->chain_id() ) );
+      header.sign( delegate_key );
+      FC_ASSERT( header.validate_signee( delegate_pub_key ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
    signed_transaction wallet::publish_slate( const string& account_to_publish_under, bool sign )
@@ -4137,10 +4138,10 @@ namespace bts { namespace wallet {
        return transaction_errors;
    } FC_CAPTURE_AND_RETHROW() }
 
-   void wallet::scan_state( const time_point_sec& received_time )
+   void wallet::scan_state()
    { try {
       ilog( "WALLET: Scanning blockchain state" );
-      my->scan_balances( received_time );
+      my->scan_balances();
       my->scan_registered_accounts();
    } FC_RETHROW_EXCEPTIONS( warn, "" )  }
 
@@ -4312,7 +4313,7 @@ namespace bts { namespace wallet {
               continue;
             }
 
-            for( account_id_type recommended_candidate : recomendations->supported_delegates )
+            for( const auto& recommended_candidate : recomendations->supported_delegates )
               ++recommended_candidate_ranks[recommended_candidate];
           }
 
@@ -4322,7 +4323,7 @@ namespace bts { namespace wallet {
                 recommended_candidate_ranks.erase(acct_rec.second.id);
 
           //Remove from rankings candidates I already approve of
-          for( auto approved_id : for_candidates )
+          for( const auto& approved_id : for_candidates )
             if( recommended_candidate_ranks.find(approved_id) != recommended_candidate_ranks.end() )
               recommended_candidate_ranks.erase(approved_id);
 
@@ -4333,7 +4334,7 @@ namespace bts { namespace wallet {
             account_id_type best_ranked_candidate;
 
             //Add highest-ranked candidate to my list to vote for and remove him from rankings
-            for( auto& ranked_candidate : recommended_candidate_ranks )
+            for( const auto& ranked_candidate : recommended_candidate_ranks )
               if( ranked_candidate.second > best_rank )
               {
                 best_rank = ranked_candidate.second;

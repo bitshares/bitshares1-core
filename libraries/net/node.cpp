@@ -419,7 +419,7 @@ namespace bts { namespace net { namespace detail {
       std::unordered_set<peer_connection_ptr>                     _handshaking_connections;
       /** stores fully established connections we're either syncing with or in normal operation with */
       std::unordered_set<peer_connection_ptr>                     _active_connections;
-      /** stores connections we've closed, but ar_p2p_network_connect_loop_donee still waiting for the remote end to close before we delete them */
+      /** stores connections we've closed, but are still waiting for the remote end to close before we delete them */
       std::unordered_set<peer_connection_ptr>                     _closing_connections;
       
       boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted (currently tuned to the max number of connections)
