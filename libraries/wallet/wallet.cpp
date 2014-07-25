@@ -4261,7 +4261,7 @@ namespace bts { namespace wallet {
     *  selection_method as vote_none, vote_all, or vote_random. The slate
     *  returned will contain no more than BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates.
     */
-   delegate_slate wallet::select_delegate_vote( vote_selection_method selection_method )const
+   delegate_slate wallet::select_delegate_vote( vote_selection_method selection_method )
    {
       if( selection_method == vote_none ) 
          return delegate_slate();
