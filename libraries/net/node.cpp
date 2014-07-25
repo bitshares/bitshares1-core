@@ -2865,7 +2865,7 @@ namespace bts { namespace net { namespace detail {
       _active_connections.clear();
       _closing_connections.clear();
 
-      fc::usleep(fc::microseconds(1));
+      fc::usleep(fc::microseconds(10000));
     } //close
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
