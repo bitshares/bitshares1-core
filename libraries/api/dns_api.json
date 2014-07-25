@@ -79,6 +79,65 @@
             "prerequisites": ["wallet_open", "wallet_unlocked"]
         },
         {
+            "method_name": "domain_buy",
+            "description": "Buy or make an offer for a domain",
+            "return_type": "signed_transaction",
+            "parameters": 
+            [
+                {
+                    "name": "domain_name",
+                    "type": "string",
+                    "description": ""
+                },
+                {
+                    "name": "price",
+                    "type": "share_type",
+                    "description": ""
+                },
+                {
+                    "name": "pay_from_account",
+                    "type": "account_name",
+                    "description": ""
+                }
+            ],
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
+        },
+        {
+            "method_name": "domain_cancel_buy",
+            "description": "Cancel an offer for a domain",
+            "return_type": "signed_transaction",
+            "parameters": 
+            [
+                {
+                    "name": "offer_id",
+                    "type": "address",
+                    "description": ""
+                }
+            ],
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
+        },
+        {
+            "method_name": "domain_list_offers",
+            "description": "See all the offers for a domain",
+            "return_type": "domain_offer_array",
+            "parameters": 
+            [
+                {
+                    "name": "domain_name",
+                    "type": "string",
+                    "description": ""
+                },
+                {
+                    "name": "limit",
+                    "type": "uint32_t",
+                    "description": "",
+                    "default_value": "10"
+                }
+            ],
+            "prerequisites": ["wallet_open", "wallet_unlocked"]
+        },
+
+        {
             "method_name": "domain_transfer",
             "description": "Update a domain's owner.",
             "return_type": "signed_transaction",

@@ -1,5 +1,6 @@
 #pragma once
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/dns_config.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/io/enum_type.hpp>
@@ -36,6 +37,14 @@ namespace bts { namespace blockchain {
         address       offer_address;
         uint32_t      offer_time;
 
+        static offer_index_key lower_bound_for_domain(const string& domain)
+        {
+            auto key = offer_index_key();
+            key.domain_name = domain;
+            key.price = BTS_BLOCKCHAIN_MAX_SHARES;
+            return key;
+        }
+
         friend bool operator == (const offer_index_key& a, const offer_index_key& b)
         {
             return a.domain_name == b.domain_name 
@@ -63,6 +72,7 @@ namespace bts { namespace blockchain {
 
     };
 
+    typedef fc::optional<offer_index_key>           ooffer_index_key;
 
     struct domain_record
     {
@@ -117,4 +127,4 @@ namespace bts { namespace blockchain {
 FC_REFLECT_ENUM( bts::blockchain::domain_record::domain_state_type, (unclaimed)(in_auction)(in_sale)(owned) );
 FC_REFLECT( bts::blockchain::domain_record, (domain_name)(owner)(value)(last_update)(state)(price)(next_required_bid)(time_in_top) );
 FC_REFLECT( bts::blockchain::auction_index_key, (domain_name)(price)(bid_time) );
-FC_REFLECT( bts::blockchain::offer_index_key, (domain_name)(price)(offer_time) );
+FC_REFLECT( bts::blockchain::offer_index_key, (domain_name)(price)(offer_address)(offer_time) );

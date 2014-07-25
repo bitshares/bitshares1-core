@@ -85,6 +85,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
 
       for( const auto& item : domains )         prev_state->store_domain_record( item.second );
+      for( const auto& item : offers )          prev_state->store_domain_offer( item.first );
 
       prev_state->set_market_transactions( market_transactions );
    }
@@ -221,6 +222,14 @@ namespace bts { namespace blockchain {
       }
 
 
+      for( const auto& item : offers )
+      {
+         auto prev_value = prev_state->get_domain_offer( item.first.offer_address );
+         if( prev_value.valid() ) undo_state->store_domain_offer( *prev_value );
+         else  undo_state->store_domain_offer( offer_index_key() );
+      }
+
+
    }
 
    /** load the state from a variant */
@@ -328,6 +337,21 @@ namespace bts { namespace blockchain {
    {
         FC_ASSERT(!"unimplemented pending_state get_domains_in_auction");
    }
+
+   void                        pending_chain_state::store_domain_offer( const offer_index_key& offer )
+    {
+        FC_ASSERT(!"unimplemented pending_state store_domain_offer");
+    }
+   vector<offer_index_key>     pending_chain_state::get_domain_offers( const string& domain_name, uint32_t limit ) const
+    {
+        FC_ASSERT(!"unimplemented pending_state store_domain_offer");
+    }
+
+   ooffer_index_key             pending_chain_state::get_domain_offer( const address& owner )
+    {
+        FC_ASSERT(!"unimplemented pending_state store_domain_offer");
+    }
+
 
 
     // END DNS

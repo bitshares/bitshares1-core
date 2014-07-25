@@ -10,6 +10,7 @@ namespace bts { namespace blockchain {
    const uint8_t withdraw_with_multi_sig::type    = withdraw_multi_sig_type;
    const uint8_t withdraw_with_password::type     = withdraw_password_type;
    const uint8_t withdraw_option::type            = withdraw_option_type;
+   const uint8_t withdraw_domain_offer::type      = withdraw_domain_offer_type;
 
    memo_status::memo_status( const memo_data& memo, 
                    bool valid_signature,
@@ -142,6 +143,9 @@ namespace fc {
          case withdraw_option_type:
             obj["data"] = fc::raw::unpack<withdraw_option>( var.data );
             break;
+         case withdraw_domain_offer_type:
+            obj["data"] = fc::raw::unpack<withdraw_domain_offer>( var.data );
+            break;
          case withdraw_null_type:
             obj["data"] = fc::variant();
             break;
@@ -170,6 +174,9 @@ namespace fc {
             break;
          case withdraw_option_type:
             vo.data = fc::raw::pack( obj["data"].as<withdraw_option>() );
+            break;
+         case withdraw_domain_offer_type:
+            vo.data = fc::raw::pack( obj["data"].as<withdraw_domain_offer>() );
             break;
          case withdraw_null_type:
             break;

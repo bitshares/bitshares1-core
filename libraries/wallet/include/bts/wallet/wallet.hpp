@@ -464,8 +464,13 @@ namespace bts { namespace wallet {
                                                        bool sign );
 
          signed_transaction        domain_buy( const string& domain_name,
+                                               const share_type& price,
                                                const string& account_name,
                                                bool sign );
+
+         signed_transaction        domain_cancel_buy( const balance_id_type& offer_id,
+                                                      bool sign );
+
 
          signed_transaction        domain_transfer( const string& domain_name,
                                                     const string& account_name,

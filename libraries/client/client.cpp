@@ -3335,6 +3335,22 @@ config load_config( const fc::path& datadir )
         return trx;
     }
 
+    signed_transaction        client_impl::domain_buy( const string& domain_name,
+                                                       const share_type& price,
+                                                       const string& pay_from_account )
+    {
+        auto trx = _wallet->domain_buy( domain_name, price, pay_from_account, true);
+        network_broadcast_transaction( trx );
+        return trx;
+    }
+
+    signed_transaction        client_impl::domain_cancel_buy( const balance_id_type& offer_id )
+    {
+        auto trx = _wallet->domain_cancel_buy( offer_id, true);
+        network_broadcast_transaction( trx );
+        return trx;
+    }
+
 
     signed_transaction        client_impl::domain_transfer( const string& domain_name,
                                                             const string& account_name )
@@ -3356,6 +3372,11 @@ config load_config( const fc::path& datadir )
     {
         return fc::variant( _chain_db->get_domain_record( domain_name ) );
     }    
+
+    vector<offer_index_key>     client_impl::domain_list_offers(const string& domain_name, uint32_t limit)
+    {
+        FC_ASSERT(!"unimplemented");
+    }
 
     vector<domain_record>     client_impl::domain_list_auctions()
     {

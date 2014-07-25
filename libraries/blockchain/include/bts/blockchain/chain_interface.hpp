@@ -142,6 +142,11 @@ namespace bts { namespace blockchain {
         virtual odomain_record              get_domain_record( const string& domain_name )const     = 0;
         virtual vector<domain_record>       get_domain_records( const string& first_name,
                                                                 uint32_t count )const               = 0;
+        virtual void                        store_domain_offer( const offer_index_key& offer )      = 0;
+        virtual ooffer_index_key     get_domain_offer( const balance_id_type& owner )        = 0;
+        virtual vector<offer_index_key>     get_domain_offers( const string& domain_name, uint32_t limit ) const = 0;
+
+
         virtual vector<domain_record>       get_domains_in_auction()const                           = 0;
         // END DNS
 

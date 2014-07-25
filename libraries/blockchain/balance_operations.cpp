@@ -176,6 +176,39 @@ namespace bts { namespace blockchain {
             } FC_CAPTURE_AND_RETHROW( (option) )
             break;
          }
+
+        case withdraw_domain_offer_type:
+        {
+            auto offer = current_balance_record->condition.as<withdraw_domain_offer>();
+            try {
+                // TODO check date
+                // If it's yours it's free
+                if( eval_state.check_signature( offer.owner ) )
+                {
+                }
+                else  // otherwise there has to be enough sent to the last address
+                {
+                    share_type paid_to_deposit = 0;
+                    for (auto op : eval_state.trx.operations)
+                    {
+                        if (op.type == operation_type_enum::deposit_op_type)
+                        {
+                            auto deposit = op.as<deposit_operation>();
+                            if (deposit.condition.type == withdraw_condition_types::withdraw_signature_type)
+                            {
+                                auto condition = deposit.condition.as<withdraw_with_signature>();
+                                if (condition.owner == offer.owner)
+                                {
+                                    paid_to_deposit += deposit.amount;
+                                }
+                            }
+                        }
+                    }
+                }
+            } FC_CAPTURE_AND_RETHROW( (offer) )
+
+        }
+
          case withdraw_null_type:
             FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
             break;

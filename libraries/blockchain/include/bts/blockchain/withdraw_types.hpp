@@ -17,7 +17,9 @@ namespace bts { namespace blockchain {
       withdraw_signature_type   = 1,
       withdraw_multi_sig_type   = 2,
       withdraw_password_type    = 3,
-      withdraw_option_type      = 4
+      withdraw_option_type      = 4,
+
+      withdraw_domain_offer_type = 10
    };
 
    /**
@@ -173,7 +175,11 @@ namespace bts { namespace blockchain {
     struct withdraw_domain_offer
     {
         static const uint8_t type;
-       
+
+        withdraw_domain_offer(){}    
+ 
+        balance_id_type get_address()const { return owner; }
+
         address         owner; 
         share_type      price;
         string          domain_name;
@@ -193,7 +199,8 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
                  (withdraw_signature_type)
                  (withdraw_multi_sig_type)
                  (withdraw_password_type)
-                 (withdraw_option_type) )
+                 (withdraw_option_type)
+                 (withdraw_domain_offer_type) )
 
 FC_REFLECT( bts::blockchain::titan_memo, (one_time_key)(encrypted_memo_data) );
 FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_slate_id)(type)(data) )
@@ -202,6 +209,7 @@ FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
 FC_REFLECT( bts::blockchain::withdraw_with_pts, (new_key)(pts_signature) )
+FC_REFLECT( bts::blockchain::withdraw_domain_offer, (owner)(price)(domain_name) )
 FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
 FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
 FC_REFLECT_DERIVED( bts::blockchain::memo_status, 

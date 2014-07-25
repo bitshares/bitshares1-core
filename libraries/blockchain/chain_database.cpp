@@ -663,7 +663,7 @@ namespace bts { namespace blockchain {
             // an ordered cache of what is in auction
             bts::db::level_map< auction_index_key, string >                     _auction_db;
             // an ordered cache of domain offers
-            bts::db::level_map< offer_index_key, string>                        _offer_db;
+            bts::db::level_map< offer_index_key, balance_id_type>               _offer_db;
 
             // END DNS
 
@@ -2004,6 +2004,30 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (rec) ) }
 
 
+    void                        chain_database::store_domain_offer( const offer_index_key& offer )
+    {
+        my->_offer_db.store( offer, offer.offer_address );
+    }
+
+    ooffer_index_key             chain_database::get_domain_offer( const balance_id_type& owner )
+    {
+        FC_ASSERT(!"unimplemented");
+    }
+    vector<offer_index_key>     chain_database::get_domain_offers( const string& domain_name, uint32_t limit ) const
+    {
+        auto start_key = offer_index_key::lower_bound_for_domain( domain_name );
+        auto itr = my->_offer_db.lower_bound( start_key );
+        vector<offer_index_key> offers;
+        while( itr.valid() && itr.key().domain_name == domain_name && offers.size() < limit )
+        {
+           offers.push_back( itr.key() );
+           ++itr;
+        }
+        return offers;
+    }
+
+
+
 
 
     vector<domain_record>       chain_database::get_domain_records( const string& first_name,
@@ -2018,7 +2042,7 @@ namespace bts { namespace blockchain {
        }
        return domains;
 
-    }   
+    }
     vector<domain_record>       chain_database::get_domains_in_auction()const
     {
         vector<domain_record> domains;

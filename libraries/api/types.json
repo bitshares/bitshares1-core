@@ -591,6 +591,16 @@
         "type_name" : "domain_record_array",
         "container_type" : "array",
         "contained_type" : "domain_record"
+      },
+      {
+        "type_name" : "domain_offer",
+        "cpp_return_type": "bts::blockchain::offer_index_key",
+        "cpp_include_file" : "bts/blockchain/dns_record.hpp"
+      },
+      {
+        "type_name": "domain_offer_array",
+        "container_type" : "array",
+        "contained_type" : "domain_offer"
       }
     ]
 }

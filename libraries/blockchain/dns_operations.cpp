@@ -1,5 +1,6 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/withdraw_types.hpp>
 #include <bts/blockchain/dns_operations.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
@@ -116,8 +117,10 @@ namespace bts { namespace blockchain {
         FC_ASSERT( is_valid_domain( this->domain_name ), "Trying to buy an invalid domain name" );
 
         auto odomain_rec = eval_state._current_state->get_domain_record( this->domain_name );
-        /* If it already exists and hasn't expired */
-        if( odomain_rec.valid() && odomain_rec->get_true_state() == domain_record::in_sale )
+        /* If it already exists and hasn't expired and you offered enough */
+        if( odomain_rec.valid() 
+            && odomain_rec->get_true_state() == domain_record::in_sale
+            && this->price >= odomain_rec->price )
         {
             share_type paid_to_owner = 0;
             for (auto op : eval_state.trx.operations)
@@ -135,6 +138,7 @@ namespace bts { namespace blockchain {
                     }
                 }
             }
+            FC_ASSERT( this->price == paid_to_owner );
             FC_ASSERT( paid_to_owner >= odomain_rec->price, "Did not pay enough to previous owner" );
             odomain_rec->state = domain_record::owned;
             odomain_rec->owner = this->new_owner;
@@ -142,19 +146,51 @@ namespace bts { namespace blockchain {
             eval_state._current_state->store_domain_record( *odomain_rec );
             return;
         }
-        /* Domain does not exist or is not for sale, so this is an offer */
+        /* Domain does not exist or is not for sale or is too expensive, so this is an offer */
         else
         {
+            auto balance = eval_state._current_state->get_domain_offer(this->new_owner);
+            FC_ASSERT( !balance.valid(), "Trying to make an offer with an offer ID that already exists");
             FC_ASSERT(this->price > 0, "Price must be greater than 0 when you offer" );
-            auto balance_rec = balance_record();
-            FC_ASSERT(!" TODO unimplemented domain offer");
+            bool found_deposit = false;
+            for ( auto op : eval_state.trx.operations )
+            {
+                if (op.type == operation_type_enum::deposit_op_type)
+                {
+                    auto deposit = op.as<deposit_operation>();
+                    if( deposit.condition.type == withdraw_condition_types::withdraw_domain_offer_type )
+                    {
+                        auto condition = deposit.condition.as<bts::blockchain::withdraw_domain_offer>();
+                        FC_ASSERT( condition.domain_name == this->domain_name, "condition does not match offer op" );
+                        FC_ASSERT( condition.price == this->price, "condition does not match offer op" );
+                        FC_ASSERT( condition.owner == this->new_owner, "condition does not match offer op" );
+                        found_deposit = true;
+                    }
+                }
+            }
+            FC_ASSERT( found_deposit, "Did not find a deposit on this domain offer transaction" );
+            auto offer_key = offer_index_key();
+            offer_key.price = this->price;
+            offer_key.domain_name = this->domain_name;
+            offer_key.offer_address = this->new_owner;
+            offer_key.offer_time = eval_state._current_state->now().sec_since_epoch();
+            eval_state._current_state->store_domain_offer( offer_key );
         }
     }
 
 
     void domain_cancel_buy_operation::evaluate( transaction_evaluation_state& eval_state )
     {
-        FC_ASSERT(!" TODO unimplemented offer cancel");
+        auto deposit = eval_state._current_state->get_balance_record( this->offer_address );
+        FC_ASSERT(deposit.valid());
+        FC_ASSERT( deposit->condition.type == withdraw_condition_types::withdraw_domain_offer_type );
+        auto condition = deposit->condition.as<withdraw_domain_offer>();
+        // TODO check that the funds were withdrawn for real  ?
+        auto index_key = offer_index_key();
+        index_key.offer_address = condition.owner;
+        index_key.domain_name = condition.domain_name;
+        index_key.offer_address = condition.owner;
+        // eval_state->_current_state.remove_domain_offer(   );
     }
 
 

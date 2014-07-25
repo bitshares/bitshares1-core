@@ -4709,6 +4709,7 @@ namespace bts { namespace wallet {
     }
 
     signed_transaction   wallet::domain_buy( const string& domain_name,
+                                             const share_type& price,
                                              const string& account_name,
                                              bool sign )
     {
@@ -4738,6 +4739,13 @@ namespace bts { namespace wallet {
         return trx;
 
     }
+
+
+    signed_transaction   wallet::domain_cancel_buy( const balance_id_type& offer_id, bool sign)
+    {
+        FC_ASSERT(!"unimplemented");
+    }
+
 
     signed_transaction   wallet::domain_transfer( const string& domain_name,
                                                   const string& account_name,
