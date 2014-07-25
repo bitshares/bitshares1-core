@@ -188,8 +188,8 @@ namespace bts { namespace net {
         memcpy(padded_message.get(), (char*)&message_to_send, sizeof(message_header));
         memcpy(padded_message.get() + sizeof(message_header), message_to_send.data.data(), message_to_send.size );
         {
-         fc::scoped_lock<fc::mutex> lock(_send_mutex);
-         _sock.write(padded_message.get(), size_with_padding);
+          fc::scoped_lock<fc::mutex> lock(_send_mutex);
+          _sock.write(padded_message.get(), size_with_padding);
         }
         _sock.flush();
         _bytes_sent += size_with_padding;

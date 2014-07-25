@@ -447,6 +447,9 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _dump_node_status_task_done;
 
+      std::list<peer_connection_ptr> _peers_to_delete;
+      fc::future<void> _delayed_peer_deletion_task_done;
+
 #ifdef ENABLE_P2P_DEBUGGING_API
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
@@ -564,7 +567,10 @@ namespace bts { namespace net { namespace detail {
       peer_connection_ptr get_connection_to_endpoint( const fc::ip::endpoint& remote_endpoint );
 
       void dump_node_status();
-      
+
+      void delayed_peer_deletion_task();
+      void schedule_peer_for_deletion(const peer_connection_ptr& peer_to_delete);
+
       void disconnect_from_peer( peer_connection* originating_peer,
                                const std::string& reason_for_disconnect,
                                 bool caused_by_error = false,
@@ -618,8 +624,6 @@ namespace bts { namespace net { namespace detail {
         std::shared_ptr<fc::thread> impl_thread(impl_to_delete->_thread);
         weak_thread = impl_thread;
         impl_thread->async([impl_to_delete](){ delete impl_to_delete; }).wait();
-        dlog("sleeping to allow destructors to execute in the p2p thread");
-        fc::usleep(fc::milliseconds(10));
         dlog("deleting the p2p thread");
       }
       if (weak_thread.expired())
@@ -752,7 +756,7 @@ namespace bts { namespace net { namespace detail {
                   ( (iter->last_connection_disposition != last_connection_failed && 
                      iter->last_connection_disposition != last_connection_rejected &&
                      iter->last_connection_disposition != last_connection_handshaking_failed) ||
-                    ( fc::time_point::now() - iter->last_connection_attempt_time ) > delay_until_retry  ) )
+                    (fc::time_point::now() - iter->last_connection_attempt_time) > delay_until_retry ) )
               {
                 connect_to( iter->endpoint );
                 initiated_connection_this_pass = true;
@@ -1197,6 +1201,20 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       dump_node_status();
       _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, fc::time_point::now() + fc::minutes(1));
+    }
+
+    void node_impl::delayed_peer_deletion_task()
+    {
+      VERIFY_CORRECT_THREAD();
+      _peers_to_delete.clear();
+    }
+
+    void node_impl::schedule_peer_for_deletion(const peer_connection_ptr& peer_to_delete)
+    {
+      VERIFY_CORRECT_THREAD();
+      _peers_to_delete.emplace_back(peer_to_delete);
+      if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
+        _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); });
     }
 
     bool node_impl::is_accepting_new_connections()
@@ -2215,7 +2233,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_connection_closed( peer_connection* originating_peer )
     {
       VERIFY_CORRECT_THREAD();
-      peer_connection_ptr originating_peer_ptr = originating_peer->shared_from_this();
+       peer_connection_ptr originating_peer_ptr = originating_peer->shared_from_this();
       _rate_limiter.remove_tcp_socket( &originating_peer->get_socket() );
 
 
@@ -2228,9 +2246,9 @@ namespace bts { namespace net { namespace detail {
         _potential_peer_db.update_entry( updated_peer_record );
       }
 
-      if( _closing_connections.find(originating_peer_ptr ) != _closing_connections.end() )
+      if( _closing_connections.find(originating_peer_ptr) != _closing_connections.end() )
         _closing_connections.erase( originating_peer_ptr );
-      else if( _active_connections.find(originating_peer_ptr ) != _active_connections.end() )
+      else if( _active_connections.find(originating_peer_ptr) != _active_connections.end() )
       {
         _active_connections.erase( originating_peer_ptr );
 
@@ -2238,7 +2256,7 @@ namespace bts { namespace net { namespace detail {
         updated_peer_record.last_seen_time = fc::time_point::now();
         _potential_peer_db.update_entry( updated_peer_record );
       }
-      else if( _handshaking_connections.find(originating_peer_ptr ) != _handshaking_connections.end() )
+      else if( _handshaking_connections.find(originating_peer_ptr) != _handshaking_connections.end() )
       {
         _handshaking_connections.erase( originating_peer_ptr );
       }
@@ -2248,8 +2266,8 @@ namespace bts { namespace net { namespace detail {
 
       if( _active_connections.size() != _last_reported_number_of_connections )
       {
-        _delegate->connection_count_changed( _active_connections.size() );
         _last_reported_number_of_connections = _active_connections.size();
+        _delegate->connection_count_changed( _last_reported_number_of_connections );
       }
 
       if (!originating_peer->sync_items_requested_from_peer.empty())
@@ -2267,7 +2285,7 @@ namespace bts { namespace net { namespace detail {
         }
         trigger_fetch_items_loop();
       }
-
+      schedule_peer_for_deletion(originating_peer_ptr);
     }
 
     void node_impl::process_backlog_of_sync_blocks()
@@ -2664,8 +2682,8 @@ namespace bts { namespace net { namespace detail {
       start_synchronizing_with_peer( peer );
       if( _active_connections.size() != _last_reported_number_of_connections )
       {
-        _delegate->connection_count_changed( _active_connections.size() );
         _last_reported_number_of_connections = _active_connections.size();
+        _delegate->connection_count_changed( _last_reported_number_of_connections );
       }
     }
 
@@ -2673,6 +2691,7 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
 
+      // First, stop accepting incoming network connections
       try
       {
         _tcp_server.close();
@@ -2704,7 +2723,61 @@ namespace bts { namespace net { namespace detail {
       {
         wlog( "Exception thrown while terminating P2P accept loop, ignoring" );
       }
-      
+
+      // Next, terminate our existing connections.  First, close all of the connections nicely.  
+      // This will close the sockets and may result in calls to our "on_connection_closing" 
+      // method to inform us that the connection really closed (or may not if we manage to cancel
+      // the read loop before it gets an EOF).
+      // operate off copies of the lists in case they change during iteration
+      std::list<peer_connection_ptr> all_peers;
+      boost::push_back(all_peers, _active_connections);
+      boost::push_back(all_peers, _handshaking_connections);
+      boost::push_back(all_peers, _closing_connections);
+
+      for (const peer_connection_ptr& peer : all_peers)
+      {
+        try
+        {
+          peer->close_connection();
+        }
+        catch ( const fc::exception& e )
+        {
+          wlog( "Exception thrown while closing peer connection, ignoring: ${e}", ("e",e) );
+        }
+        catch (...)
+        {
+          wlog( "Exception thrown while closing peer connection, ignoring" );
+        }
+      }
+
+      // and delete all of the peer_connection objects
+      _active_connections.clear();
+      _handshaking_connections.clear();
+      _closing_connections.clear();
+      all_peers.clear();
+      _peers_to_delete.clear();
+
+      try 
+      {
+        _delayed_peer_deletion_task_done.cancel_and_wait();
+        dlog("Delayed peer deletion task terminated");
+      } 
+      catch ( const fc::canceled_exception& )
+      {
+        dlog("Delayed peer deletion task terminated");
+      } 
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring" );
+      }
+
+      // Now that there are no more peers that can call methods on us, there should be no
+      // chance for one of our loops to be rescheduled, so we can safely terminate all of
+      // our loops now
       try 
       {
         _p2p_network_connect_loop_done.cancel();
@@ -2860,13 +2933,7 @@ namespace bts { namespace net { namespace detail {
       {
         wlog( "Exception thrown while terminating Dump node status task, ignoring" );
       }
-
-      _handshaking_connections.clear();
-      _active_connections.clear();
-      _closing_connections.clear();
-
-      fc::usleep(fc::microseconds(10000));
-    } //close
+    } // node_impl::close()
 
     void node_impl::accept_connection_task( peer_connection_ptr new_peer )
     {
@@ -2963,9 +3030,10 @@ namespace bts { namespace net { namespace detail {
           updated_peer_record.last_error = except;
         _potential_peer_db.update_entry( updated_peer_record );
 
-        _handshaking_connections.erase( new_peer );
+        _handshaking_connections.erase(new_peer);
         display_current_connections();
         trigger_p2p_network_connect_loop();
+        schedule_peer_for_deletion(new_peer);
 
         throw except;
       }
@@ -3033,6 +3101,16 @@ namespace bts { namespace net { namespace detail {
       try
       {
         _potential_peer_db.open( potential_peer_database_file_name );
+
+        // push back the time on all peers loaded from the database so we will be able to retry them immediately
+        for (peer_database::iterator itr = _potential_peer_db.begin(); itr != _potential_peer_db.end(); ++itr)
+        {
+          potential_peer_record updated_peer_record = *itr;
+          updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time, 
+                                                                                          fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
+          _potential_peer_db.update_entry( updated_peer_record );
+        }
+
         trigger_p2p_network_connect_loop();
       }
       catch ( fc::exception& except )
