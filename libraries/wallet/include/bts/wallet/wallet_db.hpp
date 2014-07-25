@@ -29,8 +29,9 @@ namespace bts { namespace wallet {
 
          int32_t              new_wallet_record_index();
          int32_t              new_key_child_index();
-         fc::ecc::private_key new_private_key( const fc::sha512& password, 
-                                               const address& parent_account_address = address() );
+         fc::ecc::private_key new_private_key( const fc::sha512& password,
+                                               const address& parent_account_address = address(),
+                                               bool store_key = true );
 
          void        set_property( property_enum property_id, const fc::variant& v );
          fc::variant get_property( property_enum property_id );

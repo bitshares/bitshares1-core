@@ -38,14 +38,19 @@ namespace bts { namespace net
       // current task yields.  In the (not uncommon) case where it is the task executing 
       // connect_to or read_loop, this allows the task to finish before the destructor is forced
       // to cancel it.
-      return peer_connection_ptr(new peer_connection(delegate), [](peer_connection* peer_to_delete){ fc::async([peer_to_delete](){delete peer_to_delete;}); });
+      return peer_connection_ptr(new peer_connection(delegate));
+      //, [](peer_connection* peer_to_delete){ fc::async([peer_to_delete](){delete peer_to_delete;}); });
     }
 
     peer_connection::~peer_connection()
     {
-       try {
-         close_connection();
-       } catch ( ... ) {}
+      try 
+      {
+        close_connection();
+      } 
+      catch ( ... ) 
+      {
+      }
       if (_send_queued_messages_done.valid() && !_send_queued_messages_done.ready())
       {
         _send_queued_messages_done.cancel();

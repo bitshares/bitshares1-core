@@ -254,13 +254,17 @@ namespace bts { namespace wallet {
       return next_child_index;
    }
 
-   fc::ecc::private_key wallet_db::new_private_key( const fc::sha512& password, 
-                                                    const address& parent_account_address )
+   fc::ecc::private_key wallet_db::new_private_key( const fc::sha512& password,
+                                                    const address& parent_account_address,
+                                                    bool store_key )
    {
       FC_ASSERT( wallet_master_key.valid() );
 
       auto master_ext_priv_key  = wallet_master_key->decrypt_key( password );
       auto new_priv_key = master_ext_priv_key.child( new_key_child_index() );
+
+      if( !store_key )
+        return new_priv_key;
 
       key_data new_key;
       new_key.account_address = parent_account_address;
@@ -271,7 +275,7 @@ namespace bts { namespace wallet {
          new_key.account_address = address(new_key.public_key);
       }
 
-      store_key( new_key );
+      this->store_key( new_key );
       return new_priv_key;
    }
 
@@ -359,7 +363,7 @@ namespace bts { namespace wallet {
             oacct->is_my_account = true;
             store_record(*oacct);
             cache_account(*oacct);
-            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})", 
+            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
                  ("account_name",get_account_name(key_to_store.account_address)) );

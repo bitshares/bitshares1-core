@@ -36,6 +36,7 @@ int main( int argc, char** argv )
                 << e.to_detail_string() << "\n";
       wlog( "${e}", ("e", e.to_detail_string() ) );
    }
+   dlog("Leaving main()");
    return 0;
 }
 

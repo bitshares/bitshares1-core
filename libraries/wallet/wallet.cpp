@@ -2191,7 +2191,33 @@ namespace bts { namespace wallet {
           my->_blockchain->store_pending_transaction( trx );
       }
       return trx;
-   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under) ) }
+     } FC_CAPTURE_AND_RETHROW( (account_to_publish_under) ) }
+
+   int32_t wallet::recover_accounts( int32_t number_of_accounts, int32_t max_number_of_attempts )
+   {
+     FC_ASSERT( is_open() );
+     FC_ASSERT( is_unlocked() );
+
+     int attempts = 0;
+     int recoveries = 0;
+
+     while( recoveries < number_of_accounts && attempts++ < max_number_of_attempts )
+     {
+        fc::ecc::private_key new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password, address(), false );
+        fc::ecc::public_key new_pub_key = new_priv_key.get_public_key();
+        auto recovered_account = my->_blockchain->get_account_record(new_pub_key);
+
+        if( recovered_account.valid() )
+        {
+          import_private_key(new_priv_key, recovered_account->name, true);
+          ++recoveries;
+        }
+     }
+
+     if( recoveries )
+       scan_chain();
+     return recoveries;
+   }
 
    /**
     *  This method assumes that fees can be paid in the same asset type as the 
