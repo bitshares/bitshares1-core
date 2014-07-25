@@ -1503,7 +1503,11 @@ namespace bts { namespace wallet {
 
       FC_ASSERT( is_open() );
       auto registered_account = my->_blockchain->get_account_record( old_account_name );
-      FC_ASSERT( !registered_account, "You cannot rename a registered account" );
+      auto local_account = my->_wallet_db.lookup_account( old_account_name );
+      FC_ASSERT( !registered_account
+                 || (local_account
+                     && local_account->owner_key != registered_account->owner_key),
+                 "You cannot rename a registered account" );
       registered_account = my->_blockchain->get_account_record( new_account_name );
       FC_ASSERT( !registered_account, "Your new account name is already registered" );
 
@@ -1648,7 +1652,7 @@ namespace bts { namespace wallet {
 
       if( start == 0 )
       {
-         scan_state( now );
+         scan_state( my->_blockchain->get_genesis_timestamp() );
          ++start;
       }
 

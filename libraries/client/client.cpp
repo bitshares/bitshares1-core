@@ -361,7 +361,17 @@ config load_config( const fc::path& datadir )
       if( fc::exists( config_file ) )
       {
          std::cout << "Loading config \"" << config_file.generic_string()  << "\"\n";
+         auto default_peers = cfg.default_peers;
          cfg = fc::json::from_file( config_file ).as<config>();
+
+         int merged_peer_count = 0;
+         for( auto peer : default_peers )
+           if( std::find(cfg.default_peers.begin(), cfg.default_peers.end(), peer) == cfg.default_peers.end() )
+           {
+             ++merged_peer_count;
+             cfg.default_peers.push_back(peer);
+           }
+         std::cout << "Merged " << merged_peer_count << " default peers into config.\n";
       }
       else
       {
