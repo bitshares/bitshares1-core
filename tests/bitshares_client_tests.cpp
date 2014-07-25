@@ -482,7 +482,7 @@ void bts_client_launcher_fixture::create_forked_wallets()
     bts::blockchain::advance_time(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
     std::vector<bts::wallet::wallet_account_record> enabled_delegates = first_client.wallet->get_my_delegates( enabled_delegate_status );
     fc::optional<fc::time_point_sec> next_block_time = first_client.wallet->get_next_producible_block_timestamp( enabled_delegates );
-    FC_ASSERT(next_block_time);
+    assert(next_block_time);
     fc::time_point_sec my_next_block_time = *next_block_time;
     bts::blockchain::advance_time(my_next_block_time.sec_since_epoch() - bts::blockchain::now().sec_since_epoch());
     bts::blockchain::full_block next_block = first_client.blockchain->generate_block(my_next_block_time);
@@ -657,7 +657,7 @@ int bts_client_launcher_fixture::verify_network_connectivity(const fc::path& out
     for (uint32_t i = 0; i < boost::num_vertices(_undirected_graph); ++i)
       for (uint32_t j = 0; j < boost::num_vertices(_undirected_graph); ++j)
       {
-        FC_ASSERT(distances[i][j] == distances[j][i]);
+        assert(distances[i][j] == distances[j][i]);
         if (distances[i][j] > longest_path_length && distances[i][j] != std::numeric_limits<WeightMap::value_type>::max())
         {
           longest_path_length = distances[i][j];

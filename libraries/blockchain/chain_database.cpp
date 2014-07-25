@@ -1810,7 +1810,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-       wlog( "balance record: ${r}", ("r",r) );
+       ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
           my->_balance_db.remove( r.id() );

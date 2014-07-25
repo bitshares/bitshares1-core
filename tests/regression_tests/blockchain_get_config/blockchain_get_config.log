@@ -1,0 +1,42 @@
+(wallet closed) >>> help blockchain_get_config
+Usage:
+blockchain_get_config                                                                                 Returns static configuration parameters about the blockchain.
+Returns static configuration parameters about the blockchain.
+
+Parameters:
+  (none)
+
+Returns:
+  json_object
+
+aliases: getconfig, get_config, config
+(wallet closed) >>> blockchain_get_config
+{
+  "blockchain_id": "3622ad3cbd09f839b921bace52bf4432b91f636d625f53401bbf6b6cb01f754c",
+  "symbol": "XTS",
+  "name": "BitShares XTS",
+  "version": 109,
+  "genesis_timestamp": "2014-06-20T14:40:27",
+  "block_interval": 10,
+  "target_block_size": 1280,
+  "max_block_size": 2560,
+  "max_blockchain_size": 107374182400,
+  "address_prefix": "XTS",
+  "min_block_fee": "0.00001 XTS",
+  "inactivity_fee_apr": "0.00010 XTS",
+  "priority_fee": "0.10000 XTS",
+  "delegate_num": 101,
+  "delegate_reg_fee": "0.00000 XTS",
+  "name_size_max": 63,
+  "memo_size_max": 19,
+  "data_size_max": 65536,
+  "symbol_size_max": 5,
+  "symbol_size_min": 3,
+  "asset_reg_fee": "0.00000 XTS",
+  "asset_shares_max": 1000000000000000,
+  "min_market_depth": "20,000,000.00000 XTS",
+  "proposal_vote_message_max": 1024,
+  "max_pending_queue_size": 5,
+  "max_trx_per_second": 1
+}
+(wallet closed) >>> quit
