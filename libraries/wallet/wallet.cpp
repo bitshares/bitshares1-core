@@ -1652,7 +1652,7 @@ namespace bts { namespace wallet {
 
       if( start == 0 )
       {
-         scan_state( now );
+         scan_state( my->_blockchain->get_genesis_timestamp() );
          ++start;
       }
 
