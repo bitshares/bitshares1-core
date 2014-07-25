@@ -80,7 +80,7 @@ namespace bts { namespace net
     {
       try
       {
-        FC_ASSERT( our_state == our_connection_state::disconnected &&
+        assert( our_state == our_connection_state::disconnected &&
                 their_state == their_connection_state::disconnected );
         direction = peer_connection_direction::inbound;
         negotiation_status = connection_negotiation_status::accepting;
@@ -110,7 +110,8 @@ namespace bts { namespace net
     {
       try
       {
-        FC_ASSERT( our_state == our_connection_state::disconnected && their_state == their_connection_state::disconnected );
+        assert( our_state == our_connection_state::disconnected && 
+                their_state == their_connection_state::disconnected );
         direction = peer_connection_direction::outbound;
 
         _remote_endpoint = remote_endpoint;
@@ -201,7 +202,9 @@ namespace bts { namespace net
         return;
       }
 
-      if( _send_queued_messages_done.valid() ) FC_ASSERT( !_send_queued_messages_done.canceled() );
+      if( _send_queued_messages_done.valid() && _send_queued_messages_done.canceled() ) 
+        FC_THROW_EXCEPTION(fc::exception, "Attempting to send a message on a connection that is being shut down");
+
       if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
            _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
     }

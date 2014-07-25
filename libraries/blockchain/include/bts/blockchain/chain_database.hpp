@@ -169,6 +169,8 @@ namespace bts { namespace blockchain {
          oblock_record               get_block_record( uint32_t block_num )const;
 
 
+         oprice                      get_median_delegate_price( asset_id_type )const;
+
          virtual odelegate_slate      get_delegate_slate( slate_id_type id )const override;
          virtual void                 store_delegate_slate( slate_id_type id, 
                                                             const delegate_slate& slate ) override;

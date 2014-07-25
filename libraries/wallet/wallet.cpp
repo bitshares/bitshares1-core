@@ -256,7 +256,7 @@ namespace bts { namespace wallet {
             bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
             bool scan_short( wallet_transaction_record& trx_rec, const short_operation& op );
 
-            bool sync_balance_with_blockchain( const balance_id_type& balance_id );
+            void sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
 
@@ -630,8 +630,8 @@ namespace bts { namespace wallet {
                     trx_rec.ledger_entries.push_back( entry );
                 }
             }
-            sync_balance_with_blockchain( op.balance_id );
 
+            sync_balance_with_blockchain( op.balance_id );
             return true;
          }
          return false;
@@ -968,32 +968,17 @@ namespace bts { namespace wallet {
                 break;
              }
         }
-        if( cache_deposit )
-        {
-           if( !sync_balance_with_blockchain( op.balance_id() ) )
-           {
-              elog( "unable to cache balance ${b}", ("b",op) );
-           }
-        }
-        return cache_deposit;
 
+        if( cache_deposit ) sync_balance_with_blockchain( op.balance_id() );
+        return cache_deposit;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
-      bool wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
+      void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
       {
-         auto bal_rec = _blockchain->get_balance_record( balance_id );
-         if( !bal_rec.valid() )
-         {
-            // wlog( "blockchain doesn't know about balance id: ${balance_id}",
-            //      ("balance_id",balance_id) );
-            _wallet_db.remove_balance( balance_id );
-            return false;
-         }
-         else
-         {
-            _wallet_db.cache_balance( *bal_rec );
-            return true;
-         }
+         const auto pending_state = _blockchain->get_pending_state();
+         const auto balance_record = pending_state->get_balance_record( balance_id );
+         if( !balance_record.valid() ) _wallet_db.remove_balance( balance_id );
+         else _wallet_db.cache_balance( *balance_record );
       }
 
       void wallet_impl::reschedule_relocker()
@@ -1161,12 +1146,13 @@ namespace bts { namespace wallet {
           close();
           my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
-
-          const auto tmp_balances = my->_wallet_db.get_balances();
-          for( const auto& item : tmp_balances )
-              my->sync_balance_with_blockchain( item.first );
-
           my->_blockchain->set_priority_fee( get_priority_fee().amount );
+
+          for( const auto& balance_item : my->_wallet_db.get_balances() )
+          {
+              const auto balance_id = balance_item.first;
+              my->sync_balance_with_blockchain( balance_id );
+          }
       }
       catch( ... )
       {
@@ -1793,7 +1779,8 @@ namespace bts { namespace wallet {
    void wallet::sign_and_cache_transaction(
         signed_transaction& transaction,
         const std::unordered_set<address>& required_signatures,
-        wallet_transaction_record& record )
+        wallet_transaction_record& record
+        )
    { try {
         sign_transaction( transaction, required_signatures );
         my->_blockchain->store_pending_transaction( transaction, true );
@@ -1803,8 +1790,15 @@ namespace bts { namespace wallet {
         record.is_virtual = false;
         record.is_confirmed = false;
         record.trx = transaction;
-        record.created_time = record.received_time = now;
+        record.created_time = now;
+        record.received_time = now;
         my->_wallet_db.store_transaction( record );
+
+        for( const auto& balance_item : my->_wallet_db.get_balances() )
+        {
+            const auto balance_id = balance_item.first;
+            my->sync_balance_with_blockchain( balance_id );
+        }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id, vote_selection_method selection_method )
@@ -2132,6 +2126,69 @@ namespace bts { namespace wallet {
       header.sign( delegate_key, my->_blockchain->chain_id() );
       FC_ASSERT( header.validate_signee( delegate_pub_key, my->_blockchain->chain_id() ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
+
+   signed_transaction   wallet::publish_price( const string& account_to_publish_under, 
+                                               double amount_per_xts, 
+                                               const string& amount_asset_symbol, bool sign )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       if( !is_receive_account( account_to_publish_under ) )
+           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", 
+                               ("from_account_name",account_to_publish_under) );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
+      FC_ASSERT( current_account );
+      auto payer_public_key = get_account_public_key( account_to_publish_under );
+      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) ); 
+
+      auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
+      auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
+
+      asset price_shares( amount_per_xts *  quote_asset_record->get_precision(), quote_asset_record->id );
+      asset base_one_quantity( base_asset_record->get_precision(), 0 );
+
+      auto quote_price_shares = price_shares / base_one_quantity;
+
+      trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
+                        current_account->id, fc::variant( quote_price_shares )  );
+
+      auto required_fees = get_priority_fee();
+      auto size_fee = fc::raw::pack_size( trx );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+
+      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      {
+        // withdraw delegate pay... 
+        trx.withdraw_pay( current_account->id, required_fees.amount );
+      }
+      else
+      {
+         my->withdraw_to_transaction( required_fees.amount,
+                                      required_fees.asset_id,
+                                      payer_public_key,
+                                      trx, required_signatures );
+      }
+      if (sign)
+      {
+          auto entry = ledger_entry();
+          entry.from_account = payer_public_key;
+          entry.to_account = payer_public_key;
+          entry.memo = "publish price " + my->_blockchain->to_pretty_price( quote_price_shares );
+
+          auto record = wallet_transaction_record();
+          record.ledger_entries.push_back( entry );
+          record.fee = required_fees;
+
+          sign_and_cache_transaction( trx, required_signatures, record );
+          my->_blockchain->store_pending_transaction( trx );
+      }
+      return trx;
+
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
 
    signed_transaction wallet::publish_slate( const string& account_to_publish_under, bool sign )
    { try {
@@ -4261,7 +4318,7 @@ namespace bts { namespace wallet {
     *  selection_method as vote_none, vote_all, or vote_random. The slate
     *  returned will contain no more than BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates.
     */
-   delegate_slate wallet::select_delegate_vote( vote_selection_method selection_method )const
+   delegate_slate wallet::select_delegate_vote( vote_selection_method selection_method )
    {
       if( selection_method == vote_none ) 
          return delegate_slate();
@@ -4271,7 +4328,7 @@ namespace bts { namespace wallet {
 
       for( const auto& acct_rec : my->_wallet_db.get_accounts() )
       {
-         if( acct_rec.second.approved )
+         if( acct_rec.second.approved > 0 )
              for_candidates.push_back( acct_rec.second.id );
       }
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
@@ -4285,6 +4342,68 @@ namespace bts { namespace wallet {
       {
           slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE / 3, for_candidates.size() );
           slate_size = rand() % ( slate_size + 1 );
+      }
+      else if( selection_method == vote_recommended && for_candidates.size() < BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
+      {
+          unordered_map<account_id_type, int> recommended_candidate_ranks;
+
+          //Tally up the recommendation count for all delegates recommended by delegates I approve of
+          for( account_id_type approved_candidate : for_candidates )
+          {
+            oaccount_record candidate_record = my->_blockchain->get_account_record(approved_candidate);
+
+            FC_ASSERT( candidate_record.valid() );
+            if( !candidate_record->public_data.is_object()
+                || !candidate_record->public_data.get_object().contains("slate_id"))
+              continue;
+            if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
+            {
+              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
+              set_delegate_approval(candidate_record->name, -1);
+              continue;
+            }
+
+            odelegate_slate recomendations = my->_blockchain->get_delegate_slate(candidate_record->public_data.get_object()["slate_id"].as<slate_id_type>());
+            if( !recomendations.valid() )
+            {
+              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
+              set_delegate_approval(candidate_record->name, -1);
+              continue;
+            }
+
+            for( account_id_type recommended_candidate : recomendations->supported_delegates )
+              ++recommended_candidate_ranks[recommended_candidate];
+          }
+
+          //Disqualify delegates I actively disapprove of
+          for( const auto& acct_rec : my->_wallet_db.get_accounts() )
+             if( acct_rec.second.approved < 0 )
+                recommended_candidate_ranks.erase(acct_rec.second.id);
+
+          //Remove from rankings candidates I already approve of
+          for( auto approved_id : for_candidates )
+            if( recommended_candidate_ranks.find(approved_id) != recommended_candidate_ranks.end() )
+              recommended_candidate_ranks.erase(approved_id);
+
+          //While I can vote for more candidates, and there are more recommendations to vote for...
+          while( for_candidates.size() < BTS_BLOCKCHAIN_MAX_SLATE_SIZE && recommended_candidate_ranks.size() > 0 )
+          {
+            int best_rank = 0;
+            account_id_type best_ranked_candidate;
+
+            //Add highest-ranked candidate to my list to vote for and remove him from rankings
+            for( auto& ranked_candidate : recommended_candidate_ranks )
+              if( ranked_candidate.second > best_rank )
+              {
+                best_rank = ranked_candidate.second;
+                best_ranked_candidate = ranked_candidate.first;
+              }
+
+            for_candidates.push_back(best_ranked_candidate);
+            recommended_candidate_ranks.erase(best_ranked_candidate);
+          }
+
+          slate_size = for_candidates.size();
       }
 
       auto slate = delegate_slate();

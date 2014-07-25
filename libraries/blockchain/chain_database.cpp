@@ -94,8 +94,7 @@ namespace bts { namespace blockchain {
                          // DISABLE MARKET ISSUED ASSETS
                          if( quote_asset->is_market_issued() )
                          {
-
-                            return; // don't execute anything.
+                         //   return; // don't execute anything.
                          }
 
                          // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
@@ -129,6 +128,11 @@ namespace bts { namespace blockchain {
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+
+                         // while bootstraping we use this metric
+                         auto med_price = _db_impl.self->get_median_delegate_price( quote_id );
+                         if( med_price ) market_stat->avg_price_24h = *med_price;
+
                          FC_ASSERT( market_stat, "market status should have been set when the order is created" );
                          price max_bid = market_stat->maximum_bid();
                          price min_ask = market_stat->minimum_ask();
@@ -173,6 +177,7 @@ namespace bts { namespace blockchain {
                                usd_paid_by_bid = usd_received_by_ask;
                                if( _current_bid->get_price() > max_bid )
                                {
+                                  wlog( "skipping ${x} > max_bid ${b}", ("x",_current_bid->get_price())("b", max_bid)  );
                                   _current_bid.reset();
                                   continue;
                                }
@@ -183,6 +188,7 @@ namespace bts { namespace blockchain {
                                usd_received_by_ask = usd_paid_by_bid;
                                if( _current_ask->get_price() < min_ask )
                                {
+                                  wlog( "skipping ${x} < min_ask ${b}", ("x",_current_bid->get_price())("b", min_ask)  );
                                   _current_ask.reset();
                                   continue;
                                }
@@ -321,6 +327,7 @@ namespace bts { namespace blockchain {
 
                          if( _current_bid && _current_ask )
                          {
+                            // after the market is running solid we can use this metric...
                             market_stat->avg_price_24h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1);
                             market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
                             market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
@@ -1838,7 +1845,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-       wlog( "balance record: ${r}", ("r",r) );
+       ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
           my->_balance_db.remove( r.id() );
@@ -2977,6 +2984,46 @@ namespace bts { namespace blockchain {
       return my->_feed_db.fetch_optional( i );
    }
 
+   /**
+    *  Given the list of active delegates and price feeds for asset_id return the median value.
+    */
+   oprice       chain_database::get_median_delegate_price( asset_id_type asset_id )const
+   { try {
+      auto active_delegates = get_active_delegates();
+      auto feed_itr = my->_feed_db.lower_bound( feed_index{asset_id} );
+      vector<price> prices;
+      while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
+      {
+         auto  key = feed_itr.key();
+         if( is_active_delegate( key.delegate_id ) )
+         {
+            try {
+               auto val = feed_itr.value();
+               // only consider feeds updated in the past day
+               if( (fc::time_point(val.last_update) + fc::days(1)) > fc::time_point(this->now()) )
+               {
+                  prices.push_back(  val.value.as<price>() );
+                  if( prices.back().quote_asset_id != asset_id ||
+                      prices.back().base_asset_id != 0 )
+                  {
+                     prices.pop_back();
+                  }
+               }
+            } 
+            catch ( ... )
+            { // we want to catch any exceptions caused attempted to interpret value as a price and simply ignore
+              // the data feed...
+            }
+         }
+         ++feed_itr;
+      }
+      if( prices.size() )
+      {
+        std::nth_element( prices.begin(), prices.begin() + prices.size()/2, prices.end() );
+        return prices[prices.size()/2];
+      }
+      return oprice();
+   } FC_CAPTURE_AND_RETHROW( (asset_id) ) }
 
 } } // bts::blockchain
 

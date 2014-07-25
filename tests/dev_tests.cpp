@@ -321,9 +321,9 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_asset_create BUSD BitUSD delegate30 \"paper bucks\" null 1000000000 1000 true" );
    produce_block( clienta );
    exec( clientb, "wallet_account_transaction_history" );
-   exec( clientb, "short delegate30 30 5.43 BUSD" );
-   exec( clientb, "ask delegate30 4 XTS 5.41 BUSD" );
-   exec( clientb, "ask delegate32 8 XTS 4.20 BUSD" );
+   exec( clientb, "short delegate30 3000 5.43 BUSD" );
+   exec( clientb, "ask delegate30 400 XTS 5.41 BUSD" );
+   exec( clientb, "ask delegate32 800 XTS 4.20 BUSD" );
    produce_block( clienta );
    exec( clienta, "blockchain_market_order_book BUSD XTS" );
    produce_block( clienta );
@@ -440,5 +440,10 @@ BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
 
    exec(clientb, "balance delegate32");
    exec(clientb, "history delegate32");
+   exec(clientb, "wallet_publish_price_feed delegate22 .86 BUSD" );
+   produce_block(clienta);
+   exec( clientb, "ask delegate30 3 XTS 5.42 BUSD" );
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
 
 } FC_LOG_AND_RETHROW() }

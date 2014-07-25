@@ -235,8 +235,7 @@ namespace bts { namespace net {
         void disable_peer_advertising();
         fc::variant_object get_call_statistics() const;
       private:
-//        std::unique_ptr<detail::node_impl, detail::node_impl_deleter> my;
-          detail::node_impl* my;
+        std::unique_ptr<detail::node_impl, detail::node_impl_deleter> my;
    };
 
     class simulated_network : public node
