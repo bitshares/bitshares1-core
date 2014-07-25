@@ -1784,6 +1784,7 @@ config load_config( const fc::path& datadir )
 
     bool detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
     { try {
+        //TODO: Make approved an int instead of bool
       auto delegate_record = _chain_db->get_account_record( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
       _wallet->set_delegate_approval( delegate_name, approved );

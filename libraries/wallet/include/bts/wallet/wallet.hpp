@@ -32,9 +32,10 @@ namespace bts { namespace wallet {
     */
    enum vote_selection_method
    {
-      vote_none   = 0,
-      vote_all    = 1,
-      vote_random = 2
+      vote_none        = 0,
+      vote_all         = 1,
+      vote_random      = 2,
+      vote_recommended = 3
    };
 
    class wallet
@@ -102,7 +103,7 @@ namespace bts { namespace wallet {
           *  @name Utility Methods
           */
          ///@{ 
-         delegate_slate select_delegate_vote( vote_selection_method selection = vote_random )const;
+         delegate_slate select_delegate_vote( vote_selection_method selection = vote_random );
 
          bool is_receive_account( const string& account_name )const;
          bool is_valid_account( const string& account_name )const;
@@ -453,4 +454,4 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-FC_REFLECT_ENUM( bts::wallet::vote_selection_method, (vote_none)(vote_all)(vote_random) )
+FC_REFLECT_ENUM( bts::wallet::vote_selection_method, (vote_none)(vote_all)(vote_random)(vote_recommended) )

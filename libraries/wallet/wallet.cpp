@@ -4255,7 +4255,7 @@ namespace bts { namespace wallet {
     *  selection_method as vote_none, vote_all, or vote_random. The slate
     *  returned will contain no more than BTS_BLOCKCHAIN_MAX_SLATE_SIZE delegates.
     */
-   delegate_slate wallet::select_delegate_vote( vote_selection_method selection_method )const
+   delegate_slate wallet::select_delegate_vote( vote_selection_method selection_method )
    {
       if( selection_method == vote_none ) 
          return delegate_slate();
@@ -4265,7 +4265,7 @@ namespace bts { namespace wallet {
 
       for( const auto& acct_rec : my->_wallet_db.get_accounts() )
       {
-         if( acct_rec.second.approved )
+         if( acct_rec.second.approved > 0 )
              for_candidates.push_back( acct_rec.second.id );
       }
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
@@ -4279,6 +4279,68 @@ namespace bts { namespace wallet {
       {
           slate_size = std::min<size_t>( BTS_BLOCKCHAIN_MAX_SLATE_SIZE / 3, for_candidates.size() );
           slate_size = rand() % ( slate_size + 1 );
+      }
+      else if( selection_method == vote_recommended && for_candidates.size() < BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
+      {
+          unordered_map<account_id_type, int> recommended_candidate_ranks;
+
+          //Tally up the recommendation count for all delegates recommended by delegates I approve of
+          for( account_id_type approved_candidate : for_candidates )
+          {
+            oaccount_record candidate_record = my->_blockchain->get_account_record(approved_candidate);
+
+            FC_ASSERT( candidate_record.valid() );
+            if( !candidate_record->public_data.is_object()
+                || !candidate_record->public_data.get_object().contains("slate_id"))
+              continue;
+            if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
+            {
+              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
+              set_delegate_approval(candidate_record->name, -1);
+              continue;
+            }
+
+            odelegate_slate recomendations = my->_blockchain->get_delegate_slate(candidate_record->public_data.get_object()["slate_id"].as<slate_id_type>());
+            if( !recomendations.valid() )
+            {
+              //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
+              set_delegate_approval(candidate_record->name, -1);
+              continue;
+            }
+
+            for( account_id_type recommended_candidate : recomendations->supported_delegates )
+              ++recommended_candidate_ranks[recommended_candidate];
+          }
+
+          //Disqualify delegates I actively disapprove of
+          for( const auto& acct_rec : my->_wallet_db.get_accounts() )
+             if( acct_rec.second.approved < 0 )
+                recommended_candidate_ranks.erase(acct_rec.second.id);
+
+          //Remove from rankings candidates I already approve of
+          for( auto approved_id : for_candidates )
+            if( recommended_candidate_ranks.find(approved_id) != recommended_candidate_ranks.end() )
+              recommended_candidate_ranks.erase(approved_id);
+
+          //While I can vote for more candidates, and there are more recommendations to vote for...
+          while( for_candidates.size() < BTS_BLOCKCHAIN_MAX_SLATE_SIZE && recommended_candidate_ranks.size() > 0 )
+          {
+            int best_rank = 0;
+            account_id_type best_ranked_candidate;
+
+            //Add highest-ranked candidate to my list to vote for and remove him from rankings
+            for( auto& ranked_candidate : recommended_candidate_ranks )
+              if( ranked_candidate.second > best_rank )
+              {
+                best_rank = ranked_candidate.second;
+                best_ranked_candidate = ranked_candidate.first;
+              }
+
+            for_candidates.push_back(best_ranked_candidate);
+            recommended_candidate_ranks.erase(best_ranked_candidate);
+          }
+
+          slate_size = for_candidates.size();
       }
 
       auto slate = delegate_slate();
