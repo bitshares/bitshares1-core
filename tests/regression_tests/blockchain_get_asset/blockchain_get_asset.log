@@ -1,6 +1,6 @@
-default (unlocked) >>> debug_filter_output_for_tests true
+(wallet closed) >>> debug_filter_output_for_tests true
 OK
-default (unlocked) >>> help blockchain_get_asset
+(wallet closed) >>> help blockchain_get_asset
 Usage:
 blockchain_get_asset <asset>                                                                          Retrieves the record for the given asset ticker symbol or ID
 Retrieves the record for the given asset ticker symbol or ID
@@ -12,7 +12,7 @@ Returns:
   optional_asset_record
 
 aliases: get_asset
-default (unlocked) >>> blockchain_get_asset XTS
+(wallet closed) >>> blockchain_get_asset XTS
 {
   "id": 0,
   "symbol": "XTS",
@@ -36,7 +36,7 @@ default (unlocked) >>> blockchain_get_asset XTS
     "base_asset_id": 0
   }
 }
-default (unlocked) >>> get_asset XTS
+(wallet closed) >>> blockchain_get_asset 0
 {
   "id": 0,
   "symbol": "XTS",
@@ -60,4 +60,4 @@ default (unlocked) >>> get_asset XTS
     "base_asset_id": 0
   }
 }
-default (unlocked) >>> quit
+(wallet closed) >>> quit

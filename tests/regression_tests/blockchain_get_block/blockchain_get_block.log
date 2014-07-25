@@ -78,43 +78,4 @@ default (unlocked) >>> blockchain_get_block 4
   "delegate_signature": "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f643c60f13ca3c96c01f10b65b2c7871ddf15b82d8cfa5501bc64749afb86a947a",
   "user_transaction_ids": []
 }
-default (unlocked) >>> wallet_account_create testaccount
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-[redacted]          PENDING   delegate0           testaccount         100.00000 XTS                                                       0.10000 XTS         [redacted]
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 5
-OK
-default (unlocked) >>> balance testaccount
-No balances found.
-default (unlocked) >>> wallet_delegate_set_block_production ALL false
-OK
-default (unlocked) >>> wallet_rescan_blockchain
-Rescanning blockchain...
-Scan complete.
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
-OK
-default (unlocked) >>> balance testaccount
-ACCOUNT                         BALANCE                     
-============================================================
-testaccount                     100.00000 XTS               
-default (unlocked) >>> blockchain_get_block 5
-{
-  "previous": "32f75807d12db377b2978646485b3ac02f719411",
-  "block_num": 5,
-  "timestamp": "20140620T144040",
-  "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "0d72c0a5831a5b1d911f10acdf438c52510e5e0d",
-  "previous_secret": "323925a41e8b0aca8e7faba8b71d6183ee25afde",
-  "delegate_signature": "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d224572e8bddb4f94fd51ad8231c1855e4b235773645ec8932ae1cd0a6542bc2de4",
-  "user_transaction_ids": [
-    "c03a4c9fc662a23de9abcaa4b58b213d58029ed4"
-  ]
-}
 default (unlocked) >>> quit

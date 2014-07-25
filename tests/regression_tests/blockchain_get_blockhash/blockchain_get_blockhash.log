@@ -42,32 +42,4 @@ default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
 OK
 default (unlocked) >>> blockchain_get_blockhash 4
 "32f75807d12db377b2978646485b3ac02f719411"
-default (unlocked) >>> wallet_account_create testaccount
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-[redacted]          PENDING   delegate0           testaccount         100.00000 XTS                                                       0.10000 XTS         [redacted]
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 5
-OK
-default (unlocked) >>> balance testaccount
-No balances found.
-default (unlocked) >>> wallet_delegate_set_block_production ALL false
-OK
-default (unlocked) >>> wallet_rescan_blockchain
-Rescanning blockchain...
-Scan complete.
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
-OK
-default (unlocked) >>> balance testaccount
-ACCOUNT                         BALANCE                     
-============================================================
-testaccount                     100.00000 XTS               
-default (unlocked) >>> blockchain_get_blockhash 5
-"b5748a9b8d59d469a81338ee954d2d6b7d58c190"
 default (unlocked) >>> quit
