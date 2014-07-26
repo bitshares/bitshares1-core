@@ -262,8 +262,7 @@ namespace bts { namespace wallet {
 
             void scan_balances();
             void scan_registered_accounts();
-            void withdraw_to_transaction( share_type amount,
-                                          asset_id_type asset_id,
+            void withdraw_to_transaction( const asset& amount_to_withdraw,
                                           const address& from_account_address,
                                           signed_transaction& trx, 
                                           unordered_set<address>& required_fees );
@@ -362,54 +361,47 @@ namespace bts { namespace wallet {
          return opt_key->account_address == account_address;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("address_to_check",address_to_check)("account_address",account_address) ) }
 
-      void wallet_impl::withdraw_to_transaction( share_type amount,
-                                                 asset_id_type asset_id,
-                                                 const address& from_account_address,
-                                                 signed_transaction& trx, 
-                                                 unordered_set<address>& required_signatures )
+      void wallet_impl::withdraw_to_transaction(
+              const asset& amount_to_withdraw,
+              const address& from_account_address,
+              signed_transaction& trx, 
+              unordered_set<address>& required_signatures
+              )
       { try {
-         auto pending_state = _blockchain->get_pending_state();
-         share_type remaining = amount;
-         for( const auto& balance_item : _wallet_db.get_balances() )
-         {
-            auto owner = balance_item.second.owner();
-            //auto oaccount = _wallet_db.lookup_account( owner );
-            //string name = oaccount ? oaccount->name : string(owner);
-            //ilog( "${name} owner ${owner} == ${from_account}  ${item}", ("name",name)("owner",owner)("from_account",from_account_address)("item",balance_item) );
+         const auto pending_state = _blockchain->get_pending_state();
+         auto amount_remaining = amount_to_withdraw;
 
-            if( balance_item.second.asset_id() == asset_id && 
-                address_in_account( owner, from_account_address ) )
-            {
-               auto current_balance = pending_state->get_balance_record( balance_item.first );
-               if( current_balance )
-               {
-                  if( current_balance->balance > 0 )
-                  {
-                     if( remaining > current_balance->balance )
-                     {
-                        trx.withdraw( balance_item.first, balance_item.second.balance );
-                        remaining -= current_balance->balance;
-                     //   balance_item.second.balance = 0;
-                        required_signatures.insert( balance_item.second.owner() );
-                     //   _wallet_db.cache_balance( balance_item.second );
-                     }
-                     else
-                     {
-                        trx.withdraw( balance_item.first, remaining );
-                      //  balance_item.second.balance -= remaining;
-                        remaining = 0;
-                     //   _wallet_db.cache_balance( balance_item.second );
-                        required_signatures.insert( current_balance->owner() );
-                        return;
-                     }
-                 }
-               }
-            }
+         for( const auto& item : _wallet_db.get_balances() )
+         {
+             const auto owner = item.second.owner();
+             const auto okey_rec = _wallet_db.lookup_key( owner );
+             if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
+             if( okey_rec->account_address != from_account_address ) continue;
+
+             const auto balance_id = item.first;
+             const auto obalance = pending_state->get_balance_record( balance_id );
+             if( !obalance.valid() ) continue;
+             const auto balance = obalance->get_balance();
+             if( balance.amount <= 0 || balance.asset_id != amount_remaining.asset_id ) continue;
+
+             if( amount_remaining.amount > balance.amount )
+             {
+                 trx.withdraw( balance_id, balance.amount );
+                 required_signatures.insert( owner );
+                 amount_remaining -= balance;
+             }
+             else
+             {
+                 trx.withdraw( balance_id, amount_remaining.amount );
+                 required_signatures.insert( owner );
+                 return;
+             }
          }
-         auto required = _blockchain->to_pretty_asset( asset(amount,asset_id) );
-         auto available = _blockchain->to_pretty_asset( asset(amount-remaining,asset_id) );
+
+         auto required = _blockchain->to_pretty_asset( amount_to_withdraw );
+         auto available = _blockchain->to_pretty_asset( amount_to_withdraw - amount_remaining );
          FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available) );
-      } FC_CAPTURE_AND_RETHROW( (amount)(asset_id)(from_account_address)(trx)(required_signatures) ) }
+      } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_address)(trx)(required_signatures) ) }
 
       secret_hash_type wallet_impl::get_secret( uint32_t block_num, 
                                                 const private_key_type& delegate_key )const
@@ -2161,8 +2153,8 @@ namespace bts { namespace wallet {
                           optional<public_key_type>() );
 
       auto required_fees = get_priority_fee();
-      auto size_fee = fc::raw::pack_size( trx );
-      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+      //auto size_fee = fc::raw::pack_size( trx );
+      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       if( required_fees.amount <  current_account->delegate_pay_balance() )
       {
@@ -2171,10 +2163,10 @@ namespace bts { namespace wallet {
       }
       else
       {
-         my->withdraw_to_transaction( required_fees.amount,
-                                      required_fees.asset_id,
+         my->withdraw_to_transaction( required_fees,
                                       payer_public_key,
-                                      trx, required_signatures );
+                                      trx,
+                                      required_signatures );
       }
       if (sign)
       {
@@ -2502,22 +2494,22 @@ namespace bts { namespace wallet {
       const auto required_fees = get_priority_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
-         my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
-                                      required_fees.asset_id,
+         my->withdraw_to_transaction( required_fees + asset_to_transfer,
                                       sender_account_address,
-                                      trx, required_signatures );
+                                      trx,
+                                      required_signatures );
       }
       else
       {
-         my->withdraw_to_transaction( asset_to_transfer.amount,
-                                      asset_to_transfer.asset_id,
+         my->withdraw_to_transaction( asset_to_transfer,
                                       sender_account_address,
-                                      trx, required_signatures );
+                                      trx,
+                                      required_signatures );
          
-         my->withdraw_to_transaction( required_fees.amount,
-                                      required_fees.asset_id,
+         my->withdraw_to_transaction( required_fees,
                                       sender_account_address,
-                                      trx, required_signatures );
+                                      trx,
+                                      required_signatures );
       }
 
       const auto slate_id = select_slate( trx, asset_to_transfer.asset_id, selection_method );
@@ -2578,10 +2570,10 @@ namespace bts { namespace wallet {
             share_type amount_to_transfer((share_type)(real_amount_to_transfer * asset_rec->get_precision()));
             asset asset_to_transfer( amount_to_transfer, asset_id );
             
-            my->withdraw_to_transaction( amount_to_transfer,
-                                        asset_to_transfer.asset_id,
-                                        sender_account_address,
-                                        trx, required_signatures );
+            my->withdraw_to_transaction( asset_to_transfer,
+                                         sender_account_address,
+                                         trx,
+                                         required_signatures );
             
             total_asset_to_transfer += asset_to_transfer;
              
@@ -2590,10 +2582,10 @@ namespace bts { namespace wallet {
             to_addresses.push_back( address_amount.first );
          }
          
-         my->withdraw_to_transaction( required_fees.amount,
-                                     required_fees.asset_id,
-                                     sender_account_address,
-                                     trx, required_signatures );
+         my->withdraw_to_transaction( required_fees,
+                                      sender_account_address,
+                                      trx,
+                                      required_signatures );
          
          if( sign )
          {
@@ -2665,22 +2657,22 @@ namespace bts { namespace wallet {
       const auto required_fees = get_priority_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
-         my->withdraw_to_transaction( required_fees.amount + amount_to_transfer,
-                                       required_fees.asset_id,
-                                       payer_account_address,
-                                       trx, required_signatures );
+         my->withdraw_to_transaction( required_fees + asset_to_transfer,
+                                      payer_account_address,
+                                      trx,
+                                      required_signatures );
       }
       else
       {
-         my->withdraw_to_transaction( asset_to_transfer.amount,
-                                       asset_to_transfer.asset_id,
-                                       payer_account_address,
-                                       trx, required_signatures );
+         my->withdraw_to_transaction( asset_to_transfer,
+                                      payer_account_address,
+                                      trx,
+                                      required_signatures );
          
-         my->withdraw_to_transaction( required_fees.amount,
-                                       required_fees.asset_id,
-                                       payer_account_address,
-                                       trx, required_signatures );
+         my->withdraw_to_transaction( required_fees,
+                                      payer_account_address,
+                                      trx,
+                                      required_signatures );
       }
 
       const auto slate_id = select_slate( trx, asset_to_transfer.asset_id, selection_method );
@@ -2781,10 +2773,10 @@ namespace bts { namespace wallet {
       // TODO: adjust fee based upon blockchain price per byte and
       // the size of trx... 'recursively'
 
-      my->withdraw_to_transaction( required_fees.amount,
-                                   required_fees.asset_id,
+      my->withdraw_to_transaction( required_fees,
                                    from_account_address,
-                                   trx, required_signatures );
+                                   trx,
+                                   required_signatures );
 
       if( sign )
       {
@@ -2840,10 +2832,10 @@ namespace bts { namespace wallet {
       auto oname_rec = my->_blockchain->get_account_record( issuer_account_name );
       FC_ASSERT( oname_rec.valid() );
 
-      my->withdraw_to_transaction( required_fees.amount,
-                                   required_fees.asset_id,
+      my->withdraw_to_transaction( required_fees,
                                    from_account_address,
-                                   trx, required_signatures );
+                                   trx,
+                                   required_signatures );
     
       //check this way to avoid overflow
       FC_ASSERT(BTS_BLOCKCHAIN_MAX_SHARES / precision > max_share_supply);      
@@ -2905,10 +2897,10 @@ namespace bts { namespace wallet {
       FC_ASSERT(issuer_account, "uh oh! no account for valid asset");
 
       asset shares_to_issue( amount_to_issue * asset_record->get_precision(), asset_record->id );
-      my->withdraw_to_transaction( required_fees.amount,
-                                   required_fees.asset_id,
+      my->withdraw_to_transaction( required_fees,
                                    get_account_public_key( issuer_account->name ),
-                                   trx, required_signatures );
+                                   trx,
+                                   required_signatures );
      
       trx.issue( shares_to_issue );
       required_signatures.insert( issuer_account->active_key() );
@@ -2995,13 +2987,13 @@ namespace bts { namespace wallet {
          }
       }
 
-      auto size_fee = fc::raw::pack_size( public_data );
-      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+      //auto size_fee = fc::raw::pack_size( public_data );
+      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
-      my->withdraw_to_transaction( required_fees.amount,
-                                   required_fees.asset_id,
+      my->withdraw_to_transaction( required_fees,
                                    payer_public_key,
-                                   trx, required_signatures );
+                                   trx,
+                                   required_signatures );
      
       //Either this account or any parent may authorize this action. Find a key that can do it.
       oaccount_record authority(account);
@@ -3062,10 +3054,10 @@ namespace bts { namespace wallet {
       required_fees += asset( my->_blockchain->calculate_data_fee( fc::raw::pack_size(trx) ), 0 );
 
       /*
-      my->withdraw_to_transaction( required_fees.amount,
-                                   required_fees.asset_id,
+      my->withdraw_to_transaction( required_fees,
                                    get_account_public_key( delegate_account->name ),
-                                   trx, required_signatures );
+                                   trx,
+                                   required_signatures );
       */
      
       trx.withdraw_pay( delegate_account->id, required_fees.amount );
@@ -3123,10 +3115,10 @@ namespace bts { namespace wallet {
       required_fees += asset( my->_blockchain->calculate_data_fee(fc::raw::pack_size(trx)), 0 );
       
       /*
-      my->withdraw_to_transaction( required_fees.amount,
-                                   required_fees.asset_id,
+      my->withdraw_to_transaction( required_fees,
                                    get_account_public_key( account->name ),
-                                   trx, required_signatures );
+                                   trx,
+                                   required_signatures );
       */
 
       trx.withdraw_pay( delegate_account->id, required_fees.amount );
@@ -3236,8 +3228,7 @@ namespace bts { namespace wallet {
         {
            trx.deposit( owner_address, balance, 0 );
 
-           my->withdraw_to_transaction( required_fees.amount,
-                                        0,
+           my->withdraw_to_transaction( required_fees,
                                         from_address,  // get address of account
                                         trx, 
                                         required_signatures );
@@ -3318,8 +3309,7 @@ namespace bts { namespace wallet {
 
        if( cost_shares.asset_id == 0 )
        {
-          my->withdraw_to_transaction( cost_shares.amount + required_fees.amount, 
-                                       0, 
+          my->withdraw_to_transaction( cost_shares + required_fees,
                                        from_address, 
                                        trx, 
                                        required_signatures );
@@ -3329,14 +3319,12 @@ namespace bts { namespace wallet {
           /// TODO: determine if we can pay our fees in cost.asset_id
           ///        quote_asset_record->symbol );
 
-          my->withdraw_to_transaction( cost_shares.amount,
-                                       cost_shares.asset_id,
+          my->withdraw_to_transaction( cost_shares,
                                        from_address, 
                                        trx, 
                                        required_signatures );
           // pay our fees in XTS
-          my->withdraw_to_transaction( required_fees.amount,
-                                       0,
+          my->withdraw_to_transaction( required_fees,
                                        from_address, 
                                        trx, 
                                        required_signatures );
@@ -3433,8 +3421,7 @@ namespace bts { namespace wallet {
 
        if( cost_shares.asset_id == 0 )
        {
-          my->withdraw_to_transaction( cost_shares.amount + required_fees.amount, 
-                                       0, 
+          my->withdraw_to_transaction( cost_shares + required_fees,
                                        from_address, 
                                        trx, 
                                        required_signatures );
@@ -3444,14 +3431,12 @@ namespace bts { namespace wallet {
           /// TODO: determine if we can pay our fees in cost.asset_id
           ///        quote_asset_record->symbol );
 
-          my->withdraw_to_transaction( cost_shares.amount,
-                                       cost_shares.asset_id,
+          my->withdraw_to_transaction( cost_shares,
                                        from_address, 
                                        trx, 
                                        required_signatures );
           // pay our fees in XTS
-          my->withdraw_to_transaction( required_fees.amount,
-                                       0,
+          my->withdraw_to_transaction( required_fees,
                                        from_address, 
                                        trx, 
                                        required_signatures );
@@ -3546,8 +3531,7 @@ namespace bts { namespace wallet {
        auto required_fees = get_priority_fee();
 
        idump( (cost_shares)(required_fees) );
-       my->withdraw_to_transaction( cost_shares.amount + required_fees.amount, 
-                                    0, 
+       my->withdraw_to_transaction( cost_shares + required_fees,
                                     from_address, 
                                     trx, 
                                     required_signatures );
@@ -3621,8 +3605,7 @@ namespace bts { namespace wallet {
           amount_to_cover.amount = order_to_cover->state.balance; 
        }
 
-       my->withdraw_to_transaction( amount_to_cover.amount,
-                                    amount_to_cover.asset_id, 
+       my->withdraw_to_transaction( amount_to_cover,
                                     from_address, 
                                     trx, 
                                     required_signatures );
@@ -3656,8 +3639,7 @@ namespace bts { namespace wallet {
        }
        if( !fees_paid )
        {
-             my->withdraw_to_transaction( required_fees.amount,
-                                          required_fees.asset_id, 
+             my->withdraw_to_transaction( required_fees,
                                           from_address, 
                                           trx, 
                                           required_signatures );
@@ -4473,13 +4455,13 @@ namespace bts { namespace wallet {
       auto raw_results = map<address, std::pair<map<asset_id_type, share_type>, share_type>>();
       auto result = account_balance_summary_type();
 
-      for( const auto& b : my->_wallet_db.get_balances() )
+      for( const auto& item : my->_wallet_db.get_balances() )
       {
-          const auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
+          const auto okey_rec = my->_wallet_db.lookup_key( item.second.owner() );
           if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
           const auto account_address = okey_rec->account_address;
 
-          const auto obalance = pending_state->get_balance_record( b.first );
+          const auto obalance = pending_state->get_balance_record( item.first );
           auto balance = asset( 0 );
           if( obalance.valid() )
               balance = obalance->get_balance();
