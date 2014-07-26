@@ -340,16 +340,30 @@ namespace bts { namespace blockchain {
 
    void                        pending_chain_state::store_domain_offer( const offer_index_key& offer )
     {
-        FC_ASSERT(!"unimplemented pending_state store_domain_offer");
+        offers[offer] = offer.offer_address;
     }
-   vector<offer_index_key>     pending_chain_state::get_domain_offers( const string& domain_name, uint32_t limit ) const
+    vector<offer_index_key>     pending_chain_state::get_domain_offers( const string& domain_name, uint32_t limit ) const
     {
-        FC_ASSERT(!"unimplemented pending_state store_domain_offer");
+        chain_interface_ptr prev_state = _prev_state.lock();
+        auto itr = offers.find( offer_index_key::lower_bound_for_domain( domain_name ) );
+        auto domain_offers = vector<offer_index_key>();
+        uint32_t count = 0;
+        while ( itr != offers.end() && limit < count )
+        {
+            if( itr->first.domain_name == domain_name )
+                domain_offers.push_back( itr->first );
+            else
+                break;
+        }
+        return domain_offers;
     }
 
-   ooffer_index_key             pending_chain_state::get_domain_offer( const address& owner )
+    ooffer_index_key             pending_chain_state::get_domain_offer( const address& owner )
     {
-        FC_ASSERT(!"unimplemented pending_state store_domain_offer");
+        chain_interface_ptr prev_state = _prev_state.lock();
+        auto balance = balances.find( owner );
+        auto index_key = offer_index_key();
+        FC_ASSERT(!"unimplemented pending_state get_domain_offer");
     }
 
 

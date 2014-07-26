@@ -15,6 +15,10 @@
 
 namespace bts { namespace blockchain { 
 
+    /* Bids are made during domain auctions. Bids are distinct from "buys".
+     * The next bidder's required bid is (your bid) + (your bid - your required required bid )
+     * The bidder additionally pays a penalty for not being the final bidder.
+     */
     void domain_bid_operation::evaluate( transaction_evaluation_state& eval_state )
     {
         FC_ASSERT( is_valid_domain( this->domain_name ) );
