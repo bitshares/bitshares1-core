@@ -1766,11 +1766,9 @@ namespace bts { namespace wallet {
 
    void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
    { try {
-      trx.expiration = bts::blockchain::now() + BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC;
-      for( const auto& addr : req_sigs )
-      {
-         trx.sign( get_private_key( addr ), my->_blockchain->chain_id()  );
-      }
+      trx.expiration = blockchain::now() + BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC;
+      const auto chain_id = my->_blockchain->chain_id();
+      for( const auto& addr : req_sigs ) trx.sign( get_private_key( addr ), chain_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("req_sigs",req_sigs) ) }
 
    void wallet::sign_and_cache_transaction(
@@ -4407,45 +4405,6 @@ namespace bts { namespace wallet {
        return get_account_record( okey->account_address );
    }
 
-   account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
-   {
-      unordered_map<account_id_type, int64_t> raw_votes;
-      for( const auto& b : my->_wallet_db.get_balances() )
-      {
-          auto okey_rec = my->_wallet_db.lookup_key( b.second.owner() );
-          if( okey_rec && okey_rec->has_private_key() )
-          {
-             auto oacct_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
-             if ( !(account_name == "" || (oacct_rec.valid() && oacct_rec->name == account_name)) )
-                 continue;
-
-             asset bal = b.second.get_balance();
-             if( bal.asset_id == 0 )
-             {
-                if( b.second.delegate_slate_id() != 0 )
-                {
-                    odelegate_slate slate = my->_blockchain->get_delegate_slate(b.second.delegate_slate_id());
-                    FC_ASSERT( slate.valid() );
-                    for( const auto& delegate_id : slate->supported_delegates )
-                    {
-                        if( raw_votes.count( delegate_id ) <= 0 )
-                            raw_votes[ delegate_id ] = bal.amount;
-                        else
-                            raw_votes[ delegate_id ] += bal.amount;
-                    }
-                }
-             }
-          }
-      }
-      account_vote_summary_type result;
-      for( const auto& item : raw_votes )
-      {
-         auto delegate_account = my->_blockchain->get_account_record( item.first );
-         result[delegate_account->name] = item.second;
-      }
-      return result;
-   }
-
    account_balance_summary_type wallet::get_account_balances( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
@@ -4501,6 +4460,49 @@ namespace bts { namespace wallet {
          }
 
          result[ name ].second = account.second.second;
+      }
+
+      return result;
+   } FC_RETHROW_EXCEPTIONS(warn,"") }
+
+   account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
+   { try {
+      const auto pending_state = my->_blockchain->get_pending_state();
+      auto raw_votes = map<account_id_type, int64_t>();
+      auto result = account_vote_summary_type();
+
+      for( const auto& item : my->_wallet_db.get_balances() )
+      {
+          const auto okey_rec = my->_wallet_db.lookup_key( item.second.owner() );
+          if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
+
+          const auto oaccount_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
+          FC_ASSERT( oaccount_rec.valid() );
+          if( !account_name.empty() && oaccount_rec->name != account_name ) continue;
+
+          const auto obalance = pending_state->get_balance_record( item.first );
+          if( !obalance.valid() ) continue;
+
+          const auto balance = obalance->get_balance();
+          if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
+
+          const auto slate_id = obalance->delegate_slate_id();
+          if( slate_id == 0 ) continue;
+
+          const auto slate = pending_state->get_delegate_slate( slate_id );
+          FC_ASSERT( slate.valid() );
+
+          for( const auto& delegate_id : slate->supported_delegates )
+          {
+              if( raw_votes.count( delegate_id ) <= 0 ) raw_votes[ delegate_id ] = balance.amount;
+              else raw_votes[ delegate_id ] += balance.amount;
+          }
+      }
+
+      for( const auto& item : raw_votes )
+      {
+         auto delegate_account = pending_state->get_account_record( item.first );
+         result[ delegate_account->name ] = item.second;
       }
 
       return result;
