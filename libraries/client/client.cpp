@@ -110,6 +110,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
                               ("min-delegate-connection-count", program_options::value<uint32_t>(),
                                   "Override the default minimum delegate connection count (used to set up "
                                   "a test network with less than five delegates)")
+                              ("log-commands", "Log all command input and output")
                               ("disable-peer-advertising", "Don't let any peers know which other nodes we're connected to");
 
   program_options::variables_map option_variables;
@@ -479,15 +480,7 @@ config load_config( const fc::path& datadir )
                   client_impl&          _client_impl;
             };
 
-            fc::shared_ptr<user_appender> _user_appender;
-            bool _simulate_disconnect;
-            fc::scoped_connection _time_discontinuity_connection;
-
-            client_impl(bts::client::client* self) :
-              _simulate_disconnect(false),
-              _self(self),
-              _cli(nullptr),
-              _min_delegate_connection_count(BTS_MIN_DELEGATE_CONNECTION_COUNT)
+            client_impl(bts::client::client* self) : _self(self)
             { try {
                 _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
                 fc::logger::get( "user" ).add_appender( _user_appender );
@@ -559,37 +552,42 @@ config load_config( const fc::path& datadir )
             virtual fc::time_point_sec get_blockchain_now() override;
             virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
-            bts::client::client*                                        _self;
-            bts::cli::cli*                                              _cli;
+
+            bts::client::client*                                    _self = nullptr;
+            bts::cli::cli*                                          _cli = nullptr;
 
 #ifndef DISABLE_DELEGATE_NETWORK
-            bts::network::node                                          _delegate_network;
+            bts::network::node                                      _delegate_network;
 #endif
 
-            std::ofstream                                               _console_log;
-            std::unique_ptr<std::ostream>                               _output_stream;
-            std::unique_ptr<TeeDevice>                                  _tee_device;
-            std::unique_ptr<TeeStream>                                  _tee_stream;
-            std::unique_ptr<std::istream>                               _command_script_holder;
+            std::unique_ptr<std::istream>                           _command_script_holder;
+            std::ofstream                                           _console_log;
+            std::unique_ptr<std::ostream>                           _output_stream;
+            std::unique_ptr<TeeDevice>                              _tee_device;
+            std::unique_ptr<TeeStream>                              _tee_stream;
 
-            fc::path                                                    _data_dir;
+            fc::path                                                _data_dir;
 
-            bts::rpc::rpc_server_ptr                                    _rpc_server;
-            std::unique_ptr<bts::net::upnp_service>                     _upnp_service;
-            chain_database_ptr                                          _chain_db;
-            unordered_map<transaction_id_type, signed_transaction>      _pending_trxs;
-            wallet_ptr                                                  _wallet;
-            fc::future<void>                                            _delegate_loop_complete;
-            fc::time_point                                              _last_sync_status_message_time;
+            fc::shared_ptr<user_appender>                           _user_appender;
+            bool                                                    _simulate_disconnect = false;
+            fc::scoped_connection                                   _time_discontinuity_connection;
 
-            config                                                      _config;
-            logging_exception_db                                        _exception_db;
+            bts::rpc::rpc_server_ptr                                _rpc_server;
+            std::unique_ptr<bts::net::upnp_service>                 _upnp_service;
+            chain_database_ptr                                      _chain_db;
+            unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
+            wallet_ptr                                              _wallet;
+            fc::future<void>                                        _delegate_loop_complete;
+            fc::time_point                                          _last_sync_status_message_time;
 
-            uint32_t                                                    _min_delegate_connection_count;
-            bool                                                        _sync_mode;
+            config                                                  _config;
+            logging_exception_db                                    _exception_db;
 
-            rpc_server_config                                           _tmp_rpc_config;
-            bts::net::node_ptr                                          _p2p_node;
+            uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
+            bool                                                    _sync_mode = true;
+
+            rpc_server_config                                       _tmp_rpc_config;
+            bts::net::node_ptr                                      _p2p_node;
 
             //-------------------------------------------------- JSON-RPC Method Implementations
             // include all of the method overrides generated by the bts_api_generator
@@ -1322,7 +1320,6 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
-       my->_sync_mode = true;
        my->rebroadcast_pending();
     }
 
@@ -2413,20 +2410,25 @@ config load_config( const fc::path& datadir )
           my->_command_script_holder.reset(new std::stringstream(input_commands));
         }
 
-    #if 1
-        // tee cli output to the console and a log file
-        fc::path console_log_file = datadir / "console.log";
-        my->_console_log.open(console_log_file.string());
-        my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));;
-        my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
+        const fc::path console_log_file = datadir / "console.log";
+        if( option_variables.count("log-commands") <= 0)
+        {
+            /* Remove any console logs for security */
+            fc::remove_all( console_log_file );
+            /* Don't create a log file, just output to console */
+            my->_cli = new bts::cli::cli( this, my->_command_script_holder.get(), &std::cout );
+        }
+        else
+        {
+            /* Tee cli output to the console and a log file */
+            my->_console_log.open(console_log_file.string());
+            my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));;
+            my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
 
-        my->_cli = new bts::cli::cli( this, my->_command_script_holder.get(), my->_tee_stream.get() );
-        //echo command input to the log file
-        my->_cli->set_input_stream_log(my->_console_log);
-    #else
-        //don't create a log file, just output to console
-        my->_cli = new bts::cli::cli( this, my->_command_script_holder.get(), &std::cout );
-    #endif
+            my->_cli = new bts::cli::cli( this, my->_command_script_holder.get(), my->_tee_stream.get() );
+            /* Echo command input to the log file */
+            my->_cli->set_input_stream_log(my->_console_log);
+        }
       } //end else we will accept input from the console
 
     }
