@@ -1,6 +1,6 @@
 ##################################################################################################
 # Magic to get the genesis.json converted to a .cpp file and compiled into the bts_client library
-set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis.json")
+set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis_btsx.json")
 source_group("Genesis JSON Files" FILES ${genesis_json})
 
 set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
