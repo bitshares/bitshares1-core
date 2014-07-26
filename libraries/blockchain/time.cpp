@@ -11,19 +11,29 @@ static int32_t adjusted_time_sec = 0;
 
 time_discontinuity_signal_type time_discontinuity_signal;
 
+namespace detail
+{
+  fc::ntp* ntp_service = nullptr;
+}
+
 fc::optional<fc::time_point> ntp_time()
 {
-   static fc::ntp* ntp_service = nullptr;
-   if( ntp_service == nullptr )
+   if( !detail::ntp_service )
    {
       // TODO: allocate, then atomic swap and
       // free on failure... remove sync calls from
       // constructor of ntp() and into a "start" method
       // that is called only if we get a successful 
       // atomic swap.
-      ntp_service = new fc::ntp();
+      detail::ntp_service = new fc::ntp();
    }
-   return ntp_service->get_time();
+   return detail::ntp_service->get_time();
+}
+
+void shutdown_ntp_time()
+{
+  delete detail::ntp_service;
+  detail::ntp_service = nullptr;
 }
 
 fc::time_point_sec now()

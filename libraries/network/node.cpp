@@ -40,7 +40,9 @@ namespace bts { namespace network {
    void node::set_client( client_ptr c )
    {
       _client = c;
-      _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(1) );
+      _attempt_new_connections_task = fc::schedule( [this](){ attempt_new_connection(); }, 
+                                                    fc::time_point::now() + fc::seconds(1),
+                                                    "attempt_new_connection" );
    }
 
    void node::listen( const fc::ip::endpoint& ep )
@@ -53,7 +55,9 @@ namespace bts { namespace network {
           throw;
        }
       _accept_loop = fc::async( [this](){ accept_loop(); } );
-      _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(1) );
+      _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, 
+                                       fc::time_point::now() + fc::seconds(1),
+                                       "attempt_new_connection" );
        ilog( "delegate node listening on ${ep}", ("ep",ep) );
    } FC_CAPTURE_AND_RETHROW( (ep) ) }
 
@@ -159,7 +163,9 @@ namespace bts { namespace network {
        {
            fc::async( [peer]() { peer->send_message( keep_alive_message( fc::time_point::now() )  ); } );
        }
-       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(1) );
+       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, 
+                                        fc::time_point::now() + fc::seconds(1),
+                                        "broadcast_keep_alive" );
    }
 
    void node::on_signin_request( const shared_ptr<peer_connection>& con, 
@@ -302,7 +308,9 @@ namespace bts { namespace network {
       if( _peers.size() < _desired_peer_count )
       {
          ilog( "attempting new connections to peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
-         _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(60) );
+         _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, 
+                                                       fc::time_point::now() + fc::seconds(60),
+                                                       "attempt_new_connection" );
       }
       else {
          ilog( "we have the desired number of peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );

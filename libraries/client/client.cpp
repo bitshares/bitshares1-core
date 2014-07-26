@@ -685,18 +685,15 @@ config load_config( const fc::path& datadir )
 
        void client_impl::cancel_delegate_loop()
        {
-          if( _delegate_loop_complete.valid() && !_delegate_loop_complete.ready() )
+          try
           {
             ilog( "Canceling delegate loop..." );
-            try
-            {
-              _delegate_loop_complete.cancel_and_wait();
-            }
-            catch( const fc::exception& e )
-            {
-              wlog( "Unexpected exception thrown from delegate_loop(): ${e}", ("e",e.to_detail_string() ) );
-            }
+            _delegate_loop_complete.cancel_and_wait();
             ilog( "Delegate loop canceled" );
+          }
+          catch( const fc::exception& e )
+          {
+            wlog( "Unexpected exception thrown from delegate_loop(): ${e}", ("e",e.to_detail_string() ) );
           }
        }
 

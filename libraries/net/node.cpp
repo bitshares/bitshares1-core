@@ -443,6 +443,7 @@ namespace bts { namespace net { namespace detail {
       unsigned _average_network_usage_second_counter;
       unsigned _average_network_usage_minute_counter;
 
+      fc::time_point_sec _bandwidth_monitor_last_update_time;
       fc::future<void> _bandwidth_monitor_loop_done;
 
       fc::future<void> _dump_node_status_task_done;
@@ -1007,155 +1008,160 @@ namespace bts { namespace net { namespace detail {
     void node_impl::terminate_inactive_connections_loop()
     {
       VERIFY_CORRECT_THREAD();
-      //while( !_terminate_inactive_connections_loop_done.canceled() )
-      {
-        std::list<peer_connection_ptr> peers_to_disconnect_gently;
-        std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
-        std::list<peer_connection_ptr> peers_to_send_keep_alive;
+      std::list<peer_connection_ptr> peers_to_disconnect_gently;
+      std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
+      std::list<peer_connection_ptr> peers_to_send_keep_alive;
 
-        // Disconnect peers that haven't sent us any data recently
-        // These numbers are just guesses and we need to think through how this works better.
-        // If we and our peers get disconnected from the rest of the network, we will not 
-        // receive any blocks or transactions from the rest of the world, and that will 
-        // probably make us disconnect from our peers even though we have working connections to
-        // them (but they won't have sent us anything since they aren't getting blocks either).
-        // This might not be so bad because it could make us initiate more connections and
-        // reconnect with the rest of the network, or it might just futher isolate us.
+      // Disconnect peers that haven't sent us any data recently
+      // These numbers are just guesses and we need to think through how this works better.
+      // If we and our peers get disconnected from the rest of the network, we will not 
+      // receive any blocks or transactions from the rest of the world, and that will 
+      // probably make us disconnect from our peers even though we have working connections to
+      // them (but they won't have sent us anything since they aren't getting blocks either).
+      // This might not be so bad because it could make us initiate more connections and
+      // reconnect with the rest of the network, or it might just futher isolate us.
       
-        uint32_t handshaking_timeout = _peer_inactivity_timeout;
-        fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout);
-        for( const peer_connection_ptr handshaking_peer : _handshaking_connections )
-          if( handshaking_peer->connection_initiation_time < handshaking_disconnect_threshold &&
-              handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
-              handshaking_peer->get_last_message_sent_time() < handshaking_disconnect_threshold )
-          {
-            wlog( "Forcibly disconnecting from handshaking peer ${peer} due to inactivity of at least ${timeout} seconds", 
-                 ( "peer", handshaking_peer->get_remote_endpoint() )("timeout", handshaking_timeout ) );            
-            wlog("Peer's negotiating status: ${status}, bytes sent: ${sent}, bytes received: ${received}", 
-                 ("status", handshaking_peer->negotiation_status)
-                 ("sent", handshaking_peer->get_total_bytes_sent())
-                 ("received", handshaking_peer->get_total_bytes_received()));
-            handshaking_peer->connection_closed_error = fc::exception(FC_LOG_MESSAGE(warn, "Terminating handshaking connection due to inactivity of ${timeout} seconds.  Negotiating status: ${status}, bytes sent: ${sent}, bytes received: ${received}",
-                                                                                     ("peer", handshaking_peer->get_remote_endpoint())
-                                                                                     ("timeout", handshaking_timeout)
-                                                                                     ("status", handshaking_peer->negotiation_status)
-                                                                                     ("sent", handshaking_peer->get_total_bytes_sent())
-                                                                                     ("received", handshaking_peer->get_total_bytes_received())));
-            peers_to_disconnect_forcibly.push_back( handshaking_peer );
-          }
-
-        // timeout for any active peers is two block intervals
-        uint32_t active_disconnect_timeout = std::max<uint32_t>(5 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2, 30);
-        uint32_t active_send_keepalive_timeount = std::max<uint32_t>(active_disconnect_timeout / 2, 11);
-        uint32_t active_ignored_request_timeount = std::max<uint32_t>(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 4, 10);
-        fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_disconnect_timeout);
-        fc::time_point active_send_keepalive_threshold = fc::time_point::now() - fc::seconds(active_send_keepalive_timeount);
-        fc::time_point active_ignored_request_threshold = fc::time_point::now() - fc::seconds(active_ignored_request_timeount);
-        for( const peer_connection_ptr& active_peer : _active_connections )
+      uint32_t handshaking_timeout = _peer_inactivity_timeout;
+      fc::time_point handshaking_disconnect_threshold = fc::time_point::now() - fc::seconds(handshaking_timeout);
+      for( const peer_connection_ptr handshaking_peer : _handshaking_connections )
+        if( handshaking_peer->connection_initiation_time < handshaking_disconnect_threshold &&
+            handshaking_peer->get_last_message_received_time() < handshaking_disconnect_threshold &&
+            handshaking_peer->get_last_message_sent_time() < handshaking_disconnect_threshold )
         {
-          if( active_peer->connection_initiation_time < active_disconnect_threshold &&
-              active_peer->get_last_message_received_time() < active_disconnect_threshold )
-          {
-            wlog( "Closing connection with peer ${peer} due to inactivity of at least ${timeout} seconds", 
-                 ( "peer", active_peer->get_remote_endpoint() )("timeout", active_disconnect_timeout ) );
-            peers_to_disconnect_gently.push_back( active_peer );
-          }
-          else
-          {
-            bool disconnect_due_to_request_timeout = false;
-            for (const peer_connection::item_to_time_map_type::value_type& item_and_time : active_peer->sync_items_requested_from_peer)
+          wlog( "Forcibly disconnecting from handshaking peer ${peer} due to inactivity of at least ${timeout} seconds", 
+                ( "peer", handshaking_peer->get_remote_endpoint() )("timeout", handshaking_timeout ) );            
+          wlog("Peer's negotiating status: ${status}, bytes sent: ${sent}, bytes received: ${received}", 
+                ("status", handshaking_peer->negotiation_status)
+                ("sent", handshaking_peer->get_total_bytes_sent())
+                ("received", handshaking_peer->get_total_bytes_received()));
+          handshaking_peer->connection_closed_error = fc::exception(FC_LOG_MESSAGE(warn, "Terminating handshaking connection due to inactivity of ${timeout} seconds.  Negotiating status: ${status}, bytes sent: ${sent}, bytes received: ${received}",
+                                                                                    ("peer", handshaking_peer->get_remote_endpoint())
+                                                                                    ("timeout", handshaking_timeout)
+                                                                                    ("status", handshaking_peer->negotiation_status)
+                                                                                    ("sent", handshaking_peer->get_total_bytes_sent())
+                                                                                    ("received", handshaking_peer->get_total_bytes_received())));
+          peers_to_disconnect_forcibly.push_back( handshaking_peer );
+        }
+
+      // timeout for any active peers is two block intervals
+      uint32_t active_disconnect_timeout = std::max<uint32_t>(5 * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 2, 30);
+      uint32_t active_send_keepalive_timeount = std::max<uint32_t>(active_disconnect_timeout / 2, 11);
+      uint32_t active_ignored_request_timeount = std::max<uint32_t>(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC / 4, 10);
+      fc::time_point active_disconnect_threshold = fc::time_point::now() - fc::seconds(active_disconnect_timeout);
+      fc::time_point active_send_keepalive_threshold = fc::time_point::now() - fc::seconds(active_send_keepalive_timeount);
+      fc::time_point active_ignored_request_threshold = fc::time_point::now() - fc::seconds(active_ignored_request_timeount);
+      for( const peer_connection_ptr& active_peer : _active_connections )
+      {
+        if( active_peer->connection_initiation_time < active_disconnect_threshold &&
+            active_peer->get_last_message_received_time() < active_disconnect_threshold )
+        {
+          wlog( "Closing connection with peer ${peer} due to inactivity of at least ${timeout} seconds", 
+                ( "peer", active_peer->get_remote_endpoint() )("timeout", active_disconnect_timeout ) );
+          peers_to_disconnect_gently.push_back( active_peer );
+        }
+        else
+        {
+          bool disconnect_due_to_request_timeout = false;
+          for (const peer_connection::item_to_time_map_type::value_type& item_and_time : active_peer->sync_items_requested_from_peer)
+            if (item_and_time.second < active_ignored_request_threshold)
+            {
+              wlog("Disconnecting peer ${peer} because they didn't respond to my request for sync item ${id}",
+                    ("peer", active_peer->get_remote_endpoint())("id", item_and_time.first.item_hash));
+              disconnect_due_to_request_timeout = true;
+              break;
+            }
+          if (!disconnect_due_to_request_timeout &&
+              active_peer->item_ids_requested_from_peer &&
+              active_peer->item_ids_requested_from_peer->get<1>() < active_ignored_request_threshold)
+            {
+              wlog("Disconnecting peer ${peer} because they didn't respond to my request for sync item ids after ${id}",
+                    ("peer", active_peer->get_remote_endpoint())
+                    ("id", active_peer->item_ids_requested_from_peer->get<0>().item_hash));
+              disconnect_due_to_request_timeout = true;
+            }
+          if (!disconnect_due_to_request_timeout)
+            for (const peer_connection::item_to_time_map_type::value_type& item_and_time : active_peer->items_requested_from_peer)
               if (item_and_time.second < active_ignored_request_threshold)
               {
-                wlog("Disconnecting peer ${peer} because they didn't respond to my request for sync item ${id}",
-                     ("peer", active_peer->get_remote_endpoint())("id", item_and_time.first.item_hash));
+                wlog("Disconnecting peer ${peer} because they didn't respond to my request for item ${id}",
+                      ("peer", active_peer->get_remote_endpoint())("id", item_and_time.first.item_hash));
                 disconnect_due_to_request_timeout = true;
                 break;
               }
-            if (!disconnect_due_to_request_timeout &&
-                active_peer->item_ids_requested_from_peer &&
-                active_peer->item_ids_requested_from_peer->get<1>() < active_ignored_request_threshold)
-              {
-                wlog("Disconnecting peer ${peer} because they didn't respond to my request for sync item ids after ${id}",
-                      ("peer", active_peer->get_remote_endpoint())
-                      ("id", active_peer->item_ids_requested_from_peer->get<0>().item_hash));
-                disconnect_due_to_request_timeout = true;
-              }
-            if (!disconnect_due_to_request_timeout)
-              for (const peer_connection::item_to_time_map_type::value_type& item_and_time : active_peer->items_requested_from_peer)
-                if (item_and_time.second < active_ignored_request_threshold)
-                {
-                  wlog("Disconnecting peer ${peer} because they didn't respond to my request for item ${id}",
-                       ("peer", active_peer->get_remote_endpoint())("id", item_and_time.first.item_hash));
-                  disconnect_due_to_request_timeout = true;
-                  break;
-                }
-            if (disconnect_due_to_request_timeout)
-            {
-              // we should probably disconnect nicely and give them a reason, but right now the logic
-              // for rescheduling the requests only executes when the connection is fully closed,
-              // and we want to get those requests rescheduled as soon as possible
-              peers_to_disconnect_forcibly.push_back(active_peer);
-            }
-            else if (active_peer->connection_initiation_time < active_send_keepalive_threshold &&
-                     active_peer->get_last_message_received_time() < active_send_keepalive_threshold)
-            {
-              wlog( "Sending a keepalive message to peer ${peer} who hasn't sent us any messages in the last ${timeout} seconds", 
-                   ( "peer", active_peer->get_remote_endpoint() )("timeout", active_send_keepalive_timeount ) );
-              peers_to_send_keep_alive.push_back(active_peer);
-            }
-          }
-        }
-
-        fc::time_point closing_disconnect_threshold = fc::time_point::now() - fc::seconds(BTS_NET_PEER_DISCONNECT_TIMEOUT );
-        for( const peer_connection_ptr& closing_peer : _closing_connections )
-          if( closing_peer->connection_closed_time < closing_disconnect_threshold )
+          if (disconnect_due_to_request_timeout)
           {
-            // we asked this peer to close their connectoin to us at least BTS_NET_PEER_DISCONNECT_TIMEOUT
-            // seconds ago, but they haven't done it yet.  Terminate the connection now
-            wlog( "Forcibly disconnecting peer ${peer} who failed to close their conneciton in a timely manner", 
-                 ( "peer", closing_peer->get_remote_endpoint() ) );
-            peers_to_disconnect_forcibly.push_back( closing_peer );
+            // we should probably disconnect nicely and give them a reason, but right now the logic
+            // for rescheduling the requests only executes when the connection is fully closed,
+            // and we want to get those requests rescheduled as soon as possible
+            peers_to_disconnect_forcibly.push_back(active_peer);
           }
-
-        for( const peer_connection_ptr& peer : peers_to_disconnect_gently )
-        {
-          fc::exception detailed_error( FC_LOG_MESSAGE(warn, "Disconnecting due to inactivity", 
-                                                       ( "last_message_received_seconds_ago", (peer->get_last_message_received_time() - fc::time_point::now() ).count() / fc::seconds(1 ).count() )
-                                                       ( "last_message_sent_seconds_ago", (peer->get_last_message_sent_time() - fc::time_point::now() ).count() / fc::seconds(1 ).count() )
-                                                       ( "inactivity_timeout", _active_connections.find(peer ) != _active_connections.end() ? _peer_inactivity_timeout * 10 : _peer_inactivity_timeout ) ) );
-          disconnect_from_peer( peer.get(), "Disconnecting due to inactivity", false, detailed_error );
+          else if (active_peer->connection_initiation_time < active_send_keepalive_threshold &&
+                    active_peer->get_last_message_received_time() < active_send_keepalive_threshold)
+          {
+            wlog( "Sending a keepalive message to peer ${peer} who hasn't sent us any messages in the last ${timeout} seconds", 
+                  ( "peer", active_peer->get_remote_endpoint() )("timeout", active_send_keepalive_timeount ) );
+            peers_to_send_keep_alive.push_back(active_peer);
+          }
         }
-        peers_to_disconnect_gently.clear();
+      }
 
-        for( const peer_connection_ptr& peer : peers_to_disconnect_forcibly )
-          peer->close_connection();
-        peers_to_disconnect_forcibly.clear();
+      fc::time_point closing_disconnect_threshold = fc::time_point::now() - fc::seconds(BTS_NET_PEER_DISCONNECT_TIMEOUT );
+      for( const peer_connection_ptr& closing_peer : _closing_connections )
+        if( closing_peer->connection_closed_time < closing_disconnect_threshold )
+        {
+          // we asked this peer to close their connectoin to us at least BTS_NET_PEER_DISCONNECT_TIMEOUT
+          // seconds ago, but they haven't done it yet.  Terminate the connection now
+          wlog( "Forcibly disconnecting peer ${peer} who failed to close their conneciton in a timely manner", 
+                ( "peer", closing_peer->get_remote_endpoint() ) );
+          peers_to_disconnect_forcibly.push_back( closing_peer );
+        }
 
-        for( const peer_connection_ptr& peer : peers_to_send_keep_alive )
-          peer->send_message(current_time_request_message());
-        peers_to_send_keep_alive.clear();
+      for( const peer_connection_ptr& peer : peers_to_disconnect_gently )
+      {
+        fc::exception detailed_error( FC_LOG_MESSAGE(warn, "Disconnecting due to inactivity", 
+                                                      ( "last_message_received_seconds_ago", (peer->get_last_message_received_time() - fc::time_point::now() ).count() / fc::seconds(1 ).count() )
+                                                      ( "last_message_sent_seconds_ago", (peer->get_last_message_sent_time() - fc::time_point::now() ).count() / fc::seconds(1 ).count() )
+                                                      ( "inactivity_timeout", _active_connections.find(peer ) != _active_connections.end() ? _peer_inactivity_timeout * 10 : _peer_inactivity_timeout ) ) );
+        disconnect_from_peer( peer.get(), "Disconnecting due to inactivity", false, detailed_error );
+      }
+      peers_to_disconnect_gently.clear();
 
-      } // while( !canceled  )
+      for( const peer_connection_ptr& peer : peers_to_disconnect_forcibly )
+        peer->close_connection();
+      peers_to_disconnect_forcibly.clear();
+
+      for( const peer_connection_ptr& peer : peers_to_send_keep_alive )
+        peer->send_message(current_time_request_message());
+      peers_to_send_keep_alive.clear();
+
       if( !_terminate_inactive_connections_loop_done.canceled() )
-         _terminate_inactive_connections_loop_done = fc::schedule( [=](){ terminate_inactive_connections_loop(); }, 
-                                                                   fc::time_point::now() + 
-                                                                   ( fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT/2 ) ) );
+         _terminate_inactive_connections_loop_done = fc::schedule( [this](){ terminate_inactive_connections_loop(); }, 
+                                                                   fc::time_point::now() + fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT / 2),
+                                                                   "terminate_inactive_connections_loop" );
     }
 
     void node_impl::fetch_updated_peer_lists_loop()
     {
       VERIFY_CORRECT_THREAD();
 
-      //while (!_fetch_updated_peer_lists_loop_done.canceled())
-      //{
-      //  fc::usleep(fc::minutes(15));
-
-        for( const peer_connection_ptr& active_peer : _active_connections )
+      std::list<peer_connection_ptr> original_active_peers(_active_connections.begin(), _active_connections.end());
+      for( const peer_connection_ptr& active_peer : original_active_peers )
+      {
+        try
+        {
           active_peer->send_message(address_request_message());
-      //}
+        }
+        catch (const fc::exception& e)
+        {
+          dlog("Caught exception while sending address request message to peer ${peer} : ${e}", 
+               ("peer", active_peer->get_remote_endpoint())("e", e));
+        }
+      }
+
       if( !_fetch_updated_peer_lists_loop_done.canceled() )
-         _fetch_updated_peer_lists_loop_done = fc::schedule( [=](){ fetch_updated_peer_lists_loop(); }, 
-                                                             fc::time_point::now() + fc::minutes(15) );
+         _fetch_updated_peer_lists_loop_done = fc::schedule( [this](){ fetch_updated_peer_lists_loop(); }, 
+                                                             fc::time_point::now() + fc::minutes(15),
+                                                             "fetch_updated_peer_lists_loop" );
     }
     void node_impl::update_bandwidth_data(uint32_t usage_this_second)
     {
@@ -1179,28 +1185,31 @@ namespace bts { namespace net { namespace detail {
     void node_impl::bandwidth_monitor_loop()
     {
       VERIFY_CORRECT_THREAD();
-      fc::time_point_sec last_update_time = fc::time_point::now();
-      //while (!_bandwidth_monitor_loop_done.canceled())
-      {
-       // fc::usleep(fc::seconds(1));
-        fc::time_point_sec current_time = fc::time_point::now();
-        uint32_t seconds_since_last_update = current_time.sec_since_epoch() - last_update_time.sec_since_epoch();
-        seconds_since_last_update = std::max(UINT32_C(1), seconds_since_last_update);
-        uint32_t usage_this_second = _rate_limiter.get_actual_download_rate() + _rate_limiter.get_actual_upload_rate();
-        for (uint32_t i = 0; i < seconds_since_last_update - 1; ++i)
-          update_bandwidth_data(0);
-        update_bandwidth_data(usage_this_second);
-        last_update_time = current_time;
-      }
+      fc::time_point_sec current_time = fc::time_point::now();
+
+      if (_bandwidth_monitor_last_update_time == fc::time_point_sec::min())
+        _bandwidth_monitor_last_update_time = current_time;
+
+      uint32_t seconds_since_last_update = current_time.sec_since_epoch() - _bandwidth_monitor_last_update_time.sec_since_epoch();
+      seconds_since_last_update = std::max(UINT32_C(1), seconds_since_last_update);
+      uint32_t usage_this_second = _rate_limiter.get_actual_download_rate() + _rate_limiter.get_actual_upload_rate();
+      for (uint32_t i = 0; i < seconds_since_last_update - 1; ++i)
+        update_bandwidth_data(0);
+      update_bandwidth_data(usage_this_second);
+      _bandwidth_monitor_last_update_time = current_time;
+
       _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); }, 
-                                                   fc::time_point::now() + fc::seconds(1) );
+                                                   fc::time_point::now() + fc::seconds(1),
+                                                   "bandwidth_monitor_loop" );
     }
 
     void node_impl::dump_node_status_task()
     {
       VERIFY_CORRECT_THREAD();
       dump_node_status();
-      _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, fc::time_point::now() + fc::minutes(1));
+      _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, 
+                                                 fc::time_point::now() + fc::minutes(1),
+                                                 "dump_node_status_task");
     }
 
     void node_impl::delayed_peer_deletion_task()
@@ -2711,10 +2720,6 @@ namespace bts { namespace net { namespace detail {
         _accept_loop_complete.cancel_and_wait();
         dlog("P2P accept loop terminated");
       } 
-      catch ( const fc::canceled_exception& )
-      {
-        dlog("P2P accept loop terminated");
-      }
       catch ( const fc::exception& e )
       {
         wlog( "Exception thrown while terminating P2P accept loop, ignoring: ${e}", ("e",e) );
@@ -2724,60 +2729,7 @@ namespace bts { namespace net { namespace detail {
         wlog( "Exception thrown while terminating P2P accept loop, ignoring" );
       }
 
-      // Next, terminate our existing connections.  First, close all of the connections nicely.  
-      // This will close the sockets and may result in calls to our "on_connection_closing" 
-      // method to inform us that the connection really closed (or may not if we manage to cancel
-      // the read loop before it gets an EOF).
-      // operate off copies of the lists in case they change during iteration
-      std::list<peer_connection_ptr> all_peers;
-      boost::push_back(all_peers, _active_connections);
-      boost::push_back(all_peers, _handshaking_connections);
-      boost::push_back(all_peers, _closing_connections);
-
-      for (const peer_connection_ptr& peer : all_peers)
-      {
-        try
-        {
-          peer->close_connection();
-        }
-        catch ( const fc::exception& e )
-        {
-          wlog( "Exception thrown while closing peer connection, ignoring: ${e}", ("e",e) );
-        }
-        catch (...)
-        {
-          wlog( "Exception thrown while closing peer connection, ignoring" );
-        }
-      }
-
-      // and delete all of the peer_connection objects
-      _active_connections.clear();
-      _handshaking_connections.clear();
-      _closing_connections.clear();
-      all_peers.clear();
-      _peers_to_delete.clear();
-
-      try 
-      {
-        _delayed_peer_deletion_task_done.cancel_and_wait();
-        dlog("Delayed peer deletion task terminated");
-      } 
-      catch ( const fc::canceled_exception& )
-      {
-        dlog("Delayed peer deletion task terminated");
-      } 
-      catch ( const fc::exception& e )
-      {
-        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring: ${e}", ("e",e) );
-      }
-      catch (...)
-      {
-        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring" );
-      }
-
-      // Now that there are no more peers that can call methods on us, there should be no
-      // chance for one of our loops to be rescheduled, so we can safely terminate all of
-      // our loops now
+      // terminate all of our long-running loops (these run continuously instead of rescheduling themselves)
       try 
       {
         _p2p_network_connect_loop_done.cancel();
@@ -2862,15 +2814,62 @@ namespace bts { namespace net { namespace detail {
         wlog( "Exception thrown while terminating Advertise inventory loop, ignoring" );
       }
 
+
+      // Next, terminate our existing connections.  First, close all of the connections nicely.  
+      // This will close the sockets and may result in calls to our "on_connection_closing" 
+      // method to inform us that the connection really closed (or may not if we manage to cancel
+      // the read loop before it gets an EOF).
+      // operate off copies of the lists in case they change during iteration
+      std::list<peer_connection_ptr> all_peers;
+      boost::push_back(all_peers, _active_connections);
+      boost::push_back(all_peers, _handshaking_connections);
+      boost::push_back(all_peers, _closing_connections);
+
+      for (const peer_connection_ptr& peer : all_peers)
+      {
+        try
+        {
+          peer->destroy_connection();
+        }
+        catch ( const fc::exception& e )
+        {
+          wlog( "Exception thrown while closing peer connection, ignoring: ${e}", ("e",e) );
+        }
+        catch (...)
+        {
+          wlog( "Exception thrown while closing peer connection, ignoring" );
+        }
+      }
+
+      // and delete all of the peer_connection objects
+      _active_connections.clear();
+      _handshaking_connections.clear();
+      _closing_connections.clear();
+      all_peers.clear();
+      _peers_to_delete.clear();
+
+      try 
+      {
+        _delayed_peer_deletion_task_done.cancel_and_wait();
+        dlog("Delayed peer deletion task terminated");
+      } 
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring" );
+      }
+
+      // Now that there are no more peers that can call methods on us, there should be no
+      // chance for one of our loops to be rescheduled, so we can safely terminate all of
+      // our loops now
       try 
       {
         _terminate_inactive_connections_loop_done.cancel_and_wait();
         dlog("Terminate inactive connections loop terminated");
       } 
-      catch ( const fc::canceled_exception& )
-      {
-        dlog("Terminate inactive connections loop terminated");
-      }
       catch ( const fc::exception& e )
       {
         wlog( "Exception thrown while terminating Terminate inactive connections loop, ignoring: ${e}", ("e",e) );
@@ -2885,10 +2884,6 @@ namespace bts { namespace net { namespace detail {
         _fetch_updated_peer_lists_loop_done.cancel_and_wait();
         dlog("Fetch updated peer lists loop terminated");
       } 
-      catch ( const fc::canceled_exception& )
-      {
-        dlog("Fetch updated peer lists loop terminated");
-      }
       catch ( const fc::exception& e )
       {
         wlog( "Exception thrown while terminating Fetch updated peer lists loop, ignoring: ${e}", ("e",e) );
@@ -2903,10 +2898,6 @@ namespace bts { namespace net { namespace detail {
         _bandwidth_monitor_loop_done.cancel_and_wait();
         dlog("Bandwidth monitor loop terminated");
       } 
-      catch ( const fc::canceled_exception& )
-      {
-        dlog("Bandwidth monitor loop terminated");
-      }
       catch ( const fc::exception& e )
       {
         wlog( "Exception thrown while terminating Bandwidth monitor loop, ignoring: ${e}", ("e",e) );
@@ -2919,10 +2910,6 @@ namespace bts { namespace net { namespace detail {
       try 
       {
         _dump_node_status_task_done.cancel_and_wait();
-        dlog("Dump node status task terminated");
-      } 
-      catch ( const fc::canceled_exception& )
-      {
         dlog("Dump node status task terminated");
       } 
       catch ( const fc::exception& e )
@@ -3210,16 +3197,24 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       assert(_node_id != fc::ecc::public_key_data());
 
-      _accept_loop_complete = fc::async( [=](){ accept_loop(); } );
-
-      _p2p_network_connect_loop_done = fc::async( [=]() { p2p_network_connect_loop(); } );
-      _fetch_sync_items_loop_done = fc::async( [=]() { fetch_sync_items_loop(); } );
-      _fetch_item_loop_done = fc::async( [=]() { fetch_items_loop(); } );
-      _advertise_inventory_loop_done = fc::async( [=]() { advertise_inventory_loop(); } );
-      _terminate_inactive_connections_loop_done = fc::async( [=]() { terminate_inactive_connections_loop(); } );
-      _fetch_updated_peer_lists_loop_done = fc::async([=](){ fetch_updated_peer_lists_loop(); });
-      _bandwidth_monitor_loop_done = fc::async([=](){ bandwidth_monitor_loop(); });
-      _dump_node_status_task_done = fc::async([=](){ dump_node_status_task(); });
+      assert(!_accept_loop_complete.valid() && 
+             !_p2p_network_connect_loop_done.valid() &&
+             !_fetch_sync_items_loop_done.valid() &&
+             !_fetch_item_loop_done.valid() &&
+             !_advertise_inventory_loop_done.valid() &&
+             !_terminate_inactive_connections_loop_done.valid() &&
+             !_fetch_updated_peer_lists_loop_done.valid() &&
+             !_bandwidth_monitor_loop_done.valid() &&
+             !_dump_node_status_task_done.valid());
+      _accept_loop_complete = fc::async( [=](){ accept_loop(); }, "accept_loop");
+      _p2p_network_connect_loop_done = fc::async( [=]() { p2p_network_connect_loop(); }, "p2p_network_connect_loop" );
+      _fetch_sync_items_loop_done = fc::async( [=]() { fetch_sync_items_loop(); }, "fetch_sync_items_loop" );
+      _fetch_item_loop_done = fc::async( [=]() { fetch_items_loop(); }, "fetch_items_loop" );
+      _advertise_inventory_loop_done = fc::async( [=]() { advertise_inventory_loop(); }, "advertise_inventory_loop" );
+      _terminate_inactive_connections_loop_done = fc::async( [=]() { terminate_inactive_connections_loop(); }, "terminate_inactive_connections_loop" );
+      _fetch_updated_peer_lists_loop_done = fc::async([=](){ fetch_updated_peer_lists_loop(); }, "fetch_updated_peer_lists_loop");
+      _bandwidth_monitor_loop_done = fc::async([=](){ bandwidth_monitor_loop(); }, "bandwidth_monitor_loop");
+      _dump_node_status_task_done = fc::async([=](){ dump_node_status_task(); }, "dump_node_status_task");
     }
 
     void node_impl::add_node( const fc::ip::endpoint& ep )
