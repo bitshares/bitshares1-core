@@ -79,39 +79,48 @@ fc::variant_object version_info();
 program_options::variables_map parse_option_variables(int argc, char** argv)
 {
    // parse command-line options
-   program_options::options_description option_config("Allowed options");
-   option_config.add_options()("data-dir", program_options::value<string>(), "Set client data directory")
-                              ("input-log", program_options::value< vector<string> >(),
-                                 "Set log file with CLI commands to execute at startup")
-                              ("help", "Display this help message and exit")
-                              ("p2p-port", program_options::value<uint16_t>(), "Set network port to listen on")
-                              ("max-connections", program_options::value<uint16_t>(),
-                                  "Set the maximum number of peers this node will accept at any one time")
-                              ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
-                              ("connect-to", program_options::value<std::vector<string> >(), "Set remote host to connect to")
-                              ("disable-default-peers", "Disable automatic connection to default peers")
-                              ("server", "Enable JSON-RPC server")
-                              ("daemon", "Run in daemon mode with no CLI and start JSON-RPC server")
-                              ("rpcuser", program_options::value<string>(), "Set username for JSON-RPC")
-                              ("rpcpassword", program_options::value<string>(), "Set password for JSON-RPC")
-                              ("rpcport", program_options::value<uint16_t>(), "Set port to listen for JSON-RPC connections")
-                              ("httpport", program_options::value<uint16_t>(), "Set port to listen for HTTP JSON-RPC connections")
-                              ("genesis-config", program_options::value<string>(),
-                                 "Generate a genesis state with the given JSON file instead of using the built-in "
-                                 "genesis block (only accepted when the blockchain is empty)")
-                              ("clear-peer-database", "Erase all information in the peer database")
-                              ("resync-blockchain", "Delete our copy of the blockchain at startup and download a "
-                                 "fresh copy of the entire blockchain from the network")
-                              ("rebuild-index", "Same as --resync-blockchain, except it preserves the raw blockchain data rather "
-                                 "than downloading a new copy")
-                              ("version", "Print version information and exit")
-                              ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(1000000),
-                                  "Limit total bandwidth to this many bytes per second")
-                              ("min-delegate-connection-count", program_options::value<uint32_t>(),
-                                  "Override the default minimum delegate connection count (used to set up "
-                                  "a test network with less than five delegates)")
-                              ("log-commands", "Log all command input and output")
-                              ("disable-peer-advertising", "Don't let any peers know which other nodes we're connected to");
+   program_options::options_description option_config("Usage");
+   option_config.add_options()
+       ("help", "Display this help message and exit")
+       ("version", "Print version information and exit")
+
+       ("data-dir", program_options::value<string>(), "Set client data directory")
+
+       ("genesis-config", program_options::value<string>(),
+          "Generate a genesis state with the given JSON file instead of using the built-in "
+          "genesis block (only accepted when the blockchain is empty)")
+
+       ("rebuild-index", "Same as --resync-blockchain, except it preserves the raw blockchain data rather "
+          "than downloading a new copy")
+       ("resync-blockchain", "Delete our copy of the blockchain at startup and download a "
+          "fresh copy of the entire blockchain from the network")
+
+       ("p2p-port", program_options::value<uint16_t>(), "Set network port to listen on")
+       ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
+
+       ("max-connections", program_options::value<uint16_t>(),
+          "Set the maximum number of peers this node will accept at any one time")
+       ("total-bandwidth-limit", program_options::value<uint32_t>()->default_value(1000000),
+           "Limit total bandwidth to this many bytes per second")
+       ("min-delegate-connection-count", program_options::value<uint32_t>(),
+           "Override the default minimum connection count needed to produce a block")
+
+       ("clear-peer-database", "Erase all information in the peer database")
+       ("connect-to", program_options::value<std::vector<string> >(), "Set a remote host to connect to")
+       ("disable-default-peers", "Disable automatic connection to default peers")
+       ("disable-peer-advertising", "Don't let any peers know which other nodes we're connected to")
+
+       ("server", "Enable JSON-RPC server")
+       ("daemon", "Run in daemon mode with no CLI and start JSON-RPC server")
+
+       ("rpcuser", program_options::value<string>(), "Set username for JSON-RPC")
+       ("rpcpassword", program_options::value<string>(), "Set password for JSON-RPC")
+       ("rpcport", program_options::value<uint16_t>(), "Set port to listen for JSON-RPC connections")
+       ("httpport", program_options::value<uint16_t>(), "Set port to listen for HTTP JSON-RPC connections")
+
+       ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
+       ("log-commands", "Log all command input and output")
+       ;
 
   program_options::variables_map option_variables;
   try
