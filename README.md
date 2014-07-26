@@ -4,7 +4,7 @@ A DAC build with [Bitshares toolkit](https://github.com/BitShares/bitshares_tool
 
 Latest Stable Version
 ------------------
-[v0.2.1](https://github.com/dacsunlimited/bitsharesx/releases/tag/0.2.1)
+[v0.2.3](https://github.com/dacsunlimited/bitsharesx/releases/tag/0.2.3)
 
 Build Instructions
 ------------------
