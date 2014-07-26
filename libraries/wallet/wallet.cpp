@@ -78,7 +78,9 @@ namespace bts { namespace wallet {
              const static short                       _login_lifetime_seconds = 300;
 
              void reschedule_relocker();
+         private:
              void relocker();
+         public:
 
              fc::ecc::private_key create_one_time_key()
              {
@@ -977,7 +979,7 @@ namespace bts { namespace wallet {
       void wallet_impl::reschedule_relocker()
       {
         if( !_relocker_done.valid() || _relocker_done.ready() )
-          _relocker_done = fc::async( [this](){ relocker(); } );
+          _relocker_done = fc::async( [this](){ relocker(); }, "wallet_relocker" );
       }
 
       void wallet_impl::relocker()
@@ -991,7 +993,7 @@ namespace bts { namespace wallet {
           else
           {
               ilog( "Scheduling wallet relocker task for time: ${t}", ("t", *_scheduled_lock_time) );
-              _relocker_done = fc::schedule( [this](){ relocker(); }, *_scheduled_lock_time );
+              _relocker_done = fc::schedule( [this](){ relocker(); }, *_scheduled_lock_time, "wallet_relocker" );
           }
       }
 
@@ -1156,17 +1158,38 @@ namespace bts { namespace wallet {
 
    void wallet::close()
    { try {
-      if( my->_scan_in_progress.valid() )
+      try
       {
-         my->_scan_in_progress.cancel();
-         try {
-            my->_scan_in_progress.wait();
-         } catch ( ... ) {}
+        ilog( "Canceling wallet scan_chain_task..." );
+        my->_scan_in_progress.cancel_and_wait();
+        ilog( "Wallet scan_chain_task canceled..." );
       }
+      catch( const fc::exception& e )
+      {
+        wlog("Unexpected exception from wallet's scan_chain_task() : ${e}", ("e", e));
+      }
+      catch( ... )
+      {
+        wlog("Unexpected exception from wallet's scan_chain_task()");
+      }
+
       lock();
-      ilog( "Canceling wallet relocker task..." );
-      try { my->_relocker_done.cancel_and_wait(); } catch( ... ) {}
-      ilog( "Wallet relocker task canceled" );
+
+      try 
+      { 
+        ilog( "Canceling wallet relocker task..." );
+        my->_relocker_done.cancel_and_wait();
+        ilog( "Wallet relocker task canceled" );
+      } 
+      catch( const fc::exception& e )
+      {
+        wlog("Unexpected exception from wallet's relocker() : ${e}", ("e", e));
+      }
+      catch( ... )
+      {
+        wlog("Unexpected exception from wallet's relocker()");
+      }
+
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
       my->_use_deterministic_one_time_keys = false;
