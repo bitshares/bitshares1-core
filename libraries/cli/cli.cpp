@@ -237,7 +237,7 @@ namespace bts { namespace cli {
                       *_out << prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
-                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline").wait();
                       fc::set_console_echo(true);
                       *_out << std::endl;
                   }
@@ -259,11 +259,11 @@ namespace bts { namespace cli {
                   else
                     {
                       *_out <<prompt;
-                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline" ).wait();
                     }
                   #else
                     *_out <<prompt;
-                    _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                    _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline").wait();
                   #endif
                   if (_input_stream_log)
                     {
@@ -1423,7 +1423,7 @@ namespace bts { namespace cli {
     }
     extern "C" int get_character(FILE* stream)
     {
-      return cli_impl_instance->_cin_thread.async([stream](){ return rl_getc(stream); }).wait();
+      return cli_impl_instance->_cin_thread.async([stream](){ return rl_getc(stream); }, "rl_getc").wait();
     }
     extern "C" char* json_command_completion_generator_function(const char* text, int state)
     {

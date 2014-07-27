@@ -624,7 +624,7 @@ namespace bts { namespace net { namespace detail {
       {
         std::shared_ptr<fc::thread> impl_thread(impl_to_delete->_thread);
         weak_thread = impl_thread;
-        impl_thread->async([impl_to_delete](){ delete impl_to_delete; }).wait();
+        impl_thread->async([impl_to_delete](){ delete impl_to_delete; }, "delete node_impl").wait();
         dlog("deleting the p2p thread");
       }
       if (weak_thread.expired())
@@ -1223,7 +1223,7 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       _peers_to_delete.emplace_back(peer_to_delete);
       if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
-        _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); });
+        _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
     }
 
     bool node_impl::is_accepting_new_connections()
@@ -2949,7 +2949,7 @@ namespace bts { namespace net { namespace detail {
             if (!new_peer)
               return;
             accept_connection_task(new_peer);
-          } );
+          }, "accept_connection_task" );
 
           // limit the rate at which we accept connections to mitigate DOS attacks
           fc::usleep( fc::milliseconds(10) );
@@ -3253,7 +3253,7 @@ namespace bts { namespace net { namespace detail {
         if (!new_peer)
           return;
         connect_to_task(new_peer, remote_endpoint );
-      } );
+      }, "connect_to_task" );
     }
 
     peer_connection_ptr node_impl::get_connection_to_endpoint( const fc::ip::endpoint& remote_endpoint )

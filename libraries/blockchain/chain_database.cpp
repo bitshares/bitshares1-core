@@ -751,7 +751,7 @@ namespace bts { namespace blockchain {
          // during the middle of pushing a block.  If that happens, the database is in an
          // inconsistent state and it confuses the p2p network code.
          if( !_revalidate_pending.valid() || _revalidate_pending.ready() ) 
-           _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );
+           _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       }

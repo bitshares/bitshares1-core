@@ -379,7 +379,7 @@ namespace bts { namespace rpc {
          //   TODO  0.5 BTC: handle connection errors and and connection closed without
          //   creating an entirely new context... this is waistful
          //     json_con->exec();
-              fc::async( [json_con]{ json_con->exec().wait(); } );
+              fc::async( [json_con]{ json_con->exec().wait(); }, "rpc_server json_con->exec" );
            }
          }
 
@@ -670,7 +670,7 @@ namespace bts { namespace rpc {
       }
       ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
-      my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
+      my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); }, "rpc_server accept_loop" );
 
       return true;
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );

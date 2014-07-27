@@ -2454,7 +2454,7 @@ config load_config( const fc::path& datadir )
 
     fc::future<void> client::start()
     {
-      return fc::async( [=](){ my->start(); } );
+      return fc::async( [=](){ my->start(); }, "client::start" );
     }
 
     bool client::is_connected() const
