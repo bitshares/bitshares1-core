@@ -2,7 +2,6 @@
 #include <bts/cli/pretty.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <iomanip>
 #include <iostream>
@@ -25,28 +24,10 @@ string pretty_shorten( const string& str, size_t max_size )
     return str;
 }
 
-/*
-#include <codecvt>
-string pretty_align_utf8( const string& str, int width )
-{
-    std::stringstream ss;
-    ss << std::left;
-
-    auto str_size = str.size();
-    auto str_wsize = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>().from_bytes( str ).size();
-
-    if( str_size > str_wsize ) width += str_wsize;
-    ss << std::setw( width ) << pretty_shorten( str, width - 1 );
-
-    return ss.str();
-}
-*/
-
 string pretty_timestamp( const time_point_sec& timestamp )
 {
     if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    auto ptime = boost::posix_time::from_time_t( time_t ( timestamp.sec_since_epoch() ) );
-    return boost::posix_time::to_iso_extended_string( ptime );
+    return timestamp.to_iso_extended_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )

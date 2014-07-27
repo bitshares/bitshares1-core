@@ -34,7 +34,7 @@ namespace bts { namespace wallet {
                                                bool store_key = true );
 
          void        set_property( property_enum property_id, const fc::variant& v );
-         fc::variant get_property( property_enum property_id );
+         fc::variant get_property( property_enum property_id )const;
 
          void store_key( const key_data& k );
          void store_transaction( wallet_transaction_record& t );
@@ -49,7 +49,6 @@ namespace bts { namespace wallet {
          void remove_transaction( const transaction_id_type& record_id );
 
          vector<wallet_transaction_record> get_pending_transactions()const;
-         void                              hide_pending_transactions();
 
          void update_market_order( const address& owner, 
                                    const optional<bts::blockchain::market_order>& order,
@@ -57,17 +56,14 @@ namespace bts { namespace wallet {
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
-         private_keys get_account_private_keys( const fc::sha512& password );
+         private_keys get_account_private_keys( const fc::sha512& password )const;
          string       get_account_name( const address& account_address )const;
 
          owallet_account_record lookup_account( const address& address_of_public_key )const;
          owallet_account_record lookup_account( const string& account_name )const;
          owallet_account_record lookup_account( account_id_type aid )const;
 
-         oprivate_key           lookup_private_key( const address& address, 
-                                                    const fc::sha512& password );
-
-         owallet_balance_record lookup_balance( const balance_id_type& balance_id );
+         owallet_balance_record lookup_balance( const balance_id_type& balance_id )const;
          owallet_key_record     lookup_key( const address& address )const;
 
 

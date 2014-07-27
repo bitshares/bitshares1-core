@@ -1538,6 +1538,7 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::wallet_change_passphrase(const string& new_password)
     {
+      _wallet->auto_backup( "passphrase_change" );
       _wallet->change_passphrase(new_password);
       reschedule_delegate_loop();
     }
@@ -1841,6 +1842,7 @@ config load_config( const fc::path& datadir )
       try
       {
           _wallet->import_bitcoin_wallet(filename, "", account_name);
+          _wallet->auto_backup( "bitcoin_import" );
           return;
       }
       catch( const fc::exception& e )
@@ -1849,24 +1851,29 @@ config load_config( const fc::path& datadir )
       }
 
       _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "bitcoin_import" );
     }
     void detail::client_impl::wallet_import_multibit(const fc::path& filename,
                                                     const string& passphrase,
                                                     const string& account_name )
     {
       _wallet->import_multibit_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "multibit_import" );
     }
     void detail::client_impl::wallet_import_electrum(const fc::path& filename,
                                                     const string& passphrase,
                                                     const string& account_name )
     {
       _wallet->import_electrum_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "electrum_import" );
     }
+
     void detail::client_impl::wallet_import_armory(const fc::path& filename,
                                                     const string& passphrase,
                                                     const string& account_name )
     {
       _wallet->import_armory_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "armory_import" );
     }
 
     void detail::client_impl::wallet_import_keyhotee(const string& firstname,
@@ -1875,7 +1882,8 @@ config load_config( const fc::path& datadir )
                                                      const string& brainkey,
                                                      const string& keyhoteeid)
     {
-        _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid);
+       _wallet->import_keyhotee(firstname, middlename, lastname, brainkey, keyhoteeid);
+      _wallet->auto_backup( "keyhotee_import" );
     }
 
     string detail::client_impl::wallet_import_private_key(const string& wif_key_to_import,
@@ -1889,6 +1897,7 @@ config load_config( const fc::path& datadir )
 
       auto oacct = _wallet->get_account_for_address( address( key ) );
       FC_ASSERT(oacct.valid(), "No account for a key we just imported" );
+      _wallet->auto_backup( "key_import" );
       return oacct->name;
     }
 
@@ -2567,12 +2576,10 @@ config load_config( const fc::path& datadir )
       return fc::ecc::public_key(signature, digest());
     }
 
-
    /**
     * Detail Implementation
     */
    namespace detail  {
-
 
     void client_impl::wallet_add_contact_account( const string& account_name,
                                              const public_key_type& contact_key )
@@ -2580,12 +2587,13 @@ config load_config( const fc::path& datadir )
        _wallet->add_contact_account( account_name, contact_key );
     }
 
-
     public_key_type client_impl::wallet_account_create( const string& account_name,
                                                    const variant& private_data )
     {
        ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
-       return _wallet->create_account( account_name, private_data );
+       const auto result = _wallet->create_account( account_name, private_data );
+       _wallet->auto_backup( "account_create" );
+       return result;
     }
 
     void client_impl::wallet_account_set_favorite( const string& account_name, bool is_favorite )

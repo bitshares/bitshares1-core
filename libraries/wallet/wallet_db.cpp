@@ -298,7 +298,7 @@ namespace bts { namespace wallet {
       store_record( property_record );
    }
 
-   variant wallet_db::get_property( property_enum property_id )
+   variant wallet_db::get_property( property_enum property_id )const
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end() ) return property_itr->second.value;
@@ -455,7 +455,7 @@ namespace bts { namespace wallet {
       store_key( data );
    }
 
-   private_keys wallet_db::get_account_private_keys( const fc::sha512& password )
+   private_keys wallet_db::get_account_private_keys( const fc::sha512& password )const
    { try {
        private_keys keys;
        keys.reserve( accounts.size() );
@@ -476,7 +476,7 @@ namespace bts { namespace wallet {
        return keys;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
    
-   owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )
+   owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )const
    {
       auto itr = balances.find( balance_id );
       if( itr == balances.end() ) return fc::optional<wallet_balance_record>();

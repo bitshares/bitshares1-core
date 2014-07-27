@@ -266,10 +266,10 @@ namespace bts { namespace wallet {
                                           const address& from_account_address,
                                           signed_transaction& trx, 
                                           unordered_set<address>& required_fees );
-            bool address_in_account( const address& address_to_check,
-                                     const address& account_address )const;
 
             owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
+
+            void upgrade_version( uint32_t current_version );
       };
      
       vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
@@ -302,9 +302,6 @@ namespace bts { namespace wallet {
 
                 if( bal_rec.genesis_info.valid() ) /* Create virtual transactions for genesis claims */
                 {
-                    /* TODO: This is temporary to remove old wallet version genesis claim records */
-                    self->remove_transaction_record( string( bal_rec.id().addr ) );
-
                     const auto public_key = key_rec->public_key;
                     const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
                     auto transaction_record = _wallet_db.lookup_transaction( record_id );
@@ -349,17 +346,6 @@ namespace bts { namespace wallet {
          } );
          ilog( "account scan complete" );
       }
-
-      bool wallet_impl::address_in_account( const address& address_to_check, 
-                                            const address& account_address )const
-      { try {
-         if( address_to_check == account_address )
-            return true;
-         auto opt_key = _wallet_db.lookup_key( address_to_check );
-         if( !opt_key.valid() )
-            return false;
-         return opt_key->account_address == account_address;
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("address_to_check",address_to_check)("account_address",account_address) ) }
 
       void wallet_impl::withdraw_to_transaction(
               const asset& amount_to_withdraw,
@@ -995,6 +981,35 @@ namespace bts { namespace wallet {
           }
       }
 
+      void wallet_impl::upgrade_version( uint32_t current_version )
+      {
+          ulog( "Upgrading wallet..." );
+          try
+          {
+              self->auto_backup( "version_upgrade" );
+
+              if( current_version < 100 )
+              {
+                  /* Remove old format genesis claim virtual transactions */
+                  _blockchain->scan_balances( [&]( const balance_record& bal_rec )
+                  {
+                       if( !bal_rec.genesis_info.valid() ) return;
+                       self->remove_transaction_record( string( bal_rec.id().addr ) );
+                  } );
+
+                  ulog( "Wallet format change. Please unlock your wallet and run: \"wallet_rescan_blockchain 0 1\"" );
+              }
+
+              _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
+              ulog( "Wallet successfully upgraded." );
+          }
+          catch( ... )
+          {
+              ulog( "Wallet upgrade failure." );
+              throw;
+          }
+      }
+
    } // detail 
 
    wallet::wallet( chain_database_ptr blockchain )
@@ -1091,13 +1106,13 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.set_master_key( epk, my->_wallet_password);
 
+          my->_wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
           my->_wallet_db.set_property( last_unlocked_scanned_block_number, variant( my->_blockchain->get_head_block_num() ) );
           my->_wallet_db.set_property( default_transaction_priority_fee, variant( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) ) );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
-
 
           FC_ASSERT( my->_wallet_db.validate_password( my->_wallet_password ) );
       }
@@ -1137,9 +1152,22 @@ namespace bts { namespace wallet {
       try
       {
           close();
-          my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
-          my->_blockchain->set_priority_fee( get_priority_fee().amount );
+          my->_wallet_db.open( wallet_file_path );
+
+          /* Check wallet version */
+          const auto version_property = my->_wallet_db.get_property( version );
+          auto version = uint32_t( 0 );
+          if( !version_property.is_null() ) version = version_property.as<uint32_t>();
+          if( version < BTS_WALLET_VERSION )
+          {
+              my->upgrade_version( version );
+          }
+          else if ( version > BTS_WALLET_VERSION )
+          {
+              FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
+                                  ("wallet_version",version)("supported_version",BTS_WALLET_VERSION) );
+          }
 
           for( const auto& balance_item : my->_wallet_db.get_balances() )
           {
@@ -1207,7 +1235,10 @@ namespace bts { namespace wallet {
       try
       {
           create( wallet_name, passphrase );
+          my->_wallet_db.set_property( version, variant( 0 ) );
           my->_wallet_db.import_from_json( filename );
+          close();
+          open( wallet_name );
           unlock( passphrase, BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC );
       }
       catch( ... )
@@ -1218,6 +1249,26 @@ namespace bts { namespace wallet {
           throw;
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
+
+   void wallet::auto_backup( const string& reason )const
+   { try {
+      ulog( "Backing up wallet..." );
+      const auto wallet_path = my->_current_wallet_path;
+      const auto wallet_name = wallet_path.filename().string();
+      const auto wallet_dir = wallet_path.parent_path();
+      auto backup_path = fc::path();
+      while( true )
+      {
+          auto backup_filename = wallet_name + "-" + blockchain::now().to_iso_string();
+          if( !reason.empty() ) backup_filename += "-" + reason;
+          backup_filename += ".json";
+          backup_path = wallet_dir / ".backups" / wallet_name / backup_filename;
+          if( !fc::exists( backup_path ) ) break;
+          fc::usleep( fc::seconds( 1 ) );
+      }
+      export_to_json( backup_path );
+      ulog( "Wallet automatically backed up to: ${f}", ("f",backup_path) );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
@@ -2274,9 +2325,12 @@ namespace bts { namespace wallet {
        for( auto balance_item : my->_wallet_db.get_balances() )
        {
           auto owner = balance_item.second.owner();
-          if( balance_item.second.asset_id() == asset_id &&
-              my->address_in_account( owner, sender_account_address ) )
+          if( balance_item.second.asset_id() == asset_id )
           {
+             const auto okey_rec = my->_wallet_db.lookup_key( owner );
+             if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
+             if( okey_rec->account_address != sender_account_address ) continue;
+
              signed_transaction trx;
 
              auto from_balance = balance_item.second.get_balance();
@@ -3669,19 +3723,9 @@ namespace bts { namespace wallet {
 
    asset wallet::get_priority_fee()const
    { try {
-      FC_ASSERT( is_open () );
+      FC_ASSERT( is_open() );
       // TODO: support price conversion using price from blockchain
-      const auto priority_fee = my->_wallet_db.get_property( default_transaction_priority_fee );
-      if( priority_fee.is_null() ) return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
-      try {
-         return priority_fee.as<asset>(); 
-      } 
-      catch ( const fc::exception& e )
-      {
-         wlog( "priority fee setting appears corrupted, resetting to default" );
-         my->_wallet_db.set_property( default_transaction_priority_fee, fc::variant( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE) ) );
-         return asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE );
-      }
+      return my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
    } FC_CAPTURE_AND_RETHROW() }
    
    string wallet::get_key_label( const public_key_type& key )const
@@ -4514,6 +4558,7 @@ namespace bts { namespace wallet {
        obj( "data_directory", fc::absolute(my->_data_directory) );
        if( is_open() )
        {
+          obj( "version", my->_wallet_db.get_property( version ) );
           obj( "last_unlocked_scanned_block_number", my->_wallet_db.get_property( last_unlocked_scanned_block_number ) );
           obj( "last_locked_scanned_block_number", my->_wallet_db.get_property( last_locked_scanned_block_number ) );
           obj( "next_child_key_index", my->_wallet_db.get_property( next_child_key_index ) );

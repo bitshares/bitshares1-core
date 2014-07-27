@@ -80,6 +80,8 @@ namespace bts { namespace wallet {
 
          void    export_to_json( const path& filename )const;
          void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
+
+         void    auto_backup( const string& reason )const;
          ///@}
          
          /**
