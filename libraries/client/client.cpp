@@ -3325,6 +3325,7 @@ config load_config( const fc::path& datadir )
    {
       auto trx = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol );
       network_broadcast_transaction( trx );
+      return trx;
    }
 
    } // namespace detail

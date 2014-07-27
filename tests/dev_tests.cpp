@@ -393,15 +393,15 @@ BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
    exec(clientb, "wallet_account_balance");
 
    exec(clienta, "ask delegate21 18000000 XTS 1000000 BUSD");
-   exec(clientb, "short delegate20 18000000 1 BUSD");
+   exec(clientb, "short delegate20 18000000 .001 BUSD");
    exec(clienta, "ask delegate23 18000000 XTS 1000000 BUSD");
-   exec(clientb, "short delegate22 18000000 1 BUSD");
+   exec(clientb, "short delegate22 18000000 .001 BUSD");
    exec(clienta, "ask delegate25 18000000 XTS 1000000 BUSD");
-   exec(clientb, "short delegate24 18000000 1 BUSD");
+   exec(clientb, "short delegate24 18000000 .001 BUSD");
    exec(clienta, "ask delegate27 18000000 XTS 1000000 BUSD");
-   exec(clientb, "short delegate26 18000000 1 BUSD");
+   exec(clientb, "short delegate26 18000000 .001 BUSD");
    exec(clienta, "ask delegate29 18000000 XTS 1000000 BUSD");
-   exec(clientb, "short delegate28 18000000 1 BUSD");
+   exec(clientb, "short delegate28 18000000 .001 BUSD");
    exec(clienta, "ask delegate31 18000000 XTS 1.05 BUSD");
    exec(clientb, "short delegate30 18000000 1 BUSD");
 
@@ -442,8 +442,14 @@ BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
    exec(clientb, "history delegate32");
    exec(clientb, "wallet_publish_price_feed delegate22 .86 BUSD" );
    produce_block(clienta);
-   exec( clientb, "ask delegate30 3 XTS 5.42 BUSD" );
+   exec( clientb, "ask delegate22 3 XTS 0.92 BUSD" );
+   exec( clientb, "ask delegate22 4 XTS 0.22 BUSD" );
+   exec( clientb, "short delegate22 4 2.0 BUSD" );
+   enable_logging();
    produce_block(clienta);
    exec(clienta, "blockchain_market_order_book BUSD XTS");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec( clienta, "wallet_account_transaction_history" );
 
 } FC_LOG_AND_RETHROW() }

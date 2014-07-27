@@ -131,11 +131,13 @@ namespace bts { namespace blockchain {
 
                          // while bootstraping we use this metric
                          auto med_price = _db_impl.self->get_median_delegate_price( quote_id );
+                         FC_ASSERT( med_price );
                          if( med_price ) market_stat->avg_price_24h = *med_price;
 
                          FC_ASSERT( market_stat, "market status should have been set when the order is created" );
                          price max_bid = market_stat->maximum_bid();
                          price min_ask = market_stat->minimum_ask();
+                         edump( (max_bid)(min_ask) );
                    
                          while( get_next_bid() && get_next_ask() )
                          {
@@ -3017,6 +3019,8 @@ namespace bts { namespace blockchain {
          }
          ++feed_itr;
       }
+      if( prices.size() < BTS_BLOCKCHAIN_MIN_FEEDS )
+         return oprice();
       if( prices.size() )
       {
         std::nth_element( prices.begin(), prices.begin() + prices.size()/2, prices.end() );
