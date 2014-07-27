@@ -1,7 +1,7 @@
-(wallet closed) >>> help blockchain_get_config
+(wallet closed) >>> help blockchain_get_info
 Usage:
-blockchain_get_config                                                                                 Returns static configuration parameters about the blockchain.
-Returns static configuration parameters about the blockchain.
+blockchain_get_info                                                                                   Returns current blockchain information and parameters
+Returns current blockchain information and parameters
 
 Parameters:
   (none)
@@ -9,8 +9,8 @@ Parameters:
 Returns:
   json_object
 
-aliases: getconfig, get_config, config
-(wallet closed) >>> blockchain_get_config
+aliases: getconfig, get_config, config, blockchain_get_config
+(wallet closed) >>> blockchain_get_info
 {
   "blockchain_id": "3622ad3cbd09f839b921bace52bf4432b91f636d625f53401bbf6b6cb01f754c",
   "symbol": "XTS",

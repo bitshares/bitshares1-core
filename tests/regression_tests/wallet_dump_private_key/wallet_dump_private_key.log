@@ -14,7 +14,7 @@ Parameters:
 Returns:
   string
 
-aliases: dump_private_key
+aliases: dump_private_key, dumpprivkey
 default (unlocked) >>> wallet_dump_private_key test
 "5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
 default (unlocked) >>> wallet_dump_private_key XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp

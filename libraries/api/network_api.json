@@ -22,7 +22,8 @@
               "default_value" : "add"
             }
           ],
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["addnode"]
       },
       {
         "method_name": "network_get_connection_count",
@@ -30,7 +31,8 @@
         "return_type": "uint32_t",
         "parameters" : [],
         "is_const"   : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["getconnectioncount"]
       },
       {
         "method_name": "network_get_peer_info",

@@ -1360,7 +1360,7 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
   {
     std::vector<uint32_t> final_block_counts;
     for (unsigned i = 0; i < client_processes.size(); ++i)
-      final_block_counts.push_back(client_processes[i].rpc_client->blockchain_get_blockcount());
+      final_block_counts.push_back(client_processes[i].rpc_client->blockchain_get_block_count());
 
     // verify that all clients have the same block count
     std::sort(final_block_counts.begin(), final_block_counts.end());
@@ -1410,9 +1410,9 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
     
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
-      uint32_t head_block_number = client_processes[i].rpc_client->blockchain_get_blockcount();
+      uint32_t head_block_number = client_processes[i].rpc_client->blockchain_get_block_count();
       block_counts_after_fork.push_back(head_block_number);
-      block_hashes_after_fork.push_back(client_processes[i].rpc_client->blockchain_get_blockhash(head_block_number));
+      block_hashes_after_fork.push_back(client_processes[i].rpc_client->blockchain_get_block_hash(head_block_number));
     }
 
     bool even_are_same = true;
@@ -1473,8 +1473,8 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
 
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
-      uint32_t block_num = client_processes[i].rpc_client->blockchain_get_blockcount();
-      block_hashes_after_net_join.push_back(client_processes[i].rpc_client->blockchain_get_blockhash(block_num));
+      uint32_t block_num = client_processes[i].rpc_client->blockchain_get_block_count();
+      block_hashes_after_net_join.push_back(client_processes[i].rpc_client->blockchain_get_block_hash(block_num));
     }
 
     bool all_are_in_sync = true;

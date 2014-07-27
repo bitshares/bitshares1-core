@@ -8,6 +8,8 @@ Parameters:
 
 Returns:
   json_object
+
+aliases: validateaddress
 (wallet closed) >>> validate_address XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55
 {
   "isvalid": true

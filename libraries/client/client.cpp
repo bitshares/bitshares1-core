@@ -1460,12 +1460,12 @@ config load_config( const fc::path& datadir )
     }
 
     //JSON-RPC Method Implementations START
-    block_id_type detail::client_impl::blockchain_get_blockhash(uint32_t block_number) const
+    block_id_type detail::client_impl::blockchain_get_block_hash(uint32_t block_number) const
     {
       return _chain_db->get_block(block_number).id();
     }
 
-    uint32_t detail::client_impl::blockchain_get_blockcount() const
+    uint32_t detail::client_impl::blockchain_get_block_count() const
     {
       return _chain_db->get_head_block_num();
     }
@@ -1514,12 +1514,12 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
     }
 
-    void detail::client_impl::wallet_export_to_json(const fc::path& json_filename)const
+    void detail::client_impl::wallet_backup_create(const fc::path& json_filename)const
     {
       _wallet->export_to_json(json_filename);
     }
 
-    void detail::client_impl::wallet_create_from_json(const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase)
+    void detail::client_impl::wallet_backup_restore(const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase)
     {
       _wallet->create_from_json(json_filename, wallet_name, imported_wallet_passphrase);
       reschedule_delegate_loop();
@@ -1554,27 +1554,6 @@ config load_config( const fc::path& datadir )
           out << fc::json::to_pretty_string( errors );
       }
       return errors;
-    }
-
-    vector<signed_transaction> detail::client_impl::wallet_multipart_transfer(double amount_to_transfer,
-                                                       const string& asset_symbol,
-                                                       const string& from_account_name,
-                                                       const string& to_account_name,
-                                                       const string& memo_message)
-    {
-        // TODO: Broken in wallet
-        /*
-         auto trxs = _wallet->multipart_transfer( amount_to_transfer, asset_symbol,
-                                                  from_account_name, to_account_name,
-                                                  memo_message, true );
-         for( auto trx : trxs )
-         {
-            network_broadcast_transaction( trx );
-         }
-
-         return trxs;
-         */
-        return vector<signed_transaction>();
     }
 
     signed_transaction detail::client_impl::wallet_publish_slate( const string& account_name )
@@ -1645,59 +1624,16 @@ config load_config( const fc::path& datadir )
       return create_asset_trx;
     }
 
-
     signed_transaction  detail::client_impl::wallet_asset_issue(double real_amount,
                                                    const string& symbol,
                                                    const string& to_account_name,
                                                    const string& memo_message
                                                    )
     {
-      //rpc_client_api::generate_transaction_flag flag = rpc_client_api::sign_and_broadcast;
-      //bool sign = (flag != client::do_not_sign);
-      auto issue_asset_trx = _wallet->issue_asset(real_amount,symbol,to_account_name, memo_message, true);
-      //if (flag == client::sign_and_broadcast)
-          network_broadcast_transaction(issue_asset_trx);
+      const auto issue_asset_trx = _wallet->issue_asset(real_amount,symbol,to_account_name, memo_message, true);
+      network_broadcast_transaction(issue_asset_trx);
       return issue_asset_trx;
     }
-
-
-
-    signed_transaction detail::client_impl::wallet_submit_proposal( const string& delegate_account_name,
-                                                       const string& subject,
-                                                       const string& body,
-                                                       const string& proposal_type,
-                                                       const fc::variant& json_data)
-    {
-      try {
-        generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
-        bool sign = (flag != bts::rpc::do_not_sign);
-        auto trx = _wallet->create_proposal(delegate_account_name, subject, body, proposal_type, json_data, sign);
-        if (flag == bts::rpc::sign_and_broadcast)
-        {
-            network_broadcast_transaction(trx);
-        }
-        return trx;
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("delegate_account_name", delegate_account_name)("subject", subject))
-    }
-
-
-    signed_transaction detail::client_impl::wallet_vote_proposal(const string& name,
-                                                    const proposal_id_type& proposal_id,
-                                                    const proposal_vote::vote_type& vote,
-                                                    const string& message )
-    {
-      try {
-        generate_transaction_flag flag = bts::rpc::sign_and_broadcast;
-        bool sign = (flag != bts::rpc::do_not_sign);
-        auto trx = _wallet->vote_proposal(name, proposal_id, vote, message, sign);
-        if (flag == bts::rpc::sign_and_broadcast)
-        {
-            network_broadcast_transaction(trx);
-        }
-        return trx;
-      } FC_RETHROW_EXCEPTIONS(warn, "", ("name", name)("proposal_id", proposal_id)("vote", vote))
-    }
-
 
     vector<string> detail::client_impl::wallet_list() const
     {
@@ -1758,12 +1694,12 @@ config load_config( const fc::path& datadir )
       }
     } FC_RETHROW_EXCEPTIONS( warn, "") }
 
-    void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
+    void detail::client_impl::wallet_transaction_remove( const string& transaction_id )
     { try {
        _wallet->remove_transaction_record( transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
-    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
+    void detail::client_impl::wallet_transaction_rebroadcast( const string& transaction_id )
     { try {
        const auto records = _wallet->get_transactions( transaction_id );
        for( const auto& record : records )
@@ -1974,263 +1910,6 @@ config load_config( const fc::path& datadir )
         if (command == "add")
           _p2p_node->add_node( node );
       }
-    }
-
-    address detail::client_impl::bitcoin_getaccountaddress(const string& account_name)
-    {
-       try {
-          FC_ASSERT( _wallet->is_valid_account_name( account_name ) );
-          if ( _wallet->is_valid_account( account_name ) )
-          {
-             return address( _wallet->get_account_public_key( account_name ) );
-          }
-
-          return _wallet->get_new_address( account_name );
-       } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-    bts::blockchain::account_record detail::client_impl::bitcoin_getaccount(const address& account_address)
-    {
-        try {
-            auto opt_account = _wallet->get_account_record(account_address);
-            if( opt_account.valid() )
-                return *opt_account;
-            FC_ASSERT(false, "Invalid Account Key: ${account_address}", ("account_address",account_address) );
-        } FC_CAPTURE_AND_RETHROW( (account_address) ) }
-
-    string detail::client_impl::bitcoin_dumpprivkey(const address& account_address){
-        try {
-            auto wif_private_key = bts::utilities::key_to_wif( _wallet->get_private_key(account_address) );
-            return wif_private_key;
-        } FC_CAPTURE_AND_RETHROW( (account_address) ) }
-
-    void detail::client_impl::bitcoin_encryptwallet(const string& passphrase)
-    {
-        wallet_change_passphrase(passphrase);
-    }
-
-    void detail::client_impl::bitcoin_addnode(const fc::ip::endpoint& node, const string& command)
-    {
-        network_add_node(node, command);
-    }
-
-    void detail::client_impl::bitcoin_backupwallet(const fc::path& destination) const
-    {
-        wallet_export_to_json(destination);
-    }
-
-    std::vector<address> detail::client_impl::bitcoin_getaddressesbyaccount(const string& account_name)
-    { try {
-       std::vector<address> addresses;
-       auto public_keys = _wallet->get_public_keys_in_account(account_name);
-
-       addresses.reserve(public_keys.size());
-
-       for ( auto key : public_keys )
-           addresses.push_back( address(key) );
-       return addresses;
-    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-    int64_t detail::client_impl::bitcoin_getbalance(const string& account_name)
-    { try {
-       const account_balance_summary_type balances = _wallet->get_account_balances();
-       auto itr = balances.find( account_name );
-       if( itr != balances.end() )
-       {
-          auto bitr = itr->second.first.find( BTS_BLOCKCHAIN_SYMBOL );
-          if( bitr != itr->second.first.end() )
-             return bitr->second;
-       }
-       return 0;
-
-    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-    digest_block detail::client_impl::bitcoin_getblock( const block_id_type& block_id )const
-    {
-       const auto& block = blockchain_get_block( block_id.str() );
-       FC_ASSERT( block.valid() );
-       return *block;
-    }
-
-    uint32_t detail::client_impl::bitcoin_getblockcount() const
-    {
-       return blockchain_get_blockcount();
-    }
-
-    bts::blockchain::block_id_type detail::client_impl::bitcoin_getblockhash(uint32_t block_number) const
-    {
-       return blockchain_get_blockhash(block_number);
-    }
-
-    uint32_t detail::client_impl::bitcoin_getconnectioncount() const
-    {
-       return network_get_connection_count();
-    }
-
-    fc::variant_object detail::client_impl::bitcoin_getinfo() const
-    {
-       return get_info();
-    }
-
-    bts::blockchain::address detail::client_impl::bitcoin_getnewaddress(const string& account_name)
-    {
-       return _wallet->get_new_address( account_name );
-    }
-
-    int64_t detail::client_impl::bitcoin_getreceivedbyaddress(const address& account_address)
-    {
-       try {
-          auto balance = _chain_db->get_balance_record( account_address );
-          if (balance.valid() && balance->asset_id() == 0)
-          {
-             return balance->balance;
-          }
-          else
-          {
-             return 0;
-          }
-       } FC_CAPTURE_AND_RETHROW( (account_address) ) }
-
-    void detail::client_impl::bitcoin_importprivkey(const string& wif_key, const string& account_name, bool rescan)
-    {
-       wallet_import_private_key(wif_key, account_name, rescan);
-    }
-
-    std::unordered_map< string, bts::blockchain::share_type > detail::client_impl::bitcoin_listaccounts()
-    {
-       account_balance_summary_type account_blances = _wallet->get_account_balances();
-
-       std::unordered_map< string, bts::blockchain::share_type > account_bts_balances;
-       for ( auto account_blance : account_blances )
-       {
-          if ( account_blance.second.first.find( BTS_BLOCKCHAIN_SYMBOL ) != account_blance.second.first.end() )
-          {
-             account_bts_balances[ account_blance.first ] = account_blance.second.first[ BTS_BLOCKCHAIN_SYMBOL ];
-          }
-       }
-
-       return account_bts_balances;
-    }
-
-    std::vector<bts::wallet::pretty_transaction> detail::client_impl::bitcoin_listtransactions(const string& account_name, uint64_t count, uint64_t from)
-    {
-       try {
-          auto trx_history = wallet_account_transaction_history( account_name );
-          trx_history.reserve(trx_history.size());
-
-          std::vector<bts::wallet::pretty_transaction> trxs;
-
-          uint64_t index = 0;
-          for ( auto trx : trx_history )
-          {
-             if ( index >= from )
-             {
-                trxs.push_back( trx );
-             }
-
-             if ( trxs.size() >= count )
-             {
-                break;
-             }
-             index ++;
-          }
-          return trxs;
-       } FC_CAPTURE_AND_RETHROW( (account_name)(count)(from) ) }
-
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendfrom(const string& fromaccount, const address& toaddress, int64_t amount, const string& comment)
-    {
-
-       try {
-          auto trx = _wallet->transfer_asset_to_address( amount, BTS_ADDRESS_PREFIX,
-                                                         fromaccount, toaddress,
-                                                         comment, vote_random,true );
-
-          network_broadcast_transaction( trx );
-
-          return trx.id();
-       } FC_CAPTURE_AND_RETHROW( (fromaccount)(toaddress)(amount)(comment) ) }
-
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendmany(const string& fromaccount, const std::unordered_map< address, int64_t >& to_address_amounts, const string& comment)
-    {
-       try {
-          std::unordered_map< address, double > to_address_amount_map;
-          for ( auto address_amount : to_address_amounts )
-          {
-             to_address_amount_map[address_amount.first] = address_amount.second;
-          }
-
-          auto trx = _wallet->transfer_asset_to_many_address(BTS_ADDRESS_PREFIX, fromaccount, to_address_amount_map, comment, true);
-
-          network_broadcast_transaction(trx);
-
-          return trx.id();
-       } FC_CAPTURE_AND_RETHROW( (fromaccount)(to_address_amounts)(comment) ) }
-
-    bts::blockchain::transaction_id_type detail::client_impl::bitcoin_sendtoaddress(const address& address, int64_t amount, const string& comment)
-    {
-       FC_ASSERT(false, "Do not support send to address from multi account yet, if you need, please contact the dev.");
-    }
-
-    void detail::client_impl::bitcoin_settrxfee(int64_t amount)
-    {
-       _wallet->set_priority_fee( asset( amount ) );
-       _chain_db->set_priority_fee( amount );
-    }
-
-    string detail::client_impl::bitcoin_signmessage(const address& address_to_sign_with, const string& message)
-    { try {
-       auto private_key = _wallet->get_private_key(address_to_sign_with);
-
-       auto sig = private_key.sign_compact( fc::sha256::hash( BTS_MESSAGE_MAGIC + message ) );
-
-       return fc::to_base58( (char *)sig.data, sizeof(sig) );
-
-    } FC_CAPTURE_AND_RETHROW( (address_to_sign_with)(message) ) }
-
-    bool detail::client_impl::bitcoin_verifymessage(const address& address_to_verify_with, const string& signature, const string& message)
-    { try {
-       fc::ecc::compact_signature sig;
-       fc::from_base58(signature, (char*)sig.data, sizeof(sig));
-
-       return address_to_verify_with ==  address(fc::ecc::public_key(sig, fc::sha256::hash( BTS_MESSAGE_MAGIC + message)));
-    } FC_CAPTURE_AND_RETHROW( (address_to_verify_with)(signature)(message) ) }
-
-    fc::variant detail::client_impl::bitcoin_validateaddress(const address& address_to_validate )
-    { try {
-       fc::mutable_variant_object obj("address",address_to_validate);
-
-       auto opt_account = _wallet->get_account_record(address_to_validate);
-       if ( opt_account.valid() )
-       {
-          obj( "account", *opt_account );
-       }
-       else {
-          auto opt_register_account = _chain_db->get_account_record( address_to_validate );
-          if ( opt_register_account.valid() )
-          {
-             obj( "account", *opt_register_account );
-          }
-       }
-
-       obj( "ismine", _wallet->is_receive_address( address_to_validate ) );
-       obj( "isvalid", address::is_valid( string(address_to_validate) ) );
-
-       return obj;
-    } FC_CAPTURE_AND_RETHROW( (address_to_validate) ) }
-
-    void detail::client_impl::bitcoin_walletlock()
-    {
-        wallet_lock();
-    }
-
-    void detail::client_impl::bitcoin_walletpassphrase(const string& passphrase, uint32_t timeout)
-    {
-        wallet_unlock(timeout, passphrase);
-    }
-
-    void detail::client_impl::bitcoin_walletpassphrasechange(const string& oldpassphrase, const string& newpassphrase)
-    {
-        wallet_unlock( BTS_WALLET_DEFAULT_UNLOCK_TIME_SEC, oldpassphrase );
-        wallet_change_passphrase( newpassphrase );
     }
 
     void detail::client_impl::stop()
@@ -2633,47 +2312,47 @@ config load_config( const fc::path& datadir )
       return _rpc_server->meta_help();
     }
 
-    variant_object client_impl::blockchain_get_config() const
+    variant_object client_impl::blockchain_get_info() const
     {
-       auto config = fc::mutable_variant_object();
+       auto info = fc::mutable_variant_object();
 
-       config["blockchain_id"]              = _chain_db->chain_id();
+       info["blockchain_id"]                = _chain_db->chain_id();
 
-       config["symbol"]                     = BTS_BLOCKCHAIN_SYMBOL;
-       config["name"]                       = BTS_BLOCKCHAIN_NAME;
-       config["version"]                    = BTS_BLOCKCHAIN_VERSION;
-       config["genesis_timestamp"]          = _chain_db->get_genesis_timestamp();
+       info["symbol"]                       = BTS_BLOCKCHAIN_SYMBOL;
+       info["name"]                         = BTS_BLOCKCHAIN_NAME;
+       info["version"]                      = BTS_BLOCKCHAIN_VERSION;
+       info["genesis_timestamp"]            = _chain_db->get_genesis_timestamp();
 
-       config["block_interval"]             = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       config["target_block_size"]          = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-       config["max_block_size"]             = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-       config["max_blockchain_size"]        = BTS_BLOCKCHAIN_MAX_SIZE;
+       info["block_interval"]               = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+       info["target_block_size"]            = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
+       info["max_block_size"]               = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+       info["max_blockchain_size"]          = BTS_BLOCKCHAIN_MAX_SIZE;
 
-       config["address_prefix"]             = BTS_ADDRESS_PREFIX;
-       config["min_block_fee"]              = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
-       config["inactivity_fee_apr"]         = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       config["priority_fee"]               = _chain_db->get_priority_fee();
+       info["address_prefix"]               = BTS_ADDRESS_PREFIX;
+       info["min_block_fee"]                = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
+       info["inactivity_fee_apr"]           = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
+       info["priority_fee"]                 = _chain_db->get_priority_fee();
 
-       config["delegate_num"]               = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       config["delegate_reg_fee"]           = _chain_db->get_delegate_registration_fee();
+       info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
+       info["delegate_reg_fee"]             = _chain_db->get_delegate_registration_fee();
 
-       config["name_size_max"]              = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-       config["memo_size_max"]              = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
-       config["data_size_max"]              = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+       info["name_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+       info["memo_size_max"]                = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+       info["data_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
 
-       config["symbol_size_max"]            = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
-       config["symbol_size_min"]            = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-       config["asset_reg_fee"]              = _chain_db->get_asset_registration_fee();
-       config["asset_shares_max"]           = BTS_BLOCKCHAIN_MAX_SHARES;
+       info["symbol_size_max"]              = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
+       info["symbol_size_min"]              = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
+       info["asset_reg_fee"]                = _chain_db->get_asset_registration_fee();
+       info["asset_shares_max"]             = BTS_BLOCKCHAIN_MAX_SHARES;
 
-       config["min_market_depth"]           = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
+       info["min_market_depth"]             = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
 
-       config["proposal_vote_message_max"]  = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
+       info["proposal_vote_message_max"]    = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
 
-       config["max_pending_queue_size"]     = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
-       config["max_trx_per_second"]         = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
+       info["max_pending_queue_size"]       = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
+       info["max_trx_per_second"]           = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
-       return config;
+       return info;
     }
 
     variant_object client_impl::get_info()const
@@ -2775,7 +2454,7 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    void client_impl::wallet_scan_transaction( uint32_t block_num, const string& transaction_id )
+    void client_impl::wallet_transaction_scan( uint32_t block_num, const string& transaction_id )
     { try {
        _wallet->scan_transactions( block_num, transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
@@ -2785,9 +2464,11 @@ config load_config( const fc::path& datadir )
         blockchain_security_state state;
         int64_t required_confirmations = _chain_db->get_required_confirmations();
         double participation_rate = _chain_db->get_average_delegate_participation();
+        if( participation_rate > 100 ) participation_rate = 0;
+
         state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
-        if (required_confirmations < BTS_BLOCKCHAIN_NUM_DELEGATES / 2
+        if (required_confirmations <= BTS_BLOCKCHAIN_NUM_DELEGATES / 2
             && participation_rate > 80)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::green;
