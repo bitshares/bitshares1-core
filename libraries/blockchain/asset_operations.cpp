@@ -10,6 +10,9 @@ namespace bts { namespace blockchain {
     */
    void create_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+
+        FC_ASSERT(!"Not implemented for this DAC.\n");
+
       if( NOT is_power_of_ten( this->precision ) )
          FC_CAPTURE_AND_THROW( invalid_precision, (precision) );
 
@@ -65,6 +68,8 @@ namespace bts { namespace blockchain {
     */
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
+
       auto current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record )
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
@@ -102,6 +107,8 @@ namespace bts { namespace blockchain {
     */
    void issue_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
+
       if( this->amount.amount <= 0 )
          FC_CAPTURE_AND_THROW( negative_issue, (amount) );
 

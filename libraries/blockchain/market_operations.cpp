@@ -12,6 +12,7 @@ namespace bts { namespace blockchain {
     */
    void bid_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
 
@@ -67,6 +68,7 @@ namespace bts { namespace blockchain {
     */
    void ask_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
 
@@ -118,6 +120,7 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
       if( this->short_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
 
@@ -186,6 +189,7 @@ namespace bts { namespace blockchain {
    */
    void cover_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
@@ -234,6 +238,7 @@ namespace bts { namespace blockchain {
 
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
@@ -272,6 +277,7 @@ namespace bts { namespace blockchain {
 
    void remove_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+        FC_ASSERT(!"Not implemented for this DAC.\n");
       // Should this even be allowed?
    }
 

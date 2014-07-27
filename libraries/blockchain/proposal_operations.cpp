@@ -6,6 +6,8 @@ namespace bts { namespace blockchain {
 
    void submit_proposal_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+
+        FC_ASSERT(!"Not implemented for this DAC.\n");
        auto delegate_record = eval_state._current_state->get_account_record( submitting_delegate_id );
        if( !delegate_record ) 
           FC_CAPTURE_AND_THROW( unknown_account_id, (submitting_delegate_id) );
@@ -31,6 +33,8 @@ namespace bts { namespace blockchain {
 
    void vote_proposal_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+
+        FC_ASSERT(!"Not implemented for this DAC.\n");
        auto vote_message_size = this->message.size();
        if( vote_message_size > BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE )
           FC_CAPTURE_AND_THROW( invalid_vote_message_size, (vote_message_size) );

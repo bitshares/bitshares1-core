@@ -294,5 +294,4 @@ namespace bts { namespace blockchain {
         eval_state._current_state->store_domain_record( *odomain_rec );
     }
 
-
 }} // bts::blockchain

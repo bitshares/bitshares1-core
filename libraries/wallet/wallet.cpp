@@ -4734,8 +4734,8 @@ namespace bts { namespace wallet {
 
             auto offer_op = domain_buy_operation();
             offer_op.price = price;
-            offer_op.offer_address = addr;
-            offer_op.domain_name = addr;
+            offer_op.new_owner = addr;
+            offer_op.domain_name = domain_name;
             trx.operations.push_back(offer_op);
 
             auto condition = withdraw_domain_offer();

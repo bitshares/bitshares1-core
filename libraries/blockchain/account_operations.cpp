@@ -179,6 +179,12 @@ namespace bts { namespace blockchain {
             FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
       }
 
+      if( this->points != 0 )
+      {
+         current_record->points += this->points;
+         eval_state.required_fees += asset( this->points > 0 ? this->points : -(this->points), 0);
+      }
+
       eval_state._current_state->store_account_record( *current_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 

@@ -52,6 +52,7 @@ namespace bts { namespace blockchain {
       account_id_type                   account_id;
       fc::optional<fc::variant>         public_data;
       fc::optional<public_key_type>     active_key;
+      share_type                        points;
 
       // 0-100% of the transaction fees to be paid to delegate
       // this value can only be reduced, never increased from
@@ -80,5 +81,5 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(delegate_pay_rate)(meta_data) )
-FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key)(delegate_pay_rate) )
+FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key)(delegate_pay_rate)(points) )
 FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )
