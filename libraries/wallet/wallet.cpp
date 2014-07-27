@@ -650,8 +650,8 @@ namespace bts { namespace wallet {
                     trx_rec.ledger_entries.push_back( entry );
                 }
             }
-            sync_balance_with_blockchain( op.balance_id );
 
+            sync_balance_with_blockchain( op.balance_id );
             return true;
          }
          return false;
@@ -988,15 +988,9 @@ namespace bts { namespace wallet {
                 break;
              }
         }
-        if( cache_deposit )
-        {
-           if( !sync_balance_with_blockchain( op.balance_id() ) )
-           {
-              elog( "unable to cache balance ${b}", ("b",op) );
-           }
-        }
-        return cache_deposit;
 
+        if( cache_deposit ) sync_balance_with_blockchain( op.balance_id() );
+        return cache_deposit;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit 
 
 
@@ -1094,19 +1088,10 @@ namespace bts { namespace wallet {
 
       bool wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
       {
-         auto bal_rec = _blockchain->get_balance_record( balance_id );
-         if( !bal_rec.valid() )
-         {
-            // wlog( "blockchain doesn't know about balance id: ${balance_id}",
-            //      ("balance_id",balance_id) );
-            _wallet_db.remove_balance( balance_id );
-            return false;
-         }
-         else
-         {
-            _wallet_db.cache_balance( *bal_rec );
-            return true;
-         }
+         const auto pending_state = _blockchain->get_pending_state();
+         const auto balance_record = pending_state->get_balance_record( balance_id );
+         if( !balance_record.valid() ) _wallet_db.remove_balance( balance_id );
+         else _wallet_db.cache_balance( *balance_record );
       }
 
       void wallet_impl::reschedule_relocker()
@@ -1274,12 +1259,13 @@ namespace bts { namespace wallet {
           close();
           my->_wallet_db.open( wallet_file_path );
           my->_current_wallet_path = wallet_file_path;
-
-          const auto tmp_balances = my->_wallet_db.get_balances();
-          for( const auto& item : tmp_balances )
-              my->sync_balance_with_blockchain( item.first );
-
           my->_blockchain->set_priority_fee( get_priority_fee().amount );
+
+          for( const auto& balance_item : my->_wallet_db.get_balances() )
+          {
+              const auto balance_id = balance_item.first;
+              my->sync_balance_with_blockchain( balance_id );
+          }
       }
       catch( ... )
       {
@@ -1906,7 +1892,8 @@ namespace bts { namespace wallet {
    void wallet::sign_and_cache_transaction(
         signed_transaction& transaction,
         const std::unordered_set<address>& required_signatures,
-        wallet_transaction_record& record )
+        wallet_transaction_record& record
+        )
    { try {
         sign_transaction( transaction, required_signatures );
         my->_blockchain->store_pending_transaction( transaction, true );
@@ -1916,8 +1903,15 @@ namespace bts { namespace wallet {
         record.is_virtual = false;
         record.is_confirmed = false;
         record.trx = transaction;
-        record.created_time = record.received_time = now;
+        record.created_time = now;
+        record.received_time = now;
         my->_wallet_db.store_transaction( record );
+
+        for( const auto& balance_item : my->_wallet_db.get_balances() )
+        {
+            const auto balance_id = balance_item.first;
+            my->sync_balance_with_blockchain( balance_id );
+        }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id, vote_selection_method selection_method )
