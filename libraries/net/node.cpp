@@ -776,7 +776,7 @@ namespace bts { namespace net { namespace detail {
           // we don't have any good candidates to connect to right now.
           try
           {
-            _retrigger_connect_loop_promise = fc::promise<void>::ptr( new fc::promise<void>() );
+            _retrigger_connect_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("bts::net::retrigger_connect_loop") );
             if( is_wanting_new_connections() || !_add_once_node_list.empty() )
             {
               if( is_wanting_new_connections() )
@@ -873,7 +873,7 @@ namespace bts { namespace net { namespace detail {
         if( !_sync_items_to_fetch_updated )
         {
           dlog( "no sync items to fetch right now, going to sleep" );
-          _retrigger_fetch_sync_items_loop_promise = fc::promise<void>::ptr( new fc::promise<void>() );
+          _retrigger_fetch_sync_items_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("bts::net::retrigger_fetch_sync_items_loop") );
           _retrigger_fetch_sync_items_loop_promise->wait();
           _retrigger_fetch_sync_items_loop_promise.reset();
         }
@@ -928,7 +928,7 @@ namespace bts { namespace net { namespace detail {
 
         if( !_items_to_fetch_updated )
         {
-          _retrigger_fetch_item_loop_promise = fc::promise<void>::ptr( new fc::promise<void>() );
+          _retrigger_fetch_item_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("bts::net::retrigger_fetch_item_loop") );
           _retrigger_fetch_item_loop_promise->wait();
           _retrigger_fetch_item_loop_promise.reset();
         }
@@ -991,7 +991,7 @@ namespace bts { namespace net { namespace detail {
 
         if( _new_inventory.empty() )
         {
-          _retrigger_advertise_inventory_loop_promise = fc::promise<void>::ptr( new fc::promise<void>() );
+          _retrigger_advertise_inventory_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("bts::net::retrigger_advertise_inventory_loop") );
           _retrigger_advertise_inventory_loop_promise->wait();
           _retrigger_advertise_inventory_loop_promise.reset();
         }
@@ -3832,7 +3832,7 @@ namespace bts { namespace net { namespace detail {
   namespace detail
   {
 #define INVOKE_IN_DELEGATE_THREAD(method_name, ...) \
-    return _thread->async([&](){ return _node_delegate->method_name(__VA_ARGS__); }).wait()
+    return _thread->async([&](){ return _node_delegate->method_name(__VA_ARGS__); }, "invoke " BOOST_STRINGIZE(method_name)).wait()
 
     thread_switching_node_delegate_wrapper::thread_switching_node_delegate_wrapper(fc::thread* thread, node_delegate* delegate) :
       _thread(thread),

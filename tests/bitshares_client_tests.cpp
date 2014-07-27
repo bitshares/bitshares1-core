@@ -182,7 +182,7 @@ void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
         stdouterrfile->write(buf, bytes_read);
         stdouterrfile->flush();
       }
-    });
+    }, "managed_process::stdout_reader");
   stderr_reader_done = fc::async([err_stream,stdouterrfile]()
     {
       char buf[1024];
@@ -194,7 +194,7 @@ void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
         stdouterrfile->write(buf, bytes_read);
         stdouterrfile->flush();
       }
-    });
+    }, "managed_process::stderr_reader");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////

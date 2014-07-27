@@ -3263,7 +3263,7 @@ config load_config( const fc::path& datadir )
         FC_THROW_EXCEPTION(fc::invalid_arg_exception, "type must be \"absolute\", or \"relative\", was: \"${type}\"", ("type", type));
       if (_chain_db->get_head_block_num() >= block_number)
         return;
-      fc::promise<void>::ptr block_arrived_promise(new fc::promise<void>());
+      fc::promise<void>::ptr block_arrived_promise(new fc::promise<void>("debug_wait_for_block_by_number"));
       class wait_for_block : public bts::blockchain::chain_observer
       {
         uint32_t               _block_number;
