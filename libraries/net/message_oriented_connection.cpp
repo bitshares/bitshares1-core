@@ -68,17 +68,18 @@ namespace bts { namespace net {
     }
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
-      ilog( "..." );
-      if (_read_loop_done.valid() && !_read_loop_done.ready())
+      ilog( "in ~message_oriented_connection_impl()" );
+      try 
+      { 
+        _read_loop_done.cancel_and_wait();
+      } 
+      catch ( const fc::exception& e )
       {
-        _read_loop_done.cancel();
-        try 
-        { 
-          _read_loop_done.wait();
-        } 
-        catch (...)
-        {
-        }
+        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring" );
       }
     }
 
@@ -90,13 +91,15 @@ namespace bts { namespace net {
     void message_oriented_connection_impl::accept()
     {
       _sock.accept();
-      _read_loop_done = fc::async([=](){ read_loop(); });
+      assert(!_read_loop_done.valid()); // check to be sure we never launch two read loops
+      _read_loop_done = fc::async([=](){ read_loop(); }, "message read_loop");
     }
 
     void message_oriented_connection_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
     {
       _sock.connect_to(remote_endpoint);
-      _read_loop_done = fc::async([=](){ read_loop(); });
+      assert(!_read_loop_done.valid()); // check to be sure we never launch two read loops
+      _read_loop_done = fc::async([=](){ read_loop(); }, "message read_loop");
     }
 
     void message_oriented_connection_impl::bind(const fc::ip::endpoint& local_endpoint)

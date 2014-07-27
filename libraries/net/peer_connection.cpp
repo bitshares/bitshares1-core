@@ -42,7 +42,7 @@ namespace bts { namespace net
       //, [](peer_connection* peer_to_delete){ fc::async([peer_to_delete](){delete peer_to_delete;}); });
     }
 
-    peer_connection::~peer_connection()
+    void peer_connection::destroy()
     {
       try 
       {
@@ -51,29 +51,37 @@ namespace bts { namespace net
       catch ( ... ) 
       {
       }
-      if (_send_queued_messages_done.valid() && !_send_queued_messages_done.ready())
-      {
-        _send_queued_messages_done.cancel();
-        try 
-        { 
-          _send_queued_messages_done.wait(); 
-        } 
-        catch (...)
-        {
-        }
-      }
 
-      if (accept_or_connect_task_done.valid() && !accept_or_connect_task_done.ready())
+      try 
+      { 
+        _send_queued_messages_done.cancel_and_wait(); 
+      } 
+      catch( const fc::exception& e )
       {
-        accept_or_connect_task_done.cancel();
-        try 
-        { 
-          accept_or_connect_task_done.wait(); 
-        } 
-        catch (...)
-        {
-        }
+        wlog("Unexpected exception from peer_connection's send_queued_messages_task : ${e}", ("e", e));
       }
+      catch( ... )
+      {
+        wlog("Unexpected exception from peer_connection's send_queued_messages_task");
+      }
+      
+      try 
+      { 
+        accept_or_connect_task_done.cancel_and_wait(); 
+      } 
+      catch( const fc::exception& e )
+      {
+        wlog("Unexpected exception from peer_connection's accept_or_connect_task : ${e}", ("e", e));
+      }
+      catch( ... )
+      {
+        wlog("Unexpected exception from peer_connection's accept_or_connect_task");
+      }
+    }
+
+    peer_connection::~peer_connection()
+    {
+      destroy();
     }
 
     fc::tcp_socket& peer_connection::get_socket()
@@ -211,13 +219,19 @@ namespace bts { namespace net
         FC_THROW_EXCEPTION(fc::exception, "Attempting to send a message on a connection that is being shut down");
 
       if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
-           _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); });
+           _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); }, "send_queued_messages_task");
     }
 
     void peer_connection::close_connection()
     {
       negotiation_status = connection_negotiation_status::closing;
       _message_connection.close_connection();
+    }
+
+    void peer_connection::destroy_connection()
+    {
+      negotiation_status = connection_negotiation_status::closing;
+      destroy();
     }
 
     uint64_t peer_connection::get_total_bytes_sent() const

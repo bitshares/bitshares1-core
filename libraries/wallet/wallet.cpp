@@ -42,16 +42,6 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
-             wallet_impl()
-             {
-                 _scanner_thread.reset( new fc::thread( "wallet_scanner") );
-             }
-
-             ~wallet_impl()
-             {
-                 try { if( _scanner_thread ) _scanner_thread->quit(); } catch( ... ) {}
-             }
-
              wallet*                            self;
              wallet_db                          _wallet_db;
              chain_database_ptr                 _blockchain;
@@ -73,167 +63,36 @@ namespace bts { namespace wallet {
                  fc::time_point_sec insertion_time;
              };
              std::map<public_key_type, login_record>  _login_map;
-             fc::future<void>                         _login_map_cleaner;
+             fc::future<void>                         _login_map_cleaner_done;
              const static short                       _login_cleaner_interval_seconds = 60;
              const static short                       _login_lifetime_seconds = 300;
 
-             void reschedule_relocker();
-             void relocker();
+             wallet_impl();
+             ~wallet_impl();
 
-             fc::ecc::private_key create_one_time_key()
-             {
-                if( !_use_deterministic_one_time_keys )
-                {
-                   return fc::ecc::private_key::generate();
-                }
-                return _wallet_db.new_private_key( _wallet_password );
-             }
+             void reschedule_relocker();
+         private:
+             void relocker();
+         public:
+
+             fc::ecc::private_key create_one_time_key();
 
             /**
              * This method is called anytime the blockchain state changes including
              * undo operations.
              */
-            virtual void state_changed( const pending_chain_state_ptr& state )override
-            {
-               uint32_t last_unlocked_scanned_number = _wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
-               if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
-               {
-                  _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( _blockchain->get_head_block_num() ) );
-               }
-            }
+            virtual void state_changed( const pending_chain_state_ptr& state )override;
 
             /**
              *  This method is called anytime a block is applied to the chain.
              */
-            virtual void block_applied( const block_summary& summary )override
-            {
-               if( self->is_open() && self->is_unlocked() && (_delegate_scanning_enabled || self->get_my_delegates( enabled_delegate_status ).empty() ) )
-               {
-                  const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
-                  const auto now = blockchain::now();
-                  scan_block( summary.block_data.block_num, account_priv_keys, now );
-                  _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( summary.block_data.block_num ) );
-               }
-            }
+            virtual void block_applied( const block_summary& summary )override;
 
-            void scan_market_transaction(
-                    const market_transaction& trx,
-                    uint32_t block_num,
-                    const time_point_sec& block_time,
-                    const time_point_sec& received_time
-                    )
-            { try {
-                const auto bid_is_short = ( trx.bid_type == short_order );
-                const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
-
-                auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
-                if( okey_bid && okey_bid->has_private_key() )
-                {
-                   auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
-
-                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), 
-                                                                                       trx.bid_price.base_asset_id ).get_address() );
-                   if( bal_rec )
-                   {
-                       //wlog( "BAL RECORD ${R}", ("R", bal_rec) );
-                       _wallet_db.cache_balance( *bal_rec );
-                   }
-
-                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), 
-                                                                                  trx.ask_price.quote_asset_id ).get_address() );
-
-                   if( bal_rec )
-                   {
-                       //wlog( "BAL RECORD ${R}", ("R", bal_rec) );
-                       _wallet_db.cache_balance( *bal_rec );
-                   }
-
-                   /* What we paid */
-                   auto out_entry = ledger_entry();
-                   out_entry.from_account = okey_bid->public_key;
-                   out_entry.amount = trx.bid_paid;
-                   out_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.bid_price );
-
-                   /* What we received */
-                   auto in_entry = ledger_entry();
-                   in_entry.from_account = okey_bid->public_key;
-                   in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
-                   in_entry.amount = trx.bid_received;
-                   in_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
-
-                   std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
-
-                   // TODO: Don't blow away memo, etc.
-                   auto record = wallet_transaction_record();
-                   record.record_id = fc::ripemd160::hash( id_ss.str() );
-                   record.block_num = block_num;
-                   record.is_virtual = true;
-                   record.is_confirmed = true;
-                   record.is_market = true;
-                   record.ledger_entries.push_back( out_entry );
-                   record.ledger_entries.push_back( in_entry );
-                   record.fee = trx.fees_collected;
-                   record.created_time = block_time;
-                   record.received_time = received_time;
-
-                   _wallet_db.store_transaction( record );
-                }
-
-                auto okey_ask = _wallet_db.lookup_key( trx.ask_owner ); 
-                if( okey_ask && okey_ask->has_private_key() )
-                {
-                   auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
-
-                   auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
-                                                                                       trx.ask_price.base_asset_id ).get_address() );
-                   if( bal_rec )
-                   {
-                      //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
-                      _wallet_db.cache_balance( *bal_rec );
-                   }
-
-                   bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
-                                                                                  trx.ask_price.quote_asset_id ).get_address() );
-
-                   if( bal_rec ) 
-                   {
-                      //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
-                      _wallet_db.cache_balance( *bal_rec );
-                   }
-
-                   /* What we paid */
-                   auto out_entry = ledger_entry();
-                   out_entry.from_account = okey_ask->public_key;
-                   out_entry.amount = trx.ask_paid;
-                   out_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
-
-                   /* What we received */
-                   auto in_entry = ledger_entry();
-                   in_entry.from_account = okey_ask->public_key;
-                   in_entry.to_account = ask_account_key->public_key;
-                   in_entry.amount = trx.ask_received;
-                   in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
-
-                   std::stringstream id_ss;
-                   id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
-
-                   // TODO: Don't blow away memo, etc.
-                   auto record = wallet_transaction_record();
-                   record.record_id = fc::ripemd160::hash( id_ss.str() );
-                   record.block_num = block_num;
-                   record.is_virtual = true;
-                   record.is_confirmed = true;
-                   record.is_market = true;
-                   record.ledger_entries.push_back( out_entry );
-                   record.ledger_entries.push_back( in_entry );
-                   record.fee = trx.fees_collected;
-                   record.created_time = block_time;
-                   record.received_time = received_time;
-
-                   _wallet_db.store_transaction( record );
-                }
-            } FC_CAPTURE_AND_RETHROW() }
+            void scan_market_transaction(const market_transaction& trx,
+                                         uint32_t block_num,
+                                         const time_point_sec& block_time,
+                                         const time_point_sec& received_time);
+            
 
             secret_hash_type get_secret( uint32_t block_num,
                                          const private_key_type& delegate_key )const;
@@ -269,9 +128,171 @@ namespace bts { namespace wallet {
 
             owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
 
+            void scan_chain_task( uint32_t start, uint32_t end,
+                                  const scan_progress_callback& progress_callback,
+                                  const time_point_sec& received_time );
+
+            void login_map_cleaner_task();
+
             void upgrade_version( uint32_t current_version );
       };
      
+      wallet_impl::wallet_impl()
+      {
+          _scanner_thread.reset( new fc::thread( "wallet_scanner") );
+      }
+
+      wallet_impl::~wallet_impl()
+      {
+          try { if( _scanner_thread ) _scanner_thread->quit(); } catch( ... ) {}
+      }
+
+      fc::ecc::private_key wallet_impl::create_one_time_key()
+      {
+        if( !_use_deterministic_one_time_keys )
+        {
+            return fc::ecc::private_key::generate();
+        }
+        return _wallet_db.new_private_key( _wallet_password );
+      }
+
+      void wallet_impl::state_changed( const pending_chain_state_ptr& state )
+      {
+          uint32_t last_unlocked_scanned_number = _wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
+          if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
+          {
+            _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( _blockchain->get_head_block_num() ) );
+          }
+      }
+
+      void wallet_impl::block_applied( const block_summary& summary )
+      {
+          if( self->is_open() && self->is_unlocked() && (_delegate_scanning_enabled || self->get_my_delegates( enabled_delegate_status ).empty() ) )
+          {
+            const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
+            const auto now = blockchain::now();
+            scan_block( summary.block_data.block_num, account_priv_keys, now );
+            _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( summary.block_data.block_num ) );
+          }
+      }
+
+      void wallet_impl::scan_market_transaction(const market_transaction& trx,
+                                                uint32_t block_num,
+                                                const time_point_sec& block_time,
+                                                const time_point_sec& received_time)
+      { try {
+          const auto bid_is_short = ( trx.bid_type == short_order );
+          const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
+
+          auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
+          if( okey_bid && okey_bid->has_private_key() )
+          {
+              auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
+
+              auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), 
+                                                                                  trx.bid_price.base_asset_id ).get_address() );
+              if( bal_rec )
+              {
+                  //wlog( "BAL RECORD ${R}", ("R", bal_rec) );
+                  _wallet_db.cache_balance( *bal_rec );
+              }
+
+              bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), 
+                                                                            trx.ask_price.quote_asset_id ).get_address() );
+
+              if( bal_rec )
+              {
+                  //wlog( "BAL RECORD ${R}", ("R", bal_rec) );
+                  _wallet_db.cache_balance( *bal_rec );
+              }
+
+              /* What we paid */
+              auto out_entry = ledger_entry();
+              out_entry.from_account = okey_bid->public_key;
+              out_entry.amount = trx.bid_paid;
+              out_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.bid_price );
+
+              /* What we received */
+              auto in_entry = ledger_entry();
+              in_entry.from_account = okey_bid->public_key;
+              in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
+              in_entry.amount = trx.bid_received;
+              in_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
+
+              std::stringstream id_ss;
+              id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
+
+              // TODO: Don't blow away memo, etc.
+              auto record = wallet_transaction_record();
+              record.record_id = fc::ripemd160::hash( id_ss.str() );
+              record.block_num = block_num;
+              record.is_virtual = true;
+              record.is_confirmed = true;
+              record.is_market = true;
+              record.ledger_entries.push_back( out_entry );
+              record.ledger_entries.push_back( in_entry );
+              record.fee = trx.fees_collected;
+              record.created_time = block_time;
+              record.received_time = received_time;
+
+              _wallet_db.store_transaction( record );
+          }
+
+          auto okey_ask = _wallet_db.lookup_key( trx.ask_owner ); 
+          if( okey_ask && okey_ask->has_private_key() )
+          {
+              auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
+
+              auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
+                                                                                  trx.ask_price.base_asset_id ).get_address() );
+              if( bal_rec )
+              {
+                //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
+                _wallet_db.cache_balance( *bal_rec );
+              }
+
+              bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
+                                                                            trx.ask_price.quote_asset_id ).get_address() );
+
+              if( bal_rec ) 
+              {
+                //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
+                _wallet_db.cache_balance( *bal_rec );
+              }
+
+              /* What we paid */
+              auto out_entry = ledger_entry();
+              out_entry.from_account = okey_ask->public_key;
+              out_entry.amount = trx.ask_paid;
+              out_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
+
+              /* What we received */
+              auto in_entry = ledger_entry();
+              in_entry.from_account = okey_ask->public_key;
+              in_entry.to_account = ask_account_key->public_key;
+              in_entry.amount = trx.ask_received;
+              in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+
+              std::stringstream id_ss;
+              id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
+
+              // TODO: Don't blow away memo, etc.
+              auto record = wallet_transaction_record();
+              record.record_id = fc::ripemd160::hash( id_ss.str() );
+              record.block_num = block_num;
+              record.is_virtual = true;
+              record.is_confirmed = true;
+              record.is_market = true;
+              record.ledger_entries.push_back( out_entry );
+              record.ledger_entries.push_back( in_entry );
+              record.fee = trx.fees_collected;
+              record.created_time = block_time;
+              record.received_time = received_time;
+
+              _wallet_db.store_transaction( record );
+          }
+      } FC_CAPTURE_AND_RETHROW() }
+
       vector<wallet_transaction_record> wallet_impl::get_pending_transactions()const
       {
           return _wallet_db.get_pending_transactions();
@@ -921,7 +942,7 @@ namespace bts { namespace wallet {
                              break;
                           }
                        }
-                   } ).wait();
+                   }, "scan_deposit" ).wait();
                    break;
                 }
                 break;
@@ -963,7 +984,7 @@ namespace bts { namespace wallet {
       void wallet_impl::reschedule_relocker()
       {
         if( !_relocker_done.valid() || _relocker_done.ready() )
-          _relocker_done = fc::async( [this](){ relocker(); } );
+          _relocker_done = fc::async( [this](){ relocker(); }, "wallet_relocker" );
       }
 
       void wallet_impl::relocker()
@@ -977,8 +998,65 @@ namespace bts { namespace wallet {
           else
           {
               ilog( "Scheduling wallet relocker task for time: ${t}", ("t", *_scheduled_lock_time) );
-              _relocker_done = fc::schedule( [this](){ relocker(); }, *_scheduled_lock_time );
+              _relocker_done = fc::schedule( [this](){ relocker(); }, 
+                                             *_scheduled_lock_time, 
+                                             "wallet_relocker" );
           }
+      }
+
+      void wallet_impl::scan_chain_task( uint32_t start, uint32_t end,
+                                         const scan_progress_callback& progress_callback,
+                                         const time_point_sec& received_time )
+      {
+         auto min_end = std::min<size_t>( _blockchain->get_head_block_num(), end );
+
+         try
+         {
+           _scan_progress = 0;
+           auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
+
+           for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
+           {
+              scan_block( block_num, account_priv_keys, received_time );
+              if( progress_callback )
+                 progress_callback( block_num, min_end );
+              _scan_progress = float(block_num-start)/(min_end-start+1);
+              _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+           }
+
+           for( auto acct : _wallet_db.get_accounts() )
+           {
+              auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.id );
+              if (blockchain_acct_rec.valid())
+              {
+                  blockchain::account_record& brec = acct.second;
+                  brec = *blockchain_acct_rec;
+                  _wallet_db.cache_account( acct.second );
+              }
+           }
+           _scan_progress = 1;
+         }
+         catch(...)
+         {
+           _scan_progress = -1;
+           throw;
+         }
+      }
+
+      void wallet_impl::login_map_cleaner_task()
+      {
+        std::vector<public_key_type> expired_records;
+        for( const auto& record : _login_map )
+          if( fc::time_point::now() - record.second.insertion_time >= fc::seconds(_login_lifetime_seconds) )
+            expired_records.push_back(record.first);
+        ilog("Purging ${count} expired records from login map.", ("count", expired_records.size()));
+        for( const auto& record : expired_records )
+          _login_map.erase(record);
+
+        if( !_login_map.empty() )
+          _login_map_cleaner_done = fc::schedule([this](){ login_map_cleaner_task(); },
+                                                 fc::time_point::now() + fc::seconds(_login_cleaner_interval_seconds),
+                                                 "login_map_cleaner_task");
       }
 
       void wallet_impl::upgrade_version( uint32_t current_version )
@@ -1184,17 +1262,38 @@ namespace bts { namespace wallet {
 
    void wallet::close()
    { try {
-      if( my->_scan_in_progress.valid() )
+      try
       {
-         my->_scan_in_progress.cancel();
-         try {
-            my->_scan_in_progress.wait();
-         } catch ( ... ) {}
+        ilog( "Canceling wallet scan_chain_task..." );
+        my->_scan_in_progress.cancel_and_wait();
+        ilog( "Wallet scan_chain_task canceled..." );
       }
+      catch( const fc::exception& e )
+      {
+        wlog("Unexpected exception from wallet's scan_chain_task() : ${e}", ("e", e));
+      }
+      catch( ... )
+      {
+        wlog("Unexpected exception from wallet's scan_chain_task()");
+      }
+
       lock();
-      ilog( "Canceling wallet relocker task..." );
-      try { my->_relocker_done.cancel_and_wait(); } catch( ... ) {}
-      ilog( "Wallet relocker task canceled" );
+
+      try 
+      { 
+        ilog( "Canceling wallet relocker task..." );
+        my->_relocker_done.cancel_and_wait();
+        ilog( "Wallet relocker task canceled" );
+      } 
+      catch( const fc::exception& e )
+      {
+        wlog("Unexpected exception from wallet's relocker() : ${e}", ("e", e));
+      }
+      catch( ... )
+      {
+        wlog("Unexpected exception from wallet's relocker()");
+      }
+
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
       my->_use_deterministic_one_time_keys = false;
@@ -1315,7 +1414,18 @@ namespace bts { namespace wallet {
 
    void wallet::lock()
    {
-      try { my->_login_map_cleaner.cancel_and_wait(); } catch( ... ) {}
+      try 
+      { 
+        my->_login_map_cleaner_done.cancel_and_wait();
+      } 
+      catch( const fc::exception& e )
+      {
+        wlog("Unexpected exception from wallet's login_map_cleaner() : ${e}", ("e", e));
+      }
+      catch( ... )
+      {
+        wlog("Unexpected exception from wallet's login_map_cleaner()");
+      }
       my->_wallet_password     = fc::sha512();
       my->_scheduled_lock_time = fc::optional<fc::time_point>();
       wallet_lock_state_changed( true );
@@ -1707,50 +1817,17 @@ namespace bts { namespace wallet {
       }
 
       // cancel the current scan...
-      if( my->_scan_in_progress.valid() )
+      try
       {
-         my->_scan_in_progress.cancel();
-         try {
-            my->_scan_in_progress.wait();
-         } catch ( ... ) {}
+        my->_scan_in_progress.cancel_and_wait();
+      }
+      catch (const fc::exception& e)
+      {
+        wlog("Unexpected exception caught while canceling the previous scan_chain_task : ${e}");
       }
 
-      my->_scan_in_progress = fc::async( [=](){ 
-         auto min_end = std::min<size_t>( my->_blockchain->get_head_block_num(), end );
-
-         try
-         {
-           my->_scan_progress = 0;
-           auto account_priv_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
-
-           for( auto block_num = start; !my->_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
-           {
-              my->scan_block( block_num, account_priv_keys, now );
-              if( progress_callback )
-                 progress_callback( block_num, min_end );
-              my->_scan_progress = float(block_num-start)/(min_end-start+1);
-              my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
-           }
-
-           for( auto acct : my->_wallet_db.get_accounts() )
-           {
-              auto blockchain_acct_rec = my->_blockchain->get_account_record( acct.second.id );
-              if (blockchain_acct_rec.valid())
-              {
-                  blockchain::account_record& brec = acct.second;
-                  brec = *blockchain_acct_rec;
-                  my->_wallet_db.cache_account( acct.second );
-              }
-           }
-           my->_scan_progress = 1;
-         }
-         catch(...)
-         {
-           my->_scan_progress = -1;
-           throw;
-         }
-      } );
-
+      my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task(start, end, progress_callback, now); }, 
+                                         "scan_chain_task" );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
    void wallet::scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
@@ -1885,26 +1962,10 @@ namespace bts { namespace wallet {
       public_key_type one_time_public_key = one_time_key.get_public_key();
       my->_login_map[one_time_public_key] = {one_time_key, fc::time_point::now()};
 
-      std::function<void()> cleaner = [this, &cleaner]{
-          std::vector<public_key_type> expired_records;
-          for( const auto& record : my->_login_map )
-            if( fc::time_point::now() - record.second.insertion_time >= fc::seconds(my->_login_lifetime_seconds) )
-              expired_records.push_back(record.first);
-          ilog("Purging ${count} expired records from login map.", ("count", expired_records.size()));
-          for( const auto& record : expired_records )
-            my->_login_map.erase(record);
-
-          if( !my->_login_map.empty() )
-            my->_login_map_cleaner = fc::thread::current().schedule(cleaner,
-                                                                    fc::time_point::now()
-                                                                    + fc::seconds(my->_login_cleaner_interval_seconds));
-          else
-            my->_login_map_cleaner = fc::future<void>();
-      };
-      if( !my->_login_map_cleaner.valid() )
-        my->_login_map_cleaner = fc::thread::current().schedule(cleaner,
-                                                                fc::time_point::now()
-                                                                + fc::seconds(my->_login_cleaner_interval_seconds));
+      if( !my->_login_map_cleaner_done.valid() || my->_login_map_cleaner_done.ready() )
+        my->_login_map_cleaner_done = fc::schedule([this](){ my->login_map_cleaner_task(); },
+                                                   fc::time_point::now() + fc::seconds(my->_login_cleaner_interval_seconds),
+                                                   "login_map_cleaner_task");
 
       auto signature = key->decrypt_private_key(my->_wallet_password)
                           .sign_compact(fc::sha256::hash((char*)&one_time_public_key,

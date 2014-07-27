@@ -382,7 +382,7 @@ config load_config( const fc::path& datadir )
              cfg.default_peers.push_back(peer);
            }
          std::cout << "Merged " << merged_peer_count << " default peers into config.\n";
-      }
+           }
       else
       {
          std::cerr<<"Creating default config file \""<<config_file.generic_string()<<"\"\n";
@@ -504,14 +504,15 @@ config load_config( const fc::path& datadir )
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl() override 
-            { 
-              try {
-                if( _rebroadcast_pending_loop.valid() && !_rebroadcast_pending_loop.ready() )
-                {
-                    _rebroadcast_pending_loop.cancel();
-                    _rebroadcast_pending_loop.wait();
-                }
-              } catch (...){}
+            {
+              try
+              {
+                _rebroadcast_pending_loop.cancel_and_wait();
+              }
+              catch (const fc::exception& e)
+              {
+                wlog("Unexpected error from rebroadcast_pending(): ${e}", ("e", e));
+              }
               _p2p_node.reset();
               delete _cli;
             }
@@ -668,27 +669,31 @@ config load_config( const fc::path& datadir )
 
       }
 
+       // Call this whenever a change occurs that may enable block production by the client
        void client_impl::reschedule_delegate_loop()
        {
-          if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
-              start_delegate_loop();
+         if( !_delegate_loop_complete.valid() || _delegate_loop_complete.ready() )
+           start_delegate_loop();
        }
 
        void client_impl::start_delegate_loop()
        {
           if (!_time_discontinuity_connection.connected())
             _time_discontinuity_connection = bts::blockchain::time_discontinuity_signal.connect([=](){ reschedule_delegate_loop(); });
-          _delegate_loop_complete = fc::async( [=](){ delegate_loop(); } );
+          _delegate_loop_complete = fc::async( [=](){ delegate_loop(); }, "delegate_loop" );
        }
 
        void client_impl::cancel_delegate_loop()
        {
-          if( _delegate_loop_complete.valid() && !_delegate_loop_complete.ready() )
+          try
           {
-              ilog( "Canceling delegate loop..." );
-              _delegate_loop_complete.cancel();
-              _delegate_loop_complete.wait();
-              ilog( "Delegate loop canceled" );
+            ilog( "Canceling delegate loop..." );
+            _delegate_loop_complete.cancel_and_wait();
+            ilog( "Delegate loop canceled" );
+          }
+          catch( const fc::exception& e )
+          {
+            wlog( "Unexpected exception thrown from delegate_loop(): ${e}", ("e",e.to_detail_string() ) );
           }
        }
 
@@ -696,9 +701,11 @@ config load_config( const fc::path& datadir )
        {
           const auto now = blockchain::now();
 
-          if( !_wallet->is_open() || _wallet->is_locked() ) return;
+          if( !_wallet->is_open() || _wallet->is_locked() ) 
+            return;
           vector<wallet_account_record> enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
-          if( enabled_delegates.empty() ) return;
+          if( enabled_delegates.empty() ) 
+            return;
           const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
 
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
@@ -750,13 +757,15 @@ config load_config( const fc::path& datadir )
           ilog( "Rescheduling delegate loop for time: ${t}", ("t",next_slot_time) );
 
           time_point scheduled_time = next_slot_time;
-          if( blockchain::ntp_time().valid() ) scheduled_time -= blockchain::ntp_error();
+          if( blockchain::ntp_time().valid() ) 
+            scheduled_time -= blockchain::ntp_error();
 
           /* Don't reschedule immediately in case we are in simulation */
           const auto system_now = time_point::now();
-          if( scheduled_time <= system_now ) scheduled_time = system_now + fc::seconds( 1 );
+          if( scheduled_time <= system_now ) 
+            scheduled_time = system_now + fc::seconds( 1 );
 
-          _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time );
+          _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
        }
 
        vector<account_record> client_impl::blockchain_list_active_delegates( uint32_t first, uint32_t count )const
@@ -871,12 +880,14 @@ config load_config( const fc::path& datadir )
 
        void client_impl::rebroadcast_pending()
        {
+#ifndef NDEBUG
           static bool currently_running = false;
           struct checker {
             bool& var;
             checker(bool& var) : var(var) { assert(!var); var = true; }
             ~checker() { var = false; }
           } _checker(currently_running);
+#endif // !NDEBUG
 
           if( !_sync_mode )
           {
@@ -894,9 +905,9 @@ config load_config( const fc::path& datadir )
               wlog( "error rebroadcasting transacation: ${e}", ("e",e.to_detail_string() ) );
             }
           }
-          _rebroadcast_pending_loop = fc::schedule( [=](){ 
-                        rebroadcast_pending();
-                    }, fc::time_point::now() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3) );
+          _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
+                                                    fc::time_point::now() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3),
+                                                    "rebroadcast_pending" );
        }
 
        ///////////////////////////////////////////////////////
@@ -1419,17 +1430,7 @@ config load_config( const fc::path& datadir )
 
     client::~client()
     {
-       try
-       {
-          my->cancel_delegate_loop();
-       }
-       catch( const fc::canceled_exception& )
-       {
-       }
-       catch( const fc::exception& e )
-       {
-          wlog( "${e}", ("e",e.to_detail_string() ) );
-       }
+      my->cancel_delegate_loop();
     }
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }

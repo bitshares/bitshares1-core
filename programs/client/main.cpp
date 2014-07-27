@@ -3,6 +3,7 @@
 #include <bts/client/client.hpp>
 #include <bts/net/upnp.hpp>
 #include <bts/blockchain/chain_database.hpp>
+#include <bts/blockchain/time.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/cli/cli.hpp>
 #include <bts/utilities/git_revision.hpp>
@@ -36,7 +37,8 @@ int main( int argc, char** argv )
                 << e.to_detail_string() << "\n";
       wlog( "${e}", ("e", e.to_detail_string() ) );
    }
-   dlog("Leaving main()");
+   bts::blockchain::shutdown_ntp_time();
+   ilog("Leaving main()");
    return 0;
 }
 
