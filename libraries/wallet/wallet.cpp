@@ -4720,18 +4720,40 @@ namespace bts { namespace wallet {
         unordered_set<address> required_signatures;
 
         auto odomain_rec = my->_blockchain->get_domain_record( domain_name );
-        FC_ASSERT( odomain_rec.valid(), "No such domain" );
-        FC_ASSERT( odomain_rec->state == domain_record::in_sale, "That domain is not for sale" );
-        auto buyer_pubkey = get_account_public_key( account_name );
+        if( odomain_rec.valid() && odomain_rec->state == domain_record::in_sale 
+            && price < odomain_rec->price ) // we are buying an existing "for sale"
+        {
+            auto buyer_pubkey = get_account_public_key( account_name );
 
-        auto buy_op = domain_buy_operation();
-        buy_op.domain_name = domain_name;
-        buy_op.new_owner = get_new_address( account_name );
-        trx.operations.push_back( buy_op );
+            auto buy_op = domain_buy_operation();
+            buy_op.domain_name = domain_name;
+            buy_op.new_owner = get_new_address( account_name );
+            trx.operations.push_back( buy_op );
 
-        auto priority_fee = get_priority_fee().amount;
-        
-        my->withdraw_to_transaction( odomain_rec->price + priority_fee, 0, buyer_pubkey, trx, required_signatures );
+            auto priority_fee = get_priority_fee().amount;
+            
+            my->withdraw_to_transaction( odomain_rec->price + priority_fee, 0, buyer_pubkey, trx, required_signatures );
+
+        } else // else we are placing a new offer
+        {
+            auto addr = get_new_address( account_name );
+
+            auto offer_op = domain_buy_operation();
+            offer_op.price = price;
+            offer_op.offer_address = addr;
+            offer_op.domain_name = addr;
+            trx.operations.push_back(offer_op);
+
+            auto condition = withdraw_domain_offer();
+            condition.owner = addr;
+            condition.price = price;
+            condition.domain_name = domain_name;
+            
+            auto deposit_op = deposit_operation();
+            deposit_op.condition = condition;
+            deposit_op.amount = price;
+            trx.operations.push_back(deposit_op);
+        }
 
         if ( sign )
             sign_transaction( trx, required_signatures );

@@ -56,7 +56,9 @@ namespace bts { namespace blockchain {
       domain_sell_op_type              = 103,
       domain_cancel_sell_op_type       = 104,
       domain_buy_op_type               = 105,
-      domain_transfer_op_type          = 106
+      domain_cancel_buy_op_type        = 106,
+      domain_transfer_op_type          = 107,
+
    };
 
    /**
