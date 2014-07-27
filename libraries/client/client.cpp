@@ -2635,7 +2635,8 @@ config load_config( const fc::path& datadir )
 
     variant_object client_impl::blockchain_get_config() const
     {
-       fc::mutable_variant_object config;
+       auto config = fc::mutable_variant_object();
+
        config["blockchain_id"]              = _chain_db->chain_id();
 
        config["symbol"]                     = BTS_BLOCKCHAIN_SYMBOL;
@@ -2677,11 +2678,11 @@ config load_config( const fc::path& datadir )
 
     variant_object client_impl::get_info()const
     {
-      fc::time_point_sec now = blockchain::now();
-      fc::mutable_variant_object info;
+      const auto now = blockchain::now();
+      auto info = fc::mutable_variant_object();
 
       /* Blockchain */
-      uint32_t head_block_num                                   = _chain_db->get_head_block_num();
+      const auto head_block_num                                 = _chain_db->get_head_block_num();
       info["blockchain_head_block_num"]                         = head_block_num;
       info["blockchain_head_block_age"]                         = variant();
       info["blockchain_head_block_timestamp"]                   = variant();
@@ -2723,7 +2724,7 @@ config load_config( const fc::path& datadir )
       }
 
       /* Wallet */
-      bool is_open                                              = _wallet->is_open();
+      const auto is_open                                        = _wallet->is_open();
       info["wallet_open"]                                       = is_open;
 
       info["wallet_unlocked"]                                   = variant();
@@ -2738,20 +2739,20 @@ config load_config( const fc::path& datadir )
       {
         info["wallet_unlocked"]                                 = _wallet->is_unlocked();
 
-        optional<time_point_sec> unlocked_until                 = _wallet->unlocked_until();
-        if( unlocked_until )
+        const auto unlocked_until                               = _wallet->unlocked_until();
+        if( unlocked_until.valid() )
         {
           info["wallet_unlocked_until"]                         = ( *unlocked_until - now ).to_seconds();
           info["wallet_unlocked_until_timestamp"]               = *unlocked_until;
 
-          vector<wallet_account_record> enabled_delegates       = _wallet->get_my_delegates( enabled_delegate_status );
-          bool block_production_enabled                         = !enabled_delegates.empty();
+          const auto enabled_delegates                          = _wallet->get_my_delegates( enabled_delegate_status );
+          const auto block_production_enabled                   = !enabled_delegates.empty();
           info["wallet_block_production_enabled"]               = block_production_enabled;
 
           if( block_production_enabled )
           {
-            optional<time_point_sec> next_block_time            = _wallet->get_next_producible_block_timestamp( enabled_delegates );
-            if( next_block_time )
+            const auto next_block_time                          = _wallet->get_next_producible_block_timestamp( enabled_delegates );
+            if( next_block_time.valid() )
             {
               info["wallet_next_block_production_time"]         = ( *next_block_time - now ).to_seconds();
               info["wallet_next_block_production_timestamp"]    = *next_block_time;

@@ -148,6 +148,49 @@ string pretty_blockchain_config( fc::mutable_variant_object config, cptr client 
     return out.str();
 }
 
+string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
+{
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    if( !info["unlocked_until_timestamp"].is_null() )
+    {
+        const auto unlocked_until_timestamp = info["unlocked_until_timestamp"].as<time_point_sec>();
+        info["unlocked_until_timestamp"] = pretty_timestamp( unlocked_until_timestamp );
+
+        if( !info["unlocked_until"].is_null() )
+            info["unlocked_until"] = pretty_age( unlocked_until_timestamp, true );
+    }
+
+    if( !info["scan_progress"].is_null() )
+    {
+        const auto scan_progress = info["scan_progress"].as<float>();
+        info["scan_progress"] = pretty_percent( scan_progress, 1 );
+    }
+
+    if( !info["priority_fee"].is_null() )
+    {
+        const auto priority_fee = info["priority_fee"].as<asset>();
+        info["priority_fee"] = client->get_chain()->to_pretty_asset( priority_fee );
+    }
+
+    if( !info["next_block_production_timestamp"].is_null() )
+    {
+        const auto next_block_timestamp = info["next_block_production_timestamp"].as<time_point_sec>();
+        info["next_block_production_timestamp"] = pretty_timestamp( next_block_timestamp );
+
+        if( !info["next_block_production_time"].is_null() )
+        {
+            info["next_block_production_time"] = pretty_age( next_block_timestamp, true );
+        }
+    }
+
+    out << fc::json::to_pretty_string( info ) << "\n";
+    return out.str();
+}
+
 string pretty_delegate_list( const vector<account_record>& delegate_records, cptr client )
 {
     if( delegate_records.empty() ) return "No delegates found.\n";

@@ -1234,17 +1234,17 @@ namespace bts { namespace wallet {
           my->_wallet_db.open( wallet_file_path );
 
           /* Check wallet version */
+          auto current_version = uint32_t( 0 );
           const auto version_property = my->_wallet_db.get_property( version );
-          auto version = uint32_t( 0 );
-          if( !version_property.is_null() ) version = version_property.as<uint32_t>();
-          if( version < BTS_WALLET_VERSION )
+          if( !version_property.is_null() ) current_version = version_property.as<uint32_t>();
+          if( current_version < BTS_WALLET_VERSION )
           {
-              my->upgrade_version( version );
+              my->upgrade_version( current_version );
           }
-          else if ( version > BTS_WALLET_VERSION )
+          else if ( current_version > BTS_WALLET_VERSION )
           {
               FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
-                                  ("wallet_version",version)("supported_version",BTS_WALLET_VERSION) );
+                                  ("wallet_version",current_version)("supported_version",BTS_WALLET_VERSION) );
           }
 
           for( const auto& balance_item : my->_wallet_db.get_balances() )
@@ -4615,29 +4615,69 @@ namespace bts { namespace wallet {
 
    variant wallet::get_info()const
    {
-       fc::mutable_variant_object obj;
-       obj( "data_directory", fc::absolute(my->_data_directory) );
-       if( is_open() )
+       const auto now = blockchain::now();
+       auto info = fc::mutable_variant_object();
+
+       info["data_dir"]                                 = fc::absolute( my->_data_directory );
+
+       const auto is_open                               = this->is_open();
+       info["open"]                                     = is_open;
+
+       info["path"]                                     = variant();
+
+       info["unlocked"]                                 = variant();
+       info["unlocked_until"]                           = variant();
+       info["unlocked_until_timestamp"]                 = variant();
+
+       info["last_scanned_block_num"]                   = variant();
+       info["scan_progress"]                            = variant();
+
+       info["priority_fee"]                             = variant();
+
+       info["next_child_key_index"]                     = variant();
+
+       info["block_production_enabled"]                 = variant();
+       info["next_block_production_time"]               = variant();
+       info["next_block_production_timestamp"]          = variant();
+
+       if( is_open )
        {
-          obj( "version", my->_wallet_db.get_property( version ) );
-          obj( "last_unlocked_scanned_block_number", my->_wallet_db.get_property( last_unlocked_scanned_block_number ) );
-          obj( "last_locked_scanned_block_number", my->_wallet_db.get_property( last_locked_scanned_block_number ) );
-          obj( "next_child_key_index", my->_wallet_db.get_property( next_child_key_index ) );
-          obj( "default_transaction_priority_fee", get_priority_fee() );
-          obj( "state", "open" );
-          obj( "locked", is_locked() );
-          obj( "file", fc::absolute(my->_current_wallet_path) );
-          fc::optional<fc::time_point_sec> relock_time_in_sec;
-          if (my->_scheduled_lock_time)
-            relock_time_in_sec = *my->_scheduled_lock_time;                                
-          obj( "scheduled_lock_time", relock_time_in_sec);
-          obj( "scan_progress", my->_scan_progress );
+         info["path"]                                   = fc::absolute( my->_current_wallet_path );
+
+         info["unlocked"]                               = is_unlocked();
+
+         const auto unlocked_until                      = this->unlocked_until();
+         if( unlocked_until.valid() )
+         {
+           info["unlocked_until"]                       = ( *unlocked_until - now ).to_seconds();
+           info["unlocked_until_timestamp"]             = *unlocked_until;
+
+           info["last_scanned_block_num"]               = my->_wallet_db.get_property( last_unlocked_scanned_block_number );
+           info["scan_progress"]                        = my->_scan_progress;
+
+           info["priority_fee"]                         = get_priority_fee();
+
+           info["next_child_key_index"]                 = my->_wallet_db.get_property( next_child_key_index );
+
+           const auto enabled_delegates                 = get_my_delegates( enabled_delegate_status );
+           const auto block_production_enabled          = !enabled_delegates.empty();
+           info["block_production_enabled"]             = block_production_enabled;
+
+           if( block_production_enabled )
+           {
+             const auto next_block_time                 = get_next_producible_block_timestamp( enabled_delegates );
+             if( next_block_time.valid() )
+             {
+               info["next_block_production_time"]       = ( *next_block_time - now ).to_seconds();
+               info["next_block_production_timestamp"]  = *next_block_time;
+             }
+           }
+         }
        }
-       else
-       {
-          obj( "state", "closed" );
-       }
-       return obj;
+
+       info["version"]                                  = BTS_WALLET_VERSION;
+
+       return info;
    }
 
    public_key_summary wallet::get_public_key_summary( const public_key_type& pubkey ) const
