@@ -562,8 +562,8 @@
             {
               "name" : "vote_method", 
               "type" : "vote_selection_method", 
-              "description" : "enumeration [vote_none | vote_all | vote_random] ",
-              "default_value" : "vote_random"
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
@@ -609,8 +609,8 @@
             {
               "name" : "vote_method",
               "type" : "vote_selection_method",
-              "description" : "enumeration [vote_none | vote_all | vote_random] ",
-              "default_value" : "vote_random"
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
             }
           ],
         "prerequisites" : ["wallet_unlocked"]
@@ -1220,14 +1220,14 @@
       },
       {
          "method_name" : "wallet_dump_private_key",
-         "description" : "Reveals the private key corresponding to an address or public key",
+         "description" : "Reveals the private key corresponding to an account, public key, or address",
          "return_type"  : "string",
          "parameters" : [
-         {
-            "name" : "address_or_public_key",
-            "type" : "string",
-            "description" : "a public key or address (quoted on hash of public key) of the private key"
-         }
+             {
+                "name" : "input",
+                "type" : "string",
+                "description" : "an account name, public key, or address (quoted hash of public key)"
+             }
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "dump_private_key" ]
@@ -1247,13 +1247,6 @@
          "is_const" : true,
          "prerequisites" : ["wallet_open"],
          "aliases" : ["votes"]
-      },
-      {
-         "method_name" : "wallet_account_export_private_key",
-         "description" : "returns the private key for this account in WIF format",
-         "return_type" : "string",
-         "parameters"  : [{"name" : "account_name", "type":"account_name", "description": "the name of the account key to export"}],
-         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_set_setting",
@@ -1380,6 +1373,25 @@
                 "name" : "account_name",
                 "type" : "account_name",
                 "description" : "The account to publish the slate ID under"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_recover_accounts",
+         "description" : "Attempts to recover accounts created after last backup was taken and returns number of successful recoveries. Use if you have restored from backup and are missing accounts.",
+         "return_type" : "int32_t",
+         "parameters"  : [
+            {
+                "name" : "accounts_to_recover",
+                "type" : "int32_t",
+                "description" : "The number of accounts to attept to recover"
+            },
+            {
+                "name" : "maximum_number_of_attempts",
+                "type" : "int32_t",
+                "description" : "The maximum number of keys to generate trying to recover accounts",
+                "default_value" : 1000
             }
          ],
          "prerequisites" : ["wallet_unlocked"]

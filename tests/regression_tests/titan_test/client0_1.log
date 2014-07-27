@@ -1,9 +1,0 @@
-default (unlocked) >>> wallet_rescan_blockchain
-Rescanning blockchain...
-Scan complete.
-OK
-default (unlocked) >>> wallet_account_balance test-account
-ACCOUNT                         BALANCE                 
---------------------------------------------------------
-test-account                    100.00000 XTS           
-default (unlocked) >>> quit

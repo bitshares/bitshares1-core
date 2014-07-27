@@ -60,7 +60,8 @@ namespace bts { namespace wallet {
       default_transaction_priority_fee,
       next_child_key_index,
       last_locked_scanned_block_number,
-      last_unlocked_scanned_block_number
+      last_unlocked_scanned_block_number,
+      version
    };
 
    /** Used to store key/value property pairs.
@@ -232,6 +233,7 @@ FC_REFLECT_ENUM( bts::wallet::property_enum,
                     (next_child_key_index)
                     (last_locked_scanned_block_number)
                     (last_unlocked_scanned_block_number)
+                    (version)
                )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum, 

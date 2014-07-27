@@ -1,0 +1,630 @@
+default (unlocked) >>> help wallet_approve_delegate
+Usage:
+wallet_approve_delegate <delegate_name> [approved]                                                    Updates your approval for the specified delegate
+Updates your approval for the specified delegate
+
+Parameters:
+  delegate_name (account_name, required): the name of the delegate to set approval for
+  approved (bool, optional, defaults to true): true to approve and false otherwise
+
+Returns:
+  bool
+
+aliases: approve, set_approval
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
+default (unlocked) >>> wallet_approve_delegate delegate0
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate0 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate1 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate2 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate3 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate4 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate5 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate6 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate7 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate8 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate9 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate10 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate11 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate12 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate13 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate14 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate15 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate16 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate17 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate18 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate19 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate20 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate21 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate22 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate23 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate24 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate25 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate26 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate27 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate28 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate29 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate30 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate31 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate32 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate33 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate34 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate35 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate36 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate37 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate38 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate39 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate40 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate41 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate42 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate43 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate44 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate45 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate46 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate47 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate48 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate49 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate50 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate51 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate52 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate53 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate54 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate55 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate56 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate57 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate58 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate59 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate60 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate61 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate62 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate63 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate64 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate65 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate66 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate67 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate68 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate69 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate70 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate71 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate72 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate73 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate74 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate75 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate76 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate77 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate78 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate79 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate80 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate81 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate82 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate83 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate84 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate85 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate86 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate87 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate88 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate89 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate90 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate91 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate92 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate93 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate94 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate95 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate96 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate97 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate98 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate99 true
+Delegate approved.
+default (unlocked) >>> wallet_approve_delegate delegate100 true
+Delegate approved.
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
+delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            NO             1         
+delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           [redacted]            NO             1         
+delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we           [redacted]            NO             1         
+delegate100 *                      XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy           [redacted]            NO             1         
+delegate11 *                       XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ           [redacted]            NO             1         
+delegate12 *                       XTS7tiuERuqKUprGXxmsxW2vir3pJYvA38paRsFL1UCUs34pirbA3           [redacted]            NO             1         
+delegate13 *                       XTS8A2zrUcWsAatWNa11tv58eBZeWAWTmhfDZmZmGkY3WEPdgEubt           [redacted]            NO             1         
+delegate14 *                       XTS8HeYR6kw8zfvm1tWw1zKyPUGu38AiDpA5r2ZhsUVLX4uzZ33uM           [redacted]            NO             1         
+delegate15 *                       XTS6ZS5L2szhzQmGztoQAwTxeLRsNext9Pfp3fktDn3ZJN7Ct54Yj           [redacted]            NO             1         
+delegate16 *                       XTS64mncWuqqWPwY8um8DhGvwKtVjdMgeKHE5DXAYV4v5p7petzU7           [redacted]            NO             1         
+delegate17 *                       XTS8TAYx3Zxfg64UHpWTuJ4sperVgxVE6JkUAADxTMsHzND4UgsKE           [redacted]            NO             1         
+delegate18 *                       XTS8QPbn7KFnnTPEHoq8HfsimCUBQ7RQPG5PKCkMpgfcQKtV2vMkA           [redacted]            NO             1         
+delegate19 *                       XTS5Xt5yFu2NVsvQzjNwMfaUEVKN3s9YgTsyi22a27tNDJBWuyh5g           [redacted]            NO             1         
+delegate2 *                        XTS6dvBki8EnzCY796an4p2DTwA5bqyrY2xHH9nm9rQVALGgFdn33           [redacted]            NO             1         
+delegate20 *                       XTS6Pmsu9reduDgwRFybHejPAcjsNQQnWmzEJdRFhp3f6q8wG9u13           [redacted]            NO             1         
+delegate21 *                       XTS6PbFVthhitWwbRUuZXerti2aQBvgKQj6FmZWH9UxGRcE1Aw2E3           [redacted]            NO             1         
+delegate22 *                       XTS5R2tbsxSvgfD3gUzmUVFVWoLRXGbuC1uPHdxEDagR6XiGtoQbw           [redacted]            NO             1         
+delegate23 *                       XTS8FA6Cvd19PeG8cuvLsF8qPGcfccUypXCv2arXYqpUc43CGFTs5           [redacted]            NO             1         
+delegate24 *                       XTS8W4L9GNvTR31kaQD1iaWoH75mWpwisPP4CazhxoHp977uvWrvS           [redacted]            NO             1         
+delegate25 *                       XTS5VWxNgabK1nv47GoYJjv8JSUTP2s6nurBT6rwdcHJY8QE3ez5s           [redacted]            NO             1         
+delegate26 *                       XTS5W2YJZsZtp4CitW6L1AtWmX7ogu7SdJSMmJJSnHdoAEB8kN1LP           [redacted]            NO             1         
+delegate27 *                       XTS7sj4XpKSG1u36xJgG9nyWJwMrdcvtKKyxZTh74UX7Te8vqNXFM           [redacted]            NO             1         
+delegate28 *                       XTS67CoLLohu5vVH13gKb9KYEPfiQ6LZrDjPBT4c7cALz4iBxXUP4           [redacted]            NO             1         
+delegate29 *                       XTS5dAUYdxrdAQYm91hLfg1UDiJZENk1XxNaGSUU59ocDDFjb6Gh9           [redacted]            NO             1         
+delegate3 *                        XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU           [redacted]            NO             1         
+delegate30 *                       XTS8bKmwsGuPTJJ6nabDqCPN4zCBga5oWaWsgBhmCA1E2vjBxVj42           [redacted]            NO             1         
+delegate31 *                       XTS532i1KPDmdp5XNHD5bP2EPwXxCACbi6PeU2uYfZLwfJmKEB9Eo           [redacted]            NO             1         
+delegate32 *                       XTS6oASQPHcEUHF6k9B8ohB1ycgcce4xWfsF1YsycT7uvFcP9GLcp           [redacted]            NO             1         
+delegate33 *                       XTS76CHU7uPKBaWhPejWb5io99u5eFg2xWsP9fsLQKntbbjAeGTWr           [redacted]            NO             1         
+delegate34 *                       XTS7VvH4BS8yQkBXekBJ3QjrFKm8zQf1MXvrg8UoRHYTn4omJmAS1           [redacted]            NO             1         
+delegate35 *                       XTS63fdrCkJWnnrW2BGv14hVFka3fEcP7XN1sRPe98JUYje8UK1fB           [redacted]            NO             1         
+delegate36 *                       XTS6m74rw5Us2NaFz48EqqCJNDp2MUnX2gJnfmvbicz6CH65HzdFs           [redacted]            NO             1         
+delegate37 *                       XTS87TP8uVBzzXJyF5qZeqekihUdAAXMSwNfrhXH6PGMCRKH2jWJU           [redacted]            NO             1         
+delegate38 *                       XTS8HDHZcdpGc5uZpMQNsa5c46XYJGeFNJWtQBi9HN3chrnWqv3wV           [redacted]            NO             1         
+delegate39 *                       XTS6DBBnNZTc5GhwqWJj4REzY9utZfryLjXHbRSSeDCDxBbof9VHL           [redacted]            NO             1         
+delegate4 *                        XTS5DxgyVA5DzSVj9SznZeNyi7xktjW74A2oZ2LB6EFqVTCzq984t           [redacted]            NO             1         
+delegate40 *                       XTS8EPgousmfRqfH4HLQdxkLPLMtYXQyqYihbuPR3XBUqkvQ1Dpis           [redacted]            NO             1         
+delegate41 *                       XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw           [redacted]            NO             1         
+delegate42 *                       XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv           [redacted]            NO             1         
+delegate43 *                       XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F           [redacted]            NO             1         
+delegate44 *                       XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1           [redacted]            NO             1         
+delegate45 *                       XTS6p5x8Hezh3bBHptmFq8wCT5ZK53a548R2sY8MKHor5WF1Xij6N           [redacted]            NO             1         
+delegate46 *                       XTS5u5YQF3k2YTxNs33QgugbmJSYf2ZnhBCoXimzZ62SnPwo8xQui           [redacted]            NO             1         
+delegate47 *                       XTS6sGPRw2wCRtBhFVq3r5f6jYgEMniBGkNS327KPwXHGm5HPvnuJ           [redacted]            NO             1         
+delegate48 *                       XTS6F9xvTqUvSSzqJABVyg3QNHveHrViDAiAiWXiCKpeCkSRA9d64           [redacted]            NO             1         
+delegate49 *                       XTS6cwrKpbQHZYbvjEgWrUrZsZj9uAunYnowtR86tUZjpCQEPMVFv           [redacted]            NO             1         
+delegate5 *                        XTS7qqpmyKANmLr8T1eQDpZFnJqTSzQkGAkz3wvzo1RBSCBQge2CG           [redacted]            NO             1         
+delegate50 *                       XTS8XH6nATM7Z9YuaVHyfbGTZBUCrPjyt9S3uxpebecCGiijSxBUa           [redacted]            NO             1         
+delegate51 *                       XTS5Q1vVwmSwYi2zqEdkYUPnLpyzH2DPhuiAJhgFWLbpte2jyHev5           [redacted]            NO             1         
+delegate52 *                       XTS5mXXa7QbX43Ad9QYWjQSeA7LWekcTjjBuLjrRz998jMa4YggMC           [redacted]            NO             1         
+delegate53 *                       XTS7C3u8AL6FY8kjKNvqpZJHrXotvPuEPRFEed2Dh3AW9rfbsrHNa           [redacted]            NO             1         
+delegate54 *                       XTS5nox8VX18R1YtP2VyyzifS9wK3T5eY7QMwKHza56CA9Ktmg24t           [redacted]            NO             1         
+delegate55 *                       XTS6shynV3nfqkEBu4m66LzUJghMbaAsuiDpkMEfM2rohzBugepFg           [redacted]            NO             1         
+delegate56 *                       XTS7A6SmGG5KcHzJBjRhyZoiTyBVCmuGfHatw3NFMhJ4EAkEmGmZw           [redacted]            NO             1         
+delegate57 *                       XTS5nzTn9Ys3xe87BSqcLvZsVnUeB1dciJMB48fCKTEyoVW1B5Xz3           [redacted]            NO             1         
+delegate58 *                       XTS51SA8CjYtde8hgwVSReUbZVqHj6cWjMpX1K1DetYaNjD97dQN1           [redacted]            NO             1         
+delegate59 *                       XTS7K2z9uz2Xe98Xskm2RvyVn7evEFP1n4Y2qNPGTTa9pcw9jKms5           [redacted]            NO             1         
+delegate6 *                        XTS8Xpna9Y9ZEDnByFYC5ZqBDCsDvV2F2NwkjnKxEunYZbszAxsko           [redacted]            NO             1         
+delegate60 *                       XTS5mPJs2UwnVPWirg91EzTg8jMpBxPk8J3AL5WtxffiybTnZ16gP           [redacted]            NO             1         
+delegate61 *                       XTS6jSgSE9ymYMNfypKwira3Z5n5HocCHM6RuM6tEYK8m4AZq2YsM           [redacted]            NO             1         
+delegate62 *                       XTS64BaCqo2MofGMz22AGFErnGQxoSoEWCjy5H9F2mNCgp1PTcErK           [redacted]            NO             1         
+delegate63 *                       XTS55RZjqAaRV8aF7tBVu58g88uZq3HKCLM7NLHS4DW4vzkm6KpiY           [redacted]            NO             1         
+delegate64 *                       XTS5afbTiwzxmAoZbfEaTBjpyDTDbAAFzy3eLouQMopGYKR7U3zf9           [redacted]            NO             1         
+delegate65 *                       XTS6WqxJNy2PofLWgS8Sfq35Fee3xpAuJvD2JEBYFe1peeSDr8iWF           [redacted]            NO             1         
+delegate66 *                       XTS6Cwr98hiNT1R5ogh1RdKfyeZY6nxfukEsqmyz81He4sEoW9H1A           [redacted]            NO             1         
+delegate67 *                       XTS6fwBfcpii4yCNQBk9YUgXjThhBP9wafkjGJgqaQJqQnGfJ8U3s           [redacted]            NO             1         
+delegate68 *                       XTS5Nj2R2vRAVf9faLqA3AUc86MWPtj5F5fbXFkpN66M3sHHyQWJL           [redacted]            NO             1         
+delegate69 *                       XTS83CFdeYK4XrEA1gYoCmdmifjEnTdDzHJSUQM5zjUn4wHPPxHhh           [redacted]            NO             1         
+delegate7 *                        XTS7FyFKgqAouufC2VgDgkjEuexfAxkvxWoCZSh6VRnVsT44NeTdv           [redacted]            NO             1         
+delegate70 *                       XTS6qYzqYepR6VgsPjfLNiUurLmnEKUxcd1X7ZMyQmkFg5owgVYVL           [redacted]            NO             1         
+delegate71 *                       XTS5V3inret4XzoUg5QuakyyyzWFCVp6bCb99cxVKvdWvd7q7KfDX           [redacted]            NO             1         
+delegate72 *                       XTS8UmJGf9kxHAgqCWv3FnpDVe1Weuh9yx9XxdNFEHmvKCJYDPYUd           [redacted]            NO             1         
+delegate73 *                       XTS8CnJjiWePpPSbJ7kz2H8YoACn6udKoTTTDLYMe2v2TQgViNEB8           [redacted]            NO             1         
+delegate74 *                       XTS73JEFG3SKaL3BUXN5eUHUCBZGHGhrUMeRZnhmMZhZvzSRoWByR           [redacted]            NO             1         
+delegate75 *                       XTS6vfncDfbrRu5ew5EGArwJxj1vrP3vGwhXLg1XGf2Tiupmdm1Un           [redacted]            NO             1         
+delegate76 *                       XTS8U5YQZox32Pu7suZASCrnNopaEt1fWfWk4oEUdVcuzF6Ux9rma           [redacted]            NO             1         
+delegate77 *                       XTS64buf7GDt7vg6qj3E8J5SQaDCS3ANHXbAXyCRjaCNanXHrbHHV           [redacted]            NO             1         
+delegate78 *                       XTS57M2Tgy8cARastsAjdiJjQz9Qodv99NmmQU6oyAhfUhrhKxTcd           [redacted]            NO             1         
+delegate79 *                       XTS8bfUFtarRaY4ceHAaAZjhhHGh5YUe4eyJKC5XCuXf5EJJa1bPi           [redacted]            NO             1         
+delegate8 *                        XTS6gXH5ZX6csAqhDSyGBExFmBgjdjiLiVQwQqNPpAcDgPo9Kwb11           [redacted]            NO             1         
+delegate80 *                       XTS55TXnA9vvh8hsAmkWy2mxZjzXNMLhsgnsVvvWe83QJvSqWpWmM           [redacted]            NO             1         
+delegate81 *                       XTS72CDS8wjoVDCGXvVcWvxNxYZCJBbMLn8dAWF1n1ap6Nk21uzdZ           [redacted]            NO             1         
+delegate82 *                       XTS5vg1iP93DwDTWVhS1R6c4G14EdnUJy2mr6ww5FoPd8EvZiNkDX           [redacted]            NO             1         
+delegate83 *                       XTS5uiKwt1SU4kpCk5HUMHbZz8wEmNsZL64PfbABc3aQqud9VzEA2           [redacted]            NO             1         
+delegate84 *                       XTS6Hw6PP5EtHdSP31nM7r5YWTUBRwYMaNPLFQ5HHk5tmgXKt8HGr           [redacted]            NO             1         
+delegate85 *                       XTS8LrAYkQBVL1GGLFJcH5Z2yVhxKUdkeQsx8uvJFLG6QhmpxF2aB           [redacted]            NO             1         
+delegate86 *                       XTS5tMQELkRQYQsTvSWn2wzNiS7qXApnhXhPpxzP7bf6amaoQQin7           [redacted]            NO             1         
+delegate87 *                       XTS8NvHDJnPRUKbm7BbBWPQRvRJM7i1EEJZQgixE8aMf2zM2t1iP5           [redacted]            NO             1         
+delegate88 *                       XTS8cvx34Hk1N6MvDwKWkC8erbYHbfR6oeasq8Tz2CDipAW2UFEPb           [redacted]            NO             1         
+delegate89 *                       XTS59ShtZoyWUPZvD1r6t1PCVhpf8NV7eMbYPNbSpfE93KPyUgMKB           [redacted]            NO             1         
+delegate9 *                        XTS8diKNyR2cpJxAuKhKSjmgRdXjrm8NJ8Q3v1Bbj2XSknqxTk8XY           [redacted]            NO             1         
+delegate90 *                       XTS7wd9uDd9ZipHpq7szNXZbDX6dWRZUiPCs4sEKAvHDAcsaGpp4E           [redacted]            NO             1         
+delegate91 *                       XTS6ZkK1qpfxnYo89LCEavaJgBiQ38RBN8rHHiHwnLf459ouy6rwG           [redacted]            NO             1         
+delegate92 *                       XTS6PSJQd6ChLT336xQzi2YPFUKayWBVacAwWx9hiV4tc7iYyq1bg           [redacted]            NO             1         
+delegate93 *                       XTS7B59R833TqfArVZeDTMFT7wz2HToLx178NoJLNHXZBsV9uEd7T           [redacted]            NO             1         
+delegate94 *                       XTS6rw7EEz5LiepCLvtAnFKsuBLHCJzdhw1ARmDC27gk8bu7Epqgy           [redacted]            NO             1         
+delegate95 *                       XTS8R8pGXK5VN6GKRBW9ccf3JUZ9DZ7M9ZSCrfHgbL9apXTuo9NR3           [redacted]            NO             1         
+delegate96 *                       XTS7y7NEDHFeTAyUquo3aPP8eGb6YpjVi8ShQ5xeWkTWL8j6AgGno           [redacted]            NO             1         
+delegate97 *                       XTS7pUEhLJ3EqrBa7g6Y9gUGt6T1wEavniodXfZq7S1eZG4DVCN5v           [redacted]            NO             1         
+delegate98 *                       XTS6MTa2sthDUAsvBggmAsJrk1XsTZy7BTve1V7voShdSKvZbMjdA           [redacted]            NO             1         
+delegate99 *                       XTS79NNeLPbqYTbznELs271Y4rezpwzfxKR7DEbrSnDWEigoK1WU6           [redacted]            NO             1         
+default (unlocked) >>> wallet_approve_delegate delegate0 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate0 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate1 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate2 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate3 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate4 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate5 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate6 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate7 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate8 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate9 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate10 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate11 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate12 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate13 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate14 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate15 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate16 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate17 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate18 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate19 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate20 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate21 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate22 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate23 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate24 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate25 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate26 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate27 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate28 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate29 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate30 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate31 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate32 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate33 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate34 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate35 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate36 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate37 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate38 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate39 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate40 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate41 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate42 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate43 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate44 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate45 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate46 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate47 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate48 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate49 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate50 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate51 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate52 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate53 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate54 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate55 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate56 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate57 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate58 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate59 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate60 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate61 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate62 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate63 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate64 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate65 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate66 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate67 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate68 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate69 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate70 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate71 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate72 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate73 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate74 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate75 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate76 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate77 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate78 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate79 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate80 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate81 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate82 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate83 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate84 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate85 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate86 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate87 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate88 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate89 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate90 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate91 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate92 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate93 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate94 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate95 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate96 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate97 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate98 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate99 false
+Delegate not approved.
+default (unlocked) >>> wallet_approve_delegate delegate100 false
+Delegate not approved.
+default (unlocked) >>> wallet_list_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
+delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            NO             0         
+delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           [redacted]            NO             0         
+delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we           [redacted]            NO             0         
+delegate100 *                      XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy           [redacted]            NO             0         
+delegate11 *                       XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ           [redacted]            NO             0         
+delegate12 *                       XTS7tiuERuqKUprGXxmsxW2vir3pJYvA38paRsFL1UCUs34pirbA3           [redacted]            NO             0         
+delegate13 *                       XTS8A2zrUcWsAatWNa11tv58eBZeWAWTmhfDZmZmGkY3WEPdgEubt           [redacted]            NO             0         
+delegate14 *                       XTS8HeYR6kw8zfvm1tWw1zKyPUGu38AiDpA5r2ZhsUVLX4uzZ33uM           [redacted]            NO             0         
+delegate15 *                       XTS6ZS5L2szhzQmGztoQAwTxeLRsNext9Pfp3fktDn3ZJN7Ct54Yj           [redacted]            NO             0         
+delegate16 *                       XTS64mncWuqqWPwY8um8DhGvwKtVjdMgeKHE5DXAYV4v5p7petzU7           [redacted]            NO             0         
+delegate17 *                       XTS8TAYx3Zxfg64UHpWTuJ4sperVgxVE6JkUAADxTMsHzND4UgsKE           [redacted]            NO             0         
+delegate18 *                       XTS8QPbn7KFnnTPEHoq8HfsimCUBQ7RQPG5PKCkMpgfcQKtV2vMkA           [redacted]            NO             0         
+delegate19 *                       XTS5Xt5yFu2NVsvQzjNwMfaUEVKN3s9YgTsyi22a27tNDJBWuyh5g           [redacted]            NO             0         
+delegate2 *                        XTS6dvBki8EnzCY796an4p2DTwA5bqyrY2xHH9nm9rQVALGgFdn33           [redacted]            NO             0         
+delegate20 *                       XTS6Pmsu9reduDgwRFybHejPAcjsNQQnWmzEJdRFhp3f6q8wG9u13           [redacted]            NO             0         
+delegate21 *                       XTS6PbFVthhitWwbRUuZXerti2aQBvgKQj6FmZWH9UxGRcE1Aw2E3           [redacted]            NO             0         
+delegate22 *                       XTS5R2tbsxSvgfD3gUzmUVFVWoLRXGbuC1uPHdxEDagR6XiGtoQbw           [redacted]            NO             0         
+delegate23 *                       XTS8FA6Cvd19PeG8cuvLsF8qPGcfccUypXCv2arXYqpUc43CGFTs5           [redacted]            NO             0         
+delegate24 *                       XTS8W4L9GNvTR31kaQD1iaWoH75mWpwisPP4CazhxoHp977uvWrvS           [redacted]            NO             0         
+delegate25 *                       XTS5VWxNgabK1nv47GoYJjv8JSUTP2s6nurBT6rwdcHJY8QE3ez5s           [redacted]            NO             0         
+delegate26 *                       XTS5W2YJZsZtp4CitW6L1AtWmX7ogu7SdJSMmJJSnHdoAEB8kN1LP           [redacted]            NO             0         
+delegate27 *                       XTS7sj4XpKSG1u36xJgG9nyWJwMrdcvtKKyxZTh74UX7Te8vqNXFM           [redacted]            NO             0         
+delegate28 *                       XTS67CoLLohu5vVH13gKb9KYEPfiQ6LZrDjPBT4c7cALz4iBxXUP4           [redacted]            NO             0         
+delegate29 *                       XTS5dAUYdxrdAQYm91hLfg1UDiJZENk1XxNaGSUU59ocDDFjb6Gh9           [redacted]            NO             0         
+delegate3 *                        XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU           [redacted]            NO             0         
+delegate30 *                       XTS8bKmwsGuPTJJ6nabDqCPN4zCBga5oWaWsgBhmCA1E2vjBxVj42           [redacted]            NO             0         
+delegate31 *                       XTS532i1KPDmdp5XNHD5bP2EPwXxCACbi6PeU2uYfZLwfJmKEB9Eo           [redacted]            NO             0         
+delegate32 *                       XTS6oASQPHcEUHF6k9B8ohB1ycgcce4xWfsF1YsycT7uvFcP9GLcp           [redacted]            NO             0         
+delegate33 *                       XTS76CHU7uPKBaWhPejWb5io99u5eFg2xWsP9fsLQKntbbjAeGTWr           [redacted]            NO             0         
+delegate34 *                       XTS7VvH4BS8yQkBXekBJ3QjrFKm8zQf1MXvrg8UoRHYTn4omJmAS1           [redacted]            NO             0         
+delegate35 *                       XTS63fdrCkJWnnrW2BGv14hVFka3fEcP7XN1sRPe98JUYje8UK1fB           [redacted]            NO             0         
+delegate36 *                       XTS6m74rw5Us2NaFz48EqqCJNDp2MUnX2gJnfmvbicz6CH65HzdFs           [redacted]            NO             0         
+delegate37 *                       XTS87TP8uVBzzXJyF5qZeqekihUdAAXMSwNfrhXH6PGMCRKH2jWJU           [redacted]            NO             0         
+delegate38 *                       XTS8HDHZcdpGc5uZpMQNsa5c46XYJGeFNJWtQBi9HN3chrnWqv3wV           [redacted]            NO             0         
+delegate39 *                       XTS6DBBnNZTc5GhwqWJj4REzY9utZfryLjXHbRSSeDCDxBbof9VHL           [redacted]            NO             0         
+delegate4 *                        XTS5DxgyVA5DzSVj9SznZeNyi7xktjW74A2oZ2LB6EFqVTCzq984t           [redacted]            NO             0         
+delegate40 *                       XTS8EPgousmfRqfH4HLQdxkLPLMtYXQyqYihbuPR3XBUqkvQ1Dpis           [redacted]            NO             0         
+delegate41 *                       XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw           [redacted]            NO             0         
+delegate42 *                       XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv           [redacted]            NO             0         
+delegate43 *                       XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F           [redacted]            NO             0         
+delegate44 *                       XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1           [redacted]            NO             0         
+delegate45 *                       XTS6p5x8Hezh3bBHptmFq8wCT5ZK53a548R2sY8MKHor5WF1Xij6N           [redacted]            NO             0         
+delegate46 *                       XTS5u5YQF3k2YTxNs33QgugbmJSYf2ZnhBCoXimzZ62SnPwo8xQui           [redacted]            NO             0         
+delegate47 *                       XTS6sGPRw2wCRtBhFVq3r5f6jYgEMniBGkNS327KPwXHGm5HPvnuJ           [redacted]            NO             0         
+delegate48 *                       XTS6F9xvTqUvSSzqJABVyg3QNHveHrViDAiAiWXiCKpeCkSRA9d64           [redacted]            NO             0         
+delegate49 *                       XTS6cwrKpbQHZYbvjEgWrUrZsZj9uAunYnowtR86tUZjpCQEPMVFv           [redacted]            NO             0         
+delegate5 *                        XTS7qqpmyKANmLr8T1eQDpZFnJqTSzQkGAkz3wvzo1RBSCBQge2CG           [redacted]            NO             0         
+delegate50 *                       XTS8XH6nATM7Z9YuaVHyfbGTZBUCrPjyt9S3uxpebecCGiijSxBUa           [redacted]            NO             0         
+delegate51 *                       XTS5Q1vVwmSwYi2zqEdkYUPnLpyzH2DPhuiAJhgFWLbpte2jyHev5           [redacted]            NO             0         
+delegate52 *                       XTS5mXXa7QbX43Ad9QYWjQSeA7LWekcTjjBuLjrRz998jMa4YggMC           [redacted]            NO             0         
+delegate53 *                       XTS7C3u8AL6FY8kjKNvqpZJHrXotvPuEPRFEed2Dh3AW9rfbsrHNa           [redacted]            NO             0         
+delegate54 *                       XTS5nox8VX18R1YtP2VyyzifS9wK3T5eY7QMwKHza56CA9Ktmg24t           [redacted]            NO             0         
+delegate55 *                       XTS6shynV3nfqkEBu4m66LzUJghMbaAsuiDpkMEfM2rohzBugepFg           [redacted]            NO             0         
+delegate56 *                       XTS7A6SmGG5KcHzJBjRhyZoiTyBVCmuGfHatw3NFMhJ4EAkEmGmZw           [redacted]            NO             0         
+delegate57 *                       XTS5nzTn9Ys3xe87BSqcLvZsVnUeB1dciJMB48fCKTEyoVW1B5Xz3           [redacted]            NO             0         
+delegate58 *                       XTS51SA8CjYtde8hgwVSReUbZVqHj6cWjMpX1K1DetYaNjD97dQN1           [redacted]            NO             0         
+delegate59 *                       XTS7K2z9uz2Xe98Xskm2RvyVn7evEFP1n4Y2qNPGTTa9pcw9jKms5           [redacted]            NO             0         
+delegate6 *                        XTS8Xpna9Y9ZEDnByFYC5ZqBDCsDvV2F2NwkjnKxEunYZbszAxsko           [redacted]            NO             0         
+delegate60 *                       XTS5mPJs2UwnVPWirg91EzTg8jMpBxPk8J3AL5WtxffiybTnZ16gP           [redacted]            NO             0         
+delegate61 *                       XTS6jSgSE9ymYMNfypKwira3Z5n5HocCHM6RuM6tEYK8m4AZq2YsM           [redacted]            NO             0         
+delegate62 *                       XTS64BaCqo2MofGMz22AGFErnGQxoSoEWCjy5H9F2mNCgp1PTcErK           [redacted]            NO             0         
+delegate63 *                       XTS55RZjqAaRV8aF7tBVu58g88uZq3HKCLM7NLHS4DW4vzkm6KpiY           [redacted]            NO             0         
+delegate64 *                       XTS5afbTiwzxmAoZbfEaTBjpyDTDbAAFzy3eLouQMopGYKR7U3zf9           [redacted]            NO             0         
+delegate65 *                       XTS6WqxJNy2PofLWgS8Sfq35Fee3xpAuJvD2JEBYFe1peeSDr8iWF           [redacted]            NO             0         
+delegate66 *                       XTS6Cwr98hiNT1R5ogh1RdKfyeZY6nxfukEsqmyz81He4sEoW9H1A           [redacted]            NO             0         
+delegate67 *                       XTS6fwBfcpii4yCNQBk9YUgXjThhBP9wafkjGJgqaQJqQnGfJ8U3s           [redacted]            NO             0         
+delegate68 *                       XTS5Nj2R2vRAVf9faLqA3AUc86MWPtj5F5fbXFkpN66M3sHHyQWJL           [redacted]            NO             0         
+delegate69 *                       XTS83CFdeYK4XrEA1gYoCmdmifjEnTdDzHJSUQM5zjUn4wHPPxHhh           [redacted]            NO             0         
+delegate7 *                        XTS7FyFKgqAouufC2VgDgkjEuexfAxkvxWoCZSh6VRnVsT44NeTdv           [redacted]            NO             0         
+delegate70 *                       XTS6qYzqYepR6VgsPjfLNiUurLmnEKUxcd1X7ZMyQmkFg5owgVYVL           [redacted]            NO             0         
+delegate71 *                       XTS5V3inret4XzoUg5QuakyyyzWFCVp6bCb99cxVKvdWvd7q7KfDX           [redacted]            NO             0         
+delegate72 *                       XTS8UmJGf9kxHAgqCWv3FnpDVe1Weuh9yx9XxdNFEHmvKCJYDPYUd           [redacted]            NO             0         
+delegate73 *                       XTS8CnJjiWePpPSbJ7kz2H8YoACn6udKoTTTDLYMe2v2TQgViNEB8           [redacted]            NO             0         
+delegate74 *                       XTS73JEFG3SKaL3BUXN5eUHUCBZGHGhrUMeRZnhmMZhZvzSRoWByR           [redacted]            NO             0         
+delegate75 *                       XTS6vfncDfbrRu5ew5EGArwJxj1vrP3vGwhXLg1XGf2Tiupmdm1Un           [redacted]            NO             0         
+delegate76 *                       XTS8U5YQZox32Pu7suZASCrnNopaEt1fWfWk4oEUdVcuzF6Ux9rma           [redacted]            NO             0         
+delegate77 *                       XTS64buf7GDt7vg6qj3E8J5SQaDCS3ANHXbAXyCRjaCNanXHrbHHV           [redacted]            NO             0         
+delegate78 *                       XTS57M2Tgy8cARastsAjdiJjQz9Qodv99NmmQU6oyAhfUhrhKxTcd           [redacted]            NO             0         
+delegate79 *                       XTS8bfUFtarRaY4ceHAaAZjhhHGh5YUe4eyJKC5XCuXf5EJJa1bPi           [redacted]            NO             0         
+delegate8 *                        XTS6gXH5ZX6csAqhDSyGBExFmBgjdjiLiVQwQqNPpAcDgPo9Kwb11           [redacted]            NO             0         
+delegate80 *                       XTS55TXnA9vvh8hsAmkWy2mxZjzXNMLhsgnsVvvWe83QJvSqWpWmM           [redacted]            NO             0         
+delegate81 *                       XTS72CDS8wjoVDCGXvVcWvxNxYZCJBbMLn8dAWF1n1ap6Nk21uzdZ           [redacted]            NO             0         
+delegate82 *                       XTS5vg1iP93DwDTWVhS1R6c4G14EdnUJy2mr6ww5FoPd8EvZiNkDX           [redacted]            NO             0         
+delegate83 *                       XTS5uiKwt1SU4kpCk5HUMHbZz8wEmNsZL64PfbABc3aQqud9VzEA2           [redacted]            NO             0         
+delegate84 *                       XTS6Hw6PP5EtHdSP31nM7r5YWTUBRwYMaNPLFQ5HHk5tmgXKt8HGr           [redacted]            NO             0         
+delegate85 *                       XTS8LrAYkQBVL1GGLFJcH5Z2yVhxKUdkeQsx8uvJFLG6QhmpxF2aB           [redacted]            NO             0         
+delegate86 *                       XTS5tMQELkRQYQsTvSWn2wzNiS7qXApnhXhPpxzP7bf6amaoQQin7           [redacted]            NO             0         
+delegate87 *                       XTS8NvHDJnPRUKbm7BbBWPQRvRJM7i1EEJZQgixE8aMf2zM2t1iP5           [redacted]            NO             0         
+delegate88 *                       XTS8cvx34Hk1N6MvDwKWkC8erbYHbfR6oeasq8Tz2CDipAW2UFEPb           [redacted]            NO             0         
+delegate89 *                       XTS59ShtZoyWUPZvD1r6t1PCVhpf8NV7eMbYPNbSpfE93KPyUgMKB           [redacted]            NO             0         
+delegate9 *                        XTS8diKNyR2cpJxAuKhKSjmgRdXjrm8NJ8Q3v1Bbj2XSknqxTk8XY           [redacted]            NO             0         
+delegate90 *                       XTS7wd9uDd9ZipHpq7szNXZbDX6dWRZUiPCs4sEKAvHDAcsaGpp4E           [redacted]            NO             0         
+delegate91 *                       XTS6ZkK1qpfxnYo89LCEavaJgBiQ38RBN8rHHiHwnLf459ouy6rwG           [redacted]            NO             0         
+delegate92 *                       XTS6PSJQd6ChLT336xQzi2YPFUKayWBVacAwWx9hiV4tc7iYyq1bg           [redacted]            NO             0         
+delegate93 *                       XTS7B59R833TqfArVZeDTMFT7wz2HToLx178NoJLNHXZBsV9uEd7T           [redacted]            NO             0         
+delegate94 *                       XTS6rw7EEz5LiepCLvtAnFKsuBLHCJzdhw1ARmDC27gk8bu7Epqgy           [redacted]            NO             0         
+delegate95 *                       XTS8R8pGXK5VN6GKRBW9ccf3JUZ9DZ7M9ZSCrfHgbL9apXTuo9NR3           [redacted]            NO             0         
+delegate96 *                       XTS7y7NEDHFeTAyUquo3aPP8eGb6YpjVi8ShQ5xeWkTWL8j6AgGno           [redacted]            NO             0         
+delegate97 *                       XTS7pUEhLJ3EqrBa7g6Y9gUGt6T1wEavniodXfZq7S1eZG4DVCN5v           [redacted]            NO             0         
+delegate98 *                       XTS6MTa2sthDUAsvBggmAsJrk1XsTZy7BTve1V7voShdSKvZbMjdA           [redacted]            NO             0         
+delegate99 *                       XTS79NNeLPbqYTbznELs271Y4rezpwzfxKR7DEbrSnDWEigoK1WU6           [redacted]            NO             0         
+default (unlocked) >>> quit

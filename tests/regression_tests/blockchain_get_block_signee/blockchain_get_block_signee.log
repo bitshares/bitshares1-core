@@ -1,0 +1,43 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
+default (unlocked) >>> help blockchain_get_block_signee
+Usage:
+blockchain_get_block_signee <block_number>                                                            Get the delegate that signed a given block
+Get the delegate that signed a given block
+
+Parameters:
+  block_number (uint32_t, required): Block whose signing delegate to return
+
+Returns:
+  string
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+OK
+default (unlocked) >>> blockchain_get_block_signee 1
+"delegate39"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+OK
+default (unlocked) >>> blockchain_get_block_signee 2
+"delegate40"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
+OK
+default (unlocked) >>> blockchain_get_block_signee 3
+"delegate41"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+OK
+default (unlocked) >>> blockchain_get_block_signee 4
+"delegate42"
+default (unlocked) >>> quit

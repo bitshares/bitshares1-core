@@ -480,10 +480,15 @@ void run_regression_test(fc::path test_dir, bool with_network)
     //create one client per line and run each client's input commands
     auto sim_network = std::make_shared<bts::net::simulated_network>();
     vector<test_file> tests;
-    string line = " --min-delegate-connection-count=0 ";
+    string line;
     std::vector<bts::client::client_ptr> clients;
     while (std::getline(test_config_file, line))
     {
+      line += " --disable-default-peers ";
+      line += " --log-commands ";
+      line += " --min-delegate-connection-count=0 ";
+      line += " --upnp=false ";
+
       //append genesis_file to load to command-line for now (later should be pre-created in test dir I think)
       line += " --genesis-config " + genesis_json_file.string();
 

@@ -32,9 +32,10 @@ namespace bts { namespace wallet {
     */
    enum vote_selection_method
    {
-      vote_none   = 0,
-      vote_all    = 1,
-      vote_random = 2
+      vote_none        = 0,
+      vote_all         = 1,
+      vote_random      = 2,
+      vote_recommended = 3
    };
 
    class wallet
@@ -79,6 +80,8 @@ namespace bts { namespace wallet {
 
          void    export_to_json( const path& filename )const;
          void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
+
+         void    auto_backup( const string& reason )const;
          ///@}
          
          /**
@@ -102,7 +105,7 @@ namespace bts { namespace wallet {
           *  @name Utility Methods
           */
          ///@{ 
-         delegate_slate select_delegate_vote( vote_selection_method selection = vote_random )const;
+         delegate_slate select_delegate_vote( vote_selection_method selection = vote_random );
 
          bool is_receive_account( const string& account_name )const;
          bool is_valid_account( const string& account_name )const;
@@ -128,7 +131,7 @@ namespace bts { namespace wallet {
          vector<wallet_transaction_record>          get_pending_transactions()const;
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
-         void      scan_state( const time_point_sec& received_time );
+         void      scan_state();
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
                                const scan_progress_callback& progress_callback = scan_progress_callback() );
          uint32_t  get_last_scanned_block_number()const;
@@ -418,6 +421,8 @@ namespace bts { namespace wallet {
          void                               remove_transaction_record( const string& record_id );
          signed_transaction                 publish_slate( const string& account, bool sign = true );
 
+         int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
+
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*
          optional<address>                  get_owning_address( const balance_id_type& id )const;
@@ -453,4 +458,4 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-FC_REFLECT_ENUM( bts::wallet::vote_selection_method, (vote_none)(vote_all)(vote_random) )
+FC_REFLECT_ENUM( bts::wallet::vote_selection_method, (vote_none)(vote_all)(vote_random)(vote_recommended) )

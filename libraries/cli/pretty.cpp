@@ -2,7 +2,6 @@
 #include <bts/cli/pretty.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <iomanip>
 #include <iostream>
@@ -25,28 +24,10 @@ string pretty_shorten( const string& str, size_t max_size )
     return str;
 }
 
-/*
-#include <codecvt>
-string pretty_align_utf8( const string& str, int width )
-{
-    std::stringstream ss;
-    ss << std::left;
-
-    auto str_size = str.size();
-    auto str_wsize = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>().from_bytes( str ).size();
-
-    if( str_size > str_wsize ) width += str_wsize;
-    ss << std::setw( width ) << pretty_shorten( str, width - 1 );
-
-    return ss.str();
-}
-*/
-
 string pretty_timestamp( const time_point_sec& timestamp )
 {
     if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    auto ptime = boost::posix_time::from_time_t( time_t ( timestamp.sec_since_epoch() ) );
-    return boost::posix_time::to_iso_extended_string( ptime );
+    return timestamp.to_iso_extended_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
@@ -131,7 +112,39 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         }
     }
 
-    out << fc::json::to_pretty_string( info );
+    out << fc::json::to_pretty_string( info ) << "\n";
+    return out.str();
+}
+
+string pretty_blockchain_config( fc::mutable_variant_object config, cptr client )
+{
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    const auto timestamp = config["genesis_timestamp"].as<time_point_sec>();
+    config["genesis_timestamp"] = pretty_timestamp( timestamp );
+
+    const auto min_fee = config["min_block_fee"].as<share_type>();
+    config["min_block_fee"] = client->get_chain()->to_pretty_asset( asset( min_fee ) );
+
+    const auto inactivity_fee = config["inactivity_fee_apr"].as<share_type>();
+    config["inactivity_fee_apr"] = client->get_chain()->to_pretty_asset( asset( inactivity_fee ) );
+
+    const auto priority_fee = config["priority_fee"].as<share_type>();
+    config["priority_fee"] = client->get_chain()->to_pretty_asset( asset( priority_fee ) );
+
+    const auto delegate_reg_fee = config["delegate_reg_fee"].as<share_type>();
+    config["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
+
+    const auto asset_reg_fee = config["asset_reg_fee"].as<share_type>();
+    config["asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( asset_reg_fee ) );
+
+    const auto min_market_depth = config["min_market_depth"].as<share_type>();
+    config["min_market_depth"] = client->get_chain()->to_pretty_asset( asset( min_market_depth ) );
+
+    out << fc::json::to_pretty_string( config ) << "\n";
     return out.str();
 }
 

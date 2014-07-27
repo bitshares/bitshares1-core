@@ -1,0 +1,43 @@
+default (unlocked) >>> wallet_create_account thief
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_account_register thief delegate0
+{
+  "expiration": "20140620T164000",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "register_account_op_type",
+      "data": {
+        "name": "thief",
+        "public_data": null,
+        "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "delegate_pay_rate": 255,
+        "meta_data": null
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6d111609af1ac3409efffe9a0bb762006e7684a91ea853a4e594e24a7c0dbfb02"
+  ]
+}
+default (unlocked) >>> debug_wait_for_block_by_number 1
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2
+OK
+default (unlocked) >>> wallet_rename_account thief thiever
+Command failed with exception: Assert Exception (10)
+!registered_account || (local_account && local_account->owner_key != registered_account->owner_key): You cannot rename a registered account
+
+
+
+
+default (unlocked) >>> quit
