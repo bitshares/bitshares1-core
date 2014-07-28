@@ -203,7 +203,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     ac.rotation_limit       = fc::days( 1 );
     ac.rotation_compression = true;
 
-    std::cout << "Logging to file \"" << ac.filename.generic_string() << "\"\n";
+    std::cout << "Logging to file: " << ac.filename.generic_string() << "\n";
 
     fc::file_appender::config ac_rpc;
     ac_rpc.filename             = log_dir / "rpc" / "rpc.log";
@@ -214,7 +214,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     ac_rpc.rotation_limit       = fc::days( 1 );
     ac_rpc.rotation_compression = true;
 
-    std::cout << "Logging RPC to file \"" << ac_rpc.filename.generic_string() << "\"\n";
+    std::cout << "Logging RPC to file: " << ac_rpc.filename.generic_string() << "\n";
 
     fc::file_appender::config ac_blockchain;
     ac_blockchain.filename             = log_dir / "blockchain" / "blockchain.log";
@@ -225,7 +225,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     ac_blockchain.rotation_limit       = fc::days( 1 );
     ac_blockchain.rotation_compression = true;
 
-    std::cout << "Logging blockchain to file \"" << ac_blockchain.filename.generic_string() << "\"\n";
+    std::cout << "Logging blockchain to file: " << ac_blockchain.filename.generic_string() << "\n";
 
     fc::file_appender::config ac_p2p;
     ac_p2p.filename             = log_dir / "p2p" / "p2p.log";
@@ -240,7 +240,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     ac_p2p.rotation_limit       = fc::days( 1 );
     ac_p2p.rotation_compression = true;
 
-    std::cout << "Logging P2P to file \"" << ac_p2p.filename.generic_string() << "\"\n";
+    std::cout << "Logging P2P to file: " << ac_p2p.filename.generic_string() << "\n";
 
     fc::variants  c  {
                 fc::mutable_variant_object( "level","debug")("color", "green"),
@@ -334,7 +334,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
 
   if (option_variables.count("resync-blockchain"))
   {
-    std::cout << "Deleting old copy of the blockchain in \"" << ( datadir / "chain" ).generic_string() << "\"\n";
+    std::cout << "Deleting old copy of the blockchain in: " << ( datadir / "chain" ).generic_string() << "\n";
     try
     {
       fc::remove_all(datadir / "chain");
@@ -359,7 +359,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
   }
   else
   {
-    std::cout << "Loading blockchain from \"" << ( datadir / "chain" ).generic_string()  << "\"\n";
+    std::cout << "Loading blockchain from: " << ( datadir / "chain" ).generic_string()  << "\n";
   }
 
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
@@ -370,22 +370,25 @@ config load_config( const fc::path& datadir )
       config cfg;
       if( fc::exists( config_file ) )
       {
-         std::cout << "Loading config \"" << config_file.generic_string()  << "\"\n";
+         std::cout << "Loading config from: " << config_file.generic_string()  << "\n";
          auto default_peers = cfg.default_peers;
          cfg = fc::json::from_file( config_file ).as<config>();
 
          int merged_peer_count = 0;
          for( const auto& peer : default_peers )
+         {
            if( std::find(cfg.default_peers.begin(), cfg.default_peers.end(), peer) == cfg.default_peers.end() )
            {
              ++merged_peer_count;
              cfg.default_peers.push_back(peer);
            }
-         std::cout << "Merged " << merged_peer_count << " default peers into config.\n";
-           }
+         }
+         if( merged_peer_count > 0 )
+             std::cout << "Merged " << merged_peer_count << " default peers into config.\n";
+      }
       else
       {
-         std::cerr<<"Creating default config file \""<<config_file.generic_string()<<"\"\n";
+         std::cerr<<"Creating default config file at: "<<config_file.generic_string()<<"\n";
          cfg.logging = create_default_logging_config(datadir);
          fc::json::save_to_file( cfg, config_file );
       }
@@ -597,6 +600,7 @@ config load_config( const fc::path& datadir )
 
             uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
             bool                                                    _sync_mode = true;
+            bool                                                    _in_sync = true;
 
             rpc_server_config                                       _tmp_rpc_config;
             bts::net::node_ptr                                      _p2p_node;
@@ -728,17 +732,16 @@ config load_config( const fc::path& datadir )
               {
                   try
                   {
+                      FC_ASSERT( _in_sync, "Blockchain must be synced to produce blocks!" );
+                      FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
+                                 "Client must have ${count} connections before you may produce blocks!",
+                                 ("count",_min_delegate_connection_count) );
+                      FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks!" );
                       FC_ASSERT( (now - *next_block_time) < fc::seconds( BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ),
                                  "You missed your slot at time: ${t}!", ("t",*next_block_time) );
-                      FC_ASSERT( _wallet->is_unlocked(), "Wallet must be unlocked to produce blocks" );
-                      FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
-                                 "Client must have ${count} connections before you may produce blocks",
-                                 ("count",_min_delegate_connection_count) );
 
                       full_block next_block = _chain_db->generate_block( *next_block_time );
                       _wallet->sign_block( next_block );
-
-
                       on_new_block( next_block, next_block.id(), false );
 
 #ifndef DISABLE_DELEGATE_NETWORK
@@ -1283,7 +1286,9 @@ config load_config( const fc::path& datadir )
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
-         auto now = blockchain::now();
+         _in_sync = ( item_count <= 0 );
+
+         const auto now = blockchain::now();
          if (_cli && _last_sync_status_message_time < (now - fc::seconds(10)))
          {
            std::ostringstream message;
@@ -2129,6 +2134,7 @@ config load_config( const fc::path& datadir )
         }
         else
         {
+            std::cout << "Logging commands to: " << console_log_file.string() << "\n";
             /* Tee cli output to the console and a log file */
             my->_console_log.open(console_log_file.string());
             my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));;
@@ -2391,8 +2397,7 @@ config load_config( const fc::path& datadir )
       info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
 
       oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
-      share_type share_supply                                   = share_record ? share_record->current_share_supply : 0;
-      info["blockchain_share_supply"]                           = share_supply;
+      info["blockchain_share_supply"]                           = share_record.valid() ? share_record->current_share_supply : 0;
       info["blockchain_random_seed"]                            = _chain_db->get_current_random_seed();
 
       info["blockchain_database_version"]                       = BTS_BLOCKCHAIN_DATABASE_VERSION;
