@@ -97,13 +97,14 @@ namespace bts { namespace blockchain {
                          //   return; // don't execute anything.
                          }
 
+
                          // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
                          // next market class and then back up one
                          auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
                          _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
                          _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
                          _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
-                         _collateral_itr      = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
+                         _collateral_itr = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
                    
                          if( !_ask_itr.valid() )
                          {
@@ -124,25 +125,35 @@ namespace bts { namespace blockchain {
                          asset consumed_ask_depth(0,base_id);
                    
                    
-                         asset usd_fees_collected(0,quote_id);
+                         //asset usd_fees_collected(0,quote_id);
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
 
                          // while bootstraping we use this metric
-                         auto med_price = _db_impl.self->get_median_delegate_price( quote_id );
-                         FC_ASSERT( med_price );
-                         if( med_price ) market_stat->avg_price_24h = *med_price;
+                         auto median_price = _db_impl.self->get_median_delegate_price( quote_id );
+                         if( !median_price )
+                            FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
 
                          FC_ASSERT( market_stat, "market status should have been set when the order is created" );
-                         price max_bid = market_stat->maximum_bid();
-                         price min_ask = market_stat->minimum_ask();
-                         edump( (max_bid)(min_ask) );
+
+                         auto feed_max_short_bid = *median_price;
+                         feed_max_short_bid.ratio *= 3;
+                         feed_max_short_bid.ratio /= 2;
+
+                         auto feed_min_ask = *median_price;
+                         feed_min_ask.ratio *= 2;
+                         feed_min_ask.ratio /= 3;
+
+                         price max_short_bid = std::min( market_stat->maximum_bid(), feed_max_short_bid );
+                         price min_cover_ask = std::max( market_stat->minimum_ask(), feed_min_ask );
+                         edump( (max_short_bid)(min_cover_ask) );
                    
                          while( get_next_bid() && get_next_ask() )
                          {
-                   
                             idump( (_current_bid)(_current_ask) );
+
+
                             price ask_price = _current_ask->get_price();
                             // this works for bids, asks, and shorts.... but in the case of a cover
                             // the current ask can go lower than the call price in order to match 
@@ -150,6 +161,44 @@ namespace bts { namespace blockchain {
                             if( _current_ask->type == cover_order )
                             {
                                ask_price = std::min( _current_bid->get_price(), _current_ask->get_highest_cover_price() );
+                            }
+
+                            /** if there are any fees collected by an asset, sell them now for XTS */
+                            if( quote_asset->collected_fees > 0 && base_id == 0 )
+                            {
+                               // max xts received is all of the collected fees * ask_price or the XTS actually available, 
+                               // which ever is less.
+                               auto max_xts_received_from_ask = asset( quote_asset->collected_fees, quote_asset->id) * ask_price;
+                               auto xts_received_from_ask 
+                                    = std::min<share_type>( max_xts_received_from_ask.amount, _current_ask->state.balance );
+                               auto usd_paid_to_ask = asset( xts_received_from_ask, quote_asset->id ) * ask_price;
+
+                               // if we didn't wipe out the ask with our fees, then that means we should pay the
+                               // full fees to the ask.  This check is put here because multiplying xts_received_from_ask
+                               // by the price may result in rounding errors such that usd_paid_to_ask is slightly less
+                               // than all of the USD.  We want to avoid these rounding errors.
+                               if( xts_received_from_ask != _current_ask->state.balance )
+                                  usd_paid_to_ask = asset(quote_asset->collected_fees, quote_id);
+
+                               auto ask_balance_address = withdraw_condition( 
+                                                              withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
+                               auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
+                               if( !ask_payout )
+                                  ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
+                               ask_payout->balance += usd_paid_to_ask.amount;
+                               ask_payout->last_update = _pending_state->now();
+                   
+                               _current_ask->state.balance -= xts_received_from_ask;
+                               quote_asset->collected_fees -= usd_paid_to_ask.amount;
+
+                               _pending_state->store_balance_record( *ask_payout );
+                               _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
+
+                               // XTS received need to be paid to delegates...
+                               auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
+                               _pending_state->set_accumulated_fees( prev_accumulated_fees + xts_received_from_ask );
+
+                               continue;
                             }
                    
                             if( _current_bid->get_price() < ask_price )
@@ -177,9 +226,9 @@ namespace bts { namespace blockchain {
                             if( _current_bid->type == short_order )
                             {
                                usd_paid_by_bid = usd_received_by_ask;
-                               if( _current_bid->get_price() > max_bid )
+                               if( _current_bid->get_price() > max_short_bid )
                                {
-                                  wlog( "skipping ${x} > max_bid ${b}", ("x",_current_bid->get_price())("b", max_bid)  );
+                                  wlog( "skipping ${x} > max_short_bid ${b}", ("x",_current_bid->get_price())("b", max_short_bid)  );
                                   _current_bid.reset();
                                   continue;
                                }
@@ -188,9 +237,9 @@ namespace bts { namespace blockchain {
                             if( _current_ask->type == cover_order )
                             {
                                usd_received_by_ask = usd_paid_by_bid;
-                               if( _current_ask->get_price() < min_ask )
+                               if( _current_ask->get_price() < min_cover_ask )
                                {
-                                  wlog( "skipping ${x} < min_ask ${b}", ("x",_current_bid->get_price())("b", min_ask)  );
+                                  wlog( "skipping ${x} < min_cover_ask ${b}", ("x",_current_bid->get_price())("b", min_cover_ask)  );
                                   _current_ask.reset();
                                   continue;
                                }
@@ -206,8 +255,9 @@ namespace bts { namespace blockchain {
                             // sanity check to keep supply from growing without bound
                             FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset)  )
                    
-                            usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
-                            idump( (usd_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quantity) );
+                            // usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
+                            quote_asset->collected_fees += (usd_paid_by_bid - usd_received_by_ask).amount;
+                            idump( (quote_asset->collected_fees)(xts_paid_by_ask)(xts_received_by_bid)(quantity) );
                    
                             market_transaction mtrx;
                             mtrx.bid_owner       = _current_bid->get_owner();
@@ -344,7 +394,7 @@ namespace bts { namespace blockchain {
                               )
                               FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
                          }
-                         quote_asset->collected_fees += usd_fees_collected.amount;
+                         //quote_asset->collected_fees += usd_fees_collected.amount;
                          _pending_state->store_asset_record( *quote_asset );
                          _pending_state->store_market_status( *market_stat );
                    
@@ -1064,7 +1114,7 @@ namespace bts { namespace blockchain {
            pending_state->get_undo_state( undo_state );
            _undo_state_db.store( block_id, *undo_state );
            auto block_num = self->get_head_block_num();
-           if( block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY > 0 )
+           if( int32_t(block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) > 0 )
            {
               auto old_id = self->get_block_id( block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY );
               try {
