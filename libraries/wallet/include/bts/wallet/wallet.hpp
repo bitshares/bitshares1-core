@@ -366,6 +366,11 @@ namespace bts { namespace wallet {
                                       uint8_t delegate_pay_rate = 255,
                                       bool sign = true );
 
+         signed_transaction update_active_key( const std::string& account_to_update,
+                                               const std::string& pay_from_account,
+                                               const std::string& new_active_key,
+                                               bool sign = true );
+
          signed_transaction create_proposal( const string& delegate_account_name,
                                              const string& subject,
                                              const string& body,
@@ -448,8 +453,8 @@ namespace bts { namespace wallet {
 
          std::string login_start( const std::string& account_name );
          fc::variant login_finish(const public_key_type& server_key,
-                                            const public_key_type& client_key,
-                                            const fc::ecc::compact_signature& client_signature);
+                                  const public_key_type& client_key,
+                                  const fc::ecc::compact_signature& client_signature);
      private:
          unique_ptr<detail::wallet_impl> my;
    };

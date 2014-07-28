@@ -2522,6 +2522,13 @@ config load_config( const fc::path& datadir )
        return trx;
     }
 
+    signed_transaction detail::client_impl::wallet_account_update_active_key( const std::string& account_to_update,
+                                                                              const std::string& pay_from_account,
+                                                                              const std::string& new_active_key )
+    {
+      return _wallet->update_active_key(account_to_update, pay_from_account, new_active_key);
+    }
+
     fc::variant_object client_impl::network_get_info() const
     {
       return _p2p_node->network_get_info();

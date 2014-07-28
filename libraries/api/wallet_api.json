@@ -722,6 +722,30 @@
          "aliases" : [ "update_registration" ]
       },
       {
+         "method_name" : "wallet_account_update_active_key",
+         "description" : "Updates the specified account's active key and broadcasts the transaction.",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+            {
+                "name" : "account_to_update",
+                "type" : "account_name",
+                "description" : "The name of the account to update the active key of."
+            },
+            {
+                "name" : "pay_from_account",
+                "type" : "account_name",
+                "description" : "The account from which fees will be paid."
+            },
+            {
+                "name" : "new_active_key",
+                "type" : "string",
+                "description" : "WIF private key to update active key to. If empty, a new key will be generated.",
+                "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_list_accounts",
          "description" : "Lists all accounts associated with this wallet",
          "return_type" : "wallet_account_record_array",
