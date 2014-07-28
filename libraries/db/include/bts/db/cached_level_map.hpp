@@ -58,7 +58,7 @@ namespace bts { namespace db {
              {
                  _dirty.insert(key);
                  if( !_pending_flush.valid() || _pending_flush.ready() )
-                    _pending_flush = fc::async( [this](){ flush(); } );
+                    _pending_flush = fc::async( [this](){ flush(); }, "cached_level_map::flush" );
                 _db.store( key, value );
              }
              else

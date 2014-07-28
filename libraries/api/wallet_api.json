@@ -105,7 +105,7 @@
            }
         ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["import_key"]
+        "aliases" : ["import_key", "importprivkey"]
       },
       {
         "method_name": "wallet_import_bitcoin",
@@ -241,7 +241,7 @@
         "aliases" : ["close"]
       },
       {
-        "method_name": "wallet_export_to_json",
+        "method_name": "wallet_backup_create",
         "description": "Exports the current wallet to a JSON file",
         "return_type": "void",
         "parameters" : 
@@ -254,10 +254,11 @@
             }
           ],
         "is_const" : true,
-        "prerequisites" : ["wallet_open"]
+        "prerequisites" : ["wallet_open"],
+        "aliases" : ["backupwallet", "wallet_export_to_json"]
       },
       {
-        "method_name": "wallet_create_from_json",
+        "method_name": "wallet_backup_restore",
         "description": "Creates a new wallet from an exported JSON file",
         "return_type": "void",
         "parameters" : 
@@ -279,7 +280,8 @@
               "description" : "passphrase of the imported wallet"
             }
           ],
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["wallet_create_from_json"]
       },
       {
         "method_name": "wallet_account_transaction_history",
@@ -321,10 +323,10 @@
         ],
         "prerequisites" : ["wallet_open"],
         "is_const": true,
-        "aliases" : ["history"]
+        "aliases" : ["history", "listtransactions"]
       },
       {
-        "method_name": "wallet_remove_transaction",
+        "method_name": "wallet_transaction_remove",
         "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
         "return_type": "void",
         "parameters" :
@@ -381,7 +383,7 @@
             }
           ],
         "prerequisites" : ["wallet_open"],
-        "aliases" : ["unlock"]
+        "aliases" : ["unlock", "walletpassphrase"]
       },
       {
         "method_name": "wallet_change_passphrase",
@@ -396,6 +398,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["walletpassphrasechange"],
         "detailed_description" : "This will change the wallet's spending passphrase, please make sure you remember it."
       },
       {
@@ -492,42 +495,6 @@
         "prerequisites" : ["wallet_open"]
       },
       {
-        "method_name": "wallet_multipart_transfer",
-        "description": "Sends given amount to the given address.  This transfer will occur using multiple transactions as necessary to maximize your privacy, but will be more costly.",
-        "return_type": "signed_transaction_array",
-        "parameters" : 
-          [
-            {
-              "name" : "amount_to_transfer", 
-              "type" : "real_amount", 
-              "description" : "the amount of shares to transfer, will be multiplied by the precision associated by asset_symbol"
-            },
-            {
-              "name" : "asset_symbol", 
-              "type" : "asset_symbol", 
-              "description" : "the asset to transfer"
-            },
-            {
-              "name" : "from_account_name", 
-              "type" : "sending_account_name", 
-              "description" : "the source account to draw the shares from"
-            },
-            {
-              "name" : "to_account_name", 
-              "type" : "receive_account_name", 
-              "description" : "the account to transfer the shares to"
-            },
-            {
-              "name" : "memo_message", 
-              "type" : "string", 
-              "description" : "a memo to store with the transaction",
-              "default_value" : ""
-            }
-          ],
-        "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["multipart_transfer"]
-      },
-      {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
         "return_type": "signed_transaction",
@@ -562,8 +529,8 @@
             {
               "name" : "vote_method", 
               "type" : "vote_selection_method", 
-              "description" : "enumeration [vote_none | vote_all | vote_random] ",
-              "default_value" : "vote_random"
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
@@ -609,8 +576,8 @@
             {
               "name" : "vote_method",
               "type" : "vote_selection_method",
-              "description" : "enumeration [vote_none | vote_all | vote_random] ",
-              "default_value" : "vote_random"
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
             }
           ],
         "prerequisites" : ["wallet_unlocked"]
@@ -638,7 +605,7 @@
         "aliases" : ["scan"]
       },
       {
-        "method_name": "wallet_scan_transaction",
+        "method_name": "wallet_transaction_scan",
         "description": "Scans the specified transaction",
         "return_type": "void",
         "parameters" : 
@@ -655,10 +622,10 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["scan_transaction"]
+        "aliases" : ["scan_transaction", "wallet_scan_transaction"]
       },
       {
-        "method_name": "wallet_rebroadcast_transaction",
+        "method_name": "wallet_transaction_rebroadcast",
         "description": "Rebroadcasts the specified transaction",
         "return_type": "void",
         "parameters" : 
@@ -670,7 +637,7 @@
             }
           ],
         "prerequisites" : ["wallet_open"],
-        "aliases" : ["rebroadcast"]
+        "aliases" : ["rebroadcast", "wallet_rebroadcast_transaction"]
       },
       {
          "method_name" : "wallet_account_register",
@@ -760,7 +727,8 @@
          "return_type" : "wallet_account_record_array",
          "parameters"  : [],
          "is_const" : true,
-         "prerequisites" : ["wallet_open"]
+         "prerequisites" : ["wallet_open"],
+         "aliases" : [ "listaccounts" ]
       },
       {
          "method_name" : "wallet_list_favorite_accounts",
@@ -916,68 +884,6 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
-         "method_name" : "wallet_submit_proposal",
-         "description" : "Submit a proposal to the delegates for voting",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-               {
-                  "name" : "delegate_account_name",
-                  "type" : "account_name",
-                  "description" : "the delegate account proposing the issue"
-               },
-               {
-                  "name" : "subject",
-                  "type" : "string",
-                  "description" : "the subject of the proposal"
-               },
-               {
-                  "name" : "body",
-                  "type" : "string",
-                  "description" : "the body of the proposal"
-               },
-               {
-                  "name" : "proposal_type",
-                  "type" : "string",
-                  "description" : "the type of the proposal"
-               },
-               {
-                  "name" : "data",
-                  "type" : "json_variant",
-                  "description" : "the name of the account to receive the shares"
-               }
-            ],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-         "method_name" : "wallet_vote_proposal",
-         "description" : "Vote on a proposal",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-               {
-                  "name" : "name",
-                  "type" : "account_name",
-                  "description" : "the name of the account to vote with"
-               },
-               {
-                  "name" : "proposal_id",
-                  "type" : "proposal_id",
-                  "description" : "the id of the proposal to vote on"
-               },
-               {
-                  "name" : "vote",
-                  "type" : "vote_type",
-                  "description" : "your vote"
-               },
-               {
-                  "name" : "message",
-                  "type" : "string",
-                  "description" : "comment to go along with vote",
-                  "default_value" : ""
-               }
-            ],
-         "prerequisites" : ["wallet_unlocked"]
-      },
-      {
          "method_name"    : "wallet_account_balance",
          "description"    : "Lists the total asset balances for the specified account",
          "return_type"    : "account_balance_summary_type",
@@ -991,7 +897,7 @@
          ],
          "is_const" : true,
          "prerequisites" : ["wallet_open"],
-         "aliases" : ["balance"]
+         "aliases" : ["balance", "getbalance"]
       },
       {
          "method_name" : "wallet_account_list_public_keys",
@@ -1051,7 +957,7 @@
          }
          ],
          "prerequisites" : ["wallet_open"],
-         "aliases" : ["set_priority_fee"]
+         "aliases" : ["set_priority_fee", "settrxfee"]
       },
       {
          "method_name" : "wallet_market_submit_bid",
@@ -1220,17 +1126,17 @@
       },
       {
          "method_name" : "wallet_dump_private_key",
-         "description" : "Reveals the private key corresponding to an address or public key",
+         "description" : "Reveals the private key corresponding to an account, public key, or address",
          "return_type"  : "string",
          "parameters" : [
-         {
-            "name" : "address_or_public_key",
-            "type" : "string",
-            "description" : "a public key or address (quoted on hash of public key) of the private key"
-         }
+             {
+                "name" : "input",
+                "type" : "string",
+                "description" : "an account name, public key, or address (quoted hash of public key)"
+             }
          ],
          "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "dump_private_key" ]
+         "aliases" : [ "dump_private_key, dumpprivkey" ]
       },
       {
          "method_name" : "wallet_account_vote_summary",
@@ -1247,13 +1153,6 @@
          "is_const" : true,
          "prerequisites" : ["wallet_open"],
          "aliases" : ["votes"]
-      },
-      {
-         "method_name" : "wallet_account_export_private_key",
-         "description" : "returns the private key for this account in WIF format",
-         "return_type" : "string",
-         "parameters"  : [{"name" : "account_name", "type":"account_name", "description": "the name of the account key to export"}],
-         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_set_setting",
@@ -1380,6 +1279,25 @@
                 "name" : "account_name",
                 "type" : "account_name",
                 "description" : "The account to publish the slate ID under"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_recover_accounts",
+         "description" : "Attempts to recover accounts created after last backup was taken and returns number of successful recoveries. Use if you have restored from backup and are missing accounts.",
+         "return_type" : "int32_t",
+         "parameters"  : [
+            {
+                "name" : "accounts_to_recover",
+                "type" : "int32_t",
+                "description" : "The number of accounts to attept to recover"
+            },
+            {
+                "name" : "maximum_number_of_attempts",
+                "type" : "int32_t",
+                "description" : "The maximum number of keys to generate trying to recover accounts",
+                "default_value" : 1000
             }
          ],
          "prerequisites" : ["wallet_unlocked"]

@@ -30,14 +30,14 @@ public:
     _connection(bts::net::peer_connection::make_shared(this)),
     _connection_was_rejected(false),
     _done(false),
-    _probe_complete_promise(fc::promise<void>::ptr(new fc::promise<void>()))
+    _probe_complete_promise(fc::promise<void>::ptr(new fc::promise<void>("probe_complete")))
   {}
 
   void start(const fc::ip::endpoint& endpoint_to_probe, 
              const fc::ecc::private_key& my_node_id,
              const bts::blockchain::digest_type& chain_id)
   {
-    fc::future<void> connect_task = fc::async([=](){ _connection->connect_to(endpoint_to_probe); });
+    fc::future<void> connect_task = fc::async([=](){ _connection->connect_to(endpoint_to_probe); }, "connect_task");
     try
     {
       connect_task.wait(fc::seconds(10));
@@ -176,13 +176,16 @@ int main(int argc, char** argv)
   fc::path data_dir = fc::temp_directory_path() / "map_bts_network";
   fc::create_directories(data_dir);
 
-  fc::ip::endpoint seed_node1 = fc::ip::endpoint::from_string("107.170.30.182:" BOOST_PP_STRINGIZE(BTS_NETWORK_DEFAULT_P2P_PORT));
+  fc::ip::endpoint seed_node1 = fc::ip::endpoint::from_string("178.62.50.61:1776");
   nodes_to_visit.push(seed_node1);
-  nodes_to_visit.push(fc::ip::endpoint::from_string("107.170.30.182:7890"));
+  nodes_to_visit.push(fc::ip::endpoint::from_string("178.62.50.61:1777"));
+  nodes_to_visit.push(fc::ip::endpoint::from_string("178.62.50.61:1778"));
+  nodes_to_visit.push(fc::ip::endpoint::from_string("80.240.133.79:1776"));
+  nodes_to_visit.push(fc::ip::endpoint::from_string("80.240.133.79:1777"));
 
   fc::ecc::private_key my_node_id = fc::ecc::private_key::generate();
   bts::blockchain::chain_database_ptr chain_db = std::make_shared<bts::blockchain::chain_database>();
-  chain_db->open(data_dir / "chain", fc::optional<fc::path>());
+  chain_db->open(data_dir / "chain", fc::optional<fc::path>("C:/Users/Administrator/AppData/Local/Temp/map_bts_network/genesis.json"));
 
   std::map<bts::net::node_id_t, bts::net::address_info> address_info_by_node_id;
   std::map<bts::net::node_id_t, std::vector<bts::net::address_info> > connections_by_node_id;

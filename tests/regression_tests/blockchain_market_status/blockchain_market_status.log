@@ -1,7 +1,7 @@
 default (unlocked) >>> debug_filter_output_for_tests true
 OK
 default (unlocked) >>> wallet_account_create testaccount1
-"XTS5kmVHDwLN9zsxa18jKFrLn6yPJkBsxJJHmFeRygEpUaBWCqcb4"
+"XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount1
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -12,7 +12,7 @@ default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" null 5000000 100
 {
-  "expiration": "20140620T164010",
+  "expiration": "20140620T164000",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -35,8 +35,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASS
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d224f51233a0ce29f86717d6725f3b2c0bd44d7a1e9c8d50658e46c563d00139c2d",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b104f5ee8b343a69138ff0ca08b40dda386b9a78e9bdbbdce5c1e9171b74c403c"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960c166594346579d127ed74361bd8443816d41531e15ec85ed0e448c989753c252",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22b38b30c23947f2cfb5c0f586f6aba2d82be77835229692e8c477939b3667cee1"
   ]
 }
 default (unlocked) >>> wallet_account_balance testaccount1
@@ -50,9 +50,8 @@ OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 ===================================================================================================================
-3       [redacted]          [redacted]                      1       383     0.10000 XTS     [redacted][redacted]     
-2       [redacted]          [redacted]                      1       410     0.10000 XTS     [redacted][redacted]     
-1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+2       [redacted]          [redacted]                      1       383     0.10000 XTS     [redacted][redacted]     
+1       [redacted]          [redacted]                      1       410     0.10000 XTS     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
@@ -60,7 +59,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
 {
-  "expiration": "20140620T164020",
+  "expiration": "20140620T164010",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -86,10 +85,10 @@ default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some a
           "delegate_slate_id": 0,
           "type": "withdraw_signature_type",
           "data": {
-            "owner": "XTS2UYQDzrV1WxqZxo1rsCZBxaZAsjMBmnWg",
+            "owner": "XTSEQsyyiZNVUvyMGxk3JZFiJHntmuom87Yy",
             "memo": {
-              "one_time_key": "XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ",
-              "encrypted_memo_data": "e465255c8bca471b4107dac9b3d06aa72b4f8eeb6077067edf9258b71f686b9d0e4f44a98e3c9c2e8c32c14bab9c73498273bec4997334703a7264119bad00d1"
+              "one_time_key": "XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we",
+              "encrypted_memo_data": "435d19f622257718d24c607eae8aab0f24ed6c6e8d87f4aa1a7234cbee31cb8ce42f1d992a9906343ee61d791ca9b2f4f368941d2a58277170a2b23f360ada2b"
             }
           }
         }
@@ -97,8 +96,8 @@ default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some a
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0000219ca87b2377861cb3cfb4a98b1ca1c15adf2c979b12726b4d70e48a90496f",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66821b12f16914b57c0d8568d2f8a6b56e124144b3b58b8d085be619aaceff225b"
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b978f616ba214c92212a1d82b99ddbc7afe072b39a95dbae2489ee46a1d9f71724",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f009f875f899f55df760054c8319b6fa193b260ac70e6a856c877e4b2c6db6a6dcf"
   ]
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
@@ -132,9 +131,9 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
-[redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
-[redacted]          3         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
-[redacted]          4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
+[redacted]          1         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
+[redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
+[redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
 default (unlocked) >>> blockchain_list_assets 
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
@@ -152,9 +151,9 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
-[redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
-[redacted]          3         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
-[redacted]          4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
+[redacted]          1         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
+[redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
+[redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
 default (unlocked) >>> help wallet_market_submit_bid 
 Usage:
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol>   Used to place a request to buy a quantity of assets at a price specified in another asset
@@ -178,19 +177,19 @@ testaccount1                    10,000.00 XMO
                                 100.00000 XTS               
 default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T164030",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
       "data": {
-        "balance_id": "XTS5s6w8TM1LuWKaS4QkV3fYLdqHqKdUw671",
+        "balance_id": "XTS4rL7ZWjiwUkoxbkWosDrwKidXoUSJf8cs",
         "amount": 150000,
         "claim_input_data": ""
       }
     },{
       "type": "withdraw_op_type",
       "data": {
-        "balance_id": "XTSKm6QmzZ6HJqp1i2NA2zEX399GJPk4sS7N",
+        "balance_id": "XTSBwY6Z9FyseFkJdyphjZTwbFzW8cHdowXW",
         "amount": 10000,
         "claim_input_data": ""
       }
@@ -204,15 +203,15 @@ default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
             "quote_asset_id": 1,
             "base_asset_id": 0
           },
-          "owner": "XTSNewrSidDXd4tLzWX1MjwXjgGuZsaGVKZZ"
+          "owner": "XTSMVVWT3x5YeCdP7jWWtAUxMNWUr11pLseB"
         }
       }
     }
   ],
   "signatures": [
-    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a689027d0cee5164f20e827bc1a5a78494f6bc34a9605b9d1b454d4fc1ae8ab9b",
-    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96fecff81d308aa8936fc16138358080b7bdb69a550dc4890a1319df71027b2f7bf",
-    "20cefb525e31270f268abb362101d80a91ebdc2cf47469c2887593a6dcc4ca94d99255b9a0f772b90756d4aab48ffd80e776df473b0e2c0c1996da699b11e30cb0"
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907f7ed091a9657aaa25d7af67bf19e7293949b432894ddaefa7e5bbae1b16a9e89",
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31aaf4decb33f6810af4ff264db5ce8f89214995ecb57949e958128ca043ea4a53e",
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f1cded22e7f5e031f73ecf84f6d851aa45d06c4c430694b1e3de3c7227d8146dd"
   ]
 }
 default (unlocked) >>> balance testaccount1
@@ -228,10 +227,10 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
-[redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
-[redacted]          3         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
-[redacted]          4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
-[redacted]          PENDING   testaccount1        ORDER-NewrSidD      1,500.00 XMO            buy 500 XTS @ 3 XMO                         0.10000 XTS         [redacted]
+[redacted]          1         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
+[redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
+[redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
+[redacted]          PENDING   testaccount1        ORDER-MVVWT3x5      1,500.00 XMO            buy 500 XTS @ 3 XMO                         0.10000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
 No market orders found.
 default (unlocked) >>> balance testaccount1
@@ -242,7 +241,7 @@ testaccount1                    8,500.00 XMO
 default (unlocked) >>> wallet_market_order_list XMO XTS
 No market orders found.
 default (unlocked) >>> wallet_account_create testaccount2
-"XTS6d6U1ga1oSKRm9ZBUrbR3vY7MFwH9PTfSFYV7tGCt2PqWskQ6q"
+"XTS8JhhZYsfSKHhhFBtDjtAiMZ1F46KLLtv7sj9j2NtnLE2rFuagC"
 default (unlocked) >>> wallet_transfer 10000 XTS delegate0 testaccount2
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -254,7 +253,7 @@ OK
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 XTSNewrSidDXd4tLzWX1MjwXjgGuZsaGVKZZ
+bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 XTSMVVWT3x5YeCdP7jWWtAUxMNWUr11pLseB
 default (unlocked) >>> balance testaccount1
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -271,7 +270,7 @@ default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
   "operations": [{
       "type": "withdraw_op_type",
       "data": {
-        "balance_id": "XTSLhNHq2y8zT9x92akB3eQxXQpf6AZ5jxDk",
+        "balance_id": "XTS8fkyLcWaXLEigT95nGngHt8uarkWpPYxS",
         "amount": 10010000,
         "claim_input_data": ""
       }
@@ -285,14 +284,14 @@ default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
             "quote_asset_id": 1,
             "base_asset_id": 0
           },
-          "owner": "XTSD2Bug9u9HnZBhFSZ2RyxknqbdYLwhGiSs"
+          "owner": "XTS8gMh2aDJWPXdoapNP8X49ML1VPtUZDP7V"
         }
       }
     }
   ],
   "signatures": [
-    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a77623251cf023d38fa092f984f478343919cea94f8275e7b583db820c7df721cc",
-    "20ba046948474062143457a651b49a8c70564cc571fe556e48143608c74ea21d084007796d4f8875c5303edda828eeba0375456a21f84faf770570e23f065ee076"
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38e5139cd6123c15bb50dc41c1de1ea47c42bd316a457b1b13dd674bc683c61d8f7",
+    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a7d8fcdd6b0a293ada046ad4643e4f92cdbb628cf9fe775fe811ba43a345ab75ba"
   ]
 }
 default (unlocked) >>> help blockchain_market_order_book

@@ -1,0 +1,148 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
+default (unlocked) >>> help blockchain_get_block_transactions
+Usage:
+blockchain_get_block_transactions <block>                                                             Retrieves the detailed transaction information for a block
+Retrieves the detailed transaction information for a block
+
+Parameters:
+  block (string, required): the number or id of the block to get transactions from
+
+Returns:
+  blockchain_transaction_record_map
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+OK
+default (unlocked) >>> blockchain_get_block_transactions 1
+[]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+OK
+default (unlocked) >>> blockchain_get_block_transactions 2
+[]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
+OK
+default (unlocked) >>> blockchain_get_block_transactions 3
+[]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+OK
+default (unlocked) >>> blockchain_get_block_transactions 4
+[]
+default (unlocked) >>> wallet_account_create testaccount
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           testaccount         100.00000 XTS                                                       0.10000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> balance testaccount
+No balances found.
+default (unlocked) >>> wallet_delegate_set_block_production ALL false
+OK
+default (unlocked) >>> wallet_rescan_blockchain
+Rescanning blockchain...
+Scan complete.
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
+OK
+default (unlocked) >>> balance testaccount
+ACCOUNT                         BALANCE                     
+============================================================
+testaccount                     100.00000 XTS               
+default (unlocked) >>> blockchain_get_block_transactions 5
+[[
+    "c03a4c9fc662a23de9abcaa4b58b213d58029ed4",{
+      "trx": {
+        "expiration": "20140620T164030",
+        "delegate_slate_id": null,
+        "operations": [{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+              "amount": 10010000,
+              "claim_input_data": ""
+            }
+          },{
+            "type": "deposit_op_type",
+            "data": {
+              "amount": 10000000,
+              "condition": {
+                "asset_id": 0,
+                "delegate_slate_id": 0,
+                "type": "withdraw_signature_type",
+                "data": {
+                  "owner": "XTS42hnG6FzGaGYBFbNbQUijqqoMCN9zQG78",
+                  "memo": {
+                    "one_time_key": "XTS8Xpna9Y9ZEDnByFYC5ZqBDCsDvV2F2NwkjnKxEunYZbszAxsko",
+                    "encrypted_memo_data": "66f7a6367c11ce46351d786b5f6612d118fd88851df971f4548040b263358b926240e07a0aa4b1b819f0d2e16e453c09c1500044dd57fe02391931ebc2d0cff1"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "signatures": [
+          "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960cba7c88f2ea1ccb114c943ceea053c32ced99bf6685b1b0906a9677e25fc1c85"
+        ]
+      },
+      "signed_keys": [
+        "XTSA5wQqHYd93W65JzCZ1wtmBq9DbtTRyqD",
+        "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF",
+        "XTSPcpRoTjhdb9KBYXmsFB3nfe2BYiZV88Be",
+        "XTSEbFjCRUUsoN3FUJTeBbWX7SZx1bMrFzUH",
+        "XTSF4Bjx9KdtUChuTn8wL9T6aBFrLBq6wyDJ"
+      ],
+      "validation_error": null,
+      "required_deposits": [],
+      "provided_deposits": [[
+          "XTS5TcKpYbSAzxn9iqKQ6fJFbbExvVvay8ch",{
+            "amount": 10000000,
+            "asset_id": 0
+          }
+        ]
+      ],
+      "deposits": [[
+          0,{
+            "amount": 10000000,
+            "asset_id": 0
+          }
+        ]
+      ],
+      "withdraws": [[
+          0,{
+            "amount": 10010000,
+            "asset_id": 0
+          }
+        ]
+      ],
+      "balance": [[
+          0,
+          10000
+        ]
+      ],
+      "net_delegate_votes": [],
+      "chain_location": {
+        "block_num": 5,
+        "trx_num": 0
+      }
+    }
+  ]
+]
+default (unlocked) >>> quit

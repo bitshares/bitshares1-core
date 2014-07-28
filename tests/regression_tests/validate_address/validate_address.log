@@ -1,0 +1,25 @@
+(wallet closed) >>> help validate_address
+Usage:
+validate_address <address>                                                                            Return information about given BitShares address
+Return information about given BitShares address
+
+Parameters:
+  address (std::string, required): the address or public key to validate
+
+Returns:
+  json_object
+
+aliases: validateaddress
+(wallet closed) >>> validate_address XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55
+{
+  "isvalid": true
+}
+(wallet closed) >>> validate_address XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6cabPW55
+{
+  "isvalid": false
+}
+(wallet closed) >>> validate_address XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBfgfgfgbPW55
+{
+  "isvalid": false
+}
+(wallet closed) >>> quit

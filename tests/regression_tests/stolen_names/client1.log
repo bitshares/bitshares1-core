@@ -1,0 +1,24 @@
+default (unlocked) >>> wallet_create_account thief
+"XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v"
+default (unlocked) >>> debug_wait_for_block_by_number 1
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2
+OK
+default (unlocked) >>> blockchain_get_account thief
+Name: thief
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+Not a delegate.
+default (unlocked) >>> wallet_rename_account thief thieved
+OK
+default (unlocked) >>> wallet_rename_account thieved thief
+Command failed with exception: Assert Exception (10)
+!registered_account: Your new account name is already registered
+
+
+
+
+default (unlocked) >>> quit

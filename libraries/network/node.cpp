@@ -40,7 +40,9 @@ namespace bts { namespace network {
    void node::set_client( client_ptr c )
    {
       _client = c;
-      _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(1) );
+      _attempt_new_connections_task = fc::schedule( [this](){ attempt_new_connection(); }, 
+                                                    fc::time_point::now() + fc::seconds(1),
+                                                    "attempt_new_connection" );
    }
 
    void node::listen( const fc::ip::endpoint& ep )
@@ -52,8 +54,10 @@ namespace bts { namespace network {
           ilog( "${e}", ("e",e.to_detail_string() ) );
           throw;
        }
-      _accept_loop = fc::async( [this](){ accept_loop(); } );
-      _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(1) );
+      _accept_loop = fc::async( [this](){ accept_loop(); }, "node::accept_loop" );
+      _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, 
+                                       fc::time_point::now() + fc::seconds(1),
+                                       "broadcast_keep_alive" );
        ilog( "delegate node listening on ${ep}", ("ep",ep) );
    } FC_CAPTURE_AND_RETHROW( (ep) ) }
 
@@ -139,7 +143,7 @@ namespace bts { namespace network {
        {
           if( peer != con )
           {
-              fc::async( [peer, msg](){ peer->send_message(msg); } );
+              fc::async( [peer, msg](){ peer->send_message(msg); }, "peer::send_message" );
           }
        }
        try {
@@ -157,9 +161,11 @@ namespace bts { namespace network {
        vector<peer_connection_ptr> broadcast_list( _peers.begin(), _peers.end() );
        for( auto peer : broadcast_list )
        {
-           fc::async( [peer]() { peer->send_message( keep_alive_message( fc::time_point::now() )  ); } );
+           fc::async( [peer]() { peer->send_message( keep_alive_message( fc::time_point::now() )  ); }, "send keep_alive_message" );
        }
-       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, fc::time_point::now() + fc::seconds(1) );
+       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, 
+                                        fc::time_point::now() + fc::seconds(1),
+                                        "broadcast_keep_alive" );
    }
 
    void node::on_signin_request( const shared_ptr<peer_connection>& con, 
@@ -302,7 +308,9 @@ namespace bts { namespace network {
       if( _peers.size() < _desired_peer_count )
       {
          ilog( "attempting new connections to peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
-         _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, fc::time_point::now() + fc::seconds(60) );
+         _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, 
+                                                       fc::time_point::now() + fc::seconds(60),
+                                                       "attempt_new_connection" );
       }
       else {
          ilog( "we have the desired number of peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
@@ -315,7 +323,7 @@ namespace bts { namespace network {
        vector<peer_connection_ptr> broadcast_list( _peers.begin(), _peers.end() );
        for( auto peer : broadcast_list )
        {
-          fc::async( [peer, block_to_broadcast](){ peer->send_message(block_message(block_to_broadcast) ); } );
+          fc::async( [peer, block_to_broadcast](){ peer->send_message(block_message(block_to_broadcast) ); }, "send block message" );
        }
    }
 

@@ -170,6 +170,7 @@ namespace bts { namespace net
       fc::future<void> accept_or_connect_task_done;
     private:
       peer_connection(peer_connection_delegate* delegate);
+      void destroy();
     public:
       static peer_connection_ptr make_shared(peer_connection_delegate* delegate); // use this instead of the constructor
       virtual ~peer_connection();
@@ -183,6 +184,7 @@ namespace bts { namespace net
 
       void send_message(const message& message_to_send);
       void close_connection();
+      void destroy_connection();
 
       uint64_t get_total_bytes_sent() const;
       uint64_t get_total_bytes_received() const;
