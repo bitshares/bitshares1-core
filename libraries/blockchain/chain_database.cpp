@@ -1061,6 +1061,18 @@ namespace bts { namespace blockchain {
            pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>(nullptr);
            pending_state->get_undo_state( undo_state );
            _undo_state_db.store( block_id, *undo_state );
+           auto block_num = self->get_head_block_num();
+           if( block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY > 0 )
+           {
+              auto old_id = self->get_block_id( block_num - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY );
+              try {
+                 _undo_state_db.remove( old_id );
+              } 
+              catch( const fc::key_not_found_exception& e )
+              {
+                 // ignore this...
+              }
+           }
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
 
