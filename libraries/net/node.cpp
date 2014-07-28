@@ -3045,6 +3045,12 @@ namespace bts { namespace net { namespace detail {
         _potential_peer_db.update_entry( updated_peer_record );
 
         _handshaking_connections.erase(new_peer);
+        _terminating_connections.erase(new_peer);
+        assert(_active_connections.find(new_peer) == _active_connections.end());
+        _active_connections.erase(new_peer);
+        assert(_closing_connections.find(new_peer) == _closing_connections.end());
+        _closing_connections.erase(new_peer);
+
         display_current_connections();
         trigger_p2p_network_connect_loop();
         schedule_peer_for_deletion(new_peer);
