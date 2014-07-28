@@ -22,6 +22,7 @@ typedef bts::client::client const * const cptr;
 string pretty_line( int size, char c = '=' );
 string pretty_shorten( const string& str, size_t max_size );
 string pretty_timestamp( const time_point_sec& timestamp );
+string pretty_path( const path& file_path );
 string pretty_age( const time_point_sec& timestamp, bool from_now = false, const string& suffix = string() );
 string pretty_percent( double part, double whole, int precision = 2 );
 
