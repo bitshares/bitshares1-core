@@ -4458,7 +4458,7 @@ namespace bts { namespace wallet {
       auto local_account      = my->_wallet_db.lookup_account( account_name );
       auto registered_account = my->_blockchain->get_account_record( account_name );
       if( local_account && registered_account )
-         return local_account->active_key() == registered_account->active_key();
+         return local_account->owner_key == registered_account->owner_key;
       return local_account || registered_account;
    }
 
