@@ -736,10 +736,10 @@ namespace bts { namespace wallet {
           auto opt_account = _wallet_db.lookup_account( address( oaccount->owner_key ) );
           if( !opt_account.valid() )
           {
-             wlog( "We have the key but no account for registration operation" );
+             wlog( "We have the key but no account for update operation" );
              return false;
           }
-          wlog( "we detected an account register operation for ${name}", ("name",oaccount->name) );
+          wlog( "we detected an account update operation for ${name}", ("name",oaccount->name) );
           auto account_name_rec = _blockchain->get_account_record( oaccount->name );
           FC_ASSERT( account_name_rec.valid() );
 
@@ -4414,7 +4414,7 @@ namespace bts { namespace wallet {
       auto local_account      = my->_wallet_db.lookup_account( account_name );
       auto registered_account = my->_blockchain->get_account_record( account_name );
       if( local_account && registered_account )
-         return local_account->account_address == address( registered_account->active_key() );
+         return local_account->active_key() == registered_account->active_key();
       return local_account || registered_account;
    }
 
