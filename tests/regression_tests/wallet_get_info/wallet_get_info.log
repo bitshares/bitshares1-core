@@ -1,0 +1,32 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
+default (unlocked) >>> help wallet_get_info
+Usage:
+wallet_get_info                                                                                       Extra information about the wallet.
+Extra information about the wallet.
+
+Parameters:
+  (none)
+
+Returns:
+  json_object
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "/home/yuvaraj/software/project/InvictusRoot/regression_tests_output/regression_tests/wallet_get_info/client/wallets",
+  "open": true,
+  "path": "/home/yuvaraj/software/project/InvictusRoot/regression_tests_output/regression_tests/wallet_get_info/client/wallets/default",
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "last_scanned_block_num": 0,
+  "scan_progress": "100.00 %",
+  "priority_fee": "0.10000 XTS",
+  "next_child_key_index": null,
+  "block_production_enabled": true,
+  "next_block_production_time": "[redacted]",
+  "next_block_production_timestamp": "[redacted]",
+  "version": 100
+}
+default (unlocked) >>> quit
