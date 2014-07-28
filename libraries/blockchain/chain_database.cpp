@@ -130,8 +130,6 @@ namespace bts { namespace blockchain {
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
 
-                         FC_ASSERT( market_stat, "market status should have been set when the order is created" );
-
 
                          price max_short_bid;
                          price min_cover_ask;
@@ -140,6 +138,7 @@ namespace bts { namespace blockchain {
                          auto median_price = _db_impl.self->get_median_delegate_price( quote_id );
                          if( quote_asset->is_market_issued() )
                          {
+                            FC_ASSERT( market_stat, "market status should have been set when the order is created" );
                             if( !median_price )
                                FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
                             auto feed_max_short_bid = *median_price;
@@ -280,7 +279,7 @@ namespace bts { namespace blockchain {
                             _market_transactions.push_back(mtrx);
                             trading_volume += mtrx.bid_received;
                    
-                            market_stat->ask_depth -= xts_paid_by_ask.amount;
+                            if( market_stat ) market_stat->ask_depth -= xts_paid_by_ask.amount;
                             if( _current_ask->type == ask_order )
                             {
                                /* rounding errors on price cause this not to go to 0 in some cases */
@@ -354,7 +353,7 @@ namespace bts { namespace blockchain {
                             }
                             else if( _current_bid->type == short_order )
                             {
-                               market_stat->bid_depth -= xts_received_by_bid.amount;
+                               if( market_stat ) market_stat->bid_depth -= xts_received_by_bid.amount;
                    
                                // TODO: what if the amount paid is 0 for bid and ask due to rounding errors,
                                // make sure this doesn't put us in an infinite loop.
@@ -383,31 +382,34 @@ namespace bts { namespace blockchain {
                             }
                          } // while bid && ask 
 
-                         if( market_stat->avg_price_24h.ratio == 0 )
+                         if( market_stat )
                          {
-                            market_stat->avg_price_24h = *median_price;
-                         }
+                            if( market_stat->avg_price_24h.ratio == 0 && median_price )
+                            {
+                               market_stat->avg_price_24h = *median_price;
+                            }
 
-                         if( _current_bid && _current_ask )
-                         {
-                            // after the market is running solid we can use this metric...
-                            market_stat->avg_price_24h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1);
-                            market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
-                            market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
-                            market_stat->avg_price_24h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY+1);
-                         }
-                   
-                         if( quote_asset->is_market_issued() )
-                         {
-                            if( !market_stat || 
-                                market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 ||
-                                market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 
-                              )
-                              FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
+                            if( _current_bid && _current_ask )
+                            {
+                               // after the market is running solid we can use this metric...
+                               market_stat->avg_price_24h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1);
+                               market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
+                               market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
+                               market_stat->avg_price_24h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY+1);
+                            }
+                      
+                            if( quote_asset->is_market_issued() )
+                            {
+                               if( !market_stat || 
+                                   market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 ||
+                                   market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT/2 
+                                 )
+                                 FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
+                            }
+                            _pending_state->store_market_status( *market_stat );
                          }
                          //quote_asset->collected_fees += usd_fees_collected.amount;
                          _pending_state->store_asset_record( *quote_asset );
-                         _pending_state->store_market_status( *market_stat );
                    
                          if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
                          {
@@ -467,8 +469,7 @@ namespace bts { namespace blockchain {
                          }
 
                          auto market_state = _pending_state->get_market_status( quote_id, base_id );
-                          if( !market_state )
-                             market_state = market_status( quote_id, base_id, 0, 0 );
+                          if( !market_state ) market_state = market_status( quote_id, base_id, 0, 0 );
                          market_state->last_error.reset();
                          _pending_state->store_market_status( *market_state );
                    
