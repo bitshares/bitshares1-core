@@ -1541,6 +1541,7 @@ namespace bts { namespace cli {
       }
       else
       {
+        (*_out) << message << "\n";
         // it's not clear what state we're in if rl_prompt is null, but we've had reports
         // of crashes.  Just swallow the message and avoid crashing.
       }
