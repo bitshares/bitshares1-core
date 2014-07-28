@@ -2808,10 +2808,10 @@ namespace bts { namespace wallet {
       private_key_type payer_private_key  = get_account_private_key( paying_account_name );
       public_key_type  payer_public_key   = payer_private_key.get_public_key();
       address          payer_account_address( payer_private_key.get_public_key() );
-        
+      
       signed_transaction     trx;
       unordered_set<address> required_signatures;
-        
+      
       const auto required_fees = get_priority_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
@@ -4271,7 +4271,7 @@ namespace bts { namespace wallet {
       accounts.reserve( accs.size() );
       for( const auto& item : accs )
       {
-         FC_ASSERT(item.second.is_my_account == my->_wallet_db.has_private_key( item.second.account_address )
+         FC_ASSERT(item.second.is_my_account == my->_wallet_db.has_private_key( item.second.active_address() )
                  , "\'is_my_account\' field fell out of sync" );
          accounts.push_back( item.second );
       }
@@ -4290,12 +4290,8 @@ namespace bts { namespace wallet {
       vector<wallet_account_record> receive_accounts;
       receive_accounts.reserve( accs.size() );
       for( const auto& item : accs )
-      {
-         if ( my->_wallet_db.has_private_key( item.second.account_address ) )
-         {
+         if ( item.second.is_my_account )
             receive_accounts.push_back( item.second );
-         }
-      }
 
       std::sort( receive_accounts.begin(), receive_accounts.end(),
                  [](const wallet_account_record& a, const wallet_account_record& b) -> bool
@@ -4464,21 +4460,20 @@ namespace bts { namespace wallet {
 
    /**
     *  Looks up the public key for an account whether local or in the blockchain, with
-    *  the local name taking priority.
+    *  the blockchain taking priority.
     */
    public_key_type wallet::get_account_public_key( const string& account_name )const
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+      FC_ASSERT( is_unique_account(account_name) );
       FC_ASSERT( is_open() );
 
+      auto registered_account = my->_blockchain->get_account_record( account_name );
+      if( registered_account.valid() )
+         return registered_account->active_key();
+      
       auto opt_account = my->_wallet_db.lookup_account( account_name );
-      if( !opt_account.valid() )
-      {
-         auto registered_account = my->_blockchain->get_account_record( account_name );
-         if( registered_account.valid() )
-            return registered_account->active_key();
-      }
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'", 
                 ("name",account_name) );
 
