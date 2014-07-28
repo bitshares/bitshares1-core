@@ -8,9 +8,9 @@ OK
 OK
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "/Users/vikramrajkumar/regression_tests_output/regression_tests/wallet_unlock/client/wallets",
+  "data_dir": "[redacted]",
   "open": true,
-  "path": "/Users/vikramrajkumar/regression_tests_output/regression_tests/wallet_unlock/client/wallets/default",
+  "path": "[redacted]",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
@@ -54,9 +54,9 @@ default (locked) >>> wallet_unlock 5 123456789
 OK
 default (unlocked) >>> wallet_get_info
 {
-  "data_dir": "/Users/vikramrajkumar/regression_tests_output/regression_tests/wallet_unlock/client/wallets",
+  "data_dir": "[redacted]",
   "open": true,
-  "path": "/Users/vikramrajkumar/regression_tests_output/regression_tests/wallet_unlock/client/wallets/default",
+  "path": "[redacted]",
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
@@ -73,9 +73,9 @@ default (unlocked) >>> debug_wait 6
 OK
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "/Users/vikramrajkumar/regression_tests_output/regression_tests/wallet_unlock/client/wallets",
+  "data_dir": "[redacted]",
   "open": true,
-  "path": "/Users/vikramrajkumar/regression_tests_output/regression_tests/wallet_unlock/client/wallets/default",
+  "path": "[redacted]",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,

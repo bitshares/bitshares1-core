@@ -30,6 +30,12 @@ string pretty_timestamp( const time_point_sec& timestamp )
     return timestamp.to_iso_extended_string();
 }
 
+string pretty_path( const path& file_path )
+{
+    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
+    return file_path.string();
+}
+
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
 {
     if( FILTER_OUTPUT_FOR_TESTS )
@@ -157,6 +163,15 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
 
     std::stringstream out;
     out << std::left;
+
+    const auto data_dir = info["data_dir"].as<path>();
+    info["data_dir"] = pretty_path( data_dir );
+
+    if( !info["path"].is_null() )
+    {
+        const auto wallet_path = info["path"].as<path>();
+        info["path"] = pretty_path( wallet_path );
+    }
 
     if( !info["unlocked_until_timestamp"].is_null() )
     {
