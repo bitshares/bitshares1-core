@@ -419,8 +419,10 @@ namespace bts { namespace net { namespace detail {
       std::unordered_set<peer_connection_ptr>                     _handshaking_connections;
       /** stores fully established connections we're either syncing with or in normal operation with */
       std::unordered_set<peer_connection_ptr>                     _active_connections;
-      /** stores connections we've closed, but are still waiting for the remote end to close before we delete them */
+      /** stores connections we've closed (sent closing message, not actually closed), but are still waiting for the remote end to close before we delete them */
       std::unordered_set<peer_connection_ptr>                     _closing_connections;
+      /** stores connections we've closed, but are still waiting for the OS to notify us that the socket is really closed */
+      std::unordered_set<peer_connection_ptr>                     _terminating_connections;
       
       boost::circular_buffer<item_hash_t> _most_recent_blocks_accepted; // the /n/ most recent blocks we've accepted (currently tuned to the max number of connections)
 
@@ -564,6 +566,10 @@ namespace bts { namespace net { namespace detail {
       void send_hello_message( const peer_connection_ptr& peer );
       void connect_to_task( peer_connection_ptr new_peer, const fc::ip::endpoint& remote_endpoint );
       bool is_connection_to_endpoint_in_progress( const fc::ip::endpoint& remote_endpoint );
+
+      void move_peer_to_active_list(const peer_connection_ptr& peer);
+      void move_peer_to_closing_list(const peer_connection_ptr& peer);
+      void move_peer_to_terminating_list(const peer_connection_ptr& peer);
 
       peer_connection_ptr get_connection_to_endpoint( const fc::ip::endpoint& remote_endpoint );
 
@@ -1011,6 +1017,7 @@ namespace bts { namespace net { namespace detail {
       std::list<peer_connection_ptr> peers_to_disconnect_gently;
       std::list<peer_connection_ptr> peers_to_disconnect_forcibly;
       std::list<peer_connection_ptr> peers_to_send_keep_alive;
+      std::list<peer_connection_ptr> peers_to_terminate;
 
       // Disconnect peers that haven't sent us any data recently
       // These numbers are just guesses and we need to think through how this works better.
@@ -1105,7 +1112,7 @@ namespace bts { namespace net { namespace detail {
         }
       }
 
-      fc::time_point closing_disconnect_threshold = fc::time_point::now() - fc::seconds(BTS_NET_PEER_DISCONNECT_TIMEOUT );
+      fc::time_point closing_disconnect_threshold = fc::time_point::now() - fc::seconds(BTS_NET_PEER_DISCONNECT_TIMEOUT);
       for( const peer_connection_ptr& closing_peer : _closing_connections )
         if( closing_peer->connection_closed_time < closing_disconnect_threshold )
         {
@@ -1114,6 +1121,16 @@ namespace bts { namespace net { namespace detail {
           wlog( "Forcibly disconnecting peer ${peer} who failed to close their conneciton in a timely manner", 
                 ( "peer", closing_peer->get_remote_endpoint() ) );
           peers_to_disconnect_forcibly.push_back( closing_peer );
+        }
+
+      uint32_t failed_terminate_timeout_seconds = 120;
+      fc::time_point failed_terminate_threshold = fc::time_point::now() - fc::seconds(failed_terminate_timeout_seconds);
+      for (const peer_connection_ptr& peer : _terminating_connections )
+        if (peer->get_connection_terminated_time() != fc::time_point::min() &&
+            peer->get_connection_terminated_time() < failed_terminate_threshold)
+        {
+          wlog("Terminating connection with peer ${peer}, closing the connection didn't work", ("peer", peer->get_remote_endpoint()));
+          peers_to_terminate.push_back(peer);
         }
 
       for( const peer_connection_ptr& peer : peers_to_disconnect_gently )
@@ -1127,12 +1144,22 @@ namespace bts { namespace net { namespace detail {
       peers_to_disconnect_gently.clear();
 
       for( const peer_connection_ptr& peer : peers_to_disconnect_forcibly )
+      {
+        move_peer_to_terminating_list(peer);
         peer->close_connection();
+      }
       peers_to_disconnect_forcibly.clear();
 
       for( const peer_connection_ptr& peer : peers_to_send_keep_alive )
         peer->send_message(current_time_request_message());
       peers_to_send_keep_alive.clear();
+
+      for (const peer_connection_ptr& peer : peers_to_terminate )
+        {
+        assert(_terminating_connections.find(peer) != _terminating_connections.end());
+        _terminating_connections.erase(peer);
+        schedule_peer_for_deletion(peer);
+        }
 
       if( !_terminate_inactive_connections_loop_done.canceled() )
          _terminate_inactive_connections_loop_done = fc::schedule( [this](){ terminate_inactive_connections_loop(); }, 
@@ -1221,6 +1248,11 @@ namespace bts { namespace net { namespace detail {
     void node_impl::schedule_peer_for_deletion(const peer_connection_ptr& peer_to_delete)
     {
       VERIFY_CORRECT_THREAD();
+      assert(_handshaking_connections.find(peer_to_delete) == _handshaking_connections.end());
+      assert(_active_connections.find(peer_to_delete) == _active_connections.end());
+      assert(_closing_connections.find(peer_to_delete) == _closing_connections.end());
+      assert(_terminating_connections.find(peer_to_delete) == _terminating_connections.end());
+
       _peers_to_delete.emplace_back(peer_to_delete);
       if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
         _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
@@ -1643,8 +1675,7 @@ namespace bts { namespace net { namespace detail {
         if( connection_rejected_message_received.reason_code == rejection_reason_code::connected_to_self )
         {
           _potential_peer_db.erase( originating_peer->get_socket().remote_endpoint() );
-          _closing_connections.insert( originating_peer->shared_from_this() );
-          _active_connections.erase( originating_peer->shared_from_this() );
+          move_peer_to_closing_list(originating_peer->shared_from_this());
           originating_peer->close_connection();
         }
         else
@@ -1713,14 +1744,14 @@ namespace bts { namespace net { namespace detail {
         // if we were handshaking, we need to continue with the next step in handshaking (which is either
         // ending handshaking and starting synchronization or disconnecting)
         if( originating_peer->our_state == peer_connection::our_connection_state::connection_rejected )      
-          disconnect_from_peer( originating_peer, "You rejected my connection request (hello message ) so I'm disconnecting" );
+          disconnect_from_peer( originating_peer, "You rejected my connection request (hello message) so I'm disconnecting" );
         else if( originating_peer->their_state == peer_connection::their_connection_state::connection_rejected )
-          disconnect_from_peer( originating_peer, "I rejected your connection request (hello message ) so I'm disconnecting" );
+          disconnect_from_peer( originating_peer, "I rejected your connection request (hello message) so I'm disconnecting" );
         else
         {
           // not filtering firewalled nodes just incase they have working UPNP or port mapping
           // TODO: add enhanced firewall detection code
-          // if( originating_peer->is_firewalled == firewalled_state::not_firewalled )
+          // if( originating_peer->is_firewalled == firewalled_state::not_firewalled)
           {
             // mark the connection as successful in the database
             potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );
@@ -1729,8 +1760,7 @@ namespace bts { namespace net { namespace detail {
           }
 
           originating_peer->negotiation_status = peer_connection::connection_negotiation_status::negotiation_complete;
-          _active_connections.insert( originating_peer->shared_from_this() );
-          _handshaking_connections.erase( originating_peer->shared_from_this() );
+          move_peer_to_active_list(originating_peer->shared_from_this());
           new_peer_just_added( originating_peer->shared_from_this() );
         }
       }
@@ -1812,8 +1842,7 @@ namespace bts { namespace net { namespace detail {
         }
 
         // transition it to our active list
-        _active_connections.insert( originating_peer->shared_from_this() );
-        _handshaking_connections.erase( originating_peer->shared_from_this() );
+        move_peer_to_active_list(originating_peer->shared_from_this());
         new_peer_just_added( originating_peer->shared_from_this() );
       }
     }
@@ -2242,7 +2271,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_connection_closed( peer_connection* originating_peer )
     {
       VERIFY_CORRECT_THREAD();
-       peer_connection_ptr originating_peer_ptr = originating_peer->shared_from_this();
+      peer_connection_ptr originating_peer_ptr = originating_peer->shared_from_this();
       _rate_limiter.remove_tcp_socket( &originating_peer->get_socket() );
 
 
@@ -2255,9 +2284,10 @@ namespace bts { namespace net { namespace detail {
         _potential_peer_db.update_entry( updated_peer_record );
       }
 
-      if( _closing_connections.find(originating_peer_ptr) != _closing_connections.end() )
-        _closing_connections.erase( originating_peer_ptr );
-      else if( _active_connections.find(originating_peer_ptr) != _active_connections.end() )
+      _closing_connections.erase( originating_peer_ptr );
+      _handshaking_connections.erase( originating_peer_ptr );
+      _terminating_connections.erase( originating_peer_ptr );
+      if( _active_connections.find(originating_peer_ptr) != _active_connections.end() )
       {
         _active_connections.erase( originating_peer_ptr );
 
@@ -2265,10 +2295,7 @@ namespace bts { namespace net { namespace detail {
         updated_peer_record.last_seen_time = fc::time_point::now();
         _potential_peer_db.update_entry( updated_peer_record );
       }
-      else if( _handshaking_connections.find(originating_peer_ptr) != _handshaking_connections.end() )
-      {
-        _handshaking_connections.erase( originating_peer_ptr );
-      }
+
       ilog( "Remote peer ${endpoint} closed their connection to us", ("endpoint", originating_peer->get_remote_endpoint() ) );
       display_current_connections();
       trigger_p2p_network_connect_loop();
@@ -2359,7 +2386,7 @@ namespace bts { namespace net { namespace detail {
                 _most_recent_blocks_accepted.push_back( block_message_to_process.block_id );
               }
               else
-                dlog( "Already received and accepted this block (presumably through normal inventory mechanism ), treating it as accepted" );
+                dlog( "Already received and accepted this block (presumably through normal inventory mechanism), treating it as accepted" );
 
               client_accepted_block = true;
             }
@@ -3018,6 +3045,12 @@ namespace bts { namespace net { namespace detail {
         _potential_peer_db.update_entry( updated_peer_record );
 
         _handshaking_connections.erase(new_peer);
+        _terminating_connections.erase(new_peer);
+        assert(_active_connections.find(new_peer) == _active_connections.end());
+        _active_connections.erase(new_peer);
+        assert(_closing_connections.find(new_peer) == _closing_connections.end());
+        _closing_connections.erase(new_peer);
+
         display_current_connections();
         trigger_p2p_network_connect_loop();
         schedule_peer_for_deletion(new_peer);
@@ -3280,6 +3313,33 @@ namespace bts { namespace net { namespace detail {
       return get_connection_to_endpoint( remote_endpoint ) != peer_connection_ptr();
     }
 
+    void node_impl::move_peer_to_active_list(const peer_connection_ptr& peer)
+    {
+      VERIFY_CORRECT_THREAD();
+      _active_connections.insert(peer);
+      _handshaking_connections.erase(peer);
+      _closing_connections.erase(peer);
+      _terminating_connections.erase(peer);
+    }
+
+    void node_impl::move_peer_to_closing_list(const peer_connection_ptr& peer)
+    {
+      VERIFY_CORRECT_THREAD();
+      _active_connections.erase(peer);
+      _handshaking_connections.erase(peer);
+      _closing_connections.insert(peer);
+      _terminating_connections.erase(peer);
+    }
+
+    void node_impl::move_peer_to_terminating_list(const peer_connection_ptr& peer)
+    {
+      VERIFY_CORRECT_THREAD();
+      _active_connections.erase(peer);
+      _handshaking_connections.erase(peer);
+      _closing_connections.erase(peer);
+      _terminating_connections.insert(peer);
+    }
+
     void node_impl::dump_node_status()
     {
       VERIFY_CORRECT_THREAD();
@@ -3302,7 +3362,7 @@ namespace bts { namespace net { namespace detail {
       }
 
       ilog( "--------- MEMORY USAGE ------------" );
-      ilog( "node._active_sync_requests size: ${size} (this is known to be broken)", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
+      ilog( "node._active_sync_requests size: ${size}", ("size", _active_sync_requests.size() ) ); // TODO: un-break this
       ilog( "node._received_sync_items size: ${size}", ("size", _received_sync_items.size() ) );
       ilog( "node._items_to_fetch size: ${size}", ("size", _items_to_fetch.size() ) );
       ilog( "node._new_inventory size: ${size}", ("size", _new_inventory.size() ) );
@@ -3325,9 +3385,7 @@ namespace bts { namespace net { namespace detail {
                                           const fc::oexception& error /* = fc::oexception() */ )
     {
       VERIFY_CORRECT_THREAD();
-      _closing_connections.insert( peer_to_disconnect->shared_from_this() );
-      _handshaking_connections.erase( peer_to_disconnect->shared_from_this() );
-      _active_connections.erase( peer_to_disconnect->shared_from_this() );
+      move_peer_to_closing_list(peer_to_disconnect->shared_from_this());
 
       if( peer_to_disconnect->they_have_requested_close )
       {
