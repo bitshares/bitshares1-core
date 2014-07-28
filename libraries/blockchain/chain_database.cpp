@@ -344,6 +344,8 @@ namespace bts { namespace blockchain {
                               )
                               FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
                          }
+                         quote_asset->collected_fees += usd_fees_collected.amount;
+                         _pending_state->store_asset_record( *quote_asset );
                          _pending_state->store_market_status( *market_stat );
                    
                          if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
