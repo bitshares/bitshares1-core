@@ -1,0 +1,70 @@
+default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
+{
+  "expiration": "20140620T164030",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS813o8XNCGxjSvE9zUKRvi1p5SiizkWyWs",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 5,
+        "public_data": null,
+        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6269b547690c268bd1b9c36ee58ee4e5c7cb92a732c4205f4b1cd5487f30ffc82",
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d989f631dbd7220eab98f73e8e767fbc3092eef55fa13f996187b29d63c1c7ee31"
+  ]
+}
+default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR"
+{
+  "expiration": "20140620T164030",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSCYxycACPxN2L78BcRdtSUcomALMaYZiJf",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 6,
+        "public_data": null,
+        "active_key": "XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac",
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749609388bd1f56be029195bf69efb6adf3ef54140ffe65b81655944c994553a568cc",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22929ef7bce27e9539ece073f8994b892017bfdb4a713aa6a63f5c4e83e974c03f"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> transfer 30 XTS delegate0 delegate4
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+OK
+default (unlocked) >>> quit

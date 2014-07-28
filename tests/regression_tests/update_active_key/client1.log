@@ -1,0 +1,10 @@
+default (unlocked) >>> debug_wait_for_block_by_number 2
+OK
+default (unlocked) >>> wallet_import_private_key "5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L" delegate4 true true
+"delegate4"
+default (unlocked) >>> wallet_import_private_key "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR" delegate5 true true
+"delegate5"
+default (unlocked) >>> debug_wait_for_block_by_number 3
+OK
+default (unlocked) >>> wallet_account_balance
+default (unlocked) >>> quit
