@@ -86,6 +86,9 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     const auto fees = info["blockchain_accumulated_fees"].as<share_type>();
     info["blockchain_accumulated_fees"] = client->get_chain()->to_pretty_asset( asset( fees ) );
 
+    const auto share_supply = info["blockchain_share_supply"].as<share_type>();
+    info["blockchain_share_supply"] = client->get_chain()->to_pretty_asset( asset( share_supply ) );
+
     if( !info["ntp_time"].is_null() )
     {
         const auto ntp_time = info["ntp_time"].as<time_point_sec>();
