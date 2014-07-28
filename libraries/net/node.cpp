@@ -2254,9 +2254,12 @@ namespace bts { namespace net { namespace detail {
         std::ostringstream message;
         message << "Peer " << fc::variant( originating_peer->get_remote_endpoint() ).as_string() << 
                   " disconnected us: " << closing_connection_message_received.reason_for_closing;
-
+        fc::exception detailed_error(FC_LOG_MESSAGE(warn, "Peer ${peer} is disconnecting us because of an error: ${msg}, exception: ${error}", 
+                                                    ( "peer", originating_peer->get_remote_endpoint() )
+                                                    ( "msg", closing_connection_message_received.reason_for_closing )
+                                                    ( "error", closing_connection_message_received.error ) ));
         _delegate->error_encountered( message.str(), 
-                                     closing_connection_message_received.error );
+                                      detailed_error );
       }
       else
       {
