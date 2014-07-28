@@ -130,24 +130,30 @@ namespace bts { namespace blockchain {
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
 
-                         // while bootstraping we use this metric
-                         auto median_price = _db_impl.self->get_median_delegate_price( quote_id );
-                         if( !median_price )
-                            FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
-
                          FC_ASSERT( market_stat, "market status should have been set when the order is created" );
 
-                         auto feed_max_short_bid = *median_price;
-                         feed_max_short_bid.ratio *= 3;
-                         feed_max_short_bid.ratio /= 2;
 
-                         auto feed_min_ask = *median_price;
-                         feed_min_ask.ratio *= 2;
-                         feed_min_ask.ratio /= 3;
+                         price max_short_bid;
+                         price min_cover_ask;
 
-                         price max_short_bid = std::min( market_stat->maximum_bid(), feed_max_short_bid );
-                         price min_cover_ask = std::max( market_stat->minimum_ask(), feed_min_ask );
-                         edump( (max_short_bid)(min_cover_ask) );
+                         // while bootstraping we use this metric
+                         auto median_price = _db_impl.self->get_median_delegate_price( quote_id );
+                         if( quote_asset->is_market_issued() )
+                         {
+                            if( !median_price )
+                               FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
+                            auto feed_max_short_bid = *median_price;
+                            feed_max_short_bid.ratio *= 3;
+                            feed_max_short_bid.ratio /= 2;
+
+                            auto feed_min_ask = *median_price;
+                            feed_min_ask.ratio *= 2;
+                            feed_min_ask.ratio /= 3;
+
+                            max_short_bid = std::min( market_stat->maximum_bid(), feed_max_short_bid );
+                            min_cover_ask = std::max( market_stat->minimum_ask(), feed_min_ask );
+                            edump( (max_short_bid)(min_cover_ask) );
+                         }
                    
                          while( get_next_bid() && get_next_ask() )
                          {
@@ -376,6 +382,11 @@ namespace bts { namespace blockchain {
                                _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
                             }
                          } // while bid && ask 
+
+                         if( market_stat->avg_price_24h.ratio == 0 )
+                         {
+                            market_stat->avg_price_24h = *median_price;
+                         }
 
                          if( _current_bid && _current_ask )
                          {
