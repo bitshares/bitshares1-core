@@ -42,30 +42,32 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
-             wallet*                            self;
-             wallet_db                          _wallet_db;
-             chain_database_ptr                 _blockchain;
-             path                               _data_directory;
-             path                               _current_wallet_path;
-             fc::sha512                         _wallet_password;
-             fc::optional<fc::time_point>       _scheduled_lock_time;
-             fc::future<void>                   _relocker_done;
-             bool                               _use_deterministic_one_time_keys;
-             bool                               _delegate_scanning_enabled;
-             fc::future<void>                   _scan_in_progress;
+             wallet*                                    self;
+             wallet_db                                  _wallet_db;
+             chain_database_ptr                         _blockchain;
+             path                                       _data_directory;
+             path                                       _current_wallet_path;
+             fc::sha512                                 _wallet_password;
+             fc::optional<fc::time_point>               _scheduled_lock_time;
+             fc::future<void>                           _relocker_done;
+             bool                                       _use_deterministic_one_time_keys;
+             bool                                       _delegate_scanning_enabled;
+             fc::future<void>                           _scan_in_progress;
 
-             std::unique_ptr<fc::thread>        _scanner_thread;
-             float                              _scan_progress;
+             std::unique_ptr<fc::thread>                _scanner_thread;
+             float                                      _scan_progress;
 
              struct login_record
              {
                  fc::ecc::private_key key;
                  fc::time_point_sec insertion_time;
              };
-             std::map<public_key_type, login_record>  _login_map;
-             fc::future<void>                         _login_map_cleaner_done;
-             const static short                       _login_cleaner_interval_seconds = 60;
-             const static short                       _login_lifetime_seconds = 300;
+             std::map<public_key_type, login_record>    _login_map;
+             fc::future<void>                           _login_map_cleaner_done;
+             const static short                         _login_cleaner_interval_seconds = 60;
+             const static short                         _login_lifetime_seconds = 300;
+
+             vector<function<void( void )>>             _unlocked_upgrade_tasks;
 
              wallet_impl();
              ~wallet_impl();
@@ -134,7 +136,8 @@ namespace bts { namespace wallet {
 
             void login_map_cleaner_task();
 
-            void upgrade_version( uint32_t current_version );
+            void upgrade_version();
+            void upgrade_version_unlocked();
       };
      
       wallet_impl::wallet_impl()
@@ -1059,8 +1062,21 @@ namespace bts { namespace wallet {
                                                  "login_map_cleaner_task");
       }
 
-      void wallet_impl::upgrade_version( uint32_t current_version )
+      void wallet_impl::upgrade_version()
       {
+          auto current_version = uint32_t( 0 );
+          const auto version_property = _wallet_db.get_property( version );
+          if( !version_property.is_null() ) current_version = version_property.as<uint32_t>();
+          if ( current_version > BTS_WALLET_VERSION )
+          {
+              FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
+                                  ("wallet_version",current_version)("supported_version",BTS_WALLET_VERSION) );
+          }
+          else if( current_version == BTS_WALLET_VERSION )
+          {
+              return;
+          }
+
           ulog( "Upgrading wallet..." );
           try
           {
@@ -1069,15 +1085,51 @@ namespace bts { namespace wallet {
               if( current_version < 100 )
               {
                   /* Remove old format genesis claim virtual transactions */
+                  auto removed = false;
                   _blockchain->scan_balances( [&]( const balance_record& bal_rec )
                   {
                        if( !bal_rec.genesis_info.valid() ) return;
-                       self->remove_transaction_record( string( bal_rec.id().addr ) );
+                       const auto id = bal_rec.id().addr;
+                       if( _wallet_db.lookup_transaction( id ).valid() )
+                       {
+                           _wallet_db.remove_transaction( id );
+                           removed = true;
+                       }
                   } );
 
-                  ulog( "Wallet format change. Please unlock your wallet and run: \"wallet_rescan_blockchain 0 1\"" );
+                  if( removed )
+                  {
+                      const function<void( void )> rescan = [&]() { scan_balances(); };
+                      _unlocked_upgrade_tasks.push_back( rescan );
+                  }
               }
 
+              if( _unlocked_upgrade_tasks.empty() )
+              {
+                  _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
+                  ulog( "Wallet successfully upgraded." );
+              }
+              else
+              {
+                  ulog( "Please unlock your wallet to complete the upgrade." );
+              }
+          }
+          catch( ... )
+          {
+              ulog( "Wallet upgrade failure." );
+              throw;
+          }
+      }
+
+      void wallet_impl::upgrade_version_unlocked()
+      {
+          if( _unlocked_upgrade_tasks.empty() ) return;
+
+          ulog( "Continuing wallet upgrade..." );
+          try
+          {
+              for( const auto& task : _unlocked_upgrade_tasks ) task();
+              _unlocked_upgrade_tasks.clear();
               _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
               ulog( "Wallet successfully upgraded." );
           }
@@ -1227,25 +1279,15 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
+      if( is_open() && my->_current_wallet_path == wallet_file_path )
+          return;
+
       try
       {
           close();
           my->_current_wallet_path = wallet_file_path;
           my->_wallet_db.open( wallet_file_path );
-
-          /* Check wallet version */
-          auto current_version = uint32_t( 0 );
-          const auto version_property = my->_wallet_db.get_property( version );
-          if( !version_property.is_null() ) current_version = version_property.as<uint32_t>();
-          if( current_version < BTS_WALLET_VERSION )
-          {
-              my->upgrade_version( current_version );
-          }
-          else if ( current_version > BTS_WALLET_VERSION )
-          {
-              FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
-                                  ("wallet_version",current_version)("supported_version",BTS_WALLET_VERSION) );
-          }
+          my->upgrade_version();
 
           for( const auto& balance_item : my->_wallet_db.get_balances() )
           {
@@ -1389,6 +1431,8 @@ namespace bts { namespace wallet {
           my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
           if( !my->_wallet_db.validate_password( my->_wallet_password ) )
               FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
+
+          my->upgrade_version_unlocked();
 
           my->_scheduled_lock_time = new_lock_time;
           ilog( "Wallet unlocked at time: ${t}", ("t", fc::time_point_sec(now)) );

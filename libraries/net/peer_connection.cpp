@@ -225,6 +225,8 @@ namespace bts { namespace net
     void peer_connection::close_connection()
     {
       negotiation_status = connection_negotiation_status::closing;
+      if (connection_terminated_time != fc::time_point::min())
+        connection_terminated_time = fc::time_point::now();
       _message_connection.close_connection();
     }
 

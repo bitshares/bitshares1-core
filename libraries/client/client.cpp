@@ -526,6 +526,8 @@ config load_config( const fc::path& datadir )
             void start_delegate_loop();
             void cancel_delegate_loop();
             void delegate_loop();
+            void set_target_connections( uint32_t target );
+
             void rebroadcast_pending();
             fc::future<void> _rebroadcast_pending_loop;
 
@@ -699,16 +701,18 @@ config load_config( const fc::path& datadir )
 
        void client_impl::delegate_loop()
        {
-          const auto now = blockchain::now();
-
           if( !_wallet->is_open() || _wallet->is_locked() ) 
-            return;
+              return;
+
           vector<wallet_account_record> enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
           if( enabled_delegates.empty() ) 
-            return;
-          const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
+              return;
 
+          const auto now = blockchain::now();
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
+          set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );
+
+          const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
           if( next_block_time.valid() )
           {
               // delegates don't get to skip this check, they must check up on everyone else
@@ -766,6 +770,13 @@ config load_config( const fc::path& datadir )
             scheduled_time = system_now + fc::seconds( 1 );
 
           _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
+       }
+
+       void client_impl::set_target_connections( uint32_t target )
+       {
+           auto params = fc::mutable_variant_object();
+           params["desired_number_of_connections"] = target;
+           network_set_advanced_node_parameters( params );
        }
 
        vector<account_record> client_impl::blockchain_list_active_delegates( uint32_t first, uint32_t count )const
@@ -943,16 +954,16 @@ config load_config( const fc::path& datadir )
                       FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
                    ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
 
-
-                   auto now = blockchain::now();
+                   fc::time_point_sec now = blockchain::now();
+                   fc::time_point_sec head_block_timestamp = _chain_db->now();
                    if (_cli
                        && result.is_included
-                       && (now - block.timestamp) > fc::minutes(5)
+                       && (now - head_block_timestamp) > fc::minutes(5)
                        && _last_sync_status_message_time < (now - fc::seconds(30)))
                    {
                       std::ostringstream message;
-                      message << "--- syncing with p2p network, our last block was created "
-                              << fc::get_approximate_relative_time_string(block.timestamp);
+                      message << "--- syncing with p2p network, our last block is "
+                              << fc::get_approximate_relative_time_string(head_block_timestamp, now, " old");
                       ulog( message.str() );
                       _last_sync_status_message_time = now;
                    }
@@ -2381,7 +2392,7 @@ config load_config( const fc::path& datadir )
 
       oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       share_type share_supply                                   = share_record ? share_record->current_share_supply : 0;
-      info["blockchain_share_supply"]                           = _chain_db->to_pretty_asset( asset( share_supply ) );
+      info["blockchain_share_supply"]                           = share_supply;
       info["blockchain_random_seed"]                            = _chain_db->get_current_random_seed();
 
       info["blockchain_database_version"]                       = BTS_BLOCKCHAIN_DATABASE_VERSION;
