@@ -89,6 +89,7 @@ namespace bts { namespace net
     public:
       fc::time_point connection_initiation_time;
       fc::time_point connection_closed_time;
+      fc::time_point connection_terminated_time;
       peer_connection_direction direction;
       //connection_state state;
       firewalled_state is_firewalled;
@@ -103,6 +104,7 @@ namespace bts { namespace net
       fc::oexception connection_closed_error;
 
       fc::time_point get_connection_time()const { return _message_connection.get_connection_time(); }
+      fc::time_point get_connection_terminated_time()const { return connection_terminated_time; }
 
       /// data about the peer node
       /// @{
