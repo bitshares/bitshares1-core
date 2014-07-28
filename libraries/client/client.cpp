@@ -943,16 +943,16 @@ config load_config( const fc::path& datadir )
                       FC_THROW_EXCEPTION(bts::blockchain::unlinkable_block, "The blockchain accepted this block, but it isn't linked");
                    ilog("After push_block, current head block is ${num}", ("num", _chain_db->get_head_block_num()));
 
-
-                   auto now = blockchain::now();
+                   fc::time_point_sec now = blockchain::now();
+                   fc::time_point_sec head_block_timestamp = _chain_db->now();
                    if (_cli
                        && result.is_included
-                       && (now - block.timestamp) > fc::minutes(5)
+                       && (now - head_block_timestamp) > fc::minutes(5)
                        && _last_sync_status_message_time < (now - fc::seconds(30)))
                    {
                       std::ostringstream message;
-                      message << "--- syncing with p2p network, our last block was created "
-                              << fc::get_approximate_relative_time_string(block.timestamp);
+                      message << "--- syncing with p2p network, our last block is "
+                              << fc::get_approximate_relative_time_string(head_block_timestamp, now, " old");
                       ulog( message.str() );
                       _last_sync_status_message_time = now;
                    }
