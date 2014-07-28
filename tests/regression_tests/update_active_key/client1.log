@@ -7,4 +7,6 @@ default (unlocked) >>> wallet_import_private_key "5JDQmM7RDjLr7LR9MVceuckKLE61Bf
 default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> wallet_account_balance
+*** This is wrong ***
+No balances found.
 default (unlocked) >>> quit

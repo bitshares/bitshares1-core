@@ -1,3 +1,9 @@
+>>>  debug_enable_output true
+OK
+default (unlocked) >>>  debug_enable_output false
+>>>  wallet_delegate_set_block_production ALL true
+>>>  debug_enable_output true
+OK
 default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
 {
   "expiration": "20140620T164030",
@@ -59,6 +65,9 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> transfer 30 XTS delegate0 delegate4
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
