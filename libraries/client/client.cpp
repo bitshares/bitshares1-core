@@ -526,6 +526,8 @@ config load_config( const fc::path& datadir )
             void start_delegate_loop();
             void cancel_delegate_loop();
             void delegate_loop();
+            void set_target_connections( uint32_t target );
+
             void rebroadcast_pending();
             fc::future<void> _rebroadcast_pending_loop;
 
@@ -699,16 +701,18 @@ config load_config( const fc::path& datadir )
 
        void client_impl::delegate_loop()
        {
-          const auto now = blockchain::now();
-
           if( !_wallet->is_open() || _wallet->is_locked() ) 
-            return;
+              return;
+
           vector<wallet_account_record> enabled_delegates = _wallet->get_my_delegates( enabled_delegate_status );
           if( enabled_delegates.empty() ) 
-            return;
-          const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
+              return;
 
+          const auto now = blockchain::now();
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
+          set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );
+
+          const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
           if( next_block_time.valid() )
           {
               // delegates don't get to skip this check, they must check up on everyone else
@@ -766,6 +770,13 @@ config load_config( const fc::path& datadir )
             scheduled_time = system_now + fc::seconds( 1 );
 
           _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
+       }
+
+       void client_impl::set_target_connections( uint32_t target )
+       {
+           auto params = fc::mutable_variant_object();
+           params["desired_number_of_connections"] = target;
+           network_set_advanced_node_parameters( params );
        }
 
        vector<account_record> client_impl::blockchain_list_active_delegates( uint32_t first, uint32_t count )const
