@@ -84,19 +84,19 @@ namespace bts { namespace keyhotee {
    */
   fc::sha512 stretch_seed( const fc::sha512& seed )
   {
-      fc::thread t("stretch_seed");
-	        fc::sha512 stretched_seed = t.async( [=]() {
-          std::vector<fc::sha512> seeds(1024*1024*4);
-          seeds[0] = seed;
-          for( uint32_t i = 1; i < seeds.size(); ++i )
-          {
-             seeds[i] = fc::sha512::hash((char*)&seeds[i-1], sizeof(fc::sha512) ); 
-          }
-          auto result = fc::sha512::hash( (char*)&seeds[0], sizeof(fc::sha512)*seeds.size() );
-          return result;
-      } ).wait();
-	  t.quit();
-	  return stretched_seed;
+    fc::thread stretch_seed_thread("stretch_seed");
+    fc::sha512 stretched_seed = stretch_seed_thread.async( [=]() {
+      std::vector<fc::sha512> seeds(1024*1024*4);
+      seeds[0] = seed;
+      for( uint32_t i = 1; i < seeds.size(); ++i )
+      {
+        seeds[i] = fc::sha512::hash((char*)&seeds[i-1], sizeof(fc::sha512) ); 
+      }
+      auto result = fc::sha512::hash( (char*)&seeds[0], sizeof(fc::sha512)*seeds.size() );
+      return result;
+    }, "stretch_seed" ).wait();
+    stretch_seed_thread.quit();
+    return stretched_seed;
   }
 
 

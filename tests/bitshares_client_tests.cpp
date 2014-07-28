@@ -182,7 +182,7 @@ void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
         stdouterrfile->write(buf, bytes_read);
         stdouterrfile->flush();
       }
-    });
+    }, "managed_process::stdout_reader");
   stderr_reader_done = fc::async([err_stream,stdouterrfile]()
     {
       char buf[1024];
@@ -194,7 +194,7 @@ void managed_process::log_stdout_stderr_to_file(const fc::path& logfile)
         stdouterrfile->write(buf, bytes_read);
         stdouterrfile->flush();
       }
-    });
+    }, "managed_process::stderr_reader");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -385,7 +385,7 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
   master_wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
     master_wallet->import_private_key(delegate_keys[i], "delegatekeys");
-  master_wallet->scan_state(bts::blockchain::now());
+  master_wallet->scan_state();
 
   // master wallet is created and ready to go.  Fill it with the desired number of blocks
   uint32_t current_block_count = 0;
@@ -417,13 +417,13 @@ void bts_client_launcher_fixture::create_unsynchronized_wallets()
     client_processes[client_index].wallet->unlock(WALLET_PASSPHRASE, UINT32_MAX);
     client_processes[client_index].wallet->create_account("delegatekeys");
     client_processes[client_index].wallet->import_private_key(delegate_keys[client_index], "delegatekeys");
-    client_processes[client_index].wallet->scan_state(bts::blockchain::now());
+    client_processes[client_index].wallet->scan_state();
 
     for (unsigned delegate_index = 0; delegate_index < delegate_keys.size(); ++delegate_index)
       if (delegate_index % client_processes.size() == client_index)
       {
         client_processes[client_index].wallet->import_private_key(delegate_keys[delegate_index], "delegatekeys");
-        client_processes[client_index].wallet->scan_state(bts::blockchain::now());
+        client_processes[client_index].wallet->scan_state();
       }
 
     // this client's wallet and blockchain are initialized.  Now give it some blocks from the master blockchain
@@ -471,7 +471,7 @@ void bts_client_launcher_fixture::create_forked_wallets()
   first_client.wallet->create_account("delegatekeys");
   for (unsigned i = 0; i < delegate_keys.size(); ++i)
     first_client.wallet->import_private_key(delegate_keys[i], "delegatekeys");
-  first_client.wallet->scan_state(bts::blockchain::now());
+  first_client.wallet->scan_state();
 
   uint32_t current_block_count = 0;
   for (current_block_count = 0; current_block_count < initial_block_count; ++current_block_count)
@@ -1360,7 +1360,7 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
   {
     std::vector<uint32_t> final_block_counts;
     for (unsigned i = 0; i < client_processes.size(); ++i)
-      final_block_counts.push_back(client_processes[i].rpc_client->blockchain_get_blockcount());
+      final_block_counts.push_back(client_processes[i].rpc_client->blockchain_get_block_count());
 
     // verify that all clients have the same block count
     std::sort(final_block_counts.begin(), final_block_counts.end());
@@ -1410,9 +1410,9 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
     
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
-      uint32_t head_block_number = client_processes[i].rpc_client->blockchain_get_blockcount();
+      uint32_t head_block_number = client_processes[i].rpc_client->blockchain_get_block_count();
       block_counts_after_fork.push_back(head_block_number);
-      block_hashes_after_fork.push_back(client_processes[i].rpc_client->blockchain_get_blockhash(head_block_number));
+      block_hashes_after_fork.push_back(client_processes[i].rpc_client->blockchain_get_block_hash(head_block_number));
     }
 
     bool even_are_same = true;
@@ -1473,8 +1473,8 @@ BOOST_AUTO_TEST_CASE(simple_fork_resolution_test)
 
     for (unsigned i = 0; i < client_processes.size(); ++i)
     {
-      uint32_t block_num = client_processes[i].rpc_client->blockchain_get_blockcount();
-      block_hashes_after_net_join.push_back(client_processes[i].rpc_client->blockchain_get_blockhash(block_num));
+      uint32_t block_num = client_processes[i].rpc_client->blockchain_get_block_count();
+      block_hashes_after_net_join.push_back(client_processes[i].rpc_client->blockchain_get_block_hash(block_num));
     }
 
     bool all_are_in_sync = true;

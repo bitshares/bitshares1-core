@@ -4,6 +4,8 @@
 #include <fc/exception/exception.hpp>
 #include <fc/network/ntp.hpp>
 
+#include <atomic>
+
 namespace bts { namespace blockchain {
 
 static int32_t simulated_time    = 0;
@@ -11,19 +13,32 @@ static int32_t adjusted_time_sec = 0;
 
 time_discontinuity_signal_type time_discontinuity_signal;
 
+namespace detail
+{
+  std::atomic<fc::ntp*> ntp_service(nullptr);
+}
+
 fc::optional<fc::time_point> ntp_time()
 {
-   static fc::ntp* ntp_service = nullptr;
-   if( ntp_service == nullptr )
-   {
-      // TODO: allocate, then atomic swap and
-      // free on failure... remove sync calls from
-      // constructor of ntp() and into a "start" method
-      // that is called only if we get a successful 
-      // atomic swap.
-      ntp_service = new fc::ntp();
-   }
-   return ntp_service->get_time();
+  fc::ntp* actual_ntp_service = detail::ntp_service.load();
+  if (!actual_ntp_service)
+  {
+    actual_ntp_service = new fc::ntp;
+    fc::ntp* old_ntp_service = nullptr;
+    bool exchanged = detail::ntp_service.compare_exchange_strong(old_ntp_service, actual_ntp_service);
+    if (!exchanged)
+    {
+      delete actual_ntp_service;
+      actual_ntp_service = old_ntp_service;
+    }
+  }
+  return actual_ntp_service->get_time();
+}
+
+void shutdown_ntp_time()
+{
+  fc::ntp* actual_ntp_service = detail::ntp_service.exchange(nullptr);
+  delete actual_ntp_service;
 }
 
 fc::time_point_sec now()
@@ -31,17 +46,18 @@ fc::time_point_sec now()
    if( simulated_time )
        return fc::time_point() + fc::seconds( simulated_time + adjusted_time_sec );
 
-   auto ntp = ntp_time();
-   if( ntp.valid() )
-      return *ntp + fc::seconds( adjusted_time_sec );
+   fc::optional<fc::time_point> current_ntp_time = ntp_time();
+   if( current_ntp_time.valid() )
+      return *current_ntp_time + fc::seconds( adjusted_time_sec );
    else
       return fc::time_point::now() + fc::seconds( adjusted_time_sec );
 }
 
 fc::microseconds ntp_error()
 {
-   FC_ASSERT( ntp_time().valid(), "We don't have NTP time!" );
-   return *ntp_time() - fc::time_point::now();
+  fc::optional<fc::time_point> current_ntp_time = ntp_time();
+  FC_ASSERT( current_ntp_time, "We don't have NTP time!" );
+  return *current_ntp_time - fc::time_point::now();
 }
 
 void start_simulated_time( const fc::time_point& sim_time )

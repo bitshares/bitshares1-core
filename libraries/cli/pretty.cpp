@@ -2,7 +2,6 @@
 #include <bts/cli/pretty.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <iomanip>
 #include <iostream>
@@ -25,28 +24,10 @@ string pretty_shorten( const string& str, size_t max_size )
     return str;
 }
 
-/*
-#include <codecvt>
-string pretty_align_utf8( const string& str, int width )
-{
-    std::stringstream ss;
-    ss << std::left;
-
-    auto str_size = str.size();
-    auto str_wsize = std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t>().from_bytes( str ).size();
-
-    if( str_size > str_wsize ) width += str_wsize;
-    ss << std::setw( width ) << pretty_shorten( str, width - 1 );
-
-    return ss.str();
-}
-*/
-
 string pretty_timestamp( const time_point_sec& timestamp )
 {
     if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    auto ptime = boost::posix_time::from_time_t( time_t ( timestamp.sec_since_epoch() ) );
-    return boost::posix_time::to_iso_extended_string( ptime );
+    return timestamp.to_iso_extended_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
@@ -135,35 +116,78 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     return out.str();
 }
 
-string pretty_blockchain_config( fc::mutable_variant_object config, cptr client )
+string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
 {
     FC_ASSERT( client != nullptr );
 
     std::stringstream out;
     out << std::left;
 
-    const auto timestamp = config["genesis_timestamp"].as<time_point_sec>();
-    config["genesis_timestamp"] = pretty_timestamp( timestamp );
+    const auto timestamp = info["genesis_timestamp"].as<time_point_sec>();
+    info["genesis_timestamp"] = pretty_timestamp( timestamp );
 
-    const auto min_fee = config["min_block_fee"].as<share_type>();
-    config["min_block_fee"] = client->get_chain()->to_pretty_asset( asset( min_fee ) );
+    const auto min_fee = info["min_block_fee"].as<share_type>();
+    info["min_block_fee"] = client->get_chain()->to_pretty_asset( asset( min_fee ) );
 
-    const auto inactivity_fee = config["inactivity_fee_apr"].as<share_type>();
-    config["inactivity_fee_apr"] = client->get_chain()->to_pretty_asset( asset( inactivity_fee ) );
+    const auto inactivity_fee = info["inactivity_fee_apr"].as<share_type>();
+    info["inactivity_fee_apr"] = client->get_chain()->to_pretty_asset( asset( inactivity_fee ) );
 
-    const auto priority_fee = config["priority_fee"].as<share_type>();
-    config["priority_fee"] = client->get_chain()->to_pretty_asset( asset( priority_fee ) );
+    const auto priority_fee = info["priority_fee"].as<share_type>();
+    info["priority_fee"] = client->get_chain()->to_pretty_asset( asset( priority_fee ) );
 
-    const auto delegate_reg_fee = config["delegate_reg_fee"].as<share_type>();
-    config["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
+    const auto delegate_reg_fee = info["delegate_reg_fee"].as<share_type>();
+    info["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
 
-    const auto asset_reg_fee = config["asset_reg_fee"].as<share_type>();
-    config["asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( asset_reg_fee ) );
+    const auto asset_reg_fee = info["asset_reg_fee"].as<share_type>();
+    info["asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( asset_reg_fee ) );
 
-    const auto min_market_depth = config["min_market_depth"].as<share_type>();
-    config["min_market_depth"] = client->get_chain()->to_pretty_asset( asset( min_market_depth ) );
+    const auto min_market_depth = info["min_market_depth"].as<share_type>();
+    info["min_market_depth"] = client->get_chain()->to_pretty_asset( asset( min_market_depth ) );
 
-    out << fc::json::to_pretty_string( config ) << "\n";
+    out << fc::json::to_pretty_string( info ) << "\n";
+    return out.str();
+}
+
+string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
+{
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    if( !info["unlocked_until_timestamp"].is_null() )
+    {
+        const auto unlocked_until_timestamp = info["unlocked_until_timestamp"].as<time_point_sec>();
+        info["unlocked_until_timestamp"] = pretty_timestamp( unlocked_until_timestamp );
+
+        if( !info["unlocked_until"].is_null() )
+            info["unlocked_until"] = pretty_age( unlocked_until_timestamp, true );
+    }
+
+    if( !info["scan_progress"].is_null() )
+    {
+        const auto scan_progress = info["scan_progress"].as<float>();
+        info["scan_progress"] = pretty_percent( scan_progress, 1 );
+    }
+
+    if( !info["priority_fee"].is_null() )
+    {
+        const auto priority_fee = info["priority_fee"].as<asset>();
+        info["priority_fee"] = client->get_chain()->to_pretty_asset( priority_fee );
+    }
+
+    if( !info["next_block_production_timestamp"].is_null() )
+    {
+        const auto next_block_timestamp = info["next_block_production_timestamp"].as<time_point_sec>();
+        info["next_block_production_timestamp"] = pretty_timestamp( next_block_timestamp );
+
+        if( !info["next_block_production_time"].is_null() )
+        {
+            info["next_block_production_time"] = pretty_age( next_block_timestamp, true );
+        }
+    }
+
+    out << fc::json::to_pretty_string( info ) << "\n";
     return out.str();
 }
 
