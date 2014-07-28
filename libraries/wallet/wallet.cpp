@@ -1084,8 +1084,8 @@ namespace bts { namespace wallet {
 
               if( current_version < 100 )
               {
-                  auto removed = false;
                   /* Remove old format genesis claim virtual transactions */
+                  auto removed = false;
                   _blockchain->scan_balances( [&]( const balance_record& bal_rec )
                   {
                        if( !bal_rec.genesis_info.valid() ) return;
@@ -1278,6 +1278,9 @@ namespace bts { namespace wallet {
    { try {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
+
+      if( is_open() && my->_current_wallet_path == wallet_file_path )
+          return;
 
       try
       {
