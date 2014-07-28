@@ -30,14 +30,14 @@ public:
     _connection(bts::net::peer_connection::make_shared(this)),
     _connection_was_rejected(false),
     _done(false),
-    _probe_complete_promise(fc::promise<void>::ptr(new fc::promise<void>()))
+    _probe_complete_promise(fc::promise<void>::ptr(new fc::promise<void>("probe_complete")))
   {}
 
   void start(const fc::ip::endpoint& endpoint_to_probe, 
              const fc::ecc::private_key& my_node_id,
              const bts::blockchain::digest_type& chain_id)
   {
-    fc::future<void> connect_task = fc::async([=](){ _connection->connect_to(endpoint_to_probe); });
+    fc::future<void> connect_task = fc::async([=](){ _connection->connect_to(endpoint_to_probe); }, "connect_task");
     try
     {
       connect_task.wait(fc::seconds(10));
