@@ -2392,7 +2392,7 @@ config load_config( const fc::path& datadir )
 
       oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
       share_type share_supply                                   = share_record ? share_record->current_share_supply : 0;
-      info["blockchain_share_supply"]                           = _chain_db->to_pretty_asset( asset( share_supply ) );
+      info["blockchain_share_supply"]                           = share_supply;
       info["blockchain_random_seed"]                            = _chain_db->get_current_random_seed();
 
       info["blockchain_database_version"]                       = BTS_BLOCKCHAIN_DATABASE_VERSION;
