@@ -303,7 +303,6 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     return cfg;
 }
 
-
 fc::path get_data_dir(const program_options::variables_map& option_variables)
 { try {
    fc::path datadir;
@@ -2403,6 +2402,11 @@ config load_config( const fc::path& datadir )
       info["blockchain_database_version"]                       = BTS_BLOCKCHAIN_DATABASE_VERSION;
       info["blockchain_version"]                                = BTS_BLOCKCHAIN_VERSION;
 
+      /* Client */
+      info["client_data_dir"]                                   = fc::absolute( _data_dir );
+      //info["client_httpd_port"]                                 = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
+      //info["client_rpc_port"]                                   = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+
       /* Network */
       info["network_num_connections"]                           = network_get_connection_count();
       fc::variant_object advanced_params                        = network_get_advanced_node_parameters();
@@ -2457,10 +2461,6 @@ config load_config( const fc::path& datadir )
       }
 
       info["wallet_version"]                                    = BTS_WALLET_VERSION;
-
-      /* Client */
-      //info["client_httpd_port"]                                 = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
-      //info["client_rpc_port"]                                   = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
 
       return info;
     }

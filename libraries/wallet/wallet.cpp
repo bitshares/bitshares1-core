@@ -4667,7 +4667,7 @@ namespace bts { namespace wallet {
        const auto is_open                               = this->is_open();
        info["open"]                                     = is_open;
 
-       info["path"]                                     = variant();
+       info["name"]                                     = variant();
 
        info["unlocked"]                                 = variant();
        info["unlocked_until"]                           = variant();
@@ -4686,7 +4686,7 @@ namespace bts { namespace wallet {
 
        if( is_open )
        {
-         info["path"]                                   = fc::absolute( my->_current_wallet_path );
+         info["name"]                                   = my->_current_wallet_path.filename().string();
 
          info["unlocked"]                               = is_unlocked();
 

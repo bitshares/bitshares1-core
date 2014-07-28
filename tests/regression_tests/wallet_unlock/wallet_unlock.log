@@ -10,7 +10,7 @@ default (locked) >>> wallet_get_info
 {
   "data_dir": "[redacted]",
   "open": true,
-  "path": "[redacted]",
+  "name": "default",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
@@ -56,7 +56,7 @@ default (unlocked) >>> wallet_get_info
 {
   "data_dir": "[redacted]",
   "open": true,
-  "path": "[redacted]",
+  "name": "default",
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
@@ -75,7 +75,7 @@ default (locked) >>> wallet_get_info
 {
   "data_dir": "[redacted]",
   "open": true,
-  "path": "[redacted]",
+  "name": "default",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,

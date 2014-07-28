@@ -95,6 +95,9 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     const auto share_supply = info["blockchain_share_supply"].as<share_type>();
     info["blockchain_share_supply"] = client->get_chain()->to_pretty_asset( asset( share_supply ) );
 
+    const auto data_dir = info["data_dir"].as<path>();
+    info["data_dir"] = pretty_path( data_dir );
+
     if( !info["ntp_time"].is_null() )
     {
         const auto ntp_time = info["ntp_time"].as<time_point_sec>();
@@ -166,12 +169,6 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
 
     const auto data_dir = info["data_dir"].as<path>();
     info["data_dir"] = pretty_path( data_dir );
-
-    if( !info["path"].is_null() )
-    {
-        const auto wallet_path = info["path"].as<path>();
-        info["path"] = pretty_path( wallet_path );
-    }
 
     if( !info["unlocked_until_timestamp"].is_null() )
     {
