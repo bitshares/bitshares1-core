@@ -1,8 +1,5 @@
-default (unlocked) >>> wallet_account_create test
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
-test                               XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           NO                    NO             0         
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
 default (unlocked) >>> help wallet_dump_private_key
 Usage:
 wallet_dump_private_key <input>                                                                       Reveals the private key corresponding to an account, public key, or address
@@ -15,10 +12,26 @@ Returns:
   string
 
 aliases: dump_private_key, dumpprivkey
-default (unlocked) >>> wallet_dump_private_key test
+default (unlocked) >>> wallet_account_create testaccount
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           testaccount         100.00000 XTS                                                       0.10000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> balance testaccount
+No balances found.
+default (unlocked) >>> wallet_delegate_set_block_production ALL false
+OK
+default (unlocked) >>> wallet_rescan_blockchain
+Rescanning blockchain...
+Scan complete.
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_dump_private_key testaccount XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 "5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
-default (unlocked) >>> wallet_dump_private_key XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
-"5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
-default (unlocked) >>> wallet_dump_private_key test2
-"key not found"
 default (unlocked) >>> quit
