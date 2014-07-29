@@ -61,7 +61,7 @@ namespace bts { namespace wallet {
          void    set_data_directory( const path& data_dir );
          path    get_data_directory()const;
 
-         void    create( const string& wallet_name, 
+         void    create( const string& wallet_name,
                          const string& password,
                          const string& brainkey = string() );
 
@@ -83,7 +83,23 @@ namespace bts { namespace wallet {
 
          void    auto_backup( const string& reason )const;
          ///@}
-         
+
+         /**
+          *  Properties
+          */
+         ///@{
+
+         void    set_automatic_backups( bool enabled );
+         bool    get_automatic_backups()const;
+
+         void    set_transaction_scanning( bool enabled );
+         bool    get_transaction_scanning()const;
+
+         void    set_priority_fee( const asset& fee );
+         asset   get_priority_fee()const;
+
+         ///@}
+
          /**
           *  Lock management & security
           */
@@ -104,7 +120,7 @@ namespace bts { namespace wallet {
          /**
           *  @name Utility Methods
           */
-         ///@{ 
+         ///@{
          delegate_slate select_delegate_vote( vote_selection_method selection = vote_random );
 
          bool is_receive_account( const string& account_name )const;
@@ -121,9 +137,6 @@ namespace bts { namespace wallet {
 
          public_key_summary get_public_key_summary( const public_key_type& pubkey ) const;
          vector<public_key_type> get_public_keys_in_account( const string& account_name )const;
-         
-         void    set_priority_fee( const asset& fee );
-         asset   get_priority_fee()const;
          ///@}
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
@@ -142,7 +155,7 @@ namespace bts { namespace wallet {
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
          ///@{ account management
-         public_key_type  create_account( const string& account_name, 
+         public_key_type  create_account( const string& account_name,
                                           const variant& private_data = variant() );
 
          void account_set_favorite ( const string& account_name,
@@ -154,20 +167,20 @@ namespace bts { namespace wallet {
          /**
           *  A contact is an account for which we do not have the private key.
           */
-         void     add_contact_account( const string& account_name, 
+         void     add_contact_account( const string& account_name,
                                        const public_key_type& key,
                                        const variant& private_data = variant() );
 
          void     remove_contact_account( const string& account_name );
 
-         void     rename_account( const string& old_contact_name, 
+         void     rename_account( const string& old_contact_name,
                                   const string& new_contact_name );
 
          owallet_account_record  get_account_for_address( address addr );
-         ///@}  
-         
-         /** 
-          * Return general information about the wallet 
+         ///@}
+
+         /**
+          * Return general information about the wallet
           **/
          variant get_info()const;
 
@@ -176,7 +189,6 @@ namespace bts { namespace wallet {
           */
          ///@{
          void set_delegate_block_production( const string& delegate_id, bool enabled = true );
-         void set_delegate_transaction_scanning( bool enabled = false );
 
          ///@param delegates_to_retrieve Type is delegate_status_flags. Uses int type to allow ORing multiple flags
          vector<wallet_account_record> get_my_delegates( int delegates_to_retrieve = any_delegate_status )const;
@@ -212,7 +224,7 @@ namespace bts { namespace wallet {
          void import_armory_wallet( const path& wallet_dat,
                                      const string& wallet_dat_passphrase,
                                      const string& account_name );
-       
+
          void import_keyhotee( const string& firstname,
                             const string& middlename,
                             const string& lastname,
@@ -223,7 +235,7 @@ namespace bts { namespace wallet {
                                              const string& account_name,
                                              bool create_account = false );
 
-         public_key_type import_wif_private_key( const string& wif_key, 
+         public_key_type import_wif_private_key( const string& wif_key,
                                                  const string& account_name,
                                                  bool create_account = false );
          ///@}
@@ -255,7 +267,7 @@ namespace bts { namespace wallet {
                                           const string& from_account_name,
                                           const address& to_address,
                                           const string& memo_message,
-                                          vote_selection_method selection_method, 
+                                          vote_selection_method selection_method,
                                           bool sign );
          /**
           * This transfer works like a bitcoin sendmany transaction combining multiple inputs
@@ -276,7 +288,7 @@ namespace bts { namespace wallet {
                                               const string& from_account_name,
                                               const string& to_account_name,
                                               const string& memo_message,
-                                              vote_selection_method m, 
+                                              vote_selection_method m,
                                               bool sign );
 
          signed_transaction  withdraw_delegate_pay( const string& delegate_name,
@@ -295,8 +307,8 @@ namespace bts { namespace wallet {
                                            bool is_market_issued = false,
                                            bool sign = true );
 
-         signed_transaction  issue_asset( double amount, 
-                                          const string& symbol,                                               
+         signed_transaction  issue_asset( double amount,
+                                          const string& symbol,
                                           const string& to_account_name,
                                           const string& memo_message,
                                           bool sign = true );
@@ -307,7 +319,7 @@ namespace bts { namespace wallet {
           *  Requires the user have 6003.4 USD
           */
          signed_transaction  submit_bid( const string& from_account_name,
-                                         double real_quantity, 
+                                         double real_quantity,
                                          const string& quantity_symbol,
                                          double price_per_unit,
                                          const string& quote_symbol,
@@ -319,7 +331,7 @@ namespace bts { namespace wallet {
           *  Requires the user have 10 BTC + fees
           */
          signed_transaction  submit_ask( const string& from_account_name,
-                                         double real_quantity, 
+                                         double real_quantity,
                                          const string& quantity_symbol,
                                          double price_per_unit,
                                          const string& quote_symbol,
@@ -331,7 +343,7 @@ namespace bts { namespace wallet {
           *  Requires the user have 10 / 600.34 XTS + fees
           */
          signed_transaction  submit_short( const string& from_account_name,
-                                         double real_quantity_usd, 
+                                         double real_quantity_usd,
                                          double price_per_unit,
                                          const string& quote_symbol,
                                          bool sign = true );
@@ -373,8 +385,8 @@ namespace bts { namespace wallet {
                                              const variant& data,
                                              bool sign = true );
 
-         signed_transaction vote_proposal( const string& delegate_account_name, 
-                                           proposal_id_type proposal_id, 
+         signed_transaction vote_proposal( const string& delegate_account_name,
+                                           proposal_id_type proposal_id,
                                            proposal_vote::vote_type vote,
                                            const string& message = string(),
                                            bool sign = true);
@@ -401,7 +413,7 @@ namespace bts { namespace wallet {
          unordered_map<address,string>    get_receive_addresses()const;
          unordered_map<address,string>    get_send_addresses()const;
          */
-         
+
          account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
