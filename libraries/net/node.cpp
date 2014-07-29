@@ -2254,9 +2254,12 @@ namespace bts { namespace net { namespace detail {
         std::ostringstream message;
         message << "Peer " << fc::variant( originating_peer->get_remote_endpoint() ).as_string() << 
                   " disconnected us: " << closing_connection_message_received.reason_for_closing;
-
+        fc::exception detailed_error(FC_LOG_MESSAGE(warn, "Peer ${peer} is disconnecting us because of an error: ${msg}, exception: ${error}", 
+                                                    ( "peer", originating_peer->get_remote_endpoint() )
+                                                    ( "msg", closing_connection_message_received.reason_for_closing )
+                                                    ( "error", closing_connection_message_received.error ) ));
         _delegate->error_encountered( message.str(), 
-                                     closing_connection_message_received.error );
+                                      detailed_error );
       }
       else
       {
@@ -3172,25 +3175,22 @@ namespace bts { namespace net { namespace detail {
           {
             if( _node_configuration.wait_if_endpoint_is_busy )
             {
-              std::ostringstream error_message;
-              //error_message << "Unable to listen for connections on port " << _node_configuration.listen_endpoint.port()
-              //              << ", retrying in a few seconds";
-              // I think the right thing to do here is to send the delegate an error_encountered message: 
-              //   _delegate->error_encountered( error_message.str(), fc::oexception() );
-              // but we don't have the CLI fully initialized at this point, so the message gets discarded.
-              // for now, just cout it
+              std::ostringstream error_message_stream;
               if( first )
               {
-                std::cout << "Unable to listen for connections on port " << listen_endpoint.port() 
-                          << ", retrying in a few seconds\n";
-                std::cout << "You can wait for it to become available, or restart this program using\n";
-                std::cout << "the --p2p-port option to specify another port\n";
+                error_message_stream << "Unable to listen for connections on port " << listen_endpoint.port() 
+                                     << ", retrying in a few seconds\n";
+                error_message_stream << "You can wait for it to become available, or restart this program using\n";
+                error_message_stream << "the --p2p-port option to specify another port\n";
                 first = false;
               }
               else
               {
-                std::cout << "\nStill waiting for port " << listen_endpoint.port() << " to become available\n";
+                error_message_stream << "\nStill waiting for port " << listen_endpoint.port() << " to become available\n";
               }
+              std::string error_message = error_message_stream.str();
+              ulog(error_message);
+              _delegate->error_encountered( error_message, fc::oexception() );
               fc::usleep( fc::seconds(5 ) );
             }
             else // don't wait, just find a random port

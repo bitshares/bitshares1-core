@@ -2046,60 +2046,7 @@ config load_config( const fc::path& datadir )
       }
       // else we use the default set in bts::net::node
 
-      // start listening.  this just finds a port and binds it, it doesn't start
-      // accepting connections until connect_to_p2p_network()
-      listen_to_p2p_network();
-
-      if( option_variables["upnp"].as<bool>() )
-      {
-        std::cout << "Attempting to map P2P port " << get_p2p_listening_endpoint().port() << " with UPNP...\n";
-        my->_upnp_service = std::unique_ptr<bts::net::upnp_service>(new bts::net::upnp_service);
-        my->_upnp_service->map_port( get_p2p_listening_endpoint().port() );
-        fc::usleep( fc::seconds(3) );
-      }
-
-      if (option_variables.count("total-bandwidth-limit"))
-        get_node()->set_total_bandwidth_limit(option_variables["total-bandwidth-limit"].as<uint32_t>(),
-                                              option_variables["total-bandwidth-limit"].as<uint32_t>());
-
-      if (option_variables.count("disable-peer-advertising"))
-        get_node()->disable_peer_advertising();
-
-      if (option_variables.count("clear-peer-database"))
-      {
-        std::cout << "Erasing old peer database\n";
-        get_node()->clear_peer_database();
-      }
-
-      // fire up the p2p ,
-      connect_to_p2p_network();
-      fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
-      std::cout << "Listening for P2P connections on ";
-      if (actual_p2p_endpoint.get_address() == fc::ip::address())
-        std::cout << "port " << actual_p2p_endpoint.port();
-      else
-        std::cout << (string)actual_p2p_endpoint;
-      if (option_variables.count("p2p-port"))
-      {
-        uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
-        if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
-          std::cout << " (unable to bind to the desired port " << p2p_port << ")";
-      }
-      std::cout << "\n";
-
-
-      if (option_variables.count("connect-to"))
-      {
-        std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
-        for( auto peer : hosts )
-          this->connect_to_peer( peer );
-      }
-      else if (!option_variables.count("disable-default-peers"))
-      {
-        for (string default_peer : my->_config.default_peers)
-          this->connect_to_peer(default_peer);
-      }
-
+      //initialize cli
       if( option_variables.count("daemon") || my->_config.ignore_console )
       {
         std::cout << "Running in daemon mode, ignoring console\n";
@@ -2130,8 +2077,8 @@ config load_config( const fc::path& datadir )
         }
         else
         {
-            std::cout << "Logging commands to: " << console_log_file.string() << "\n";
             /* Tee cli output to the console and a log file */
+            ulog("Logging commands to: ${file}" ,("file",console_log_file.string()));
             my->_console_log.open(console_log_file.string());
             my->_tee_device.reset(new TeeDevice(std::cout, my->_console_log));;
             my->_tee_stream.reset(new TeeStream(*my->_tee_device.get()));
@@ -2142,7 +2089,62 @@ config load_config( const fc::path& datadir )
         }
       } //end else we will accept input from the console
 
-    }
+
+      // start listening.  this just finds a port and binds it, it doesn't start
+      // accepting connections until connect_to_p2p_network()
+      listen_to_p2p_network();
+
+      if( option_variables["upnp"].as<bool>() )
+      {
+        ulog("Attempting to map P2P port ${port} with UPNP...",("port",get_p2p_listening_endpoint().port()));
+        my->_upnp_service = std::unique_ptr<bts::net::upnp_service>(new bts::net::upnp_service);
+        my->_upnp_service->map_port( get_p2p_listening_endpoint().port() );
+        fc::usleep( fc::seconds(3) );
+      }
+
+      if (option_variables.count("total-bandwidth-limit"))
+        get_node()->set_total_bandwidth_limit(option_variables["total-bandwidth-limit"].as<uint32_t>(),
+                                              option_variables["total-bandwidth-limit"].as<uint32_t>());
+
+      if (option_variables.count("disable-peer-advertising"))
+        get_node()->disable_peer_advertising();
+
+      if (option_variables.count("clear-peer-database"))
+      {
+        ulog("Erasing old peer database");
+        get_node()->clear_peer_database();
+      }
+
+      // fire up the p2p network
+      connect_to_p2p_network();
+      fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
+      std::ostringstream port_stream;
+      if (actual_p2p_endpoint.get_address() == fc::ip::address())
+        port_stream << "port " << actual_p2p_endpoint.port();
+      else
+        port_stream << (string)actual_p2p_endpoint;
+      ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
+      if (option_variables.count("p2p-port"))
+      {
+        uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
+        if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
+          ulog(" (unable to bind to the desired port ${ptp_port} )", ("p2p_port",p2p_port));
+      }
+
+
+      if (option_variables.count("connect-to"))
+      {
+        std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
+        for( auto peer : hosts )
+          this->connect_to_peer( peer );
+      }
+      else if (!option_variables.count("disable-default-peers"))
+      {
+        for (string default_peer : my->_config.default_peers)
+          this->connect_to_peer(default_peer);
+      }
+
+    } //configure_from_command_line
 
     fc::future<void> client::start()
     {
@@ -2880,14 +2882,18 @@ config load_config( const fc::path& datadir )
    void client_impl::debug_clear_errors( const fc::time_point& start_time, int32_t first_error_number, uint32_t limit )
    {
       auto itr = _exception_db.lower_bound( start_time );
-      while( itr.valid() )
+      //skip to first error to clear
+      while (itr.valid() && first_error_number > 1)
       {
-         if (--first_error_number)
-             continue;
-         _exception_db.remove(itr.key());
-         ++itr;
-         if (--limit == 0)
-             break;
+        --first_error_number;
+        ++itr;
+      }
+      //clear the desired errors
+      while( itr.valid() && limit > 0)
+      {
+        _exception_db.remove(itr.key());
+        --limit;
+        ++itr;
       }
    }
 
