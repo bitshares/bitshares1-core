@@ -52,6 +52,10 @@
 #include <boost/iostreams/stream.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/rolling_mean.hpp>
+
 #include <iostream>
 #include <algorithm>
 #include <fstream>
@@ -491,7 +495,12 @@ config load_config( const fc::path& datadir )
                   client_impl&          _client_impl;
             };
 
-            client_impl(bts::client::client* self) : _self(self)
+            client_impl(bts::client::client* self) : 
+              _self(self),
+              _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5),
+              _last_sync_status_message_indicated_in_sync(true),
+              _last_sync_status_head_block(0),
+              _remaining_items_to_sync(0)
             { try {
                 _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
                 fc::logger::get( "user" ).add_appender( _user_appender );
@@ -593,6 +602,10 @@ config load_config( const fc::path& datadir )
             wallet_ptr                                              _wallet;
             fc::future<void>                                        _delegate_loop_complete;
             fc::time_point                                          _last_sync_status_message_time;
+            bool                                                    _last_sync_status_message_indicated_in_sync;
+            uint32_t                                                _last_sync_status_head_block;
+            uint32_t                                                _remaining_items_to_sync;
+            boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > _sync_speed_accumulator;
 
             config                                                  _config;
             logging_exception_db                                    _exception_db;
@@ -919,7 +932,7 @@ config load_config( const fc::path& datadir )
             }
           }
           _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
-                                                    fc::time_point::now() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3),
+                                                    fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
                                                     "rebroadcast_pending" );
        }
 
@@ -933,6 +946,8 @@ config load_config( const fc::path& datadir )
          try
          {
             _sync_mode = sync_mode;
+            if (sync_mode && _remaining_items_to_sync > 0)
+              --_remaining_items_to_sync;
             try
             {
               FC_ASSERT( !_simulate_disconnect );
@@ -967,7 +982,32 @@ config load_config( const fc::path& datadir )
                       message << "--- syncing with p2p network, our last block is "
                               << fc::get_approximate_relative_time_string(head_block_timestamp, now, " old");
                       ulog( message.str() );
+                      uint32_t current_head_block_num = _chain_db->get_head_block_num();
+                      if (_last_sync_status_message_time > (now - fc::seconds(60)) &&
+                          _last_sync_status_head_block != 0 &&
+                          current_head_block_num > _last_sync_status_head_block)
+                      {
+                        uint32_t seconds_since_last_status_message = (uint32_t)((fc::time_point(now) - _last_sync_status_message_time).count() / fc::seconds(1).count());
+                        uint32_t blocks_since_last_status_message = current_head_block_num - _last_sync_status_head_block;
+                        double current_sync_speed_in_blocks_per_sec = (double)blocks_since_last_status_message / seconds_since_last_status_message;
+                        _sync_speed_accumulator(current_sync_speed_in_blocks_per_sec);
+                        double average_sync_speed = boost::accumulators::rolling_mean(_sync_speed_accumulator);
+                        double remaining_seconds_to_sync = _remaining_items_to_sync / average_sync_speed;
+
+                        std::ostringstream speed_message;
+                        speed_message << "--- currently syncing at ";
+                        if (average_sync_speed >= 10.)
+                          speed_message << (int)average_sync_speed << " blocks/sec, ";
+                        else if (average_sync_speed >= 0.1)
+                          speed_message << std::setprecision(2) << average_sync_speed << " blocks/sec, ";
+                        else if (average_sync_speed >= 0.1)
+                          speed_message << (int)(1./average_sync_speed) << " sec/block, ";
+                        speed_message << fc::get_approximate_relative_time_string(fc::time_point::now(), fc::time_point::now() + fc::seconds((int64_t)remaining_seconds_to_sync), "") << " remaining";
+                        ulog(speed_message.str());
+                      }
                       _last_sync_status_message_time = now;
+                      _last_sync_status_head_block = current_head_block_num;
+                      _last_sync_status_message_indicated_in_sync = false;
                    }
 
                    return result;
@@ -1285,19 +1325,31 @@ config load_config( const fc::path& datadir )
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
-         _in_sync = ( item_count <= 0 );
+         _in_sync = item_count == 0;
+         _remaining_items_to_sync = item_count;
 
-         const auto now = blockchain::now();
-         if (_cli && _last_sync_status_message_time < (now - fc::seconds(10)))
+         fc::time_point now = fc::time_point::now();
+         if (_cli)
          {
-           std::ostringstream message;
-           if (item_count > 100)
-              message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
-           else if (item_count == 0)
-              message << "--- in sync with p2p network";
-           if (!message.str().empty())
-               ulog( message.str() );
-           _last_sync_status_message_time = now;
+           if (_in_sync && !_last_sync_status_message_indicated_in_sync)
+           {
+             ulog( "--- in sync with p2p network" );
+             _last_sync_status_message_time = now;
+             _last_sync_status_message_indicated_in_sync = true;
+             _last_sync_status_head_block = 0;
+           }
+           else if (!_in_sync &&
+                    item_count >= 100 && // if we're only a few blocks out of sync, don't bother the user about it
+                    _last_sync_status_message_indicated_in_sync && 
+                    _last_sync_status_message_time < now - fc::seconds(30))
+           {
+             std::ostringstream message;
+             message << "--- syncing with p2p network, " << item_count << " blocks left to fetch";
+             ulog( message.str() );
+             _last_sync_status_message_time = now;
+             _last_sync_status_message_indicated_in_sync = false;
+             _last_sync_status_head_block = _chain_db->get_head_block_num();
+           }
          }
        }
 
