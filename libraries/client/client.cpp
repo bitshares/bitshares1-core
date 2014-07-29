@@ -1763,6 +1763,11 @@ config load_config( const fc::path& datadir )
       return _wallet->get_account_approval( account_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval",approval) ) }
 
+    int8_t detail::client_impl::wallet_account_get_approval( const string& account_name )
+    { try {
+      return _wallet->get_account_approval( account_name );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
     otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
       auto id = variant( transaction_id ).as<transaction_id_type>();
