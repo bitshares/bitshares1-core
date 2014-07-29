@@ -1,4 +1,4 @@
-default (unlocked) >>> wallet_delegate_set_transaction_scanning true
+default (unlocked) >>> debug_filter_output_for_tests false
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
@@ -8,26 +8,41 @@ default (unlocked) >>> wallet_import_private_key "5JDQmM7RDjLr7LR9MVceuckKLE61Bf
 "delegate5"
 default (unlocked) >>> wallet_list_my_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
-delegate4 *                        XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            NO             0              NO                       
-delegate5 *                        XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac           [redacted]            NO             0              NO                       
+delegate4 *                        XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           2014-06-20T14:40:27   NO             0              NO                       
+delegate5 *                        XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac           2014-06-20T14:40:27   NO             0              NO                       
 default (unlocked) >>> debug_wait_for_block_by_number 5
 OK
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
+2014-06-20T14:41:20 4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         0e73117b
 default (unlocked) >>> wallet_account_balance
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate4                       30.00000 XTS                
 default (unlocked) >>> wallet_delegate_set_block_production ALL true
 OK
+default (unlocked) >>> wallet_delegate_set_transaction_scanning true
+OK
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 6
 OK
+default (unlocked) >>> transfer 10 XTS delegate4 delegate5
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+2014-06-20T14:41:50 PENDING   delegate4           delegate5           10.00000 XTS                                                        0.10000 XTS         9c6a9477
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 7
+OK
+default (unlocked) >>> debug_wait 1
+OK
+default (unlocked) >>> balance
+ACCOUNT                         BALANCE                     
+============================================================
+delegate4                       19.90000 XTS                
+delegate5                       10.00000 XTS                
+default (unlocked) >>> debug_wait_for_block_by_number 9
 OK
 default (unlocked) >>> quit
