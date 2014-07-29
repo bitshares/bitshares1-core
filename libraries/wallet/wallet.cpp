@@ -1414,7 +1414,7 @@ namespace bts { namespace wallet {
    void wallet::set_automatic_backups( bool enabled )
    {
        FC_ASSERT( is_open() );
-       my->_wallet_db.set_property( automatic_backups, variant( true ) );
+       my->_wallet_db.set_property( automatic_backups, variant( enabled ) );
    }
 
    bool wallet::get_automatic_backups()const
@@ -1428,7 +1428,7 @@ namespace bts { namespace wallet {
    void wallet::set_transaction_scanning( bool enabled )
    {
        FC_ASSERT( is_open() );
-       my->_wallet_db.set_property( transaction_scanning, variant( true ) );
+       my->_wallet_db.set_property( transaction_scanning, variant( enabled ) );
    }
 
    bool wallet::get_transaction_scanning()const
