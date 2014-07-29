@@ -480,6 +480,10 @@ namespace bts { namespace wallet {
                                                   const variant& value,
                                                   bool sign );
 
+         signed_transaction        keyid_adjust_points( const string& name,
+                                                        const share_type& points,
+                                                        const string& pay_from_account,
+                                                        bool sign);
 
 
 

@@ -4712,21 +4712,23 @@ namespace bts { namespace wallet {
 
         signed_transaction trx;
         unordered_set<address> required_signatures;
+        auto buyer_pubkey = get_account_public_key( account_name );
+        auto priority_fee = get_priority_fee().amount;
 
         auto odomain_rec = my->_blockchain->get_domain_record( domain_name );
         if( odomain_rec.valid() && odomain_rec->state == domain_record::in_sale 
-            && price < odomain_rec->price ) // we are buying an existing "for sale"
+            && price >= odomain_rec->price ) // we are buying an existing "for sale"
         {
-            auto buyer_pubkey = get_account_public_key( account_name );
 
             auto buy_op = domain_buy_operation();
             buy_op.domain_name = domain_name;
             buy_op.new_owner = get_new_address( account_name );
+            buy_op.price = price;
             trx.operations.push_back( buy_op );
 
-            auto priority_fee = get_priority_fee().amount;
-            
             my->withdraw_to_transaction( odomain_rec->price + priority_fee, 0, buyer_pubkey, trx, required_signatures );
+            trx.deposit( odomain_rec->owner, asset(odomain_rec->price, 0), 0);
+
 
         } else // else we are placing a new offer
         {
@@ -4746,6 +4748,9 @@ namespace bts { namespace wallet {
             auto deposit_op = deposit_operation();
             deposit_op.condition = condition;
             deposit_op.amount = price;
+
+            my->withdraw_to_transaction( price + priority_fee, 0, buyer_pubkey, trx, required_signatures );
+
             trx.operations.push_back(deposit_op);
         }
 
@@ -4848,6 +4853,35 @@ namespace bts { namespace wallet {
         return trx;
     }
 
+
+    signed_transaction    wallet::keyid_adjust_points( const string& name,
+                                                       const share_type& points,
+                                                       const string& pay_from_account,
+                                                       bool sign)
+    {
+        if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
+        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+
+        signed_transaction trx;
+        unordered_set<address>     required_signatures;
+        auto from_acct = get_account( pay_from_account );
+        auto oaccount = my->_blockchain->get_account_record( name );
+        FC_ASSERT( oaccount.valid(), "No such KeyID" );
+        update_account_operation op;
+        op.account_id = oaccount->id;
+        op.points = points;
+
+        trx.operations.push_back(op);
+        auto required_fees = get_priority_fee();
+        my->withdraw_to_transaction( required_fees.amount + points, required_fees.asset_id,
+                                     from_acct.active_address(), trx, required_signatures );
+
+        if ( sign )
+            sign_transaction( trx, required_signatures );
+
+        return trx;
+
+    }
 
 
     // END DNS

@@ -46,7 +46,7 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type; 
 
-      update_account_operation():account_id(0){}
+      update_account_operation():account_id(0),points(0){}
 
       /** this should be 0 for creating a new name */
       account_id_type                   account_id;

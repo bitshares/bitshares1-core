@@ -37,6 +37,11 @@ namespace bts { namespace blockchain {
         address       offer_address;
         uint32_t      offer_time;
 
+        offer_index_key() {};
+
+        offer_index_key(const string& domain_name, const share_type& price)
+        :domain_name(domain_name),price(price) {};
+
         static offer_index_key lower_bound_for_domain(const string& domain)
         {
             auto key = offer_index_key();
@@ -62,9 +67,9 @@ namespace bts { namespace blockchain {
                 return true;
             if (a.price < b.price)
                 return false;
-            if (a.offer_time > b.offer_time)
-                return true;
             if (a.offer_time < b.offer_time)
+                return true;
+            if (a.offer_time > b.offer_time)
                 return false;
 
             return a.offer_address < b.offer_address;

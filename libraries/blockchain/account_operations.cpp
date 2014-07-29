@@ -79,6 +79,15 @@ namespace bts { namespace blockchain {
       if( !current_record ) FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );
       if( current_record->is_retracted() ) FC_CAPTURE_AND_THROW( account_retracted, (current_record) );
 
+
+      if( this->points != 0 )  // proof-of-burn for names - cannot burn in same op as update
+      {
+         current_record->points += this->points;
+         eval_state.required_fees += asset( this->points > 0 ? this->points : -(this->points), 0);
+         eval_state._current_state->store_account_record( *current_record );
+         return;
+      }
+
       string parent_name = get_parent_account_name( current_record->name );
       if( this->active_key && *this->active_key != current_record->active_key() )
       {
@@ -177,12 +186,6 @@ namespace bts { namespace blockchain {
          auto account_with_same_key = eval_state._current_state->get_account_record( address(*this->active_key) );
          if( account_with_same_key )
             FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
-      }
-
-      if( this->points != 0 )
-      {
-         current_record->points += this->points;
-         eval_state.required_fees += asset( this->points > 0 ? this->points : -(this->points), 0);
       }
 
       eval_state._current_state->store_account_record( *current_record );

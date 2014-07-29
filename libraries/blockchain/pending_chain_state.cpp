@@ -226,7 +226,7 @@ namespace bts { namespace blockchain {
       {
          auto prev_value = prev_state->get_domain_offer( item.first.offer_address );
          if( prev_value.valid() ) undo_state->store_domain_offer( *prev_value );
-         else  undo_state->store_domain_offer( offer_index_key() );
+         //else  undo_state->store_domain_offer( offer_index_key() );
       }
 
 
@@ -361,9 +361,24 @@ namespace bts { namespace blockchain {
     ooffer_index_key             pending_chain_state::get_domain_offer( const address& owner )
     {
         chain_interface_ptr prev_state = _prev_state.lock();
-        auto balance = balances.find( owner );
+        auto itr = balances.find(owner);
+        if ( itr == balances.end() )
+            return ooffer_index_key();
+        auto balance = itr->second;
         auto index_key = offer_index_key();
-        FC_ASSERT(!"unimplemented pending_state get_domain_offer");
+        auto condition = balance.condition.as<withdraw_domain_offer>();
+        index_key.offer_address = owner;
+        index_key.domain_name = condition.domain_name;
+        index_key.price = condition.price;
+        // index time = now
+        FC_ASSERT(!"unimplemented");
+/*
+        auto offer_itr = offers.find( index_key );
+        if ( offer_itr != offers.end() )
+            return itr;
+        else
+            return ooffer_index_key();
+*/
     }
 
 
