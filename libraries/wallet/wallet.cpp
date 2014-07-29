@@ -4556,10 +4556,11 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       const auto account_record = my->_blockchain->get_account_record( account_name );
-      if( !account_record.valid() )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-
       auto war = my->_wallet_db.lookup_account( account_name );
+
+      if( !account_record.valid() && !war.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
+
       if( war.valid() )
       {
          war->approved = approval;
