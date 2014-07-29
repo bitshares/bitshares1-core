@@ -497,10 +497,10 @@ config load_config( const fc::path& datadir )
 
             client_impl(bts::client::client* self) : 
               _self(self),
-              _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5),
               _last_sync_status_message_indicated_in_sync(true),
               _last_sync_status_head_block(0),
-              _remaining_items_to_sync(0)
+              _remaining_items_to_sync(0),
+              _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5)
             { try {
                 _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
                 fc::logger::get( "user" ).add_appender( _user_appender );
