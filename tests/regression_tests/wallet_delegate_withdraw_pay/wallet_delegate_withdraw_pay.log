@@ -259,16 +259,6 @@ OK
 default (unlocked) >>> debug_wait 5
 OK
 default (unlocked) >>> balance test
-No balances found.
-default (unlocked) >>> wallet_delegate_set_block_production ALL false
-OK
-default (unlocked) >>> wallet_rescan_blockchain
-Rescanning blockchain...
-Scan complete.
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
 test                            0.10000 XTS                 

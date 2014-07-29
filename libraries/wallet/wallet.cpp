@@ -2248,12 +2248,14 @@ namespace bts { namespace wallet {
       }
       else if( empty_before )
       {
-          ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
+          // TODO: This line was breaking regression tests by getting included in console.log
+          //ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
           set_transaction_scanning( false );
       }
       else
       {
-          ulog( "Wallet transaction scanning has been automatically re-enabled!" );
+          // TODO: This line was breaking regression tests by getting included in console.log
+          //ulog( "Wallet transaction scanning has been automatically re-enabled!" );
           set_transaction_scanning( true );
       }
    }

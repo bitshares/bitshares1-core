@@ -19,7 +19,7 @@ OK
 default (unlocked) >>> debug_wait_block_interval 1
 OK
 default (unlocked) >>> blockchain_list_accounts test
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
 default (unlocked) >>> blockchain_get_account test
@@ -70,11 +70,11 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 102   test                            0.0000000000 % 0        0        N/A           10 %     0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_list_accounts test
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
 default (unlocked) >>> blockchain_list_accounts delegate0 1
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            0              0              
 default (unlocked) >>> blockchain_get_account delegate0
@@ -98,7 +98,7 @@ OK
 default (unlocked) >>> debug_wait 10
 OK
 default (unlocked) >>> blockchain_list_accounts delegate0 1
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            0              0              
 default (unlocked) >>> blockchain_get_account delegate0
