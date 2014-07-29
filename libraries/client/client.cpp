@@ -1529,15 +1529,21 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
     }
 
-    void detail::client_impl::wallet_backup_create(const fc::path& json_filename)const
+    void detail::client_impl::wallet_backup_create( const fc::path& json_filename )const
     {
-      _wallet->export_to_json(json_filename);
+        _wallet->export_to_json( json_filename );
     }
 
-    void detail::client_impl::wallet_backup_restore(const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase)
+    void detail::client_impl::wallet_backup_restore( const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase )
     {
-      _wallet->create_from_json(json_filename, wallet_name, imported_wallet_passphrase);
-      reschedule_delegate_loop();
+        _wallet->create_from_json( json_filename, wallet_name, imported_wallet_passphrase );
+        reschedule_delegate_loop();
+    }
+
+    bool detail::client_impl::wallet_set_automatic_backups( bool enabled )
+    {
+        _wallet->set_automatic_backups( enabled );
+        return _wallet->get_automatic_backups();
     }
 
     void detail::client_impl::wallet_lock()

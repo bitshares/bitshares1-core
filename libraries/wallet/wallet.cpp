@@ -1238,7 +1238,8 @@ namespace bts { namespace wallet {
 
           my->_wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
           my->_wallet_db.set_property( last_unlocked_scanned_block_number, variant( my->_blockchain->get_head_block_num() ) );
-          my->_wallet_db.set_property( default_transaction_priority_fee, variant( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) ) );
+          set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
+          set_automatic_backups( true );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
@@ -1393,6 +1394,7 @@ namespace bts { namespace wallet {
 
    void wallet::auto_backup( const string& reason )const
    { try {
+      if( !get_automatic_backups() ) return;
       ulog( "Backing up wallet..." );
       const auto wallet_path = my->_current_wallet_path;
       const auto wallet_name = wallet_path.filename().string();
@@ -1410,6 +1412,20 @@ namespace bts { namespace wallet {
       export_to_json( backup_path );
       ulog( "Wallet automatically backed up to: ${f}", ("f",backup_path) );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void wallet::set_automatic_backups( bool enabled )
+   {
+       FC_ASSERT( is_open() );
+       my->_wallet_db.set_property( automatic_backups, variant( true ) );
+   }
+
+   bool wallet::get_automatic_backups()const
+   {
+       FC_ASSERT( is_open() );
+       const auto property = my->_wallet_db.get_property( automatic_backups );
+       if( property.is_null() ) return true;
+       return my->_wallet_db.get_property( automatic_backups ).as<bool>();
+   }
 
    void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
@@ -1845,9 +1861,6 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       elog( "WALLET SCANNING CHAIN!" );
 
-
-      const auto now = blockchain::now();
-
       if( start == 0 )
       {
          scan_state();
@@ -1870,6 +1883,7 @@ namespace bts { namespace wallet {
         wlog("Unexpected exception caught while canceling the previous scan_chain_task : ${e}");
       }
 
+      const auto now = blockchain::now();
       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task(start, end, progress_callback, now); }, 
                                          "scan_chain_task" );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
@@ -4672,25 +4686,27 @@ namespace bts { namespace wallet {
        info["open"]                                     = is_open;
 
        info["name"]                                     = variant();
+       info["last_scanned_block_num"]                   = variant();
+       info["priority_fee"]                             = variant();
 
        info["unlocked"]                                 = variant();
        info["unlocked_until"]                           = variant();
        info["unlocked_until_timestamp"]                 = variant();
 
-       info["last_scanned_block_num"]                   = variant();
        info["scan_progress"]                            = variant();
-
-       info["priority_fee"]                             = variant();
-
-       info["next_child_key_index"]                     = variant();
 
        info["block_production_enabled"]                 = variant();
        info["next_block_production_time"]               = variant();
        info["next_block_production_timestamp"]          = variant();
 
+       info["version"]                                  = variant();
+
        if( is_open )
        {
          info["name"]                                   = my->_current_wallet_path.filename().string();
+         info["automatic_backups"]                      = get_automatic_backups();
+         info["last_scanned_block_num"]                 = my->_wallet_db.get_property( last_unlocked_scanned_block_number );
+         info["priority_fee"]                           = get_priority_fee();
 
          info["unlocked"]                               = is_unlocked();
 
@@ -4700,12 +4716,7 @@ namespace bts { namespace wallet {
            info["unlocked_until"]                       = ( *unlocked_until - now ).to_seconds();
            info["unlocked_until_timestamp"]             = *unlocked_until;
 
-           info["last_scanned_block_num"]               = my->_wallet_db.get_property( last_unlocked_scanned_block_number );
            info["scan_progress"]                        = my->_scan_progress;
-
-           info["priority_fee"]                         = get_priority_fee();
-
-           info["next_child_key_index"]                 = my->_wallet_db.get_property( next_child_key_index );
 
            const auto enabled_delegates                 = get_my_delegates( enabled_delegate_status );
            const auto block_production_enabled          = !enabled_delegates.empty();
@@ -4721,9 +4732,9 @@ namespace bts { namespace wallet {
              }
            }
          }
-       }
 
-       info["version"]                                  = BTS_WALLET_VERSION;
+         info["version"]                                = my->_wallet_db.get_property( version );
+       }
 
        return info;
    }
