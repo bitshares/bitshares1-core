@@ -2128,7 +2128,7 @@ config load_config( const fc::path& datadir )
       {
         uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
         if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
-          ulog(" (unable to bind to the desired port ${ptp_port} )", ("p2p_port",p2p_port));
+          ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
       }
 
 
