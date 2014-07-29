@@ -454,25 +454,25 @@
         "aliases" : [ "favor" ]
       },
       {
-        "method_name": "wallet_approve_delegate",
-        "description": "Updates your approval for the specified delegate",
-        "return_type": "bool",
+        "method_name": "wallet_account_set_approval",
+        "description": "Updates your approval of the specified account",
+        "return_type": "int8_t",
         "parameters" : 
           [
             { 
-              "name" : "delegate_name", 
-              "type" : "account_name", 
-              "description" : "the name of the delegate to set approval for"
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the name of the account to set approval for"
             },
             { 
-              "name" : "approved",
-              "type" : "bool",
-              "description" : "true to approve and false otherwise",
-              "default_value" : true
+              "name" : "approval",
+              "type" : "int8_t",
+              "description" : "1, 0, or -1 respectively for approve, neutral, or disapprove",
+              "default_value" : 1
             }
           ],
         "prerequisites" : ["wallet_open"],
-        "aliases" : [ "approve", "set_approval" ]
+        "aliases" : [ "approve", "set_approval", "wallet_approve_delegate", "wallet_approve" ]
       },
       {
         "method_name": "wallet_add_contact_account",

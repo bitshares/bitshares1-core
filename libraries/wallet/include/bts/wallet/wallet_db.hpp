@@ -151,5 +151,3 @@ namespace bts { namespace wallet {
    };
 
 } } // bts::wallet
-
-

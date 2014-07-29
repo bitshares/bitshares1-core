@@ -1757,14 +1757,11 @@ config load_config( const fc::path& datadir )
       return oasset_record();
     }
 
-    bool detail::client_impl::wallet_approve_delegate( const string& delegate_name, bool approved )
+    int8_t detail::client_impl::wallet_account_set_approval( const string& account_name, int8_t approval )
     { try {
-        //TODO: Make approved an int instead of bool
-      auto delegate_record = _chain_db->get_account_record( delegate_name );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
-      _wallet->set_delegate_approval( delegate_name, approved );
-      return _wallet->get_delegate_approval( delegate_name );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved",approved) ) }
+      _wallet->set_account_approval( account_name, approval );
+      return _wallet->get_account_approval( account_name );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval",approval) ) }
 
     otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
