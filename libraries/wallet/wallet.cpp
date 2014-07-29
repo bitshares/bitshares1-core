@@ -4427,7 +4427,7 @@ namespace bts { namespace wallet {
       {
           const auto account_record = item.second;
           if( !account_record.is_delegate() ) continue;
-          if( account_record.approval <= 0 ) continue;
+          if( account_record.approved <= 0 ) continue;
           for_candidates.push_back( account_record.id );
       }
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
@@ -4476,7 +4476,7 @@ namespace bts { namespace wallet {
 
           //Disqualify delegates I actively disapprove of
           for( const auto& acct_rec : my->_wallet_db.get_accounts() )
-             if( acct_rec.second.approval < 0 )
+             if( acct_rec.second.approved < 0 )
                 recommended_candidate_ranks.erase(acct_rec.second.id);
 
           //Remove from rankings candidates I already approve of
@@ -4524,7 +4524,7 @@ namespace bts { namespace wallet {
       auto war = my->_wallet_db.lookup_account( account_name );
       if( war.valid() )
       {
-         war->approval = approval;
+         war->approved = approval;
          my->_wallet_db.cache_account( *war );
          return;
       }
@@ -4542,7 +4542,7 @@ namespace bts { namespace wallet {
 
       auto war = my->_wallet_db.lookup_account( account_name );
       if( !war.valid() ) return 0;
-      return war->approval;
+      return war->approved;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    owallet_account_record wallet::get_account_record( const address& addr)const

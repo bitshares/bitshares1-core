@@ -1,4 +1,8 @@
+/* NOTE: Avoid renaming any record members because there will be no way to
+ * unserialize everyone's existing wallet */
+
 #pragma once
+
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/extended_address.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -88,7 +92,7 @@ namespace bts { namespace wallet {
        variant  private_data;
 
        bool     is_my_account = false;
-       int8_t   approval = 0;
+       int8_t   approved = 0;
        bool     is_favorite = false;
        bool     block_production_enabled = false;
    };
@@ -257,7 +261,7 @@ FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record),
                     (account_address)
                     (private_data)
                     (is_my_account)
-                    (approval)
+                    (approved)
                     (is_favorite)
                     (block_production_enabled)
                     )

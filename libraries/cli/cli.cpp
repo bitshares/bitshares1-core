@@ -1203,7 +1203,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 10) << std::to_string(acct.approval);
+                    *_out << std::setw( 10 ) << std::to_string( acct.approved );
                     *_out << "\n";
                 }
             }
@@ -1245,7 +1245,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 15 ) << std::to_string(acct.approval);
+                    *_out << std::setw( 15 ) << std::to_string( acct.approved );
                     if (acct.is_delegate())
                         *_out << std::setw( 25 ) << (acct.block_production_enabled ? "YES" : "NO");
                     else
