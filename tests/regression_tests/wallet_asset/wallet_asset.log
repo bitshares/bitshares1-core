@@ -8,7 +8,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
@@ -44,8 +44,6 @@ ACCOUNT                         BALANCE
 ============================================================
 test                            100.00000 XTS               
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
-OK
-default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
@@ -102,7 +100,7 @@ default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> blockchain_list_assets XMO
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      

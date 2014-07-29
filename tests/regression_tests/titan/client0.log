@@ -1,6 +1,6 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> debug_filter_output_for_tests true
 OK
@@ -51,5 +51,10 @@ default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
+default (unlocked) >>> wallet_account_balance test-account
+ACCOUNT                         BALANCE                     
+============================================================
+test-account                    100.00000 XTS               
+default (unlocked) >>> quit

@@ -2252,12 +2252,14 @@ namespace bts { namespace wallet {
       }
       else if( empty_before )
       {
-          ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
+          // TODO: This line was breaking regression tests by getting included in console.log
+          //ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
           set_transaction_scanning( false );
       }
       else
       {
-          ulog( "Wallet transaction scanning has been automatically re-enabled!" );
+          // TODO: This line was breaking regression tests by getting included in console.log
+          //ulog( "Wallet transaction scanning has been automatically re-enabled!" );
           set_transaction_scanning( true );
       }
    }
@@ -4653,10 +4655,11 @@ namespace bts { namespace wallet {
    { try {
       FC_ASSERT( is_open() );
       const auto account_record = my->_blockchain->get_account_record( account_name );
-      if( !account_record.valid() )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-
       auto war = my->_wallet_db.lookup_account( account_name );
+
+      if( !account_record.valid() && !war.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
+
       if( !war.valid() ) return 0;
       return war->approved;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
