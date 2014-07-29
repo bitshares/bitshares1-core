@@ -104,6 +104,7 @@ namespace bts { namespace wallet {
               auto key = key_to_load.public_key;
               auto bts_addr = key_to_load.get_address();
               self->btc_to_bts_address[ address(key) ] = bts_addr;
+              self->btc_to_bts_address[ key_to_load.account_address ] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,false,56) )] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
@@ -389,6 +390,7 @@ namespace bts { namespace wallet {
          auto key = key_to_store.public_key;
          auto bts_addr = key_to_store.get_address();
          btc_to_bts_address[ address(key) ] = bts_addr;
+         btc_to_bts_address[ key_to_store.account_address ] = bts_addr;
          btc_to_bts_address[ address(pts_address(key,false,56) )] = bts_addr;
          btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
          btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;

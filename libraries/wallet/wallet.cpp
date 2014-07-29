@@ -733,7 +733,7 @@ namespace bts { namespace wallet {
           auto oaccount =  _blockchain->get_account_record( op.account_id ); 
           FC_ASSERT( oaccount.valid() );
           auto opt_key_rec = _wallet_db.lookup_key( oaccount->owner_key );
-          if( !opt_key_rec.valid() || !opt_key_rec->has_private_key() )
+          if( !opt_key_rec.valid() )
              return false;
 
           auto opt_account = _wallet_db.lookup_account( address( oaccount->owner_key ) );
@@ -749,6 +749,9 @@ namespace bts { namespace wallet {
           blockchain::account_record& tmp = *opt_account;
           tmp = *account_name_rec; 
           _wallet_db.cache_account( *opt_account );
+          
+          if( !opt_account->is_my_account )
+            return false;
 
           // TODO: Refactor this
           for( auto& entry : trx_rec.ledger_entries )
@@ -1611,7 +1614,7 @@ namespace bts { namespace wallet {
 
       auto current_registered_account = my->_blockchain->get_account_record( account_name );
 
-      if( current_registered_account.valid() && current_registered_account->active_key() != key )
+      if( current_registered_account.valid() && current_registered_account->owner_key != key )
          FC_ASSERT( false, "Account name is already registered under a different key; provided: ${provided_key}, registered: ${registered_key}",
                     ("provided_key", key)("registered_key", current_registered_account->active_key()) );
 
@@ -1773,7 +1776,7 @@ namespace bts { namespace wallet {
                         ("account_with_key", registered_account->name)
                         ("account_name",account_name) );
 
-         add_contact_account( registered_account->name, import_public_key );
+         add_contact_account( registered_account->name, registered_account->owner_key );
          return import_private_key( key, registered_account->name );
       }
       FC_ASSERT( account_name.size(), "You must specify an account name because the private key "
