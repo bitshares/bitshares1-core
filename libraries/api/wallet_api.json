@@ -1219,9 +1219,9 @@
          "prerequisites" : ["wallet_open"]
       },
       {
-         "method_name" : "wallet_delegate_set_transaction_scanning",
+         "method_name" : "wallet_set_transaction_scanning",
          "description" : "Enable or disable wallet transaction scanning",
-         "return_type" : "void",
+         "return_type" : "bool",
          "parameters"  : [
             {
                 "name" : "enabled",

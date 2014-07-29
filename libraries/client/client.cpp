@@ -3007,9 +3007,10 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
    }
 
-   void client_impl::wallet_delegate_set_transaction_scanning( bool enabled )
+   bool client_impl::wallet_set_transaction_scanning( bool enabled )
    {
-      _wallet->set_delegate_transaction_scanning( enabled );
+       _wallet->set_transaction_scanning( enabled );
+       return _wallet->get_transaction_scanning();
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
