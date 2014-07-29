@@ -1,8 +1,12 @@
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1
+OK
 default (unlocked) >>> wallet_delegate_set_transaction_scanning true
 OK
 default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
 {
-  "expiration": "20140620T164030",
+  "expiration": "20140620T164040",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -22,13 +26,13 @@ default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
     }
   ],
   "signatures": [
-    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f66e089c180ce3b558398344406e15caeb667672d043b82890c86396be115e3839",
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d989f631dbd7220eab98f73e8e767fbc3092eef55fa13f996187b29d63c1c7ee31"
+    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6efe775f3bc3bc5132c493b1059bd0b9e9e65bec0da936ad65b16270938fa9906",
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9e59e6490f828633dd97833f8ced0febfd0eae14c2969dd3cbde84fe8e7d238ac"
   ]
 }
 default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR"
 {
-  "expiration": "20140620T164030",
+  "expiration": "20140620T164040",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -48,8 +52,8 @@ default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JD
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960bdcb271a0e8efe869fe7e4d8c2b1a9acfd1b031e2167dc82839e4eafa162d4e4",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22929ef7bce27e9539ece073f8994b892017bfdb4a713aa6a63f5c4e83e974c03f"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749604dc4cbf43591af76ddd955230a7932d32266a8297f6f2a20fbe0d67dc6b53521",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22f86209201ed1a6d4ac5ecea8fd31e8b091894d51bc3d7049ddd98f921c8b2c0c"
   ]
 }
 default (unlocked) >>> wallet_get_account delegate4
@@ -85,7 +89,7 @@ default (unlocked) >>> wallet_get_account delegate4
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> wallet_list_my_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
@@ -192,7 +196,7 @@ delegate98 *                       XTS6MTa2sthDUAsvBggmAsJrk1XsTZy7BTve1V7voShdS
 delegate99 *                       XTS79NNeLPbqYTbznELs271Y4rezpwzfxKR7DEbrSnDWEigoK1WU6           [redacted]            NO             0              YES                      
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> transfer 30 XTS delegate0 delegate4
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -200,10 +204,18 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          PENDING   delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+default (unlocked) >>> debug_wait_for_block_by_number 5
+OK
+default (unlocked) >>> wallet_delegate_set_block_production delegate4 false
+OK
+default (unlocked) >>> wallet_delegate_set_block_production delegate5 false
+OK
+default (unlocked) >>> debug_advance_time 2 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 7
 OK
 default (unlocked) >>> quit

@@ -1,13 +1,33 @@
-default (unlocked) >>> debug_wait_for_block_by_number 2
+default (unlocked) >>> wallet_delegate_set_transaction_scanning true
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> wallet_import_private_key "5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L" delegate4 true true
 "delegate4"
 default (unlocked) >>> wallet_import_private_key "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR" delegate5 true true
 "delegate5"
 default (unlocked) >>> wallet_list_my_accounts
-default (unlocked) >>> debug_wait_for_block_by_number 4
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
+delegate4 *                        XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            NO             0              NO                       
+delegate5 *                        XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac           [redacted]            NO             0              NO                       
+default (unlocked) >>> debug_wait_for_block_by_number 5
 OK
+default (unlocked) >>> history
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
 default (unlocked) >>> wallet_account_balance
-*** This is wrong ***
-No balances found.
+ACCOUNT                         BALANCE                     
+============================================================
+delegate4                       30.00000 XTS                
+default (unlocked) >>> wallet_delegate_set_block_production ALL true
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 6
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 7
+OK
 default (unlocked) >>> quit

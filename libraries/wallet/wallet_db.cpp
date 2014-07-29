@@ -76,7 +76,9 @@ namespace bts { namespace wallet {
               auto current_index_itr = self->address_to_account_wallet_record_index.find( account_to_load.account_address );
               if( !overwrite) FC_ASSERT( current_index_itr == self->address_to_account_wallet_record_index.end() );
               self->address_to_account_wallet_record_index[ account_to_load.account_address ]= account_to_load.wallet_record_index;
-              
+              for( const auto& active_key : account_to_load.active_key_history )
+                self->address_to_account_wallet_record_index[ address(active_key.second) ]= account_to_load.wallet_record_index;
+
               if( account_to_load.id != 0 )
               {
                 auto current_account_id_itr = self->account_id_to_wallet_record_index.find( account_to_load.id );
@@ -475,6 +477,7 @@ namespace bts { namespace wallet {
              }
           }
        }
+       keys.shrink_to_fit();
        return keys;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
    
@@ -522,7 +525,7 @@ namespace bts { namespace wallet {
 
       auto current_key = lookup_key( blockchain_account.owner_key );
       if( current_key.valid() )
-      {  
+      {
          current_key->account_address = address(blockchain_account.owner_key);
          store_record( *current_key );
       }
