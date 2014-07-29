@@ -475,21 +475,6 @@
         "aliases" : [ "approve", "set_approval", "wallet_approve_delegate", "wallet_approve" ]
       },
       {
-        "method_name": "wallet_account_get_approval",
-        "description": "Returns your approval of the specified account",
-        "return_type": "int8_t",
-        "parameters" :
-          [
-            {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the name of the account to get approval for"
-            }
-          ],
-        "prerequisites" : ["wallet_open"],
-        "aliases" : [ "get_approval" ]
-      },
-      {
         "method_name": "wallet_add_contact_account",
         "description": "Add new account for sending payments",
         "return_type": "void",
