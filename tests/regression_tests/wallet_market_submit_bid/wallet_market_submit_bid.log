@@ -12,7 +12,7 @@ default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" null 5000000 100
 {
-  "expiration": "20140620T164000",
+  "expiration": "20140620T164030",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -35,8 +35,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASS
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960c166594346579d127ed74361bd8443816d41531e15ec85ed0e448c989753c252",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22b38b30c23947f2cfb5c0f586f6aba2d82be77835229692e8c477939b3667cee1"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749605cec0ca37c3842222dadb7818454a593910df9cce446269f10ce0eacd194769d",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22187c3f1d36aae3b4e2306d1304cad1089692afa211343995d400b3589f4bbdb9"
   ]
 }
 default (unlocked) >>> wallet_account_balance testaccount1
@@ -59,7 +59,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
 {
-  "expiration": "20140620T164010",
+  "expiration": "20140620T164040",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -96,8 +96,8 @@ default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some a
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b978f616ba214c92212a1d82b99ddbc7afe072b39a95dbae2489ee46a1d9f71724",
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f009f875f899f55df760054c8319b6fa193b260ac70e6a856c877e4b2c6db6a6dcf"
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b95e1b495d6190dcdae4846a8365faa03cea89953cb61b14c0f83153a94f498510",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00be5ac8807c45c18868b2e843b6ab0c248645a40e142e8ca3affa89819e8665ee"
   ]
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
@@ -177,7 +177,7 @@ testaccount1                    10,000.00 XMO
                                 100.00000 XTS               
 default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
 {
-  "expiration": "20140620T164030",
+  "expiration": "20140620T164100",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -209,9 +209,9 @@ default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
     }
   ],
   "signatures": [
-    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907f7ed091a9657aaa25d7af67bf19e7293949b432894ddaefa7e5bbae1b16a9e89",
-    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31aaf4decb33f6810af4ff264db5ce8f89214995ecb57949e958128ca043ea4a53e",
-    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f1cded22e7f5e031f73ecf84f6d851aa45d06c4c430694b1e3de3c7227d8146dd"
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907e88b4f8db6a8faf14718606d64e80d6f3832a94379e8af9d57b7de6fcba432c8",
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a61356b601f2e4b33582528bcbc18b2bb9b6f7094340aff164a3aee3d16468b9b",
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f96278ff993f2219e9d0117b0c3f9ff3929d1b5dce14c9a184a7bfb88bbb36946"
   ]
 }
 default (unlocked) >>> balance testaccount1

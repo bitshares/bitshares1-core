@@ -1,224 +1,222 @@
-default (unlocked) >>> help wallet_approve_delegate
+default (unlocked) >>> help wallet_account_set_approval
 Usage:
-wallet_approve_delegate <delegate_name> [approved]                                                    Updates your approval for the specified delegate
-Updates your approval for the specified delegate
+wallet_account_set_approval <account_name> [approval]                                                 Updates your approval of the specified account
+Updates your approval of the specified account
 
 Parameters:
-  delegate_name (account_name, required): the name of the delegate to set approval for
-  approved (bool, optional, defaults to true): true to approve and false otherwise
+  account_name (account_name, required): the name of the account to set approval for
+  approval (int8_t, optional, defaults to 1): 1, 0, or -1 respectively for approve, neutral, or disapprove
 
 Returns:
-  bool
+  int8_t
 
-aliases: approve, set_approval
+aliases: approve, set_approval, wallet_approve_delegate, wallet_approve
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
-default (unlocked) >>> wallet_approve_delegate delegate0
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate0 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate1 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate2 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate3 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate4 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate5 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate6 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate7 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate8 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate9 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate10 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate11 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate12 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate13 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate14 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate15 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate16 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate17 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate18 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate19 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate20 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate21 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate22 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate23 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate24 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate25 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate26 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate27 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate28 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate29 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate30 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate31 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate32 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate33 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate34 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate35 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate36 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate37 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate38 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate39 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate40 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate41 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate42 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate43 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate44 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate45 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate46 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate47 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate48 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate49 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate50 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate51 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate52 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate53 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate54 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate55 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate56 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate57 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate58 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate59 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate60 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate61 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate62 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate63 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate64 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate65 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate66 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate67 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate68 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate69 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate70 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate71 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate72 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate73 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate74 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate75 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate76 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate77 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate78 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate79 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate80 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate81 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate82 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate83 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate84 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate85 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate86 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate87 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate88 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate89 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate90 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate91 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate92 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate93 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate94 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate95 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate96 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate97 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate98 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate99 true
-Delegate approved.
-default (unlocked) >>> wallet_approve_delegate delegate100 true
-Delegate approved.
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+default (unlocked) >>> wallet_account_set_approval delegate0 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate1 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate2 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate3 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate4 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate5 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate6 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate7 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate8 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate9 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate10 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate11 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate12 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate13 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate14 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate15 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate16 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate17 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate18 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate19 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate20 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate21 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate22 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate23 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate24 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate25 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate26 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate27 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate28 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate29 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate30 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate31 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate32 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate33 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate34 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate35 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate36 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate37 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate38 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate39 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate40 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate41 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate42 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate43 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate44 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate45 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate46 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate47 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate48 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate49 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate50 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate51 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate52 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate53 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate54 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate55 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate56 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate57 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate58 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate59 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate60 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate61 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate62 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate63 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate64 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate65 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate66 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate67 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate68 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate69 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate70 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate71 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate72 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate73 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate74 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate75 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate76 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate77 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate78 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate79 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate80 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate81 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate82 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate83 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate84 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate85 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate86 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate87 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate88 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate89 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate90 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate91 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate92 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate93 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate94 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate95 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate96 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate97 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate98 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate99 1
+1
+default (unlocked) >>> wallet_account_set_approval delegate100 1
+1
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            NO             1         
 delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           [redacted]            NO             1         
 delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we           [redacted]            NO             1         
@@ -320,212 +318,210 @@ delegate96 *                       XTS7y7NEDHFeTAyUquo3aPP8eGb6YpjVi8ShQ5xeWkTWL
 delegate97 *                       XTS7pUEhLJ3EqrBa7g6Y9gUGt6T1wEavniodXfZq7S1eZG4DVCN5v           [redacted]            NO             1         
 delegate98 *                       XTS6MTa2sthDUAsvBggmAsJrk1XsTZy7BTve1V7voShdSKvZbMjdA           [redacted]            NO             1         
 delegate99 *                       XTS79NNeLPbqYTbznELs271Y4rezpwzfxKR7DEbrSnDWEigoK1WU6           [redacted]            NO             1         
-default (unlocked) >>> wallet_approve_delegate delegate0 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate0 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate1 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate2 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate3 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate4 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate5 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate6 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate7 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate8 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate9 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate10 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate11 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate12 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate13 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate14 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate15 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate16 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate17 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate18 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate19 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate20 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate21 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate22 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate23 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate24 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate25 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate26 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate27 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate28 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate29 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate30 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate31 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate32 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate33 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate34 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate35 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate36 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate37 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate38 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate39 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate40 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate41 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate42 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate43 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate44 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate45 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate46 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate47 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate48 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate49 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate50 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate51 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate52 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate53 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate54 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate55 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate56 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate57 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate58 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate59 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate60 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate61 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate62 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate63 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate64 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate65 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate66 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate67 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate68 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate69 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate70 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate71 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate72 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate73 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate74 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate75 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate76 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate77 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate78 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate79 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate80 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate81 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate82 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate83 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate84 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate85 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate86 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate87 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate88 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate89 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate90 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate91 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate92 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate93 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate94 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate95 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate96 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate97 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate98 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate99 false
-Delegate not approved.
-default (unlocked) >>> wallet_approve_delegate delegate100 false
-Delegate not approved.
+default (unlocked) >>> wallet_account_set_approval delegate0 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate1 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate2 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate3 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate4 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate5 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate6 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate7 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate8 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate9 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate10 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate11 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate12 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate13 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate14 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate15 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate16 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate17 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate18 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate19 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate20 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate21 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate22 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate23 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate24 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate25 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate26 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate27 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate28 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate29 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate30 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate31 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate32 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate33 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate34 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate35 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate36 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate37 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate38 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate39 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate40 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate41 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate42 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate43 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate44 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate45 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate46 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate47 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate48 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate49 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate50 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate51 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate52 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate53 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate54 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate55 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate56 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate57 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate58 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate59 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate60 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate61 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate62 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate63 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate64 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate65 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate66 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate67 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate68 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate69 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate70 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate71 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate72 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate73 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate74 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate75 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate76 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate77 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate78 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate79 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate80 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate81 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate82 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate83 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate84 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate85 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate86 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate87 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate88 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate89 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate90 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate91 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate92 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate93 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate94 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate95 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate96 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate97 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate98 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate99 0
+0
+default (unlocked) >>> wallet_account_set_approval delegate100 0
+0
 default (unlocked) >>> wallet_list_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            NO             0         
 delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           [redacted]            NO             0         
 delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we           [redacted]            NO             0         

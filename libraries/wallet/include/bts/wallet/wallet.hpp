@@ -389,9 +389,8 @@ namespace bts { namespace wallet {
          string              get_key_label( const public_key_type& key )const;
          pretty_transaction to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
-
-         void      set_delegate_approval( const string& delegate_name, int approved );
-         int       get_delegate_approval( const string& delegate_name )const;
+         void      set_account_approval( const string& account_name, int8_t approval );
+         int8_t    get_account_approval( const string& account_name )const;
 
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;

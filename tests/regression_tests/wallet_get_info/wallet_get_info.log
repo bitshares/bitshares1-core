@@ -10,13 +10,11 @@ Parameters:
 
 Returns:
   json_object
-default (unlocked) >>> debug_wait 5
-OK
 default (unlocked) >>> wallet_get_info
 {
-  "data_dir": "/home/yuvaraj/software/project/InvictusRoot/regression_tests_output/regression_tests/wallet_get_info/client/wallets",
+  "data_dir": "[redacted]",
   "open": true,
-  "path": "/home/yuvaraj/software/project/InvictusRoot/regression_tests_output/regression_tests/wallet_get_info/client/wallets/default",
+  "name": "default",
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
@@ -24,9 +22,9 @@ default (unlocked) >>> wallet_get_info
   "scan_progress": "100.00 %",
   "priority_fee": "0.10000 XTS",
   "next_child_key_index": null,
-  "block_production_enabled": true,
-  "next_block_production_time": "[redacted]",
-  "next_block_production_timestamp": "[redacted]",
+  "block_production_enabled": false,
+  "next_block_production_time": null,
+  "next_block_production_timestamp": null,
   "version": 100
 }
 default (unlocked) >>> quit

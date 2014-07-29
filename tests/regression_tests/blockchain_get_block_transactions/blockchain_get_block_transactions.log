@@ -68,9 +68,9 @@ ACCOUNT                         BALANCE
 testaccount                     100.00000 XTS               
 default (unlocked) >>> blockchain_get_block_transactions 5
 [[
-    "c03a4c9fc662a23de9abcaa4b58b213d58029ed4",{
+    "4626aee1ed34cd68e147337b78385d7bb0f44bf1",{
       "trx": {
-        "expiration": "20140620T164030",
+        "expiration": "20140620T164100",
         "delegate_slate_id": null,
         "operations": [{
             "type": "withdraw_op_type",
@@ -99,7 +99,7 @@ default (unlocked) >>> blockchain_get_block_transactions 5
           }
         ],
         "signatures": [
-          "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960cba7c88f2ea1ccb114c943ceea053c32ced99bf6685b1b0906a9677e25fc1c85"
+          "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749603a72bf5ae83690ce1288ebe857791781a496a01c9ea5efc9fd5887e1a21ccb79"
         ]
       },
       "signed_keys": [

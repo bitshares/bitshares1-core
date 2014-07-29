@@ -4500,10 +4500,12 @@ namespace bts { namespace wallet {
       FC_ASSERT( BTS_BLOCKCHAIN_MAX_SLATE_SIZE <= BTS_BLOCKCHAIN_NUM_DELEGATES );
       vector<account_id_type> for_candidates;
 
-      for( const auto& acct_rec : my->_wallet_db.get_accounts() )
+      for( const auto& item : my->_wallet_db.get_accounts() )
       {
-         if( acct_rec.second.approved > 0 )
-             for_candidates.push_back( acct_rec.second.id );
+          const auto account_record = item.second;
+          if( !account_record.is_delegate() ) continue;
+          if( account_record.approved <= 0 ) continue;
+          for_candidates.push_back( account_record.id );
       }
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
@@ -4522,7 +4524,7 @@ namespace bts { namespace wallet {
           unordered_map<account_id_type, int> recommended_candidate_ranks;
 
           //Tally up the recommendation count for all delegates recommended by delegates I approve of
-          for( account_id_type approved_candidate : for_candidates )
+          for( const auto& approved_candidate : for_candidates )
           {
             oaccount_record candidate_record = my->_blockchain->get_account_record(approved_candidate);
 
@@ -4533,7 +4535,7 @@ namespace bts { namespace wallet {
             if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              set_delegate_approval(candidate_record->name, -1);
+              set_account_approval( candidate_record->name, -1 );
               continue;
             }
 
@@ -4541,7 +4543,7 @@ namespace bts { namespace wallet {
             if( !recomendations.valid() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              set_delegate_approval(candidate_record->name, -1);
+              set_account_approval( candidate_record->name, -1 );
               continue;
             }
 
@@ -4589,34 +4591,36 @@ namespace bts { namespace wallet {
       return slate;
    }
 
-   void wallet::set_delegate_approval( const string& delegate_name, int approved )
+   void wallet::set_account_approval( const string& account_name, int8_t approval )
    { try {
       FC_ASSERT( is_open() );
-      auto war = my->_wallet_db.lookup_account( delegate_name );
+      const auto account_record = my->_blockchain->get_account_record( account_name );
+      if( !account_record.valid() )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
+      auto war = my->_wallet_db.lookup_account( account_name );
       if( war.valid() )
       {
-         war->approved = approved;
+         war->approved = approval;
          my->_wallet_db.cache_account( *war );
+         return;
       }
-      else
-      {
-         auto reg_account = my->_blockchain->get_account_record( delegate_name );
-         if( !reg_account.valid() )
-         {
-            FC_ASSERT( !"Not a Registered Account" );
-         }
-         add_contact_account( delegate_name, reg_account->active_key() );
-         set_delegate_approval( delegate_name, approved );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved", approved) ) }
 
-   int wallet::get_delegate_approval( const string& delegate_name )const
+      add_contact_account( account_name, account_record->owner_key );
+      set_account_approval( account_name, approval );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval", approval) ) }
+
+   int8_t wallet::get_account_approval( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
-      auto war = my->_wallet_db.lookup_account( delegate_name );
-      FC_ASSERT( war.valid() );
+      const auto account_record = my->_blockchain->get_account_record( account_name );
+      if( !account_record.valid() )
+          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
+
+      auto war = my->_wallet_db.lookup_account( account_name );
+      if( !war.valid() ) return 0;
       return war->approved;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    owallet_account_record wallet::get_account_record( const address& addr)const
    {
@@ -4744,7 +4748,7 @@ namespace bts { namespace wallet {
        const auto is_open                               = this->is_open();
        info["open"]                                     = is_open;
 
-       info["path"]                                     = variant();
+       info["name"]                                     = variant();
 
        info["unlocked"]                                 = variant();
        info["unlocked_until"]                           = variant();
@@ -4763,7 +4767,7 @@ namespace bts { namespace wallet {
 
        if( is_open )
        {
-         info["path"]                                   = fc::absolute( my->_current_wallet_path );
+         info["name"]                                   = my->_current_wallet_path.filename().string();
 
          info["unlocked"]                               = is_unlocked();
 
