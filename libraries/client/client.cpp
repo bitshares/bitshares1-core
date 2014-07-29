@@ -497,10 +497,10 @@ config load_config( const fc::path& datadir )
 
             client_impl(bts::client::client* self) : 
               _self(self),
-              _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5),
               _last_sync_status_message_indicated_in_sync(true),
               _last_sync_status_head_block(0),
-              _remaining_items_to_sync(0)
+              _remaining_items_to_sync(0),
+              _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5)
             { try {
                 _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
                 fc::logger::get( "user" ).add_appender( _user_appender );
@@ -1581,15 +1581,21 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
     }
 
-    void detail::client_impl::wallet_backup_create(const fc::path& json_filename)const
+    void detail::client_impl::wallet_backup_create( const fc::path& json_filename )const
     {
-      _wallet->export_to_json(json_filename);
+        _wallet->export_to_json( json_filename );
     }
 
-    void detail::client_impl::wallet_backup_restore(const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase)
+    void detail::client_impl::wallet_backup_restore( const fc::path& json_filename, const string& wallet_name, const string& imported_wallet_passphrase )
     {
-      _wallet->create_from_json(json_filename, wallet_name, imported_wallet_passphrase);
-      reschedule_delegate_loop();
+        _wallet->create_from_json( json_filename, wallet_name, imported_wallet_passphrase );
+        reschedule_delegate_loop();
+    }
+
+    bool detail::client_impl::wallet_set_automatic_backups( bool enabled )
+    {
+        _wallet->set_automatic_backups( enabled );
+        return _wallet->get_automatic_backups();
     }
 
     void detail::client_impl::wallet_lock()
@@ -1814,11 +1820,6 @@ config load_config( const fc::path& datadir )
       _wallet->set_account_approval( account_name, approval );
       return _wallet->get_account_approval( account_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval",approval) ) }
-
-    int8_t detail::client_impl::wallet_account_get_approval( const string& account_name )
-    { try {
-      return _wallet->get_account_approval( account_name );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
     otransaction_record detail::client_impl::blockchain_get_transaction(const string& transaction_id, bool exact ) const
     {
@@ -2180,14 +2181,13 @@ config load_config( const fc::path& datadir )
         port_stream << "port " << actual_p2p_endpoint.port();
       else
         port_stream << (string)actual_p2p_endpoint;
-      ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
+      //ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
       if (option_variables.count("p2p-port"))
       {
         uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
         if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
           ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
       }
-
 
       if (option_variables.count("connect-to"))
       {
@@ -3065,9 +3065,10 @@ config load_config( const fc::path& datadir )
       reschedule_delegate_loop();
    }
 
-   void client_impl::wallet_delegate_set_transaction_scanning( bool enabled )
+   bool client_impl::wallet_set_transaction_scanning( bool enabled )
    {
-      _wallet->set_delegate_transaction_scanning( enabled );
+       _wallet->set_transaction_scanning( enabled );
+       return _wallet->get_transaction_scanning();
    }
 
    vector<bts::net::potential_peer_record> client_impl::network_list_potential_peers()const
