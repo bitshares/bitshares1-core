@@ -7,7 +7,7 @@ default (unlocked) >>> wallet_import_private_key "5JD4mvHByhzb3RsdoiXJhnU4vBnVEA
 default (unlocked) >>> wallet_import_private_key "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR" delegate5 true true
 "delegate5"
 default (unlocked) >>> wallet_list_my_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
 delegate4 *                        XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           2014-06-20T14:40:27   NO             0              NO                       
 delegate5 *                        XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac           2014-06-20T14:40:27   NO             0              NO                       
 default (unlocked) >>> debug_wait_for_block_by_number 5
@@ -22,8 +22,8 @@ ACCOUNT                         BALANCE
 delegate4                       30.00000 XTS                
 default (unlocked) >>> wallet_delegate_set_block_production ALL true
 OK
-default (unlocked) >>> wallet_delegate_set_transaction_scanning true
-OK
+default (unlocked) >>> wallet_set_transaction_scanning true
+true
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 6

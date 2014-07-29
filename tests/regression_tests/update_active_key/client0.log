@@ -2,8 +2,6 @@ default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
-default (unlocked) >>> wallet_delegate_set_transaction_scanning true
-OK
 default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
 {
   "expiration": "20140620T164040",
@@ -62,7 +60,7 @@ default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> wallet_get_account delegate4
 {
-  "index": 13,
+  "index": 15,
   "id": 5,
   "name": "delegate4",
   "public_data": null,
@@ -88,15 +86,15 @@ default (unlocked) >>> wallet_get_account delegate4
   },
   "meta_data": null,
   "account_address": "XTSCJ7it7uAFpurQyzWrhKEcuiY5itg8SyDs",
-  "approved": 0,
-  "block_production_enabled": true,
   "private_data": null,
   "is_my_account": true,
-  "is_favorite": false
+  "approved": 0,
+  "is_favorite": false,
+  "block_production_enabled": true
 }
 default (unlocked) >>> wallet_get_account delegate5
 {
-  "index": 15,
+  "index": 17,
   "id": 6,
   "name": "delegate5",
   "public_data": null,
@@ -122,11 +120,11 @@ default (unlocked) >>> wallet_get_account delegate5
   },
   "meta_data": null,
   "account_address": "XTSEvGmnx67aDYYnmU2SzFgy248YWf83EBar",
-  "approved": 0,
-  "block_production_enabled": true,
   "private_data": null,
   "is_my_account": true,
-  "is_favorite": false
+  "approved": 0,
+  "is_favorite": false,
+  "block_production_enabled": true
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
