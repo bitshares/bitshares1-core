@@ -30,6 +30,12 @@ string pretty_timestamp( const time_point_sec& timestamp )
     return timestamp.to_iso_extended_string();
 }
 
+string pretty_path( const path& file_path )
+{
+    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
+    return file_path.string();
+}
+
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
 {
     if( FILTER_OUTPUT_FOR_TESTS )
@@ -88,6 +94,9 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
 
     const auto share_supply = info["blockchain_share_supply"].as<share_type>();
     info["blockchain_share_supply"] = client->get_chain()->to_pretty_asset( asset( share_supply ) );
+
+    const auto data_dir = info["client_data_dir"].as<path>();
+    info["client_data_dir"] = pretty_path( data_dir );
 
     if( !info["ntp_time"].is_null() )
     {
@@ -157,6 +166,9 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
 
     std::stringstream out;
     out << std::left;
+
+    const auto data_dir = info["data_dir"].as<path>();
+    info["data_dir"] = pretty_path( data_dir );
 
     if( !info["unlocked_until_timestamp"].is_null() )
     {
@@ -632,7 +644,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
 
     out << std::setw( 32 ) << "DELEGATE";
     out << std::setw( 24 ) << "VOTES";
-    out << std::setw(  8 ) << "APPROVED";
+    out << std::setw(  8 ) << "APPROVAL";
     out << "\n";
 
     out << pretty_line( 64 );
@@ -645,7 +657,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
 
         out << std::setw( 32 ) << pretty_shorten( delegate_name, 31 );
         out << std::setw( 24 ) << client->get_chain()->to_pretty_asset( asset( votes_for ) );
-        out << std::setw(  8 ) << ( client->get_wallet()->get_delegate_approval( delegate_name ) ? "YES" : "NO" );
+        out << std::setw(  8 ) << client->get_wallet()->get_account_approval( delegate_name );
 
         out << "\n";
     }
