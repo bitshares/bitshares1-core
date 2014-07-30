@@ -3706,7 +3706,7 @@ namespace bts { namespace net { namespace detail {
 
 #ifdef P2P_IN_DEDICATED_THREAD
 # define INVOKE_IN_IMPL(method_name, ...) \
-    return my->_thread->async([&](){ return my->method_name(__VA_ARGS__); }).wait()
+    return my->_thread->async([&](){ return my->method_name(__VA_ARGS__); }, "thread invoke for method " BOOST_PP_STRINGIZE(method_name)).wait()
 #else
 # define INVOKE_IN_IMPL(method_name, ...) \
     return my->method_name(__VA_ARGS__)
