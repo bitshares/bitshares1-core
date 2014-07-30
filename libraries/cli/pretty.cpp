@@ -104,6 +104,8 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         info["ntp_time"] = pretty_timestamp( ntp_time );
     }
 
+    if( FILTER_OUTPUT_FOR_TESTS )
+        info["ntp_error"] = "[redacted]";
     if( !info["wallet_unlocked_until_timestamp"].is_null() )
     {
         const auto unlocked_until_timestamp = info["wallet_unlocked_until_timestamp"].as<time_point_sec>();
