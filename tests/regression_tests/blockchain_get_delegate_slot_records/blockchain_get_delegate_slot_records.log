@@ -1,0 +1,79 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
+default (unlocked) >>> help blockchain_get_block
+Usage:
+blockchain_get_block <block>                                                                          Retrieves the block header for the given block number or ID
+Retrieves the block header for the given block number or ID
+
+Parameters:
+  block (string, required): block number or ID to retrieve
+
+Returns:
+  odigest_block
+
+aliases: get_block, getblock
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+OK
+default (unlocked) >>> help blockchain_get_delegate_slot_records
+Usage:
+blockchain_get_delegate_slot_records <delegate_name>                                                  Query the block production slot records for a particular delegate
+Query the block production slot records for a particular delegate
+
+Parameters:
+  delegate_name (string, required): Delegate whose block production slot records to query
+
+Returns:
+  slot_records_list
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate42
+[{
+    "start_time": "20140620T144030",
+    "block_producer_id": 43,
+    "block_produced": true,
+    "block_id": "b212308c046b816d99ddfaac3b1643fc83fccdfa"
+  }
+]
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate43
+[{
+    "start_time": "20140620T144040",
+    "block_producer_id": 44,
+    "block_produced": true,
+    "block_id": "f940daef3a5ce85f54428dcaef75af0ba1becab5"
+  }
+]
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate44
+[{
+    "start_time": "20140620T144050",
+    "block_producer_id": 45,
+    "block_produced": true,
+    "block_id": "c7e1a427287d54bbda6800db4e8ae0d3bb3f4a94"
+  }
+]
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate45
+[{
+    "start_time": "20140620T144100",
+    "block_producer_id": 46,
+    "block_produced": true,
+    "block_id": "82f653d3fd88da91215ea53f539c89e250973a30"
+  }
+]
+default (unlocked) >>> quit
