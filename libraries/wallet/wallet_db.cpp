@@ -458,10 +458,10 @@ namespace bts { namespace wallet {
    private_keys wallet_db::get_account_private_keys( const fc::sha512& password )const
    { try {
        private_keys keys;
-       keys.reserve( accounts.size() );
-       for( const auto& item : accounts )
+       keys.reserve( accounts.size() * 2 );
+
+       auto insert_key = [&keys,&password]( const owallet_key_record& key_rec )
        {
-          auto key_rec = lookup_key(item.second.account_address);
           if( key_rec.valid() && key_rec->has_private_key() )
           {
              try {
@@ -472,7 +472,16 @@ namespace bts { namespace wallet {
                 throw; // TODO... don't thtrow here, just log
              }
           }
+       };
+
+       for( const auto& item : accounts )
+       {
+          insert_key(lookup_key(item.second.account_address));
+          for( const auto& active_key : item.second.active_key_history )
+            insert_key(lookup_key(active_key.second));
        }
+
+       keys.shrink_to_fit();
        return keys;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
    
