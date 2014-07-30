@@ -2464,7 +2464,7 @@ namespace bts { namespace wallet {
        vector<wallet_balance_record>     balances_to_store; // records to cache if transfer succeeds
 
        public_key_type  receiver_public_key = get_account_public_key( to_account_name );
-       private_key_type sender_private_key  = get_account_private_key( from_account_name );
+       private_key_type sender_private_key  = get_active_private_key( from_account_name );
        public_key_type  sender_public_key   = sender_private_key.get_public_key();
        address          sender_account_address( sender_private_key.get_public_key() );
        
@@ -2685,7 +2685,7 @@ namespace bts { namespace wallet {
       share_type amount_to_transfer = real_amount_to_transfer * precision;
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
-      private_key_type sender_private_key  = get_account_private_key( from_account_name );
+      private_key_type sender_private_key  = get_active_private_key( from_account_name );
       public_key_type  sender_public_key   = sender_private_key.get_public_key();
       address          sender_account_address( sender_private_key.get_public_key() );
 
@@ -2754,7 +2754,7 @@ namespace bts { namespace wallet {
          FC_ASSERT( asset_rec.valid() );
          auto asset_id = asset_rec->id;
          
-         private_key_type sender_private_key  = get_account_private_key( from_account_name );
+         private_key_type sender_private_key  = get_active_private_key( from_account_name );
          public_key_type  sender_public_key   = sender_private_key.get_public_key();
          address          sender_account_address( sender_private_key.get_public_key() );
          
@@ -2848,7 +2848,7 @@ namespace bts { namespace wallet {
       asset asset_to_transfer( amount_to_transfer, asset_id );
 
       public_key_type  receiver_public_key = get_account_public_key( to_account_name );
-      private_key_type payer_private_key  = get_account_private_key( paying_account_name );
+      private_key_type payer_private_key  = get_active_private_key( paying_account_name );
       public_key_type  payer_public_key   = payer_private_key.get_public_key();
       address          payer_account_address( payer_private_key.get_public_key() );
       
@@ -2882,7 +2882,7 @@ namespace bts { namespace wallet {
       public_key_type sender_public_key;
       if( !from_account_name.empty() )
       {
-        sender_private_key = get_account_private_key( from_account_name );
+        sender_private_key = get_active_private_key( from_account_name );
         sender_public_key = sender_private_key.get_public_key();
       }
 
@@ -3581,7 +3581,7 @@ namespace bts { namespace wallet {
        unordered_set<address>     required_signatures;
        required_signatures.insert(order_address);
 
-       private_key_type from_private_key  = get_account_private_key( from_account_name );
+       private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
        auto required_fees = get_priority_fee();
@@ -3693,7 +3693,7 @@ namespace bts { namespace wallet {
        unordered_set<address>     required_signatures;
        required_signatures.insert(order_address);
 
-       private_key_type from_private_key  = get_account_private_key( from_account_name );
+       private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
        auto required_fees = get_priority_fee();
@@ -3804,7 +3804,7 @@ namespace bts { namespace wallet {
        unordered_set<address>     required_signatures;
        required_signatures.insert(order_address);
 
-       private_key_type from_private_key  = get_account_private_key( from_account_name );
+       private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
        auto required_fees = get_priority_fee();
@@ -4433,7 +4433,7 @@ namespace bts { namespace wallet {
    }
 
    /**
-    *  Any account for which this wallet owns the private key.
+    *  Any account for which this wallet owns the active private key.
     */
    bool wallet::is_receive_account( const string& account_name )const
    {
@@ -4441,7 +4441,7 @@ namespace bts { namespace wallet {
       if( !is_valid_account_name( account_name ) ) return false;
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       if( !opt_account.valid() ) return false;
-      auto opt_key = my->_wallet_db.lookup_key( opt_account->account_address );
+      auto opt_key = my->_wallet_db.lookup_key( opt_account->active_address() );
       if( !opt_key.valid() ) return false;
       return opt_key->has_private_key();
    }
@@ -4454,7 +4454,7 @@ namespace bts { namespace wallet {
       return my->_blockchain->is_valid_account_name( account_name );
    }
 
-   private_key_type wallet::get_account_private_key( const string& account_name )const
+   private_key_type wallet::get_active_private_key( const string& account_name )const
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -4464,7 +4464,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'", 
                 ("name",account_name) );
 
-      auto opt_key = my->_wallet_db.lookup_key( opt_account->account_address );
+      auto opt_key = my->_wallet_db.lookup_key( opt_account->active_address() );
       FC_ASSERT( opt_key.valid(), "Unable to find key for account '${name}", 
                 ("name",account_name) );
 

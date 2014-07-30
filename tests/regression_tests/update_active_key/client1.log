@@ -7,7 +7,7 @@ default (unlocked) >>> wallet_import_private_key "5JD4mvHByhzb3RsdoiXJhnU4vBnVEA
 default (unlocked) >>> wallet_import_private_key "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR" delegate5 true true
 "delegate5"
 default (unlocked) >>> wallet_list_my_accounts
-NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVED       BLOCK PRODUCTION ENABLED 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
 delegate4 *                        XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           2014-06-20T14:40:27   NO             0              NO                       
 delegate5 *                        XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac           2014-06-20T14:40:27   NO             0              NO                       
 default (unlocked) >>> debug_wait_for_block_by_number 5
@@ -15,15 +15,15 @@ OK
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-2014-06-20T14:41:10 4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         0e73117b
+2014-06-20T14:41:20 4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         0e73117b
 default (unlocked) >>> wallet_account_balance
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate4                       30.00000 XTS                
 default (unlocked) >>> wallet_delegate_set_block_production ALL true
 OK
-default (unlocked) >>> wallet_delegate_set_transaction_scanning true
-OK
+default (unlocked) >>> wallet_set_transaction_scanning true
+true
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 6
@@ -43,6 +43,30 @@ ACCOUNT                         BALANCE
 ============================================================
 delegate4                       19.90000 XTS                
 delegate5                       10.00000 XTS                
-default (unlocked) >>> debug_wait_for_block_by_number 9
+default (unlocked) >>> debug_wait_for_block_by_number 10
 OK
+default (unlocked) >>> transfer 1 XTS delegate4 delegate10 "should fail"
+20006 unknown_account: unknown account
+Unknown paying account name!
+    {"paying_account_name":"delegate4"}
+    th_a  wallet.cpp:2828 transfer_asset
+
+    {"real_amount_to_transfer":1,"amount_to_transfer_symbol":"XTS","paying_account_name":"delegate4","from_account_name":"delegate4","to_account_name":"delegate10","memo_message":"should fail"}
+    th_a  wallet.cpp:2921 transfer_asset
+
+    {}
+    th_a  common_api_client.cpp:947 wallet_transfer
+
+    {"command":"transfer"}
+    th_a  cli.cpp:543 execute_command
+default (unlocked) >>> debug_wait_for_block_by_number 11
+OK
+default (unlocked) >>> debug_wait 1
+OK
+default (unlocked) >>> history
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+2014-06-20T14:41:20 4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         0e73117b
+2014-06-20T14:41:50 7         delegate4           delegate5           10.00000 XTS                                                        0.10000 XTS         9c6a9477
+2014-06-20T14:42:30 10        delegate4           delegate4           0.00000 XTS             update delegate4                            0.10000 XTS         8b8dd701
 default (unlocked) >>> quit

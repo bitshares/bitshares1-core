@@ -132,7 +132,7 @@ namespace bts { namespace wallet {
           */
          bool is_valid_account_name( const string& account_name )const;
 
-         private_key_type get_account_private_key( const string& account_name )const;
+         private_key_type get_active_private_key( const string& account_name )const;
          public_key_type  get_account_public_key( const string& account_name )const;
 
          public_key_summary get_public_key_summary( const public_key_type& pubkey ) const;

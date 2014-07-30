@@ -106,7 +106,6 @@ namespace bts { namespace wallet {
               auto key = key_to_load.public_key;
               auto bts_addr = key_to_load.get_address();
               self->btc_to_bts_address[ address(key) ] = bts_addr;
-              self->btc_to_bts_address[ key_to_load.account_address ] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,false,56) )] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
@@ -392,7 +391,6 @@ namespace bts { namespace wallet {
          auto key = key_to_store.public_key;
          auto bts_addr = key_to_store.get_address();
          btc_to_bts_address[ address(key) ] = bts_addr;
-         btc_to_bts_address[ key_to_store.account_address ] = bts_addr;
          btc_to_bts_address[ address(pts_address(key,false,56) )] = bts_addr;
          btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
          btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
@@ -542,9 +540,20 @@ namespace bts { namespace wallet {
          wallet_key_record new_key;
          new_key.wallet_record_index = new_wallet_record_index();
          new_key.account_address = address(blockchain_account.owner_key);
-         new_key.public_key = blockchain_account.active_key();
+         new_key.public_key = blockchain_account.owner_key;
          my->load_key_record( new_key, false );
          store_key( new_key );
+
+         for( auto active_key : blockchain_account.active_key_history )
+         {
+           if( active_key.second != blockchain_account.owner_key )
+           {
+             new_key.wallet_record_index = new_wallet_record_index();
+             new_key.public_key = active_key.second;
+             my->load_key_record( new_key, false );
+             store_key( new_key );
+           }
+         }
       }
    } FC_CAPTURE_AND_RETHROW( (blockchain_account) ) }
 

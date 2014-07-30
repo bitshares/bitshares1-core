@@ -1912,18 +1912,21 @@ config load_config( const fc::path& datadir )
     {
       try
       {
-          return utilities::key_to_wif( _wallet->get_account_private_key( input ) );
+          //If input is an account name...
+          return utilities::key_to_wif( _wallet->get_active_private_key( input ) );
       }
       catch( ... )
       {
           try
           {
+             //If input is an address...
              return utilities::key_to_wif( _wallet->get_private_key( address( input ) ) );
           }
           catch( ... )
           {
               try
               {
+                 //If input is a public key...
                  return utilities::key_to_wif( _wallet->get_private_key( address( public_key_type( input ) ) ) );
               }
               catch( ... )
@@ -3094,7 +3097,7 @@ config load_config( const fc::path& datadir )
 
    fc::ecc::compact_signature client_impl::wallet_sign_hash(const string& signing_account, const fc::sha256& hash)
    {
-      return _wallet->get_account_private_key(signing_account).sign_compact(hash);
+      return _wallet->get_active_private_key(signing_account).sign_compact(hash);
    }
 
    std::string client_impl::wallet_login_start(const std::string &server_account)
