@@ -1298,12 +1298,6 @@ namespace bts { namespace wallet {
           my->_current_wallet_path = wallet_file_path;
           my->_wallet_db.open( wallet_file_path );
           my->upgrade_version();
-
-          for( const auto& balance_item : my->_wallet_db.get_balances() )
-          {
-              const auto balance_id = balance_item.first;
-              my->sync_balance_with_blockchain( balance_id );
-          }
       }
       catch( ... )
       {
