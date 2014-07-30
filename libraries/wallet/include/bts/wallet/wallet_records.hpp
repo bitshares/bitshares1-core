@@ -66,7 +66,7 @@ namespace bts { namespace wallet {
       automatic_backups,
       transaction_scanning,
       last_unlocked_scanned_block_number,
-      priority_fee
+      default_transaction_priority_fee
    };
 
    /** Used to store key/value property pairs.
@@ -224,7 +224,7 @@ FC_REFLECT_ENUM( bts::wallet::property_enum,
         (automatic_backups)
         (transaction_scanning)
         (last_unlocked_scanned_block_number)
-        (priority_fee)
+        (default_transaction_priority_fee)
         )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum, 

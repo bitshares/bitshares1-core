@@ -3864,14 +3864,14 @@ namespace bts { namespace wallet {
    void wallet::set_priority_fee( const asset& fee )
    { try {
       FC_ASSERT( is_open () );
-      my->_wallet_db.set_property( priority_fee, variant( fee ) );
+      my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
    asset wallet::get_priority_fee()const
    { try {
       FC_ASSERT( is_open() );
       // TODO: support price conversion using price from blockchain
-      return my->_wallet_db.get_property( priority_fee ).as<asset>();
+      return my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
    } FC_CAPTURE_AND_RETHROW() }
    
    string wallet::get_key_label( const public_key_type& key )const
