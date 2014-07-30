@@ -1,4 +1,8 @@
+/* NOTE: Avoid renaming any record members because there will be no way to
+ * unserialize everyone's existing wallet */
+
 #pragma once
+
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/extended_address.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
@@ -56,11 +60,13 @@ namespace bts { namespace wallet {
 
    enum property_enum
    {
+      version,
       next_record_number,
-      default_transaction_priority_fee,
       next_child_key_index,
-      last_locked_scanned_block_number,
-      last_unlocked_scanned_block_number
+      automatic_backups,
+      transaction_scanning,
+      last_unlocked_scanned_block_number,
+      default_transaction_priority_fee
    };
 
    /** Used to store key/value property pairs.
@@ -80,31 +86,16 @@ namespace bts { namespace wallet {
     */
    struct account : public bts::blockchain::account_record
    {
-       account()
-       :approved(0)
-       ,block_production_enabled(false)
-       ,is_my_account(false),is_favorite(false)
-       {}
-
-       address           account_address;
+       address  account_address;
        /**
         * Data kept locally for this account
         */
-       variant           private_data;
+       variant  private_data;
 
-       /** 
-        * If registered account ID is a delegate ID then
-        * approval indicates whether the user wants to
-        * vote for the delegate or not.
-        *
-        * The assumption is that if the delegate is in the
-        * user's wallet then they are a potential candidate.
-        */
-       int               approved;
-
-       bool              block_production_enabled;
-       bool              is_my_account;
-       bool              is_favorite;
+       bool     is_my_account = false;
+       int8_t   approved = 0;
+       bool     is_favorite = false;
+       bool     block_production_enabled = false;
    };
 
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
@@ -227,12 +218,14 @@ namespace bts { namespace wallet {
 } } // bts::wallet
 
 FC_REFLECT_ENUM( bts::wallet::property_enum,
-                    (next_record_number)
-                    (default_transaction_priority_fee)
-                    (next_child_key_index)
-                    (last_locked_scanned_block_number)
-                    (last_unlocked_scanned_block_number)
-               )
+        (version)
+        (next_record_number)
+        (next_child_key_index)
+        (automatic_backups)
+        (transaction_scanning)
+        (last_unlocked_scanned_block_number)
+        (default_transaction_priority_fee)
+        )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum, 
                    (master_key_record_type)
@@ -266,7 +259,15 @@ FC_REFLECT( bts::wallet::transaction_data,
             (extra_addresses)
           )
 
-FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record), (account_address)(approved)(block_production_enabled)(private_data)(is_my_account)(is_favorite) )
+FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record),
+                    (account_address)
+                    (private_data)
+                    (is_my_account)
+                    (approved)
+                    (is_favorite)
+                    (block_production_enabled)
+                    )
+
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 FC_REFLECT( bts::wallet::setting, (name)(value) )
 

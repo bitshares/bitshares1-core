@@ -6,7 +6,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              (109)
-#define BTS_WALLET_VERSION                                  (100)
+#define BTS_WALLET_VERSION                                  uint32_t(100)
 #define BTS_BLOCKCHAIN_DATABASE_VERSION                     (117)
 
 /**

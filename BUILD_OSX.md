@@ -62,4 +62,4 @@ Building BitShares Toolkit on OS X 10.9
     git clone git@github.com:BitShares/web_wallet.git
     git clone git@github.com:BitShares/qt_wallet.git
     export CMAKE_PREFIX_PATH=~/Qt/5.3/
-    cmake -DINCLUDE_QT_WALLET .
+    cmake -DINCLUDE_QT_WALLET=TRUE -DCMAKE_PREFIX_PATH=/usr/local/ssl  .

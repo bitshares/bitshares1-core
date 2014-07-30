@@ -25,7 +25,7 @@ void stcp_socket::do_key_exchange()
 {
   _priv_key = fc::ecc::private_key::generate();
   fc::ecc::public_key pub = _priv_key.get_public_key();
-  auto s = pub.serialize();
+  fc::ecc::public_key_data s = pub.serialize();
   _sock.write( (char*)&s, sizeof(s) );
   fc::ecc::public_key_data rpub;
   _sock.read( (char*)&rpub, sizeof(rpub) );
@@ -57,8 +57,7 @@ void stcp_socket::bind( const fc::ip::endpoint& local_endpoint )
  */
 size_t stcp_socket::readsome( char* buffer, size_t len )
 { try {
-    FC_ASSERT( (len % 16) == 0 );
-    FC_ASSERT( len >= 16 );
+    assert( len > 0 && (len % 16) == 0 );
     char crypt_buf[4096];
     len = std::min<size_t>(sizeof(crypt_buf),len);
 
@@ -79,29 +78,25 @@ bool stcp_socket::eof()const
 
 size_t stcp_socket::writesome( const char* buffer, size_t len )
 { try {
-    FC_ASSERT( len % 16 == 0 );
-    FC_ASSERT( len > 0 );
+    assert( len > 0 && (len % 16) == 0 );
     char crypt_buf[4096];
     len = std::min<size_t>(sizeof(crypt_buf),len);
-    memcpy( crypt_buf, buffer, len );
+    memset(crypt_buf, 0, len); // just in case aes.encode screws up
     /**
      * every sizeof(crypt_buf) bytes the aes channel
      * has an error and doesn't decrypt properly...  disable
      * for now because we are going to upgrade to something
      * better.
      */
-    //auto cipher_len =
-    _send_aes.encode( buffer, len, crypt_buf );
-    FC_ASSERT( len >= 16 );
-    FC_ASSERT( len % 16 == 0);
-   // memcpy( crypt_buf, buffer, len );
-    _sock.write( (char*)crypt_buf, len );
+    uint32_t ciphertext_len = _send_aes.encode( buffer, len, crypt_buf );
+    assert(ciphertext_len == len);
+    _sock.write( crypt_buf, len );
     return len;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("len",len) ) }
 
 void stcp_socket::flush()
 {
-   _sock.flush();
+  _sock.flush();
 }
 
 
@@ -109,7 +104,7 @@ void stcp_socket::close()
 {
   try 
   {
-   _sock.close();
+    _sock.close();
   }FC_RETHROW_EXCEPTIONS( warn, "error closing stcp socket" );
 }
 

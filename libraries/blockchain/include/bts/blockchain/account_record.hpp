@@ -40,23 +40,20 @@ namespace bts { namespace blockchain {
 
    struct account_record
    {
-      account_record()
-      :id(0){}
+      bool              is_null()const;
+      account_record    make_null()const;
 
-      bool is_null()const;
-      account_record make_null()const;
+      share_type        delegate_pay_balance()const;
+      bool              is_delegate()const;
+      void              adjust_votes_for( share_type delta );
+      share_type        net_votes()const;
+      bool              is_retracted()const;
+      address           active_address()const;
+      void              set_active_key( const time_point_sec& now, const public_key_type& new_key );
+      public_key_type   active_key()const;
+      uint8_t           delegate_pay_rate()const;
 
-      share_type     delegate_pay_balance()const;
-      bool           is_delegate()const;
-      void           adjust_votes_for( share_type delta );
-      share_type     net_votes()const;
-      bool           is_retracted()const;
-      address        active_address()const;
-      void           set_active_key( time_point_sec now, 
-                                     const public_key_type& new_key );
-      public_key_type active_key()const;
-
-      account_id_type                        id;
+      account_id_type                        id = 0;
       std::string                            name;
       fc::variant                            public_data;
       public_key_type                        owner_key;

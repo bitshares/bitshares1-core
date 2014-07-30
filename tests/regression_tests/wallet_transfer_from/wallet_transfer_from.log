@@ -1,0 +1,53 @@
+default (unlocked) >>> wallet_account_create test
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> wallet_account_balance delegate1
+ACCOUNT                         BALANCE                     
+============================================================
+delegate1                       19,801,980.19801 XTS        
+default (unlocked) >>> help wallet_transfer_from
+Usage:
+wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [vote_method]   Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
+Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
+
+Parameters:
+  amount_to_transfer (real_amount, required): the amount of shares to transfer
+  asset_symbol (asset_symbol, required): the asset to transfer
+  paying_account_name (sending_account_name, required): the source account to draw the shares from
+  from_account_name (sending_account_name, required): the account to show the recipient as being the sender (requires account's private key to be in wallet). Leave empty to send anonymously.
+  to_account_name (receive_account_name, required): the account to transfer the shares to
+  memo_message (string, optional, defaults to ""): a memo to store with the transaction
+  vote_method (vote_selection_method, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
+
+Returns:
+  signed_transaction
+default (unlocked) >>> debug_enable_output false
+>>> wallet_transfer_from 100 XTS delegate1 delegate0 test
+>>> debug_enable_output true
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> wallet_account_balance delegate1
+ACCOUNT                         BALANCE                     
+============================================================
+delegate1                       19,801,880.09801 XTS        
+default (unlocked) >>> debug_wait_block_interval 1
+OK
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> wallet_account_balance delegate1
+ACCOUNT                         BALANCE                     
+============================================================
+delegate1                       19,801,880.09801 XTS        
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            100.00000 XTS               
+default (unlocked) >>> quit

@@ -35,7 +35,7 @@ namespace bts { namespace network {
    void peer_connection::start_read_loop()
    {
       if( !_read_loop.valid() )
-         _read_loop = fc::async( [this](){ read_loop(); } );
+         _read_loop = fc::async( [this](){ read_loop(); }, "peer_connection::read_loop" );
    }
 
    void peer_connection::read_loop()
@@ -57,7 +57,7 @@ namespace bts { namespace network {
          elog( "${ss}", ("ss",_shared_secret) );
 
          if( _send_queue.size() && !_send_queue_complete.valid() )
-            _send_queue_complete = fc::async( [=](){ process_send_queue(); } );
+            _send_queue_complete = fc::async( [=](){ process_send_queue(); }, "process_send_queue" );
 
          message next_message;
          next_message.data.resize( BTS_NETWORK_MAX_MESSAGE_SIZE );
@@ -109,7 +109,7 @@ namespace bts { namespace network {
    { 
          _send_queue.push_back(m);
          if( _shared_secret != fc::sha512() && _send_queue.size() == 1 )
-            _send_queue_complete = fc::async( [=](){ process_send_queue(); } );
+            _send_queue_complete = fc::async( [=](){ process_send_queue(); }, "process_send_queue" );
    }
    void peer_connection::process_send_queue()
    {
@@ -138,7 +138,7 @@ namespace bts { namespace network {
    {
       auto sig = key.sign_compact( fc::sha256::hash( (char*)&_shared_secret, sizeof(_shared_secret) ) );
       auto self = shared_from_this();
-      fc::async( [=](){ self->send_message( signin_request( sig ) ); } );
+      fc::async( [=](){ self->send_message( signin_request( sig ) ); }, "peer_connection::signin" );
    }
 
 } }

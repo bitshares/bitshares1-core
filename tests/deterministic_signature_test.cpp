@@ -22,7 +22,7 @@ BOOST_AUTO_TEST_CASE(ecc_signatures)
   //fc::ecc::private_key signing_key = fc::ecc::private_key::generate();
   //std::string private_key_as_string = fc::variant(signing_key).as_string();
   //fc::ecc::private_key reconstructed_private_key = fc::variant(private_key_as_string).as<fc::ecc::private_key>();
-  //FC_ASSERT(signing_key == reconstructed_private_key);
+  //assert(signing_key == reconstructed_private_key);
   fc::ecc::private_key signing_key = fc::variant("940ff36f9c6d4d19d8c965bfbbe50bd318774a2af3d8c76021e681af462f943e").as<fc::ecc::private_key>();
 
   // generate two signatures before injecting our code into openssl    

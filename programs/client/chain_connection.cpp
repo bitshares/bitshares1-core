@@ -96,7 +96,7 @@ const chain_message_type trx_err_message::type   = chain_message_type::trx_err_m
               if( con_del )
               {
                  ilog( ".");
-                 fc::async( [=](){con_del->on_connection_disconnected( self );} );
+                 fc::async( [=](){con_del->on_connection_disconnected( self );}, "on_connection_disconnected" );
                  ilog( ".");
               }
               else
@@ -111,7 +111,7 @@ const chain_message_type trx_err_message::type   = chain_message_type::trx_err_m
               {
                 elog( "disconnected ${er}", ("er", er.to_detail_string() ) );
                 //con_del->on_connection_disconnected( self );
-                fc::async( [=](){con_del->on_connection_disconnected( self );} );
+                fc::async( [=](){con_del->on_connection_disconnected( self );}, "exception on_connection_disconnected" );
               }
               else
               {
@@ -135,7 +135,7 @@ const chain_message_type trx_err_message::type   = chain_message_type::trx_err_m
     my->sock = c;
     my->con_del = d;
     my->remote_ep = remote_endpoint();
-    my->read_loop_complete = fc::async( [=](){ my->read_loop(); } );
+    my->read_loop_complete = fc::async( [=](){ my->read_loop(); }, "chain_connection::read_loop" );
   }
 
   chain_connection::chain_connection( chain_connection_delegate* d )
