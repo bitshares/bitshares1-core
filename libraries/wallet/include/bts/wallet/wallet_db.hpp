@@ -94,11 +94,11 @@ namespace bts { namespace wallet {
          void                           change_password( const fc::sha512& old_password,
                                                          const fc::sha512& new_password );
 
-         const unordered_map< transaction_id_type, wallet_transaction_record >&  get_transactions()const
+         const unordered_map< transaction_id_type, wallet_transaction_record >& get_transactions()const
          {
             return transactions;
          }
-         const unordered_map< balance_id_type,wallet_balance_record >&  get_balances()const
+         const unordered_map< balance_id_type,wallet_balance_record >& get_balances()const
          {
             return balances;
          }
@@ -106,7 +106,7 @@ namespace bts { namespace wallet {
          {
             return accounts;
          }
-         const unordered_map<address,wallet_market_order_status_record>&  get_market_orders()const
+         const unordered_map<address,wallet_market_order_status_record>& get_market_orders()const
          {
             return market_orders;
          }

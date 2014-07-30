@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 for regression_test in `ls regression_tests | grep -v "^\\_"`; do
     printf " Running $regression_test                            \\r"

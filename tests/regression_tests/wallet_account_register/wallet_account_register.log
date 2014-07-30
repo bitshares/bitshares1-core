@@ -18,7 +18,7 @@ default (unlocked) >>>  debug_enable_output false
 >>> debug_enable_output true
 OK
 default (unlocked) >>> blockchain_list_accounts "test" 10
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
 default (unlocked) >>> quit

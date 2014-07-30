@@ -10,7 +10,7 @@ Parameters:
 Returns:
   account_record_array
 (wallet closed) >>> blockchain_list_accounts delegate0
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           2014-06-20T14:40:27   0              0              
 delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           2014-06-20T14:40:27   0              0              
@@ -40,7 +40,7 @@ delegate3 *                        XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdB
 delegate30 *                       XTS8bKmwsGuPTJJ6nabDqCPN4zCBga5oWaWsgBhmCA1E2vjBxVj42           2014-06-20T14:40:27   0              0              
 ... Use "blockchain_list_accounts <start_name> <count>" to see more.
 (wallet closed) >>> blockchain_list_accounts delegate0 5
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           2014-06-20T14:40:27   0              0              
 delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           2014-06-20T14:40:27   0              0              
@@ -48,7 +48,7 @@ delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4q
 delegate100 *                      XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy           2014-06-20T14:40:27   0              0              
 delegate11 *                       XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ           2014-06-20T14:40:27   0              0              
 (wallet closed) >>> blockchain_list_accounts 1 5
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           2014-06-20T14:40:27   0              0              
 delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           2014-06-20T14:40:27   0              0              
@@ -56,7 +56,7 @@ delegate10 *                       XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4q
 delegate100 *                      XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy           2014-06-20T14:40:27   0              0              
 delegate11 *                       XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ           2014-06-20T14:40:27   0              0              
 (wallet closed) >>> blockchain_list_accounts 4 9
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate100 *                      XTS5eovbuPjx28541PhMJ5LFtcdRP8eNtNt9MjSwHoH6oggf88REy           2014-06-20T14:40:27   0              0              
 delegate11 *                       XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ           2014-06-20T14:40:27   0              0              
@@ -68,7 +68,7 @@ delegate16 *                       XTS64mncWuqqWPwY8um8DhGvwKtVjdMgeKHE5DXAYV4v5
 delegate17 *                       XTS8TAYx3Zxfg64UHpWTuJ4sperVgxVE6JkUAADxTMsHzND4UgsKE           2014-06-20T14:40:27   0              0              
 delegate18 *                       XTS8QPbn7KFnnTPEHoq8HfsimCUBQ7RQPG5PKCkMpgfcQKtV2vMkA           2014-06-20T14:40:27   0              0              
 (wallet closed) >>> blockchain_list_accounts 1 100
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVED       
+NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
 -------------------------------------------------------------------------------------------------------------------------------------------------------
 delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           2014-06-20T14:40:27   0              0              
 delegate1 *                        XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54           2014-06-20T14:40:27   0              0              
