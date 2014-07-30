@@ -2182,7 +2182,7 @@ config load_config( const fc::path& datadir )
       else
         port_stream << (string)actual_p2p_endpoint;
       // TODO: This line was breaking regression tests by getting included in console.log
-      //ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
+      ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
       if (option_variables.count("p2p-port"))
       {
         uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();

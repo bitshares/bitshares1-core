@@ -1023,7 +1023,7 @@ namespace bts { namespace wallet {
               if( progress_callback )
                  progress_callback( block_num, min_end );
               _scan_progress = float(block_num-start)/(min_end-start+1);
-              _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+              _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( block_num ) );
            }
 
            for( auto acct : _wallet_db.get_accounts() )
@@ -1063,9 +1063,8 @@ namespace bts { namespace wallet {
 
       void wallet_impl::upgrade_version()
       {
-          auto current_version = uint32_t( 0 );
-          const auto version_property = _wallet_db.get_property( version );
-          if( !version_property.is_null() ) current_version = version_property.as<uint32_t>();
+          if( _wallet_db.get_property( version ).is_null() ) _wallet_db.set_property( version, variant( 0 ) );
+          const auto current_version = _wallet_db.get_property( version ).as<uint32_t>();
           if ( current_version > BTS_WALLET_VERSION )
           {
               FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
@@ -1079,26 +1078,38 @@ namespace bts { namespace wallet {
           ulog( "Upgrading wallet..." );
           try
           {
-              self->auto_backup( "version_upgrade" );
+              if( current_version >= 100 )
+                  self->auto_backup( "version_upgrade" );
 
               if( current_version < 100 )
               {
-                  /* Remove old format genesis claim virtual transactions */
-                  auto removed = false;
+                  self->set_automatic_backups( true );
+                  self->auto_backup( "version_upgrade" );
+                  self->set_transaction_scanning( self->get_my_delegates( enabled_delegate_status ).empty() );
+                  self->set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
+
+                  /* Check for old index format genesis claim virtual transactions */
+                  auto present = false;
                   _blockchain->scan_balances( [&]( const balance_record& bal_rec )
                   {
                        if( !bal_rec.genesis_info.valid() ) return;
                        const auto id = bal_rec.id().addr;
-                       if( _wallet_db.lookup_transaction( id ).valid() )
-                       {
-                           _wallet_db.remove_transaction( id );
-                           removed = true;
-                       }
+                       present |= _wallet_db.lookup_transaction( id ).valid();
                   } );
 
-                  if( removed )
+                  if( present )
                   {
-                      const function<void( void )> rescan = [&]() { scan_balances(); };
+                      const function<void( void )> rescan = [&]()
+                      {
+                          /* Upgrade genesis claim virtual transaction indexes */
+                          _blockchain->scan_balances( [&]( const balance_record& bal_rec )
+                          {
+                               if( !bal_rec.genesis_info.valid() ) return;
+                               const auto id = bal_rec.id().addr;
+                               _wallet_db.remove_transaction( id );
+                          } );
+                          scan_balances();
+                      };
                       _unlocked_upgrade_tasks.push_back( rescan );
                   }
               }
@@ -1110,7 +1121,7 @@ namespace bts { namespace wallet {
               }
               else
               {
-                  ulog( "Please unlock your wallet to complete the upgrade." );
+                  ulog( "Please unlock your wallet to complete the upgrade..." );
               }
           }
           catch( ... )
@@ -1287,12 +1298,6 @@ namespace bts { namespace wallet {
           my->_current_wallet_path = wallet_file_path;
           my->_wallet_db.open( wallet_file_path );
           my->upgrade_version();
-
-          for( const auto& balance_item : my->_wallet_db.get_balances() )
-          {
-              const auto balance_id = balance_item.first;
-              my->sync_balance_with_blockchain( balance_id );
-          }
       }
       catch( ... )
       {
@@ -1372,9 +1377,9 @@ namespace bts { namespace wallet {
       if( !is_valid_account_name( wallet_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
+      create( wallet_name, passphrase );
       try
       {
-          create( wallet_name, passphrase );
           my->_wallet_db.set_property( version, variant( 0 ) );
           my->_wallet_db.import_from_json( filename );
           close();
@@ -1420,8 +1425,6 @@ namespace bts { namespace wallet {
    bool wallet::get_automatic_backups()const
    {
        FC_ASSERT( is_open() );
-       const auto property = my->_wallet_db.get_property( automatic_backups );
-       if( property.is_null() ) return true;
        return my->_wallet_db.get_property( automatic_backups ).as<bool>();
    }
 
@@ -1434,8 +1437,6 @@ namespace bts { namespace wallet {
    bool wallet::get_transaction_scanning()const
    {
        FC_ASSERT( is_open() );
-       const auto property = my->_wallet_db.get_property( transaction_scanning );
-       if( property.is_null() ) return true;
        return my->_wallet_db.get_property( transaction_scanning ).as<bool>();
    }
 
@@ -2249,13 +2250,13 @@ namespace bts { namespace wallet {
       else if( empty_before )
       {
           // TODO: This line was breaking regression tests by getting included in console.log
-          //ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
+          ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
           set_transaction_scanning( false );
       }
       else
       {
           // TODO: This line was breaking regression tests by getting included in console.log
-          //ulog( "Wallet transaction scanning has been automatically re-enabled!" );
+          ulog( "Wallet transaction scanning has been automatically re-enabled!" );
           set_transaction_scanning( true );
       }
    }
@@ -3863,14 +3864,14 @@ namespace bts { namespace wallet {
    void wallet::set_priority_fee( const asset& fee )
    { try {
       FC_ASSERT( is_open () );
-      my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
+      my->_wallet_db.set_property( priority_fee, variant( fee ) );
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
    asset wallet::get_priority_fee()const
    { try {
       FC_ASSERT( is_open() );
       // TODO: support price conversion using price from blockchain
-      return my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
+      return my->_wallet_db.get_property( priority_fee ).as<asset>();
    } FC_CAPTURE_AND_RETHROW() }
    
    string wallet::get_key_label( const public_key_type& key )const
@@ -4736,7 +4737,7 @@ namespace bts { namespace wallet {
          info["name"]                                   = my->_current_wallet_path.filename().string();
          info["automatic_backups"]                      = get_automatic_backups();
          info["transaction_scanning"]                   = get_transaction_scanning();
-         info["last_scanned_block_num"]                 = my->_wallet_db.get_property( last_unlocked_scanned_block_number );
+         info["last_scanned_block_num"]                 = my->_wallet_db.get_property( last_unlocked_scanned_block_number ).as<uint32_t>();
          info["priority_fee"]                           = get_priority_fee();
 
          info["unlocked"]                               = is_unlocked();
@@ -4764,7 +4765,7 @@ namespace bts { namespace wallet {
            }
          }
 
-         info["version"]                                = my->_wallet_db.get_property( version );
+         info["version"]                                = my->_wallet_db.get_property( version ).as<uint32_t>();
        }
 
        return info;
