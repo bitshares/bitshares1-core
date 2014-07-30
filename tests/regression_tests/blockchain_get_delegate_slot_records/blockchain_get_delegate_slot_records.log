@@ -1,17 +1,5 @@
 default (unlocked) >>> debug_filter_output_for_tests true
 OK
-default (unlocked) >>> help blockchain_get_block
-Usage:
-blockchain_get_block <block>                                                                          Retrieves the block header for the given block number or ID
-Retrieves the block header for the given block number or ID
-
-Parameters:
-  block (string, required): block number or ID to retrieve
-
-Returns:
-  odigest_block
-
-aliases: get_block, getblock
 default (unlocked) >>> debug_wait 5
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
