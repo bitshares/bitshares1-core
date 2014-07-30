@@ -1383,9 +1383,9 @@ namespace bts { namespace wallet {
       if( !is_valid_account_name( wallet_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
+      create( wallet_name, passphrase );
       try
       {
-          create( wallet_name, passphrase );
           my->_wallet_db.set_property( version, variant( 0 ) );
           my->_wallet_db.import_from_json( filename );
           close();
