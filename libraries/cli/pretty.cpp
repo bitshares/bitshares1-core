@@ -115,6 +115,12 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
             info["wallet_unlocked_until"] = pretty_age( unlocked_until_timestamp, true );
     }
 
+    if( !info["wallet_scan_progress"].is_null() )
+    {
+        const auto scan_progress = info["wallet_scan_progress"].as<float>();
+        info["wallet_scan_progress"] = pretty_percent( scan_progress, 1 );
+    }
+
     if( !info["wallet_next_block_production_timestamp"].is_null() )
     {
         const auto next_block_timestamp = info["wallet_next_block_production_timestamp"].as<time_point_sec>();

@@ -3873,7 +3873,13 @@ namespace bts { namespace wallet {
       // TODO: support price conversion using price from blockchain
       return my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
    } FC_CAPTURE_AND_RETHROW() }
-   
+
+   float wallet::get_scan_progress()const
+   {
+       FC_ASSERT( is_open() );
+       return my->_scan_progress;
+   }
+
    string wallet::get_key_label( const public_key_type& key )const
    { try {
        if( key == public_key_type() )
@@ -4748,7 +4754,7 @@ namespace bts { namespace wallet {
            info["unlocked_until"]                       = ( *unlocked_until - now ).to_seconds();
            info["unlocked_until_timestamp"]             = *unlocked_until;
 
-           info["scan_progress"]                        = my->_scan_progress;
+           info["scan_progress"]                        = get_scan_progress();
 
            const auto enabled_delegates                 = get_my_delegates( enabled_delegate_status );
            const auto block_production_enabled          = !enabled_delegates.empty();

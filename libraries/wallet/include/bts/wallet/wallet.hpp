@@ -98,6 +98,8 @@ namespace bts { namespace wallet {
          void    set_priority_fee( const asset& fee );
          asset   get_priority_fee()const;
 
+         float   get_scan_progress()const;
+
          ///@}
 
          /**

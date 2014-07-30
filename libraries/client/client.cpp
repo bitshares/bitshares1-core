@@ -2491,6 +2491,8 @@ config load_config( const fc::path& datadir )
       info["wallet_unlocked_until"]                             = variant();
       info["wallet_unlocked_until_timestamp"]                   = variant();
 
+      info["wallet_scan_progress"]                              = variant();
+
       info["wallet_block_production_enabled"]                   = variant();
       info["wallet_next_block_production_time"]                 = variant();
       info["wallet_next_block_production_timestamp"]            = variant();
@@ -2504,6 +2506,8 @@ config load_config( const fc::path& datadir )
         {
           info["wallet_unlocked_until"]                         = ( *unlocked_until - now ).to_seconds();
           info["wallet_unlocked_until_timestamp"]               = *unlocked_until;
+
+          info["wallet_scan_progress"]                          = _wallet->get_scan_progress();
 
           const auto enabled_delegates                          = _wallet->get_my_delegates( enabled_delegate_status );
           const auto block_production_enabled                   = !enabled_delegates.empty();
