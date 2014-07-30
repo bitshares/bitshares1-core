@@ -582,7 +582,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
 }
 
 #if 0
-#ifdef NDEBUG
+#ifndef NDEBUG
 
 // A simple test that feeds a chain database from a normal client installation block-by-block to
 // the client directly, bypassing all networking code.
@@ -599,9 +599,14 @@ BOOST_AUTO_TEST_CASE(replay_chain_database)
   bts::blockchain::chain_database_ptr source_blockchain = std::make_shared<bts::blockchain::chain_database>();
   fc::path test_net_chain_dir("C:\\Users\\Administrator\\AppData\\Roaming\\BitShares XTS");
   source_blockchain->open(test_net_chain_dir / "chain", fc::optional<fc::path>());
+  fc::time_point start_time(fc::time_point::now());
+  client->sync_status(bts::client::block_message::type, source_blockchain->get_head_block_num());
   for (unsigned block_num = 1; block_num <= source_blockchain->get_head_block_num(); ++block_num)
     client->handle_message(bts::client::block_message(source_blockchain->get_block(block_num)), true);
-  client_done.wait();
+  client->sync_status(bts::client::block_message::type, 0);
+  fc::time_point end_time(fc::time_point::now());
+  BOOST_TEST_MESSAGE("Processed " << source_blockchain->get_head_block_num() << " blocks in " << ((end_time - start_time).count() / fc::seconds(1).count()) << " seconds");
+    client_done.wait();
 }
 
 #endif // NDEBUG

@@ -2310,6 +2310,10 @@ config load_config( const fc::path& datadir )
     {
       return my->handle_message(message, sync_mode);
     }
+    void client::sync_status(uint32_t item_type, uint32_t item_count)
+    {
+      my->sync_status(item_type, item_count);
+    }
 #endif
 
     fc::sha256 client_notification::digest()const
