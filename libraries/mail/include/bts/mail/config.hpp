@@ -1,0 +1,3 @@
+#pragma once
+
+#define BTS_MAIL_INVENTORY_FETCH_LIMIT 4096
