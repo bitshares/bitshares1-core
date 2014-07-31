@@ -3135,10 +3135,12 @@ config load_config( const fc::path& datadir )
 
   bool rpc_server_config::is_valid() const
   {
+#ifndef _WIN32
     if (rpc_user.empty())
       return false;
     if (rpc_password.empty())
       return false;
+#endif
     return true;
   }
 
