@@ -139,6 +139,12 @@ run_cmake.bat (or run_cmake_x64.bat for 64bit development)
  native compilers**.  Look through the output and fix any errors.  Then 
  hit **Generate**.
 
+Please note that if you are targeting Windows XP platform you need to add the cache entry "CMAKE_GENERATOR_TOOLSET" to contain the "v120_xp" value before configuring.
+
+Or you can run Cmake in command line:
+> cd build
+> cmake -G "Visual Studio 12" -T "v120_xp" -DINCLUDE_QT_WALLET ..\bitshares_toolkit
+
 #### Build BitShares ####
 * Launch *Visual Studio* and load `D:\BitShares\bin\BitShares.sln`
 * Set Configuration to Win32 - RelWithDebInfo
