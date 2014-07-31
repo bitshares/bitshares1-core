@@ -534,11 +534,13 @@ namespace bts { namespace blockchain {
             void                                        pop_block();
             void                                        mark_invalid( const block_id_type& id, const fc::exception& reason );
             void                                        mark_included( const block_id_type& id, bool state );
-            void                                        verify_header( const full_block& );
+            void                                        verify_header( const full_block&, const public_key_type& block_signee );
             void                                        apply_transactions( const signed_block_header& block,
                                                                             const std::vector<signed_transaction>&,
                                                                             const pending_chain_state_ptr& );
-            void                                        pay_delegate( const block_id_type& block_id, const pending_chain_state_ptr& );
+            void                                        pay_delegate( const block_id_type& block_id, 
+                                                                      const pending_chain_state_ptr&,
+                                                                      const public_key_type& block_signee );
             void                                        save_undo_state( const block_id_type& id,
                                                                             const pending_chain_state_ptr& );
             void                                        update_head_block( const full_block& blk );
@@ -553,7 +555,8 @@ namespace bts { namespace blockchain {
                                                                                     const pending_chain_state_ptr& pending_state );
 
             void                                        update_delegate_production_info( const full_block& block_data,
-                                                                                         const pending_chain_state_ptr& pending_state );
+                                                                                         const pending_chain_state_ptr& pending_state,
+                                                                                         const public_key_type& block_signee );
 
             void                                        revalidate_pending()
             {
@@ -778,7 +781,7 @@ namespace bts { namespace blockchain {
          // during the middle of pushing a block.  If that happens, the database is in an
          // inconsistent state and it confuses the p2p network code.
          if( !_revalidate_pending.valid() || _revalidate_pending.ready() ) 
-           _revalidate_pending = fc::async( [=](){ revalidate_pending(); } );
+           _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       }
@@ -1025,10 +1028,10 @@ namespace bts { namespace blockchain {
 
       // "amount" is amount of fees - delegate pay from preallocation is added automatically
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                              const pending_chain_state_ptr& pending_state )
+                                              const pending_chain_state_ptr& pending_state,
+                                              const public_key_type& block_signee )
       { try {
-
-            auto delegate_record = pending_state->get_account_record( self->get_block_signee( block_id ).id );
+            auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
             const auto pay_percent = delegate_record->delegate_info->pay_rate;
             FC_ASSERT( pay_percent <= 100 );
@@ -1080,7 +1083,7 @@ namespace bts { namespace blockchain {
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
 
-      void chain_database_impl::verify_header( const full_block& block_data )
+      void chain_database_impl::verify_header( const full_block& block_data, const public_key_type& block_signee )
       { try {
             // validate preliminaries:
             if( block_data.block_num > 1 && block_data.block_num != _head_block_header.block_num + 1 )
@@ -1110,7 +1113,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( NOT block_data.validate_signee( expected_delegate.active_key(), _chain_id ) )
+            if( block_signee != expected_delegate.active_key() )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
@@ -1133,11 +1136,12 @@ namespace bts { namespace blockchain {
        *  applied to pending_state.
        */
       void chain_database_impl::update_delegate_production_info( const full_block& produced_block,
-                                                                 const pending_chain_state_ptr& pending_state )
+                                                                 const pending_chain_state_ptr& pending_state,
+                                                                 const public_key_type& block_signee )
       {
           /* Update production info for signing delegate */
+          auto delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
 
-          auto delegate_id = self->get_block_signee( produced_block.id() ).id;
           auto delegate_record = pending_state->get_account_record( delegate_id );
           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
 
@@ -1252,8 +1256,11 @@ namespace bts { namespace blockchain {
          block_summary summary;
          try
          {
+            /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
+            public_key_type block_signee = block_data.signee();
+
             /* Note: Secret is validated later in update_delegate_production_info() */
-            verify_header( block_data );
+            verify_header( block_data, block_signee );
 
             summary.block_data = block_data;
 
@@ -1264,13 +1271,13 @@ namespace bts { namespace blockchain {
             /** Increment the blocks produced or missed for all delegates. This must be done
              *  before applying transactions because it depends upon the current active delegate order.
              **/
-            update_delegate_production_info( block_data, pending_state );
+            update_delegate_production_info( block_data, pending_state, block_signee );
 
             // apply any deterministic operations such as market operations before we perturb indexes
             pending_state->apply_deterministic_updates();
 
             // pay delegate and adjust current and total share supply
-            pay_delegate( block_data.id(), pending_state );
+            pay_delegate( block_data.id(), pending_state, block_signee );
 
             apply_transactions( block_data, block_data.user_transactions, pending_state );
 
@@ -1578,6 +1585,13 @@ namespace bts { namespace blockchain {
       //my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   account_record chain_database::get_delegate_record_for_signee( const public_key_type& block_signee )const
+   {
+      auto delegate_record = get_account_record( address( block_signee ) );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      return *delegate_record;
+   }
+
    account_record chain_database::get_block_signee( const block_id_type& block_id )const
    {
       auto block_header = get_block_header( block_id );
@@ -1867,7 +1881,7 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-       wlog( "balance record: ${r}", ("r",r) );
+       ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
           my->_balance_db.remove( r.id() );
@@ -2547,7 +2561,7 @@ namespace bts { namespace blockchain {
                         fork.latency = fork_block.latency;
                         fork.signing_delegate = get_block_signee( forked_block_id ).id;
                         fork.transaction_count = fork_block.user_transaction_ids.size();
-                        fork.size = fork_block.block_size;
+                        fork.size = (uint32_t)fork_block.block_size;
                         fork.timestamp = fork_block.timestamp;
                         fork.is_valid = fork_data.is_valid;
                         fork.invalid_reason = fork_data.invalid_reason;

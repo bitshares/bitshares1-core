@@ -1,0 +1,37 @@
+(wallet closed) >>> wallet_create default 12345678
+OK
+default (unlocked) >>> wallet_set_automatic_backups false
+false
+default (unlocked) >>> help wallet_list_unregistered_accounts
+Usage:
+wallet_list_unregistered_accounts                                                                     Lists all unregistered accounts belonging to this wallet
+Lists all unregistered accounts belonging to this wallet
+
+Parameters:
+  (none)
+
+Returns:
+  wallet_account_record_array
+default (unlocked) >>> wallet_list_unregistered_accounts 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+default (unlocked) >>> wallet_account_create testaccount1
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_account_create testaccount2
+"XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b"
+default (unlocked) >>> wallet_account_create testaccount3
+"XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM"
+default (unlocked) >>> wallet_account_create testaccount4
+"XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg"
+default (unlocked) >>> wallet_account_create testaccount5
+"XTS6gMFVtK34mYn7T7iGCWZJVT2Q4r7Vr2Tb8GHTnBrpgTBa9U87m"
+default (unlocked) >>> wallet_account_create testaccount6
+"XTS5muxe9bjq7GCmxwMGdXCPhtX6XagLmAq5EDCbLWbpPjk6XLxbn"
+default (unlocked) >>> wallet_list_unregistered_accounts 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+testaccount1                       XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           NO                    NO             0         
+testaccount2                       XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b           NO                    NO             0         
+testaccount3                       XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM           NO                    NO             0         
+testaccount4                       XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg           NO                    NO             0         
+testaccount5                       XTS6gMFVtK34mYn7T7iGCWZJVT2Q4r7Vr2Tb8GHTnBrpgTBa9U87m           NO                    NO             0         
+testaccount6                       XTS5muxe9bjq7GCmxwMGdXCPhtX6XagLmAq5EDCbLWbpPjk6XLxbn           NO                    NO             0         
+default (unlocked) >>> quit

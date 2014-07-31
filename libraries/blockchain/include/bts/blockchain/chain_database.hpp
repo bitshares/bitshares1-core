@@ -145,6 +145,7 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160               get_current_random_seed()const override;
 
+         account_record              get_delegate_record_for_signee( const public_key_type& block_signee )const;
          account_record              get_block_signee( const block_id_type& block_id )const;
          account_record              get_block_signee( uint32_t block_num )const;
 

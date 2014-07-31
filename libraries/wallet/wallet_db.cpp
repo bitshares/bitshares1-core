@@ -265,13 +265,17 @@ namespace bts { namespace wallet {
       return next_child_index;
    }
 
-   fc::ecc::private_key wallet_db::new_private_key( const fc::sha512& password, 
-                                                    const address& parent_account_address )
+   fc::ecc::private_key wallet_db::new_private_key( const fc::sha512& password,
+                                                    const address& parent_account_address,
+                                                    bool store_key )
    {
       FC_ASSERT( wallet_master_key.valid() );
 
       auto master_ext_priv_key  = wallet_master_key->decrypt_key( password );
       auto new_priv_key = master_ext_priv_key.child( new_key_child_index() );
+
+      if( !store_key )
+        return new_priv_key;
 
       key_data new_key;
       new_key.account_address = parent_account_address;
@@ -282,7 +286,7 @@ namespace bts { namespace wallet {
          new_key.account_address = address(new_key.public_key);
       }
 
-      store_key( new_key );
+      this->store_key( new_key );
       return new_priv_key;
    }
 
@@ -305,7 +309,7 @@ namespace bts { namespace wallet {
       store_record( property_record );
    }
 
-   variant wallet_db::get_property( property_enum property_id )
+   variant wallet_db::get_property( property_enum property_id )const
    {
       auto property_itr = properties.find( property_id );
       if( property_itr != properties.end() ) return property_itr->second.value;
@@ -370,7 +374,7 @@ namespace bts { namespace wallet {
             oacct->is_my_account = true;
             store_record(*oacct);
             cache_account(*oacct);
-            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})", 
+            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
                  ("account_name",get_account_name(key_to_store.account_address)) );
@@ -462,13 +466,13 @@ namespace bts { namespace wallet {
       store_key( data );
    }
 
-   private_keys wallet_db::get_account_private_keys( const fc::sha512& password )
+   private_keys wallet_db::get_account_private_keys( const fc::sha512& password )const
    { try {
        private_keys keys;
-       keys.reserve( accounts.size() );
-       for( const auto& item : accounts )
+       keys.reserve( accounts.size() * 2 );
+
+       auto insert_key = [&keys,&password]( const owallet_key_record& key_rec )
        {
-          auto key_rec = lookup_key(item.second.account_address);
           if( key_rec.valid() && key_rec->has_private_key() )
           {
              try {
@@ -479,11 +483,20 @@ namespace bts { namespace wallet {
                 throw; // TODO... don't thtrow here, just log
              }
           }
+       };
+
+       for( const auto& item : accounts )
+       {
+          insert_key(lookup_key(item.second.account_address));
+          for( const auto& active_key : item.second.active_key_history )
+            insert_key(lookup_key(active_key.second));
        }
+
+       keys.shrink_to_fit();
        return keys;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
    
-   owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )
+   owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )const
    {
       auto itr = balances.find( balance_id );
       if( itr == balances.end() ) return fc::optional<wallet_balance_record>();

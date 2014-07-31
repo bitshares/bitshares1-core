@@ -29,11 +29,12 @@ namespace bts { namespace wallet {
 
          int32_t              new_wallet_record_index();
          int32_t              new_key_child_index();
-         fc::ecc::private_key new_private_key( const fc::sha512& password, 
-                                               const address& parent_account_address = address() );
+         fc::ecc::private_key new_private_key( const fc::sha512& password,
+                                               const address& parent_account_address = address(),
+                                               bool store_key = true );
 
          void        set_property( property_enum property_id, const fc::variant& v );
-         fc::variant get_property( property_enum property_id );
+         fc::variant get_property( property_enum property_id )const;
 
          void store_key( const key_data& k );
          void store_transaction( wallet_transaction_record& t );
@@ -50,7 +51,6 @@ namespace bts { namespace wallet {
          void remove_transaction( const transaction_id_type& record_id );
 
          vector<wallet_transaction_record> get_pending_transactions()const;
-         void                              hide_pending_transactions();
 
          void update_market_order( const address& owner, 
                                    const optional<bts::blockchain::market_order>& order,
@@ -58,17 +58,14 @@ namespace bts { namespace wallet {
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
-         private_keys get_account_private_keys( const fc::sha512& password );
+         private_keys get_account_private_keys( const fc::sha512& password )const;
          string       get_account_name( const address& account_address )const;
 
          owallet_account_record lookup_account( const address& address_of_public_key )const;
          owallet_account_record lookup_account( const string& account_name )const;
          owallet_account_record lookup_account( account_id_type aid )const;
 
-         oprivate_key           lookup_private_key( const address& address, 
-                                                    const fc::sha512& password );
-
-         owallet_balance_record lookup_balance( const balance_id_type& balance_id );
+         owallet_balance_record lookup_balance( const balance_id_type& balance_id )const;
          owallet_key_record     lookup_key( const address& address )const;
 
 
@@ -99,11 +96,11 @@ namespace bts { namespace wallet {
          void                           change_password( const fc::sha512& old_password,
                                                          const fc::sha512& new_password );
 
-         const unordered_map< transaction_id_type, wallet_transaction_record >&  get_transactions()const
+         const unordered_map< transaction_id_type, wallet_transaction_record >& get_transactions()const
          {
             return transactions;
          }
-         const unordered_map< balance_id_type,wallet_balance_record >&  get_balances()const
+         const unordered_map< balance_id_type,wallet_balance_record >& get_balances()const
          {
             return balances;
          }
@@ -111,7 +108,7 @@ namespace bts { namespace wallet {
          {
             return accounts;
          }
-         const unordered_map<address,wallet_market_order_status_record>&  get_market_orders()const
+         const unordered_map<address,wallet_market_order_status_record>& get_market_orders()const
          {
             return market_orders;
          }
@@ -163,5 +160,3 @@ namespace bts { namespace wallet {
    };
 
 } } // bts::wallet
-
-

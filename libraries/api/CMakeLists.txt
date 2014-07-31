@@ -24,7 +24,6 @@ set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/types.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/blockchain_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/wallet_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/bitcoin_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/general_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/debug_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/dns_api.json")

@@ -49,7 +49,7 @@ namespace bts { namespace blockchain {
         return address(active_key());
     }
 
-    void account_record::set_active_key( time_point_sec now, const public_key_type& new_key )
+    void account_record::set_active_key( const time_point_sec& now, const public_key_type& new_key )
     { try {
         FC_ASSERT( now != fc::time_point_sec() );
         active_key_history[now] = new_key;
@@ -61,6 +61,12 @@ namespace bts { namespace blockchain {
             return active_key_history.rbegin()->second;
 
         return public_key_type();
+    }
+
+    uint8_t account_record::delegate_pay_rate()const
+    {
+        if( is_delegate() ) return delegate_info->pay_rate;
+        return 255;
     }
 
 }} // bts::blockchain

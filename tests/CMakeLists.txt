@@ -17,6 +17,10 @@ file(GLOB regression_tests_register_accounts_as_delegate_files "${CMAKE_CURRENT_
                                                                "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/register_accounts_as_delegate_test/*.log")
 source_group("Regression Tests\\Register Accounts as Delegates" FILES ${regression_tests_register_accounts_as_delegate_files})
 
+file(GLOB regression_tests_invalid_names_test_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/invalid_names_test/test.config"
+                                             "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/invalid_names_test/*.log")
+source_group("Regression Tests\\Invalid Names Test" FILES ${regression_tests_invalid_names_test_files})
+
 file(GLOB regression_tests_simple_test_files "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/simple_test/test.config"
                                              "${CMAKE_CURRENT_SOURCE_DIR}/regression_tests/simple_test/*.log")
 source_group("Regression Tests\\Simple Test" FILES ${regression_tests_simple_test_files})
@@ -40,6 +44,7 @@ source_group("Regression Tests\\Wallet Asset Test" FILES ${regression_tests_wall
 set(regression_test_files ${regression_tests_common_logs_files}
                           ${regression_tests_titan_test_files}
                           ${regression_tests_register_accounts_as_delegate_files}
+                          ${regression_tests_invalid_name_test_files}
                           ${regression_tests_simple_test_files}
                           ${regression_tests_transfer_test_files}
                           ${regression_tests_two_client_test_files}
@@ -51,7 +56,6 @@ target_link_libraries( wallet_tests deterministic_openssl_rand bts_client bts_cl
 
 add_executable( dev_tests dev_tests.cpp )
 target_link_libraries( dev_tests deterministic_openssl_rand bts_client bts_cli bts_wallet bts_blockchain bts_net bitcoin fc )
-
 
 add_executable( server_node server_node.cpp )
 target_link_libraries( server_node bts_client bts_network bts_net fc bts_cli )
@@ -103,7 +107,7 @@ target_link_libraries( deterministic_signature_test deterministic_openssl_rand f
 
 include_directories( ${CMAKE_SOURCE_DIR}/libraries/rpc/include )
 
- 
+if( false )
 add_executable( bitshares_client_tests bitshares_client_tests.cpp )
 if( WIN32 )
 #   target_compile_definitions(bitshares_client_tests PUBLIC BOOST_ALL_NO_LIB BOOST_ALL_DYN_LINK)
@@ -111,10 +115,9 @@ set( RPCRT4 Rpcrt4 )
 endif (WIN32)
 target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wallet bts_blockchain fc )
 add_dependencies(bitshares_client_tests bitshares_client)
+endif (false )
 
 add_subdirectory( bitcoin )
-add_subdirectory( client_rpc_tests )
+#add_subdirectory( client_rpc_tests )
 
-if( false )
-   add_subdirectory( dns )
-endif (false )
+#add_subdirectory( dns )

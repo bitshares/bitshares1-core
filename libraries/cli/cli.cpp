@@ -172,7 +172,10 @@ namespace bts { namespace cli {
                 }
                 catch( const fc::exception& e )
                 {
-                  *_out << e.to_detail_string() << "\n";
+                  if( FILTER_OUTPUT_FOR_TESTS )
+                    *_out << "Command failed with exception: " << e.to_string() << "\n";
+                  else
+                    *_out << e.to_detail_string() << "\n";
                 }
               }
             } //parse_and_execute_interactive_command
@@ -234,7 +237,7 @@ namespace bts { namespace cli {
                       *_out << prompt;
                       // there is no need to add input to history when echo is off, so both Windows and Unix implementations are same
                       fc::set_console_echo(false);
-                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline").wait();
                       fc::set_console_echo(true);
                       *_out << std::endl;
                   }
@@ -256,11 +259,11 @@ namespace bts { namespace cli {
                   else
                     {
                       *_out <<prompt;
-                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                      _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline" ).wait();
                     }
                   #else
                     *_out <<prompt;
-                    _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }).wait();
+                    _cin_thread.async([this,&line](){ std::getline( *_input_stream, line ); }, "getline").wait();
                   #endif
                   if (_input_stream_log)
                     {
@@ -658,7 +661,7 @@ namespace bts { namespace cli {
               else if( method_name == "wallet_account_vote_summary" )
               {
                   const auto& votes = result.as<account_vote_summary_type>();
-                  *_out << pretty_vote_summary( votes );
+                  *_out << pretty_vote_summary( votes, _client );
               }
               else if (method_name == "debug_list_errors")
               {
@@ -673,9 +676,24 @@ namespace bts { namespace cli {
                        (*_out) << "\n";
                     }
               }
+              else if( method_name == "get_info" )
+              {
+                  const auto& info = result.as<variant_object>();
+                  *_out << pretty_info( info, _client );
+              }
+              else if( method_name == "blockchain_get_info" )
+              {
+                  const auto& config = result.as<variant_object>();
+                  *_out << pretty_blockchain_info( config, _client );
+              }
+              else if( method_name == "wallet_get_info" )
+              {
+                  const auto& info = result.as<variant_object>();
+                  *_out << pretty_wallet_info( info, _client );
+              }
               else if (method_name == "wallet_account_transaction_history")
               {
-                  const auto& transactions  = result.as<vector<pretty_transaction>>();
+                  const auto& transactions = result.as<vector<pretty_transaction>>();
                   *_out << pretty_transaction_list( transactions, _client );
               }
               else if( method_name == "wallet_market_order_list" )
@@ -722,12 +740,6 @@ namespace bts { namespace cli {
                   else
                       for( const auto& wallet : wallets )
                           *_out << wallet << "\n";
-              }
-              else if (method_name == "wallet_approve_delegate" )
-              {
-                  auto approved = result.as<bool>();
-                  if( approved ) *_out << "Delegate approved.\n";
-                  else *_out << "Delegate not approved.\n";
               }
               else if (method_name == "network_get_usage_stats" )
               {
@@ -889,8 +901,12 @@ namespace bts { namespace cli {
 
                       for( const auto& transaction : transactions )
                       {
-                          *_out << std::setw(10) << transaction.id().str().substr(0, 8)
-                                << std::setw(10) << transaction.data_size()
+                          if( FILTER_OUTPUT_FOR_TESTS )
+                              *_out << std::setw(10) << "[redacted]";
+                          else
+                              *_out << std::setw(10) << transaction.id().str().substr(0, 8);
+
+                          *_out << std::setw(10) << transaction.data_size()
                                 << std::setw(25) << transaction.operations.size()
                                 << std::setw(25) << transaction.signatures.size()
                                 << "\n";
@@ -1165,7 +1181,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "APPROVED";
+                *_out << std::setw( 15 ) << "APPROVAL";
                 *_out << "\n";
 
                 for( const auto& acct : account_records )
@@ -1187,7 +1203,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 10) << acct.approved;
+                    *_out << std::setw( 10 ) << std::to_string( acct.approved );
                     *_out << "\n";
                 }
             }
@@ -1198,7 +1214,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "APPROVED";
+                *_out << std::setw( 15 ) << "APPROVAL";
                 *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
 
@@ -1229,7 +1245,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 15 ) << acct.approved;
+                    *_out << std::setw( 15 ) << std::to_string( acct.approved );
                     if (acct.is_delegate())
                         *_out << std::setw( 25 ) << (acct.block_production_enabled ? "YES" : "NO");
                     else
@@ -1244,7 +1260,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "VOTES FOR";
-                *_out << std::setw( 15 ) << "APPROVED";
+                *_out << std::setw( 15 ) << "APPROVAL";
 
                 *_out << '\n';
                 for( int i = 0; i < 151; ++i )
@@ -1272,9 +1288,7 @@ namespace bts { namespace cli {
 
                         try
                         {
-                            // TODO: This needs to be through the blockchain, not the wallet
-                            auto approval = _client->get_wallet()->get_delegate_approval( acct.name );
-                            *_out << std::setw( 15 ) << ( approval > 0 );
+                            *_out << std::setw( 15 ) << std::to_string( _client->get_wallet()->get_account_approval( acct.name ) );
                         }
                         catch( ... )
                         {
@@ -1406,7 +1420,7 @@ namespace bts { namespace cli {
     }
     extern "C" int get_character(FILE* stream)
     {
-      return cli_impl_instance->_cin_thread.async([stream](){ return rl_getc(stream); }).wait();
+      return cli_impl_instance->_cin_thread.async([stream](){ return rl_getc(stream); }, "rl_getc").wait();
     }
     extern "C" char* json_command_completion_generator_function(const char* text, int state)
     {
@@ -1519,6 +1533,7 @@ namespace bts { namespace cli {
       }
       else
       {
+        (*_out) << message << "\n";
         // it's not clear what state we're in if rl_prompt is null, but we've had reports
         // of crashes.  Just swallow the message and avoid crashing.
       }

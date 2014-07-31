@@ -161,7 +161,7 @@ void upnp_service::map_port( uint16_t local_port )
                FreeUPNPUrls(&urls);
            }
        }
-  });
+  }, "upnp::map_port" );
 }
 
 } } // namespace bts::net

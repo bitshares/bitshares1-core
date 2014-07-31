@@ -1,0 +1,41 @@
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> help wallet_backup_create
+Usage:
+wallet_backup_create <json_filename>                                                                  Exports the current wallet to a JSON file
+Exports the current wallet to a JSON file
+
+Parameters:
+  json_filename (filename, required): the full path and filename of JSON file to generate
+
+Returns:
+  void
+
+aliases: backupwallet, wallet_export_to_json
+default (unlocked) >>> wallet_backup_create wallet_backup.json
+OK
+default (unlocked) >>> wallet_close
+OK
+(wallet closed) >>> help wallet_backup_restore
+Usage:
+wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                      Creates a new wallet from an exported JSON file
+Creates a new wallet from an exported JSON file
+
+Parameters:
+  json_filename (filename, required): the full path and filename of JSON wallet to import
+  wallet_name (wallet_name, required): name of the wallet to create
+  imported_wallet_passphrase (passphrase, required): passphrase of the imported wallet
+
+Returns:
+  void
+
+aliases: wallet_create_from_json
+(wallet closed) >>> wallet_backup_restore wallet_backup.json recovered password
+OK
+recovered (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+recovered (unlocked) >>> quit
