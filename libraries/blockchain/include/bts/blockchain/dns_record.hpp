@@ -37,7 +37,7 @@ namespace bts { namespace blockchain {
         address       offer_address;
         uint32_t      offer_time;
 
-        offer_index_key() {};
+        offer_index_key(){};
 
         offer_index_key(const string& domain_name, const share_type& price)
         :domain_name(domain_name),price(price) {};

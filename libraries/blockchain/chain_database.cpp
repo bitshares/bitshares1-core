@@ -2011,7 +2011,17 @@ namespace bts { namespace blockchain {
 
     ooffer_index_key             chain_database::get_domain_offer( const balance_id_type& owner )
     {
-        FC_ASSERT(!"unimplemented");
+        auto itr = my->_balance_db.find( owner );
+        if (itr.valid())
+        {
+            auto key = offer_index_key();
+            auto condition = itr.value().condition.as<withdraw_domain_offer>();
+            key.domain_name = condition.domain_name;
+            key.price = condition.price;
+            key.offer_address = condition.owner;
+            return optional<offer_index_key>(key);
+        }
+        return ooffer_index_key();
     }
     vector<offer_index_key>     chain_database::get_domain_offers( const string& domain_name, uint32_t limit ) const
     {

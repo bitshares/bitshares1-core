@@ -41,7 +41,7 @@ namespace bts { namespace blockchain {
    struct account_record
    {
       account_record()
-      :id(0){}
+      :id(0),points(0){}
 
       bool is_null()const;
       account_record make_null()const;
