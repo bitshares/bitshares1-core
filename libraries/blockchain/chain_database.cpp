@@ -127,10 +127,7 @@ namespace bts { namespace blockchain {
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
                          if( !market_stat.valid() )
-                         {
-                            if( quote_asset->is_market_issued() ) FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
-                            FC_ASSERT( market_stat.valid() );
-                         }
+                             market_stat = market_status( quote_id, base_id, 0, 0 );
                    
                          while( get_next_bid() && get_next_ask() )
                          {
