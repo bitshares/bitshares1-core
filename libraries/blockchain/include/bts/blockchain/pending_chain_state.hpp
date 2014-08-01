@@ -2,6 +2,8 @@
 
 #include <bts/blockchain/chain_interface.hpp>
 
+#include <deque>
+
 namespace bts { namespace blockchain {
 
    class pending_chain_state : public chain_interface, public std::enable_shared_from_this<pending_chain_state>
@@ -55,6 +57,9 @@ namespace bts { namespace blockchain {
          virtual void                   store_asset_record( const asset_record& r )override;
          virtual void                   store_balance_record( const balance_record& r )override;
          virtual void                   store_account_record( const account_record& r )override;
+
+         virtual vector<operation>      get_recent_operations( operation_type_enum t )override;
+         virtual void                   store_recent_operation( const operation& o )override;
 
          virtual variant                get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
@@ -111,6 +116,7 @@ namespace bts { namespace blockchain {
          map<time_point_sec, slot_record>                               slots;
          map<market_history_key, market_history_record>                 market_history;
          map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
+         map<operation_type_enum, std::deque<operation>>                recent_operations;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 

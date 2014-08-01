@@ -11,6 +11,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/account_operations.hpp>
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/utilities/git_revision.hpp>
 #include <bts/rpc/rpc_client.hpp>
@@ -1938,6 +1939,21 @@ config load_config( const fc::path& datadir )
     vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t count) const
     {
       return _chain_db->get_accounts(first, count);
+    }
+
+    vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts() const
+    {
+      vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
+      vector<account_record> accounts(account_registrations.size());
+
+      for( const operation& op : account_registrations )
+      {
+        auto oaccount = _chain_db->get_account_record(op.as<register_account_operation>().owner_key);
+        if(oaccount)
+          accounts.push_back(*oaccount);
+      }
+
+      return accounts;
     }
 
     vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t count) const
