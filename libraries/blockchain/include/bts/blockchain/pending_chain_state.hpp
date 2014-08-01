@@ -100,6 +100,7 @@ namespace bts { namespace blockchain {
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs ) override;
 
+         // NOTE: this isn't really part of the chain state, but more part of the block state 
          vector<market_transaction>                                     market_transactions;
 
          unordered_map< asset_id_type, asset_record>                    assets;

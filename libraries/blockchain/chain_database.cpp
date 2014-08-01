@@ -185,23 +185,61 @@ namespace bts { namespace blockchain {
                                if( xts_received_from_ask != _current_ask->state.balance )
                                   usd_paid_to_ask = asset(quote_asset->collected_fees, quote_id);
 
-                               auto ask_balance_address = withdraw_condition( 
-                                                              withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
-                               auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
-                               if( !ask_payout )
-                                  ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
-                               ask_payout->balance += usd_paid_to_ask.amount;
-                               ask_payout->last_update = _pending_state->now();
-                   
-                               _current_ask->state.balance -= xts_received_from_ask;
-                               quote_asset->collected_fees -= usd_paid_to_ask.amount;
+                               if( _current_ask->type == ask_order )
+                               {
+                                  auto ask_balance_address = withdraw_condition( 
+                                                                 withdraw_with_signature(_current_ask->get_owner()), quote_id ).get_address();
+                                  auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
+                                  if( !ask_payout )
+                                     ask_payout = balance_record( _current_ask->get_owner(), asset(0,quote_id), 0 );
+                                  ask_payout->balance += usd_paid_to_ask.amount;
+                                  ask_payout->last_update = _pending_state->now();
+                      
+                                  _current_ask->state.balance -= xts_received_from_ask;
+                                  quote_asset->collected_fees -= usd_paid_to_ask.amount;
 
-                               _pending_state->store_balance_record( *ask_payout );
-                               _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
+                                  _pending_state->store_balance_record( *ask_payout );
+                                  _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
+                               }
+                               else if( _current_ask->type == cover_order )
+                               {
+                                  _current_ask->state.balance  -= usd_paid_to_ask.amount;
+                                  *(_current_ask->collateral)  -= xts_received_from_ask;//.amount;
+
+                                  if( _current_ask->state.balance == 0 ) // no more USD left
+                                  { // send collateral home to mommy & daddy
+                                        wlog( "            collateral balance is now 0!" ); 
+                                        auto ask_balance_address = withdraw_condition( 
+                                                                          withdraw_with_signature(_current_ask->get_owner()), 
+                                                                          base_id ).get_address();
+                      
+                                        auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
+                                        if( !ask_payout )
+                                           ask_payout = balance_record( _current_ask->get_owner(), asset(0,base_id), 0 );
+                                        ask_payout->balance += (*_current_ask->collateral);
+                                        ask_payout->last_update = _pending_state->now();
+                      
+                                        _pending_state->store_balance_record( *ask_payout );
+                                        _current_ask->collateral = 0;
+                      
+                                  }
+                                  _pending_state->store_collateral_record( _current_ask->market_index, 
+                                                                           collateral_record( *_current_ask->collateral, 
+                                                                                              _current_ask->state.balance ) );
+                               }
 
                                // XTS received need to be paid to delegates...
                                auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
                                _pending_state->set_accumulated_fees( prev_accumulated_fees + xts_received_from_ask );
+
+                               market_transaction mtrx;
+                               mtrx.ask_owner       = _current_ask->get_owner();
+                               mtrx.ask_price       = ask_price;
+                               mtrx.ask_paid        = asset(xts_received_from_ask,0);
+                               mtrx.ask_received    = usd_paid_to_ask;
+                               mtrx.fees_collected  = asset(xts_received_from_ask,0);
+                               
+                               _market_transactions.push_back(mtrx);
 
                                continue;
                             }
@@ -1080,7 +1118,7 @@ namespace bts { namespace blockchain {
                // TODO: remove this once performance picks up, but for now
                // we don't want to block very long, so we yield a bit
                if( trx_num % 20 == 19 ) 
-                  fc::usleep( fc::microseconds( 2000 ) );
+                  fc::usleep( fc::microseconds( 200 ) );
 
                total_fees += record.get_fees();
             }
@@ -1291,7 +1329,8 @@ namespace bts { namespace blockchain {
         elog( "execute markets ${e}", ("e", pending_state->get_dirty_markets()) );
         map<asset_id_type,share_type> collected_fees;
 
-        vector<market_transaction> market_transactions;
+        // TODO: grab market transactions generated by fee payments from pending state...
+        vector<market_transaction> market_transactions; // = pending_state.market_transactions;
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
