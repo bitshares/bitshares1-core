@@ -107,6 +107,9 @@ namespace bts { namespace blockchain {
             asset required_order_balance = asset( fee.second, fee.first ) * 
                                             lowest_ask->market_index.order_price;  
             
+            // TODO: verify that if fees were paid at this price they would be sufficient, then 
+            // we can add it to the asset total fees collected balance and then match this
+            // in the market order matching code (mark this market as dirty)
             if( required_order_balance.amount <= lowest_ask->state.balance )
             {
                balance[0] += required_order_balance.amount;
@@ -131,6 +134,15 @@ namespace bts { namespace blockchain {
 
                lowest_ask->state.balance -= required_order_balance.amount;
                _current_state->store_ask_record( lowest_ask->market_index, lowest_ask->state );
+
+               market_transaction mtrx;
+               mtrx.ask_owner       = lowest_ask->market_index.owner;
+               mtrx.ask_price       = lowest_ask->market_index.order_price;  
+               mtrx.ask_paid        = required_order_balance;
+               mtrx.ask_received    = asset(fee.second,fee.first);
+               mtrx.fees_collected  = asset(0);
+               // TODO....
+               // _current_state->add_market_transactions(mtrx);
             }
             // trade fee.second 
          }

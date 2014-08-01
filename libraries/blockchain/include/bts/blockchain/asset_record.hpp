@@ -39,6 +39,7 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply;
       share_type          maximum_share_supply;
       share_type          collected_fees;
+      feed_id_type        price_feed_id;
 
       /**
        *  Setting these values to a reasonable range helps the 
@@ -57,6 +58,6 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::asset_record,
             (id)(symbol)(name)(description)(public_data)(issuer_account_id)(precision)(current_share_supply)
-            (maximum_share_supply)(collected_fees)(registration_date)(minimum_xts_price)(maximum_xts_price) 
+            (maximum_share_supply)(collected_fees)(price_feed_id)(registration_date)(minimum_xts_price)(maximum_xts_price) 
           )
 

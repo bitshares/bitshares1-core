@@ -246,7 +246,7 @@ public:
         try {
            derivekeys_v4( passphrase );
         }
-        catch ( const fc::exception& e )
+        catch ( const fc::exception& )
         {
            //wlog( "${e}", ("e",e.to_detail_string()) );
         }

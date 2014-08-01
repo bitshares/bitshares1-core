@@ -34,6 +34,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( memo_too_long,           bts::wallet::wallet_exception, 20027, "memo too long" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_pay_rate,        bts::wallet::wallet_exception, 20028, "invalid pay rate" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_wallet_name,     bts::wallet::wallet_exception, 20029, "invalid wallet name" );
+  FC_DECLARE_DERIVED_EXCEPTION( unsupported_version,     bts::wallet::wallet_exception, 20030, "unsupported version" );
   // registered in wallet.cpp
 
 } } // bts::wallet

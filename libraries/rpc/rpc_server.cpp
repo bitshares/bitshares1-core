@@ -101,6 +101,34 @@ namespace bts { namespace rpc {
            help_string = short_description.str();
            return help_string;
          }
+        
+        void add_content_type_header(const fc::string& path, const fc::http::server::response& s ) {
+            static map<string, string> mime_types
+            {   {"png", "image/png"},
+                {"jpg", "image/jpeg"},
+                {"svg", "image/svg+xml"},
+                {"css", "text/css"},
+                {"html", "text/html"},
+                {"js", "application/javascript"},
+                {"json", "application/json"},
+                {"xml", "application/xml"},
+                {"woff", "application/font-woff"},
+                {"ttf", "pplication/x-font-ttf"}
+            };
+            
+            if( path == "/rpc") {
+                s.add_header("Content-Type",  "application/json");
+                return;
+            }
+            
+            auto pos = path.rfind('.');
+            if(pos != std::string::npos) {
+                auto extension = path.substr(pos + 1, std::string::npos);
+                auto mime_type = mime_types.find(extension);
+                if(mime_type != mime_types.end())
+                    s.add_header("Content-Type", mime_type->second);
+            }
+        }
 
          void handle_request( const fc::http::request& r, const fc::http::server::response& s )
          {
@@ -160,6 +188,7 @@ namespace bts { namespace rpc {
                 FC_ASSERT( pos == std::string::npos );
 
                 if( path == "/" ) path = "/index.html";
+                 add_content_type_header(path,s);
 
                 auto filename = _config.htdocs / path.substr(1,std::string::npos);
                 if( r.path == fc::path("/rpc") )
@@ -350,7 +379,7 @@ namespace bts { namespace rpc {
          //   TODO  0.5 BTC: handle connection errors and and connection closed without
          //   creating an entirely new context... this is waistful
          //     json_con->exec();
-              fc::async( [json_con]{ json_con->exec().wait(); } );
+              fc::async( [json_con]{ json_con->exec().wait(); }, "rpc_server json_con->exec" );
            }
          }
 
@@ -641,7 +670,7 @@ namespace bts { namespace rpc {
       }
       ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
-      my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); } );
+      my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); }, "rpc_server accept_loop" );
 
       return true;
     } FC_RETHROW_EXCEPTIONS( warn, "attempting to configure rpc server ${port}", ("port",cfg.rpc_endpoint)("config",cfg) );

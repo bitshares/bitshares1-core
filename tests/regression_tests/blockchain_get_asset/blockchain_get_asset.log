@@ -1,0 +1,63 @@
+(wallet closed) >>> debug_filter_output_for_tests true
+OK
+(wallet closed) >>> help blockchain_get_asset
+Usage:
+blockchain_get_asset <asset>                                                                          Retrieves the record for the given asset ticker symbol or ID
+Retrieves the record for the given asset ticker symbol or ID
+
+Parameters:
+  asset (string, required): asset ticker symbol or ID to retrieve
+
+Returns:
+  optional_asset_record
+
+aliases: get_asset
+(wallet closed) >>> blockchain_get_asset XTS
+{
+  "id": 0,
+  "symbol": "XTS",
+  "name": "BitShares XTS",
+  "description": "Stake in future BitShares X chains",
+  "public_data": "",
+  "issuer_account_id": 0,
+  "precision": 100000,
+  "current_share_supply": 199999999999901,
+  "maximum_share_supply": 1000000000000000,
+  "collected_fees": 0,
+  "registration_date": "20140620T144027",
+  "minimum_xts_price": {
+    "ratio": "0.",
+    "quote_asset_id": 0,
+    "base_asset_id": 0
+  },
+  "maximum_xts_price": {
+    "ratio": "0.",
+    "quote_asset_id": 0,
+    "base_asset_id": 0
+  }
+}
+(wallet closed) >>> blockchain_get_asset 0
+{
+  "id": 0,
+  "symbol": "XTS",
+  "name": "BitShares XTS",
+  "description": "Stake in future BitShares X chains",
+  "public_data": "",
+  "issuer_account_id": 0,
+  "precision": 100000,
+  "current_share_supply": 199999999999901,
+  "maximum_share_supply": 1000000000000000,
+  "collected_fees": 0,
+  "registration_date": "20140620T144027",
+  "minimum_xts_price": {
+    "ratio": "0.",
+    "quote_asset_id": 0,
+    "base_asset_id": 0
+  },
+  "maximum_xts_price": {
+    "ratio": "0.",
+    "quote_asset_id": 0,
+    "base_asset_id": 0
+  }
+}
+(wallet closed) >>> quit

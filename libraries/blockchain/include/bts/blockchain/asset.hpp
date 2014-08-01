@@ -66,6 +66,7 @@ namespace bts { namespace blockchain {
       asset_id_type base_asset_id;
       asset_id_type quote_asset_id;
   };
+  typedef optional<price> oprice;
 
   inline bool operator == ( const asset& l, const asset& r ) { return l.amount == r.amount; }
   inline bool operator != ( const asset& l, const asset& r ) { return l.amount != r.amount; }

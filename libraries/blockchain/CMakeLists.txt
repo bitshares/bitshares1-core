@@ -1,6 +1,6 @@
 ##################################################################################################
 # Magic to get the genesis.json converted to a .cpp file and compiled into the bts_client library
-set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis-July18.json")
+set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis.json")
 source_group("Genesis JSON Files" FILES ${genesis_json})
 
 set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
@@ -39,6 +39,7 @@ add_library( bts_blockchain
              asset_operations.cpp
              market_operations.cpp
              proposal_operations.cpp
+             feed_operations.cpp
 #fire_operation.cpp
              asset.cpp
              transaction.cpp

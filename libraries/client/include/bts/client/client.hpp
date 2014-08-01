@@ -104,8 +104,6 @@ namespace bts { namespace client {
 
          void add_node( const string& ep );
 
-         void start_delegate_loop();
-
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
          bts::rpc::rpc_server_ptr   get_rpc_server()const;
@@ -127,6 +125,7 @@ namespace bts { namespace client {
          fc::ip::endpoint get_p2p_listening_endpoint() const;
 #ifndef NDEBUG
          bool handle_message(const bts::net::message&, bool sync_mode);
+         void sync_status(uint32_t item_type, uint32_t item_count);
 #endif
 
        protected:
