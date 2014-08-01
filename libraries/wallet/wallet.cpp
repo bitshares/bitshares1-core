@@ -4735,10 +4735,6 @@ namespace bts { namespace wallet {
 
        info["scan_progress"]                            = variant();
 
-       info["block_production_enabled"]                 = variant();
-       info["next_block_production_time"]               = variant();
-       info["next_block_production_timestamp"]          = variant();
-
        info["version"]                                  = variant();
 
        if( is_open )
@@ -4758,20 +4754,6 @@ namespace bts { namespace wallet {
            info["unlocked_until_timestamp"]             = *unlocked_until;
 
            info["scan_progress"]                        = get_scan_progress();
-
-           const auto enabled_delegates                 = get_my_delegates( enabled_delegate_status );
-           const auto block_production_enabled          = !enabled_delegates.empty();
-           info["block_production_enabled"]             = block_production_enabled;
-
-           if( block_production_enabled )
-           {
-             const auto next_block_time                 = get_next_producible_block_timestamp( enabled_delegates );
-             if( next_block_time.valid() )
-             {
-               info["next_block_production_time"]       = ( *next_block_time - now ).to_seconds();
-               info["next_block_production_timestamp"]  = *next_block_time;
-             }
-           }
          }
 
          info["version"]                                = my->_wallet_db.get_property( version ).as<uint32_t>();
