@@ -926,15 +926,6 @@ config load_config( const fc::path& datadir )
 
        void client_impl::rebroadcast_pending()
        {
-#ifndef NDEBUG
-          static bool currently_running = false;
-          struct checker {
-            bool& var;
-            checker(bool& var) : var(var) { assert(!var); var = true; }
-            ~checker() { var = false; }
-          } _checker(currently_running);
-#endif // !NDEBUG
-
           if( !_sync_mode )
           {
             wlog( "rebroadcasting... " );
@@ -1428,7 +1419,7 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
-       my->rebroadcast_pending();
+      my->_rebroadcast_pending_loop = fc::async([this]{my->rebroadcast_pending();});
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
@@ -1436,7 +1427,7 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-      my->rebroadcast_pending();
+      my->_rebroadcast_pending_loop = fc::async([this]{my->rebroadcast_pending();});
     }
 
     void client::simulate_disconnect( bool state )
@@ -1964,7 +1955,8 @@ config load_config( const fc::path& datadir )
     vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts() const
     {
       vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
-      vector<account_record> accounts(account_registrations.size());
+      vector<account_record> accounts;
+      accounts.reserve(account_registrations.size());
 
       for( const operation& op : account_registrations )
       {
