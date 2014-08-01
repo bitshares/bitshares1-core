@@ -1316,6 +1316,29 @@
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_publish_price_feed",
+         "description" : "publishes a price feed for BitAssets, only active delegates may do this",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+             {
+                "name" : "delegate_account",
+                "type" : "account_name",
+                "description" : "the delegate to publish the price under"
+             },
+             {
+                "name" : "price",
+                "type" : "real_amount",
+                "description" : "the number of this asset per XTS"
+             },
+             {
+                "name" : "asset_symbol",
+                "type" : "asset_symbol",
+                "description" : "the type of asset being priced"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }

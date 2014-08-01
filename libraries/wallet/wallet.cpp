@@ -2322,6 +2322,68 @@ namespace bts { namespace wallet {
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
+   signed_transaction   wallet::publish_price( const string& account_to_publish_under, 
+                                               double amount_per_xts, 
+                                               const string& amount_asset_symbol, bool sign )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       if( !is_receive_account( account_to_publish_under ) )
+           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", 
+                               ("from_account_name",account_to_publish_under) );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
+      FC_ASSERT( current_account );
+      auto payer_public_key = get_account_public_key( account_to_publish_under );
+      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) ); 
+
+      auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
+      auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
+
+      asset price_shares( amount_per_xts *  quote_asset_record->get_precision(), quote_asset_record->id );
+      asset base_one_quantity( base_asset_record->get_precision(), 0 );
+
+      auto quote_price_shares = price_shares / base_one_quantity;
+
+      trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
+                        current_account->id, fc::variant( quote_price_shares )  );
+
+      auto required_fees = get_priority_fee();
+      auto size_fee = fc::raw::pack_size( trx );
+      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+
+      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      {
+        // withdraw delegate pay... 
+        trx.withdraw_pay( current_account->id, required_fees.amount );
+      }
+      else
+      {
+         my->withdraw_to_transaction( required_fees,
+                                      payer_public_key,
+                                      trx, required_signatures );
+      }
+      if (sign)
+      {
+          auto entry = ledger_entry();
+          entry.from_account = payer_public_key;
+          entry.to_account = payer_public_key;
+          entry.memo = "publish price " + my->_blockchain->to_pretty_price( quote_price_shares );
+
+          auto record = wallet_transaction_record();
+          record.ledger_entries.push_back( entry );
+          record.fee = required_fees;
+
+          sign_and_cache_transaction( trx, required_signatures, record );
+          my->_blockchain->store_pending_transaction( trx );
+      }
+      return trx;
+
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
+
    signed_transaction wallet::publish_slate( const string& account_to_publish_under, bool sign )
    { try {
        FC_ASSERT( is_open() );
