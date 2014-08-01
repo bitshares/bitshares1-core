@@ -1406,7 +1406,7 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
-       my->rebroadcast_pending();
+      my->_rebroadcast_pending_loop = fc::async([this]{my->rebroadcast_pending();});
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
@@ -1414,7 +1414,7 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-      my->rebroadcast_pending();
+      my->_rebroadcast_pending_loop = fc::async([this]{my->rebroadcast_pending();});
     }
 
     void client::simulate_disconnect( bool state )
