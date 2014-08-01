@@ -2594,7 +2594,11 @@ config load_config( const fc::path& datadir )
 
         state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
-        if (required_confirmations <= BTS_BLOCKCHAIN_NUM_DELEGATES / 2
+        if (!blockchain_is_synced())
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::grey;
+        }
+        else if (required_confirmations <= BTS_BLOCKCHAIN_NUM_DELEGATES / 2
             && participation_rate > 80)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::green;
@@ -2608,6 +2612,7 @@ config load_config( const fc::path& datadir )
         {
             state.alert_level = bts::blockchain::blockchain_security_state::yellow;
         }
+
         return state;
     }
 
