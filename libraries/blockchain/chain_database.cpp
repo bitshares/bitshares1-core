@@ -127,10 +127,14 @@ namespace bts { namespace blockchain {
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
+                         if( !market_stat.valid() )
+                         {
+                            if( quote_asset->is_market_issued() ) FC_CAPTURE_AND_THROW( insufficient_depth, (market_stat) );
+                            FC_ASSERT( market_stat.valid() );
+                         }
                    
                          while( get_next_bid() && get_next_ask() )
                          {
-                   
                             idump( (_current_bid)(_current_ask) );
                             price ask_price = _current_ask->get_price();
                             // this works for bids, asks, and shorts.... but in the case of a cover
@@ -256,7 +260,6 @@ namespace bts { namespace blockchain {
                                                                         collateral_record( *_current_ask->collateral, 
                                                                                            _current_ask->state.balance ) );
                             }
-                   
                    
                             if( _current_bid->type == bid_order )
                             {

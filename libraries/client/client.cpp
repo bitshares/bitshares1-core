@@ -69,6 +69,26 @@ using std::string;
 // delegate network breaks win32
 #define DISABLE_DELEGATE_NETWORK 1
 
+#define INVOCATION_COUNTER(name) \
+    static unsigned total_ ## name ## _counter = 0; \
+    static unsigned active_ ## name ## _counter = 0; \
+    struct name ## _invocation_logger { \
+      unsigned *total; \
+      unsigned *active; \
+      name ## _invocation_logger(unsigned *total, unsigned *active) : \
+        total(total), active(active) \
+      { \
+        ++*total; \
+        ++*active; \
+        fprintf(stderr,"NEWDEBUG: Entering %s, now %d total calls, %d active calls", #name, *total, *active); \
+      } \
+      ~name ## _invocation_logger() \
+      { \
+        --*active; \
+        fprintf(stderr,"NEWDEBUG: Leaving %s, now %d total calls, %d active calls", #name, *total, *active); \
+      } \
+    } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
+
 namespace bts { namespace client {
 
 const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
@@ -613,7 +633,6 @@ config load_config( const fc::path& datadir )
 
             uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
             bool                                                    _sync_mode = true;
-            bool                                                    _in_sync = true;
 
             rpc_server_config                                       _tmp_rpc_config;
             bts::net::node_ptr                                      _p2p_node;
@@ -745,7 +764,6 @@ config load_config( const fc::path& datadir )
               {
                   try
                   {
-                      FC_ASSERT( _in_sync, "Blockchain must be synced to produce blocks!" );
                       FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
                                  "Client must have ${count} connections before you may produce blocks!",
                                  ("count",_min_delegate_connection_count) );
@@ -785,7 +803,8 @@ config load_config( const fc::path& datadir )
           if( scheduled_time <= system_now ) 
             scheduled_time = system_now + fc::seconds( 1 );
 
-          _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
+          if (!_delegate_loop_complete.canceled())
+            _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
        }
 
        void client_impl::set_target_connections( uint32_t target )
@@ -932,9 +951,10 @@ config load_config( const fc::path& datadir )
               wlog( "error rebroadcasting transacation: ${e}", ("e",e.to_detail_string() ) );
             }
           }
-          _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
-                                                    fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
-                                                    "rebroadcast_pending" );
+          if (!_rebroadcast_pending_loop.canceled())
+            _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
+                                                      fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
+                                                      "rebroadcast_pending" );
        }
 
        ///////////////////////////////////////////////////////
@@ -1326,20 +1346,20 @@ config load_config( const fc::path& datadir )
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
-         _in_sync = item_count == 0;
+         const bool in_sync = item_count == 0;
          _remaining_items_to_sync = item_count;
 
          fc::time_point now = fc::time_point::now();
          if (_cli)
          {
-           if (_in_sync && !_last_sync_status_message_indicated_in_sync)
+           if (in_sync && !_last_sync_status_message_indicated_in_sync)
            {
              ulog( "--- in sync with p2p network" );
              _last_sync_status_message_time = now;
              _last_sync_status_message_indicated_in_sync = true;
              _last_sync_status_head_block = 0;
            }
-           else if (!_in_sync &&
+           else if (!in_sync &&
                     item_count >= 100 && // if we're only a few blocks out of sync, don't bother the user about it
                     _last_sync_status_message_indicated_in_sync && 
                     _last_sync_status_message_time < now - fc::seconds(30))
@@ -2099,7 +2119,7 @@ config load_config( const fc::path& datadir )
       if (option_variables.count("min-delegate-connection-count"))
         my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
 
-      start_delegate_loop();
+      my->reschedule_delegate_loop();
 
       this->configure( datadir );
 
@@ -2258,11 +2278,6 @@ config load_config( const fc::path& datadir )
        my->_cli->set_daemon_mode(daemon_mode);
     }
 
-    void client::start_delegate_loop()
-    {
-       my->start_delegate_loop();
-    }
-
     fc::path client::get_data_dir()const
     {
        return my->_data_dir;
@@ -2414,6 +2429,7 @@ config load_config( const fc::path& datadir )
        info["symbol"]                       = BTS_BLOCKCHAIN_SYMBOL;
        info["name"]                         = BTS_BLOCKCHAIN_NAME;
        info["version"]                      = BTS_BLOCKCHAIN_VERSION;
+       info["db_version"]                   = BTS_BLOCKCHAIN_DATABASE_VERSION;
        info["genesis_timestamp"]            = _chain_db->get_genesis_timestamp();
 
        info["block_interval"]               = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -2458,26 +2474,42 @@ config load_config( const fc::path& datadir )
       info["blockchain_head_block_num"]                         = head_block_num;
       info["blockchain_head_block_age"]                         = variant();
       info["blockchain_head_block_timestamp"]                   = variant();
+      time_point_sec head_block_timestamp;
       if( head_block_num > 0 )
       {
-          fc::time_point_sec head_block_timestamp              = _chain_db->now();
+          head_block_timestamp                                 = _chain_db->now();
           info["blockchain_head_block_age"]                    = ( now - head_block_timestamp ).to_seconds();
           info["blockchain_head_block_timestamp"]              = head_block_timestamp;
       }
 
+      info["blockchain_average_delegate_participation"]         = variant();
       const auto participation                                  = _chain_db->get_average_delegate_participation();
-      info["blockchain_average_delegate_participation"]         = participation <= 100 ? participation : 0;
-      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
-      info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
+      if( participation <= 100 )
+          info["blockchain_average_delegate_participation"]     = participation;
+
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
+
       info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
+      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
-      oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
-      info["blockchain_share_supply"]                           = share_record.valid() ? share_record->current_share_supply : 0;
+      info["blockchain_share_supply"]                           = variant();
+      const auto share_record                                   = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
+      if( share_record.valid() )
+          info["blockchain_share_supply"]                       = share_record->current_share_supply;
+
+      const auto blocks_left                                    = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
+      info["blockchain_blocks_left_in_round"]                   = blocks_left;
+
+      info["blockchain_next_round_time"]                        = variant();
+      info["blockchain_next_round_timestamp"]                   = variant();
+      if( head_block_num > 0 )
+      {
+          const auto next_round_timestamp                       = head_block_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+          info["blockchain_next_round_time"]                    = ( next_round_timestamp - now ).to_seconds();
+          info["blockchain_next_round_timestamp"]               = next_round_timestamp;
+      }
+
       info["blockchain_random_seed"]                            = _chain_db->get_current_random_seed();
-
-      info["blockchain_database_version"]                       = BTS_BLOCKCHAIN_DATABASE_VERSION;
-      info["blockchain_version"]                                = BTS_BLOCKCHAIN_VERSION;
 
       /* Client */
       info["client_data_dir"]                                   = fc::absolute( _data_dir );
@@ -2488,15 +2520,14 @@ config load_config( const fc::path& datadir )
       info["network_num_connections"]                           = network_get_connection_count();
       fc::variant_object advanced_params                        = network_get_advanced_node_parameters();
       info["network_num_connections_max"]                       = advanced_params["maximum_number_of_connections"];
-      info["network_protocol_version"]                          = BTS_NET_PROTOCOL_VERSION;
 
       /* NTP */
       info["ntp_time"]                                          = variant();
-      info["ntp_error"]                                         = variant();
+      info["ntp_time_error"]                                    = variant();
       if( blockchain::ntp_time().valid() )
       {
         info["ntp_time"]                                        = now;
-        info["ntp_error"]                                       = static_cast<double>(blockchain::ntp_error().count()) / fc::seconds(1).count();
+        info["ntp_time_error"]                                  = static_cast<double>(blockchain::ntp_error().count()) / fc::seconds(1).count();
       }
 
       /* Wallet */
@@ -2531,17 +2562,15 @@ config load_config( const fc::path& datadir )
 
           if( block_production_enabled )
           {
-            const auto next_block_time                          = _wallet->get_next_producible_block_timestamp( enabled_delegates );
-            if( next_block_time.valid() )
+            const auto next_block_timestamp                     = _wallet->get_next_producible_block_timestamp( enabled_delegates );
+            if( next_block_timestamp.valid() )
             {
-              info["wallet_next_block_production_time"]         = ( *next_block_time - now ).to_seconds();
-              info["wallet_next_block_production_timestamp"]    = *next_block_time;
+              info["wallet_next_block_production_time"]         = ( *next_block_timestamp - now ).to_seconds();
+              info["wallet_next_block_production_timestamp"]    = *next_block_timestamp;
             }
           }
         }
       }
-
-      info["wallet_version"]                                    = BTS_WALLET_VERSION;
 
       return info;
     }
