@@ -42,30 +42,31 @@ namespace bts { namespace wallet {
       class wallet_impl : public chain_observer
       {
          public:
-             wallet*                            self;
-             wallet_db                          _wallet_db;
-             chain_database_ptr                 _blockchain;
-             path                               _data_directory;
-             path                               _current_wallet_path;
-             fc::sha512                         _wallet_password;
-             fc::optional<fc::time_point>       _scheduled_lock_time;
-             fc::future<void>                   _relocker_done;
-             bool                               _use_deterministic_one_time_keys;
-             bool                               _delegate_scanning_enabled;
-             fc::future<void>                   _scan_in_progress;
+             wallet*                                    self = nullptr;
+             wallet_db                                  _wallet_db;
+             chain_database_ptr                         _blockchain;
+             path                                       _data_directory;
+             path                                       _current_wallet_path;
+             fc::sha512                                 _wallet_password;
+             fc::optional<fc::time_point>               _scheduled_lock_time;
+             fc::future<void>                           _relocker_done;
+             bool                                       _use_deterministic_one_time_keys = true;
+             fc::future<void>                           _scan_in_progress;
 
-             std::unique_ptr<fc::thread>        _scanner_thread;
-             float                              _scan_progress;
+             std::unique_ptr<fc::thread>                _scanner_thread;
+             float                                      _scan_progress = 0;
 
              struct login_record
              {
                  fc::ecc::private_key key;
                  fc::time_point_sec insertion_time;
              };
-             std::map<public_key_type, login_record>  _login_map;
-             fc::future<void>                         _login_map_cleaner_done;
-             const static short                       _login_cleaner_interval_seconds = 60;
-             const static short                       _login_lifetime_seconds = 300;
+             std::map<public_key_type, login_record>    _login_map;
+             fc::future<void>                           _login_map_cleaner_done;
+             const static short                         _login_cleaner_interval_seconds = 60;
+             const static short                         _login_lifetime_seconds = 300;
+
+             vector<function<void( void )>>             _unlocked_upgrade_tasks;
 
              wallet_impl();
              ~wallet_impl();
@@ -134,7 +135,8 @@ namespace bts { namespace wallet {
 
             void login_map_cleaner_task();
 
-            void upgrade_version( uint32_t current_version );
+            void upgrade_version();
+            void upgrade_version_unlocked();
       };
      
       wallet_impl::wallet_impl()
@@ -167,13 +169,13 @@ namespace bts { namespace wallet {
 
       void wallet_impl::block_applied( const block_summary& summary )
       {
-          if( self->is_open() && self->is_unlocked() && (_delegate_scanning_enabled || self->get_my_delegates( enabled_delegate_status ).empty() ) )
-          {
-            const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
-            const auto now = blockchain::now();
-            scan_block( summary.block_data.block_num, account_priv_keys, now );
-            _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( summary.block_data.block_num ) );
-          }
+          if( !self->is_open() || !self->is_unlocked() ) return;
+          if( !self->get_transaction_scanning() ) return;
+
+          const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
+          const auto now = blockchain::now();
+          scan_block( summary.block_data.block_num, account_priv_keys, now );
+          _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( summary.block_data.block_num ) );
       }
 
       void wallet_impl::scan_market_transaction(const market_transaction& trx,
@@ -736,10 +738,10 @@ namespace bts { namespace wallet {
           auto opt_account = _wallet_db.lookup_account( address( oaccount->owner_key ) );
           if( !opt_account.valid() )
           {
-             wlog( "We have the key but no account for registration operation" );
+             wlog( "We have the key but no account for update operation" );
              return false;
           }
-          wlog( "we detected an account register operation for ${name}", ("name",oaccount->name) );
+          wlog( "we detected an account update operation for ${name}", ("name",oaccount->name) );
           auto account_name_rec = _blockchain->get_account_record( oaccount->name );
           FC_ASSERT( account_name_rec.valid() );
 
@@ -997,10 +999,13 @@ namespace bts { namespace wallet {
           }
           else
           {
+            if (!_relocker_done.canceled())
+            {
               ilog( "Scheduling wallet relocker task for time: ${t}", ("t", *_scheduled_lock_time) );
               _relocker_done = fc::schedule( [this](){ relocker(); }, 
                                              *_scheduled_lock_time, 
                                              "wallet_relocker" );
+            }
           }
       }
 
@@ -1021,7 +1026,7 @@ namespace bts { namespace wallet {
               if( progress_callback )
                  progress_callback( block_num, min_end );
               _scan_progress = float(block_num-start)/(min_end-start+1);
-              _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant(block_num) );
+              _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( block_num ) );
            }
 
            for( auto acct : _wallet_db.get_accounts() )
@@ -1059,25 +1064,85 @@ namespace bts { namespace wallet {
                                                  "login_map_cleaner_task");
       }
 
-      void wallet_impl::upgrade_version( uint32_t current_version )
+      void wallet_impl::upgrade_version()
       {
+          if( _wallet_db.get_property( version ).is_null() ) _wallet_db.set_property( version, variant( 0 ) );
+          const auto current_version = _wallet_db.get_property( version ).as<uint32_t>();
+          if ( current_version > BTS_WALLET_VERSION )
+          {
+              FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
+                                  ("wallet_version",current_version)("supported_version",BTS_WALLET_VERSION) );
+          }
+          else if( current_version == BTS_WALLET_VERSION )
+          {
+              return;
+          }
+
           ulog( "Upgrading wallet..." );
           try
           {
-              self->auto_backup( "version_upgrade" );
+              if( current_version >= 100 )
+                  self->auto_backup( "version_upgrade" );
 
               if( current_version < 100 )
               {
-                  /* Remove old format genesis claim virtual transactions */
+                  self->set_automatic_backups( true );
+                  self->auto_backup( "version_upgrade" );
+                  self->set_transaction_scanning( self->get_my_delegates( enabled_delegate_status ).empty() );
+                  self->set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
+
+                  /* Check for old index format genesis claim virtual transactions */
+                  auto present = false;
                   _blockchain->scan_balances( [&]( const balance_record& bal_rec )
                   {
                        if( !bal_rec.genesis_info.valid() ) return;
-                       self->remove_transaction_record( string( bal_rec.id().addr ) );
+                       const auto id = bal_rec.id().addr;
+                       present |= _wallet_db.lookup_transaction( id ).valid();
                   } );
 
-                  ulog( "Wallet format change. Please unlock your wallet and run: \"wallet_rescan_blockchain 0 1\"" );
+                  if( present )
+                  {
+                      const function<void( void )> rescan = [&]()
+                      {
+                          /* Upgrade genesis claim virtual transaction indexes */
+                          _blockchain->scan_balances( [&]( const balance_record& bal_rec )
+                          {
+                               if( !bal_rec.genesis_info.valid() ) return;
+                               const auto id = bal_rec.id().addr;
+                               _wallet_db.remove_transaction( id );
+                          } );
+                          scan_balances();
+                      };
+                      _unlocked_upgrade_tasks.push_back( rescan );
+                  }
               }
 
+              if( _unlocked_upgrade_tasks.empty() )
+              {
+                  _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
+                  ulog( "Wallet successfully upgraded." );
+              }
+              else
+              {
+                  ulog( "Please unlock your wallet to complete the upgrade..." );
+              }
+          }
+          catch( ... )
+          {
+              ulog( "Wallet upgrade failure." );
+              throw;
+          }
+      }
+
+      void wallet_impl::upgrade_version_unlocked()
+      {
+          if( _unlocked_upgrade_tasks.empty() ) return;
+
+          ulog( "Continuing wallet upgrade..." );
+          try
+          {
+              for( const auto& task : _unlocked_upgrade_tasks ) task();
+              _unlocked_upgrade_tasks.clear();
               _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
               ulog( "Wallet successfully upgraded." );
           }
@@ -1091,11 +1156,9 @@ namespace bts { namespace wallet {
    } // detail 
 
    wallet::wallet( chain_database_ptr blockchain )
-   :my( new detail::wallet_impl() )
+   : my( new detail::wallet_impl() )
    {
       my->self = this;
-      my->_delegate_scanning_enabled = false;
-      my->_use_deterministic_one_time_keys = true;
       my->_blockchain = blockchain;
       my->_blockchain->add_observer( my.get() );
    }
@@ -1185,8 +1248,10 @@ namespace bts { namespace wallet {
           my->_wallet_db.set_master_key( epk, my->_wallet_password);
 
           my->_wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
+          set_automatic_backups( true );
+          set_transaction_scanning( true );
           my->_wallet_db.set_property( last_unlocked_scanned_block_number, variant( my->_blockchain->get_head_block_num() ) );
-          my->_wallet_db.set_property( default_transaction_priority_fee, variant( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) ) );
+          set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
@@ -1227,31 +1292,15 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
+      if( is_open() && my->_current_wallet_path == wallet_file_path )
+          return;
+
       try
       {
           close();
           my->_current_wallet_path = wallet_file_path;
           my->_wallet_db.open( wallet_file_path );
-
-          /* Check wallet version */
-          const auto version_property = my->_wallet_db.get_property( version );
-          auto version = uint32_t( 0 );
-          if( !version_property.is_null() ) version = version_property.as<uint32_t>();
-          if( version < BTS_WALLET_VERSION )
-          {
-              my->upgrade_version( version );
-          }
-          else if ( version > BTS_WALLET_VERSION )
-          {
-              FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
-                                  ("wallet_version",version)("supported_version",BTS_WALLET_VERSION) );
-          }
-
-          for( const auto& balance_item : my->_wallet_db.get_balances() )
-          {
-              const auto balance_id = balance_item.first;
-              my->sync_balance_with_blockchain( balance_id );
-          }
+          my->upgrade_version();
       }
       catch( ... )
       {
@@ -1331,9 +1380,9 @@ namespace bts { namespace wallet {
       if( !is_valid_account_name( wallet_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
+      create( wallet_name, passphrase );
       try
       {
-          create( wallet_name, passphrase );
           my->_wallet_db.set_property( version, variant( 0 ) );
           my->_wallet_db.import_from_json( filename );
           close();
@@ -1351,6 +1400,7 @@ namespace bts { namespace wallet {
 
    void wallet::auto_backup( const string& reason )const
    { try {
+      if( !get_automatic_backups() ) return;
       ulog( "Backing up wallet..." );
       const auto wallet_path = my->_current_wallet_path;
       const auto wallet_name = wallet_path.filename().string();
@@ -1368,6 +1418,30 @@ namespace bts { namespace wallet {
       export_to_json( backup_path );
       ulog( "Wallet automatically backed up to: ${f}", ("f",backup_path) );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void wallet::set_automatic_backups( bool enabled )
+   {
+       FC_ASSERT( is_open() );
+       my->_wallet_db.set_property( automatic_backups, variant( enabled ) );
+   }
+
+   bool wallet::get_automatic_backups()const
+   {
+       FC_ASSERT( is_open() );
+       return my->_wallet_db.get_property( automatic_backups ).as<bool>();
+   }
+
+   void wallet::set_transaction_scanning( bool enabled )
+   {
+       FC_ASSERT( is_open() );
+       my->_wallet_db.set_property( transaction_scanning, variant( enabled ) );
+   }
+
+   bool wallet::get_transaction_scanning()const
+   {
+       FC_ASSERT( is_open() );
+       return my->_wallet_db.get_property( transaction_scanning ).as<bool>();
+   }
 
    void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
@@ -1389,6 +1463,8 @@ namespace bts { namespace wallet {
           my->_wallet_password = fc::sha512::hash( password.c_str(), password.size() );
           if( !my->_wallet_db.validate_password( my->_wallet_password ) )
               FC_THROW_EXCEPTION( invalid_password, "Invalid password!" );
+
+          my->upgrade_version_unlocked();
 
           my->_scheduled_lock_time = new_lock_time;
           ilog( "Wallet unlocked at time: ${t}", ("t", fc::time_point_sec(now)) );
@@ -1801,18 +1877,15 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       elog( "WALLET SCANNING CHAIN!" );
 
-
-      const auto now = blockchain::now();
-
       if( start == 0 )
       {
          scan_state();
          ++start;
       }
 
-      if( !my->_delegate_scanning_enabled && !get_my_delegates( enabled_delegate_status ).empty() )
+      if( !get_transaction_scanning() )
       {
-         ulog( "\nWallet blockchain scanning disabled because there are enabled delegates!\n" );
+         ulog( "Wallet transaction scanning is disabled!" );
          return;
       }
 
@@ -1826,6 +1899,7 @@ namespace bts { namespace wallet {
         wlog("Unexpected exception caught while canceling the previous scan_chain_task : ${e}");
       }
 
+      const auto now = blockchain::now();
       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task(start, end, progress_callback, now); }, 
                                          "scan_chain_task" );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
@@ -2146,6 +2220,7 @@ namespace bts { namespace wallet {
    {
       FC_ASSERT( is_open() );
       std::vector<wallet_account_record> delegate_records;
+      const auto empty_before = get_my_delegates( enabled_delegate_status ).empty();
 
       if( delegate_name != "ALL" )
       {
@@ -2168,12 +2243,25 @@ namespace bts { namespace wallet {
           delegate_record.block_production_enabled = enabled;
           my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
       }
-   }
 
-   void wallet::set_delegate_transaction_scanning( bool enabled )
-   {
-      FC_ASSERT( is_open() );
-      my->_delegate_scanning_enabled = enabled;
+      const auto empty_after = get_my_delegates( enabled_delegate_status ).empty();
+
+      if( empty_before == empty_after )
+      {
+          return;
+      }
+      else if( empty_before )
+      {
+          // TODO: This line was breaking regression tests by getting included in console.log
+          ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
+          set_transaction_scanning( false );
+      }
+      else
+      {
+          // TODO: This line was breaking regression tests by getting included in console.log
+          ulog( "Wallet transaction scanning has been automatically re-enabled!" );
+          set_transaction_scanning( true );
+      }
    }
 
    vector<wallet_account_record> wallet::get_my_delegates(int delegates_to_retrieve)const
@@ -3788,7 +3876,13 @@ namespace bts { namespace wallet {
       // TODO: support price conversion using price from blockchain
       return my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
    } FC_CAPTURE_AND_RETHROW() }
-   
+
+   float wallet::get_scan_progress()const
+   {
+       FC_ASSERT( is_open() );
+       return my->_scan_progress;
+   }
+
    string wallet::get_key_label( const public_key_type& key )const
    { try {
        if( key == public_key_type() )
@@ -4335,7 +4429,7 @@ namespace bts { namespace wallet {
       auto local_account      = my->_wallet_db.lookup_account( account_name );
       auto registered_account = my->_blockchain->get_account_record( account_name );
       if( local_account && registered_account )
-         return local_account->account_address == address( registered_account->active_key() );
+         return local_account->owner_key == registered_account->owner_key;
       return local_account || registered_account;
    }
 
@@ -4379,10 +4473,12 @@ namespace bts { namespace wallet {
       FC_ASSERT( BTS_BLOCKCHAIN_MAX_SLATE_SIZE <= BTS_BLOCKCHAIN_NUM_DELEGATES );
       vector<account_id_type> for_candidates;
 
-      for( const auto& acct_rec : my->_wallet_db.get_accounts() )
+      for( const auto& item : my->_wallet_db.get_accounts() )
       {
-         if( acct_rec.second.approved > 0 )
-             for_candidates.push_back( acct_rec.second.id );
+          const auto account_record = item.second;
+          if( !account_record.is_delegate() ) continue;
+          if( account_record.approved <= 0 ) continue;
+          for_candidates.push_back( account_record.id );
       }
       std::random_shuffle( for_candidates.begin(), for_candidates.end() );
 
@@ -4401,7 +4497,7 @@ namespace bts { namespace wallet {
           unordered_map<account_id_type, int> recommended_candidate_ranks;
 
           //Tally up the recommendation count for all delegates recommended by delegates I approve of
-          for( account_id_type approved_candidate : for_candidates )
+          for( const auto& approved_candidate : for_candidates )
           {
             oaccount_record candidate_record = my->_blockchain->get_account_record(approved_candidate);
 
@@ -4412,7 +4508,7 @@ namespace bts { namespace wallet {
             if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              set_delegate_approval(candidate_record->name, -1);
+              set_account_approval( candidate_record->name, -1 );
               continue;
             }
 
@@ -4420,7 +4516,7 @@ namespace bts { namespace wallet {
             if( !recomendations.valid() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
-              set_delegate_approval(candidate_record->name, -1);
+              set_account_approval( candidate_record->name, -1 );
               continue;
             }
 
@@ -4468,34 +4564,38 @@ namespace bts { namespace wallet {
       return slate;
    }
 
-   void wallet::set_delegate_approval( const string& delegate_name, int approved )
+   void wallet::set_account_approval( const string& account_name, int8_t approval )
    { try {
       FC_ASSERT( is_open() );
-      auto war = my->_wallet_db.lookup_account( delegate_name );
+      const auto account_record = my->_blockchain->get_account_record( account_name );
+      auto war = my->_wallet_db.lookup_account( account_name );
+
+      if( !account_record.valid() && !war.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
+
       if( war.valid() )
       {
-         war->approved = approved;
+         war->approved = approval;
          my->_wallet_db.cache_account( *war );
+         return;
       }
-      else
-      {
-         auto reg_account = my->_blockchain->get_account_record( delegate_name );
-         if( !reg_account.valid() )
-         {
-            FC_ASSERT( !"Not a Registered Account" );
-         }
-         add_contact_account( delegate_name, reg_account->active_key() );
-         set_delegate_approval( delegate_name, approved );
-      }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)("approved", approved) ) }
 
-   int wallet::get_delegate_approval( const string& delegate_name )const
+      add_contact_account( account_name, account_record->owner_key );
+      set_account_approval( account_name, approval );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval", approval) ) }
+
+   int8_t wallet::get_account_approval( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
-      auto war = my->_wallet_db.lookup_account( delegate_name );
-      FC_ASSERT( war.valid() );
+      const auto account_record = my->_blockchain->get_account_record( account_name );
+      auto war = my->_wallet_db.lookup_account( account_name );
+
+      if( !account_record.valid() && !war.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
+
+      if( !war.valid() ) return 0;
       return war->approved;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name) ) }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    owallet_account_record wallet::get_account_record( const address& addr)const
    {
@@ -4615,29 +4715,51 @@ namespace bts { namespace wallet {
 
    variant wallet::get_info()const
    {
-       fc::mutable_variant_object obj;
-       obj( "data_directory", fc::absolute(my->_data_directory) );
-       if( is_open() )
+       const auto now = blockchain::now();
+       auto info = fc::mutable_variant_object();
+
+       info["data_dir"]                                 = fc::absolute( my->_data_directory );
+
+       const auto is_open                               = this->is_open();
+       info["open"]                                     = is_open;
+
+       info["name"]                                     = variant();
+       info["automatic_backups"]                        = variant();
+       info["transaction_scanning"]                     = variant();
+       info["last_scanned_block_num"]                   = variant();
+       info["priority_fee"]                             = variant();
+
+       info["unlocked"]                                 = variant();
+       info["unlocked_until"]                           = variant();
+       info["unlocked_until_timestamp"]                 = variant();
+
+       info["scan_progress"]                            = variant();
+
+       info["version"]                                  = variant();
+
+       if( is_open )
        {
-          obj( "version", my->_wallet_db.get_property( version ) );
-          obj( "last_unlocked_scanned_block_number", my->_wallet_db.get_property( last_unlocked_scanned_block_number ) );
-          obj( "last_locked_scanned_block_number", my->_wallet_db.get_property( last_locked_scanned_block_number ) );
-          obj( "next_child_key_index", my->_wallet_db.get_property( next_child_key_index ) );
-          obj( "default_transaction_priority_fee", get_priority_fee() );
-          obj( "state", "open" );
-          obj( "locked", is_locked() );
-          obj( "file", fc::absolute(my->_current_wallet_path) );
-          fc::optional<fc::time_point_sec> relock_time_in_sec;
-          if (my->_scheduled_lock_time)
-            relock_time_in_sec = *my->_scheduled_lock_time;                                
-          obj( "scheduled_lock_time", relock_time_in_sec);
-          obj( "scan_progress", my->_scan_progress );
+         info["name"]                                   = my->_current_wallet_path.filename().string();
+         info["automatic_backups"]                      = get_automatic_backups();
+         info["transaction_scanning"]                   = get_transaction_scanning();
+         info["last_scanned_block_num"]                 = my->_wallet_db.get_property( last_unlocked_scanned_block_number ).as<uint32_t>();
+         info["priority_fee"]                           = get_priority_fee();
+
+         info["unlocked"]                               = is_unlocked();
+
+         const auto unlocked_until                      = this->unlocked_until();
+         if( unlocked_until.valid() )
+         {
+           info["unlocked_until"]                       = ( *unlocked_until - now ).to_seconds();
+           info["unlocked_until_timestamp"]             = *unlocked_until;
+
+           info["scan_progress"]                        = get_scan_progress();
+         }
+
+         info["version"]                                = my->_wallet_db.get_property( version ).as<uint32_t>();
        }
-       else
-       {
-          obj( "state", "closed" );
-       }
-       return obj;
+
+       return info;
    }
 
    public_key_summary wallet::get_public_key_summary( const public_key_type& pubkey ) const

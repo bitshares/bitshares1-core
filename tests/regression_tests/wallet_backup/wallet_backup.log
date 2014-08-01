@@ -1,110 +1,10 @@
-default (unlocked) >>> wallet_account_balance
+default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,801,980.19801 XTS        
-delegate1                       19,801,980.19801 XTS        
-delegate10                      19,801,980.19801 XTS        
-delegate100                     19,801,980.19801 XTS        
-delegate11                      19,801,980.19801 XTS        
-delegate12                      19,801,980.19801 XTS        
-delegate13                      19,801,980.19801 XTS        
-delegate14                      19,801,980.19801 XTS        
-delegate15                      19,801,980.19801 XTS        
-delegate16                      19,801,980.19801 XTS        
-delegate17                      19,801,980.19801 XTS        
-delegate18                      19,801,980.19801 XTS        
-delegate19                      19,801,980.19801 XTS        
-delegate2                       19,801,980.19801 XTS        
-delegate20                      19,801,980.19801 XTS        
-delegate21                      19,801,980.19801 XTS        
-delegate22                      19,801,980.19801 XTS        
-delegate23                      19,801,980.19801 XTS        
-delegate24                      19,801,980.19801 XTS        
-delegate25                      19,801,980.19801 XTS        
-delegate26                      19,801,980.19801 XTS        
-delegate27                      19,801,980.19801 XTS        
-delegate28                      19,801,980.19801 XTS        
-delegate29                      19,801,980.19801 XTS        
-delegate3                       19,801,980.19801 XTS        
-delegate30                      19,801,980.19801 XTS        
-delegate31                      19,801,980.19801 XTS        
-delegate32                      19,801,980.19801 XTS        
-delegate33                      19,801,980.19801 XTS        
-delegate34                      19,801,980.19801 XTS        
-delegate35                      19,801,980.19801 XTS        
-delegate36                      19,801,980.19801 XTS        
-delegate37                      19,801,980.19801 XTS        
-delegate38                      19,801,980.19801 XTS        
-delegate39                      19,801,980.19801 XTS        
-delegate4                       19,801,980.19801 XTS        
-delegate40                      19,801,980.19801 XTS        
-delegate41                      19,801,980.19801 XTS        
-delegate42                      19,801,980.19801 XTS        
-delegate43                      19,801,980.19801 XTS        
-delegate44                      19,801,980.19801 XTS        
-delegate45                      19,801,980.19801 XTS        
-delegate46                      19,801,980.19801 XTS        
-delegate47                      19,801,980.19801 XTS        
-delegate48                      19,801,980.19801 XTS        
-delegate49                      19,801,980.19801 XTS        
-delegate5                       19,801,980.19801 XTS        
-delegate50                      19,801,980.19801 XTS        
-delegate51                      19,801,980.19801 XTS        
-delegate52                      19,801,980.19801 XTS        
-delegate53                      19,801,980.19801 XTS        
-delegate54                      19,801,980.19801 XTS        
-delegate55                      19,801,980.19801 XTS        
-delegate56                      19,801,980.19801 XTS        
-delegate57                      19,801,980.19801 XTS        
-delegate58                      19,801,980.19801 XTS        
-delegate59                      19,801,980.19801 XTS        
-delegate6                       19,801,980.19801 XTS        
-delegate60                      19,801,980.19801 XTS        
-delegate61                      19,801,980.19801 XTS        
-delegate62                      19,801,980.19801 XTS        
-delegate63                      19,801,980.19801 XTS        
-delegate64                      19,801,980.19801 XTS        
-delegate65                      19,801,980.19801 XTS        
-delegate66                      19,801,980.19801 XTS        
-delegate67                      19,801,980.19801 XTS        
-delegate68                      19,801,980.19801 XTS        
-delegate69                      19,801,980.19801 XTS        
-delegate7                       19,801,980.19801 XTS        
-delegate70                      19,801,980.19801 XTS        
-delegate71                      19,801,980.19801 XTS        
-delegate72                      19,801,980.19801 XTS        
-delegate73                      19,801,980.19801 XTS        
-delegate74                      19,801,980.19801 XTS        
-delegate75                      19,801,980.19801 XTS        
-delegate76                      19,801,980.19801 XTS        
-delegate77                      19,801,980.19801 XTS        
-delegate78                      19,801,980.19801 XTS        
-delegate79                      19,801,980.19801 XTS        
-delegate8                       19,801,980.19801 XTS        
-delegate80                      19,801,980.19801 XTS        
-delegate81                      19,801,980.19801 XTS        
-delegate82                      19,801,980.19801 XTS        
-delegate83                      19,801,980.19801 XTS        
-delegate84                      19,801,980.19801 XTS        
-delegate85                      19,801,980.19801 XTS        
-delegate86                      19,801,980.19801 XTS        
-delegate87                      19,801,980.19801 XTS        
-delegate88                      19,801,980.19801 XTS        
-delegate89                      19,801,980.19801 XTS        
-delegate9                       19,801,980.19801 XTS        
-delegate90                      19,801,980.19801 XTS        
-delegate91                      19,801,980.19801 XTS        
-delegate92                      19,801,980.19801 XTS        
-delegate93                      19,801,980.19801 XTS        
-delegate94                      19,801,980.19801 XTS        
-delegate95                      19,801,980.19801 XTS        
-delegate96                      19,801,980.19801 XTS        
-delegate97                      19,801,980.19801 XTS        
-delegate98                      19,801,980.19801 XTS        
-delegate99                      19,801,980.19801 XTS        
-default (unlocked) >>> help wallet_export_to_json
+default (unlocked) >>> help wallet_backup_create
 Usage:
-wallet_export_to_json <json_filename>                                                                 Exports the current wallet to a JSON file
+wallet_backup_create <json_filename>                                                                  Exports the current wallet to a JSON file
 Exports the current wallet to a JSON file
 
 Parameters:
@@ -112,13 +12,15 @@ Parameters:
 
 Returns:
   void
-default (unlocked) >>> wallet_export_to_json wallet_backup.json
+
+aliases: backupwallet, wallet_export_to_json
+default (unlocked) >>> wallet_backup_create wallet_backup.json
 OK
 default (unlocked) >>> wallet_close
 OK
-(wallet closed) >>> help wallet_create_from_json
+(wallet closed) >>> help wallet_backup_restore
 Usage:
-wallet_create_from_json <json_filename> <wallet_name> <imported_wallet_passphrase>                    Creates a new wallet from an exported JSON file
+wallet_backup_restore <json_filename> <wallet_name> <imported_wallet_passphrase>                      Creates a new wallet from an exported JSON file
 Creates a new wallet from an exported JSON file
 
 Parameters:
@@ -128,110 +30,12 @@ Parameters:
 
 Returns:
   void
-(wallet closed) >>> wallet_create_from_json wallet_backup.json recovered password
+
+aliases: wallet_create_from_json
+(wallet closed) >>> wallet_backup_restore wallet_backup.json recovered password
 OK
-recovered (unlocked) >>> wallet_account_balance
+recovered (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,801,980.19801 XTS        
-delegate1                       19,801,980.19801 XTS        
-delegate10                      19,801,980.19801 XTS        
-delegate100                     19,801,980.19801 XTS        
-delegate11                      19,801,980.19801 XTS        
-delegate12                      19,801,980.19801 XTS        
-delegate13                      19,801,980.19801 XTS        
-delegate14                      19,801,980.19801 XTS        
-delegate15                      19,801,980.19801 XTS        
-delegate16                      19,801,980.19801 XTS        
-delegate17                      19,801,980.19801 XTS        
-delegate18                      19,801,980.19801 XTS        
-delegate19                      19,801,980.19801 XTS        
-delegate2                       19,801,980.19801 XTS        
-delegate20                      19,801,980.19801 XTS        
-delegate21                      19,801,980.19801 XTS        
-delegate22                      19,801,980.19801 XTS        
-delegate23                      19,801,980.19801 XTS        
-delegate24                      19,801,980.19801 XTS        
-delegate25                      19,801,980.19801 XTS        
-delegate26                      19,801,980.19801 XTS        
-delegate27                      19,801,980.19801 XTS        
-delegate28                      19,801,980.19801 XTS        
-delegate29                      19,801,980.19801 XTS        
-delegate3                       19,801,980.19801 XTS        
-delegate30                      19,801,980.19801 XTS        
-delegate31                      19,801,980.19801 XTS        
-delegate32                      19,801,980.19801 XTS        
-delegate33                      19,801,980.19801 XTS        
-delegate34                      19,801,980.19801 XTS        
-delegate35                      19,801,980.19801 XTS        
-delegate36                      19,801,980.19801 XTS        
-delegate37                      19,801,980.19801 XTS        
-delegate38                      19,801,980.19801 XTS        
-delegate39                      19,801,980.19801 XTS        
-delegate4                       19,801,980.19801 XTS        
-delegate40                      19,801,980.19801 XTS        
-delegate41                      19,801,980.19801 XTS        
-delegate42                      19,801,980.19801 XTS        
-delegate43                      19,801,980.19801 XTS        
-delegate44                      19,801,980.19801 XTS        
-delegate45                      19,801,980.19801 XTS        
-delegate46                      19,801,980.19801 XTS        
-delegate47                      19,801,980.19801 XTS        
-delegate48                      19,801,980.19801 XTS        
-delegate49                      19,801,980.19801 XTS        
-delegate5                       19,801,980.19801 XTS        
-delegate50                      19,801,980.19801 XTS        
-delegate51                      19,801,980.19801 XTS        
-delegate52                      19,801,980.19801 XTS        
-delegate53                      19,801,980.19801 XTS        
-delegate54                      19,801,980.19801 XTS        
-delegate55                      19,801,980.19801 XTS        
-delegate56                      19,801,980.19801 XTS        
-delegate57                      19,801,980.19801 XTS        
-delegate58                      19,801,980.19801 XTS        
-delegate59                      19,801,980.19801 XTS        
-delegate6                       19,801,980.19801 XTS        
-delegate60                      19,801,980.19801 XTS        
-delegate61                      19,801,980.19801 XTS        
-delegate62                      19,801,980.19801 XTS        
-delegate63                      19,801,980.19801 XTS        
-delegate64                      19,801,980.19801 XTS        
-delegate65                      19,801,980.19801 XTS        
-delegate66                      19,801,980.19801 XTS        
-delegate67                      19,801,980.19801 XTS        
-delegate68                      19,801,980.19801 XTS        
-delegate69                      19,801,980.19801 XTS        
-delegate7                       19,801,980.19801 XTS        
-delegate70                      19,801,980.19801 XTS        
-delegate71                      19,801,980.19801 XTS        
-delegate72                      19,801,980.19801 XTS        
-delegate73                      19,801,980.19801 XTS        
-delegate74                      19,801,980.19801 XTS        
-delegate75                      19,801,980.19801 XTS        
-delegate76                      19,801,980.19801 XTS        
-delegate77                      19,801,980.19801 XTS        
-delegate78                      19,801,980.19801 XTS        
-delegate79                      19,801,980.19801 XTS        
-delegate8                       19,801,980.19801 XTS        
-delegate80                      19,801,980.19801 XTS        
-delegate81                      19,801,980.19801 XTS        
-delegate82                      19,801,980.19801 XTS        
-delegate83                      19,801,980.19801 XTS        
-delegate84                      19,801,980.19801 XTS        
-delegate85                      19,801,980.19801 XTS        
-delegate86                      19,801,980.19801 XTS        
-delegate87                      19,801,980.19801 XTS        
-delegate88                      19,801,980.19801 XTS        
-delegate89                      19,801,980.19801 XTS        
-delegate9                       19,801,980.19801 XTS        
-delegate90                      19,801,980.19801 XTS        
-delegate91                      19,801,980.19801 XTS        
-delegate92                      19,801,980.19801 XTS        
-delegate93                      19,801,980.19801 XTS        
-delegate94                      19,801,980.19801 XTS        
-delegate95                      19,801,980.19801 XTS        
-delegate96                      19,801,980.19801 XTS        
-delegate97                      19,801,980.19801 XTS        
-delegate98                      19,801,980.19801 XTS        
-delegate99                      19,801,980.19801 XTS        
 recovered (unlocked) >>> quit

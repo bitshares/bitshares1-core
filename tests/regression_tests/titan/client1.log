@@ -1,6 +1,6 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> debug_filter_output_for_tests true
 OK
@@ -8,7 +8,7 @@ default (unlocked) >>> wallet_import_private_key "5JMnSU8bfBcu67oA9KemNm5jbs9RTp
 "account-for-client1"
 default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_account_balance account-for-client1
 ACCOUNT                         BALANCE                     

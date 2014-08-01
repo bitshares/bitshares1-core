@@ -4,7 +4,7 @@ default (unlocked) >>> wallet_set_priority_fee 100000
 100,000.00000 XTS
 default (unlocked) >>> wallet_asset_create XBC ASSET1 delegate0 "CREATING ASSET1" null 500 100
 {
-  "expiration": "20140620T164000",
+  "expiration": "20140620T164030",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -27,8 +27,8 @@ default (unlocked) >>> wallet_asset_create XBC ASSET1 delegate0 "CREATING ASSET1
     }
   ],
   "signatures": [
-    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e44292c0696e8a3cd66dd16516e6a908122e40acff95e2900fb7d196e229502bc",
-    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c3417fc8bd6a8ee02bd2d76813593f4ed154d3bbae489e948e697c59d70e32959"
+    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e070abe81ad20efc070d61ac1f3c4f9e60dfbbd8524eb2e99a8c009ad1f64e086",
+    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c2cebb64fcd897116a51df975641d0f9c66a4756aee832694176196fbe708dbf6"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -37,7 +37,7 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XCD ASSET2 delegate0 "CREATING ASSET2" null 500 100
 {
-  "expiration": "20140620T164010",
+  "expiration": "20140620T164040",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -60,8 +60,8 @@ default (unlocked) >>> wallet_asset_create XCD ASSET2 delegate0 "CREATING ASSET2
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d91b43ed13a9c470af4a7e292858287ddc2327a0dbd2091ab14a3de3867e615895",
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749600a1fd04131b5ac309668fbb856484336b657f1b03699ca42beb2e31de2d6c0ff"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9229c3208898a0febb8203ff8345f788453c66ffcef571b030ccc294839d59d08",
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960476505d1d5d25d754488e16a72f6af98c6822305b894a304db98d7e370dea1a4"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -70,7 +70,7 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XDE ASSET3  delegate0 "CREATING ASSET3" null 500 100
 {
-  "expiration": "20140620T164020",
+  "expiration": "20140620T164050",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -93,8 +93,8 @@ default (unlocked) >>> wallet_asset_create XDE ASSET3  delegate0 "CREATING ASSET
     }
   ],
   "signatures": [
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bf991bf0ea7e8eb6618415c598c2f945bfa832b9c136a9c054ea596b12338b206",
-    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c044ee07ae0eb0b93e9f29808e15f150dd256de7d1400d6533bb7367847e4e659d"
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b6d3d361b831282f8d7b7a377b78a472b5b1154481829fa03bed1acc86eb56779",
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c008421524961816263398b00a3274854d193fedbf018a758878760d9ff0b86036"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -103,7 +103,7 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XEF ASSET4 delegate0 "CREATING ASSET4" null 500 100
 {
-  "expiration": "20140620T164030",
+  "expiration": "20140620T164100",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -126,8 +126,8 @@ default (unlocked) >>> wallet_asset_create XEF ASSET4 delegate0 "CREATING ASSET4
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00893d8be72491fa02105fe5b4ad46756b0e870250a3b0a3618a9bcd15f4841533",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66e61d48115d78ea123b83163ec4f3008cbd494cb5f0afeb2b964863f0d17ad810"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0079f792a669907a405287f41a9b868174a332e8e97dcaa7dfb9c37af4ad08c886",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e663e117f0cf5fbfb2de0a6b089631ab55f59ec190662343d32665698646872249e"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -161,7 +161,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-42    delegate41                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+42    delegate41                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_get_account delegate41 
 Name: delegate41
@@ -173,7 +173,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-42    delegate41                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+42    delegate41                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_get_account delegate43 
 Name: delegate43
@@ -185,13 +185,13 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-44    delegate43                      0.0000002896 % 1        0        100.00 %      100 %    5.78698 XTS         5         
+44    delegate43                      0.0000000000 % 1        0        100.00 %      100 %    0.00000 XTS         2         
 
 default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate44                      19,801,980.19801 XTS        
-                                12.40063 XTS (pay)          
+                                0.82671 XTS (pay)           
 default (unlocked) >>> blockchain_get_account delegate44
 Name: delegate44
 Registered: Genesis (Keyhotee Founder)
@@ -202,11 +202,11 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-45    delegate44                      0.0000006205 % 1        0        100.00 %      100 %    12.40063 XTS        6         
+45    delegate44                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
 
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
 {
-  "expiration": "20140620T164050",
+  "expiration": "20140620T164120",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_pay_op_type",
@@ -234,14 +234,14 @@ default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw
     }
   ],
   "signatures": [
-    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96fbe91397252bfbf1abb76b3aeed170ba7157d4320d20e72142dfbb875c512e7a7"
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96ff20fe56437c30abfa56847e5042e5732de644c225431f8f1d315b3233e68e3ea"
   ]
 }
 default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate44                      19,801,980.19801 XTS        
-                                12.20063 XTS (pay)          
+                                0.62671 XTS (pay)           
 default (unlocked) >>> blockchain_get_account delegate44
 Name: delegate44
 Registered: Genesis (Keyhotee Founder)
@@ -252,21 +252,11 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-45    delegate44                      0.0000006205 % 1        0        100.00 %      100 %    12.40063 XTS        6         
+45    delegate44                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
 
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 5
-OK
-default (unlocked) >>> balance test
-No balances found.
-default (unlocked) >>> wallet_delegate_set_block_production ALL false
-OK
-default (unlocked) >>> wallet_rescan_blockchain
-Rescanning blockchain...
-Scan complete.
-OK
-default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     

@@ -41,5 +41,7 @@ ACCOUNT                         BALANCE
 ============================================================
 delegate0                       19,801,880.09801 XTS        
 default (unlocked) >>> wallet_account_balance test
-No balances found.
+ACCOUNT                         BALANCE                     
+============================================================
+test                            100.00000 XTS               
 default (unlocked) >>> quit

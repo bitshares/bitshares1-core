@@ -64,6 +64,9 @@ namespace bts { namespace blockchain {
       for( const auto& item : slots )           prev_state->store_slot_record( item.second );
       for( const auto& item : market_history )  prev_state->store_market_history_record( item.first, item.second );
       for( const auto& item : market_statuses ) prev_state->store_market_status( item.second );
+      for( const auto& items : recent_operations )
+        for( const auto& item : items.second )
+          prev_state->store_recent_operation( item );
       prev_state->set_market_transactions( market_transactions );
    }
 
@@ -88,6 +91,9 @@ namespace bts { namespace blockchain {
                                                 const transaction_record& rec )
    {
       transactions[id] = rec;
+
+      for( const auto& op : rec.trx.operations )
+        store_recent_operation(op);
    }
 
    void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
@@ -307,6 +313,22 @@ namespace bts { namespace blockchain {
       for( const auto& item : r.active_key_history )
          key_to_account[address(item.second)] = r.id;
       key_to_account[address(r.owner_key)] = r.id;
+   }
+
+   vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
+   {
+      const auto& recent_op_queue = recent_operations[t];
+      vector<operation> recent_ops(recent_op_queue.size());
+      std::copy(recent_op_queue.begin(), recent_op_queue.end(), recent_ops.begin());
+      return recent_ops;
+   }
+
+   void pending_chain_state::store_recent_operation(const operation& o)
+   {
+      auto& recent_op_queue = recent_operations[o.type];
+      recent_op_queue.push_back(o);
+      if( recent_op_queue.size() > MAX_RECENT_OPERATIONS )
+        recent_op_queue.pop_front();
    }
 
    fc::variant pending_chain_state::get_property( chain_property_enum property_id )const

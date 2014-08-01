@@ -8,11 +8,11 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
-  "expiration": "20140620T164000",
+  "expiration": "20140620T164030",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -35,8 +35,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749603e7439ce23d2466deee2d12ab18d0c527e6498601210b5f8e819c8f60a391d72",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22f374f47f8d016ef4eeb4d77078ed4d210162e0891f5ae191c88bda38fe5a411f"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749608848f257da5978b222badb0a05709afb3c3273f51bbd3717c929f58083d70ec6",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22c6e2baa22c808109d3ad5a709bad6180b049ff669f2a6ba090beeb0aeea07b82"
   ]
 }
 default (unlocked) >>> wallet_account_balance test
@@ -44,8 +44,6 @@ ACCOUNT                         BALANCE
 ============================================================
 test                            100.00000 XTS               
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
-OK
-default (unlocked) >>> debug_wait 1
 OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
@@ -59,7 +57,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           Stake in future BitShares X chains              GENESIS                         N/A       1,999,999,999.79901 XTS     
 default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
 {
-  "expiration": "20140620T164010",
+  "expiration": "20140620T164040",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -96,13 +94,13 @@ default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9b029cebc47982962b2b0f47d6a8639fee7a0654b684e823fb7c886bc9a100346",
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f003bcd40d69ef15b951f218fdfe46ef37305412e145cc9d2336c5ee0209b0bf980"
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b93575edb9ad826b12910bc61efa6e7f811060c1a1754ce5c51e27cb92eb358d31",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0070b64da3777b7b9c4d4e176eeaeae326cdfb71aa1b17cc35786daadfb840d5b0"
   ]
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> debug_wait 1
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> blockchain_list_assets XMO
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      

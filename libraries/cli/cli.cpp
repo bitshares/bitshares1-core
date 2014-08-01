@@ -681,10 +681,15 @@ namespace bts { namespace cli {
                   const auto& info = result.as<variant_object>();
                   *_out << pretty_info( info, _client );
               }
-              else if( method_name == "blockchain_get_config" )
+              else if( method_name == "blockchain_get_info" )
               {
                   const auto& config = result.as<variant_object>();
-                  *_out << pretty_blockchain_config( config, _client );
+                  *_out << pretty_blockchain_info( config, _client );
+              }
+              else if( method_name == "wallet_get_info" )
+              {
+                  const auto& info = result.as<variant_object>();
+                  *_out << pretty_wallet_info( info, _client );
               }
               else if (method_name == "wallet_account_transaction_history")
               {
@@ -735,12 +740,6 @@ namespace bts { namespace cli {
                   else
                       for( const auto& wallet : wallets )
                           *_out << wallet << "\n";
-              }
-              else if (method_name == "wallet_approve_delegate" )
-              {
-                  auto approved = result.as<bool>();
-                  if( approved ) *_out << "Delegate approved.\n";
-                  else *_out << "Delegate not approved.\n";
               }
               else if (method_name == "network_get_usage_stats" )
               {
@@ -1182,7 +1181,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "APPROVED";
+                *_out << std::setw( 15 ) << "APPROVAL";
                 *_out << "\n";
 
                 for( const auto& acct : account_records )
@@ -1204,7 +1203,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 10) << acct.approved;
+                    *_out << std::setw( 10 ) << std::to_string( acct.approved );
                     *_out << "\n";
                 }
             }
@@ -1215,7 +1214,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "FAVORITE";
-                *_out << std::setw( 15 ) << "APPROVED";
+                *_out << std::setw( 15 ) << "APPROVAL";
                 *_out << std::setw( 25 ) << "BLOCK PRODUCTION ENABLED";
                 *_out << "\n";
 
@@ -1246,7 +1245,7 @@ namespace bts { namespace cli {
                     else
                       *_out << std::setw( 15 ) << "NO";
 
-                    *_out << std::setw( 15 ) << acct.approved;
+                    *_out << std::setw( 15 ) << std::to_string( acct.approved );
                     if (acct.is_delegate())
                         *_out << std::setw( 25 ) << (acct.block_production_enabled ? "YES" : "NO");
                     else
@@ -1261,7 +1260,7 @@ namespace bts { namespace cli {
                 *_out << std::setw( 64 ) << "KEY";
                 *_out << std::setw( 22 ) << "REGISTERED";
                 *_out << std::setw( 15 ) << "VOTES FOR";
-                *_out << std::setw( 15 ) << "APPROVED";
+                *_out << std::setw( 15 ) << "APPROVAL";
 
                 *_out << '\n';
                 for( int i = 0; i < 151; ++i )
@@ -1289,9 +1288,7 @@ namespace bts { namespace cli {
 
                         try
                         {
-                            // TODO: This needs to be through the blockchain, not the wallet
-                            auto approval = _client->get_wallet()->get_delegate_approval( acct.name );
-                            *_out << std::setw( 15 ) << ( approval > 0 );
+                            *_out << std::setw( 15 ) << std::to_string( _client->get_wallet()->get_account_approval( acct.name ) );
                         }
                         catch( ... )
                         {
@@ -1536,6 +1533,7 @@ namespace bts { namespace cli {
       }
       else
       {
+        (*_out) << message << "\n";
         // it's not clear what state we're in if rl_prompt is null, but we've had reports
         // of crashes.  Just swallow the message and avoid crashing.
       }
