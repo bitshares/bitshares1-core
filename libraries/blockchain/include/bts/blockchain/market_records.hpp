@@ -182,8 +182,35 @@ namespace bts { namespace blockchain {
        asset_id_type quote_id;
        asset_id_type base_id;
 
+       price minimum_ask()const
+       {
+         auto avg = avg_price_24h;
+         avg.ratio *= 2;
+         avg.ratio /= 3;
+         return avg;
+       }
+       price maximum_bid()const
+       {
+         auto avg = avg_price_24h;
+         avg.ratio *= 3;
+         avg.ratio /= 2;
+         return avg;
+       }
+
        share_type               bid_depth;
        share_type               ask_depth;
+       /**
+        *  Calculated as the average of the highest bid and lowest ask
+        *  every time the market executes.  The new is weighted against 
+        *  the old value with a factor of 1:BLOCKS_PER_DAY.  In a very
+        *  active market this will be a 24 hour moving average, in
+        *  less active markets this will be a longer window.
+        *
+        *  No shorts or covers will execute at prices more 30% +/- this
+        *  number which serves as a natural rate limitor on price movement
+        *  and thus limits the potential manipulation.
+        */
+       price                    avg_price_24h;
        optional<fc::exception>  last_error;
    };
    typedef optional<market_status> omarket_status;
@@ -192,7 +219,7 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (null_order)(bid_order)(ask_order)(short_order)(cover_order) )
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
-FC_REFLECT( bts::blockchain::market_status,  (quote_id)(base_id)(bid_depth)(ask_depth)(last_error) );
+FC_REFLECT( bts::blockchain::market_status,  (quote_id)(base_id)(bid_depth)(ask_depth)(avg_price_24h)(last_error) );
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(volume) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )

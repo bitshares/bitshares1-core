@@ -3165,6 +3165,14 @@ config load_config( const fc::path& datadir )
       FC_ASSERT( oresult );
       return *oresult;
    }
+   bts::blockchain::signed_transaction client_impl::wallet_publish_price_feed( const std::string& delegate_account,
+                                                                               double real_amount_per_xts,
+                                                                               const std::string& real_amount_symbol )
+   {
+      auto trx = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
 
    } // namespace detail
 ///////////////////////////////////////////////////////////////////////////////////////////////

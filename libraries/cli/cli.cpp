@@ -1033,9 +1033,17 @@ namespace bts { namespace cli {
                      }
                   }
 
+                 auto median_feed = _client->get_chain()->get_median_delegate_price( quote_id );
+                 *_out << "\nMedian Feed Price: " 
+                       << (median_feed ? _client->get_chain()->to_pretty_price( *median_feed ) : "NO FEEDS" )
+                       <<"     ";
+
                  auto status = _client->get_chain()->get_market_status( quote_id, base_id );
                  if( status )
                  {
+                    *_out << "Maximum Short Price: " 
+                          << _client->get_chain()->to_pretty_price( status->maximum_bid() )
+                          <<"     ";
                     *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
                     *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";
                     if(  status->last_error )
