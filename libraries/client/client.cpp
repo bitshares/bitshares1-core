@@ -744,7 +744,6 @@ config load_config( const fc::path& datadir )
               {
                   try
                   {
-                      FC_ASSERT( _in_sync, "Blockchain must be synced to produce blocks!" );
                       FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
                                  "Client must have ${count} connections before you may produce blocks!",
                                  ("count",_min_delegate_connection_count) );
