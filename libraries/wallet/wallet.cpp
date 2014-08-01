@@ -999,10 +999,13 @@ namespace bts { namespace wallet {
           }
           else
           {
+            if (!_relocker_done.canceled())
+            {
               ilog( "Scheduling wallet relocker task for time: ${t}", ("t", *_scheduled_lock_time) );
               _relocker_done = fc::schedule( [this](){ relocker(); }, 
                                              *_scheduled_lock_time, 
                                              "wallet_relocker" );
+            }
           }
       }
 

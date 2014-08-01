@@ -68,6 +68,26 @@ using std::string;
 // delegate network breaks win32
 #define DISABLE_DELEGATE_NETWORK 1
 
+#define INVOCATION_COUNTER(name) \
+    static unsigned total_ ## name ## _counter = 0; \
+    static unsigned active_ ## name ## _counter = 0; \
+    struct name ## _invocation_logger { \
+      unsigned *total; \
+      unsigned *active; \
+      name ## _invocation_logger(unsigned *total, unsigned *active) : \
+        total(total), active(active) \
+      { \
+        ++*total; \
+        ++*active; \
+        fprintf(stderr,"NEWDEBUG: Entering %s, now %d total calls, %d active calls", #name, *total, *active); \
+      } \
+      ~name ## _invocation_logger() \
+      { \
+        --*active; \
+        fprintf(stderr,"NEWDEBUG: Leaving %s, now %d total calls, %d active calls", #name, *total, *active); \
+      } \
+    } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
+
 namespace bts { namespace client {
 
 const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
@@ -783,7 +803,8 @@ config load_config( const fc::path& datadir )
           if( scheduled_time <= system_now ) 
             scheduled_time = system_now + fc::seconds( 1 );
 
-          _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
+          if (!_delegate_loop_complete.canceled())
+            _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
        }
 
        void client_impl::set_target_connections( uint32_t target )
@@ -930,9 +951,10 @@ config load_config( const fc::path& datadir )
               wlog( "error rebroadcasting transacation: ${e}", ("e",e.to_detail_string() ) );
             }
           }
-          _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
-                                                    fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
-                                                    "rebroadcast_pending" );
+          if (!_rebroadcast_pending_loop.canceled())
+            _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
+                                                      fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
+                                                      "rebroadcast_pending" );
        }
 
        ///////////////////////////////////////////////////////
@@ -2082,7 +2104,7 @@ config load_config( const fc::path& datadir )
       if (option_variables.count("min-delegate-connection-count"))
         my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
 
-      start_delegate_loop();
+      my->reschedule_delegate_loop();
 
       this->configure( datadir );
 
@@ -2239,11 +2261,6 @@ config load_config( const fc::path& datadir )
     {
        init_cli();
        my->_cli->set_daemon_mode(daemon_mode);
-    }
-
-    void client::start_delegate_loop()
-    {
-       my->start_delegate_loop();
     }
 
     fc::path client::get_data_dir()const
