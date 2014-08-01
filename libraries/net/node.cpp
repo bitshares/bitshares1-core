@@ -1225,18 +1225,20 @@ namespace bts { namespace net { namespace detail {
       update_bandwidth_data(usage_this_second);
       _bandwidth_monitor_last_update_time = current_time;
 
-      _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); }, 
-                                                   fc::time_point::now() + fc::seconds(1),
-                                                   "bandwidth_monitor_loop" );
+      if (!_bandwidth_monitor_loop_done.canceled())
+        _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); }, 
+                                                     fc::time_point::now() + fc::seconds(1),
+                                                     "bandwidth_monitor_loop" );
     }
 
     void node_impl::dump_node_status_task()
     {
       VERIFY_CORRECT_THREAD();
       dump_node_status();
-      _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, 
-                                                 fc::time_point::now() + fc::minutes(1),
-                                                 "dump_node_status_task");
+      if (!_dump_node_status_task_done.canceled())
+        _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, 
+                                                   fc::time_point::now() + fc::minutes(1),
+                                                   "dump_node_status_task");
     }
 
     void node_impl::delayed_peer_deletion_task()

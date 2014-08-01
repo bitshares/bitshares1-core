@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <deque>
 
 using namespace bts::blockchain;
 
@@ -652,6 +653,8 @@ namespace bts { namespace blockchain {
 
             /** used to prevent duplicate processing */
             // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
+
+            std::map<operation_type_enum, std::deque<operation>>            _recent_operations;
 
             void open_database(const fc::path& data_dir );
       };
@@ -1892,7 +1895,23 @@ namespace bts { namespace blockchain {
                                                 0/*dummy value*/ );
           }
        }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
+     } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
+
+   vector<operation> chain_database::get_recent_operations(operation_type_enum t)
+   {
+      const auto& recent_op_queue = my->_recent_operations[t];
+      vector<operation> recent_ops(recent_op_queue.size());
+      std::copy(recent_op_queue.begin(), recent_op_queue.end(), recent_ops.begin());
+      return recent_ops;
+   }
+
+   void chain_database::store_recent_operation(const operation& o)
+   {
+      auto& recent_op_queue = my->_recent_operations[o.type];
+      recent_op_queue.push_back(o);
+      if( recent_op_queue.size() > MAX_RECENT_OPERATIONS )
+        recent_op_queue.pop_front();
+   }
 
    otransaction_record chain_database::get_transaction( const transaction_id_type& trx_id, bool exact )const
    { try {

@@ -77,6 +77,14 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "blockchain_list_recently_registered_accounts",
+        "description": "Returns a list of recently registered accounts",
+        "return_type": "account_record_array",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
         "method_name": "blockchain_list_assets",
         "description": "Returns registered assets starting with a given name upto a the limit provided",
         "return_type": "asset_record_array",
