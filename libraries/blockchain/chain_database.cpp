@@ -421,7 +421,7 @@ namespace bts { namespace blockchain {
 
                          if( market_stat )
                          {
-                            if( market_stat->avg_price_24h.ratio == 0 && median_price )
+                            if( market_stat->avg_price_24h.ratio == fc::uint128_t() && median_price )
                             {
                                market_stat->avg_price_24h = *median_price;
                             }
