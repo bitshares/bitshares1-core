@@ -1378,7 +1378,7 @@ namespace bts { namespace wallet {
           FC_THROW_EXCEPTION( file_not_found, "Filename to import from could not be found!", ("filename",filename) );
 
       if( !is_valid_account_name( wallet_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
+          FC_THROW_EXCEPTION( invalid_wallet_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
       create( wallet_name, passphrase );
       try
