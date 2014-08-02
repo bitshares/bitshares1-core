@@ -3174,7 +3174,29 @@ namespace bts { namespace blockchain {
         return prices[prices.size()/2];
       }
       return oprice();
-   } FC_CAPTURE_AND_RETHROW( (asset_id) ) }
+     } FC_CAPTURE_AND_RETHROW( (asset_id) ) }
+
+   vector<feed_record> chain_database::get_feeds_for_asset(asset_id_type asset_id) const
+   {
+      vector<feed_record> feeds;
+      auto feed_itr = my->_feed_db.lower_bound(feed_index{asset_id});
+      while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
+        feeds.push_back(feed_itr.value());
+
+      return feeds;
+   }
+
+   vector<feed_record> chain_database::get_feeds_from_delegate(account_id_type delegate_id) const
+   {
+      vector<feed_record> feeds;
+      auto assets = get_assets(string(), -1);
+
+      for( const auto& asset : assets )
+        if( auto record = my->_feed_db.fetch_optional(feed_index{asset.id, delegate_id}) )
+          feeds.push_back(*record);
+
+      return feeds;
+   }
 
 } } // bts::blockchain
 

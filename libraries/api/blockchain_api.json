@@ -193,6 +193,34 @@
         "aliases" : ["get_asset"]
       },
       {
+        "method_name": "blockchain_get_feeds_for_asset",
+        "description": "Retrieves all current feeds for the given asset",
+        "return_type": "feed_record_list",
+        "parameters" : [
+            {
+              "name" : "asset",
+              "type" : "string",
+              "description" : "asset ticker symbol or ID to retrieve"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_get_feeds_from_delegate",
+        "description": "Retrieves all current feeds published by the given delegate",
+        "return_type": "feed_record_list",
+        "parameters" : [
+            {
+              "name" : "delegate_name",
+              "type" : "string",
+              "description" : "the name of the delegate to list feeds from"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
         "method_name": "blockchain_list_proposals",
         "description": "Returns the list of proposals",
         "return_type": "proposal_array",
