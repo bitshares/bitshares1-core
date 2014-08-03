@@ -1386,7 +1386,8 @@ namespace bts { namespace cli {
 
     cli_impl::cli_impl(bts::client::client* client, std::istream* command_script, std::ostream* output_stream)
     :_client(client)
-    ,_rpc_server(client->get_rpc_server())
+    ,_rpc_server(client->get_rpc_server()),
+    _cin_thread("stdin_reader")
     ,_quit(false)
     ,show_raw_output(false)
     ,_daemon_mode(false)
