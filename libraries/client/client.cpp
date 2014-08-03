@@ -195,6 +195,13 @@ string extract_commands_from_log_stream(std::istream& log_stream)
 
 string extract_commands_from_log_file(fc::path test_file)
 {
+  if( !fc::exists( test_file ) )
+    FC_THROW( ("Unable to input-log-file: \"" + test_file.string() + "\" not found!").c_str() );
+//enable this eventually, but it will cause regression tests to fail until they are updated
+#ifdef 0
+  else
+    ulog("Extracting commands from input-log-file: ${log}",("log",test_file.string() ) );
+#endif
   std::ifstream test_input(test_file.string());
   return extract_commands_from_log_stream(test_input);
 }
@@ -522,17 +529,21 @@ config load_config( const fc::path& datadir )
               _last_sync_status_head_block(0),
               _remaining_items_to_sync(0),
               _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5)
-            { try {
-                _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
-                fc::logger::get( "user" ).add_appender( _user_appender );
-
-                try {
-                  _rpc_server = std::make_shared<rpc_server>(self);
-                } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
-                try {
-                  _chain_db = std::make_shared<chain_database>();
-                } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
-
+            { 
+            try 
+            {
+              _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
+              fc::logger::get( "user" ).add_appender( _user_appender );
+              try 
+              {
+                _rpc_server = std::make_shared<rpc_server>(self);
+              } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
+              try 
+              {
+                _chain_db = std::make_shared<chain_database>();
+              } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
+              _rebroadcast_pending_loop = fc::async( [=]() { rebroadcast_pending(); },
+                                                     "rebroadcast_pending");
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl() override 
@@ -632,7 +643,9 @@ config load_config( const fc::path& datadir )
             logging_exception_db                                    _exception_db;
 
             uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
-            bool                                                    _sync_mode = true;
+            //start by assuming not syncing, network won't send us a msg if we start synced and stay synched.
+            //at worst this means we might briefly sending some pending transactions while not synched.
+            bool                                                    _sync_mode = false;
 
             rpc_server_config                                       _tmp_rpc_config;
             bts::net::node_ptr                                      _p2p_node;
@@ -926,9 +939,21 @@ config load_config( const fc::path& datadir )
 
        void client_impl::rebroadcast_pending()
        {
-          if( !_sync_mode )
+#ifndef NDEBUG
+          static bool currently_running = false;
+          struct checker {
+            bool& var;
+            checker(bool& var) : var(var) { assert(!var); var = true; }
+            ~checker() { var = false; }
+          } _checker(currently_running);
+#endif // !NDEBUG
+          if (_sync_mode)
           {
-            wlog( "rebroadcasting... " );
+            wlog("skip rebroadcast_pending while syncing");
+          }
+          else
+          {
+            wlog( " rebroadcasting..." );
             try 
             {
               signed_transactions pending = blockchain_get_pending_transactions();
@@ -1419,7 +1444,6 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
-      my->_rebroadcast_pending_loop = fc::async([this]{my->rebroadcast_pending();}, "rebroadcast_pending");
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
@@ -1427,7 +1451,6 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-      my->_rebroadcast_pending_loop = fc::async([this]{my->rebroadcast_pending();}, "rebroadcast_pending");
     }
 
     void client::simulate_disconnect( bool state )
