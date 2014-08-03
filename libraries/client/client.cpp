@@ -198,7 +198,7 @@ string extract_commands_from_log_file(fc::path test_file)
   if( !fc::exists( test_file ) )
     FC_THROW( ("Unable to input-log-file: \"" + test_file.string() + "\" not found!").c_str() );
 //enable this eventually, but it will cause regression tests to fail until they are updated
-#ifdef 0
+#ifdef TESTING 
   else
     ulog("Extracting commands from input-log-file: ${log}",("log",test_file.string() ) );
 #endif

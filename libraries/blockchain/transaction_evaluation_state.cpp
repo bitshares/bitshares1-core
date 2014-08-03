@@ -71,11 +71,15 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::validate_required_fee()
    { try {
       share_type required_fee = _current_state->calculate_data_fee( trx.data_size() );
+      asset xts_fees;
       auto fee_itr = balance.find( 0 );
-      if( fee_itr == balance.end() ||
-          fee_itr->second < required_fee ) 
+      if( fee_itr != balance.end() ) xts_fees += asset( fee_itr->second, 0);
+      
+      xts_fees += alt_fees_paid;
+
+      if( required_fees > xts_fees )
       {
-         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fee) );
+         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fee)(alt_fees_paid)(xts_fees)  );
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -103,48 +107,8 @@ namespace bts { namespace blockchain {
          omarket_order lowest_ask = _current_state->get_lowest_ask_record( fee.first, 0 );
          if( lowest_ask )
          {
-            // do we have enough funds in the ask to cover the fees?
-            asset required_order_balance = asset( fee.second, fee.first ) * 
-                                            lowest_ask->market_index.order_price;  
-            
-            // TODO: verify that if fees were paid at this price they would be sufficient, then 
-            // we can add it to the asset total fees collected balance and then match this
-            // in the market order matching code (mark this market as dirty)
-            if( required_order_balance.amount <= lowest_ask->state.balance )
-            {
-               balance[0] += required_order_balance.amount;
-
-               auto balance_id = withdraw_condition( 
-                                   withdraw_with_signature( lowest_ask->market_index.owner ), 
-                                   fee.first       ).get_address(); 
-
-
-               auto balance_rec = _current_state->get_balance_record( balance_id );
-               if( balance_rec )
-               {
-                  balance_rec->balance += fee.second; 
-               }
-               else
-               {
-                  balance_rec = balance_record( lowest_ask->market_index.owner, 
-                                              asset( fee.second, fee.first ), 0 );
-
-               }
-               _current_state->store_balance_record( *balance_rec );
-
-               lowest_ask->state.balance -= required_order_balance.amount;
-               _current_state->store_ask_record( lowest_ask->market_index, lowest_ask->state );
-
-               market_transaction mtrx;
-               mtrx.ask_owner       = lowest_ask->market_index.owner;
-               mtrx.ask_price       = lowest_ask->market_index.order_price;  
-               mtrx.ask_paid        = required_order_balance;
-               mtrx.ask_received    = asset(fee.second,fee.first);
-               mtrx.fees_collected  = asset(0);
-               // TODO....
-               // _current_state->add_market_transactions(mtrx);
-            }
-            // trade fee.second 
+            // fees paid in something other than XTS are discounted 50% 
+            alt_fees_paid += asset( fee.second/2, fee.first ) * lowest_ask->market_index.order_price;  
          }
       }
 
@@ -152,17 +116,15 @@ namespace bts { namespace blockchain {
       for( auto fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
-         if( fee.second > 0 )
+         if( fee.second > 0 ) // if a fee was paid...
          {
-            if( fee.first == 0 && fee.second < required_fees.amount )
-               FC_CAPTURE_AND_THROW( insufficient_fee, (fee)(required_fees.amount) );
-
             auto asset_record = _current_state->get_asset_record( fee.first );
             if( !asset_record )
               FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
 
             asset_record->collected_fees += fee.second;
-            asset_record->current_share_supply -= fee.second;
+            // collecting fees should not decrease share supply.
+            // asset_record->current_share_supply -= fee.second;
             _current_state->store_asset_record( *asset_record );
          }
       }

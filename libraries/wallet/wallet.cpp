@@ -169,9 +169,13 @@ namespace bts { namespace wallet {
 
       void wallet_impl::block_applied( const block_summary& summary )
       {
+         wlog( "BLOCK APPLIED" );
           if( !self->is_open() || !self->is_unlocked() ) return;
+         wlog( "BLOCK APPLIED" );
           if( !self->get_transaction_scanning() ) return;
+         wlog( "BLOCK APPLIED" );
 
+         wlog( "BLOCK APPLIED" );
           const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
           const auto now = blockchain::now();
           scan_block( summary.block_data.block_num, account_priv_keys, now );
@@ -186,9 +190,15 @@ namespace bts { namespace wallet {
           const auto bid_is_short = ( trx.bid_type == short_order );
           const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
 
+
           auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
           if( okey_bid && okey_bid->has_private_key() )
           {
+              auto ord = _blockchain->get_market_bid( market_index_key(trx.bid_price, trx.bid_owner) );
+              if( ord ) _wallet_db.update_market_order(trx.bid_owner, ord, transaction_id_type()); 
+              ord = _blockchain->get_market_short( market_index_key(trx.bid_price, trx.bid_owner) );
+              if( ord ) _wallet_db.update_market_order(trx.bid_owner, ord, transaction_id_type()); 
+
               auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
               auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner), 
@@ -433,13 +443,17 @@ namespace bts { namespace wallet {
 
       void wallet_impl::scan_block( uint32_t block_num, const private_keys& keys, const time_point_sec& received_time )
       {
+         wlog( "......" );
          const auto block = _blockchain->get_block( block_num );
          for( const auto& transaction : block.user_transactions )
             scan_transaction( transaction, block_num, block.timestamp, keys, received_time );
 
          const auto market_trxs = _blockchain->get_market_transactions( block_num );
+         wlog( "scan market trx ${trx}", ("trx",market_trxs) );
          for( const auto& market_trx : market_trxs )
+         {
             scan_market_transaction( market_trx, block_num, block.timestamp, received_time );
+         }
       }
 
       void wallet_impl::scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
@@ -3447,6 +3461,8 @@ namespace bts { namespace wallet {
 
         const market_order_status& order = order_itr->second;
         asset balance = order.get_balance();
+
+        edump( (order) );
 
         auto required_fees = get_priority_fee();
 

@@ -91,6 +91,7 @@ namespace bts { namespace blockchain {
                          _quote_id = quote_id;
                          _base_id = base_id;
                          auto quote_asset = _pending_state->get_asset_record( _quote_id );
+                         auto base_asset = _pending_state->get_asset_record( _base_id );
 
                          // DISABLE MARKET ISSUED ASSETS
                          if( quote_asset->is_market_issued() )
@@ -125,8 +126,6 @@ namespace bts { namespace blockchain {
                          asset consumed_bid_depth(0,base_id);
                          asset consumed_ask_depth(0,base_id);
                    
-                   
-                         //asset usd_fees_collected(0,quote_id);
                          asset trading_volume(0, base_id);
                    
                          omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
@@ -150,7 +149,7 @@ namespace bts { namespace blockchain {
                             feed_min_ask.ratio /= 3;
 
                             max_short_bid = std::min( market_stat->maximum_bid(), feed_max_short_bid );
-                            min_cover_ask = std::max( market_stat->minimum_ask(), feed_min_ask );
+                            min_cover_ask = feed_min_ask; //std::max( market_stat->minimum_ask(), feed_min_ask );
                             edump( (max_short_bid)(min_cover_ask) );
                          }
                    
@@ -196,7 +195,6 @@ namespace bts { namespace blockchain {
                                   ask_payout->last_update = _pending_state->now();
                       
                                   _current_ask->state.balance -= xts_received_from_ask;
-                                  quote_asset->collected_fees -= usd_paid_to_ask.amount;
 
                                   _pending_state->store_balance_record( *ask_payout );
                                   _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
@@ -227,6 +225,8 @@ namespace bts { namespace blockchain {
                                                                            collateral_record( *_current_ask->collateral, 
                                                                                               _current_ask->state.balance ) );
                                }
+                               quote_asset->collected_fees -= usd_paid_to_ask.amount;
+                               base_asset->collected_fees  += xts_received_from_ask;
 
                                // XTS received need to be paid to delegates...
                                auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
@@ -238,6 +238,12 @@ namespace bts { namespace blockchain {
                                mtrx.ask_paid        = asset(xts_received_from_ask,0);
                                mtrx.ask_received    = usd_paid_to_ask;
                                mtrx.fees_collected  = asset(xts_received_from_ask,0);
+                               mtrx.bid_type        = bid_order;
+                               mtrx.bid_owner       = address();
+                               mtrx.bid_price       = ask_price;
+                               mtrx.bid_received    = mtrx.ask_paid;
+                               mtrx.bid_paid        = mtrx.ask_received;
+                               //mtrx.ask_type        = _current_ask->type;
                                
                                _market_transactions.push_back(mtrx);
 
@@ -298,8 +304,8 @@ namespace bts { namespace blockchain {
                             // sanity check to keep supply from growing without bound
                             FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset)  )
                    
-                            // usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
                             quote_asset->collected_fees += (usd_paid_by_bid - usd_received_by_ask).amount;
+
                             idump( (quote_asset->collected_fees)(xts_paid_by_ask)(xts_received_by_bid)(quantity) );
                    
                             market_transaction mtrx;
@@ -312,7 +318,9 @@ namespace bts { namespace blockchain {
                             mtrx.ask_paid        = xts_paid_by_ask;
                             mtrx.ask_received    = usd_received_by_ask;
                             mtrx.bid_type        = _current_bid->type;
+                           // mtrx.ask_type        = _current_ask->type;
                             mtrx.fees_collected  = xts_paid_by_ask - xts_received_by_bid;
+                            elog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
                    
                             _market_transactions.push_back(mtrx);
                             trading_volume += mtrx.bid_received;
@@ -445,8 +453,8 @@ namespace bts { namespace blockchain {
                             }
                             _pending_state->store_market_status( *market_stat );
                          }
-                         //quote_asset->collected_fees += usd_fees_collected.amount;
                          _pending_state->store_asset_record( *quote_asset );
+                         _pending_state->store_asset_record( *base_asset );
                    
                          if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
                          {
@@ -1344,6 +1352,7 @@ namespace bts { namespace blockchain {
            engine.execute( market_pair.first, market_pair.second, timestamp );
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
         } 
+        wlog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
@@ -1418,6 +1427,7 @@ namespace bts { namespace blockchain {
          for( const auto& o : _observers )
          {
             try { 
+               ilog( "... block applied ... " );
                o->block_applied( summary );
             } catch ( const fc::exception& e )
             {
