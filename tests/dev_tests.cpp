@@ -217,7 +217,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_get_transaction d387d39ca1" );
 
    exec( clientb, "wallet_transfer 20 USD c-account delegate31 c-d31" );
-   exec( clientb, "blockchain_get_pending_transactions" );
+   exec( clientb, "blockchain_list_pending_transactions" );
    enable_logging();
    exec( clientb, "wallet_market_order_list USD XTS" );
    exec( clientb, "wallet_account_transaction_history" );

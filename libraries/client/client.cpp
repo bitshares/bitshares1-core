@@ -925,7 +925,7 @@ config load_config( const fc::path& datadir )
           return result;
        }
 
-       signed_transactions client_impl::blockchain_get_pending_transactions() const
+       signed_transactions client_impl::blockchain_list_pending_transactions() const
        {
          signed_transactions trxs;
          vector<transaction_evaluation_state_ptr> pending = _chain_db->get_pending_transactions();
@@ -956,7 +956,7 @@ config load_config( const fc::path& datadir )
             wlog( " rebroadcasting..." );
             try 
             {
-              signed_transactions pending = blockchain_get_pending_transactions();
+              signed_transactions pending = blockchain_list_pending_transactions();
               for( auto trx : pending )
               {
                 network_broadcast_transaction( trx );

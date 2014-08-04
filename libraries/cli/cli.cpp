@@ -883,7 +883,7 @@ namespace bts { namespace cli {
                       }
                   }
               }
-              else if (method_name == "blockchain_get_pending_transactions")
+              else if (method_name == "blockchain_list_pending_transactions")
               {
                   auto transactions = result.as<vector<signed_transaction>>();
 
