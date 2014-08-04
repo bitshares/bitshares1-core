@@ -11,6 +11,21 @@ namespace bts { namespace net {
      * The chain_server will bind a port and listen on it when it is constructed. If a port is specified, the server
      * will attempt to bind that one; otherwise, the server will allow the OS to select a port. This port may be
      * queried using the get_listening_port method.
+     *
+     * The chain_server responds to chain_server_commands. When a client connects, the client should send a command
+     * along with any arguments that command requires, complete the communication for that command, then repeat with
+     * another command and so-on. When the client is finished, it should send the finish command, to indicate that
+     * it is ready to terminate the connection.
+     *
+     * The commands are as follows:
+     * * get_blocks_from_number
+     *      This command takes one argument, the number of the first block to retrieve. The server responds with a
+     *      uint64_t count of blocks it will send, followed by the blocks, which are encoded as packed variants of
+     *      full_block objects. When the server has finished sending these blocks, it repeats the procedure for
+     *      any new blocks which have been made in the interim, so another count is sent, followed by that number
+     *      of blocks. When the server sends a count of 0, there are no blocks, and the command is complete.
+     *
+     * All block numbers are of type uint64_t
      */
     class chain_server {
         std::unique_ptr<detail::chain_server_impl> my;
