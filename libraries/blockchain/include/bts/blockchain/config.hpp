@@ -15,22 +15,22 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                 "P2P"
-#define BTS_BLOCKCHAIN_SYMBOL                              "P2P"
-#define BTS_BLOCKCHAIN_NAME                                ".p2p"
-#define BTS_BLOCKCHAIN_DESCRIPTION                         "The .p2p decentralized top-level domain."
+#define BTS_ADDRESS_PREFIX                                 "KEY"
+#define BTS_BLOCKCHAIN_SYMBOL                              "DNS"
+#define BTS_BLOCKCHAIN_NAME                                "DNS"
+#define BTS_BLOCKCHAIN_DESCRIPTION                         "The Decentralized Namespace Service"
 #define BTS_BLOCKCHAIN_PRECISION                           (100000)
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC      (60*60*24*2)
 #define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC  (60*60*2)
 
 #define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                (false)
 
-#define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE    (10000) // P2P
+#define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE    (10000) // DNS
 
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (5)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (101)
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                   (BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 
