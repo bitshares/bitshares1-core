@@ -107,6 +107,10 @@ namespace bts { namespace blockchain {
       void cover( const asset& quantity, 
                   const market_index_key& order_idx );
 
+      void publish_feed( feed_id_type feed_id, 
+                         account_id_type delegate_id,
+                         fc::variant value );
+
       bool is_cancel()const;
 
    }; // transaction

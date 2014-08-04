@@ -195,6 +195,13 @@ string extract_commands_from_log_stream(std::istream& log_stream)
 
 string extract_commands_from_log_file(fc::path test_file)
 {
+  if( !fc::exists( test_file ) )
+    FC_THROW( ("Unable to input-log-file: \"" + test_file.string() + "\" not found!").c_str() );
+//enable this eventually, but it will cause regression tests to fail until they are updated
+#ifdef TESTING 
+  else
+    ulog("Extracting commands from input-log-file: ${log}",("log",test_file.string() ) );
+#endif
   std::ifstream test_input(test_file.string());
   return extract_commands_from_log_stream(test_input);
 }
@@ -309,7 +316,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::debug;
+    dlc_p2p.level = fc::log_level::warn;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -522,17 +529,21 @@ config load_config( const fc::path& datadir )
               _last_sync_status_head_block(0),
               _remaining_items_to_sync(0),
               _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5)
-            { try {
-                _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
-                fc::logger::get( "user" ).add_appender( _user_appender );
-
-                try {
-                  _rpc_server = std::make_shared<rpc_server>(self);
-                } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
-                try {
-                  _chain_db = std::make_shared<chain_database>();
-                } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
-
+            { 
+            try 
+            {
+              _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
+              fc::logger::get( "user" ).add_appender( _user_appender );
+              try 
+              {
+                _rpc_server = std::make_shared<rpc_server>(self);
+              } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
+              try 
+              {
+                _chain_db = std::make_shared<chain_database>();
+              } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
+              _rebroadcast_pending_loop = fc::async( [=]() { rebroadcast_pending(); },
+                                                     "rebroadcast_pending");
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl() override 
@@ -632,7 +643,9 @@ config load_config( const fc::path& datadir )
             logging_exception_db                                    _exception_db;
 
             uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
-            bool                                                    _sync_mode = true;
+            //start by assuming not syncing, network won't send us a msg if we start synced and stay synched.
+            //at worst this means we might briefly sending some pending transactions while not synched.
+            bool                                                    _sync_mode = false;
 
             rpc_server_config                                       _tmp_rpc_config;
             bts::net::node_ptr                                      _p2p_node;
@@ -912,7 +925,7 @@ config load_config( const fc::path& datadir )
           return result;
        }
 
-       signed_transactions client_impl::blockchain_get_pending_transactions() const
+       signed_transactions client_impl::blockchain_list_pending_transactions() const
        {
          signed_transactions trxs;
          vector<transaction_evaluation_state_ptr> pending = _chain_db->get_pending_transactions();
@@ -934,13 +947,16 @@ config load_config( const fc::path& datadir )
             ~checker() { var = false; }
           } _checker(currently_running);
 #endif // !NDEBUG
-
-          if( !_sync_mode )
+          if (_sync_mode)
           {
-            wlog( "rebroadcasting... " );
+            wlog("skip rebroadcast_pending while syncing");
+          }
+          else
+          {
+            wlog( " rebroadcasting..." );
             try 
             {
-              signed_transactions pending = blockchain_get_pending_transactions();
+              signed_transactions pending = blockchain_list_pending_transactions();
               for( auto trx : pending )
               {
                 network_broadcast_transaction( trx );
@@ -1428,7 +1444,6 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
-       my->rebroadcast_pending();
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
@@ -1436,7 +1451,6 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-      my->rebroadcast_pending();
     }
 
     void client::simulate_disconnect( bool state )
@@ -1836,6 +1850,24 @@ config load_config( const fc::path& datadir )
       return oasset_record();
     }
 
+    vector<feed_record> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
+    { try {
+        asset_id_type asset_id;
+          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+              asset_id = _chain_db->get_asset_id(asset);
+          else
+              asset_id = std::stoi( asset );
+
+          return _chain_db->get_feeds_for_asset(asset_id);
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
+
+    vector<feed_record> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
+    { try {
+        auto delegate_record = _chain_db->get_account_record(delegate_name);
+        FC_ASSERT( delegate_record.valid(), "Unknown account name." );
+        return _chain_db->get_feeds_from_delegate(delegate_record->id);
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
+
     int8_t detail::client_impl::wallet_account_set_approval( const string& account_name, int8_t approval )
     { try {
       _wallet->set_account_approval( account_name, approval );
@@ -1964,7 +1996,8 @@ config load_config( const fc::path& datadir )
     vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts() const
     {
       vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
-      vector<account_record> accounts(account_registrations.size());
+      vector<account_record> accounts;
+      accounts.reserve(account_registrations.size());
 
       for( const operation& op : account_registrations )
       {
@@ -2761,13 +2794,9 @@ config load_config( const fc::path& datadir )
 
    asset client_impl::wallet_set_priority_fee( double fee )
    { try {
-      FC_ASSERT( fee >= 0, "Priority fee should be non-negative." );
-      if( fee > 0 )
-      {
-          oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
-          FC_ASSERT( asset_record );
-          _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
-      }
+      oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
+      FC_ASSERT( asset_record.valid() );
+      _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
       return _wallet->get_priority_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
@@ -3172,6 +3201,14 @@ config load_config( const fc::path& datadir )
       auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
       FC_ASSERT( oresult );
       return *oresult;
+   }
+   bts::blockchain::signed_transaction client_impl::wallet_publish_price_feed( const std::string& delegate_account,
+                                                                               double real_amount_per_xts,
+                                                                               const std::string& real_amount_symbol )
+   {
+      auto trx = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol );
+      network_broadcast_transaction( trx );
+      return trx;
    }
 
    } // namespace detail

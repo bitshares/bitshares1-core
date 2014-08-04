@@ -106,12 +106,13 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
-        "method_name": "blockchain_get_pending_transactions",
+        "method_name": "blockchain_list_pending_transactions",
         "description": "Return a list of transactions that are not yet in a block.",
         "return_type": "signed_transaction_array",
         "parameters" : [],
         "is_const" : true,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["blockchain_get_pending_transactions", "list_pending"]
       },
       {
         "method_name": "blockchain_get_transaction",
@@ -146,7 +147,7 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
-        "aliases" : ["get_block, getblock"]
+        "aliases" : ["get_block", "getblock"]
       },
       {
         "method_name": "blockchain_get_block_transactions",
@@ -191,6 +192,34 @@
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
         "aliases" : ["get_asset"]
+      },
+      {
+        "method_name": "blockchain_get_feeds_for_asset",
+        "description": "Retrieves all current feeds for the given asset",
+        "return_type": "feed_record_list",
+        "parameters" : [
+            {
+              "name" : "asset",
+              "type" : "string",
+              "description" : "asset ticker symbol or ID to retrieve"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_get_feeds_from_delegate",
+        "description": "Retrieves all current feeds published by the given delegate",
+        "return_type": "feed_record_list",
+        "parameters" : [
+            {
+              "name" : "delegate_name",
+              "type" : "string",
+              "description" : "the name of the delegate to list feeds from"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       },
       {
         "method_name": "blockchain_list_proposals",

@@ -7,6 +7,7 @@
 #include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/proposal_record.hpp>
+#include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain {
@@ -36,7 +37,8 @@ namespace bts { namespace blockchain {
       database_version         = 7, // database version, to know when we need to upgrade
       current_fee_rate         = 8, // database version, to know when we need to upgrade
       accumulated_fees         = 9, // database version, to know when we need to upgrade
-      dirty_markets            = 10
+      dirty_markets            = 10,
+      last_feed_id             = 11 // used for allocating new data feeds
    };
    typedef uint32_t chain_property_type;
 
@@ -64,6 +66,9 @@ namespace bts { namespace blockchain {
          /** convers an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
          string                             to_pretty_price( const price& a )const;
+
+         virtual void                       set_feed( const feed_record&  ) = 0;
+         virtual ofeed_record               get_feed( const feed_index& )const = 0;
 
          virtual fc::ripemd160              get_current_random_seed()const                          = 0;
 

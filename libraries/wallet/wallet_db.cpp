@@ -745,7 +745,8 @@ namespace bts { namespace wallet {
    {
       if( order.valid() ) market_orders[ owner ].order = *order;
       else market_orders[ owner ].order.state.balance = 0;
-      market_orders[ owner ].transactions.insert( trx_id );
+      if( trx_id != transaction_id_type() )
+         market_orders[ owner ].transactions.insert( trx_id );
       store_record( market_orders[ owner ] );
    }
 

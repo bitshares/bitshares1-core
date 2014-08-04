@@ -1,0 +1,22 @@
+default (unlocked) >>> help wallet_open_file 
+Usage:
+wallet_open_file <wallet_file>                                                                        Opens the wallet at the given path
+Opens the wallet at the given path
+
+Parameters:
+  wallet_file (filename, required): the full path and filename of the wallet to open
+
+Returns:
+  void
+default (unlocked) >>> wallet_open_file testwallet
+OK
+testwallet (locked) >>> wallet_list
+default
+testwallet (locked) >>> wallet_unlock 9999 password
+OK
+testwallet (unlocked) >>> wallet_list_accounts 
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
+testaccount                        XTS76VRXcZaCHe7Kt1BZSa9chW7jfVPorwgXxgVfho3HQeoGNzrvN           NO                    NO             1         
+testwallet (unlocked) >>> wallet_list
+default
+testwallet (unlocked) >>> quit

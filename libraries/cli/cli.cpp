@@ -883,7 +883,7 @@ namespace bts { namespace cli {
                       }
                   }
               }
-              else if (method_name == "blockchain_get_pending_transactions")
+              else if (method_name == "blockchain_list_pending_transactions")
               {
                   auto transactions = result.as<vector<signed_transaction>>();
 
@@ -945,6 +945,11 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_market_order_book")
               {
                   auto bids_asks = result.as<std::pair<vector<market_order>,vector<market_order>>>();
+                  if( bids_asks.first.size() == 0 && bids_asks.second.size() == 0 )
+                  {
+                     *_out << "No Orders\n";
+                     return;
+                  }
                   *_out << std::string(18, ' ') << "BIDS (* Short Order)" 
                         << std::string(38, ' ') << " | " 
                         << std::string(34, ' ') << "ASKS" 
@@ -961,12 +966,34 @@ namespace bts { namespace cli {
                   asset_id_type quote_id;
                   asset_id_type base_id;
 
-                  while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
+                  if( bid_itr != bids_asks.first.end() )
                   {
-                    if( bid_itr != bids_asks.first.end() )
-                    {
                      quote_id = bid_itr->get_price().quote_asset_id;
                      base_id = bid_itr->get_price().base_asset_id;
+                  }
+                  if( ask_itr != bids_asks.second.end() )
+                  {
+                     quote_id = ask_itr->get_price().quote_asset_id;
+                     base_id = ask_itr->get_price().base_asset_id;
+                  }
+
+                  auto quote_asset_record = _client->get_chain()->get_asset_record( quote_id );
+                  // fee order is the market order to convert fees from other asset classes to XTS
+                  bool show_fee_order_record = base_id == 0 && quote_asset_record->collected_fees > 0;
+
+                  while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
+                  {
+                    if( show_fee_order_record )
+                    {
+                       *_out << std::left << std::setw(26) << _client->get_chain()->to_pretty_asset( asset(quote_asset_record->collected_fees, quote_id) )
+                             << std::setw(20) << " "
+                             << std::right << std::setw(30) << "MARKET PRICE";
+
+                       *_out << ' ';
+                       show_fee_order_record = false;
+                    }
+                    else if( bid_itr != bids_asks.first.end() )
+                    {
                       *_out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
                                : _client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
@@ -989,8 +1016,6 @@ namespace bts { namespace cli {
 
                     while( ask_itr != bids_asks.second.end() )
                     {
-                      quote_id = ask_itr->get_price().quote_asset_id;
-                      base_id = ask_itr->get_price().base_asset_id;
                       if( !ask_itr->collateral )
                       {
                          *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
@@ -1033,9 +1058,23 @@ namespace bts { namespace cli {
                      }
                   }
 
+                 auto median_feed = _client->get_chain()->get_median_delegate_price( quote_id );
+                 *_out << "\nMedian Feed Price: " 
+                       << (median_feed ? _client->get_chain()->to_pretty_price( *median_feed ) : "NO FEEDS" )
+                       <<"     ";
+
                  auto status = _client->get_chain()->get_market_status( quote_id, base_id );
                  if( status )
                  {
+                    if( median_feed )
+                    {
+                       auto maximum_short_price = *median_feed;
+                       maximum_short_price.ratio *= 3;
+                       maximum_short_price.ratio /= 2;
+                       *_out << "Maximum Short Price: " 
+                             << _client->get_chain()->to_pretty_price( maximum_short_price )
+                             <<"     ";
+                    }
                     *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
                     *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";
                     if(  status->last_error )
@@ -1378,7 +1417,8 @@ namespace bts { namespace cli {
 
     cli_impl::cli_impl(bts::client::client* client, std::istream* command_script, std::ostream* output_stream)
     :_client(client)
-    ,_rpc_server(client->get_rpc_server())
+    ,_rpc_server(client->get_rpc_server()),
+    _cin_thread("stdin_reader")
     ,_quit(false)
     ,show_raw_output(false)
     ,_daemon_mode(false)
