@@ -21,7 +21,6 @@ namespace bts { namespace blockchain {
       }
   };
 
-
   struct feed_record
   {
       bool        is_null()const{ return value.is_null(); }
@@ -50,6 +49,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::update_feed_operation, (feed)(value) )
 FC_REFLECT( bts::blockchain::feed_index, (feed_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::feed_record, (feed)(value)(last_update) )
+FC_REFLECT( bts::blockchain::update_feed_operation, (feed)(value) )

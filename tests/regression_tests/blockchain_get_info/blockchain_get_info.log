@@ -16,6 +16,7 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "symbol": "XTS",
   "name": "BitShares XTS",
   "version": 109,
+  "db_version": 119,
   "genesis_timestamp": "[redacted]",
   "block_interval": 10,
   "target_block_size": 1280,
@@ -34,7 +35,7 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "symbol_size_min": 3,
   "asset_reg_fee": "0.00000 XTS",
   "asset_shares_max": 1000000000000000,
-  "min_market_depth": "20,000,000.00000 XTS",
+  "min_market_depth": "0.00010 XTS",
   "proposal_vote_message_max": 1024,
   "max_pending_queue_size": 5,
   "max_trx_per_second": 1
