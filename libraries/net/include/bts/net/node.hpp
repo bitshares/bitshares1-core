@@ -6,6 +6,8 @@
 #include <bts/blockchain/block.hpp>
 #include <bts/net/peer_database.hpp>
 
+#include <list>
+
 namespace bts { namespace net {
 
   using fc::variant_object;
