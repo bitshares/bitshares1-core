@@ -3864,29 +3864,57 @@ namespace bts { namespace net { namespace detail {
 
   void node::close()
   {
-     wlog( ".... WARNING NOT DOING ANYTHING WHEN I SHOULD ......" );
-     return;
+    wlog( ".... WARNING NOT DOING ANYTHING WHEN I SHOULD ......" );
+    return;
     my->close();
   }
 
-  void simulated_network::broadcast( const message& item_to_broadcast  )
+  struct simulated_network::node_info
   {
-    for( node_delegate* network_node : network_nodes )
+    node_delegate* delegate;
+    fc::future<void> message_sender_task_done;
+    std::queue<message> messages_to_deliver;
+    node_info(node_delegate* delegate) : delegate(delegate) {}
+  };
+
+  simulated_network::~simulated_network()
+  {
+    for( node_info* network_node_info : network_nodes )
+    {
+      network_node_info->message_sender_task_done.cancel_and_wait();
+      delete network_node_info;
+    }
+  }
+
+  void simulated_network::message_sender(node_info* destination_node)
+  {
+    while (!destination_node->messages_to_deliver.empty())
     {
       try 
       {
-        network_node->handle_message( item_to_broadcast, false );
+        destination_node->delegate->handle_message(destination_node->messages_to_deliver.front(), false);
       } 
       catch ( const fc::exception& e )
       {
         elog( "${r}", ("r",e.to_detail_string() ) );
-      }
+      }    
+      destination_node->messages_to_deliver.pop();
+    }
+  }
+
+  void simulated_network::broadcast( const message& item_to_broadcast  )
+  {
+    for (node_info* network_node_info : network_nodes)
+    {
+      network_node_info->messages_to_deliver.emplace(item_to_broadcast);
+      if (!network_node_info->message_sender_task_done.valid() || network_node_info->message_sender_task_done.ready())
+        network_node_info->message_sender_task_done = fc::async([=](){ message_sender(network_node_info); }, "simulated_network_sender");
     }
   }
 
   void simulated_network::add_node_delegate( node_delegate* node_delegate_to_add )
   { 
-     network_nodes.push_back( node_delegate_to_add );
+    network_nodes.push_back(new node_info(node_delegate_to_add));
   }
 
   namespace detail
