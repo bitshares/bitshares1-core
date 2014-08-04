@@ -1183,7 +1183,7 @@ namespace bts { namespace blockchain {
               try {
                  _undo_state_db.remove( old_id );
               } 
-              catch( const fc::key_not_found_exception& e )
+              catch( const fc::key_not_found_exception& )
               {
                  // ignore this...
               }
