@@ -1050,28 +1050,6 @@ namespace bts { namespace blockchain {
             base_asset_record->current_share_supply -= (pending_pay - pay);
             pending_state->store_asset_record( *base_asset_record );
 
-/*  premerge dilution code
-
-            auto standard_pay = (amount*pay_rate)/100;
-            auto dilution = (base_asset_record->maximum_share_supply - base_asset_record->current_share_supply)
-                            / P2P_DILUTION_RATE;
-            auto dilution_pay = (dilution*pay_rate) / 100;
-            auto dilution_burn = (dilution * (100 - pay_rate)) / 100;
-
-            auto pay = standard_pay + dilution_pay;
-            */
-
-/*
-            delegate_record->delegate_info->pay_balance += pay;
-            delegate_record->delegate_info->votes_for += pay;
-            pending_state->store_account_record( *delegate_record );
-*/
-
-            //FC_ASSERT( base_asset_record.valid() );
-            //base_asset_record->maximum_share_supply -= dilution_burn;
-//            FC_ASSERT( base_asset_record.valid() );
-//            base_asset_record->current_share_supply -= (pending_pay - pay);
-//            pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,

@@ -40,7 +40,7 @@ namespace bts { namespace blockchain {
    void pending_chain_state::apply_deterministic_updates()
    {
        auto k = 0;
-       auto max = 1;
+       auto max = 3;
        auto prev_state = _prev_state.lock();
        auto auctions = prev_state->get_domains_in_auction();
        for(auto domain_rec : auctions)

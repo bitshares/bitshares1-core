@@ -30,7 +30,7 @@
 /**
  * The number of delegates that the blockchain is designed to support
  */
-#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (101)
+#define BTS_BLOCKCHAIN_NUM_DELEGATES                    (5)
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                   (BTS_BLOCKCHAIN_NUM_DELEGATES)
 
 

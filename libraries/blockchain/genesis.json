@@ -1,226 +1,533 @@
 {
-    "timestamp" : "20140717T000001",
-    "market_assets": [
-        {
-            "symbol": "PTS",
-            "name": "BitShares PTS",
-            "description": "1 PTS",
-            "precision": 100000000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "PPC",
-            "name": "Peercoin",
-            "description": "1 peercoin",
-            "precision": 100000000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "LTC",
-            "name": "Litecoin",
-            "description": "1 litecoin",
-            "precision": 100000000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "BTC",
-            "name": "Bitcoin",
-            "description": "1 bitcoin",
-            "precision": 100000000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "WTI",
-            "name": "Light Sweet Crude Oil",
-            "description": "1 barrel light sweet crude oil",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "SLV",
-            "name": "Silver",
-            "description": "1 troy ounce .999 fine silver",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "GLD",
-            "name": "Gold",
-            "description": "1 troy ounce .999 fine gold",
-            "precision": 1000000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "TRY",
-            "name": "Turkish Lira",
-            "description": "1 Turkish lira",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "SGD",
-            "name": "Singapore Dollar"
-            "description": "1 Singapore dollar",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "HKD",
-            "name": "Hong Kong Dollar"
-            "description": "1 Hong Kong dollar",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "RUB",
-            "name": "Russian Ruble"
-            "description": "1 Russian ruble",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "SEK",
-            "name": "Swedish Krona"
-            "description": "1 Swedish krona",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "NZD",
-            "name": "New Zealand Dollar"
-            "description": "1 New Zealand dollar",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "CNY",
-            "name": "Chinese Yuan"
-            "description": "1 Chinese yuan",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "MXN",
-            "name": "Mexican Peso"
-            "description": "1 Mexican peso",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "CAD",
-            "name": "Canadian Dollar",
-            "description": "1 Canadian dollar",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "CHF",
-            "name": "Swiss Franc",
-            "description": "1 Swiss franc",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "AUD",
-            "name": "Australian Dollar"
-            "description": "1 Australian dollar",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "GBP",
-            "name": "Pound sterling",
-            "description": "1 pound sterling",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "JPY",
-            "name": "Japanese Yen",
-            "description": "1 Japanese yen",
-            "precision": 100,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "EUR",
-            "name": "Euro",
-            "description": "1 euro",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        },
-        {
-            "symbol": "USD",
-            "name": "United States Dollar",
-            "description": "1 United States dollar",
-            "precision": 10000,
-            "min_price": 0.000001,
-            "max_price": 1000000
-        }
-    ],
-     "names": [
-    {
-      "name": "init0",
-      "delegate_pay_rate": 100,
-      "owner": "P2P6e6aBm2BMrMJNqgE9Atkw71f54eTf9moKCULtNf4SSqvzSXoc1"
-    },{
-      "name": "init1",
-      "delegate_pay_rate": 100,
-      "owner": "P2P63VonyH7ZjmehZJozbFpsviDJoDxG6LCgC1p1YcTbEE3uv3MCS"
-    },{
-      "name": "init2",
-      "delegate_pay_rate": 100,
-      "owner": "P2P6FRFZpy1124PEMni9EoJj4yqmD9xDKQzntcS7fRNd4ML4gDyoZ"
-    },{
-      "name": "init3",
-      "delegate_pay_rate": 100,
-      "owner": "P2P8P4GsvrnhjBecwVwWSgfpfx662ic65BuYM8fJHuoCSs4x8q4zT"
-    },{
-      "name": "init4",
-      "delegate_pay_rate": 100,
-      "owner": "P2P5mEe7uFhBjxSMveDPrQaU512d6hjQFahcKK8VnmoTUKP2enM5g"
-    }
-    ],
+    "timestamp": "20140717T000001", 
     "balances": [
         [
-            "PoAzkrLCwy1nZug4cnaecf7H1wPdzWVmku",
+            "PoAzkrLCwy1nZug4cnaecf7H1wPdzWVmku", 
             200000000000000
-        ],
+        ], 
         [
-            "PsqiivkZCVtsD8oEkpZtDH5ZHQhiCTw4ai",
+            "PsqiivkZCVtsD8oEkpZtDH5ZHQhiCTw4ai", 
             200000000000000
-        ],
+        ], 
         [
-            "Pd1wZB41BFE4njMK5AmXVuPTMLtAkSoaP9",
+            "Pd1wZB41BFE4njMK5AmXVuPTMLtAkSoaP9", 
             200000000000000
-        ],
+        ], 
         [
-            "Pp7nLdJLF2bMKr6h4gL7QQDmbKfWNoDVSF",
+            "Pp7nLdJLF2bMKr6h4gL7QQDmbKfWNoDVSF", 
             200000000000000
-        ],
+        ], 
         [
-            "PZW5TSetFsmE8CCLfuBTsnjHMDPAe6nN9C",
+            "PZW5TSetFsmE8CCLfuBTsnjHMDPAe6nN9C", 
             200000000000000
         ]
+    ], 
+    "market_assets": [], 
+    "names": [
+        {
+            "owner": "KEY7UKMckkZknuSNJixMed1rNHw3jBM8qUj6RMwcLnA8t6x57mws6", 
+            "delegate_pay_rate": 100, 
+            "name": "init0"
+        }, 
+        {
+            "owner": "KEY8T1JoNjiiHGJccxUzwDWqasLxNp8TozECrA7D4tChk8gZFxVnJ", 
+            "delegate_pay_rate": 100, 
+            "name": "init1"
+        }, 
+        {
+            "owner": "KEY6y4pFvVpzEhB5yRyQaam99jzaC8URYjz6ufXv9EzouAmcV9vVy", 
+            "delegate_pay_rate": 100, 
+            "name": "init2"
+        }, 
+        {
+            "owner": "KEY5DZjXWpN92xxXqUSZFau668YXa2Gvt99uZiKfnk2w1e9oAVhFN", 
+            "delegate_pay_rate": 100, 
+            "name": "init3"
+        }, 
+        {
+            "owner": "KEY5ZAKwYssDCyjWEBoCdSAjs4fDnzreq9cLexsibNoMVcdVcJdeQ", 
+            "delegate_pay_rate": 100, 
+            "name": "init4"
+        }, 
+        {
+            "owner": "KEY7Ex1uLE8B7n7aPdYXoy26WxPnNd84yYhppENPAbn634cDVEaKD", 
+            "delegate_pay_rate": 100, 
+            "name": "init5"
+        }, 
+        {
+            "owner": "KEY5QK539GNpmH4iaCHEhkuoTs72xfe9qCMuTF6TQ5gyk3hekZ1rx", 
+            "delegate_pay_rate": 100, 
+            "name": "init6"
+        }, 
+        {
+            "owner": "KEY66hTkN8i8Ck5nAVugrNNDTtsPuCqmTrQRUZKLvZSW2stWs5nPt", 
+            "delegate_pay_rate": 100, 
+            "name": "init7"
+        }, 
+        {
+            "owner": "KEY8GWWAjRpf8HX5fLH2WzQoQiUBxpaWyjWBPXduV2pKThSjPu945", 
+            "delegate_pay_rate": 100, 
+            "name": "init8"
+        }, 
+        {
+            "owner": "KEY7fiQ7jEmcQ9HGo5uZJSWA61QFAtRyGapZArrLJLvrQrWFqPJoi", 
+            "delegate_pay_rate": 100, 
+            "name": "init9"
+        }, 
+        {
+            "owner": "KEY6JHbsrFniNzS5Jfmbs6W7Q3BjskCJ6U9oZxzy1CaMbvzzQCRjE", 
+            "delegate_pay_rate": 100, 
+            "name": "init10"
+        }, 
+        {
+            "owner": "KEY6HMe4XpDnPW6zRHomHCMKKdwuPBLeVR7tseGpZW1SMM4Xn7FzL", 
+            "delegate_pay_rate": 100, 
+            "name": "init11"
+        }, 
+        {
+            "owner": "KEY68bjNFWjkDX1eU6p349pohXhMXsroUVcxrwhboUJHUZsyVAqa2", 
+            "delegate_pay_rate": 100, 
+            "name": "init12"
+        }, 
+        {
+            "owner": "KEY5V9i9da4WkeH4EwWkkREXqmSG5dM8UuDpZySp1f4SPmyJNFQ4L", 
+            "delegate_pay_rate": 100, 
+            "name": "init13"
+        }, 
+        {
+            "owner": "KEY8E5ZCUNHpiWevwbo6NVKevuPnoa5sDu9S45NcjPAdtVgRvqFZx", 
+            "delegate_pay_rate": 100, 
+            "name": "init14"
+        }, 
+        {
+            "owner": "KEY6UUbCFFjdc3tXwU2TSdjfSnyTH2iemiNDJ49pfYDq5xo4Q5gPw", 
+            "delegate_pay_rate": 100, 
+            "name": "init15"
+        }, 
+        {
+            "owner": "KEY7jzLf83ZVyzpcE5GsV5sVaFiHiJwzV89HyQB18UoaihxJ2ZvbD", 
+            "delegate_pay_rate": 100, 
+            "name": "init16"
+        }, 
+        {
+            "owner": "KEY5mEn5czxJaDgJEzLPtSgdcpQZoYDJi2e8DECfoB1c9PgEM5Ck3", 
+            "delegate_pay_rate": 100, 
+            "name": "init17"
+        }, 
+        {
+            "owner": "KEY7SovczBrotcYLoLnArhXgqTdY69UgH3FmpHVMibh4yYDUAYtwB", 
+            "delegate_pay_rate": 100, 
+            "name": "init18"
+        }, 
+        {
+            "owner": "KEY6yUjp6Tqnn45YsErZxGpiLSDymAYt7fEdNpjVjJeKhQSmaeGZV", 
+            "delegate_pay_rate": 100, 
+            "name": "init19"
+        }, 
+        {
+            "owner": "KEY5KsgE5QZZdSYPXdiLfe38qHKw55zZpENjg5nvmjFwPqEqcw2Ta", 
+            "delegate_pay_rate": 100, 
+            "name": "init20"
+        }, 
+        {
+            "owner": "KEY8mkhQaRokP6MbGUYbPKxCGqReQybuYVCnKMk8H5JhNCwfUeJgV", 
+            "delegate_pay_rate": 100, 
+            "name": "init21"
+        }, 
+        {
+            "owner": "KEY6w8yGo2APVeFACuDGisS7qTC4AjXEZeiFM3GmbBY3MuqeyqmHZ", 
+            "delegate_pay_rate": 100, 
+            "name": "init22"
+        }, 
+        {
+            "owner": "KEY5otegxQFgrdHJizQehHCu8sNxFYiMRbYUkKqMgXCM5gqhFsvYV", 
+            "delegate_pay_rate": 100, 
+            "name": "init23"
+        }, 
+        {
+            "owner": "KEY7P6dk7QDeJ83kCtiEKMPhECgnAztx4Q5iZUjPBvvKFwRwfn1c7", 
+            "delegate_pay_rate": 100, 
+            "name": "init24"
+        }, 
+        {
+            "owner": "KEY8kZgxPyntyFzr2oDH2pdfnPnoiN3jqFJ7G9H7kL1B6eTwVVwHu", 
+            "delegate_pay_rate": 100, 
+            "name": "init25"
+        }, 
+        {
+            "owner": "KEY6b45KSU8inhfQunBjtLzUbNM246aY1sKKXLAf4n6dQh6SB3CVZ", 
+            "delegate_pay_rate": 100, 
+            "name": "init26"
+        }, 
+        {
+            "owner": "KEY8deEKyUxs5cDqfZ569K9bD844paiKufRLwqhRDGqrDGXXaDxfv", 
+            "delegate_pay_rate": 100, 
+            "name": "init27"
+        }, 
+        {
+            "owner": "KEY6V94evwpkHb8XYgfX3192TUfP9XPAiVxTTkY14CLw7d6CqFvcb", 
+            "delegate_pay_rate": 100, 
+            "name": "init28"
+        }, 
+        {
+            "owner": "KEY557U8pbmy4SmLApWVeiHJ4BngyHo3J9AbVBtUsm2soSj9KhkjG", 
+            "delegate_pay_rate": 100, 
+            "name": "init29"
+        }, 
+        {
+            "owner": "KEY77HddSWmMfvtCfUNjeydSHGZ92847P3r5NVvGGnTE8FrEfFuJU", 
+            "delegate_pay_rate": 100, 
+            "name": "init30"
+        }, 
+        {
+            "owner": "KEY7MkqADn1kxHyRtgYtqxRKmCfws6quCVCJEFqddsLCs2AkJEt7N", 
+            "delegate_pay_rate": 100, 
+            "name": "init31"
+        }, 
+        {
+            "owner": "KEY8epbAKfu1HH75bUSHdFWofGVuneHdKaQRTS483T7WgprVtqdYt", 
+            "delegate_pay_rate": 100, 
+            "name": "init32"
+        }, 
+        {
+            "owner": "KEY8FAMKzHaWpzvMk422kb5NoMmT3314wS9tbs8QxzN1B5XZeEVA1", 
+            "delegate_pay_rate": 100, 
+            "name": "init33"
+        }, 
+        {
+            "owner": "KEY7f2cYo6c8Tm7J89Ut6Rqbg84MYpCaGpPNZPiAWhPF9E5kKPR7o", 
+            "delegate_pay_rate": 100, 
+            "name": "init34"
+        }, 
+        {
+            "owner": "KEY642Yhb8SQ8DXcLK8kXDwYL1RBthgjF8bBHRdPcAKq3xduEBsmB", 
+            "delegate_pay_rate": 100, 
+            "name": "init35"
+        }, 
+        {
+            "owner": "KEY5h8B3fkoreuLXKHzoBJhgrH94hu4PCX9zPjqrG8snaeRKNkZFr", 
+            "delegate_pay_rate": 100, 
+            "name": "init36"
+        }, 
+        {
+            "owner": "KEY8aeDkTnUsWC1CeV3jDGc5FwrevVWcFckzv1TQy4rQh87eJw1k6", 
+            "delegate_pay_rate": 100, 
+            "name": "init37"
+        }, 
+        {
+            "owner": "KEY67Ko8ZdZRxaBvdz8csCCqeky1Mqd8ufC49CYEatjQmhr6oeWYJ", 
+            "delegate_pay_rate": 100, 
+            "name": "init38"
+        }, 
+        {
+            "owner": "KEY5hvXA9ixNCKzEmdELcysAuvAJtQBEW1cNgHAat2pXfJyV7trSs", 
+            "delegate_pay_rate": 100, 
+            "name": "init39"
+        }, 
+        {
+            "owner": "KEY58NuUDB692SeT5oXpm7SnXmEvexeYegcLbmryKCvWnFEL14fVA", 
+            "delegate_pay_rate": 100, 
+            "name": "init40"
+        }, 
+        {
+            "owner": "KEY5YKfY2C17LrTuDrc1JudnxptvC4nKXFyoYTkdKUmRed8P2s48P", 
+            "delegate_pay_rate": 100, 
+            "name": "init41"
+        }, 
+        {
+            "owner": "KEY5zGf4KVKecNaUHmTTSqYEHR9K3Tp6pM95rAScetxRFoPRzYcEq", 
+            "delegate_pay_rate": 100, 
+            "name": "init42"
+        }, 
+        {
+            "owner": "KEY5E5CiwStK67PJ8ZW2Sw8JReWr6wax83wNFWEBsTQBj845uAps3", 
+            "delegate_pay_rate": 100, 
+            "name": "init43"
+        }, 
+        {
+            "owner": "KEY8Wssm6nj3uSg4ssHjye8TvcmvgD17mPAD8aV7uWZ67PvBrVgys", 
+            "delegate_pay_rate": 100, 
+            "name": "init44"
+        }, 
+        {
+            "owner": "KEY7c4XiFZfjYTvDjfuET4cqg9XWTdkzphfYSHUwHyknkbfWsuvm6", 
+            "delegate_pay_rate": 100, 
+            "name": "init45"
+        }, 
+        {
+            "owner": "KEY6T2qepDhum1xwQoRcnQtB92kC3sb1pA5YnYqbCoZWP9sK3aH4t", 
+            "delegate_pay_rate": 100, 
+            "name": "init46"
+        }, 
+        {
+            "owner": "KEY5TEw6QBovw1RNjBUP5EJckHaxV9PTAtnDwKiX1j83bZJx34iGU", 
+            "delegate_pay_rate": 100, 
+            "name": "init47"
+        }, 
+        {
+            "owner": "KEY7kgJn6gBmwH38pvvQdABkWBrJmzCfDKYwy2NvJrUkDSkYekxPi", 
+            "delegate_pay_rate": 100, 
+            "name": "init48"
+        }, 
+        {
+            "owner": "KEY5yZhZT5BzyQDkDSsGQbAnHH1CFgZVkkzgsnfRRdG5yTcCNPVPi", 
+            "delegate_pay_rate": 100, 
+            "name": "init49"
+        }, 
+        {
+            "owner": "KEY88HhycD8HzsbbAcjXsasXcQWnhQuHdy8gsSzQs3grxAHc5nFiX", 
+            "delegate_pay_rate": 100, 
+            "name": "init50"
+        }, 
+        {
+            "owner": "KEY823GtUb9dhqKN7MtgNrHyG6fGCA5fRTEC1X6Rd1tuKSf6otwkL", 
+            "delegate_pay_rate": 100, 
+            "name": "init51"
+        }, 
+        {
+            "owner": "KEY55TK1W4dzPTZpacyqC26GhoVCdMYSdWKBJN6dJbVA6ZLVVT9su", 
+            "delegate_pay_rate": 100, 
+            "name": "init52"
+        }, 
+        {
+            "owner": "KEY53RQhmKwV7DguXS6t8bQoir53UBffr9YLYN9PxHX1toGEcToHP", 
+            "delegate_pay_rate": 100, 
+            "name": "init53"
+        }, 
+        {
+            "owner": "KEY7xbc8uUJt3PVdm4LqRRnmvdC1ZmrnNtemFgqnMUpfomCAipqmo", 
+            "delegate_pay_rate": 100, 
+            "name": "init54"
+        }, 
+        {
+            "owner": "KEY7fa6NiYaCcihqi8KSBB7DtVLtQ38xSpWz6swjsoFsY5ktmgJ1R", 
+            "delegate_pay_rate": 100, 
+            "name": "init55"
+        }, 
+        {
+            "owner": "KEY7AKnyvZfGknPq5mKeArJi5En32VvrrTx3ZpTLiEK4zvA5DngCf", 
+            "delegate_pay_rate": 100, 
+            "name": "init56"
+        }, 
+        {
+            "owner": "KEY8R25sVguLsTt9P3MaeCzaLX21FtMd6U8SmLUcARpn2qtM7m2wm", 
+            "delegate_pay_rate": 100, 
+            "name": "init57"
+        }, 
+        {
+            "owner": "KEY65XrYVknwt7GPDcUudxDwHKAG8hJiomTY64RwB38btBRUXaQcc", 
+            "delegate_pay_rate": 100, 
+            "name": "init58"
+        }, 
+        {
+            "owner": "KEY711ddT9gCXWAzzu598fUKykg8arT4xbkkfLxMM3xGb1YtWnb1n", 
+            "delegate_pay_rate": 100, 
+            "name": "init59"
+        }, 
+        {
+            "owner": "KEY5229f8aNQH8r41ud56UuK6P3obpWYnt8j5Q6QuPA8ftQQvn2px", 
+            "delegate_pay_rate": 100, 
+            "name": "init60"
+        }, 
+        {
+            "owner": "KEY86dHr2gh7g3jMW1uQFS96obqdkfk3WHxLj3c37LVqSmEP1GuFp", 
+            "delegate_pay_rate": 100, 
+            "name": "init61"
+        }, 
+        {
+            "owner": "KEY7j3HLVBdke3cQamaGQ95D3QPEiCLT2QSdAk3QvoCUp4myJBVhQ", 
+            "delegate_pay_rate": 100, 
+            "name": "init62"
+        }, 
+        {
+            "owner": "KEY7DSDcGZ6WMqmTV6SYaiPWSk58r52RwXyW4e9qB8u7Dum4ZyW1x", 
+            "delegate_pay_rate": 100, 
+            "name": "init63"
+        }, 
+        {
+            "owner": "KEY55ExVsGG1DQ3ENi8NNZ1ikoMkUrAMqfWTdJbzXFvXFdi3wAjcQ", 
+            "delegate_pay_rate": 100, 
+            "name": "init64"
+        }, 
+        {
+            "owner": "KEY5HXSMhV7TRPQdm58v8BxkXermGEbHrh2qtrXxT9zpXyZNfqTkf", 
+            "delegate_pay_rate": 100, 
+            "name": "init65"
+        }, 
+        {
+            "owner": "KEY7phwxKS7ohNDUyKFam5NDiiUzSsKcdgT1rPtHAEXn17qUCE1w7", 
+            "delegate_pay_rate": 100, 
+            "name": "init66"
+        }, 
+        {
+            "owner": "KEY7ayutHXkRQoAF2SWQxzbXTX1X1bQ632ETBPT3BmvEwyRmHpfur", 
+            "delegate_pay_rate": 100, 
+            "name": "init67"
+        }, 
+        {
+            "owner": "KEY5Wz6m62CCcwyb7ywmf2AkDRxHKjq8rU8dAKCFrRgvfapDMbz6a", 
+            "delegate_pay_rate": 100, 
+            "name": "init68"
+        }, 
+        {
+            "owner": "KEY8h5C9yEEp9bopmbKQHTTdvrKALPFc4D4rUkKGfbSNaZchK2rgY", 
+            "delegate_pay_rate": 100, 
+            "name": "init69"
+        }, 
+        {
+            "owner": "KEY6BbrfJDhNXG4BgyRt3zW2f6Va51DRZ3ND1iLssCrFZqYDf7cds", 
+            "delegate_pay_rate": 100, 
+            "name": "init70"
+        }, 
+        {
+            "owner": "KEY7SDSvFusocoBxpWn5je1nsFrUsoPSMM3kjH6oVJuzbpVg52puG", 
+            "delegate_pay_rate": 100, 
+            "name": "init71"
+        }, 
+        {
+            "owner": "KEY5cqopqeXzKyqyasJs16kQHK9hkxA2tCt4LHMR5L6VrXMs4m1BX", 
+            "delegate_pay_rate": 100, 
+            "name": "init72"
+        }, 
+        {
+            "owner": "KEY8KuL57HsrKE12vMacZgaruBL5ZBaMhLQmBu9sR3YcapiFcM6fX", 
+            "delegate_pay_rate": 100, 
+            "name": "init73"
+        }, 
+        {
+            "owner": "KEY5N5nv2vU5cR49i2ZkxK81qTXdCo6aUeooV78UcZXBYwokrwhK8", 
+            "delegate_pay_rate": 100, 
+            "name": "init74"
+        }, 
+        {
+            "owner": "KEY6QmYtJ6gPBCEXtWdMnuZmm3in7JFL6ZuRsJNugpVmRTwW4L1Cx", 
+            "delegate_pay_rate": 100, 
+            "name": "init75"
+        }, 
+        {
+            "owner": "KEY5VenjuqZqU9JiMs5WcPD85vgmq1T85JA39ZnaqXrS4DfTPgAir", 
+            "delegate_pay_rate": 100, 
+            "name": "init76"
+        }, 
+        {
+            "owner": "KEY74Ws6tWoQVS8gMwXdu9pjtpniCDCmRTkHBJqpSL38GeGb5hEUo", 
+            "delegate_pay_rate": 100, 
+            "name": "init77"
+        }, 
+        {
+            "owner": "KEY5S85Nf7ykD4Qje8tQaSEnBnuxK8tYzoDrURZqCgFQdx5gAHndu", 
+            "delegate_pay_rate": 100, 
+            "name": "init78"
+        }, 
+        {
+            "owner": "KEY7mXrwaZWv9ZYUFPRg4juAQGuVuVyt5rfv6AzwhwcoHniy1qxGJ", 
+            "delegate_pay_rate": 100, 
+            "name": "init79"
+        }, 
+        {
+            "owner": "KEY5ZETsThC2F3VbyaDwG9tGXuiSP1v32qfwF34mvsjKEkQEHVUD2", 
+            "delegate_pay_rate": 100, 
+            "name": "init80"
+        }, 
+        {
+            "owner": "KEY6FzHw5eC1jxueCuF5qo4bGVc1qHyuQKhuwDdfqsrguHzgURHmB", 
+            "delegate_pay_rate": 100, 
+            "name": "init81"
+        }, 
+        {
+            "owner": "KEY6LRCTuNz1KQfCmveZCgdANPy83Zy94tg17QEnW6upoC7mRAHJq", 
+            "delegate_pay_rate": 100, 
+            "name": "init82"
+        }, 
+        {
+            "owner": "KEY7binn6ShRVwZwWZgZuwEVXKWWkhozUPqeeBuBnJf9eMMKzgiwV", 
+            "delegate_pay_rate": 100, 
+            "name": "init83"
+        }, 
+        {
+            "owner": "KEY5K7BRCcCct7mr7pMGMW8qg4GLj651v1oRu1xJFxziCmZpVc7Nk", 
+            "delegate_pay_rate": 100, 
+            "name": "init84"
+        }, 
+        {
+            "owner": "KEY8Ha4CawhFRNBJPwzEamTWa9i8CLDCu3L2M4ATaZWBxP3aK21kB", 
+            "delegate_pay_rate": 100, 
+            "name": "init85"
+        }, 
+        {
+            "owner": "KEY717GbGWR8GBUcaQb9NWRyAwPKLLb2V5fRmJ8udJkQioweQaCms", 
+            "delegate_pay_rate": 100, 
+            "name": "init86"
+        }, 
+        {
+            "owner": "KEY8N2i7puVjYcmLXBfX5LtPziLWFDyEKijw7c6dRXhZzuXXD1zN7", 
+            "delegate_pay_rate": 100, 
+            "name": "init87"
+        }, 
+        {
+            "owner": "KEY6Ru96cSiVFHQdUxCvFEVKiR4nRVXFhgCUHCEiszGLeZu3nrWZR", 
+            "delegate_pay_rate": 100, 
+            "name": "init88"
+        }, 
+        {
+            "owner": "KEY8LVGzTDDnZBCiGJNpCSPJWJdkwSKVTiLHzMst9NTmFb9RBU3Vw", 
+            "delegate_pay_rate": 100, 
+            "name": "init89"
+        }, 
+        {
+            "owner": "KEY8hdPoRGaC4LmDbBFmnAn1QZEiLKc7NEGBfpmdpmgQtspJguSNR", 
+            "delegate_pay_rate": 100, 
+            "name": "init90"
+        }, 
+        {
+            "owner": "KEY6t1PgrHdubxybtqdfKBHqgkTm9Y9hduju2NB9XioRmvn4apCta", 
+            "delegate_pay_rate": 100, 
+            "name": "init91"
+        }, 
+        {
+            "owner": "KEY8TCUpDn6Kc3d85eJy5ipFFfUuPqhUpmFwyS3ngPbTDEFKpdjcW", 
+            "delegate_pay_rate": 100, 
+            "name": "init92"
+        }, 
+        {
+            "owner": "KEY5hZUN89QMMXWQagMjLAh4TpG1m26F7KCYu6jR5VNSeinUkJbup", 
+            "delegate_pay_rate": 100, 
+            "name": "init93"
+        }, 
+        {
+            "owner": "KEY8ZWtLVwUXHGK4XtLgSVnKhpr5vHxK6D3zh3CVUSty2xkNjaU1z", 
+            "delegate_pay_rate": 100, 
+            "name": "init94"
+        }, 
+        {
+            "owner": "KEY64NioywDGdYQzMPgmS9xMytcgLimb8Ddv7Jjrp5YPJSz5HvukK", 
+            "delegate_pay_rate": 100, 
+            "name": "init95"
+        }, 
+        {
+            "owner": "KEY5RT6xrihLxdFmktbHsP4ymDyA52W6sRQyw97zMZo82okHk5NhZ", 
+            "delegate_pay_rate": 100, 
+            "name": "init96"
+        }, 
+        {
+            "owner": "KEY7r67sdF7cxzF4Zcrav9388mxkij4argsWEnfqBMa24Ype2aX7A", 
+            "delegate_pay_rate": 100, 
+            "name": "init97"
+        }, 
+        {
+            "owner": "KEY8HHa574nfYDTfoxdZx8ABEvVWUUe9WVMKEhyf9x79s5ooXRq93", 
+            "delegate_pay_rate": 100, 
+            "name": "init98"
+        }, 
+        {
+            "owner": "KEY5TEGGrQQc5NBn1F796HuVWmNrUxqbJ2AavXU1L6hk426h7qdvU", 
+            "delegate_pay_rate": 100, 
+            "name": "init99"
+        }, 
+        {
+            "owner": "KEY6MMstYwsy9FQaKPy4eSWJWwQngR8jWigxjX7G2vsDtDDPtnT2N", 
+            "delegate_pay_rate": 100, 
+            "name": "init100"
+        }
     ]
 }

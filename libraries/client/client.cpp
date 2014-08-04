@@ -3170,6 +3170,7 @@ config load_config( const fc::path& datadir )
 
     signed_transaction        client_impl::domain_cancel_buy( const balance_id_type& offer_id )
     {
+        FC_ASSERT(!"unimplemented");
         auto trx = _wallet->domain_cancel_buy( offer_id, true);
         network_broadcast_transaction( trx );
         return trx;
@@ -3192,9 +3193,16 @@ config load_config( const fc::path& datadir )
         return trx;
     }
 
+    variant                   client_impl::domain_info( const string& domain_name )
+    {
+        auto record = _chain_db->get_domain_record( domain_name );
+        record->value = variant("use domain_show");
+        return fc::variant( record );
+    }    
+
     variant                   client_impl::domain_show( const string& domain_name )
     {
-        return fc::variant( _chain_db->get_domain_record( domain_name ) );
+        return fc::variant( _chain_db->get_domain_record( domain_name )->value );
     }    
 
     vector<offer_index_key>     client_impl::domain_list_offers(const string& domain_name, uint32_t limit)

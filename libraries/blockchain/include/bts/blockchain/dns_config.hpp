@@ -10,10 +10,10 @@
 #define P2P_NEXT_REQ_BID(req, bid) MAX((bid + (P2P_REQUIRED_BID_DIFF_RATIO*(bid - req))), P2P_MIN_BID_INCREASE_RATIO * bid)
 
 #define P2P_MAX_CONCURRENT_AUCTIONS_FOR_BLOCK(block) (50)
-#define P2P_AUCTION_DURATION_SECS (10) //(60*60*24  * 3)
-#define P2P_EXPIRE_DURATION_SECS (60 * 100) //(60*60*24  * 365)
+#define P2P_AUCTION_DURATION_SECS (60 * 5) //(60*60*24  * 3)
+#define P2P_EXPIRE_DURATION_SECS (60 * 120) //(60*60*24  * 365)
 
 #define P2P_MIN_DOMAIN_NAME_SIZE (1)
 #define P2P_MAX_DOMAIN_NAME_SIZE (63)
 
-#define P2P_DILUTION_RATE (100000) // extra block reward = (max_supply - current_supply) / this
+#define P2P_DILUTION_RATE (5000000) // extra block reward = (max_supply - current_supply) / this

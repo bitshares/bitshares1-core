@@ -175,6 +175,20 @@
             "prerequisites": ["json_authenticated"]
         },
         {
+            "method_name": "domain_info",
+            "description": "Gets metadata associated with this domain.",
+            "return_type": "json_variant",
+            "parameters": 
+            [
+                {
+                    "name": "domain_name",
+                    "type": "string",
+                    "description": ""
+                }
+            ],
+            "prerequisites": ["json_authenticated"]
+        },
+        {
             "method_name": "domain_show",
             "description": "Gets the user-specified value associated with this domain.",
             "return_type": "json_variant",
