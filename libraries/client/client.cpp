@@ -11,6 +11,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/account_operations.hpp>
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/utilities/git_revision.hpp>
 #include <bts/rpc/rpc_client.hpp>
@@ -67,6 +68,26 @@ using std::string;
 
 // delegate network breaks win32
 #define DISABLE_DELEGATE_NETWORK 1
+
+#define INVOCATION_COUNTER(name) \
+    static unsigned total_ ## name ## _counter = 0; \
+    static unsigned active_ ## name ## _counter = 0; \
+    struct name ## _invocation_logger { \
+      unsigned *total; \
+      unsigned *active; \
+      name ## _invocation_logger(unsigned *total, unsigned *active) : \
+        total(total), active(active) \
+      { \
+        ++*total; \
+        ++*active; \
+        fprintf(stderr,"NEWDEBUG: Entering %s, now %d total calls, %d active calls", #name, *total, *active); \
+      } \
+      ~name ## _invocation_logger() \
+      { \
+        --*active; \
+        fprintf(stderr,"NEWDEBUG: Leaving %s, now %d total calls, %d active calls", #name, *total, *active); \
+      } \
+    } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
 
 namespace bts { namespace client {
 
@@ -174,6 +195,13 @@ string extract_commands_from_log_stream(std::istream& log_stream)
 
 string extract_commands_from_log_file(fc::path test_file)
 {
+  if( !fc::exists( test_file ) )
+    FC_THROW( ("Unable to input-log-file: \"" + test_file.string() + "\" not found!").c_str() );
+//enable this eventually, but it will cause regression tests to fail until they are updated
+#ifdef TESTING 
+  else
+    ulog("Extracting commands from input-log-file: ${log}",("log",test_file.string() ) );
+#endif
   std::ifstream test_input(test_file.string());
   return extract_commands_from_log_stream(test_input);
 }
@@ -288,7 +316,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::debug;
+    dlc_p2p.level = fc::log_level::warn;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -501,17 +529,21 @@ config load_config( const fc::path& datadir )
               _last_sync_status_head_block(0),
               _remaining_items_to_sync(0),
               _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5)
-            { try {
-                _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
-                fc::logger::get( "user" ).add_appender( _user_appender );
-
-                try {
-                  _rpc_server = std::make_shared<rpc_server>(self);
-                } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
-                try {
-                  _chain_db = std::make_shared<chain_database>();
-                } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
-
+            { 
+            try 
+            {
+              _user_appender = fc::shared_ptr<user_appender>( new user_appender(*this) );
+              fc::logger::get( "user" ).add_appender( _user_appender );
+              try 
+              {
+                _rpc_server = std::make_shared<rpc_server>(self);
+              } FC_RETHROW_EXCEPTIONS(warn,"rpc server")
+              try 
+              {
+                _chain_db = std::make_shared<chain_database>();
+              } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
+              _rebroadcast_pending_loop = fc::async( [=]() { rebroadcast_pending(); },
+                                                     "rebroadcast_pending");
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl() override 
@@ -611,8 +643,9 @@ config load_config( const fc::path& datadir )
             logging_exception_db                                    _exception_db;
 
             uint32_t                                                _min_delegate_connection_count = BTS_MIN_DELEGATE_CONNECTION_COUNT;
-            bool                                                    _sync_mode = true;
-            bool                                                    _in_sync = true;
+            //start by assuming not syncing, network won't send us a msg if we start synced and stay synched.
+            //at worst this means we might briefly sending some pending transactions while not synched.
+            bool                                                    _sync_mode = false;
 
             rpc_server_config                                       _tmp_rpc_config;
             bts::net::node_ptr                                      _p2p_node;
@@ -744,7 +777,6 @@ config load_config( const fc::path& datadir )
               {
                   try
                   {
-                      FC_ASSERT( _in_sync, "Blockchain must be synced to produce blocks!" );
                       FC_ASSERT( network_get_connection_count() >= _min_delegate_connection_count,
                                  "Client must have ${count} connections before you may produce blocks!",
                                  ("count",_min_delegate_connection_count) );
@@ -784,7 +816,8 @@ config load_config( const fc::path& datadir )
           if( scheduled_time <= system_now ) 
             scheduled_time = system_now + fc::seconds( 1 );
 
-          _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
+          if (!_delegate_loop_complete.canceled())
+            _delegate_loop_complete = fc::schedule( [=](){ delegate_loop(); }, scheduled_time, "delegate_loop" );
        }
 
        void client_impl::set_target_connections( uint32_t target )
@@ -892,7 +925,7 @@ config load_config( const fc::path& datadir )
           return result;
        }
 
-       signed_transactions client_impl::blockchain_get_pending_transactions() const
+       signed_transactions client_impl::blockchain_list_pending_transactions() const
        {
          signed_transactions trxs;
          vector<transaction_evaluation_state_ptr> pending = _chain_db->get_pending_transactions();
@@ -914,13 +947,16 @@ config load_config( const fc::path& datadir )
             ~checker() { var = false; }
           } _checker(currently_running);
 #endif // !NDEBUG
-
-          if( !_sync_mode )
+          if (_sync_mode)
           {
-            wlog( "rebroadcasting... " );
+            wlog("skip rebroadcast_pending while syncing");
+          }
+          else
+          {
+            wlog( " rebroadcasting..." );
             try 
             {
-              signed_transactions pending = blockchain_get_pending_transactions();
+              signed_transactions pending = blockchain_list_pending_transactions();
               for( auto trx : pending )
               {
                 network_broadcast_transaction( trx );
@@ -931,9 +967,10 @@ config load_config( const fc::path& datadir )
               wlog( "error rebroadcasting transacation: ${e}", ("e",e.to_detail_string() ) );
             }
           }
-          _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
-                                                    fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
-                                                    "rebroadcast_pending" );
+          if (!_rebroadcast_pending_loop.canceled())
+            _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
+                                                      fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
+                                                      "rebroadcast_pending" );
        }
 
        ///////////////////////////////////////////////////////
@@ -1325,20 +1362,20 @@ config load_config( const fc::path& datadir )
 
        void client_impl::sync_status(uint32_t item_type, uint32_t item_count)
        {
-         _in_sync = item_count == 0;
+         const bool in_sync = item_count == 0;
          _remaining_items_to_sync = item_count;
 
          fc::time_point now = fc::time_point::now();
          if (_cli)
          {
-           if (_in_sync && !_last_sync_status_message_indicated_in_sync)
+           if (in_sync && !_last_sync_status_message_indicated_in_sync)
            {
              ulog( "--- in sync with p2p network" );
              _last_sync_status_message_time = now;
              _last_sync_status_message_indicated_in_sync = true;
              _last_sync_status_head_block = 0;
            }
-           else if (!_in_sync &&
+           else if (!in_sync &&
                     item_count >= 100 && // if we're only a few blocks out of sync, don't bother the user about it
                     _last_sync_status_message_indicated_in_sync && 
                     _last_sync_status_message_time < now - fc::seconds(30))
@@ -1407,7 +1444,6 @@ config load_config( const fc::path& datadir )
     client::client()
     :my( new detail::client_impl(this))
     {
-       my->rebroadcast_pending();
     }
 
     client::client(bts::net::simulated_network_ptr network_to_connect_to)
@@ -1415,7 +1451,6 @@ config load_config( const fc::path& datadir )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
-      my->rebroadcast_pending();
     }
 
     void client::simulate_disconnect( bool state )
@@ -1815,6 +1850,24 @@ config load_config( const fc::path& datadir )
       return oasset_record();
     }
 
+    vector<feed_record> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
+    { try {
+        asset_id_type asset_id;
+          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+              asset_id = _chain_db->get_asset_id(asset);
+          else
+              asset_id = std::stoi( asset );
+
+          return _chain_db->get_feeds_for_asset(asset_id);
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
+
+    vector<feed_record> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
+    { try {
+        auto delegate_record = _chain_db->get_account_record(delegate_name);
+        FC_ASSERT( delegate_record.valid(), "Unknown account name." );
+        return _chain_db->get_feeds_from_delegate(delegate_record->id);
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
+
     int8_t detail::client_impl::wallet_account_set_approval( const string& account_name, int8_t approval )
     { try {
       _wallet->set_account_approval( account_name, approval );
@@ -1938,6 +1991,22 @@ config load_config( const fc::path& datadir )
     vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t count) const
     {
       return _chain_db->get_accounts(first, count);
+    }
+
+    vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts() const
+    {
+      vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
+      vector<account_record> accounts;
+      accounts.reserve(account_registrations.size());
+
+      for( const operation& op : account_registrations )
+      {
+        auto oaccount = _chain_db->get_account_record(op.as<register_account_operation>().owner_key);
+        if(oaccount)
+          accounts.push_back(*oaccount);
+      }
+
+      return accounts;
     }
 
     vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t count) const
@@ -2083,7 +2152,7 @@ config load_config( const fc::path& datadir )
       if (option_variables.count("min-delegate-connection-count"))
         my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
 
-      start_delegate_loop();
+      my->reschedule_delegate_loop();
 
       this->configure( datadir );
 
@@ -2244,11 +2313,6 @@ config load_config( const fc::path& datadir )
        my->_cli->set_daemon_mode(daemon_mode);
     }
 
-    void client::start_delegate_loop()
-    {
-       my->start_delegate_loop();
-    }
-
     fc::path client::get_data_dir()const
     {
        return my->_data_dir;
@@ -2400,6 +2464,7 @@ config load_config( const fc::path& datadir )
        info["symbol"]                       = BTS_BLOCKCHAIN_SYMBOL;
        info["name"]                         = BTS_BLOCKCHAIN_NAME;
        info["version"]                      = BTS_BLOCKCHAIN_VERSION;
+       info["db_version"]                   = BTS_BLOCKCHAIN_DATABASE_VERSION;
        info["genesis_timestamp"]            = _chain_db->get_genesis_timestamp();
 
        info["block_interval"]               = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
@@ -2444,26 +2509,42 @@ config load_config( const fc::path& datadir )
       info["blockchain_head_block_num"]                         = head_block_num;
       info["blockchain_head_block_age"]                         = variant();
       info["blockchain_head_block_timestamp"]                   = variant();
+      time_point_sec head_block_timestamp;
       if( head_block_num > 0 )
       {
-          fc::time_point_sec head_block_timestamp              = _chain_db->now();
+          head_block_timestamp                                 = _chain_db->now();
           info["blockchain_head_block_age"]                    = ( now - head_block_timestamp ).to_seconds();
           info["blockchain_head_block_timestamp"]              = head_block_timestamp;
       }
 
+      info["blockchain_average_delegate_participation"]         = variant();
       const auto participation                                  = _chain_db->get_average_delegate_participation();
-      info["blockchain_average_delegate_participation"]         = participation <= 100 ? participation : 0;
-      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
-      info["blockchain_blocks_left_in_round"]                   = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
+      if( participation <= 100 )
+          info["blockchain_average_delegate_participation"]     = participation;
+
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
+
       info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
+      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
-      oasset_record share_record                                = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
-      info["blockchain_share_supply"]                           = share_record.valid() ? share_record->current_share_supply : 0;
+      info["blockchain_share_supply"]                           = variant();
+      const auto share_record                                   = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
+      if( share_record.valid() )
+          info["blockchain_share_supply"]                       = share_record->current_share_supply;
+
+      const auto blocks_left                                    = BTS_BLOCKCHAIN_NUM_DELEGATES - (head_block_num % BTS_BLOCKCHAIN_NUM_DELEGATES);
+      info["blockchain_blocks_left_in_round"]                   = blocks_left;
+
+      info["blockchain_next_round_time"]                        = variant();
+      info["blockchain_next_round_timestamp"]                   = variant();
+      if( head_block_num > 0 )
+      {
+          const auto next_round_timestamp                       = head_block_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+          info["blockchain_next_round_time"]                    = ( next_round_timestamp - now ).to_seconds();
+          info["blockchain_next_round_timestamp"]               = next_round_timestamp;
+      }
+
       info["blockchain_random_seed"]                            = _chain_db->get_current_random_seed();
-
-      info["blockchain_database_version"]                       = BTS_BLOCKCHAIN_DATABASE_VERSION;
-      info["blockchain_version"]                                = BTS_BLOCKCHAIN_VERSION;
 
       /* Client */
       info["client_data_dir"]                                   = fc::absolute( _data_dir );
@@ -2474,15 +2555,14 @@ config load_config( const fc::path& datadir )
       info["network_num_connections"]                           = network_get_connection_count();
       fc::variant_object advanced_params                        = network_get_advanced_node_parameters();
       info["network_num_connections_max"]                       = advanced_params["maximum_number_of_connections"];
-      info["network_protocol_version"]                          = BTS_NET_PROTOCOL_VERSION;
 
       /* NTP */
       info["ntp_time"]                                          = variant();
-      info["ntp_error"]                                         = variant();
+      info["ntp_time_error"]                                    = variant();
       if( blockchain::ntp_time().valid() )
       {
         info["ntp_time"]                                        = now;
-        info["ntp_error"]                                       = static_cast<double>(blockchain::ntp_error().count()) / fc::seconds(1).count();
+        info["ntp_time_error"]                                  = static_cast<double>(blockchain::ntp_error().count()) / fc::seconds(1).count();
       }
 
       /* Wallet */
@@ -2517,17 +2597,15 @@ config load_config( const fc::path& datadir )
 
           if( block_production_enabled )
           {
-            const auto next_block_time                          = _wallet->get_next_producible_block_timestamp( enabled_delegates );
-            if( next_block_time.valid() )
+            const auto next_block_timestamp                     = _wallet->get_next_producible_block_timestamp( enabled_delegates );
+            if( next_block_timestamp.valid() )
             {
-              info["wallet_next_block_production_time"]         = ( *next_block_time - now ).to_seconds();
-              info["wallet_next_block_production_timestamp"]    = *next_block_time;
+              info["wallet_next_block_production_time"]         = ( *next_block_timestamp - now ).to_seconds();
+              info["wallet_next_block_production_timestamp"]    = *next_block_timestamp;
             }
           }
         }
       }
-
-      info["wallet_version"]                                    = BTS_WALLET_VERSION;
 
       return info;
     }
@@ -2551,7 +2629,11 @@ config load_config( const fc::path& datadir )
 
         state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
-        if (required_confirmations <= BTS_BLOCKCHAIN_NUM_DELEGATES / 2
+        if (!blockchain_is_synced())
+        {
+            state.alert_level = bts::blockchain::blockchain_security_state::grey;
+        }
+        else if (required_confirmations <= BTS_BLOCKCHAIN_NUM_DELEGATES / 2
             && participation_rate > 80)
         {
             state.alert_level = bts::blockchain::blockchain_security_state::green;
@@ -2565,6 +2647,7 @@ config load_config( const fc::path& datadir )
         {
             state.alert_level = bts::blockchain::blockchain_security_state::yellow;
         }
+
         return state;
     }
 
@@ -2713,13 +2796,9 @@ config load_config( const fc::path& datadir )
 
    asset client_impl::wallet_set_priority_fee( double fee )
    { try {
-      FC_ASSERT( fee >= 0, "Priority fee should be non-negative." );
-      if( fee > 0 )
-      {
-          oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
-          FC_ASSERT( asset_record );
-          _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
-      }
+      oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
+      FC_ASSERT( asset_record.valid() );
+      _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
       return _wallet->get_priority_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
@@ -3124,6 +3203,14 @@ config load_config( const fc::path& datadir )
       auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
       FC_ASSERT( oresult );
       return *oresult;
+   }
+   bts::blockchain::signed_transaction client_impl::wallet_publish_price_feed( const std::string& delegate_account,
+                                                                               double real_amount_per_xts,
+                                                                               const std::string& real_amount_symbol )
+   {
+      auto trx = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol );
+      network_broadcast_transaction( trx );
+      return trx;
    }
 
    } // namespace detail

@@ -163,9 +163,10 @@ namespace bts { namespace network {
        {
            fc::async( [peer]() { peer->send_message( keep_alive_message( fc::time_point::now() )  ); }, "send keep_alive_message" );
        }
-       _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, 
-                                        fc::time_point::now() + fc::seconds(1),
-                                        "broadcast_keep_alive" );
+       if (!_keep_alive_task.canceled())
+         _keep_alive_task = fc::schedule( [this](){ broadcast_keep_alive(); }, 
+                                          fc::time_point::now() + fc::seconds(1),
+                                          "broadcast_keep_alive" );
    }
 
    void node::on_signin_request( const shared_ptr<peer_connection>& con, 
@@ -307,10 +308,13 @@ namespace bts { namespace network {
       }
       if( _peers.size() < _desired_peer_count )
       {
-         ilog( "attempting new connections to peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
-         _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, 
-                                                       fc::time_point::now() + fc::seconds(60),
-                                                       "attempt_new_connection" );
+        if (!_attempt_new_connections_task.canceled())
+        {
+          ilog( "attempting new connections to peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );
+          _attempt_new_connections_task = fc::schedule( [=](){ attempt_new_connection(); }, 
+                                                        fc::time_point::now() + fc::seconds(60),
+                                                        "attempt_new_connection" );
+        }
       }
       else {
          ilog( "we have the desired number of peers: ${d} of ${desired}", ("d",_peers.size())("desired",_desired_peer_count) );

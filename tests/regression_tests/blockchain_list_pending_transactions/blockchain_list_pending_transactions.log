@@ -16,9 +16,9 @@ ACCOUNT                         BALANCE
 delegate0                       19,801,880.09801 XTS        
 default (unlocked) >>> wallet_account_balance test
 No balances found.
-default (unlocked) >>> help blockchain_get_pending_transactions
+default (unlocked) >>> help blockchain_list_pending_transactions
 Usage:
-blockchain_get_pending_transactions                                                                   Return a list of transactions that are not yet in a block.
+blockchain_list_pending_transactions                                                                   Return a list of transactions that are not yet in a block.
 Return a list of transactions that are not yet in a block.
 
 Parameters:
@@ -26,7 +26,7 @@ Parameters:
 
 Returns:
   signed_transaction_array
-default (unlocked) >>> blockchain_get_pending_transactions
+default (unlocked) >>> blockchain_list_pending_transactions
     TXN ID      SIZE          OPERATION COUNT          SIGNATURE COUNT
 ----------------------------------------------------------------------
 [redacted]       244                        2                        1
@@ -40,7 +40,7 @@ default (unlocked) >>> history test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
 [redacted]          2         delegate0           test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         [redacted]
-default (unlocked) >>> blockchain_get_pending_transactions
+default (unlocked) >>> blockchain_list_pending_transactions
 No pending transactions.
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     

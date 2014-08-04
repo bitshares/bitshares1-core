@@ -120,10 +120,13 @@ namespace bts { namespace blockchain {
          pending_chain_state_ptr                  get_pending_state()const;
 
          /**
-          *  @param override_limits - stores the transaction even if the pending queue is full, if false then it will require exponential fee increases
+          *  @param override_limits - stores the transaction even if the pending queue is full, 
+          *                           if false then it will require exponential fee increases
           *                           as the queue fills. 
           */
-         transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx, bool override_limits = true );
+         transaction_evaluation_state_ptr         store_pending_transaction( const signed_transaction& trx, 
+                                                                             bool override_limits = true );
+
          vector<transaction_evaluation_state_ptr> get_pending_transactions()const;
          bool                                     is_known_transaction( const transaction_id_type& trx_id );
 
@@ -169,6 +172,10 @@ namespace bts { namespace blockchain {
          oblock_record               get_block_record( const block_id_type& block_id )const;
          oblock_record               get_block_record( uint32_t block_num )const;
 
+
+         oprice                      get_median_delegate_price( asset_id_type )const;
+         vector<feed_record>         get_feeds_for_asset( asset_id_type asset_id )const;
+         vector<feed_record>         get_feeds_from_delegate( account_id_type delegate_id )const;
 
          virtual odelegate_slate      get_delegate_slate( slate_id_type id )const override;
          virtual void                 store_delegate_slate( slate_id_type id, 
@@ -258,6 +265,9 @@ namespace bts { namespace blockchain {
          virtual void                       store_balance_record( const balance_record& r )override;
          virtual void                       store_account_record( const account_record& r )override;
 
+         virtual vector<operation>          get_recent_operations( operation_type_enum t )override;
+         virtual void                       store_recent_operation( const operation& o )override;
+
          virtual void                       store_proposal_record( const proposal_record& r )override;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const override;
                                                                                                           
@@ -290,6 +300,8 @@ namespace bts { namespace blockchain {
          virtual void                       set_market_transactions( vector<market_transaction> trxs );
          vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;
 
+         virtual void                       set_feed( const feed_record&  ) override;
+         virtual ofeed_record               get_feed( const feed_index& )const override;
       private:
          unique_ptr<detail::chain_database_impl> my;
    };

@@ -2,6 +2,8 @@
 
 #include <bts/blockchain/chain_interface.hpp>
 
+#include <deque>
+
 namespace bts { namespace blockchain {
 
    class pending_chain_state : public chain_interface, public std::enable_shared_from_this<pending_chain_state>
@@ -13,6 +15,10 @@ namespace bts { namespace blockchain {
          void                           set_prev_state( chain_interface_ptr prev_state );
 
          fc::ripemd160                  get_current_random_seed()const override;
+
+         virtual void                  set_feed( const feed_record&  ) override;
+         virtual ofeed_record          get_feed( const feed_index& )const override;
+
 
          virtual fc::time_point_sec     now()const override;
 
@@ -56,6 +62,9 @@ namespace bts { namespace blockchain {
          virtual void                   store_balance_record( const balance_record& r )override;
          virtual void                   store_account_record( const account_record& r )override;
 
+         virtual vector<operation>      get_recent_operations( operation_type_enum t )override;
+         virtual void                   store_recent_operation( const operation& o )override;
+
          virtual variant                get_property( chain_property_enum property_id )const override;
          virtual void                   set_property( chain_property_enum property_id, const variant& property_value )override;
 
@@ -91,6 +100,7 @@ namespace bts { namespace blockchain {
          virtual void                   set_market_transactions( vector<market_transaction> trxs ) override;
 
 
+         // NOTE: this isn't really part of the chain state, but more part of the block state 
          vector<market_transaction>                                     market_transactions;
 
          unordered_map< asset_id_type, asset_record>                    assets;
@@ -111,6 +121,8 @@ namespace bts { namespace blockchain {
          map<time_point_sec, slot_record>                               slots;
          map<market_history_key, market_history_record>                 market_history;
          map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
+         map<operation_type_enum, std::deque<operation>>                recent_operations;
+         map<feed_index, feed_record>                                   feeds;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must 
@@ -127,4 +139,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots)(market_statuses) )
+            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds) )

@@ -1225,18 +1225,20 @@ namespace bts { namespace net { namespace detail {
       update_bandwidth_data(usage_this_second);
       _bandwidth_monitor_last_update_time = current_time;
 
-      _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); }, 
-                                                   fc::time_point::now() + fc::seconds(1),
-                                                   "bandwidth_monitor_loop" );
+      if (!_bandwidth_monitor_loop_done.canceled())
+        _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); }, 
+                                                     fc::time_point::now() + fc::seconds(1),
+                                                     "bandwidth_monitor_loop" );
     }
 
     void node_impl::dump_node_status_task()
     {
       VERIFY_CORRECT_THREAD();
       dump_node_status();
-      _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, 
-                                                 fc::time_point::now() + fc::minutes(1),
-                                                 "dump_node_status_task");
+      if (!_dump_node_status_task_done.canceled())
+        _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); }, 
+                                                   fc::time_point::now() + fc::minutes(1),
+                                                   "dump_node_status_task");
     }
 
     void node_impl::delayed_peer_deletion_task()
@@ -3862,29 +3864,57 @@ namespace bts { namespace net { namespace detail {
 
   void node::close()
   {
-     wlog( ".... WARNING NOT DOING ANYTHING WHEN I SHOULD ......" );
-     return;
+    wlog( ".... WARNING NOT DOING ANYTHING WHEN I SHOULD ......" );
+    return;
     my->close();
   }
 
-  void simulated_network::broadcast( const message& item_to_broadcast  )
+  struct simulated_network::node_info
   {
-    for( node_delegate* network_node : network_nodes )
+    node_delegate* delegate;
+    fc::future<void> message_sender_task_done;
+    std::queue<message> messages_to_deliver;
+    node_info(node_delegate* delegate) : delegate(delegate) {}
+  };
+
+  simulated_network::~simulated_network()
+  {
+    for( node_info* network_node_info : network_nodes )
+    {
+      network_node_info->message_sender_task_done.cancel_and_wait();
+      delete network_node_info;
+    }
+  }
+
+  void simulated_network::message_sender(node_info* destination_node)
+  {
+    while (!destination_node->messages_to_deliver.empty())
     {
       try 
       {
-        network_node->handle_message( item_to_broadcast, false );
+        destination_node->delegate->handle_message(destination_node->messages_to_deliver.front(), false);
       } 
       catch ( const fc::exception& e )
       {
         elog( "${r}", ("r",e.to_detail_string() ) );
-      }
+      }    
+      destination_node->messages_to_deliver.pop();
+    }
+  }
+
+  void simulated_network::broadcast( const message& item_to_broadcast  )
+  {
+    for (node_info* network_node_info : network_nodes)
+    {
+      network_node_info->messages_to_deliver.emplace(item_to_broadcast);
+      if (!network_node_info->message_sender_task_done.valid() || network_node_info->message_sender_task_done.ready())
+        network_node_info->message_sender_task_done = fc::async([=](){ message_sender(network_node_info); }, "simulated_network_sender");
     }
   }
 
   void simulated_network::add_node_delegate( node_delegate* node_delegate_to_add )
   { 
-     network_nodes.push_back( node_delegate_to_add );
+    network_nodes.push_back(new node_info(node_delegate_to_add));
   }
 
   namespace detail

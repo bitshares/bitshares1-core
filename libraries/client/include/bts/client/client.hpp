@@ -104,8 +104,6 @@ namespace bts { namespace client {
 
          void add_node( const string& ep );
 
-         void start_delegate_loop();
-
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
          bts::rpc::rpc_server_ptr   get_rpc_server()const;
