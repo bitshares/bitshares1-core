@@ -4,6 +4,7 @@
 #include <fc/network/tcp_socket.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/network/ip.hpp>
 
 namespace bts { namespace net {
     namespace detail {
@@ -37,6 +38,7 @@ namespace bts { namespace net {
             }
 
             void handle_get_blocks_from_number(fc::tcp_socket& connection_socket) {
+              try {
                 uint64_t start_block;
                 connection_socket >> start_block;
                 if (start_block == 0) start_block = 1;
@@ -46,18 +48,26 @@ namespace bts { namespace net {
                     end_block = _chain_db->get_head_block_num();
                     connection_socket << (end_block - start_block + 1);
 
+                    ilog("Sending blocks from ${start} to ${finish} to ${remote}",
+                         ("start", start_block)("finish", end_block)("remote", connection_socket.remote_endpoint()));
                     for (; start_block < end_block; ++start_block) {
                         fc::raw::pack(connection_socket, fc::variant(_chain_db->get_block(start_block)));
                         fc::yield();
                     }
                 }
+              } FC_RETHROW_EXCEPTIONS(error, "", ("remote_endpoint", connection_socket.remote_endpoint()))
             }
 
             void serve_client(fc::tcp_socket& connection_socket) {
+              try {
+                ilog("Got new connection from ${remote}", ("remote", connection_socket.remote_endpoint()));
+                connection_socket << PROTOCOL_VERSION;
+
                 chain_server_commands request;
                 connection_socket >> (int&)request;
 
                 while (request != finish) {
+                    ilog("Got ${req} request from ${remote}", ("req", request)("remote", connection_socket.remote_endpoint()));
                     switch (request) {
                       case get_blocks_from_number:
                         handle_get_blocks_from_number(connection_socket);
@@ -68,6 +78,13 @@ namespace bts { namespace net {
 
                     connection_socket >> (int&)request;
                 }
+
+                ilog("Closing connection to ${remote}", ("remote", connection_socket.remote_endpoint()));
+                connection_socket.close();
+              } catch (const fc::exception& e) {
+                  elog("The client at ${remote} hung up on us! How rude. Error: ${e}",
+                       ("remote", connection_socket.remote_endpoint())("e", e.to_detail_string()));
+              }
             }
         };
     } //namespace detail

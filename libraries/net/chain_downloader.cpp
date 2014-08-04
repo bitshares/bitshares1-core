@@ -18,8 +18,19 @@ namespace bts { namespace net {
           fc::tcp_socket connect_to_chain_server()
           {
               auto next_server = _chain_servers.begin();
-              while(!_client_socket.is_open() && next_server != _chain_servers.end())
-                _client_socket.connect_to(*(next_server++));
+              while(!_client_socket.is_open() && next_server != _chain_servers.end()) {
+                  _client_socket = fc::tcp_socket();
+                  _client_socket.connect_to(*(next_server++));
+
+                  uint32_t protocol_version = -1;
+                  _client_socket >> protocol_version;
+                  if (protocol_version != PROTOCOL_VERSION) {
+                      wlog("Can't talk to chain server; he's using protocol ${srv} and I'm using ${cli}!",
+                           ("srv", protocol_version)("cli", PROTOCOL_VERSION));
+                      _client_socket << finish;
+                      _client_socket.close();
+                  }
+              }
 
               return _client_socket;
           }
@@ -31,22 +42,29 @@ namespace bts { namespace net {
 
               connect_to_chain_server();
               FC_ASSERT(_client_socket.is_open(), "unable to connect to any chain server");
+              ilog("Connected to ${remote}", ("remote", _client_socket.remote_endpoint()));
 
               _client_socket << get_blocks_from_number << first_block_number;
 
               uint64_t blocks_to_retrieve = 0;
               _client_socket >> blocks_to_retrieve;
+              ilog("Server at ${remote} is sending us ${num} blocks.",
+                   ("remote", _client_socket.remote_endpoint())("num", blocks_to_retrieve));
 
               while(blocks_to_retrieve > 0)
               {
-                fc::variant block;
-                fc::raw::unpack(_client_socket, block);
+                  fc::variant block;
+                  fc::raw::unpack(_client_socket, block);
 
-                new_block_callback(block.as<bts::blockchain::full_block>());
-                --blocks_to_retrieve;
+                  new_block_callback(block.as<bts::blockchain::full_block>());
+                  --blocks_to_retrieve;
 
-                if(blocks_to_retrieve == 0)
-                    _client_socket >> blocks_to_retrieve;
+                  if(blocks_to_retrieve == 0) {
+                      _client_socket >> blocks_to_retrieve;
+                      if(blocks_to_retrieve > 0)
+                          ilog("Server at ${remote} is sending us ${num} blocks.",
+                               ("remote", _client_socket.remote_endpoint())("num", blocks_to_retrieve));
+                  }
               }
 
               _client_socket << finish;

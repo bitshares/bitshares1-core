@@ -7,11 +7,13 @@
 
 #include <fc/reflect/reflect.hpp>
 
-namespace bts { namespace net {
-    enum chain_server_commands {
-        get_blocks_from_number,
-        finish
-    };
-} } //namespace bts::net
+const static uint32_t PROTOCOL_VERSION = 0;
 
-FC_REFLECT_ENUM(bts::net::chain_server_commands, (get_blocks_from_number))
+namespace bts { namespace net { namespace detail {
+    enum chain_server_commands {
+        finish = 0,
+        get_blocks_from_number
+    };
+} } } //namespace bts::net::detail
+
+FC_REFLECT_ENUM(bts::net::detail::chain_server_commands, (get_blocks_from_number))

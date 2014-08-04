@@ -12,10 +12,12 @@ namespace bts { namespace net {
      * will attempt to bind that one; otherwise, the server will allow the OS to select a port. This port may be
      * queried using the get_listening_port method.
      *
-     * The chain_server responds to chain_server_commands. When a client connects, the client should send a command
-     * along with any arguments that command requires, complete the communication for that command, then repeat with
-     * another command and so-on. When the client is finished, it should send the finish command, to indicate that
-     * it is ready to terminate the connection.
+     * The chain_server responds to chain_server_commands. When a client connects, the server first sends it the
+     * protocol version this server expects. If the client does not understand that version, it must send a finish
+     * command and terminate the connection. Otherwise, the client should send a command along with any arguments
+     * that command requires, complete the communication for that command, then repeat with another command and
+     * so-on. When the client is finished, it should send the finish command, to indicate that  it is ready to
+     * terminate the connection.
      *
      * The commands are as follows:
      * * get_blocks_from_number
