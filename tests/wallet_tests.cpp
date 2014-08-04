@@ -581,7 +581,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
   boost::filesystem::current_path(original_working_directory);
 }
 
-#if 0
+#if 1
 #ifndef NDEBUG
 
 // A simple test that feeds a chain database from a normal client installation block-by-block to
