@@ -2794,13 +2794,9 @@ config load_config( const fc::path& datadir )
 
    asset client_impl::wallet_set_priority_fee( double fee )
    { try {
-      FC_ASSERT( fee >= 0, "Priority fee should be non-negative." );
-      if( fee > 0 )
-      {
-          oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
-          FC_ASSERT( asset_record );
-          _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
-      }
+      oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
+      FC_ASSERT( asset_record.valid() );
+      _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
       return _wallet->get_priority_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 

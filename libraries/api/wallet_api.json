@@ -961,14 +961,13 @@
       },
       {
          "method_name"  : "wallet_set_priority_fee",
-         "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
+         "description"  : "Set the priority fee to add to new transactions",
          "return_type"  : "asset",
          "parameters"   : [
          {
             "name" : "fee",
             "type" : "real_amount",
-            "description" : "the wallet priority fee to be set",
-            "default_value" : "0"
+            "description" : "the wallet priority fee to set"
          }
          ],
          "prerequisites" : ["wallet_open"],
