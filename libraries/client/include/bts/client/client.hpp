@@ -50,10 +50,22 @@ namespace bts { namespace client {
       bool is_valid() const; /* Currently just checks if rpc port is set */
     };
 
+    struct chain_server_config
+    {
+        chain_server_config()
+         : enabled(false),
+           listen_port(3333)
+        {}
+
+        bool enabled;
+        uint16_t listen_port;
+    };
+
     struct config
     {
        config( ) : 
           default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}), 
+          chain_servers(vector<string>{"127.0.0.1:3333"}),
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
@@ -68,6 +80,8 @@ namespace bts { namespace client {
 
           rpc_server_config   rpc;
           vector<string>      default_peers;
+          vector<string>      chain_servers;
+          chain_server_config chain_server;
           bool                ignore_console;
           bool                use_upnp;
           optional<fc::path>  genesis_config;

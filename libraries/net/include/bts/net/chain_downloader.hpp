@@ -52,6 +52,6 @@ namespace bts { namespace net {
          * function monitored by the future will return immediately.
          */
         fc::future<void> get_all_blocks(std::function<void(const bts::blockchain::full_block&)> new_block_callback,
-                                        uint64_t first_block_number);
+                                        uint32_t first_block_number);
     };
 } } //namespace bts::net

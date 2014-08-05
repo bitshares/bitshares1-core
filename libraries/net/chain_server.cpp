@@ -1,7 +1,7 @@
+#include <bts/net/stcp_socket.hpp>
 #include <bts/net/chain_server.hpp>
 #include <bts/net/chain_server_commands.hpp>
 
-#include <fc/network/tcp_socket.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/network/ip.hpp>
@@ -31,59 +31,67 @@ namespace bts { namespace net {
 
             void accept_loop() {
                 while (!_accept_loop_handle.canceled()) {
-                    fc::tcp_socket connection_socket;
-                    _server_socket.accept(connection_socket);
-                    fc::async([&]{serve_client(connection_socket);});
+                    fc::tcp_socket* connection_socket = new fc::tcp_socket;
+                    _server_socket.accept(*connection_socket);
+                    ilog("Got new connection from ${remote}", ("remote", connection_socket->remote_endpoint()));
+                    fc::async([=]{serve_client(connection_socket);});
                 }
             }
 
             void handle_get_blocks_from_number(fc::tcp_socket& connection_socket) {
               try {
-                uint64_t start_block;
-                connection_socket >> start_block;
+                uint32_t start_block;
+                fc::raw::unpack(connection_socket, start_block);
                 if (start_block == 0) start_block = 1;
-                uint64_t end_block = start_block;
+                // Client sends his head block num; real start_block is one higher
+                uint32_t end_block = ++start_block;
 
-                while (end_block < _chain_db->get_head_block_num()) {
+                while (end_block <= _chain_db->get_head_block_num()) {
                     end_block = _chain_db->get_head_block_num();
-                    connection_socket << (end_block - start_block + 1);
+                    auto blocks_to_send = end_block - start_block + 1;
+                    fc::raw::pack(connection_socket, blocks_to_send);
 
                     ilog("Sending blocks from ${start} to ${finish} to ${remote}",
                          ("start", start_block)("finish", end_block)("remote", connection_socket.remote_endpoint()));
-                    for (; start_block < end_block; ++start_block) {
-                        fc::raw::pack(connection_socket, fc::variant(_chain_db->get_block(start_block)));
+                    for (; start_block <= end_block; ++start_block) {
+                        fc::raw::pack(connection_socket, _chain_db->get_block(start_block));
                         fc::yield();
                     }
+                    end_block = start_block;
                 }
+
+                // Now sending zero more blocks...
+                fc::raw::pack(connection_socket, uint32_t(0));
               } FC_RETHROW_EXCEPTIONS(error, "", ("remote_endpoint", connection_socket.remote_endpoint()))
             }
 
-            void serve_client(fc::tcp_socket& connection_socket) {
+            void serve_client(fc::tcp_socket* connection_socket) {
               try {
-                ilog("Got new connection from ${remote}", ("remote", connection_socket.remote_endpoint()));
-                connection_socket << PROTOCOL_VERSION;
+                FC_ASSERT(connection_socket->is_open());
+                fc::raw::pack(*connection_socket, PROTOCOL_VERSION);
 
                 chain_server_commands request;
-                connection_socket >> (int&)request;
+                fc::raw::unpack(*connection_socket, request);
 
                 while (request != finish) {
-                    ilog("Got ${req} request from ${remote}", ("req", request)("remote", connection_socket.remote_endpoint()));
+                    ilog("Got ${req} request from ${remote}", ("req", request)("remote", connection_socket->remote_endpoint()));
                     switch (request) {
                       case get_blocks_from_number:
-                        handle_get_blocks_from_number(connection_socket);
+                        handle_get_blocks_from_number(*connection_socket);
                         break;
                       case finish:
                         break;
                     }
 
-                    connection_socket >> (int&)request;
+                    fc::raw::unpack(*connection_socket, request);
                 }
 
-                ilog("Closing connection to ${remote}", ("remote", connection_socket.remote_endpoint()));
-                connection_socket.close();
+                ilog("Closing connection to ${remote}", ("remote", connection_socket->remote_endpoint()));
+                connection_socket->close();
+                delete connection_socket;
               } catch (const fc::exception& e) {
                   elog("The client at ${remote} hung up on us! How rude. Error: ${e}",
-                       ("remote", connection_socket.remote_endpoint())("e", e.to_detail_string()));
+                       ("remote", connection_socket->remote_endpoint())("e", e.to_detail_string()));
               }
             }
         };
@@ -96,7 +104,10 @@ bts::net::chain_server::chain_server(std::shared_ptr<bts::blockchain::chain_data
 }
 
 chain_server::~chain_server()
-{}
+{
+  my->_server_socket.close();
+  my->_accept_loop_handle.cancel_and_wait();
+}
 
 uint16_t bts::net::chain_server::get_listening_port()
 {

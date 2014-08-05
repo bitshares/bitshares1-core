@@ -12,62 +12,75 @@ namespace bts { namespace net {
         public:
           chain_downloader* self;
 
-          fc::tcp_socket _client_socket;
+          std::unique_ptr<fc::tcp_socket> _client_socket;
           std::vector<fc::ip::endpoint> _chain_servers;
 
-          fc::tcp_socket connect_to_chain_server()
-          {
+          void connect_to_chain_server()
+          { try {
               auto next_server = _chain_servers.begin();
-              while(!_client_socket.is_open() && next_server != _chain_servers.end()) {
-                  _client_socket = fc::tcp_socket();
-                  _client_socket.connect_to(*(next_server++));
+              _client_socket = std::unique_ptr<fc::tcp_socket>(new fc::tcp_socket);
+              while(!_client_socket->is_open() && next_server != _chain_servers.end()) {
+                  _client_socket = std::unique_ptr<fc::tcp_socket>(new fc::tcp_socket);
+                  try {
+                      _client_socket->connect_to(*(next_server++));
+                  } catch (const fc::exception& e) {
+                      wlog("Failed to connect to chain_server: ${e}", ("e", e.to_detail_string()));
+                      _client_socket->close();
+                      continue;
+                  }
 
                   uint32_t protocol_version = -1;
-                  _client_socket >> protocol_version;
+                  fc::raw::unpack(*_client_socket, protocol_version);
                   if (protocol_version != PROTOCOL_VERSION) {
                       wlog("Can't talk to chain server; he's using protocol ${srv} and I'm using ${cli}!",
                            ("srv", protocol_version)("cli", PROTOCOL_VERSION));
-                      _client_socket << finish;
-                      _client_socket.close();
+                      fc::raw::pack(*_client_socket, finish);
+                      _client_socket->close();
                   }
               }
-
-              return _client_socket;
-          }
+          } FC_RETHROW_EXCEPTIONS(error, "") }
 
           void get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
-                              uint64_t first_block_number) {
+                              uint32_t first_block_number)
+          { try {
               if (!new_block_callback)
                   return;
 
               connect_to_chain_server();
-              FC_ASSERT(_client_socket.is_open(), "unable to connect to any chain server");
-              ilog("Connected to ${remote}", ("remote", _client_socket.remote_endpoint()));
+              FC_ASSERT(_client_socket->is_open(), "unable to connect to any chain server");
+              ilog("Connected to ${remote}; requesting blocks after ${num}",
+                   ("remote", _client_socket->remote_endpoint())("num", first_block_number));
 
-              _client_socket << get_blocks_from_number << first_block_number;
+              fc::raw::pack(*_client_socket, get_blocks_from_number);
+              fc::raw::pack(*_client_socket, first_block_number);
 
-              uint64_t blocks_to_retrieve = 0;
-              _client_socket >> blocks_to_retrieve;
+              uint32_t blocks_to_retrieve = 0;
+              uint32_t blocks_in = 0;
+              fc::raw::unpack(*_client_socket, blocks_to_retrieve);
               ilog("Server at ${remote} is sending us ${num} blocks.",
-                   ("remote", _client_socket.remote_endpoint())("num", blocks_to_retrieve));
+                   ("remote", _client_socket->remote_endpoint())("num", blocks_to_retrieve));
 
               while(blocks_to_retrieve > 0)
               {
-                  fc::variant block;
-                  fc::raw::unpack(_client_socket, block);
+                  blockchain::full_block block;
+                  fc::raw::unpack(*_client_socket, block);
 
-                  new_block_callback(block.as<bts::blockchain::full_block>());
+                  new_block_callback(block);
                   --blocks_to_retrieve;
+                  ++blocks_in;
 
                   if(blocks_to_retrieve == 0) {
-                      _client_socket >> blocks_to_retrieve;
+                      fc::raw::unpack(*_client_socket, blocks_to_retrieve);
                       if(blocks_to_retrieve > 0)
                           ilog("Server at ${remote} is sending us ${num} blocks.",
-                               ("remote", _client_socket.remote_endpoint())("num", blocks_to_retrieve));
+                               ("remote", _client_socket->remote_endpoint())("num", blocks_to_retrieve));
                   }
               }
 
-              _client_socket << finish;
+              ilog("Finished getting ${num} blocks from ${remote}",
+                   ("num", blocks_in)("remote", _client_socket->remote_endpoint()));
+              fc::raw::pack(*_client_socket, finish);
+            } FC_RETHROW_EXCEPTIONS(error, "", ("first_block_number", first_block_number))
           }
       };
     } //namespace detail
@@ -99,9 +112,9 @@ namespace bts { namespace net {
     }
 
     fc::future<void> chain_downloader::get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
-                                                      uint64_t first_block_number)
+                                                      uint32_t first_block_number)
     {
-        return fc::async([&]{my->get_all_blocks(new_block_callback, first_block_number);});
+        return fc::async([=]{my->get_all_blocks(new_block_callback, first_block_number);});
     }
 
   } } //namespace bts::blockchain
