@@ -610,7 +610,6 @@ BOOST_AUTO_TEST_CASE(replay_chain_database)
   BOOST_TEST_MESSAGE("Processed " << total_blocks_to_replay << " blocks in " << ((end_time - start_time).count() / fc::seconds(1).count()) << " seconds, which is " << (((double)total_blocks_to_replay*fc::seconds(1).count())/(end_time - start_time).count()) << " blocks/sec");
   client_done.wait();
 }
-
 #endif // 0
 
 boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] ) 

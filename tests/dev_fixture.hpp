@@ -236,6 +236,7 @@ struct chain_fixture
       auto b = my_client->get_chain()->generate_block(*next_block_time);
       my_client->get_wallet()->sign_block( b );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
+      fc::usleep( fc::microseconds( 2000 ) );
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
       bts::blockchain::advance_time( 7 );
    }
