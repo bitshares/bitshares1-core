@@ -1551,10 +1551,11 @@ config load_config( const fc::path& datadir )
         auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
           my->_chain_db->push_block(new_block);
         }, my->_chain_db->get_head_block_num() + 1);
-        download_future.on_complete([chain_downloader](const fc::exception_ptr& e) {
+        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
           if( e )
             elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
           delete chain_downloader;
+          connect_to_p2p_network();
         });
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
@@ -2272,7 +2273,6 @@ config load_config( const fc::path& datadir )
       }
 
       // fire up the p2p network
-      connect_to_p2p_network();
       fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
       std::ostringstream port_stream;
       if (actual_p2p_endpoint.get_address() == fc::ip::address())
