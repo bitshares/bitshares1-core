@@ -46,6 +46,8 @@ namespace bts { namespace net {
               if (!new_block_callback)
                   return;
 
+              auto start_time = fc::time_point::now();
+
               connect_to_chain_server();
               FC_ASSERT(_client_socket->is_open(), "unable to connect to any chain server");
               ilog("Connected to ${remote}; requesting blocks after ${num}",
@@ -77,6 +79,8 @@ namespace bts { namespace net {
                   }
               }
 
+              ulog("Finished fast-syncing ${num} blocks at ${rate} blocks/sec.",
+                   ("num", blocks_in)("rate", blocks_in/((fc::time_point::now() - start_time).count() / 1000000.0)));
               ilog("Finished getting ${num} blocks from ${remote}",
                    ("num", blocks_in)("remote", _client_socket->remote_endpoint()));
               fc::raw::pack(*_client_socket, finish);
