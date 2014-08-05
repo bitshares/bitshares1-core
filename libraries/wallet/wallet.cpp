@@ -1400,6 +1400,7 @@ namespace bts { namespace wallet {
           my->_current_wallet_path = wallet_file_path;
           my->_wallet_db.open( wallet_file_path );
           my->upgrade_version();
+          set_data_directory( fc::absolute( wallet_file_path.parent_path() ) );
       }
       catch( ... )
       {
