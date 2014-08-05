@@ -1081,7 +1081,7 @@ namespace bts { namespace cli {
                     {
                        *_out << "Last Error:  ";
                        *_out << status->last_error->to_string() << "\n";
-                       if( status->last_error->code() != 37005 /* insufficient funds */ )
+                       if( true || status->last_error->code() != 37005 /* insufficient funds */ )
                        {
                           *_out << "Details:\n";
                           *_out << status->last_error->to_detail_string() << "\n";
