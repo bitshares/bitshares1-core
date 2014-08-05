@@ -321,7 +321,7 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::debug;
+    dlc_p2p.level = fc::log_level::warn;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -2405,7 +2405,6 @@ config load_config( const fc::path& datadir )
       return my->_p2p_node->get_actual_listening_endpoint();
     }
 
-#ifndef NDEBUG
     bool client::handle_message(const bts::net::message& message, bool sync_mode)
     {
       return my->handle_message(message, sync_mode);
@@ -2414,7 +2413,6 @@ config load_config( const fc::path& datadir )
     {
       my->sync_status(item_type, item_count);
     }
-#endif
 
     fc::sha256 client_notification::digest()const
     {
@@ -2830,13 +2828,9 @@ config load_config( const fc::path& datadir )
 
    asset client_impl::wallet_set_priority_fee( double fee )
    { try {
-      FC_ASSERT( fee >= 0, "Priority fee should be non-negative." );
-      if( fee > 0 )
-      {
-          oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
-          FC_ASSERT( asset_record );
-          _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
-      }
+      oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
+      FC_ASSERT( asset_record.valid() );
+      _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
       return _wallet->get_priority_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 

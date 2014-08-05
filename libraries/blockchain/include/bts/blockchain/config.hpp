@@ -58,7 +58,7 @@
  *
  *  Adjusting this value will change the effective fee charged on transactions
  */
-#define BTS_BLOCKCHAIN_MAX_SIZE                             (1024*1024*1024*100ll) // 100 GB
+#define BTS_BLOCKCHAIN_MAX_SIZE                             (1024*1024*1024*INT64_C(100)) // 100 GB
 #define BTS_BLOCKCHAIN_MIN_NAME_SIZE                        (1)
 #define BTS_BLOCKCHAIN_MAX_NAME_SIZE                        (63)
 #define BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE                   (1024*64)
@@ -75,7 +75,7 @@
  *
  *  10^15 / 2^53 < 1 allows all values to be represented as a double or an int64
  */
-#define BTS_BLOCKCHAIN_MAX_SHARES                           (1000*1000*1000ll*1000*1000ll)
+#define BTS_BLOCKCHAIN_MAX_SHARES                           (1000*1000*INT64_C(1000)*1000*INT64_C(1000))
 
 /**
  * Initial shares read from the genesis block are scaled to this number. It is divided
@@ -107,12 +107,12 @@
 /**
  *  The number of blocks expected per day based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
  */
-#define BTS_BLOCKCHAIN_BLOCKS_PER_DAY                       (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR*24ll)
+#define BTS_BLOCKCHAIN_BLOCKS_PER_DAY                       (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR*INT64_C(24))
 
 /**
  * The number of blocks expected per year based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
  */
-#define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*365ll)
+#define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*INT64_C(365))
 
 #define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
 #define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (1) // (10) 

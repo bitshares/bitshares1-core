@@ -107,6 +107,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "short delegate30 3000 2.53 BUSD" );
    produce_block(clientb);
    produce_block(clientb);
+   exec(clienta, "wallet_account_transaction_history");
+   exec(clientb, "wallet_account_transaction_history");
    exec(clienta, "blockchain_market_order_book BUSD XTS");
    return;
    exec( clientb, "wallet_account_create b-account" );

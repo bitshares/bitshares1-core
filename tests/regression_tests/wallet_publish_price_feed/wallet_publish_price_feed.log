@@ -1,0 +1,536 @@
+default (unlocked) >>> debug_filter_output_for_tests true
+OK
+default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
+{
+  "expiration": "20140620T164030",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "create_asset_op_type",
+      "data": {
+        "symbol": "XMO",
+        "name": "DIGITAL_DEVICE1",
+        "description": "CREATING AN ASSET",
+        "public_data": null,
+        "issuer_account_id": 1,
+        "maximum_share_supply": 50000,
+        "precision": 100
+      }
+    }
+  ],
+  "signatures": [
+    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e067a4c81e7d9a5bf03480ac9cf60ab15d9f1f9db054c7be4e94e3226e55ad36f",
+    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c7841c10c0f72f696cfe8d55980ace721e7e6a8480d5a123e04e7439b62d8d815"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> help wallet_publish_price_feed
+Usage:
+wallet_publish_price_feed <delegate_account> <price> <asset_symbol>                                   publishes a price feed for BitAssets, only active delegates may do this
+publishes a price feed for BitAssets, only active delegates may do this
+
+Parameters:
+  delegate_account (account_name, required): the delegate to publish the price under
+  price (real_amount, required): the number of this asset per XTS
+  asset_symbol (asset_symbol, required): the type of asset being priced
+
+Returns:
+  signed_transaction
+default (unlocked) >>> help wallet_publish_price_feed
+Usage:
+wallet_publish_price_feed <delegate_account> <price> <asset_symbol>                                   publishes a price feed for BitAssets, only active delegates may do this
+publishes a price feed for BitAssets, only active delegates may do this
+
+Parameters:
+  delegate_account (account_name, required): the delegate to publish the price under
+  price (real_amount, required): the number of this asset per XTS
+  asset_symbol (asset_symbol, required): the type of asset being priced
+
+Returns:
+  signed_transaction
+default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 1
+        },
+        "value": {
+          "ratio": "0.002",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 10073,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9e56032bbb1a9bf2dc7092dd24ab9897d729fed3286a641c6ecb59368d058e14a"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 2
+        },
+        "value": {
+          "ratio": "0.0002",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS3V5xQc7Rgzs5SogiQWuVGq5wfK8EFrBoL",
+        "amount": 10074,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749607b8a5b9649ce390b36fd20af49bb721602daec8627d757605190ce758d3ac162"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 3
+        },
+        "value": {
+          "ratio": "0.001",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSAaFwcyBGLmPChJgmp2mzZoHsXBi8CkYf5",
+        "amount": 10073,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22eafbce41db99e6d409cb1a7eaff43bbaf6ed487e3ac2288b9e15488c9183b061"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 4
+        },
+        "value": {
+          "ratio": "184467440737095.41616",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSJxTqkCrv4YfFdhrZLGZAGasMbAiRrWYGJ",
+        "amount": 10089,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bbf52231ed67a9641e4013bf8dcab1c518bcb3b4ab8836685f4a0053c1478379d"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 5
+        },
+        "value": {
+          "ratio": "0.0025",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS813o8XNCGxjSvE9zUKRvi1p5SiizkWyWs",
+        "amount": 10074,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c03ee457de4b683064aadb831716f3453e3c63ccb69ab4a934c46c142c8e5d4180"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 6
+        },
+        "value": {
+          "ratio": "184467440737095.51566",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSCYxycACPxN2L78BcRdtSUcomALMaYZiJf",
+        "amount": 10089,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b912b0d8ed51ad4da6a2845a14880a59a736298a6a3302dbb74309daa828f6bcca"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 7
+        },
+        "value": {
+          "ratio": "0.00001",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSCLchKcwkBbqVmgGAkQYwXZRVFhc8ukdSX",
+        "amount": 10075,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0080a68308142461ed0945a8d0e9ca003c6c3e5ea313120a54de35634b11e2dcce"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 8
+        },
+        "value": {
+          "ratio": "0.002",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSARFWU4ENn4FrB3bdHux3YZaqmz8pEZfx9",
+        "amount": 10073,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66e50c108085bc13e65c04f4d54ef631866319b46e2bd8cb226c7b715d23ff97a5"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 1
+    },
+    "value": {
+      "ratio": "0.002",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 2
+    },
+    "value": {
+      "ratio": "0.0002",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate2
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 3
+    },
+    "value": {
+      "ratio": "0.001",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate3
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 4
+    },
+    "value": {
+      "ratio": "184467440737095.41616",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate4
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 5
+    },
+    "value": {
+      "ratio": "0.0025",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate5
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 6
+    },
+    "value": {
+      "ratio": "184467440737095.51566",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate6
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 7
+    },
+    "value": {
+      "ratio": "0.00001",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 8
+    },
+    "value": {
+      "ratio": "0.002",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
+{
+  "expiration": "20140620T164050",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 1
+        },
+        "value": {
+          "ratio": "99.999",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+        "amount": 10074,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907d49ed933333c1ac7a23ea1c1d4b3d1882752f90675229ebd2d74f48f4e9a34d2"
+  ]
+}
+default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
+{
+  "expiration": "20140620T164050",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "update_feed_op_type",
+      "data": {
+        "feed": {
+          "feed_id": 1,
+          "delegate_id": 2
+        },
+        "value": {
+          "ratio": "0.",
+          "quote_asset_id": 1,
+          "base_asset_id": 0
+        }
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS3V5xQc7Rgzs5SogiQWuVGq5wfK8EFrBoL",
+        "amount": 10070,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a1e746ddf2dc2d6915d440f60c00f7f6961e36f66c4b159d5706359103291d6b6"
+  ]
+}
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 1
+    },
+    "value": {
+      "ratio": "0.002",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 2
+    },
+    "value": {
+      "ratio": "0.0002",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144040"
+  }
+]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 5
+OK
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 1
+    },
+    "value": {
+      "ratio": "99.999",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144050"
+  }
+]
+default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
+[{
+    "feed": {
+      "feed_id": 1,
+      "delegate_id": 2
+    },
+    "value": {
+      "ratio": "0.",
+      "quote_asset_id": 1,
+      "base_asset_id": 0
+    },
+    "last_update": "20140620T144050"
+  }
+]
+default (unlocked) >>> quit

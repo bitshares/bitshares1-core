@@ -596,6 +596,9 @@ namespace bts { namespace wallet {
                   case define_delegate_slate_op_type:
                       // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
                       break;
+                  case update_feed_op_type:
+                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
+                      break;
 
                   default:
                       FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type!", ("op",op) );
@@ -3944,7 +3947,11 @@ namespace bts { namespace wallet {
 
    void wallet::set_priority_fee( const asset& fee )
    { try {
-      FC_ASSERT( is_open () );
+      FC_ASSERT( is_open() );
+
+      if( fee.amount < 0 || fee.asset_id != 0 )
+          FC_THROW_EXCEPTION( invalid_fee, "Invalid priority fee!", ("fee",fee) );
+
       my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
