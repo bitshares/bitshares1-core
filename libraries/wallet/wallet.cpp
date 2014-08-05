@@ -596,6 +596,9 @@ namespace bts { namespace wallet {
                   case define_delegate_slate_op_type:
                       // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
                       break;
+                  case update_feed_op_type:
+                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
+                      break;
 
                   default:
                       FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type!", ("op",op) );
