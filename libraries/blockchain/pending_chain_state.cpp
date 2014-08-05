@@ -450,6 +450,10 @@ namespace bts { namespace blockchain {
       shorts[key] = rec;
       _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
+   void pending_chain_state::set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      _dirty_markets[quote_id] = base_id;
+   }
 
    void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& rec ) 
    {

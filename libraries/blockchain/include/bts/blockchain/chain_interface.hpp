@@ -69,6 +69,7 @@ namespace bts { namespace blockchain {
 
          virtual void                       set_feed( const feed_record&  ) = 0;
          virtual ofeed_record               get_feed( const feed_index& )const = 0;
+         virtual void                       set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) = 0;
 
          virtual fc::ripemd160              get_current_random_seed()const                          = 0;
 
