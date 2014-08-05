@@ -43,8 +43,7 @@ namespace bts { namespace net {
                 uint32_t start_block;
                 fc::raw::unpack(connection_socket, start_block);
                 if (start_block == 0) start_block = 1;
-                // Client sends his head block num; real start_block is one higher
-                uint32_t end_block = ++start_block;
+                uint32_t end_block = start_block;
 
                 while (end_block <= _chain_db->get_head_block_num()) {
                     end_block = _chain_db->get_head_block_num();
