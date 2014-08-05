@@ -123,10 +123,8 @@ namespace bts { namespace client {
          void connect_to_p2p_network();
 
          fc::ip::endpoint get_p2p_listening_endpoint() const;
-#ifndef NDEBUG
          bool handle_message(const bts::net::message&, bool sync_mode);
          void sync_status(uint32_t item_type, uint32_t item_count);
-#endif
 
        protected:
          virtual bts::api::common_api* get_impl() const override;

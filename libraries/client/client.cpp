@@ -2366,7 +2366,6 @@ config load_config( const fc::path& datadir )
       return my->_p2p_node->get_actual_listening_endpoint();
     }
 
-#ifndef NDEBUG
     bool client::handle_message(const bts::net::message& message, bool sync_mode)
     {
       return my->handle_message(message, sync_mode);
@@ -2375,7 +2374,6 @@ config load_config( const fc::path& datadir )
     {
       my->sync_status(item_type, item_count);
     }
-#endif
 
     fc::sha256 client_notification::digest()const
     {
