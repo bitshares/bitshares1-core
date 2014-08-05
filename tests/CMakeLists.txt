@@ -117,6 +117,9 @@ target_link_libraries( bitshares_client_tests bts_client bts_rpc bts_net bts_wal
 add_dependencies(bitshares_client_tests bitshares_client)
 endif (false )
 
+#add_executable( recover recover.cpp )
+#target_link_libraries( recover bts_blockchain fc bts_utilities)
+
 add_subdirectory( bitcoin )
 #add_subdirectory( client_rpc_tests )
 
