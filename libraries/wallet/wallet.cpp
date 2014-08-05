@@ -1657,10 +1657,12 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
-      FC_ASSERT( !current_account.valid(), "This name is already in your wallet." );
+      if( current_account.valid() )
+          FC_THROW_EXCEPTION( invalid_name, "This name is already in your wallet!" );
 
       auto existing_registered_account = my->_blockchain->get_account_record( account_name );
-      FC_ASSERT( !existing_registered_account.valid(), "This name is already registered with the blockchain." );
+      if( existing_registered_account.valid() )
+          FC_THROW_EXCEPTION( invalid_name, "This name is already registered with the blockchain!" );
 
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
       auto new_pub_key  = new_priv_key.get_public_key();
@@ -1743,7 +1745,7 @@ namespace bts { namespace wallet {
       auto current_registered_account = my->_blockchain->get_account_record( account_name );
 
       if( current_registered_account.valid() && current_registered_account->active_key() != key )
-         FC_ASSERT( false, "Account name is already registered under a different key" );
+         FC_THROW_EXCEPTION( invalid_name, "Account name is already registered under a different key!" );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
@@ -1833,12 +1835,13 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       auto registered_account = my->_blockchain->get_account_record( old_account_name );
       auto local_account = my->_wallet_db.lookup_account( old_account_name );
-      FC_ASSERT( !registered_account
-                 || (local_account
-                     && local_account->owner_key != registered_account->owner_key),
-                 "You cannot rename a registered account" );
+      if( registered_account.valid()
+          && !(local_account && local_account->owner_key != registered_account->owner_key) )
+          FC_THROW_EXCEPTION( invalid_name, "You cannot rename a registered account!" );
+
       registered_account = my->_blockchain->get_account_record( new_account_name );
-      FC_ASSERT( !registered_account, "Your new account name is already registered" );
+      if( registered_account.valid() )
+          FC_THROW_EXCEPTION( invalid_name, "Your new account name is already registered!" );
 
       auto old_account = my->_wallet_db.lookup_account( old_account_name );
       FC_ASSERT( old_account.valid() );

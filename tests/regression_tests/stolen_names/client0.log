@@ -27,15 +27,21 @@ default (unlocked) >>> wallet_account_register thief delegate0
     "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f63a4b789a9ffd271a44a05f482aaa272d8301efceb86449dc69120942a3491ede"
   ]
 }
-default (unlocked) >>> debug_wait_for_block_by_number 1
-OK
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 2
+default (unlocked) >>> debug_wait 2
 OK
+default (unlocked) >>> blockchain_get_account thief
+Name: thief
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+Not a delegate.
 default (unlocked) >>> wallet_rename_account thief thiever
-Command failed with exception: Assert Exception (10)
-!registered_account || (local_account && local_account->owner_key != registered_account->owner_key): You cannot rename a registered account
+Command failed with exception: invalid account name (20017)
+You cannot rename a registered account!
 
 
 

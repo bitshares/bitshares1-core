@@ -205,7 +205,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.10000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
-[redacted]          4         testaccount1        ORDER-NMzxHFAC      1,500.00 XMO            buy 500 XTS @ 3 XMO                         0.10000 XTS         [redacted]
+[redacted]          4         testaccount1        ORDER-NMzxHFAC      1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.10000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
@@ -288,8 +288,8 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.10000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.10000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.10000 XTS         [redacted]
-[redacted]          4         testaccount1        ORDER-NMzxHFAC      1,500.00 XMO            buy 500 XTS @ 3 XMO                         0.10000 XTS         [redacted]
-[redacted]          5         testaccount2        ORDER-8gMh2aDJ      0.00000 XTS             sell 100 XTS @ 4 XMO                        100.10000 XTS       [redacted]
+[redacted]          4         testaccount1        ORDER-NMzxHFAC      1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.10000 XTS         [redacted]
+[redacted]          5         testaccount2        ORDER-8gMh2aDJ      100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.10000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
@@ -357,7 +357,7 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "bid_depth": 0,
   "ask_depth": 10000000,
   "avg_price_24h": {
-    "ratio": "0.000000810091424603",
+    "ratio": "0.",
     "quote_asset_id": 0,
     "base_asset_id": 0
   },

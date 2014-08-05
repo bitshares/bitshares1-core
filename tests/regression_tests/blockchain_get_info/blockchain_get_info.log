@@ -16,7 +16,7 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "symbol": "XTS",
   "name": "BitShares XTS",
   "version": 109,
-  "db_version": 119,
+  "db_version": 120,
   "genesis_timestamp": "[redacted]",
   "block_interval": 10,
   "target_block_size": 1280,

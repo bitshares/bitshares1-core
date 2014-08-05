@@ -1771,6 +1771,7 @@ config load_config( const fc::path& datadir )
                                        const string& new_account_name)
     {
       _wallet->rename_account(current_account_name, new_account_name);
+      _wallet->auto_backup( "account_rename" );
     }
 
     wallet_account_record detail::client_impl::wallet_get_account(const string& account_name) const
@@ -2401,6 +2402,7 @@ config load_config( const fc::path& datadir )
                                              const public_key_type& contact_key )
     {
        _wallet->add_contact_account( account_name, contact_key );
+       _wallet->auto_backup( "account_add" );
     }
 
     public_key_type client_impl::wallet_account_create( const string& account_name,
