@@ -8,8 +8,12 @@ testwallet2 (unlocked) >>> wallet_set_automatic_backups false
 false
 testwallet2 (unlocked) >>> wallet_account_create testaccount 
 "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+testwallet2 (unlocked) >>> wallet_account_create testaccount2
+"XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41"
 testwallet2 (unlocked) >>> wallet_dump_private_key testaccount
 "5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
+testwallet2 (unlocked) >>> wallet_dump_private_key testaccount2
+"5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb"
 testwallet2 (unlocked) >>> wallet_open testwallet1
 OK
 testwallet1 (locked) >>> wallet_unlock 9999 password
@@ -33,10 +37,14 @@ Returns:
 aliases: import_key, importprivkey
 testwallet1 (unlocked) >>> wallet_account_create testaccount
 "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-testwallet1 (unlocked) >>> wallet_import_private_key 5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF testaccount false true
-"testaccount"
-testwallet1 (unlocked) >>> wallet_import_private_key 5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF testaccount false true"testaccount"
-"testaccount"
 testwallet1 (unlocked) >>> wallet_dump_private_key testaccount
 "5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
+testwallet1 (unlocked) >>> wallet_import_private_key 5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF testaccount false true
+"testaccount"
+testwallet1 (unlocked) >>> wallet_import_private_key 5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb testaccount2 true true
+"testaccount2"
+testwallet1 (unlocked) >>> wallet_dump_private_key testaccount
+"5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
+testwallet1 (unlocked) >>> wallet_dump_private_key testaccount2
+"5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb"
 testwallet1 (unlocked) >>> quit
