@@ -112,9 +112,9 @@ namespace bts { namespace wallet {
             bool scan_update_account( const update_account_operation& op, wallet_transaction_record& trx_rec );
             bool scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec );
             bool scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec );
-            bool scan_bid( wallet_transaction_record& trx_rec, const bid_operation& op );
-            bool scan_ask( wallet_transaction_record& trx_rec, const ask_operation& op );
-            bool scan_short( wallet_transaction_record& trx_rec, const short_operation& op );
+            bool scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
             void sync_balance_with_blockchain( const balance_id_type& balance_id );
 
@@ -189,7 +189,6 @@ namespace bts { namespace wallet {
       { try {
           const auto bid_is_short = ( trx.bid_type == short_order );
           const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
-
 
           auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
           if( okey_bid && okey_bid->has_private_key() )
@@ -510,6 +509,15 @@ namespace bts { namespace wallet {
                   case deposit_op_type:
                       has_deposit |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
                       break;
+                  case bid_op_type:
+                      has_deposit |= scan_bid( op.as<bid_operation>(), *transaction_record, total_fee );
+                      break;
+                  case ask_op_type:
+                      has_deposit |= scan_ask( op.as<ask_operation>(), *transaction_record, total_fee );
+                      break;
+                  case short_op_type:
+                      has_deposit |= scan_short( op.as<short_operation>(), *transaction_record, total_fee );
+                      break;
                   default:
                       break;
               }
@@ -574,14 +582,14 @@ namespace bts { namespace wallet {
                       // TODO: FC_THROW( "vote_proposal_op_type not implemented!" );
                       break;
 
-                  case bid_op_type:
-                      store_record |= scan_bid( *transaction_record, op.as<bid_operation>() );
+                  case bid_op_type: /* Done above */
+                      //store_record |= scan_bid( *transaction_record, op.as<bid_operation>() );
                       break;
-                  case ask_op_type:
-                      store_record |= scan_ask( *transaction_record, op.as<ask_operation>() );
+                  case ask_op_type: /* Done above */
+                      //store_record |= scan_ask( *transaction_record, op.as<ask_operation>() );
                       break;
-                  case short_op_type:
-                      store_record |= scan_short( *transaction_record, op.as<short_operation>() );
+                  case short_op_type: /* Done above */
+                      //store_record |= scan_short( *transaction_record, op.as<short_operation>() );
                       break;
                   case cover_op_type:
                       // TODO: FC_THROW( "cover_op_type not implemented!" );
@@ -629,17 +637,20 @@ namespace bts { namespace wallet {
                 auto new_entry = true;
                 for( auto& entry : trx_rec.ledger_entries )
                 {
-                    if( entry.from_account.valid()
-                        && self->get_key_label( *entry.from_account ) == self->get_key_label( key_rec->public_key ) )
-                    {
-                        new_entry = false;
-                        // TODO: We should probably really have a map of asset ids to amounts per ledger entry
-                        if( entry.amount.asset_id == amount.asset_id )
-                            entry.amount += amount;
-                        else if( entry.amount.amount == 0 )
-                            entry.amount = amount;
-                        break;
-                    }
+                    if( !entry.from_account.valid() ) continue;
+                    const auto a1 = _wallet_db.lookup_account( *entry.from_account );
+                    if( !a1.valid() ) continue;
+                    const auto a2 = _wallet_db.lookup_account( key_rec->account_address );
+                    if( !a2.valid() ) continue;
+                    if( a1->name != a2->name ) continue;
+
+                    new_entry = false;
+                    // TODO: We should probably really have a map of asset ids to amounts per ledger entry
+                    if( entry.amount.asset_id == amount.asset_id )
+                        entry.amount += amount;
+                    else if( entry.amount.amount == 0 )
+                        entry.amount = amount;
+                    break;
                 }
                 if( new_entry )
                 {
@@ -673,20 +684,23 @@ namespace bts { namespace wallet {
              auto new_entry = true;
              for( auto& entry : trx_rec.ledger_entries )
              {
-                 if( entry.from_account.valid()
-                     && self->get_key_label( *entry.from_account ) == self->get_key_label( key_rec->public_key ) )
-                 {
-                     new_entry = false;
-                     // TODO: We should probably really have a map of asset ids to amounts per ledger entry
-                     if( entry.amount.asset_id == amount.asset_id )
-                         entry.amount += amount;
-                     else if( entry.amount.amount == 0 )
-                         entry.amount = amount;
+                 if( !entry.from_account.valid() ) continue;
+                 const auto a1 = _wallet_db.lookup_account( *entry.from_account );
+                 if( !a1.valid() ) continue;
+                 const auto a2 = _wallet_db.lookup_account( key_rec->account_address );
+                 if( !a2.valid() ) continue;
+                 if( a1->name != a2->name ) continue;
 
-                     if( entry.memo.empty() )
-                         entry.memo = "withdraw pay";
-                     break;
-                 }
+                  new_entry = false;
+                  // TODO: We should probably really have a map of asset ids to amounts per ledger entry
+                  if( entry.amount.asset_id == amount.asset_id )
+                      entry.amount += amount;
+                  else if( entry.amount.amount == 0 )
+                      entry.amount = amount;
+
+                  if( entry.memo.empty() )
+                      entry.memo = "withdraw pay";
+                  break;
              }
              if( new_entry )
              {
@@ -835,42 +849,108 @@ namespace bts { namespace wallet {
          return false;
       }
 
-      bool wallet_impl::scan_bid( wallet_transaction_record& trx_rec, const bid_operation& bid_op )
+      bool wallet_impl::scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
-          auto okey_rec = _wallet_db.lookup_key( bid_op.bid_index.owner ); 
+          const auto amount = op.get_amount();
+          if( amount.asset_id == total_fee.asset_id )
+              total_fee -= amount;
+
+          auto okey_rec = _wallet_db.lookup_key( op.bid_index.owner ); 
           if( okey_rec && okey_rec->has_private_key() )
           {
-             auto order = _blockchain->get_market_bid( bid_op.bid_index );
+             auto order = _blockchain->get_market_bid( op.bid_index );
              //FC_ASSERT( order.valid() );
-             _wallet_db.update_market_order( bid_op.bid_index.owner, order, trx_rec.trx.id() );
+             _wallet_db.update_market_order( op.bid_index.owner, order, trx_rec.trx.id() );
+
+             // TODO: Refactor this
+             for( auto& entry : trx_rec.ledger_entries )
+             {
+                 if( !entry.to_account.valid() )
+                 {
+                     entry.to_account = okey_rec->public_key;
+                     entry.amount = amount;
+                     //entry.memo =
+                     break;
+                 }
+                 else if( *entry.to_account == okey_rec->public_key )
+                 {
+                     entry.amount = amount;
+                     break;
+                 }
+             }
+
              return true;
           }
           return false;
-      } FC_CAPTURE_AND_RETHROW( (bid_op) ) } 
+      } FC_CAPTURE_AND_RETHROW( (op) ) } 
 
-      bool wallet_impl::scan_ask( wallet_transaction_record& trx_rec, const ask_operation& ask_op )
+      bool wallet_impl::scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
-          auto okey_rec = _wallet_db.lookup_key( ask_op.ask_index.owner ); 
+          const auto amount = op.get_amount();
+          if( amount.asset_id == total_fee.asset_id )
+              total_fee -= amount;
+
+          auto okey_rec = _wallet_db.lookup_key( op.ask_index.owner ); 
           if( okey_rec && okey_rec->has_private_key() )
           {
-             auto order = _blockchain->get_market_ask( ask_op.ask_index );
-             _wallet_db.update_market_order( ask_op.ask_index.owner, order, trx_rec.trx.id() );
+             auto order = _blockchain->get_market_ask( op.ask_index );
+             _wallet_db.update_market_order( op.ask_index.owner, order, trx_rec.trx.id() );
+
+             // TODO: Refactor this
+             for( auto& entry : trx_rec.ledger_entries )
+             {
+                 if( !entry.to_account.valid() )
+                 {
+                     entry.to_account = okey_rec->public_key;
+                     entry.amount = amount;
+                     //entry.memo =
+                     break;
+                 }
+                 else if( *entry.to_account == okey_rec->public_key )
+                 {
+                     entry.amount = amount;
+                     break;
+                 }
+             }
+
              return true;
           }
           return false;
-      } FC_CAPTURE_AND_RETHROW( (ask_op) ) } 
+      } FC_CAPTURE_AND_RETHROW( (op) ) } 
 
-      bool wallet_impl::scan_short( wallet_transaction_record& trx_rec, const short_operation& short_op )
+      bool wallet_impl::scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
-          auto okey_rec = _wallet_db.lookup_key( short_op.short_index.owner ); 
+          const auto amount = op.get_amount();
+          if( amount.asset_id == total_fee.asset_id )
+              total_fee -= amount;
+
+          auto okey_rec = _wallet_db.lookup_key( op.short_index.owner ); 
           if( okey_rec && okey_rec->has_private_key() )
           {
-             auto order = _blockchain->get_market_short( short_op.short_index );
-             _wallet_db.update_market_order( short_op.short_index.owner, order, trx_rec.trx.id() );
+             auto order = _blockchain->get_market_short( op.short_index );
+             _wallet_db.update_market_order( op.short_index.owner, order, trx_rec.trx.id() );
+
+             // TODO: Refactor this
+             for( auto& entry : trx_rec.ledger_entries )
+             {
+                 if( !entry.to_account.valid() )
+                 {
+                     entry.to_account = okey_rec->public_key;
+                     entry.amount = amount;
+                     //entry.memo =
+                     break;
+                 }
+                 else if( *entry.to_account == okey_rec->public_key )
+                 {
+                     entry.amount = amount;
+                     break;
+                 }
+             }
+
              return true;
           }
           return false;
-      } FC_CAPTURE_AND_RETHROW( (short_op) ) } 
+      } FC_CAPTURE_AND_RETHROW( (op) ) } 
 
       // TODO: optimize
       bool wallet_impl::scan_deposit( const deposit_operation& op, const private_keys& keys,
@@ -909,16 +989,17 @@ namespace bts { namespace wallet {
                                 // TODO: Refactor this
                                 for( auto& entry : trx_rec.ledger_entries )
                                 {
-                                    if( entry.from_account.valid()
-                                        && self->get_key_label( *entry.from_account ) == self->get_key_label( status->from ) )
-                                    {
-                                        new_entry = false;
-                                        entry.from_account = status->from;
-                                        entry.to_account = key.get_public_key();
-                                        entry.amount = asset( op.amount, op.condition.asset_id );
-                                        entry.memo = status->get_message();
-                                        break;
-                                    }
+                                    if( !entry.from_account.valid() ) continue;
+                                    const auto a1 = self->get_key_label( *entry.from_account );
+                                    const auto a2 = self->get_key_label( status->from );
+                                    if( a1 != a2 ) continue;
+
+                                    new_entry = false;
+                                    entry.from_account = status->from;
+                                    entry.to_account = key.get_public_key();
+                                    entry.amount = asset( op.amount, op.condition.asset_id );
+                                    entry.memo = status->get_message();
+                                    break;
                                 }
                                 if( new_entry )
                                 {
@@ -935,16 +1016,17 @@ namespace bts { namespace wallet {
                                 // TODO: Refactor this
                                 for( auto& entry : trx_rec.ledger_entries )
                                 {
-                                    if( entry.from_account.valid()
-                                        && self->get_key_label( *entry.from_account ) == self->get_key_label( key.get_public_key() ) )
-                                    {
-                                        new_entry = false;
-                                        entry.from_account = key.get_public_key();
-                                        entry.to_account = status->from;
-                                        entry.amount = asset( op.amount, op.condition.asset_id );
-                                        entry.memo = status->get_message();
-                                        break;
-                                    }
+                                    if( !entry.from_account.valid() ) continue;
+                                    const auto a1 = self->get_key_label( *entry.from_account );
+                                    const auto a2 = self->get_key_label( key.get_public_key() );
+                                    if( a1 != a2 ) continue;
+
+                                    new_entry = false;
+                                    entry.from_account = key.get_public_key();
+                                    entry.to_account = status->from;
+                                    entry.amount = asset( op.amount, op.condition.asset_id );
+                                    entry.memo = status->get_message();
+                                    break;
                                 }
                                 if( new_entry )
                                 {
@@ -2369,8 +2451,8 @@ namespace bts { namespace wallet {
                         current_account->id, fc::variant( quote_price_shares )  );
 
       auto required_fees = get_priority_fee();
-      auto size_fee = fc::raw::pack_size( trx );
-      required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
+      //auto size_fee = fc::raw::pack_size( trx );
+      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       if( required_fees.amount <  current_account->delegate_pay_balance() )
       {
@@ -3617,8 +3699,7 @@ namespace bts { namespace wallet {
        if( sign )
        {
            std::stringstream memo;
-           memo << "buy " << real_quantity << " " << base_asset_record->symbol << " @ ";
-           memo << quote_price << " " << quote_asset_record->symbol;
+           memo << "buy " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
            auto entry = ledger_entry();
            entry.from_account = from_account_key;
@@ -3729,8 +3810,7 @@ namespace bts { namespace wallet {
        if( sign )
        {
            std::stringstream memo;
-           memo << "sell " << real_quantity << " " << base_asset_record->symbol << " @ ";
-           memo << quote_price << " " << quote_asset_record->symbol;
+           memo << "sell " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
            auto entry = ledger_entry();
            entry.from_account = from_account_key;
@@ -3824,8 +3904,7 @@ namespace bts { namespace wallet {
        if( sign )
        {
            std::stringstream memo;
-           memo << "short " << my->_blockchain->to_pretty_asset( cost_shares )
-                << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
+           memo << "short " << quote_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
            auto entry = ledger_entry();
            entry.from_account = from_account_key;
