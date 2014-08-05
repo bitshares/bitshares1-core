@@ -302,6 +302,9 @@ namespace bts { namespace blockchain {
 
          virtual void                       set_feed( const feed_record&  ) override;
          virtual ofeed_record               get_feed( const feed_index& )const override;
+
+         // TODO... only call on pending chain state
+         virtual void                       set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) override { FC_ASSERT( false, "this shouldn't be called directly" ); }
       private:
          unique_ptr<detail::chain_database_impl> my;
    };
