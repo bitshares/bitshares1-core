@@ -2009,12 +2009,13 @@ namespace bts { namespace wallet {
       }
       catch (const fc::exception& e)
       {
-        wlog("Unexpected exception caught while canceling the previous scan_chain_task : ${e}");
+        wlog("Unexpected exception caught while canceling the previous scan_chain_task : ${e}", ("e", e.to_detail_string()));
       }
 
       const auto now = blockchain::now();
       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task(start, end, progress_callback, now); }, 
                                          "scan_chain_task" );
+      my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
    void wallet::scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id )
