@@ -89,11 +89,12 @@ namespace bts { namespace wallet {
              */
             virtual void block_applied( const block_summary& summary )override;
 
-            void scan_market_transaction(const market_transaction& trx,
-                                         uint32_t block_num,
-                                         const time_point_sec& block_time,
-                                         const time_point_sec& received_time);
-            
+            void scan_market_transaction(
+                    const market_transaction& trx,
+                    uint32_t block_num,
+                    const time_point_sec& block_time,
+                    const time_point_sec& received_time
+                    );
 
             secret_hash_type get_secret( uint32_t block_num,
                                          const private_key_type& delegate_key )const;
@@ -169,23 +170,21 @@ namespace bts { namespace wallet {
 
       void wallet_impl::block_applied( const block_summary& summary )
       {
-         wlog( "BLOCK APPLIED" );
           if( !self->is_open() || !self->is_unlocked() ) return;
-         wlog( "BLOCK APPLIED" );
           if( !self->get_transaction_scanning() ) return;
-         wlog( "BLOCK APPLIED" );
 
-         wlog( "BLOCK APPLIED" );
           const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
           const auto now = blockchain::now();
           scan_block( summary.block_data.block_num, account_priv_keys, now );
           _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( summary.block_data.block_num ) );
       }
 
-      void wallet_impl::scan_market_transaction(const market_transaction& trx,
-                                                uint32_t block_num,
-                                                const time_point_sec& block_time,
-                                                const time_point_sec& received_time)
+      void wallet_impl::scan_market_transaction(
+              const market_transaction& trx,
+              uint32_t block_num,
+              const time_point_sec& block_time,
+              const time_point_sec& received_time
+              )
       { try {
           const auto bid_is_short = ( trx.bid_type == short_order );
           const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
@@ -222,7 +221,6 @@ namespace bts { namespace wallet {
               auto out_entry = ledger_entry();
               out_entry.from_account = okey_bid->public_key;
               out_entry.amount = trx.bid_paid;
-              //out_entry.memo = "fill bid @ " + _blockchain->to_pretty_price( trx.bid_price );
               out_entry.memo = "pay " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
 
               /* What we received */
@@ -230,10 +228,11 @@ namespace bts { namespace wallet {
               in_entry.from_account = okey_bid->public_key;
               in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
               in_entry.amount = trx.bid_received;
-              in_entry.memo =  bid_type_str + " proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
+              in_entry.memo = bid_type_str + " proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
 
+              /* Construct a unique record id */
               std::stringstream id_ss;
-              id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
+              id_ss << block_num << string( trx.bid_owner ) << string( trx.ask_owner );
 
               // TODO: Don't blow away memo, etc.
               auto record = wallet_transaction_record();
@@ -244,7 +243,7 @@ namespace bts { namespace wallet {
               record.is_market = true;
               record.ledger_entries.push_back( out_entry );
               record.ledger_entries.push_back( in_entry );
-              record.fee = trx.fees_collected;
+              //record.fee = trx.fees_collected;
               record.created_time = block_time;
               record.received_time = received_time;
 
@@ -284,10 +283,11 @@ namespace bts { namespace wallet {
               in_entry.from_account = okey_ask->public_key;
               in_entry.to_account = ask_account_key->public_key;
               in_entry.amount = trx.ask_received;
-              in_entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
+              in_entry.memo = ask_type_str + " proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
 
+              /* Construct a unique record id */
               std::stringstream id_ss;
-              id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
+              id_ss << block_num << string( trx.ask_owner ) << string( trx.bid_owner );
 
               // TODO: Don't blow away memo, etc.
               auto record = wallet_transaction_record();
@@ -298,7 +298,7 @@ namespace bts { namespace wallet {
               record.is_market = true;
               record.ledger_entries.push_back( out_entry );
               record.ledger_entries.push_back( in_entry );
-              record.fee = trx.fees_collected;
+              //record.fee = trx.fees_collected;
               record.created_time = block_time;
               record.received_time = received_time;
 
@@ -444,17 +444,13 @@ namespace bts { namespace wallet {
 
       void wallet_impl::scan_block( uint32_t block_num, const private_keys& keys, const time_point_sec& received_time )
       {
-         wlog( "......" );
          const auto block = _blockchain->get_block( block_num );
          for( const auto& transaction : block.user_transactions )
             scan_transaction( transaction, block_num, block.timestamp, keys, received_time );
 
          const auto market_trxs = _blockchain->get_market_transactions( block_num );
-         wlog( "scan market trx ${trx}", ("trx",market_trxs) );
          for( const auto& market_trx : market_trxs )
-         {
             scan_market_transaction( market_trx, block_num, block.timestamp, received_time );
-         }
       }
 
       void wallet_impl::scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
@@ -2215,16 +2211,20 @@ namespace bts { namespace wallet {
           if( !account_name.empty() )
           {
               bool match = false;
-              if( tx_record.ledger_entries.front().from_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().from_account ) == account_name;
-              if( tx_record.ledger_entries.front().to_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().to_account ) == account_name;
+              for( const auto& entry : tx_record.ledger_entries )
+              {
+                  if( entry.from_account.valid() ) match |= get_key_label( *entry.from_account ) == account_name;
+                  if( entry.to_account.valid() ) match |= get_key_label( *entry.to_account ) == account_name;
+              }
               if( !match ) continue;
           }
 
           if( asset_id != 0 )
           {
               bool match = false;
-              match |= tx_record.ledger_entries.front().amount.asset_id == asset_id;
-              match |= tx_record.ledger_entries.front().memo.find( asset_symbol ) != string::npos; /* TODO: This is dumb */
+              for( const auto& entry : tx_record.ledger_entries )
+                  match |= entry.amount.amount > 0 && entry.amount.asset_id == asset_id;
+              match |= tx_record.fee.amount > 0 && tx_record.fee.asset_id == asset_id;
               if( !match ) continue;
           }
 
@@ -3806,7 +3806,7 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           key_rec->memo = "BID-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
        return trx;
@@ -3917,7 +3917,7 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           key_rec->memo = "ASK-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
        return trx;
@@ -4011,7 +4011,7 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           key_rec->memo = "SHORT-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
 
@@ -4102,7 +4102,7 @@ namespace bts { namespace wallet {
            entry.from_account = from_account_key;
            entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
            entry.amount = amount_to_cover;
-           entry.memo = "cover ORDER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
+           entry.memo = "COVER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
 
            auto record = wallet_transaction_record();
            record.is_market = true;
@@ -4197,13 +4197,17 @@ namespace bts { namespace wallet {
           }
           else if( trx_rec.is_virtual && trx_rec.block_num <= 0 )
              pretty_entry.from_account = "GENESIS";
-          else 
+          else if( trx_rec.is_market )
              pretty_entry.from_account = "MARKET";
+          else
+             pretty_entry.from_account = "UNKNOWN";
 
           if( entry.to_account.valid() )
              pretty_entry.to_account = get_key_label( *entry.to_account );
-          else
+          else if( trx_rec.is_market )
              pretty_entry.to_account = "MARKET";
+          else
+             pretty_entry.to_account = "UNKNOWN";
 
           pretty_entry.amount = entry.amount;
           pretty_entry.memo = entry.memo;
