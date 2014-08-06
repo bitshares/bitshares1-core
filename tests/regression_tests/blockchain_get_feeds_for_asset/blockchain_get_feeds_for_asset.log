@@ -54,13 +54,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 10073,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9e56032bbb1a9bf2dc7092dd24ab9897d729fed3286a641c6ecb59368d058e14a"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9334c03d890bcc9341dfc55678a3a2c478b5ae24c493afa7279c7a5213e5bc4ee",
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749602ed7c5bf432afe37b0fed2c97706465c6b145e14f7ba9c926f730631e202280b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
@@ -84,13 +85,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS3V5xQc7Rgzs5SogiQWuVGq5wfK8EFrBoL",
-        "amount": 10074,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749607b8a5b9649ce390b36fd20af49bb721602daec8627d757605190ce758d3ac162"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2211fda5a26230e5791f587846deeada3c201a651d931c72e4f9b9c66658a1b58d",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b4ae6402f1ee765aadf2b99676877472a400261d75d46ffcfc474681c21cff2d6"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
@@ -114,13 +116,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSAaFwcyBGLmPChJgmp2mzZoHsXBi8CkYf5",
-        "amount": 10073,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22eafbce41db99e6d409cb1a7eaff43bbaf6ed487e3ac2288b9e15488c9183b061"
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c0e4f4ae346febf54a036c73f8171a7940f4c82a16bffc08fdeaab47315dddeb40",
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9b8b5c64afe0544a84ce82947f734860715db432b6d05890db9c28aee8853538b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
@@ -144,13 +147,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSJxTqkCrv4YfFdhrZLGZAGasMbAiRrWYGJ",
-        "amount": 10089,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bbf52231ed67a9641e4013bf8dcab1c518bcb3b4ab8836685f4a0053c1478379d"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00e3925b7a871fe9a740f92c19e47fbfbd50c476ed458db360c8b1d17b0f064787",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66132c2bf5139d9f91cd9ac8f51ce1bda0765e1d48ea9b6b23a66daa5ef4d9b27b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
@@ -174,13 +178,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS813o8XNCGxjSvE9zUKRvi1p5SiizkWyWs",
-        "amount": 10074,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c03ee457de4b683064aadb831716f3453e3c63ccb69ab4a934c46c142c8e5d4180"
+    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c6cb2f3811840a2bceaccdf2d96a8746749737aa61e2f32276fbc02a84243bad9",
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907103a6345c407552f38e15715d8b6f4b51eac5b5356906ac2f6fa6a0f6597e5eb"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
@@ -204,13 +209,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSCYxycACPxN2L78BcRdtSUcomALMaYZiJf",
-        "amount": 10089,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b912b0d8ed51ad4da6a2845a14880a59a736298a6a3302dbb74309daa828f6bcca"
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31ae082ffb9bfbc821cc8523b8ffc57a706d905f69887ba2f8321bfb3fa9be7eccb",
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f804b5760c033f2bb105741eba274a52ac2266464102e23a768d30f99427dd330"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
@@ -234,13 +240,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSCLchKcwkBbqVmgGAkQYwXZRVFhc8ukdSX",
-        "amount": 10075,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0080a68308142461ed0945a8d0e9ca003c6c3e5ea313120a54de35634b11e2dcce"
+    "20cefb525e31270f268abb362101d80a91ebdc2cf47469c2887593a6dcc4ca94d9e2462c003d76fc66d51d25c34574f9472babdc4c0a7da76d636735d8f143db01",
+    "1f54e72a315d17c29cd01dacc9cae8a820b97886b13a3b4442c4cf45d4aede3e5fbf0de641b12dd43fae9eaed89f78cb10f67e78f6124caaeeb73acdfe642aca94"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
@@ -264,13 +271,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSARFWU4ENn4FrB3bdHux3YZaqmz8pEZfx9",
-        "amount": 10073,
+        "amount": 10000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66e50c108085bc13e65c04f4d54ef631866319b46e2bd8cb226c7b715d23ff97a5"
+    "1fc630e99ecb62dc41eda3012b64c0ab0dd090651f41eaf6cb0965e3e46c80926a5461a80984f23da64b3b30cc4688161094371094048252f819ac491afbe4403a",
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38e4ea5653740c5f0c08fb36bb5492dd491c6898204b3158a9ff909e60fdaf8c745"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
