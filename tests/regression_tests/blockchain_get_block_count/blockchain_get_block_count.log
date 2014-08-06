@@ -10,14 +10,28 @@ Returns:
   uint32_t
 
 aliases: blockchain_get_blockcount, getblockcount
-default (unlocked) >>> blockchain_get_block_count
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1
+OK
+default (unlocked) >>> blockchain_get_block_count 1
 1
-default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> blockchain_get_block_count
+default (unlocked) >>> debug_wait_for_block_by_number 2
+OK
+default (unlocked) >>> blockchain_get_block_count 2
 2
-default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> blockchain_get_block_count
+default (unlocked) >>> debug_wait_for_block_by_number 3
+OK
+default (unlocked) >>> blockchain_get_block_count 3
+3
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4
+OK
+default (unlocked) >>> blockchain_get_block_count 4
 4
 default (unlocked) >>> quit

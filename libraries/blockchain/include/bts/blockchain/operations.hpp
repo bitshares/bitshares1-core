@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include <fc/io/enum_type.hpp>
 #include <fc/io/raw.hpp>
@@ -55,7 +55,7 @@ namespace bts { namespace blockchain {
    };
 
    /**
-    *  A poly-morphic operator that modifies the blockchain database 
+    *  A poly-morphic operator that modifies the blockchain database
     *  is some manner.
     */
    struct operation
@@ -108,11 +108,11 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (null_op_type)
                  (withdraw_op_type)
                  (deposit_op_type)
-                 (create_asset_op_type)
-                 (update_asset_op_type)
-                 (withdraw_pay_op_type)
                  (register_account_op_type)
                  (update_account_op_type)
+                 (withdraw_pay_op_type)
+                 (create_asset_op_type)
+                 (update_asset_op_type)
                  (issue_asset_op_type)
                  (submit_proposal_op_type)
                  (vote_proposal_op_type)
@@ -124,10 +124,10 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (remove_collateral_op_type)
                  (define_delegate_slate_op_type)
                  (update_feed_op_type)
-               )
+                 )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
- 
+
 namespace fc {
    void to_variant( const bts::blockchain::operation& var,  variant& vo );
    void from_variant( const variant& var,  bts::blockchain::operation& vo );

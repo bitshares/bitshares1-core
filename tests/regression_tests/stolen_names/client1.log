@@ -15,8 +15,8 @@ Not a delegate.
 default (unlocked) >>> wallet_rename_account thief thieved
 OK
 default (unlocked) >>> wallet_rename_account thieved thief
-Command failed with exception: Assert Exception (10)
-!registered_account: Your new account name is already registered
+Command failed with exception: invalid account name (20017)
+Your new account name is already registered!
 
 
 

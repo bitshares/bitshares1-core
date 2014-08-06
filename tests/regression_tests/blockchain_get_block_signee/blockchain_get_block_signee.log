@@ -1,5 +1,3 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> help blockchain_get_block_signee
 Usage:
 blockchain_get_block_signee <block_number>                                                            Get the delegate that signed a given block
@@ -10,34 +8,28 @@ Parameters:
 
 Returns:
   string
-default (unlocked) >>> debug_wait 5
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_get_block_signee 1
 "delegate42"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> blockchain_get_block_signee 2
-"delegate43"
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
-OK
-default (unlocked) >>> blockchain_get_block_signee 3
 "delegate44"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+default (unlocked) >>> blockchain_get_block_signee 3
+"delegate45"
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> blockchain_get_block_signee 4
-"delegate45"
+"delegate46"
 default (unlocked) >>> quit

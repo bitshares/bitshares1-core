@@ -29,8 +29,7 @@ namespace bts { namespace db {
            opts.create_if_missing = create;
            opts.comparator = & _comparer;
            
-
-           /// \waring Given path must exist to succeed toNativeAnsiPath
+           /// \warning Given path must exist to succeed toNativeAnsiPath
            fc::create_directories(dir);
 
            std::string ldb_path = dir.to_native_ansi_path();
