@@ -64,7 +64,7 @@ namespace bts { namespace blockchain {
    FC_REGISTER_EXCEPTIONS( (blockchain_exception)
                            (invalid_pts_address)
                           (addition_overflow)
-                          (addition_underthrow)
+                          (subtraction_overflow)
                           (asset_type_mismatch)
                           (unsupported_chain_operation) )
 
