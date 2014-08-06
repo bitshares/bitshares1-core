@@ -1639,12 +1639,12 @@ namespace bts { namespace wallet {
       return my->_scheduled_lock_time ? *my->_scheduled_lock_time : fc::optional<fc::time_point_sec>();
    }
 
-   void wallet::set_setting(const string& name, const variant& value)
+   void wallet::set_setting( const string& name, const variant& value )
    {
        my->_wallet_db.store_setting(name, value);
    }
 
-   fc::optional<variant> wallet::get_setting(const string& name)
+   fc::optional<variant> wallet::get_setting( const string& name )const
    {
        return my->_wallet_db.lookup_setting(name);
    }
@@ -2213,8 +2213,18 @@ namespace bts { namespace wallet {
               bool match = false;
               for( const auto& entry : tx_record.ledger_entries )
               {
-                  if( entry.from_account.valid() ) match |= get_key_label( *entry.from_account ) == account_name;
-                  if( entry.to_account.valid() ) match |= get_key_label( *entry.to_account ) == account_name;
+                  if( entry.from_account.valid() )
+                  {
+                      const auto account_record = get_account_for_address( *entry.from_account );
+                      if( account_record.valid() ) match |= account_record->name == account_name;
+                      if( match ) break;
+                  }
+                  if( entry.to_account.valid() )
+                  {
+                      const auto account_record = get_account_for_address( *entry.to_account );
+                      if( account_record.valid() ) match |= account_record->name == account_name;
+                      if( match ) break;
+                  }
               }
               if( !match ) continue;
           }
@@ -4855,7 +4865,7 @@ namespace bts { namespace wallet {
       return my->_wallet_db.lookup_account( addr );
    }
 
-   owallet_account_record wallet::get_account_for_address( address addr_in_account )
+   owallet_account_record wallet::get_account_for_address( address addr_in_account )const
    {
        auto okey = my->_wallet_db.lookup_key( addr_in_account );
        if (! okey.valid() )
