@@ -1,7 +1,5 @@
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> wallet_set_transaction_scanning true
-true
 default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
@@ -135,7 +133,7 @@ OK
 default (unlocked) >>> transfer 30 XTS delegate0 delegate4
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-2014-06-20T14:41:00 PENDING   delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         0e73117b
+[redacted]          PENDING   delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 4
@@ -200,9 +198,9 @@ OK
 default (unlocked) >>> history delegate4
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
-2014-06-20T14:40:27 0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    19,801,980.19801 XTS    0.00000 XTS         [03c5d3]
-2014-06-20T14:40:40 2         delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,980.09801 XTS    0.10000 XTS         505353df
-2014-06-20T14:41:00 4         delegate0           delegate4           30.00000 XTS                                                        19,802,010.09801 XTS    0.00000 XTS         0e73117b
-2014-06-20T14:42:00 7         delegate4           delegate5           10.00000 XTS                                                        19,801,999.99801 XTS    0.10000 XTS         9c6a9477
-2014-06-20T14:42:20 10        delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,999.89801 XTS    0.10000 XTS         8b8dd701
+[redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    19,801,980.19801 XTS    0.00000 XTS         [redacted]
+[redacted]          2         delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,980.09801 XTS    0.10000 XTS         [redacted]
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        19,802,010.09801 XTS    0.00000 XTS         [redacted]
+[redacted]          7         delegate4           delegate5           10.00000 XTS                                                        19,801,999.99801 XTS    0.10000 XTS         [redacted]
+[redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,999.89801 XTS    0.10000 XTS         [redacted]
 default (unlocked) >>> quit
