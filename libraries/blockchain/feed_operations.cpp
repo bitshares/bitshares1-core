@@ -5,10 +5,11 @@
 namespace bts { namespace blockchain {
    void update_feed_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      wlog( "eval price feed ${this}", ("this",*this) );
       FC_ASSERT( eval_state._current_state->is_active_delegate( feed.delegate_id ) );
       FC_ASSERT( eval_state.check_signature( eval_state._current_state->get_account_record( feed.delegate_id )->active_key() ) );
       auto now = eval_state._current_state->now();
       eval_state._current_state->set_feed( feed_record{ feed, value, now } );
+      // mark it as dirty
+      eval_state._current_state->set_market_dirty(feed.feed_id, 0); //key.order_price.base_asset_id;
    }
 } }  // bts::blockchain
