@@ -46,13 +46,13 @@ namespace bts { namespace net {
               if (!new_block_callback)
                   return;
 
-              ulog("Starting fast-sync of blocks from ${num}", ("num", first_block_number));
-              auto start_time = fc::time_point::now();
-
               connect_to_chain_server();
               FC_ASSERT(_client_socket->is_open(), "unable to connect to any chain server");
               ilog("Connected to ${remote}; requesting blocks after ${num}",
                    ("remote", _client_socket->remote_endpoint())("num", first_block_number));
+
+              ulog("Starting fast-sync of blocks from ${num}", ("num", first_block_number));
+              auto start_time = fc::time_point::now();
 
               fc::raw::pack(*_client_socket, get_blocks_from_number);
               fc::raw::pack(*_client_socket, first_block_number);

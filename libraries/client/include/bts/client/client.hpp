@@ -54,7 +54,7 @@ namespace bts { namespace client {
     {
         chain_server_config()
          : enabled(false),
-           listen_port(3333)
+           listen_port(0)
         {}
 
         bool enabled;
@@ -65,7 +65,6 @@ namespace bts { namespace client {
     {
        config( ) : 
           default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}), 
-          chain_servers(vector<string>{"127.0.0.1:3333"}),
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
