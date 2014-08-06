@@ -204,7 +204,7 @@ namespace bts { namespace blockchain {
           *  this state can be used by wallets to scan for changes without the wallets
           *  having to process raw transactions.
           **/
-         block_fork_data push_block( const full_block& block_data );
+         block_fork_data push_block( const full_block& block_data, bool verify = true );
 
          vector<block_id_type> get_fork_history( const block_id_type& id );
 

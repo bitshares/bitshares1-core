@@ -8,6 +8,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/checkpoints.hpp>
 
 #include <fc/thread/mutex.hpp>
 #include <fc/thread/unique_lock.hpp>
@@ -535,7 +536,7 @@ namespace bts { namespace blockchain {
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
             void                                        clear_pending(  const full_block& blk );
             void                                        switch_to_fork( const block_id_type& block_id );
-            void                                        extend_chain( const full_block& blk );
+            void                                        extend_chain( const full_block& blk , bool verify = true );
             vector<block_id_type>                       get_fork_history( const block_id_type& id );
             void                                        pop_block();
             void                                        mark_invalid( const block_id_type& id, const fc::exception& reason );
@@ -1233,14 +1234,22 @@ namespace bts { namespace blockchain {
       /**
        *  Performs all of the block validation steps and throws if error.
        */
-      void chain_database_impl::extend_chain( const full_block& block_data )
+      void chain_database_impl::extend_chain( const full_block& block_data, bool verify )
       { try {
          auto block_id = block_data.id();
          block_summary summary;
          try
          {
-            /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
-            public_key_type block_signee = block_data.signee();
+            public_key_type block_signee;
+            if( verify )
+               /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
+               block_signee = block_data.signee();
+            else
+               block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).active_key();
+
+            auto checkpoint_itr = CHECKPOINT_BLOCKS.find(block_data.block_num);
+            if( checkpoint_itr != CHECKPOINT_BLOCKS.end() && checkpoint_itr->second != block_id )
+              FC_CAPTURE_AND_THROW( failed_checkpoint_verification, (block_id)(checkpoint_itr->second) );
 
             /* Note: Secret is validated later in update_delegate_production_info() */
             verify_header( block_data, block_signee );
@@ -1259,7 +1268,7 @@ namespace bts { namespace blockchain {
             // apply any deterministic operations such as market operations before we perturb indexes
             //apply_deterministic_updates(pending_state);
             
-            pay_delegate( block_data.id(), pending_state, block_signee );
+            pay_delegate( block_id, pending_state, block_signee );
 
             apply_transactions( block_data, block_data.user_transactions, pending_state );
 
@@ -1726,7 +1735,7 @@ namespace bts { namespace blockchain {
     *
     *  Returns the block_fork_data of the new block, not necessarily the head block
     */
-   block_fork_data chain_database::push_block( const full_block& block_data )
+   block_fork_data chain_database::push_block( const full_block& block_data, bool verify )
    { try {
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
@@ -1744,7 +1753,7 @@ namespace bts { namespace blockchain {
       if( block_data.previous == current_head_id )
       {
          // attempt to extend chain
-         my->extend_chain( block_data );
+         my->extend_chain( block_data, verify );
          new_fork_data = get_block_fork_data(block_id);
          FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
       }

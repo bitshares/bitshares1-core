@@ -54,7 +54,8 @@ namespace bts { namespace net {
                          ("start", start_block)("finish", end_block)("remote", connection_socket.remote_endpoint()));
                     for (; start_block <= end_block; ++start_block) {
                         fc::raw::pack(connection_socket, _chain_db->get_block(start_block));
-                        fc::yield();
+                        if (start_block % 10 == 0)
+                            fc::yield();
                     }
                     end_block = start_block;
                 }

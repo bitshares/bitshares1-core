@@ -1,5 +1,6 @@
 #include <bts/net/chain_downloader.hpp>
 #include <bts/net/chain_server_commands.hpp>
+#include <bts/blockchain/checkpoints.hpp>
 
 #include <fc/network/tcp_socket.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -40,7 +41,7 @@ namespace bts { namespace net {
               }
           } FC_RETHROW_EXCEPTIONS(error, "") }
 
-          void get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
+          void get_all_blocks(std::function<void (const blockchain::full_block&, bool)> new_block_callback,
                               uint32_t first_block_number)
           { try {
               if (!new_block_callback)
@@ -62,12 +63,18 @@ namespace bts { namespace net {
               ilog("Server at ${remote} is sending us ${num} blocks.",
                    ("remote", _client_socket->remote_endpoint())("num", blocks_to_retrieve));
 
+              uint32_t highest_checkpoint = 0;
+              for (auto checkpoint : CHECKPOINT_BLOCKS)
+                if (checkpoint.first > highest_checkpoint)
+                  highest_checkpoint = checkpoint.first;
+              ilog("Not verifying blocks prior to ${num}", ("num", highest_checkpoint));
+
               while(blocks_to_retrieve > 0)
               {
                   blockchain::full_block block;
                   fc::raw::unpack(*_client_socket, block);
 
-                  new_block_callback(block);
+                  new_block_callback(block, block.block_num > highest_checkpoint);
                   --blocks_to_retrieve;
                   ++blocks_in;
 
@@ -89,14 +96,14 @@ namespace bts { namespace net {
       };
     } //namespace detail
 
-    bts::net::chain_downloader::chain_downloader(std::vector<fc::ip::endpoint> chain_servers)
+    chain_downloader::chain_downloader(std::vector<fc::ip::endpoint> chain_servers)
       : my(new detail::chain_downloader_impl)
     {
         my->self = this;
         add_chain_servers(chain_servers);
     }
 
-    bts::net::chain_downloader::~chain_downloader()
+    chain_downloader::~chain_downloader()
     {}
 
     void chain_downloader::add_chain_server(const fc::ip::endpoint& server)
@@ -115,7 +122,7 @@ namespace bts { namespace net {
         my->_chain_servers.shrink_to_fit();
     }
 
-    fc::future<void> chain_downloader::get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
+    fc::future<void> chain_downloader::get_all_blocks(std::function<void (const blockchain::full_block&, bool)> new_block_callback,
                                                       uint32_t first_block_number)
     {
         return fc::async([=]{my->get_all_blocks(new_block_callback, first_block_number);});
