@@ -1680,14 +1680,15 @@ namespace bts { namespace wallet {
        FC_ASSERT( is_open() );
 
        auto judged_account = my->_wallet_db.lookup_account( account_name );
-       if ( ! judged_account.valid() )
+       if ( !judged_account.valid() )
        {
-           auto blockchain_acct = my->_blockchain->get_account_record( account_name );
-           FC_ASSERT( blockchain_acct.valid(), "No such account in blockchain" );
-           add_contact_account( account_name, blockchain_acct->active_key() );
+           const auto blockchain_acct = my->_blockchain->get_account_record( account_name );
+           if( !blockchain_acct.valid() )
+               FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
+
+           add_contact_account( account_name, blockchain_acct->owner_key );
+           return account_set_favorite( account_name, is_favorite );
        }
-       judged_account = my->_wallet_db.lookup_account( account_name );
-       FC_ASSERT( judged_account.valid(), "Account which I just added doesn't exist!" );
        judged_account->is_favorite = is_favorite;
        my->_wallet_db.cache_account( *judged_account );
    }
