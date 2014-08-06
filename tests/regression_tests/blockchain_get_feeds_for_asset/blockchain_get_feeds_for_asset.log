@@ -1,5 +1,3 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
   "expiration": "20140620T164030",
@@ -31,7 +29,7 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 5
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
 {
@@ -283,7 +281,7 @@ default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 5
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> help blockchain_get_feeds_for_asset
 Usage:
