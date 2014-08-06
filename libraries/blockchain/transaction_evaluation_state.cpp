@@ -70,7 +70,6 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::validate_required_fee()
    { try {
-      share_type required_fee = _current_state->calculate_data_fee( trx.data_size() );
       asset xts_fees;
       auto fee_itr = balance.find( 0 );
       if( fee_itr != balance.end() ) xts_fees += asset( fee_itr->second, 0);
@@ -79,7 +78,7 @@ namespace bts { namespace blockchain {
 
       if( required_fees > xts_fees )
       {
-         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fee)(alt_fees_paid)(xts_fees)  );
+         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fees)(alt_fees_paid)(xts_fees)  )
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -90,16 +89,15 @@ namespace bts { namespace blockchain {
    { try {
       required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
 
+      wdump((trx));
+      // Should this be here? We may not have fees in XTS now...
       balance[0]; // make sure we have something for this.
       for( auto fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
-         if( fee.second > 0 )
-         {
-            if( fee.first == 0  )
-               continue;
-            // check to see if there are any open bids to buy the asset
-         }
+         // if the fee is already in XTS or the fee balance is zero, move along...
+         if( fee.first == 0 || fee.second == 0 )
+           continue;
 
          // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
          // is an amount of USD which can be converted to price*USD XTS provided we
