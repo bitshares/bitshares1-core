@@ -8,7 +8,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_EXCEPTION( blockchain_exception, 30000, "Blockchain Exception" ); 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_pts_address, bts::blockchain::blockchain_exception, 30001, "invalid pts address" ); 
    FC_DECLARE_DERIVED_EXCEPTION( addition_overflow,   bts::blockchain::blockchain_exception, 30002, "addition overflow" ); 
-   FC_DECLARE_DERIVED_EXCEPTION( addition_underthrow, bts::blockchain::blockchain_exception, 30003, "addition underflow" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( subtraction_overflow, bts::blockchain::blockchain_exception, 30003, "subtraction overflow" );
    FC_DECLARE_DERIVED_EXCEPTION( asset_type_mismatch, bts::blockchain::blockchain_exception, 30004, "asset/price mismatch" ); 
    FC_DECLARE_DERIVED_EXCEPTION( unsupported_chain_operation, bts::blockchain::blockchain_exception, 30005, "unsupported chain operation" ); 
    FC_DECLARE_DERIVED_EXCEPTION( unknown_transaction, bts::blockchain::blockchain_exception, 30006, "unknown transaction" ); 
