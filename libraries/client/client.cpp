@@ -2733,7 +2733,7 @@ config load_config( const fc::path& datadir )
         vector<public_key_summary> summaries;
         vector<public_key_type> keys = _wallet->get_public_keys_in_account( account_name );
         summaries.reserve( keys.size() );
-        for (auto key : keys)
+        for( const auto& key : keys )
         {
             summaries.push_back(_wallet->get_public_key_summary( key ));
         }

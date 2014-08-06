@@ -1658,16 +1658,16 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      auto current_account = my->_wallet_db.lookup_account( account_name );
+      const auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
           FC_THROW_EXCEPTION( invalid_name, "This name is already in your wallet!" );
 
-      auto existing_registered_account = my->_blockchain->get_account_record( account_name );
+      const auto existing_registered_account = my->_blockchain->get_account_record( account_name );
       if( existing_registered_account.valid() )
           FC_THROW_EXCEPTION( invalid_name, "This name is already registered with the blockchain!" );
 
-      auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
-      auto new_pub_key  = new_priv_key.get_public_key();
+      const auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
+      const auto new_pub_key  = new_priv_key.get_public_key();
 
       my->_wallet_db.add_account( account_name, new_pub_key, private_data );
 
@@ -1678,9 +1678,16 @@ namespace bts { namespace wallet {
                                       const bool is_favorite )
    {
        FC_ASSERT( is_open() );
-       get_account( account_name ); /* Just to check input */
 
        auto judged_account = my->_wallet_db.lookup_account( account_name );
+       if ( ! judged_account.valid() )
+       {
+           auto blockchain_acct = my->_blockchain->get_account_record( account_name );
+           FC_ASSERT( blockchain_acct.valid(), "No such account in blockchain" );
+           add_contact_account( account_name, blockchain_acct->active_key() );
+       }
+       judged_account = my->_wallet_db.lookup_account( account_name );
+       FC_ASSERT( judged_account.valid(), "Account which I just added doesn't exist!" );
        judged_account->is_favorite = is_favorite;
        my->_wallet_db.cache_account( *judged_account );
    }
@@ -5031,8 +5038,11 @@ namespace bts { namespace wallet {
    
    vector<public_key_type> wallet::get_public_keys_in_account( const string& account_name )const
    {
-      public_key_type  account_public_key = get_account_public_key( account_name );
-      address          account_address( account_public_key );
+      const auto account_rec = my->_wallet_db.lookup_account( account_name );
+      if( !account_rec.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
+
+      const auto account_address = address( get_account_public_key( account_name ) );
 
       vector<public_key_type> account_keys;
       for( const auto& key : my->_wallet_db.get_keys() )
