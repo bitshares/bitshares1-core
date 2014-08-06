@@ -6,6 +6,8 @@
 #include <fc/thread/thread.hpp>
 #include <fc/network/ip.hpp>
 
+#include <thread>
+
 namespace bts { namespace net {
     namespace detail {
         class chain_server_impl {
@@ -15,9 +17,16 @@ namespace bts { namespace net {
             fc::tcp_server _server_socket;
             std::shared_ptr<bts::blockchain::chain_database> _chain_db;
             fc::future<void> _accept_loop_handle;
+            std::set<fc::thread*> _idle_threads;
+            std::set<fc::thread*> _busy_threads;
+
+            const int _target_thread_count;
+            const int _max_thread_count;
 
             chain_server_impl(std::shared_ptr<bts::blockchain::chain_database> chain_ptr, uint16_t port)
-              : _chain_db(chain_ptr)
+              : _chain_db(chain_ptr),
+                _target_thread_count(std::thread::hardware_concurrency()),
+                _max_thread_count(std::thread::hardware_concurrency() * 2)
             {
                 _server_socket.set_reuse_address();
                 _server_socket.listen(port);
@@ -26,6 +35,12 @@ namespace bts { namespace net {
             }
 
             virtual ~chain_server_impl() {
+                while (!_idle_threads.empty())
+                    kill_worker(*_idle_threads.begin());
+                while (!_busy_threads.empty())
+                    kill_worker(*_busy_threads.begin());
+
+                _server_socket.close();
                 _accept_loop_handle.cancel_and_wait();
             }
 
@@ -34,7 +49,19 @@ namespace bts { namespace net {
                     fc::tcp_socket* connection_socket = new fc::tcp_socket;
                     _server_socket.accept(*connection_socket);
                     ilog("Got new connection from ${remote}", ("remote", connection_socket->remote_endpoint()));
-                    fc::async([=]{serve_client(connection_socket);});
+
+                    auto worker_thread = get_worker();
+                    auto finished_future = worker_thread->async([=]{serve_client(connection_socket);});
+                    auto master_thread = &fc::thread::current();
+
+                    finished_future.on_complete([=](fc::exception_ptr ep) { master_thread->async([=] {
+                        _busy_threads.erase(worker_thread);
+                        if (_idle_threads.size() < std::thread::hardware_concurrency()) {
+                            _idle_threads.insert(worker_thread);
+                            ilog("Resting thread; there are now ${i} idle and ${b} busy", ("i", _idle_threads.size())("b", _busy_threads.size()));
+                        } else
+                            kill_worker(worker_thread);
+                    });});
                 }
             }
 
@@ -89,10 +116,38 @@ namespace bts { namespace net {
                 ilog("Closing connection to ${remote}", ("remote", connection_socket->remote_endpoint()));
                 connection_socket->close();
                 delete connection_socket;
+              } catch (const fc::canceled_exception&) {
+                  elog("We've been killed while serving a client! Hate it when that happens.");
+                  connection_socket->close();
+                  delete connection_socket;
               } catch (const fc::exception& e) {
                   elog("The client at ${remote} hung up on us! How rude. Error: ${e}",
                        ("remote", connection_socket->remote_endpoint())("e", e.to_detail_string()));
               }
+            }
+
+            fc::thread* get_worker()
+            {
+                  auto worker_thread = _idle_threads.begin();
+                  if (worker_thread == _idle_threads.end()) {
+                      worker_thread = _busy_threads.insert(new fc::thread("chain_server worker")).first;
+                      ilog("Creating new thread; there are now ${i} idle and ${b} busy", ("i", _idle_threads.size())("b", _busy_threads.size()));
+                  } else {
+                      auto thread_ptr = *worker_thread;
+                      _idle_threads.erase(worker_thread);
+                      worker_thread = _busy_threads.insert(thread_ptr).first;
+                      ilog("Waking up idle thread; there are now ${i} idle and ${b} busy", ("i", _idle_threads.size())("b", _busy_threads.size()));
+                  }
+                  return *worker_thread;
+            }
+
+            void kill_worker(fc::thread* thread) {
+                _idle_threads.erase(thread);
+                _busy_threads.erase(thread);
+                thread->quit();
+                delete thread;
+
+                ilog("Killing a thread; there are now ${i} idle and ${b} busy", ("i", _idle_threads.size())("b", _busy_threads.size()));
             }
         };
     } //namespace detail
@@ -100,14 +155,11 @@ namespace bts { namespace net {
 bts::net::chain_server::chain_server(std::shared_ptr<bts::blockchain::chain_database> chain_ptr, uint16_t port)
   : my(new detail::chain_server_impl(chain_ptr, port))
 {
-  my->self = this;
+    my->self = this;
 }
 
 chain_server::~chain_server()
-{
-  my->_server_socket.close();
-  my->_accept_loop_handle.cancel_and_wait();
-}
+{}
 
 uint16_t bts::net::chain_server::get_listening_port()
 {
