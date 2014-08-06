@@ -35,6 +35,7 @@
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
+#include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/enum_type.hpp>
@@ -43,16 +44,15 @@
 
 #include <bts/net/node.hpp>
 #include <bts/net/peer_database.hpp>
-#include <bts/net/message_oriented_connection.hpp>
+#include <bts/net/peer_connection.hpp>
 #include <bts/net/stcp_socket.hpp>
 #include <bts/net/config.hpp>
+#include <bts/net/exceptions.hpp>
+
 #include <bts/client/messages.hpp>
 
 #include <bts/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
-
-#include <bts/net/peer_connection.hpp>
-#include <bts/net/exceptions.hpp>
 
 #ifdef DEFAULT_LOGGER
 # undef DEFAULT_LOGGER
@@ -467,6 +467,7 @@ namespace bts { namespace net { namespace detail {
 
       bool have_already_received_sync_item( const item_hash_t& item_hash );
       void request_sync_item_from_peer( const peer_connection_ptr& peer, const item_hash_t& item_to_request );
+      void request_sync_items_from_peer( const peer_connection_ptr& peer, const std::vector<item_hash_t>& items_to_request );
       void fetch_sync_items_loop();
       void trigger_fetch_sync_items_loop();
 
@@ -835,6 +836,20 @@ namespace bts { namespace net { namespace detail {
       peer->send_message( fetch_items_message(item_id_to_request.item_type, std::vector<item_hash_t>{item_id_to_request.item_hash} ) );
     }
 
+    void node_impl::request_sync_items_from_peer( const peer_connection_ptr& peer, const std::vector<item_hash_t>& items_to_request )
+    {
+      VERIFY_CORRECT_THREAD();
+      dlog( "requesting ${item_count} item(s) ${items_to_request} from peer ${endpoint}", 
+            ("items_to_request", items_to_request.size())("items_to_request", items_to_request)("endpoint", peer->get_remote_endpoint()) );
+      for (const item_hash_t& item_to_request : items_to_request)
+      {
+        _active_sync_requests.insert( active_sync_requests_map::value_type(item_to_request, fc::time_point::now() ) );
+        item_id item_id_to_request( bts::client::block_message_type, item_to_request );
+        peer->sync_items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(item_id_to_request, fc::time_point::now() ) );
+      }
+      peer->send_message(fetch_items_message(bts::client::block_message_type, items_to_request));
+    }
+
     void node_impl::fetch_sync_items_loop()
     {
       VERIFY_CORRECT_THREAD();
@@ -843,37 +858,42 @@ namespace bts { namespace net { namespace detail {
         _sync_items_to_fetch_updated = false;
         dlog( "beginning another iteration of the sync items loop" );
 
-        std::map<peer_connection_ptr, item_hash_t> sync_item_requests_to_send;
-        std::set<item_hash_t> sync_items_to_request;
+        std::map<peer_connection_ptr, std::vector<item_hash_t> > sync_item_requests_to_send;
 
-        // for each idle peer that we're syncing with
-        for( const peer_connection_ptr& peer : _active_connections )
         {
-          if( peer->we_need_sync_items_from_peer && 
-              sync_item_requests_to_send.find( peer ) == sync_item_requests_to_send.end() && // if we've already scheduled a request for this peer, don't consider scheduling another
-              peer->idle() )
+          ASSERT_TASK_NOT_PREEMPTED();
+          std::set<item_hash_t> sync_items_to_request;
+
+          // for each idle peer that we're syncing with
+          for( const peer_connection_ptr& peer : _active_connections )
           {
-            // loop through the items it has that we don't yet have on our blockchain
-            for( unsigned i = 0; i < peer->ids_of_items_to_get.size(); ++i )
+            if( peer->we_need_sync_items_from_peer && 
+                sync_item_requests_to_send.find(peer) == sync_item_requests_to_send.end() && // if we've already scheduled a request for this peer, don't consider scheduling another
+                peer->idle() )
             {
-              item_hash_t item_to_potentially_request = peer->ids_of_items_to_get[i];
-              // if we don't already have this item in our temporary storage and we haven't requested from another syncing peer
-              if( !have_already_received_sync_item(item_to_potentially_request ) && // already got it, but for some reson it's still in our list of items to fetch
-                  sync_items_to_request.find( item_to_potentially_request ) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
-                  _active_sync_requests.find( item_to_potentially_request ) == _active_sync_requests.end() ) // we've requested it in a previous iteration and we're still waiting for it to arrive
+              // loop through the items it has that we don't yet have on our blockchain
+              for( unsigned i = 0; i < peer->ids_of_items_to_get.size(); ++i )
               {
-                // then schedule a request from this peer
-                sync_item_requests_to_send[peer] = item_to_potentially_request;
-                sync_items_to_request.insert( item_to_potentially_request );
-                break;
+                item_hash_t item_to_potentially_request = peer->ids_of_items_to_get[i];
+                // if we don't already have this item in our temporary storage and we haven't requested from another syncing peer
+                if( !have_already_received_sync_item(item_to_potentially_request) && // already got it, but for some reson it's still in our list of items to fetch
+                    sync_items_to_request.find(item_to_potentially_request) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
+                    _active_sync_requests.find(item_to_potentially_request) == _active_sync_requests.end() ) // we've requested it in a previous iteration and we're still waiting for it to arrive
+                {
+                  // then schedule a request from this peer
+                  sync_item_requests_to_send[peer].push_back(item_to_potentially_request);
+                  sync_items_to_request.insert( item_to_potentially_request );
+                  if (sync_item_requests_to_send[peer].size() >= BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
+                    break;
+                }
               }
             }
           }
-        }
+        } // end non-preemptable section
 
         // make all the requests we scheduled in the loop above
         for( auto sync_item_request : sync_item_requests_to_send )
-          request_sync_item_from_peer( sync_item_request.first, sync_item_request.second );
+          request_sync_items_from_peer( sync_item_request.first, sync_item_request.second );
         sync_item_requests_to_send.clear();
 
         if( !_sync_items_to_fetch_updated )

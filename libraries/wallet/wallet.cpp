@@ -2480,6 +2480,8 @@ namespace bts { namespace wallet {
           record.ledger_entries.push_back( entry );
           record.fee = required_fees;
 
+          required_signatures.insert( current_account->active_key() );
+
           sign_and_cache_transaction( trx, required_signatures, record );
           my->_blockchain->store_pending_transaction( trx );
       }
