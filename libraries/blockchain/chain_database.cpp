@@ -1352,11 +1352,12 @@ namespace bts { namespace blockchain {
          try
          {
             public_key_type block_signee;
-            if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first < block_data.block_num )
+            if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first > block_data.block_num )
+               //Skip signature validation
+               block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).active_key();
+            else
                /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
                block_signee = block_data.signee();
-            else
-               block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).active_key();
 
             auto checkpoint_itr = CHECKPOINT_BLOCKS.find(block_data.block_num);
             if( checkpoint_itr != CHECKPOINT_BLOCKS.end() && checkpoint_itr->second != block_id )
