@@ -46,6 +46,7 @@ namespace bts { namespace net {
               if (!new_block_callback)
                   return;
 
+              ulog("Starting fast-sync of blocks from ${num}", ("num", first_block_number));
               auto start_time = fc::time_point::now();
 
               connect_to_chain_server();

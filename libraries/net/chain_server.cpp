@@ -51,12 +51,17 @@ namespace bts { namespace net {
                     ilog("Got new connection from ${remote}", ("remote", connection_socket->remote_endpoint()));
 
                     auto worker_thread = get_worker();
+                    if (worker_thread == nullptr) {
+                        connection_socket->close();
+                        delete connection_socket;
+                        continue;
+                    }
                     auto finished_future = worker_thread->async([=]{serve_client(connection_socket);});
                     auto master_thread = &fc::thread::current();
 
                     finished_future.on_complete([=](fc::exception_ptr ep) { master_thread->async([=] {
                         _busy_threads.erase(worker_thread);
-                        if (_idle_threads.size() < std::thread::hardware_concurrency()) {
+                        if (_idle_threads.size() < _target_thread_count) {
                             _idle_threads.insert(worker_thread);
                             ilog("Resting thread; there are now ${i} idle and ${b} busy", ("i", _idle_threads.size())("b", _busy_threads.size()));
                         } else
@@ -130,6 +135,8 @@ namespace bts { namespace net {
             {
                   auto worker_thread = _idle_threads.begin();
                   if (worker_thread == _idle_threads.end()) {
+                      if (_busy_threads.size() >= _max_thread_count)
+                          return nullptr;
                       worker_thread = _busy_threads.insert(new fc::thread("chain_server worker")).first;
                       ilog("Creating new thread; there are now ${i} idle and ${b} busy", ("i", _idle_threads.size())("b", _busy_threads.size()));
                   } else {
