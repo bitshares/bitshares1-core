@@ -1,5 +1,3 @@
-(wallet closed) >>> debug_filter_output_for_tests true
-OK
 (wallet closed) >>> help blockchain_get_account
 Usage:
 blockchain_get_account <account>                                                                      Retrieves the record for the given account name or ID
@@ -24,42 +22,18 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ============================================================================================================================
 1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
-(wallet closed) >>> get_account delegate0
-Name: delegate0
+(wallet closed) >>> blockchain_get_account delegate1
+Name: delegate1
 Registered: Genesis (Keyhotee Founder)
 Last Updated: [redacted]
-Owner Key: XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z
+Owner Key: XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54
 Active Key History:
-- XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
+- XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+2     delegate1                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 (wallet closed) >>> blockchain_get_account deleg
 No account found.
-(wallet closed) >>> blockchain_get_account delegate10
-Name: delegate10
-Registered: Genesis (Keyhotee Founder)
-Last Updated: [redacted]
-Owner Key: XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we
-Active Key History:
-- XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-11    delegate10                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
-(wallet closed) >>> blockchain_get_account delegate11
-Name: delegate11
-Registered: Genesis (Keyhotee Founder)
-Last Updated: [redacted]
-Owner Key: XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ
-Active Key History:
-- XTS5URw2q7TfyTkLrvkU51AvcWNAxtyJZwp7f4Lk4jrFykhCTLmPZ, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-12    delegate11                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
 (wallet closed) >>> quit

@@ -1,6 +1,0 @@
-(wallet closed) >>> debug_enable_output false
->>> debug_filter_output_for_tests true
->>> wallet_create default password
->>> wallet_set_automatic_backups false
->>> debug_enable_output true
-OK

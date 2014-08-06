@@ -27,6 +27,7 @@ namespace bts { namespace blockchain {
    typedef address                            balance_id_type;
    typedef fc::signed_int                     asset_id_type;
    typedef fc::signed_int                     account_id_type;
+   typedef fc::signed_int                     feed_id_type;
    typedef fc::signed_int                     proposal_id_type;
    typedef uint32_t                           tapos_type; 
    typedef int64_t                            share_type;
@@ -107,7 +108,8 @@ namespace bts { namespace blockchain {
        enum alert_level_enum {
            green = 0,
            yellow = 1,
-           red = 2
+           red = 2,
+           grey = 3
        };
        alert_level_enum    alert_level;
        uint32_t            estimated_confirmation_seconds;
@@ -126,5 +128,5 @@ namespace fc
 FC_REFLECT( bts::blockchain::proposal_vote_id_type, (proposal_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::public_key_type, (key_data) )
 FC_REFLECT( bts::blockchain::public_key_type::binary_key, (data)(check) );
-FC_REFLECT_ENUM( bts::blockchain::blockchain_security_state::alert_level_enum, (green)(yellow)(red) );
+FC_REFLECT_ENUM( bts::blockchain::blockchain_security_state::alert_level_enum, (green)(yellow)(red)(grey) );
 FC_REFLECT( bts::blockchain::blockchain_security_state, (alert_level)(estimated_confirmation_seconds)(participation_rate) )

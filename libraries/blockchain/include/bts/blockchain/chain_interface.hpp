@@ -7,6 +7,7 @@
 #include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/proposal_record.hpp>
+#include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/types.hpp>
 
 namespace bts { namespace blockchain {
@@ -36,9 +37,12 @@ namespace bts { namespace blockchain {
       database_version         = 7, // database version, to know when we need to upgrade
       current_fee_rate         = 8, // database version, to know when we need to upgrade
       accumulated_fees         = 9, // database version, to know when we need to upgrade
-      dirty_markets            = 10
+      dirty_markets            = 10,
+      last_feed_id             = 11 // used for allocating new data feeds
    };
    typedef uint32_t chain_property_type;
+
+   const static short MAX_RECENT_OPERATIONS = 20;
 
    /**
     *  @class chain_interface
@@ -51,7 +55,7 @@ namespace bts { namespace blockchain {
          virtual ~chain_interface(){};
          /** return the timestamp from the most recent block */
          virtual fc::time_point_sec         now()const                                              = 0;
-                                                                                                             
+
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( account_id_type ) const;
@@ -62,6 +66,10 @@ namespace bts { namespace blockchain {
          /** convers an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
          string                             to_pretty_price( const price& a )const;
+
+         virtual void                       set_feed( const feed_record&  ) = 0;
+         virtual ofeed_record               get_feed( const feed_index& )const = 0;
+         virtual void                       set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) = 0;
 
          virtual fc::ripemd160              get_current_random_seed()const                          = 0;
 
@@ -74,7 +82,7 @@ namespace bts { namespace blockchain {
 
          /** return the current fee rate in millishares */
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const             = 0;
-         virtual void                       store_delegate_slate( slate_id_type id, 
+         virtual void                       store_delegate_slate( slate_id_type id,
                                                                   const delegate_slate& slate )     = 0;
 
          virtual share_type                 get_delegate_registration_fee()const;
@@ -83,7 +91,7 @@ namespace bts { namespace blockchain {
 
          virtual int64_t                    get_required_confirmations()const;
          virtual fc::variant                get_property( chain_property_enum property_id )const    = 0;
-         virtual void                       set_property( chain_property_enum property_id, 
+         virtual void                       set_property( chain_property_enum property_id,
                                                           const fc::variant& property_value )       = 0;
 
          virtual omarket_status             get_market_status( asset_id_type quote_id, asset_id_type base_id ) = 0;
@@ -94,17 +102,17 @@ namespace bts { namespace blockchain {
          virtual oorder_record              get_ask_record( const market_index_key& )const          = 0;
          virtual oorder_record              get_short_record( const market_index_key& )const        = 0;
          virtual ocollateral_record         get_collateral_record( const market_index_key& )const   = 0;
-                                                                                                            
-         virtual void                       store_bid_record( const market_index_key& key, 
+
+         virtual void                       store_bid_record( const market_index_key& key,
                                                               const order_record& )                 = 0;
 
-         virtual void                       store_ask_record( const market_index_key& key, 
+         virtual void                       store_ask_record( const market_index_key& key,
                                                               const order_record& )                 = 0;
 
-         virtual void                       store_short_record( const market_index_key& key, 
+         virtual void                       store_short_record( const market_index_key& key,
                                                                 const order_record& )               = 0;
 
-         virtual void                       store_collateral_record( const market_index_key& key, 
+         virtual void                       store_collateral_record( const market_index_key& key,
                                                                      const collateral_record& )     = 0;
 
 
@@ -115,18 +123,18 @@ namespace bts { namespace blockchain {
 
          virtual bool                       is_known_transaction( const transaction_id_type& trx_id ) = 0;
 
-         virtual otransaction_record        get_transaction( const transaction_id_type& trx_id, 
+         virtual otransaction_record        get_transaction( const transaction_id_type& trx_id,
                                                              bool exact = true )const               = 0;
 
-         virtual void                       store_transaction( const transaction_id_type&, 
+         virtual void                       store_transaction( const transaction_id_type&,
                                                                 const transaction_record&  )        = 0;
-                                                                                                  
+
          virtual oasset_record              get_asset_record( const std::string& symbol )const      = 0;
          virtual oaccount_record            get_account_record( const std::string& name )const      = 0;
-                                                                                                  
+
          virtual void                       store_proposal_record( const proposal_record& r )       = 0;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const         = 0;
-                                                                                                  
+
          virtual void                       store_proposal_vote( const proposal_vote& r )           = 0;
          virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const      = 0;
 
@@ -134,10 +142,13 @@ namespace bts { namespace blockchain {
          virtual void                       store_balance_record( const balance_record& r )         = 0;
          virtual void                       store_account_record( const account_record& r )         = 0;
 
+         virtual void                       store_recent_operation( const operation& o )            = 0;
+         virtual vector<operation>          get_recent_operations( operation_type_enum t )          = 0;
+
          virtual void                       apply_deterministic_updates(){}
 
          virtual asset_id_type              last_asset_id()const;
-         virtual asset_id_type              new_asset_id(); 
+         virtual asset_id_type              new_asset_id();
 
          virtual account_id_type            last_account_id()const;
          virtual account_id_type            new_account_id();
@@ -163,17 +174,17 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT_ENUM( bts::blockchain::chain_property_enum, 
+FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (last_asset_id)
                  (last_account_id)
                  (last_proposal_id)
                  (last_random_seed_id)
+                 (active_delegate_list_id)
                  (chain_id)
                  (confirmation_requirement)
-                 (active_delegate_list_id)
-                 (database_version) 
+                 (database_version)
                  (current_fee_rate)
                  (accumulated_fees)
                  (dirty_markets)
-               )
-
+                 (last_feed_id)
+                 )

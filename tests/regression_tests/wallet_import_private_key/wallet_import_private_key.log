@@ -1,0 +1,48 @@
+(wallet closed) >>> wallet_create testwallet1 password
+OK
+testwallet1 (unlocked) >>> wallet_create testwallet2 password
+OK
+testwallet2 (unlocked) >>> wallet_set_automatic_backups false
+false
+testwallet2 (unlocked) >>> wallet_account_create testaccount 
+"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+testwallet2 (unlocked) >>> wallet_account_create testaccount2
+"XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41"
+testwallet2 (unlocked) >>> wallet_dump_private_key testaccount
+"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
+testwallet2 (unlocked) >>> wallet_dump_private_key testaccount2
+"5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb"
+testwallet2 (unlocked) >>> wallet_open testwallet1
+OK
+testwallet1 (locked) >>> wallet_set_automatic_backups false
+false
+testwallet1 (locked) >>> wallet_unlock 9999 password
+OK
+testwallet1 (unlocked) >>> help wallet_import_private_key 
+Usage:
+wallet_import_private_key <wif_key> [account_name] [create_new_account] [rescan]                      Loads the private key into the specified account. Returns which account it was actually imported to.
+Loads the private key into the specified account. Returns which account it was actually imported to.
+
+Parameters:
+  wif_key (wif_private_key, required): A private key in bitcoin Wallet Import Format (WIF)
+  account_name (account_name, optional, defaults to null): the name of the account the key should be imported into, if null then the key must belong to an active account
+  create_new_account (bool, optional, defaults to false): If true, the wallet will attempt to create a new account for the name provided rather than import the key into an existing account
+  rescan (bool, optional, defaults to false): If true, the wallet will rescan the blockchain looking for transactions that involve this private key
+
+Returns:
+  account_name
+
+aliases: import_key, importprivkey
+testwallet1 (unlocked) >>> wallet_account_create testaccount
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+testwallet1 (unlocked) >>> wallet_dump_private_key testaccount
+"5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
+testwallet1 (unlocked) >>> wallet_import_private_key 5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF testaccount false true
+"testaccount"
+testwallet1 (unlocked) >>> wallet_import_private_key 5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb testaccount2 true true
+"testaccount2"
+testwallet1 (unlocked) >>> wallet_dump_private_key testaccount
+"5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
+testwallet1 (unlocked) >>> wallet_dump_private_key testaccount2
+"5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb"
+testwallet1 (unlocked) >>> quit

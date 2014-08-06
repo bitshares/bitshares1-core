@@ -1,3 +1,29 @@
+default (unlocked) >>> debug_wait_for_block_by_number 1
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 5
+OK
 default (unlocked) >>> help blockchain_list_blocks
 Usage:
 blockchain_list_blocks [first_block_number] [limit]                                                   Returns the block headers for blocks in a range
@@ -11,12 +37,6 @@ Returns:
   block_record_array
 
 aliases: list_blocks
-default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
-===================================================================================================================
-1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-default (unlocked) >>> debug_wait_for_block_by_number 5 absolute
-OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 ===================================================================================================================

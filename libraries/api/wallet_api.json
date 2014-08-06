@@ -985,14 +985,13 @@
       },
       {
          "method_name"  : "wallet_set_priority_fee",
-         "description"  : "Used to set the priority fee for new transactions. Return current fee if no parameter is provided.",
+         "description"  : "Set the priority fee to add to new transactions",
          "return_type"  : "asset",
          "parameters"   : [
          {
             "name" : "fee",
             "type" : "real_amount",
-            "description" : "the wallet priority fee to be set",
-            "default_value" : "0"
+            "description" : "the wallet priority fee to set"
          }
          ],
          "prerequisites" : ["wallet_open"],
@@ -1338,6 +1337,29 @@
                 "description" : "The maximum number of keys to generate trying to recover accounts",
                 "default_value" : 1000
             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_publish_price_feed",
+         "description" : "publishes a price feed for BitAssets, only active delegates may do this",
+         "return_type" : "signed_transaction",
+         "parameters"  : [
+             {
+                "name" : "delegate_account",
+                "type" : "account_name",
+                "description" : "the delegate to publish the price under"
+             },
+             {
+                "name" : "price",
+                "type" : "real_amount",
+                "description" : "the number of this asset per XTS"
+             },
+             {
+                "name" : "asset_symbol",
+                "type" : "asset_symbol",
+                "description" : "the type of asset being priced"
+             }
          ],
          "prerequisites" : ["wallet_unlocked"]
       }

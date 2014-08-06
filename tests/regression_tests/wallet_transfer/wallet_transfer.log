@@ -6,11 +6,30 @@ default (unlocked) >>> wallet_account_create test
 "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
 default (unlocked) >>> wallet_account_balance test
 No balances found.
+default (unlocked) >>> help wallet_transfer
+Usage:
+wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_account_name> [memo_message] [vote_method]   Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
+Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
+
+Parameters:
+  amount_to_transfer (real_amount, required): the amount of shares to transfer
+  asset_symbol (asset_symbol, required): the asset to transfer
+  from_account_name (sending_account_name, required): the source account to draw the shares from
+  to_account_name (receive_account_name, required): the account to transfer the shares to
+  memo_message (string, optional, defaults to ""): a memo to store with the transaction
+  vote_method (vote_selection_method, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
+
+Returns:
+  signed_transaction
+
+aliases: transfer
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
-default (unlocked) >>> debug_wait_block_interval 1
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     

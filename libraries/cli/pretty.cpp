@@ -83,17 +83,33 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
             info["blockchain_head_block_age"] = pretty_age( timestamp, true, "old" );
     }
 
-    const auto participation = info["blockchain_average_delegate_participation"].as<double>();
-    info["blockchain_average_delegate_participation"] = pretty_percent( participation, 100 );
-
-    const auto pay_rate = info["blockchain_delegate_pay_rate"].as<share_type>();
-    info["blockchain_delegate_pay_rate"] = client->get_chain()->to_pretty_asset( asset( pay_rate ) );
+    if( !info["blockchain_average_delegate_participation"].is_null() )
+    {
+        const auto participation = info["blockchain_average_delegate_participation"].as<double>();
+        info["blockchain_average_delegate_participation"] = pretty_percent( participation, 100 );
+    }
 
     const auto fees = info["blockchain_accumulated_fees"].as<share_type>();
     info["blockchain_accumulated_fees"] = client->get_chain()->to_pretty_asset( asset( fees ) );
 
-    const auto share_supply = info["blockchain_share_supply"].as<share_type>();
-    info["blockchain_share_supply"] = client->get_chain()->to_pretty_asset( asset( share_supply ) );
+    const auto pay_rate = info["blockchain_delegate_pay_rate"].as<share_type>();
+    info["blockchain_delegate_pay_rate"] = client->get_chain()->to_pretty_asset( asset( pay_rate ) );
+
+    if( !info["blockchain_share_supply"].is_null() )
+    {
+        const auto share_supply = info["blockchain_share_supply"].as<share_type>();
+        info["blockchain_share_supply"] = client->get_chain()->to_pretty_asset( asset( share_supply ) );
+    }
+
+    optional<time_point_sec> next_round_timestamp;
+    if( !info["blockchain_next_round_timestamp"].is_null() )
+    {
+        next_round_timestamp = info["blockchain_next_round_timestamp"].as<time_point_sec>();
+        info["blockchain_next_round_timestamp"] = pretty_timestamp( *next_round_timestamp );
+
+        if( !info["blockchain_next_round_time"].is_null() )
+            info["blockchain_next_round_time"] = pretty_age( *next_round_timestamp, true );
+    }
 
     const auto data_dir = info["client_data_dir"].as<path>();
     info["client_data_dir"] = pretty_path( data_dir );
@@ -102,10 +118,11 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     {
         const auto ntp_time = info["ntp_time"].as<time_point_sec>();
         info["ntp_time"] = pretty_timestamp( ntp_time );
+
+        if( !info["ntp_time_error"].is_null() && FILTER_OUTPUT_FOR_TESTS )
+            info["ntp_time_error"] = "[redacted]";
     }
 
-    if( FILTER_OUTPUT_FOR_TESTS )
-        info["ntp_error"] = "[redacted]";
     if( !info["wallet_unlocked_until_timestamp"].is_null() )
     {
         const auto unlocked_until_timestamp = info["wallet_unlocked_until_timestamp"].as<time_point_sec>();
@@ -115,14 +132,26 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
             info["wallet_unlocked_until"] = pretty_age( unlocked_until_timestamp, true );
     }
 
+    if( !info["wallet_scan_progress"].is_null() )
+    {
+        const auto scan_progress = info["wallet_scan_progress"].as<float>();
+        info["wallet_scan_progress"] = pretty_percent( scan_progress, 1 );
+    }
+
     if( !info["wallet_next_block_production_timestamp"].is_null() )
     {
         const auto next_block_timestamp = info["wallet_next_block_production_timestamp"].as<time_point_sec>();
-        info["wallet_next_block_production_timestamp"] = pretty_timestamp( next_block_timestamp );
-
-        if( !info["wallet_next_block_production_time"].is_null() )
+        if( !next_round_timestamp.valid() || next_block_timestamp < *next_round_timestamp )
         {
-            info["wallet_next_block_production_time"] = pretty_age( next_block_timestamp, true );
+            info["wallet_next_block_production_timestamp"] = pretty_timestamp( next_block_timestamp );
+            if( !info["wallet_next_block_production_time"].is_null() )
+                info["wallet_next_block_production_time"] = pretty_age( next_block_timestamp, true );
+        }
+        else
+        {
+            info["wallet_next_block_production_timestamp"] = variant();
+            if( !info["wallet_next_block_production_time"].is_null() )
+                info["wallet_next_block_production_time"] = "at least " + pretty_age( *next_round_timestamp, true );
         }
     }
 
@@ -191,17 +220,6 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
     {
         const auto priority_fee = info["priority_fee"].as<asset>();
         info["priority_fee"] = client->get_chain()->to_pretty_asset( priority_fee );
-    }
-
-    if( !info["next_block_production_timestamp"].is_null() )
-    {
-        const auto next_block_timestamp = info["next_block_production_timestamp"].as<time_point_sec>();
-        info["next_block_production_timestamp"] = pretty_timestamp( next_block_timestamp );
-
-        if( !info["next_block_production_time"].is_null() )
-        {
-            info["next_block_production_time"] = pretty_age( next_block_timestamp, true );
-        }
     }
 
     out << fc::json::to_pretty_string( info ) << "\n";

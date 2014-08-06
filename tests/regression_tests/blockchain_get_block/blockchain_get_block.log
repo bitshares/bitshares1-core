@@ -1,5 +1,3 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> help blockchain_get_block
 Usage:
 blockchain_get_block <block>                                                                          Retrieves the block header for the given block number or ID
@@ -12,9 +10,9 @@ Returns:
   odigest_block
 
 aliases: get_block, getblock
-default (unlocked) >>> debug_wait 5
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_get_block 1
 {
@@ -29,53 +27,47 @@ default (unlocked) >>> blockchain_get_block 1
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> blockchain_get_block 2
 {
   "previous": "b212308c046b816d99ddfaac3b1643fc83fccdfa",
   "block_num": 2,
-  "timestamp": "20140620T144040",
+  "timestamp": "20140620T144050",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "4de4c393cba99c9f72a7b5848a074c225ce08077",
-  "previous_secret": "323925a41e8b0aca8e7faba8b71d6183ee25afde",
-  "delegate_signature": "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8eab340d4d3b887ea97b6c3e09d1f6959fc5952baea0ad7fd3ec3ad3d174ce1ea0",
+  "next_secret_hash": "294a7573be8ad6fe80ef58bd170026b09506b55c",
+  "previous_secret": "13a578918b8ec128128f58d43f8f2c5f1000fb03",
+  "delegate_signature": "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e51b2762c57b0b72a5a1501524ebbce1b6275c9e6defc7941e3924feb6fee5a13",
   "user_transaction_ids": []
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> blockchain_get_block 3
 {
-  "previous": "f940daef3a5ce85f54428dcaef75af0ba1becab5",
+  "previous": "70a4576e3a272542ec56668687e9316c7d725d53",
   "block_num": 3,
-  "timestamp": "20140620T144050",
+  "timestamp": "20140620T144100",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "0be09e792540d7424ac112c28f79e058b3bdbae3",
-  "previous_secret": "13a578918b8ec128128f58d43f8f2c5f1000fb03",
-  "delegate_signature": "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c73d9be1b50248ecd59d71403c93f91854de80d83b0f7403d53582038774dadf1",
+  "next_secret_hash": "26dc09a2473c147e80fd4adef567bbbc7909daa8",
+  "previous_secret": "e8bcd23f82654bd5253381000021d218007fb869",
+  "delegate_signature": "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c5670775715dcb18b426d2c8e92567abec48c7a361da3ea7edff7d60bac94c770",
   "user_transaction_ids": []
 }
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> blockchain_get_block 4
 {
-  "previous": "c7e1a427287d54bbda6800db4e8ae0d3bb3f4a94",
+  "previous": "4e7c2afe9042da7b96afc0a32f539724f3566ce1",
   "block_num": 4,
-  "timestamp": "20140620T144100",
+  "timestamp": "20140620T144110",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "9fc8333f24714ca138ec9fc88bd2d195ec2befa0",
-  "previous_secret": "e8bcd23f82654bd5253381000021d218007fb869",
-  "delegate_signature": "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f68e03bd11d90d4f01b363c1532eb2183071dfccdd34ce79880dc40c3888d1ac2f",
+  "next_secret_hash": "1fbcbe82722110212e88af2f30ab223b90515ae9",
+  "previous_secret": "e8a59ca090b1f6423e37322f8d2a110c611a8fb5",
+  "delegate_signature": "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6fcf7966c81ce93e75d258fc6216c1fb08eedf03787538b346a1342030277adf6",
   "user_transaction_ids": []
 }
 default (unlocked) >>> quit

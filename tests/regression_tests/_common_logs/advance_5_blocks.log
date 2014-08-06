@@ -1,4 +1,4 @@
-default (unlocked) >>> debug_wait 5
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
 OK

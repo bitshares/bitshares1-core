@@ -3,6 +3,7 @@
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/proposal_operations.hpp>
+#include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction.hpp>
 
@@ -208,6 +209,13 @@ namespace bts { namespace blockchain {
                             const market_index_key& order_idx )
    {
       operations.push_back( cover_operation(cover_amount.amount, order_idx) );
+   }
+
+   void transaction::publish_feed( feed_id_type feed_id, 
+                                   account_id_type delegate_id,
+                                   fc::variant value )
+   {
+      operations.push_back( update_feed_operation{ feed_index{feed_id,delegate_id}, value } ); 
    }
 
    bool transaction::is_cancel()const

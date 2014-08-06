@@ -1,0 +1,36 @@
+default (unlocked) >>> help wallet_get_account
+Usage:
+wallet_get_account <account_name>                                                                     Get the account record for a given name
+Get the account record for a given name
+
+Parameters:
+  account_name (account_name, required): the name of the account to retrieve
+
+Returns:
+  wallet_account_record
+default (unlocked) >>> wallet_account_create testaccount
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_get_account testaccount
+{
+  "index": 413,
+  "id": 0,
+  "name": "testaccount",
+  "public_data": null,
+  "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+  "active_key_history": [[
+      "20140620T144030",
+      "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+    ]
+  ],
+  "registration_date": "19700101T000000",
+  "last_update": "19700101T000000",
+  "delegate_info": null,
+  "meta_data": null,
+  "account_address": "XTSARPTJnYCLHscfB56Fx5ewr6bsPmwPwecu",
+  "private_data": null,
+  "is_my_account": true,
+  "approved": 0,
+  "is_favorite": false,
+  "block_production_enabled": false
+}
+default (unlocked) >>> quit

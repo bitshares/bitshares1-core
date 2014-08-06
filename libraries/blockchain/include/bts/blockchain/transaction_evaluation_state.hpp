@@ -1,6 +1,6 @@
 #pragma once 
-
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/transaction.hpp>
 
 namespace bts { namespace blockchain { 
 
@@ -88,6 +88,11 @@ namespace bts { namespace blockchain {
          unordered_map<asset_id_type, asset>         withdraws;
 
          asset                                       required_fees;
+         /**
+          *  The total fees paid by in alternative asset types (like BitUSD) calculated
+          *  by using the lowest ask.  
+          */
+         asset                                       alt_fees_paid;
          
          /**
           *  As operation withdraw funds, input balance grows...
