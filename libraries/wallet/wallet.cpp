@@ -2210,16 +2210,20 @@ namespace bts { namespace wallet {
           if( !account_name.empty() )
           {
               bool match = false;
-              if( tx_record.ledger_entries.front().from_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().from_account ) == account_name;
-              if( tx_record.ledger_entries.front().to_account.valid() ) match |= get_key_label( *tx_record.ledger_entries.front().to_account ) == account_name;
+              for( const auto& entry : tx_record.ledger_entries )
+              {
+                  if( entry.from_account.valid() ) match |= get_key_label( *entry.from_account ) == account_name;
+                  if( entry.to_account.valid() ) match |= get_key_label( *entry.to_account ) == account_name;
+              }
               if( !match ) continue;
           }
 
           if( asset_id != 0 )
           {
               bool match = false;
-              match |= tx_record.ledger_entries.front().amount.asset_id == asset_id;
-              match |= tx_record.ledger_entries.front().memo.find( asset_symbol ) != string::npos; /* TODO: This is dumb */
+              for( const auto& entry : tx_record.ledger_entries )
+                  match |= entry.amount.amount > 0 && entry.amount.asset_id == asset_id;
+              match |= tx_record.fee.amount > 0 && tx_record.fee.asset_id == asset_id;
               if( !match ) continue;
           }
 
