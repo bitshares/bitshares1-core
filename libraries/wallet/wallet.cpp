@@ -2562,11 +2562,15 @@ namespace bts { namespace wallet {
                                                double amount_per_xts,
                                                const string& amount_asset_symbol, bool sign )
    { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       if( !is_receive_account( account_to_publish_under ) )
-           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!",
-                               ("from_account_name",account_to_publish_under) );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( !is_receive_account( account_to_publish_under ) )
+          FC_THROW_EXCEPTION( unknown_receive_account, "You cannot publish from this account!",
+                              ("delegate_account",account_to_publish_under) );
+
+      if( amount_per_xts <= 0 )
+          FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",amount_per_xts) );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
