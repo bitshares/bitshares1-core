@@ -1545,8 +1545,8 @@ config load_config( const fc::path& datadir )
 
         bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
         for( const auto& server : my->_config.chain_servers ) chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
-        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block, bool verify) {
-          my->_chain_db->push_block(new_block, verify);
+        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
+          my->_chain_db->push_block(new_block);
         }, my->_chain_db->get_head_block_num() + 1);
         download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
           if( e )

@@ -651,7 +651,7 @@ namespace bts { namespace blockchain {
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
             void                                        clear_pending(  const full_block& blk );
             void                                        switch_to_fork( const block_id_type& block_id );
-            void                                        extend_chain( const full_block& blk , bool verify = true );
+            void                                        extend_chain( const full_block& blk );
             vector<block_id_type>                       get_fork_history( const block_id_type& id );
             void                                        pop_block();
             void                                        mark_invalid( const block_id_type& id, const fc::exception& reason );
@@ -1349,14 +1349,14 @@ namespace bts { namespace blockchain {
       /**
        *  Performs all of the block validation steps and throws if error.
        */
-      void chain_database_impl::extend_chain( const full_block& block_data, bool verify )
+      void chain_database_impl::extend_chain( const full_block& block_data )
       { try {
          auto block_id = block_data.id();
          block_summary summary;
          try
          {
             public_key_type block_signee;
-            if( verify )
+            if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first < block_data.block_num )
                /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
                block_signee = block_data.signee();
             else
@@ -1850,7 +1850,7 @@ namespace bts { namespace blockchain {
     *
     *  Returns the block_fork_data of the new block, not necessarily the head block
     */
-   block_fork_data chain_database::push_block( const full_block& block_data, bool verify )
+   block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
@@ -1868,7 +1868,7 @@ namespace bts { namespace blockchain {
       if( block_data.previous == current_head_id )
       {
          // attempt to extend chain
-         my->extend_chain( block_data, verify );
+         my->extend_chain( block_data );
          new_fork_data = get_block_fork_data(block_id);
          FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
       }

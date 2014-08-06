@@ -1617,7 +1617,8 @@ namespace bts { namespace cli {
  
   void cli::display_status_message(const std::string& message)
   {
-    my->display_status_message(message);
+    if (my)
+      my->display_status_message(message);
   }
  
   void cli::process_commands(std::istream* input_stream)

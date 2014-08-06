@@ -51,7 +51,7 @@ namespace bts { namespace net {
          * If new_block_callback is unset, a valid future is still returned, but nothing will be done and the
          * function monitored by the future will return immediately.
          */
-        fc::future<void> get_all_blocks(std::function<void (const blockchain::full_block&, bool)> new_block_callback,
+        fc::future<void> get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
                                         uint32_t first_block_number);
     };
 } } //namespace bts::net
