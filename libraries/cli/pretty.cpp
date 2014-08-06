@@ -56,10 +56,17 @@ string pretty_age( const time_point_sec& timestamp, bool from_now, const string&
 
 string pretty_percent( double part, double whole, int precision )
 {
-    FC_ASSERT( part >= 0 );
-    FC_ASSERT( whole >= 0 );
-    FC_ASSERT( precision >= 0 );
-    FC_ASSERT( part <= whole );
+    try
+    {
+        FC_ASSERT( part >= 0 );
+        FC_ASSERT( whole >= 0 );
+        FC_ASSERT( precision >= 0 );
+        FC_ASSERT( part <= whole );
+    }
+    catch( ... )
+    {
+        return "? %";
+    }
     if( whole <= 0 ) return "N/A";
     const auto percent = 100 * part / whole;
     std::stringstream ss;
