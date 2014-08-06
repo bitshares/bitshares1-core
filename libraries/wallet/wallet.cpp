@@ -4195,13 +4195,17 @@ namespace bts { namespace wallet {
           }
           else if( trx_rec.is_virtual && trx_rec.block_num <= 0 )
              pretty_entry.from_account = "GENESIS";
-          else 
+          else if( trx_rec.is_market )
              pretty_entry.from_account = "MARKET";
+          else
+             pretty_entry.from_account = "UNKNOWN";
 
           if( entry.to_account.valid() )
              pretty_entry.to_account = get_key_label( *entry.to_account );
-          else
+          else if( trx_rec.is_market )
              pretty_entry.to_account = "MARKET";
+          else
+             pretty_entry.to_account = "UNKNOWN";
 
           pretty_entry.amount = entry.amount;
           pretty_entry.memo = entry.memo;
