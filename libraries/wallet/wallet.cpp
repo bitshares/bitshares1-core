@@ -3805,7 +3805,7 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           key_rec->memo = "BID-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
        return trx;
@@ -3916,7 +3916,7 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           key_rec->memo = "ASK-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
        return trx;
@@ -4010,7 +4010,7 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ORDER-" + variant( address(order_key) ).as_string().substr(3,8);
+           key_rec->memo = "SHORT-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
 
@@ -4101,7 +4101,7 @@ namespace bts { namespace wallet {
            entry.from_account = from_account_key;
            entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
            entry.amount = amount_to_cover;
-           entry.memo = "cover ORDER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
+           entry.memo = "COVER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
 
            auto record = wallet_transaction_record();
            record.is_market = true;
