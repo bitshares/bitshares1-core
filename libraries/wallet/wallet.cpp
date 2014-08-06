@@ -221,7 +221,6 @@ namespace bts { namespace wallet {
               auto out_entry = ledger_entry();
               out_entry.from_account = okey_bid->public_key;
               out_entry.amount = trx.bid_paid;
-              //out_entry.memo = "fill bid @ " + _blockchain->to_pretty_price( trx.bid_price );
               out_entry.memo = "pay " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
 
               /* What we received */
@@ -229,10 +228,11 @@ namespace bts { namespace wallet {
               in_entry.from_account = okey_bid->public_key;
               in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
               in_entry.amount = trx.bid_received;
-              in_entry.memo =  bid_type_str + " proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
+              in_entry.memo = bid_type_str + " proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
 
+              /* Construct a unique record id */
               std::stringstream id_ss;
-              id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
+              id_ss << block_num << string( trx.bid_owner ) << string( trx.ask_owner );
 
               // TODO: Don't blow away memo, etc.
               auto record = wallet_transaction_record();
@@ -283,10 +283,11 @@ namespace bts { namespace wallet {
               in_entry.from_account = okey_ask->public_key;
               in_entry.to_account = ask_account_key->public_key;
               in_entry.amount = trx.ask_received;
-              in_entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
+              in_entry.memo = ask_type_str + " proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
 
+              /* Construct a unique record id */
               std::stringstream id_ss;
-              id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
+              id_ss << block_num << string( trx.ask_owner ) << string( trx.bid_owner );
 
               // TODO: Don't blow away memo, etc.
               auto record = wallet_transaction_record();
