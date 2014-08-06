@@ -1,5 +1,3 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> help blockchain_get_block_hash
 Usage:
 blockchain_get_block_hash <block_number>                                                              Returns hash of block in best-block-chain at index provided
@@ -12,34 +10,28 @@ Returns:
   block_id_type
 
 aliases: blockchain_get_blockhash, getblockhash
-default (unlocked) >>> debug_wait 5
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_get_block_hash 1
 "b212308c046b816d99ddfaac3b1643fc83fccdfa"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> blockchain_get_block_hash 2
-"f940daef3a5ce85f54428dcaef75af0ba1becab5"
+"70a4576e3a272542ec56668687e9316c7d725d53"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> blockchain_get_block_hash 3
-"c7e1a427287d54bbda6800db4e8ae0d3bb3f4a94"
+"4e7c2afe9042da7b96afc0a32f539724f3566ce1"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
+default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> blockchain_get_block_hash 4
-"82f653d3fd88da91215ea53f539c89e250973a30"
+"3d2b6f0328e0636d293470d4cf326e79fee1276c"
 default (unlocked) >>> quit

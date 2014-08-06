@@ -1,5 +1,3 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> help wallet_get_info
 Usage:
 wallet_get_info                                                                                       Extra information about the wallet.
@@ -23,9 +21,6 @@ default (unlocked) >>> wallet_get_info
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "block_production_enabled": false,
-  "next_block_production_time": null,
-  "next_block_production_timestamp": null,
   "version": 100
 }
 default (unlocked) >>> quit

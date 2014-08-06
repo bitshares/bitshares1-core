@@ -1,152 +1,152 @@
 default (unlocked) >>> wallet_account_create Joe
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create jOe
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create joE
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a.
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a.b.
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a3.
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create 3a
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a3.3b
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a..b
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create .a
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a.3.b
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create 3.a.b
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a.b.3
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create -a
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a-
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create -a-
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a-.b
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a.-b
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a.b-
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create -a.b
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a3.b3.c-
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 
 
 
 default (unlocked) >>> wallet_account_create a3.b3.-c
-Command failed with exception: invalid name (20017)
+Command failed with exception: invalid account name (20017)
 Invalid account name!
 
 

@@ -1,0 +1,206 @@
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 1
+OK
+default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTS813o8XNCGxjSvE9zUKRvi1p5SiizkWyWs",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 5,
+        "public_data": null,
+        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6a87a2e52401a78780e622dbe44958f0fb4a87663c31d483a447fe4d31aac5d4f",
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9e59e6490f828633dd97833f8ced0febfd0eae14c2969dd3cbde84fe8e7d238ac"
+  ]
+}
+default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR"
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSCYxycACPxN2L78BcRdtSUcomALMaYZiJf",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 6,
+        "public_data": null,
+        "active_key": "XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac",
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960238261f97dc0b381d3b0da39fe757d15795fb509c3bf63f40c8f211378f7c909",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22f86209201ed1a6d4ac5ecea8fd31e8b091894d51bc3d7049ddd98f921c8b2c0c"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2
+OK
+default (unlocked) >>> wallet_get_account delegate4
+{
+  "index": 15,
+  "id": 5,
+  "name": "delegate4",
+  "public_data": null,
+  "owner_key": "XTS5DxgyVA5DzSVj9SznZeNyi7xktjW74A2oZ2LB6EFqVTCzq984t",
+  "active_key_history": [[
+      "20140620T144027",
+      "XTS5DxgyVA5DzSVj9SznZeNyi7xktjW74A2oZ2LB6EFqVTCzq984t"
+    ],[
+      "20140620T144030",
+      "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+    ]
+  ],
+  "registration_date": "20140620T144027",
+  "last_update": "20140620T144030",
+  "delegate_info": {
+    "votes_for": 0,
+    "blocks_produced": 0,
+    "blocks_missed": 0,
+    "pay_rate": 100,
+    "pay_balance": 0,
+    "next_secret_hash": "0000000000000000000000000000000000000000",
+    "last_block_num_produced": 0
+  },
+  "meta_data": null,
+  "account_address": "XTSCJ7it7uAFpurQyzWrhKEcuiY5itg8SyDs",
+  "private_data": null,
+  "is_my_account": true,
+  "approved": 0,
+  "is_favorite": false,
+  "block_production_enabled": true
+}
+default (unlocked) >>> wallet_get_account delegate5
+{
+  "index": 17,
+  "id": 6,
+  "name": "delegate5",
+  "public_data": null,
+  "owner_key": "XTS7qqpmyKANmLr8T1eQDpZFnJqTSzQkGAkz3wvzo1RBSCBQge2CG",
+  "active_key_history": [[
+      "20140620T144027",
+      "XTS7qqpmyKANmLr8T1eQDpZFnJqTSzQkGAkz3wvzo1RBSCBQge2CG"
+    ],[
+      "20140620T144030",
+      "XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac"
+    ]
+  ],
+  "registration_date": "20140620T144027",
+  "last_update": "20140620T144030",
+  "delegate_info": {
+    "votes_for": 0,
+    "blocks_produced": 0,
+    "blocks_missed": 0,
+    "pay_rate": 100,
+    "pay_balance": 0,
+    "next_secret_hash": "0000000000000000000000000000000000000000",
+    "last_block_num_produced": 0
+  },
+  "meta_data": null,
+  "account_address": "XTSEvGmnx67aDYYnmU2SzFgy248YWf83EBar",
+  "private_data": null,
+  "is_my_account": true,
+  "approved": 0,
+  "is_favorite": false,
+  "block_production_enabled": true
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3
+OK
+default (unlocked) >>> transfer 30 XTS delegate0 delegate4
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 5
+OK
+default (unlocked) >>> wallet_delegate_set_block_production delegate4 false
+OK
+default (unlocked) >>> wallet_delegate_set_block_production delegate5 false
+OK
+default (unlocked) >>> debug_advance_time 2 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 7
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 8
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 9
+OK
+default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
+{
+  "expiration": "20140620T164220",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSEXfr9hUi5jMRvLAQ5x4Q1bnWckdSB4dDj",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 5,
+        "public_data": null,
+        "active_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38e5f9a26860147f8ee9aef20894ffa32c7a10a982a422e2678b4b1edcb1ce03176",
+    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a79407f3aa93759956d912a2844668a949d99c749cc5161f26151f86fbd84bb6ca"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 10
+OK
+default (unlocked) >>> 
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 11
+OK
+default (unlocked) >>> debug_wait 1
+OK
+default (unlocked) >>> history delegate4
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+[redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    19,801,980.19801 XTS    0.00000 XTS         [redacted]
+[redacted]          2         delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,980.09801 XTS    0.10000 XTS         [redacted]
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        19,802,010.09801 XTS    0.00000 XTS         [redacted]
+[redacted]          7         delegate4           delegate5           10.00000 XTS                                                        19,801,999.99801 XTS    0.10000 XTS         [redacted]
+[redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,999.89801 XTS    0.10000 XTS         [redacted]
+default (unlocked) >>> quit

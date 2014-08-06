@@ -1,5 +1,3 @@
-(wallet closed) >>> wallet_create default password
-OK
 default (unlocked) >>> help wallet_get_setting
 Usage:
 wallet_get_setting <name>                                                                             Get the value of the given setting
