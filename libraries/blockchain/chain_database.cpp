@@ -404,7 +404,7 @@ namespace bts { namespace blockchain {
 
                       auto cover_price = mtrx.ask_received / asset( (3*collateral.amount)/4, _base_id );
 
-                      market_index_key cover_index( cover_price, _current_ask->get_owner() );
+                      market_index_key cover_index( cover_price, _current_bid->get_owner() );
                       auto ocover_record = _pending_state->get_collateral_record( cover_index );
           
                       if( NOT ocover_record ) ocover_record = collateral_record();
