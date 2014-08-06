@@ -8,7 +8,6 @@
 #include <bts/net/upnp.hpp>
 #include <bts/net/peer_database.hpp>
 #include <bts/net/chain_downloader.hpp>
-#include <bts/net/chain_downloader.hpp>
 #include <bts/net/chain_server.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
@@ -1488,7 +1487,7 @@ config load_config( const fc::path& datadir )
 
         for( auto delegate_host : my->_config.default_delegate_peers )
         {
-           try /
+           try {
              wlog( "connecting to delegate peer ${p}", ("p",delegate_host) );
              my->_delegate_network.connect_to( fc::ip::endpoint::from_string(delegate_host) );
            }
