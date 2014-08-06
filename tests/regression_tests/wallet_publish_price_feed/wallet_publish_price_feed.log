@@ -70,7 +70,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9334c03d890bcc9341dfc55678a3a2c478b5ae24c493afa7279c7a5213e5bc4ee"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9334c03d890bcc9341dfc55678a3a2c478b5ae24c493afa7279c7a5213e5bc4ee",
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749602ed7c5bf432afe37b0fed2c97706465c6b145e14f7ba9c926f730631e202280b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
@@ -100,7 +101,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749608a9d118709d6bbd9989a38c15de2ed257c4a118ae38dcb08c42e80335690816f"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2211fda5a26230e5791f587846deeada3c201a651d931c72e4f9b9c66658a1b58d",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b4ae6402f1ee765aadf2b99676877472a400261d75d46ffcfc474681c21cff2d6"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
@@ -130,7 +132,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22cff078ca48314528466e718b03c87bc73932c3432960e289275df18aa6e12e1a"
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c0e4f4ae346febf54a036c73f8171a7940f4c82a16bffc08fdeaab47315dddeb40",
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9b8b5c64afe0544a84ce82947f734860715db432b6d05890db9c28aee8853538b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
@@ -160,7 +163,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
     }
   ],
   "signatures": [
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b531a354b77b5cbeb46fc0f6a0058b060b8f8a76e5e7c509de03bc22edab642a4"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00e3925b7a871fe9a740f92c19e47fbfbd50c476ed458db360c8b1d17b0f064787",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66132c2bf5139d9f91cd9ac8f51ce1bda0765e1d48ea9b6b23a66daa5ef4d9b27b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
@@ -190,7 +194,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
     }
   ],
   "signatures": [
-    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c0788f933e57bddeeae34487372512b0f57f8a1bbe4c8432139447e21a368f6ebd"
+    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c6cb2f3811840a2bceaccdf2d96a8746749737aa61e2f32276fbc02a84243bad9",
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907103a6345c407552f38e15715d8b6f4b51eac5b5356906ac2f6fa6a0f6597e5eb"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
@@ -220,7 +225,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b96309af55c1221c351747eabc5c65ed4d031598d2991cd4e5a95f2d09d9afc0fb"
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31ae082ffb9bfbc821cc8523b8ffc57a706d905f69887ba2f8321bfb3fa9be7eccb",
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f804b5760c033f2bb105741eba274a52ac2266464102e23a768d30f99427dd330"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
@@ -250,7 +256,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0008846790460a36c977bac032c0419e61381e2c60793762d618c16f3cfce93fd5"
+    "20cefb525e31270f268abb362101d80a91ebdc2cf47469c2887593a6dcc4ca94d9e2462c003d76fc66d51d25c34574f9472babdc4c0a7da76d636735d8f143db01",
+    "1f54e72a315d17c29cd01dacc9cae8a820b97886b13a3b4442c4cf45d4aede3e5fbf0de641b12dd43fae9eaed89f78cb10f67e78f6124caaeeb73acdfe642aca94"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
@@ -280,7 +287,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
     }
   ],
   "signatures": [
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e6633f8ce17adaa2368e10cfe083aa1217c13d5528f14fd24d47394bc5b79e3702a"
+    "1fc630e99ecb62dc41eda3012b64c0ab0dd090651f41eaf6cb0965e3e46c80926a5461a80984f23da64b3b30cc4688161094371094048252f819ac491afbe4403a",
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38e4ea5653740c5f0c08fb36bb5492dd491c6898204b3158a9ff909e60fdaf8c745"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -426,7 +434,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
     }
   ],
   "signatures": [
-    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907fc44da05cc4a717eb2c0a5e1cbef9f7e5770a8b673579f4bea64517a5f9f9586"
+    "20ba046948474062143457a651b49a8c70564cc571fe556e48143608c74ea21d08afd63eba50299c57ac91bae44b2346a7def65589bd778219b98dbdd846aa39c1",
+    "20dbd9e07bde986aaedbb80c145ec4b437154431c887510b16624cde0b2d69498d72c9b90dc565dd1f103e6957c97425251093f117900aa40729f395aa396dfb38"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
@@ -456,7 +465,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
     }
   ],
   "signatures": [
-    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a43af2a1fcfe98160c1b2a47abc1ded90506e209c9fb17a28ba64e9e8e2029af8"
+    "1f4f88d49635ed8d422838b2d852b947c5278cb9daafce5938540c5cb82f295e81e09fc4173016ed376f4f450c68b66d0b0b2e161e9a0248ac7b1167145b944262",
+    "1f50b155334168e43933d75ff34b35c3c7cf53ed28df94f3434a23e148d7e15dc671eec841febc42ad425f68cdb42b60c3b861fabb20cd1259e7e1b547a572811d"
   ]
 }
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
