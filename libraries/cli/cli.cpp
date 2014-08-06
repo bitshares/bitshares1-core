@@ -1071,9 +1071,15 @@ namespace bts { namespace cli {
                        auto maximum_short_price = *median_feed;
                        maximum_short_price.ratio *= 3;
                        maximum_short_price.ratio /= 2;
+                       auto minimum_cover_price = *median_feed;
+                       minimum_cover_price.ratio *= 2;
+                       minimum_cover_price.ratio /= 3;
                        *_out << "Maximum Short Price: " 
                              << _client->get_chain()->to_pretty_price( maximum_short_price )
                              <<"     ";
+                       *_out << "Minimum Cover Price: " 
+                             << _client->get_chain()->to_pretty_price( minimum_cover_price )
+                             <<"\n";
                     }
                     *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
                     *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";

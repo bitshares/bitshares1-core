@@ -311,7 +311,7 @@ namespace bts { namespace blockchain {
                                mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
                                mtrx.ask_paid       = quantity_xts;
                                mtrx.bid_received   = mtrx.ask_paid;
-                               mtrx.ask_received   = mtrx.bid_paid;
+                               mtrx.ask_received   = mtrx.ask_paid * mtrx.ask_price;
 
                                xts_paid_by_short   = quantity_xts;
 
@@ -395,17 +395,13 @@ namespace bts { namespace blockchain {
                       FC_ASSERT( _current_bid->type == short_order );
                       FC_ASSERT( mtrx.bid_type == short_order );
 
-                      FC_ASSERT( mtrx.ask_paid >= xts_paid_by_short, "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
+                      FC_ASSERT( mtrx.ask_paid == xts_paid_by_short, "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
 
                       auto collateral  = xts_paid_by_short + xts_paid_by_short;
 
-                      auto xts_fees_collected = mtrx.ask_paid - xts_paid_by_short; 
-                      auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                      _pending_state->set_accumulated_fees( prev_accumulated_fees + xts_fees_collected.amount );
+                      auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
 
-                      auto cover_price = mtrx.ask_received / asset( (3*collateral.amount)/4, _base_id );
-
-                      market_index_key cover_index( cover_price, _current_ask->get_owner() );
+                      market_index_key cover_index( cover_price, _current_bid->get_owner() );
                       auto ocover_record = _pending_state->get_collateral_record( cover_index );
           
                       if( NOT ocover_record ) ocover_record = collateral_record();

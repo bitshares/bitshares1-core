@@ -189,6 +189,7 @@ namespace bts { namespace wallet {
       { try {
           const auto bid_is_short = ( trx.bid_type == short_order );
           const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
+          const auto ask_type_str = string( trx.ask_type == ask_order ? "ask" : "call" );
 
           auto okey_bid = _wallet_db.lookup_key( trx.bid_owner ); 
           if( okey_bid && okey_bid->has_private_key() )
@@ -221,14 +222,15 @@ namespace bts { namespace wallet {
               auto out_entry = ledger_entry();
               out_entry.from_account = okey_bid->public_key;
               out_entry.amount = trx.bid_paid;
-              out_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.bid_price );
+              //out_entry.memo = "fill bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+              out_entry.memo = "pay " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
 
               /* What we received */
               auto in_entry = ledger_entry();
               in_entry.from_account = okey_bid->public_key;
               in_entry.to_account = !bid_is_short ? bid_account_key->public_key : okey_bid->public_key;
               in_entry.amount = trx.bid_received;
-              in_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
+              in_entry.memo =  bid_type_str + " proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
 
               std::stringstream id_ss;
               id_ss << block_num << self->get_key_label( okey_bid->public_key ) << "0";
@@ -275,14 +277,14 @@ namespace bts { namespace wallet {
               auto out_entry = ledger_entry();
               out_entry.from_account = okey_ask->public_key;
               out_entry.amount = trx.ask_paid;
-              out_entry.memo = "fill " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
+              out_entry.memo = "fill " + ask_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
 
               /* What we received */
               auto in_entry = ledger_entry();
               in_entry.from_account = okey_ask->public_key;
               in_entry.to_account = ask_account_key->public_key;
               in_entry.amount = trx.ask_received;
-              in_entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+              in_entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
 
               std::stringstream id_ss;
               id_ss << block_num << self->get_key_label( okey_ask->public_key ) << "1";
@@ -4196,12 +4198,12 @@ namespace bts { namespace wallet {
           else if( trx_rec.is_virtual && trx_rec.block_num <= 0 )
              pretty_entry.from_account = "GENESIS";
           else 
-             pretty_entry.from_account = "UNKNOWN";
+             pretty_entry.from_account = "MARKET";
 
           if( entry.to_account.valid() )
              pretty_entry.to_account = get_key_label( *entry.to_account );
           else
-             pretty_entry.to_account = "UNKNOWN";
+             pretty_entry.to_account = "MARKET";
 
           pretty_entry.amount = entry.amount;
           pretty_entry.memo = entry.memo;

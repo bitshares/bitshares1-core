@@ -89,7 +89,6 @@ namespace bts { namespace blockchain {
    { try {
       required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
 
-      wdump((trx));
       // Should this be here? We may not have fees in XTS now...
       balance[0]; // make sure we have something for this.
       for( auto fee : balance )
