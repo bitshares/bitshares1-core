@@ -4227,6 +4227,11 @@ namespace bts { namespace wallet {
           else
              pretty_entry.to_account = "UNKNOWN";
 
+          /* I'm sorry */
+          if( pretty_entry.from_account.find( "SHORT" ) == 0
+              && pretty_entry.to_account.find( "SHORT" ) == 0 )
+              pretty_entry.to_account.replace(0, 5, "COVER" );
+
           pretty_entry.amount = entry.amount;
           pretty_entry.memo = entry.memo;
 
