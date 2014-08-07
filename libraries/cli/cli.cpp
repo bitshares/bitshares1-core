@@ -4,6 +4,7 @@
 #include <bts/rpc/exceptions.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/wallet/url.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -662,6 +663,18 @@ namespace bts { namespace cli {
               {
                   const auto& votes = result.as<account_vote_summary_type>();
                   *_out << pretty_vote_summary( votes, _client );
+              }
+              else if (method_name == "wallet_account_create")
+              {
+                  auto account_key = result.as_string();
+                  auto account = _client->get_wallet()->get_account_for_address(public_key_type(account_key));
+
+                  if (account)
+                      *_out << "\n\nAccount created successfully. You may give the following link to others"
+                               " to allow them to add you as a contact and send you funds:\n" CUSTOM_URL_SCHEME ":"
+                            << account->name << ':' << account_key << '\n';
+                  else
+                      *_out << "Sorry, something went wrong when adding your account.\n";
               }
               else if (method_name == "debug_list_errors")
               {
