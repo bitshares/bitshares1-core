@@ -1332,6 +1332,37 @@ namespace bts { namespace wallet {
                   }
               }
 
+              if( current_version < 101 )
+              {
+                  self->set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
+
+                  /* Check for old index format market order virtual transactions */
+                  auto present = false;
+                  for( const auto& item : _wallet_db.get_transactions() )
+                  {
+                      const auto id = item.first;
+                      const auto trx_rec = item.second;
+                      if( trx_rec.is_virtual && trx_rec.is_market )
+                      {
+                          present = true;
+                          _wallet_db.remove_transaction( id );
+                      }
+                  }
+                  if( present )
+                  {
+                      const auto start = 1;
+                      const auto end = _blockchain->get_head_block_num();
+
+                      /* Upgrade market order virtual transaction indexes */
+                      for( auto block_num = start; block_num <= end; block_num++ )
+                      {
+                          const auto block_timestamp = _blockchain->get_block_header( block_num ).timestamp;
+                          for( const auto& market_trx : _blockchain->get_market_transactions( block_num ) )
+                              scan_market_transaction( market_trx, block_num, block_timestamp, block_timestamp );
+                      }
+                  }
+              }
+
               if( _unlocked_upgrade_tasks.empty() )
               {
                   _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
