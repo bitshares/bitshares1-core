@@ -1541,18 +1541,6 @@ config load_config( const fc::path& datadir )
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-
-        bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
-        for( const auto& server : my->_config.chain_servers ) chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
-        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
-          my->_chain_db->push_block(new_block);
-        }, my->_chain_db->get_head_block_num() + 1);
-        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
-          if( e )
-            elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
-          delete chain_downloader;
-          connect_to_p2p_network();
-        });
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
     client::~client()
@@ -2144,6 +2132,27 @@ config load_config( const fc::path& datadir )
 
     //JSON-RPC Method Implementations END
 
+    void client::start_networking()
+    {
+      //Start chain_downloader if there are chain_servers to connect to; otherwise, just start p2p immediately
+      if( !my->_config.chain_servers.empty() )
+      {
+        bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
+        for( const auto& server : my->_config.chain_servers ) chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
+        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
+          my->_chain_db->push_block(new_block);
+        }, my->_chain_db->get_head_block_num() + 1);
+        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
+          if( e )
+            elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
+          delete chain_downloader;
+          connect_to_p2p_network();
+        });
+      }
+      else
+        connect_to_p2p_network();
+    }
+
     //RPC server and CLI configuration rules:
     //if daemon mode requested
     //  start RPC server only (no CLI input)
@@ -2270,7 +2279,7 @@ config load_config( const fc::path& datadir )
         get_node()->clear_peer_database();
       }
 
-      // fire up the p2p network
+      start_networking();
       fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
       std::ostringstream port_stream;
       if (actual_p2p_endpoint.get_address() == fc::ip::address())
