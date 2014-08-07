@@ -2953,6 +2953,10 @@ config load_config( const fc::path& datadir )
         orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
       }
 
+      if( orders.size() <= skip_count )
+        // Skip count is greater or equal to the total number of relevant orders on the blockchain.
+        return vector<market_transaction>();
+
       if( skip_count > 0 )
         orders.erase(orders.begin(), orders.begin() + skip_count);
       ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
