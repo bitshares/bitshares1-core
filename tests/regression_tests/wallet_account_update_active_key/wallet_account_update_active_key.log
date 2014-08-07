@@ -99,15 +99,6 @@ default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
 test                            99.80000 XTS                
-default (unlocked) >>> balance delagate0
-Command failed with exception: unknown account (20006)
-Unknown local account name!
-
-
-
-
-
-default (unlocked) >>> 
 default (unlocked) >>> 
 default (unlocked) >>> balance delegate0
 ACCOUNT                         BALANCE                     
@@ -118,14 +109,8 @@ ACCOUNT                         BALANCE
 ============================================================
 test                            99.80000 XTS                
 default (unlocked) >>> wallet_account_update_active_key test test 5KgPRATnTBkT4nfNAy9AHrDDmCQxEQPkSwCgtm8cpSyZnGHrnJn
-Command failed with exception: account key already in use (32008)
-
-
-
-
-
-
-
+Command failed with exception: key belongs to other account (20032)
+Key already belongs to another account!
 
 
 
@@ -133,7 +118,7 @@ Command failed with exception: account key already in use (32008)
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            19,802,079.99801 XTS        
+test                            99.80000 XTS                
 default (unlocked) >>> balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================

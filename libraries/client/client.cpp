@@ -2725,7 +2725,9 @@ config load_config( const fc::path& datadir )
                                                                               const std::string& pay_from_account,
                                                                               const std::string& new_active_key )
     {
-      return _wallet->update_active_key(account_to_update, pay_from_account, new_active_key);
+       const auto trx = _wallet->update_active_key(account_to_update, pay_from_account, new_active_key);
+       network_broadcast_transaction( trx );
+       return trx;
     }
 
     fc::variant_object client_impl::network_get_info() const

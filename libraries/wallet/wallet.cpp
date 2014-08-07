@@ -3570,12 +3570,16 @@ namespace bts { namespace wallet {
         auto new_private_key = utilities::wif_to_key(new_active_key);
         FC_ASSERT(new_private_key.valid(), "Unable to parse new active key.");
 
+        account_public_key = new_private_key->get_public_key();
+
+        if( my->_blockchain->get_account_record(account_public_key).valid() ||
+            my->_wallet_db.lookup_account(account_public_key).valid() )
+          FC_THROW_EXCEPTION( key_already_registered, "Key already belongs to another account!", ("new_public_key", account_public_key));
+
         key_data new_key;
         new_key.encrypt_private_key(my->_wallet_password, *new_private_key);
         new_key.account_address = account->account_address;
         my->_wallet_db.store_key(new_key);
-
-        account_public_key = new_private_key->get_public_key();
       }
 
       auto required_fees = get_priority_fee();
