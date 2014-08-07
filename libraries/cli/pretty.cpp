@@ -442,7 +442,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 {
                     auto name = string( errors.at( transaction.trx_id ).name() );
                     name = name.substr( 0, name.find( "_" ) );
-                    boost::to_upper( name );
+                    //boost::to_upper( name );
                     out << name.substr(0, 9 );
                 }
                 else
