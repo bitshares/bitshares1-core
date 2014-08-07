@@ -50,6 +50,17 @@ namespace bts { namespace client {
       bool is_valid() const; /* Currently just checks if rpc port is set */
     };
 
+    struct chain_server_config
+    {
+        chain_server_config()
+         : enabled(false),
+           listen_port(0)
+        {}
+
+        bool enabled;
+        uint16_t listen_port;
+    };
+
     struct config
     {
        config( ) : 
@@ -68,6 +79,8 @@ namespace bts { namespace client {
 
           rpc_server_config   rpc;
           vector<string>      default_peers;
+          vector<string>      chain_servers;
+          chain_server_config chain_server;
           bool                ignore_console;
           bool                use_upnp;
           optional<fc::path>  genesis_config;
@@ -157,8 +170,9 @@ extern const std::string BTS_MESSAGE_MAGIC;
 
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
+FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config, 
-            (rpc)(default_peers)(ignore_console)(logging)
+            (rpc)(default_peers)(chain_servers)(chain_server)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers) )
 
