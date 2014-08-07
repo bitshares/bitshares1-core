@@ -10,7 +10,7 @@
           [
             { 
               "name" : "node", 
-              "type" : "ip_endpoint", 
+              "type" : "string",
               "description" : "The node (see network_get_peer_info for nodes)",
               "example" : "192.168.1.5:5678"
             },

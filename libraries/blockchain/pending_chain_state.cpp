@@ -517,4 +517,9 @@ namespace bts { namespace blockchain {
       chain_interface_ptr prev_state = _prev_state.lock();
       return prev_state->get_feed(i);
    }
+   oprice    pending_chain_state::get_median_delegate_price( asset_id_type asset_id )const
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      return prev_state->get_median_delegate_price( asset_id );
+   }
 } } // bts::blockchain

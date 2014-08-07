@@ -100,6 +100,9 @@ namespace bts { namespace wallet {
 
          float   get_scan_progress()const;
 
+         void                   set_setting( const string& name, const variant& value );
+         fc::optional<variant>  get_setting( const string& name )const;
+
          ///@}
 
          /**
@@ -115,9 +118,6 @@ namespace bts { namespace wallet {
 
          void                               change_passphrase(const string& new_passphrase);
          ///@}
-
-         void set_setting(const string& name, const variant& value);
-         fc::optional<variant> get_setting(const string& name);
 
          /**
           *  @name Utility Methods
@@ -178,7 +178,7 @@ namespace bts { namespace wallet {
          void     rename_account( const string& old_contact_name,
                                   const string& new_contact_name );
 
-         owallet_account_record  get_account_for_address( address addr );
+         owallet_account_record  get_account_for_address( address addr )const;
          ///@}
 
          /**

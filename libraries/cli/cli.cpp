@@ -4,6 +4,7 @@
 #include <bts/rpc/exceptions.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet.hpp>
+#include <bts/wallet/url.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/console.hpp>
@@ -663,6 +664,18 @@ namespace bts { namespace cli {
                   const auto& votes = result.as<account_vote_summary_type>();
                   *_out << pretty_vote_summary( votes, _client );
               }
+              else if (method_name == "wallet_account_create")
+              {
+                  auto account_key = result.as_string();
+                  auto account = _client->get_wallet()->get_account_for_address(public_key_type(account_key));
+
+                  if (account)
+                      *_out << "\n\nAccount created successfully. You may give the following link to others"
+                               " to allow them to add you as a contact and send you funds:\n" CUSTOM_URL_SCHEME ":"
+                            << account->name << ':' << account_key << '\n';
+                  else
+                      *_out << "Sorry, something went wrong when adding your account.\n";
+              }
               else if (method_name == "debug_list_errors")
               {
                   auto error_map = result.as<map<fc::time_point,fc::exception> >();
@@ -1069,8 +1082,8 @@ namespace bts { namespace cli {
                     if( median_feed )
                     {
                        auto maximum_short_price = *median_feed;
-                       maximum_short_price.ratio *= 3;
-                       maximum_short_price.ratio /= 2;
+                       maximum_short_price.ratio *= 4;
+                       maximum_short_price.ratio /= 3;
                        auto minimum_cover_price = *median_feed;
                        minimum_cover_price.ratio *= 2;
                        minimum_cover_price.ratio /= 3;
@@ -1082,7 +1095,8 @@ namespace bts { namespace cli {
                              <<"\n";
                     }
                     *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
-                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";
+                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"     ";
+                    *_out << "Min Depth: " << _client->get_chain()->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) ) <<"\n";
                     if(  status->last_error )
                     {
                        *_out << "Last Error:  ";
@@ -1623,7 +1637,8 @@ namespace bts { namespace cli {
  
   void cli::display_status_message(const std::string& message)
   {
-    my->display_status_message(message);
+    if (my)
+      my->display_status_message(message);
   }
  
   void cli::process_commands(std::istream* input_stream)
