@@ -107,6 +107,7 @@ namespace bts { namespace client {
 
          virtual ~client();
 
+         void start_networking();
          void configure_from_command_line(int argc, char** argv);
          fc::future<void> start();
          void open( const path& data_dir, 

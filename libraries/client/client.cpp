@@ -1541,18 +1541,6 @@ config load_config( const fc::path& datadir )
           my->_p2p_node = std::make_shared<bts::net::node>();
         }
         my->_p2p_node->set_node_delegate(my.get());
-
-        bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
-        for( const auto& server : my->_config.chain_servers ) chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
-        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
-          my->_chain_db->push_block(new_block);
-        }, my->_chain_db->get_head_block_num() + 1);
-        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
-          if( e )
-            elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
-          delete chain_downloader;
-          connect_to_p2p_network();
-        });
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
     client::~client()
@@ -2071,13 +2059,11 @@ config load_config( const fc::path& datadir )
       return _p2p_node->get_advanced_node_parameters();
     }
 
-    void detail::client_impl::network_add_node(const fc::ip::endpoint& node, const string& command)
+    void detail::client_impl::network_add_node(const string& node, const string& command)
     {
       if (_p2p_node)
-      {
         if (command == "add")
-          _p2p_node->add_node( node );
-      }
+          _self->connect_to_peer(node);
     }
 
     void detail::client_impl::stop()
@@ -2143,6 +2129,27 @@ config load_config( const fc::path& datadir )
     }
 
     //JSON-RPC Method Implementations END
+
+    void client::start_networking()
+    {
+      //Start chain_downloader if there are chain_servers to connect to; otherwise, just start p2p immediately
+      if( !my->_config.chain_servers.empty() )
+      {
+        bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
+        for( const auto& server : my->_config.chain_servers ) chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
+        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
+          my->_chain_db->push_block(new_block);
+        }, my->_chain_db->get_head_block_num() + 1);
+        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
+          if( e )
+            elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
+          delete chain_downloader;
+          connect_to_p2p_network();
+        });
+      }
+      else
+        connect_to_p2p_network();
+    }
 
     //RPC server and CLI configuration rules:
     //if daemon mode requested
@@ -2270,7 +2277,7 @@ config load_config( const fc::path& datadir )
         get_node()->clear_peer_database();
       }
 
-      // fire up the p2p network
+      start_networking();
       fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
       std::ostringstream port_stream;
       if (actual_p2p_endpoint.get_address() == fc::ip::address())
@@ -2353,28 +2360,35 @@ config load_config( const fc::path& datadir )
     }
 
     void client::connect_to_peer(const string& remote_endpoint)
-
     {
-        std::cout << "Attempting to connect to peer " << remote_endpoint << "\n";
         fc::ip::endpoint ep;
         try {
             ep = fc::ip::endpoint::from_string(remote_endpoint.c_str());
         } catch (...) {
             auto pos = remote_endpoint.find(':');
-            uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
-            string hostname = remote_endpoint.substr( 0, pos );
-            auto eps = fc::resolve(hostname, port);
-            if ( eps.size() > 0 )
-            {
-                ep = eps.back();
+            try {
+              uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
+
+              string hostname = remote_endpoint.substr( 0, pos );
+              auto eps = fc::resolve(hostname, port);
+              if ( eps.size() > 0 )
+              {
+                  ep = eps.back();
+              }
+              else
+              {
+                  FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+              }
             }
-            else
+            catch (const boost::bad_lexical_cast&)
             {
-                FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+              ulog("Bad port: ${port}", ("port", remote_endpoint.substr( pos+1, remote_endpoint.size() )));
+              return;
             }
         }
         try
         {
+          ulog("Attempting to connect to peer ${peer}", ("peer", ep));
           my->_p2p_node->connect_to(ep);
         }
         catch (const bts::net::already_connected_to_requested_peer&)
