@@ -177,7 +177,7 @@ namespace bts { namespace blockchain {
                                mtrx.bid_paid     = mtrx.ask_received;
                                mtrx.bid_received = mtrx.ask_paid; // these get directed to accumulated fees
 
-                               mtrx.fees_collected = mtrx.ask_paid;
+                               // mtrx.fees_collected = mtrx.ask_paid;
 
                                if( mtrx.ask_paid.amount == 0 )
                                   break;
@@ -244,8 +244,16 @@ namespace bts { namespace blockchain {
                                ask_quantity_xts  = current_ask_balance * mtrx.ask_price;
                                auto quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
 
-                               mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
-                               mtrx.ask_received   = quantity_xts * mtrx.ask_price;
+                               if( ask_quantity_xts == quantity_xts )
+                               {
+                                  mtrx.ask_received = current_ask_balance;
+                                  mtrx.bid_paid     = current_ask_balance;
+                               }
+                               else
+                               {
+                                  mtrx.ask_received   = quantity_xts * mtrx.ask_price;
+                                  mtrx.bid_paid     = quantity_xts * mtrx.bid_price;
+                               }
                                mtrx.ask_paid       = quantity_xts;
                                mtrx.bid_received   = quantity_xts;
 
@@ -341,6 +349,8 @@ namespace bts { namespace blockchain {
 
                                market_stat->bid_depth -= xts_paid_by_short.amount;
                                market_stat->ask_depth += xts_paid_by_short.amount;
+
+                               mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
                             }
                             else if( _current_ask->type == ask_order && _current_bid->type == bid_order )
                             {
@@ -364,8 +374,8 @@ namespace bts { namespace blockchain {
                                pay_current_ask( mtrx );
 
                                market_stat->ask_depth -= mtrx.ask_paid.amount;
+                               mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
                             }
-                            mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
 
 
                             push_market_transaction(mtrx);
@@ -512,12 +522,13 @@ namespace bts { namespace blockchain {
                             auto left_over_collateral = (*_current_ask->collateral);
 
                             /** charge 5% fee for having a margin call */
-                            auto fee = (left_over_collateral * 95 )/100;
+                            auto fee = (left_over_collateral * 5000 )/100000;
                             left_over_collateral -= fee;
                             // when executing a cover order, it always takes the exact price of the
                             // highest bid, so there should be no fees paid *except* this.
                             FC_ASSERT( mtrx.fees_collected.amount == 0 );
-                            mtrx.fees_collected  = asset(fee,0);
+                           // TODO: these go to the network... as dividends..
+                            mtrx.fees_collected  += asset(fee,0);
 
                             auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
                             _pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
