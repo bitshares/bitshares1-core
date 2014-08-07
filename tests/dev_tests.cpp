@@ -70,10 +70,22 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block(clienta);
 
    exec( clientb, "short delegate30 105 1.05 BUSD" );
-   exec( clienta, "ask delegate31 10 XTS .95 BUSD" );
-   exec( clienta, "ask delegate31 100 XTS .96 BUSD" );
-
+   exec( clientb, "short delegate32 10500 0.001 BUSD" );
+   exec( clientb, "short delegate32 300 1000 BUSD" );
+   exec( clienta, "ask delegate31 100 XTS .95 BUSD" );
    produce_block(clientb);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec( clienta, "ask delegate31 1000000 XTS .96 BUSD" );
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec( clienta, "ask delegate31 1000000 XTS 1.3 BUSD" );
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec( clienta, "ask delegate31 1000000 XTS 1.3 BUSD" );
+
+   produce_block(clienta);
    exec(clienta, "blockchain_market_order_book BUSD XTS");
    produce_block(clientb);
    exec(clienta, "blockchain_market_order_book BUSD XTS");

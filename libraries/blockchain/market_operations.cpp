@@ -132,6 +132,26 @@ namespace bts { namespace blockchain {
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
+      auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
+      if( !market_stat )
+         market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
+
+      /** in a future hard-fork we can switch over to the 24h moving avg, for now
+       * we just use the price feed
+       */
+      if( false && market_stat->avg_price_24h.quote_asset_id != 0 )
+      {
+         FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
+      }
+      else
+      {
+         auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
+         FC_ASSERT( median_delegate_price.valid() );
+         auto feed_max_short_bid = *median_delegate_price;
+         feed_max_short_bid.ratio *= 4;
+         feed_max_short_bid.ratio /= 3;
+         FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
+      }
       /*
       if( this->short_index.order_price > asset_to_short->maximum_xts_price || 
           this->short_index.order_price < asset_to_short->minimum_xts_price )
@@ -165,10 +185,6 @@ namespace bts { namespace blockchain {
       
       current_short->balance     += this->amount;
 
-      auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
-
-      if( !market_stat )
-         market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
       market_stat->bid_depth += delta_amount.amount;
 
       eval_state._current_state->store_market_status( *market_stat );

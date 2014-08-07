@@ -173,7 +173,7 @@ namespace bts { namespace blockchain {
          oblock_record               get_block_record( uint32_t block_num )const;
 
 
-         oprice                      get_median_delegate_price( asset_id_type )const;
+         virtual oprice              get_median_delegate_price( asset_id_type )const override;
          vector<feed_record>         get_feeds_for_asset( asset_id_type asset_id )const;
          vector<feed_record>         get_feeds_from_delegate( account_id_type delegate_id )const;
 
