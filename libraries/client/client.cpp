@@ -2364,26 +2364,33 @@ config load_config( const fc::path& datadir )
     void client::connect_to_peer(const string& remote_endpoint)
 
     {
-        std::cout << "Attempting to connect to peer " << remote_endpoint << "\n";
         fc::ip::endpoint ep;
         try {
             ep = fc::ip::endpoint::from_string(remote_endpoint.c_str());
         } catch (...) {
             auto pos = remote_endpoint.find(':');
-            uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
-            string hostname = remote_endpoint.substr( 0, pos );
-            auto eps = fc::resolve(hostname, port);
-            if ( eps.size() > 0 )
-            {
-                ep = eps.back();
+            try {
+              uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
+
+              string hostname = remote_endpoint.substr( 0, pos );
+              auto eps = fc::resolve(hostname, port);
+              if ( eps.size() > 0 )
+              {
+                  ep = eps.back();
+              }
+              else
+              {
+                  FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+              }
             }
-            else
+            catch (const boost::bad_lexical_cast&)
             {
-                FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+              ulog("Bad port: ${port}", ("port", remote_endpoint.substr( pos+1, remote_endpoint.size() )));
             }
         }
         try
         {
+          ulog("Attempting to connect to peer ${peer}", ("peer", ep));
           my->_p2p_node->connect_to(ep);
         }
         catch (const bts::net::already_connected_to_requested_peer&)
