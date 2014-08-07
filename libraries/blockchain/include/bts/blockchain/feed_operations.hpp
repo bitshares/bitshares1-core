@@ -31,6 +31,14 @@ namespace bts { namespace blockchain {
       time_point_sec   last_update;
   };
 
+  struct feed_entry
+  {
+      string           asset_symbol;
+      string           delegate_name;
+      double           price;
+      time_point_sec   last_update;
+  };
+
   /**
    *  A feed can be published by any active delegate.  By default a new
    *  feed is created for each market pegged asset and that feed is expected
@@ -51,4 +59,5 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::feed_index, (feed_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::feed_record, (feed)(value)(last_update) )
+FC_REFLECT( bts::blockchain::feed_entry, (asset_symbol)(delegate_name)(price)(last_update) );
 FC_REFLECT( bts::blockchain::update_feed_operation, (feed)(value) )

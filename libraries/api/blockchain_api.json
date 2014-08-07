@@ -196,7 +196,7 @@
       {
         "method_name": "blockchain_get_feeds_for_asset",
         "description": "Retrieves all current feeds for the given asset",
-        "return_type": "feed_record_list",
+        "return_type": "feed_entry_list",
         "parameters" : [
             {
               "name" : "asset",
@@ -210,7 +210,7 @@
       {
         "method_name": "blockchain_get_feeds_from_delegate",
         "description": "Retrieves all current feeds published by the given delegate",
-        "return_type": "feed_record_list",
+        "return_type": "feed_entry_list",
         "parameters" : [
             {
               "name" : "delegate_name",

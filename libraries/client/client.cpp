@@ -1864,22 +1864,50 @@ config load_config( const fc::path& datadir )
       return oasset_record();
     }
 
-    vector<feed_record> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
+    //TODO: Refactor: most of these next two functions are identical. Should extract a function.
+    vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
     { try {
         asset_id_type asset_id;
-          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
-              asset_id = _chain_db->get_asset_id(asset);
-          else
-              asset_id = std::stoi( asset );
+        if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+            asset_id = _chain_db->get_asset_id(asset);
+        else
+            asset_id = std::stoi( asset );
 
-          return _chain_db->get_feeds_for_asset(asset_id);
+        auto raw_feeds = _chain_db->get_feeds_for_asset(asset_id);
+        vector<feed_entry> result_feeds;
+        for( auto feed : raw_feeds )
+        {
+            auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
+            if( !delegate )
+              FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
+            string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
+            double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
+
+            result_feeds.push_back({asset, delegate->name, price, feed.last_update});
+        }
+
+        return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
 
-    vector<feed_record> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
+    vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
     { try {
         auto delegate_record = _chain_db->get_account_record(delegate_name);
         FC_ASSERT( delegate_record.valid(), "Unknown account name." );
-        return _chain_db->get_feeds_from_delegate(delegate_record->id);
+
+        auto raw_feeds = _chain_db->get_feeds_from_delegate(delegate_record->id);
+        vector<feed_entry> result_feeds;
+        for( auto feed : raw_feeds )
+        {
+            auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
+            if( !delegate )
+              FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
+            string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
+            double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
+
+            result_feeds.push_back({asset, delegate->name, price, feed.last_update});
+        }
+
+        return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
 
     int8_t detail::client_impl::wallet_account_set_approval( const string& account_name, int8_t approval )
