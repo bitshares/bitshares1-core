@@ -2599,6 +2599,7 @@ namespace bts { namespace wallet {
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
+        required_signatures.insert( current_account->active_key() );
       }
       else
       {
@@ -2616,8 +2617,6 @@ namespace bts { namespace wallet {
           auto record = wallet_transaction_record();
           record.ledger_entries.push_back( entry );
           record.fee = required_fees;
-
-          required_signatures.insert( current_account->active_key() );
 
           sign_and_cache_transaction( trx, required_signatures, record );
           my->_blockchain->store_pending_transaction( trx );
@@ -2662,6 +2661,7 @@ namespace bts { namespace wallet {
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
+        required_signatures.insert( current_account->active_key() );
       }
       else
       {
@@ -2935,7 +2935,7 @@ namespace bts { namespace wallet {
        auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
        required_signatures.insert( delegate_private_key.get_public_key() );
 
-       public_key_type  receiver_public_key = get_account_public_key( withdraw_to_account_name );
+       public_key_type receiver_public_key = get_account_public_key( withdraw_to_account_name );
 
        const auto slate_id = select_slate( trx );
 
