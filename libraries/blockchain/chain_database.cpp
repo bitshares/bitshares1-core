@@ -8,6 +8,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/blockchain/checkpoints.hpp>
 
 #include <fc/thread/mutex.hpp>
 #include <fc/thread/unique_lock.hpp>
@@ -64,7 +65,7 @@ namespace bts { namespace blockchain {
    FC_REGISTER_EXCEPTIONS( (blockchain_exception)
                            (invalid_pts_address)
                           (addition_overflow)
-                          (addition_underthrow)
+                          (subtraction_overflow)
                           (asset_type_mismatch)
                           (unsupported_chain_operation) )
 
@@ -1417,8 +1418,17 @@ namespace bts { namespace blockchain {
          block_summary summary;
          try
          {
-            /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
-            public_key_type block_signee = block_data.signee();
+            public_key_type block_signee;
+            if( CHECKPOINT_BLOCKS.size() > 0 && (--CHECKPOINT_BLOCKS.end())->first > block_data.block_num )
+               //Skip signature validation
+               block_signee = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() ).active_key();
+            else
+               /* We need the block_signee's key in several places and computing it is expensive, so compute it here and pass it down */
+               block_signee = block_data.signee();
+
+            auto checkpoint_itr = CHECKPOINT_BLOCKS.find(block_data.block_num);
+            if( checkpoint_itr != CHECKPOINT_BLOCKS.end() && checkpoint_itr->second != block_id )
+              FC_CAPTURE_AND_THROW( failed_checkpoint_verification, (block_id)(checkpoint_itr->second) );
 
             /* Note: Secret is validated later in update_delegate_production_info() */
             verify_header( block_data, block_signee );
@@ -1437,7 +1447,7 @@ namespace bts { namespace blockchain {
             // apply any deterministic operations such as market operations before we perturb indexes
             //apply_deterministic_updates(pending_state);
             
-            pay_delegate( block_data.id(), pending_state, block_signee );
+            pay_delegate( block_id, pending_state, block_signee );
 
             apply_transactions( block_data, block_data.user_transactions, pending_state );
 
@@ -3242,7 +3252,10 @@ namespace bts { namespace blockchain {
       vector<feed_record> feeds;
       auto feed_itr = my->_feed_db.lower_bound(feed_index{asset_id});
       while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
+      {
         feeds.push_back(feed_itr.value());
+        ++feed_itr;
+      }
 
       return feeds;
    }

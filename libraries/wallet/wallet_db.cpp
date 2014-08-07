@@ -10,7 +10,7 @@ namespace bts { namespace wallet {
 
    using namespace bts::blockchain;
 
-   namespace detail { 
+   namespace detail {
      class wallet_db_impl
      {
         public:
@@ -83,7 +83,7 @@ namespace bts { namespace wallet {
               {
                 auto current_account_id_itr = self->account_id_to_wallet_record_index.find( account_to_load.id );
                 if( current_account_id_itr != self->account_id_to_wallet_record_index.end() )
-                    FC_ASSERT( current_account_id_itr->second == account_to_load.wallet_record_index, "", 
+                    FC_ASSERT( current_account_id_itr->second == account_to_load.wallet_record_index, "",
                                 ("current_account_id_tr",*current_account_id_itr)
                                 ("account_to_load.index",account_to_load.wallet_record_index) );
                 self->account_id_to_wallet_record_index[ account_to_load.id ] = account_to_load.wallet_record_index;
@@ -93,7 +93,7 @@ namespace bts { namespace wallet {
               if( !overwrite) FC_ASSERT( current_name_itr == self->name_to_account_wallet_record_index.end() );
               self->name_to_account_wallet_record_index[ account_to_load.name ] = account_to_load.wallet_record_index;
 
-           } FC_CAPTURE_AND_RETHROW( (account_to_load) ) } 
+           } FC_CAPTURE_AND_RETHROW( (account_to_load) ) }
 
            void load_key_record( const wallet_key_record& key_to_load, bool overwrite )
            { try {
@@ -176,12 +176,12 @@ namespace bts { namespace wallet {
           for( auto itr = my->_records.begin(); itr.valid(); ++itr )
           {
              auto record = itr.value();
-             try 
+             try
              {
                 my->load_generic_record( record );
                 // prevent hanging on large wallets
-                fc::usleep( fc::microseconds(1000) ); 
-             } 
+                fc::usleep( fc::microseconds(1000) );
+             }
              catch ( const fc::exception& e )
              {
                 wlog( "Error loading wallet record:\n${r}\nreason: ${e}", ("e",e.to_detail_string())("r",record) );
@@ -290,7 +290,7 @@ namespace bts { namespace wallet {
           property_record = property_itr->second;
           property_record.value = v;
       }
-      else 
+      else
       {
           if( property_id == property_enum::next_record_number )
               property_record = wallet_property_record( wallet_property(property_id, v), 1 );
@@ -373,7 +373,7 @@ namespace bts { namespace wallet {
          else
          {
             /*
-            ilog( "WALLET: storing public key ${key} under account named '${account_name}' address: (${account})", 
+            ilog( "WALLET: storing public key ${key} under account named '${account_name}' address: (${account})",
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
                   ("account_name",get_account_name(key_to_store.account_address)) );
@@ -387,7 +387,7 @@ namespace bts { namespace wallet {
       {
          auto r = wallet_key_record( key_to_store, new_wallet_record_index() );
          store_record( keys[key_to_store.get_address()] = r );
-         
+
          auto key = key_to_store.public_key;
          auto bts_addr = key_to_store.get_address();
          btc_to_bts_address[ address(key) ] = bts_addr;
@@ -441,11 +441,11 @@ namespace bts { namespace wallet {
       {
          return itr->second.has_private_key();
       }
-      return false; 
+      return false;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("address",a) ) }
 
-   void wallet_db::cache_memo( const memo_status& memo, 
-                               const fc::ecc::private_key& account_key, 
+   void wallet_db::cache_memo( const memo_status& memo,
+                               const fc::ecc::private_key& account_key,
                                const fc::sha512& password )
    {
       key_data data;
@@ -486,7 +486,7 @@ namespace bts { namespace wallet {
        keys.shrink_to_fit();
        return keys;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
-   
+
    owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )const
    {
       auto itr = balances.find( balance_id );
@@ -557,20 +557,20 @@ namespace bts { namespace wallet {
       }
    } FC_CAPTURE_AND_RETHROW( (blockchain_account) ) }
 
-   void wallet_db::add_account( const string& new_account_name, 
+   void wallet_db::add_account( const string& new_account_name,
                                 const public_key_type& new_account_key,
                                 const variant& private_data )
    {
       auto current_account_itr = name_to_account_wallet_record_index.find( new_account_name );
-      FC_ASSERT( current_account_itr == name_to_account_wallet_record_index.end(), 
-                 "Account with name ${name} already exists", 
+      FC_ASSERT( current_account_itr == name_to_account_wallet_record_index.end(),
+                 "Account with name ${name} already exists",
                  ("name",new_account_name) );
       auto current_address_itr = address_to_account_wallet_record_index.find( new_account_key );
-      FC_ASSERT( current_address_itr == address_to_account_wallet_record_index.end(), 
-                 "Account with address ${address} already exists", 
+      FC_ASSERT( current_address_itr == address_to_account_wallet_record_index.end(),
+                 "Account with address ${address} already exists",
                  ("name",new_account_key) );
 
-      wallet_account_record war; 
+      wallet_account_record war;
       war.name = new_account_name;
       war.id = 0;
       war.account_address = address( new_account_key );
@@ -585,7 +585,7 @@ namespace bts { namespace wallet {
 
       auto current_key = lookup_key( new_account_key );
       if( current_key )
-      {  
+      {
          current_key->account_address = address(new_account_key);
          store_record( *current_key );
       }
@@ -607,7 +607,7 @@ namespace bts { namespace wallet {
       {
          auto account_itr = accounts.find( address_index_itr->second );
          FC_ASSERT( account_itr != accounts.end(),
-                    "wallet database in inconsistant state" ); 
+                    "wallet database in inconsistant state" );
          return account_itr->second;
       }
       return owallet_account_record();
@@ -620,7 +620,7 @@ namespace bts { namespace wallet {
       {
          auto account_itr = accounts.find( name_index_itr->second );
          FC_ASSERT( account_itr != accounts.end(),
-                    "wallet database in inconsistant state" ); 
+                    "wallet database in inconsistant state" );
          return account_itr->second;
       }
       return owallet_account_record();
@@ -724,7 +724,7 @@ namespace bts { namespace wallet {
       return wallet_master_key->decrypt_key( password );
    }
 
-   void wallet_db::set_master_key( const extended_private_key& extended_key, 
+   void wallet_db::set_master_key( const extended_private_key& extended_key,
                                     const fc::sha512& new_password )
    {
       master_key key;
@@ -752,7 +752,7 @@ namespace bts { namespace wallet {
       }
    } FC_CAPTURE_AND_RETHROW() }
 
-   void wallet_db::update_market_order( const address& owner, 
+   void wallet_db::update_market_order( const address& owner,
                                         const optional<bts::blockchain::market_order>& order,
                                         const transaction_id_type& trx_id )
    {

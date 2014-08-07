@@ -7,6 +7,8 @@
 #include <bts/net/exceptions.hpp>
 #include <bts/net/upnp.hpp>
 #include <bts/net/peer_database.hpp>
+#include <bts/net/chain_downloader.hpp>
+#include <bts/net/chain_server.hpp>
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
@@ -142,6 +144,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
        ("rpcpassword", program_options::value<string>(), "Set password for JSON-RPC")
        ("rpcport", program_options::value<uint16_t>(), "Set port to listen for JSON-RPC connections")
        ("httpport", program_options::value<uint16_t>(), "Set port to listen for HTTP JSON-RPC connections")
+
+       ("chain-server-port", program_options::value<uint16_t>(), "Run a chain server on this port")
 
        ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
        ("log-commands", "Log all command input and output")
@@ -573,6 +577,8 @@ config load_config( const fc::path& datadir )
 
             void configure_rpc_server(config& cfg, 
                                       const program_options::variables_map& option_variables);
+            void configure_chain_server(config& cfg,
+                                        const program_options::variables_map& option_variables);
 
             block_fork_data on_new_block(const full_block& block, 
                                          const block_id_type& block_id, 
@@ -625,6 +631,7 @@ config load_config( const fc::path& datadir )
             fc::scoped_connection                                   _time_discontinuity_connection;
 
             bts::rpc::rpc_server_ptr                                _rpc_server = nullptr;
+            std::unique_ptr<bts::net::chain_server>                 _chain_server = nullptr;
             std::unique_ptr<bts::net::upnp_service>                 _upnp_service = nullptr;
             chain_database_ptr                                      _chain_db = nullptr;
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
@@ -715,6 +722,15 @@ config load_config( const fc::path& datadir )
           std::cout << "Not starting RPC server, use --server to enable the RPC interface\n";
         }
 
+      }
+
+      void client_impl::configure_chain_server(config& cfg, const program_options::variables_map& option_variables)
+      {
+        if( option_variables.count("chain-server-port") )
+        {
+          cfg.chain_server.listen_port = option_variables["chain-server-port"].as<uint16_t>();
+          cfg.chain_server.enabled = true;
+        }
       }
 
        // Call this whenever a change occurs that may enable block production by the client
@@ -2116,6 +2132,27 @@ config load_config( const fc::path& datadir )
 
     //JSON-RPC Method Implementations END
 
+    void client::start_networking()
+    {
+      //Start chain_downloader if there are chain_servers to connect to; otherwise, just start p2p immediately
+      if( !my->_config.chain_servers.empty() )
+      {
+        bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
+        for( const auto& server : my->_config.chain_servers ) chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
+        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
+          my->_chain_db->push_block(new_block);
+        }, my->_chain_db->get_head_block_num() + 1);
+        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
+          if( e )
+            elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
+          delete chain_downloader;
+          connect_to_p2p_network();
+        });
+      }
+      else
+        connect_to_p2p_network();
+    }
+
     //RPC server and CLI configuration rules:
     //if daemon mode requested
     //  start RPC server only (no CLI input)
@@ -2164,6 +2201,7 @@ config load_config( const fc::path& datadir )
       }
 
       my->configure_rpc_server(my->_config,option_variables);
+      my->configure_chain_server(my->_config,option_variables);
 
       if (option_variables.count("p2p-port"))
       {
@@ -2241,8 +2279,7 @@ config load_config( const fc::path& datadir )
         get_node()->clear_peer_database();
       }
 
-      // fire up the p2p network
-      connect_to_p2p_network();
+      start_networking();
       fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
       std::ostringstream port_stream;
       if (actual_p2p_endpoint.get_address() == fc::ip::address())
@@ -2272,6 +2309,13 @@ config load_config( const fc::path& datadir )
           this->connect_to_peer(default_peer);
       }
 
+      if (my->_config.chain_server.enabled)
+      {
+        my->_chain_server = std::unique_ptr<bts::net::chain_server>(
+              new bts::net::chain_server(my->_chain_db,
+                                         my->_config.chain_server.listen_port));
+        ulog("Starting a chain server on port ${port}", ("port", my->_chain_server->get_listening_port()));
+      }
     } //configure_from_command_line
 
     fc::future<void> client::start()
@@ -2690,7 +2734,9 @@ config load_config( const fc::path& datadir )
                                                                               const std::string& pay_from_account,
                                                                               const std::string& new_active_key )
     {
-      return _wallet->update_active_key(account_to_update, pay_from_account, new_active_key);
+       const auto trx = _wallet->update_active_key(account_to_update, pay_from_account, new_active_key);
+       network_broadcast_transaction( trx );
+       return trx;
     }
 
     fc::variant_object client_impl::network_get_info() const
@@ -2733,7 +2779,7 @@ config load_config( const fc::path& datadir )
         vector<public_key_summary> summaries;
         vector<public_key_type> keys = _wallet->get_public_keys_in_account( account_name );
         summaries.reserve( keys.size() );
-        for (auto key : keys)
+        for( const auto& key : keys )
         {
             summaries.push_back(_wallet->get_public_key_summary( key ));
         }
@@ -2915,6 +2961,10 @@ config load_config( const fc::path& datadir )
         orders = _chain_db->get_market_transactions(--head_block_num);
         orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
       }
+
+      if( orders.size() <= skip_count )
+        // Skip count is greater or equal to the total number of relevant orders on the blockchain.
+        return vector<market_transaction>();
 
       if( skip_count > 0 )
         orders.erase(orders.begin(), orders.begin() + skip_count);

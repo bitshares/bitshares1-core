@@ -946,8 +946,7 @@
            {
                 "name" : "account_name",
                 "type" : "account_name",
-                "description" : "the account for which public keys should be listed",
-                "default_value" : "*"
+                "description" : "the account for which public keys should be listed"
            }
          ],
          "prerequisites" : ["wallet_open"],

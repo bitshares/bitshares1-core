@@ -20,14 +20,14 @@ namespace bts { namespace blockchain {
   {
      FC_ASSERT( asset_id == o.asset_id );
 
-     auto old = *this;
-     amount += o.amount;
-
-     if( amount < old.amount ) 
+     if (((o.amount > 0) && (amount > (INT64_MAX - o.amount))) ||
+         ((o.amount < 0) && (amount < (INT64_MIN - o.amount))))
      {
-       FC_THROW_EXCEPTION( addition_overflow, "asset addition overflowed  ${a} + ${b} = ${c}", 
-                            ("a", old)("b",o)("c",*this) );
+       FC_THROW_EXCEPTION( addition_overflow, "asset addition overflow  ${a} + ${b}",
+                            ("a", *this)("b",o) );
      }
+
+     amount += o.amount;
      return *this;
   }
 
@@ -42,13 +42,15 @@ namespace bts { namespace blockchain {
   asset& asset::operator -= ( const asset& o )
   {
      FC_ASSERT( asset_id == o.asset_id );
-     auto old = *this;;
-     amount -= o.amount;
-     if( amount > old.amount ) 
+
+     if ((o.amount > 0 && amount < INT64_MIN + o.amount) ||
+         (o.amount < 0 && amount > INT64_MAX + o.amount))
      {
-        FC_THROW_EXCEPTION( addition_underthrow, "asset addition underflow  ${a} - ${b} = ${c}", 
-                            ("a", old)("b",o)("c",*this) );
+        FC_THROW_EXCEPTION( subtraction_overflow, "asset subtraction underflow  ${a} - ${b}",
+                            ("a", *this)("b",o) );
      }
+
+     amount -= o.amount;
      return *this;
   }
 

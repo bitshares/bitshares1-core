@@ -11,7 +11,9 @@ set(SOURCES node.cpp
             peer_database.cpp
             peer_connection.cpp
             upnp.cpp
-            message_oriented_connection.cpp)
+            message_oriented_connection.cpp
+            chain_downloader.cpp
+            chain_server.cpp)
 
 add_library( bts_net ${SOURCES} ${HEADERS} )
 
