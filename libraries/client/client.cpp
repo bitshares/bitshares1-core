@@ -2725,7 +2725,9 @@ config load_config( const fc::path& datadir )
                                                                               const std::string& pay_from_account,
                                                                               const std::string& new_active_key )
     {
-      return _wallet->update_active_key(account_to_update, pay_from_account, new_active_key);
+       const auto trx = _wallet->update_active_key(account_to_update, pay_from_account, new_active_key);
+       network_broadcast_transaction( trx );
+       return trx;
     }
 
     fc::variant_object client_impl::network_get_info() const
@@ -2950,6 +2952,10 @@ config load_config( const fc::path& datadir )
         orders = _chain_db->get_market_transactions(--head_block_num);
         orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
       }
+
+      if( orders.size() <= skip_count )
+        // Skip count is greater or equal to the total number of relevant orders on the blockchain.
+        return vector<market_transaction>();
 
       if( skip_count > 0 )
         orders.erase(orders.begin(), orders.begin() + skip_count);

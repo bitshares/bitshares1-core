@@ -36,6 +36,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( invalid_wallet_name,     bts::wallet::wallet_exception, 20029, "invalid wallet name" );
   FC_DECLARE_DERIVED_EXCEPTION( unsupported_version,     bts::wallet::wallet_exception, 20030, "unsupported version" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_fee,             bts::wallet::wallet_exception, 20031, "invalid fee" );
+  FC_DECLARE_DERIVED_EXCEPTION( key_already_registered,  bts::wallet::wallet_exception, 20032, "key belongs to other account" );
   // registered in wallet.cpp
 
 } } // bts::wallet
