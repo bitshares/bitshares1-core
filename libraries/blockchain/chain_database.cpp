@@ -3185,7 +3185,10 @@ namespace bts { namespace blockchain {
       vector<feed_record> feeds;
       auto feed_itr = my->_feed_db.lower_bound(feed_index{asset_id});
       while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
+      {
         feeds.push_back(feed_itr.value());
+        ++feed_itr;
+      }
 
       return feeds;
    }
