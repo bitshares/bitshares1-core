@@ -1078,12 +1078,16 @@ namespace bts { namespace wallet {
                                 for( auto& entry : trx_rec.ledger_entries )
                                 {
                                     if( !entry.from_account.valid() ) continue;
-                                    const auto a1 = self->get_key_label( *entry.from_account );
-                                    const auto a2 = self->get_key_label( status->from );
-                                    if( a1 != a2 ) continue;
+                                    if( !entry.memo_from_account.valid() )
+                                    {
+                                        const auto a1 = self->get_key_label( *entry.from_account );
+                                        const auto a2 = self->get_key_label( status->from );
+                                        if( a1 != a2 ) continue;
+                                    }
 
                                     new_entry = false;
-                                    entry.from_account = status->from;
+                                    if( !entry.memo_from_account.valid() )
+                                        entry.from_account = status->from;
                                     entry.to_account = key.get_public_key();
                                     entry.amount = asset( op.amount, op.condition.asset_id );
                                     entry.memo = status->get_message();
