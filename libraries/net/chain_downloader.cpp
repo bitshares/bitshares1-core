@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <bts/net/chain_downloader.hpp>
 #include <bts/net/chain_server_commands.hpp>
 
