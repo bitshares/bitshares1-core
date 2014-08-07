@@ -57,8 +57,6 @@ struct fee_index
    }
 };
 
-FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
-
 namespace bts { namespace blockchain {
 
    // register exceptions here so it doesn't get optimized out by the linker
@@ -3207,5 +3205,6 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
+FC_REFLECT_TYPENAME( std::vector<bts::blockchain::block_id_type> )
 FC_REFLECT( vote_del, (votes)(delegate_id) )
 FC_REFLECT( fee_index, (_fees)(_trx) )
