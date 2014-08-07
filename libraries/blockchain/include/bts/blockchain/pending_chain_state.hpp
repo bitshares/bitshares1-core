@@ -18,6 +18,7 @@ namespace bts { namespace blockchain {
 
          virtual void                  set_feed( const feed_record&  ) override;
          virtual ofeed_record          get_feed( const feed_index& )const override;
+         virtual oprice                get_median_delegate_price( asset_id_type )const override;
          virtual void                  set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) override;
 
 

@@ -1069,8 +1069,8 @@ namespace bts { namespace cli {
                     if( median_feed )
                     {
                        auto maximum_short_price = *median_feed;
-                       maximum_short_price.ratio *= 3;
-                       maximum_short_price.ratio /= 2;
+                       maximum_short_price.ratio *= 4;
+                       maximum_short_price.ratio /= 3;
                        auto minimum_cover_price = *median_feed;
                        minimum_cover_price.ratio *= 2;
                        minimum_cover_price.ratio /= 3;
@@ -1082,7 +1082,8 @@ namespace bts { namespace cli {
                              <<"\n";
                     }
                     *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
-                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"\n";
+                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"     ";
+                    *_out << "Min Depth: " << _client->get_chain()->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) ) <<"\n";
                     if(  status->last_error )
                     {
                        *_out << "Last Error:  ";
