@@ -2059,13 +2059,11 @@ config load_config( const fc::path& datadir )
       return _p2p_node->get_advanced_node_parameters();
     }
 
-    void detail::client_impl::network_add_node(const fc::ip::endpoint& node, const string& command)
+    void detail::client_impl::network_add_node(const string& node, const string& command)
     {
       if (_p2p_node)
-      {
         if (command == "add")
-          _p2p_node->add_node( node );
-      }
+          _self->connect_to_peer(node);
     }
 
     void detail::client_impl::stop()
@@ -2362,7 +2360,6 @@ config load_config( const fc::path& datadir )
     }
 
     void client::connect_to_peer(const string& remote_endpoint)
-
     {
         fc::ip::endpoint ep;
         try {
@@ -2386,6 +2383,7 @@ config load_config( const fc::path& datadir )
             catch (const boost::bad_lexical_cast&)
             {
               ulog("Bad port: ${port}", ("port", remote_endpoint.substr( pos+1, remote_endpoint.size() )));
+              return;
             }
         }
         try
