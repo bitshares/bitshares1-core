@@ -648,6 +648,7 @@ namespace bts { namespace wallet {
           if( store_record ) _wallet_db.store_transaction( *transaction_record );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+      // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
       bool wallet_impl::scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
          const auto chain_bal_rec = _blockchain->get_balance_record( op.balance_id );
@@ -669,9 +670,9 @@ namespace bts { namespace wallet {
                 for( auto& entry : trx_rec.ledger_entries )
                 {
                     if( !entry.from_account.valid() ) continue;
-                    const auto a1 = _wallet_db.lookup_account( *entry.from_account );
+                    const auto a1 = self->get_account_for_address( *entry.from_account );
                     if( !a1.valid() ) continue;
-                    const auto a2 = _wallet_db.lookup_account( key_rec->account_address );
+                    const auto a2 = self->get_account_for_address( key_rec->account_address );
                     if( !a2.valid() ) continue;
                     if( a1->name != a2->name ) continue;
 
@@ -698,7 +699,7 @@ namespace bts { namespace wallet {
          return false;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-      // TODO: Refactor this -- almost identical to scan_withdraw
+      // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
       bool wallet_impl::scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
          const auto amount = asset( op.amount ); // Always base asset
@@ -715,12 +716,12 @@ namespace bts { namespace wallet {
              auto new_entry = true;
              for( auto& entry : trx_rec.ledger_entries )
              {
-                 if( !entry.from_account.valid() ) continue;
-                 const auto a1 = _wallet_db.lookup_account( *entry.from_account );
-                 if( !a1.valid() ) continue;
-                 const auto a2 = _wallet_db.lookup_account( key_rec->account_address );
-                 if( !a2.valid() ) continue;
-                 if( a1->name != a2->name ) continue;
+                  if( !entry.from_account.valid() ) continue;
+                  const auto a1 = self->get_account_for_address( *entry.from_account );
+                  if( !a1.valid() ) continue;
+                  const auto a2 = self->get_account_for_address( key_rec->account_address );
+                  if( !a2.valid() ) continue;
+                  if( a1->name != a2->name ) continue;
 
                   new_entry = false;
                   // TODO: We should probably really have a map of asset ids to amounts per ledger entry
@@ -729,8 +730,7 @@ namespace bts { namespace wallet {
                   else if( entry.amount.amount == 0 )
                       entry.amount = amount;
 
-                  if( entry.memo.empty() )
-                      entry.memo = "withdraw pay";
+                  if( entry.memo.empty() ) entry.memo = "withdraw pay";
                   break;
              }
              if( new_entry )
@@ -883,6 +883,7 @@ namespace bts { namespace wallet {
          return false;
       }
 
+      // TODO: Refactor scan_{bid|ask|short}; exactly the same
       bool wallet_impl::scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
@@ -936,6 +937,7 @@ namespace bts { namespace wallet {
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
+      // TODO: Refactor scan_{bid|ask|short}; exactly the same
       bool wallet_impl::scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
@@ -988,6 +990,7 @@ namespace bts { namespace wallet {
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
+      // TODO: Refactor scan_{bid|ask|short}; exactly the same
       bool wallet_impl::scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
