@@ -26,9 +26,21 @@ namespace bts { namespace db {
         void open( const fc::path& dir, bool create = true )
         {
            ldb::Options opts;
+           opts.comparator = &_comparer;
            opts.create_if_missing = create;
-           opts.comparator = & _comparer;
-           
+           if( ldb::kMajorVersion > 1 || ( leveldb::kMajorVersion == 1 && leveldb::kMinorVersion >= 16 ) )
+           {
+               // LevelDB versions before 1.16 consider short writes to be corruption. Only trigger error
+               // on corruption in later versions.
+               opts.paranoid_checks = true;
+           }
+           opts.max_open_files = 64;
+
+           _read_options.verify_checksums = true;
+           _iter_options.verify_checksums = true;
+           _iter_options.fill_cache = false;
+           _sync_options.sync = true;
+
            /// \warning Given path must exist to succeed toNativeAnsiPath
            fc::create_directories(dir);
 
@@ -64,7 +76,7 @@ namespace bts { namespace db {
           try {
              ldb::Slice key_slice( (char*)&key, sizeof(key) );
              std::string value;
-             auto status = _db->Get( ldb::ReadOptions(), key_slice, &value );
+             auto status = _db->Get( _read_options, key_slice, &value );
              if( status.IsNotFound() )
              {
                FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",key) );
@@ -115,7 +127,7 @@ namespace bts { namespace db {
         };
         iterator begin() 
         { try {
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->SeekToFirst();
 
            if( itr._it->status().IsNotFound() )
@@ -138,7 +150,7 @@ namespace bts { namespace db {
         iterator find( const Key& key )
         { try {
            ldb::Slice key_slice( (char*)&key, sizeof(key) );
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->Seek( key_slice );
            if( itr.valid() && itr.key() == key ) 
            {
@@ -150,7 +162,7 @@ namespace bts { namespace db {
         iterator lower_bound( const Key& key )
         { try {
            ldb::Slice key_slice( (char*)&key, sizeof(key) );
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->Seek( key_slice );
            if( itr.valid()  ) 
            {
@@ -163,7 +175,7 @@ namespace bts { namespace db {
         bool last( Key& k )
         {
           try {
-             std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
+             std::unique_ptr<ldb::Iterator> it( _db->NewIterator( _iter_options ) );
              FC_ASSERT( it != nullptr );
              it->SeekToLast();
              if( !it->Valid() )
@@ -179,7 +191,7 @@ namespace bts { namespace db {
         bool last( Key& k, Value& v )
         {
           try {
-           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
+           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( _iter_options ) );
            FC_ASSERT( it != nullptr );
            it->SeekToLast();
            if( !it->Valid() )
@@ -203,7 +215,7 @@ namespace bts { namespace db {
              auto vec = fc::raw::pack(v);
              ldb::Slice vs( vec.data(), vec.size() );
              
-             auto status = _db->Put( ldb::WriteOptions(), ks, vs );
+             auto status = _db->Put( _sync_options, ks, vs );
              if( !status.ok() )
              {
                  FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
@@ -216,7 +228,7 @@ namespace bts { namespace db {
           try
           {
             ldb::Slice ks( (char*)&k, sizeof(k) );
-            auto status = _db->Delete( ldb::WriteOptions(), ks );
+            auto status = _db->Delete( _sync_options, ks );
 
             if( status.IsNotFound() )
             {
@@ -249,10 +261,11 @@ namespace bts { namespace db {
             void FindShortSuccessor( std::string* )const{};
         };
 
-        key_compare                  _comparer;
-        std::unique_ptr<leveldb::DB> _db;
-        
+        std::unique_ptr<leveldb::DB>    _db;
+        key_compare                     _comparer;
+        ldb::ReadOptions                _read_options;
+        ldb::ReadOptions                _iter_options;
+        ldb::WriteOptions               _sync_options;
   };
-
 
 } } // bts::db
