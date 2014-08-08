@@ -2728,7 +2728,6 @@ namespace bts { namespace wallet {
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
-        required_signatures.insert( current_account->active_key() );
       }
       else
       {
@@ -2736,6 +2735,7 @@ namespace bts { namespace wallet {
                                       payer_public_key,
                                       trx, required_signatures );
       }
+      required_signatures.insert( current_account->active_key() );
       if (sign)
       {
           auto entry = ledger_entry();
