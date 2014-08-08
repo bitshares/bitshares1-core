@@ -102,6 +102,7 @@ namespace bts { namespace blockchain {
       }
       
       current_ask->balance     += this->amount;
+      FC_ASSERT( current_ask->balance >= 0 );
 
       auto market_stat = eval_state._current_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
 
@@ -184,6 +185,7 @@ namespace bts { namespace blockchain {
       }
       
       current_short->balance     += this->amount;
+      FC_ASSERT( current_short->balance >= 0 );
 
       market_stat->bid_depth += delta_amount.amount;
 

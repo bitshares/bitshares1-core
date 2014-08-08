@@ -1041,22 +1041,22 @@
                "description" : "the account that will provide funds for the ask"
             },
             {
-               "name" : "quantity",
+               "name" : "sell_quantity",
                "type" : "real_amount",
                "description" : "the quantity of items you would like to sell"
             },
             {
-               "name" : "quantity_symbol",
+               "name" : "sell_quantity_symbol",
                "type" : "asset_symbol",
                "description" : "the type of items you would like to sell"
             },
             {
-               "name" : "base_price",
+               "name" : "ask_price",
                "type" : "real_amount",
-               "description" : "the price you would like to sell"
+               "description" : "the price per unit sold."
             },
             {
-               "name" : "base_symbol",
+               "name" : "ask_price_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to be paid"
             }
@@ -1075,19 +1075,19 @@
                "description" : "the account that will provide funds for the ask"
             },
             {
-               "name" : "quantity",
+               "name" : "short_quantity",
                "type" : "real_amount",
-               "description" : "the quantity of items you would like to sell"
+               "description" : "the quantity of items you would like to short sell (borrow into existance and sell)"
             },
             {
-               "name" : "base_price",
+               "name" : "short_price",
                "type" : "real_amount",
-               "description" : "the price you would like to sell"
+               "description" : "the price (ie: 2.0 USD) per XTS that you would like to short at"
             },
             {
-               "name" : "base_symbol",
+               "name" : "short_symbol",
                "type" : "asset_symbol",
-               "description" : "the type of asset you would like to be paid"
+               "description" : "the type of asset you would like to short, ie: USD"
             }
          ],
          "prerequisites" : ["wallet_unlocked"],

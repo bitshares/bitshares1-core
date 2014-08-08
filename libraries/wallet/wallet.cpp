@@ -4213,7 +4213,8 @@ namespace bts { namespace wallet {
        asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
        asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
 
-       auto quote_price_shares = price_shares / base_one_quantity;
+       //auto quote_price_shares = price_shares / base_one_quantity;
+       price quote_price_shares( (quote_price * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
        auto order_key = get_new_public_key( from_account_name );
        auto order_address = order_key;
