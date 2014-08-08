@@ -186,10 +186,6 @@ namespace bts { namespace wallet {
               const time_point_sec& received_time
               )
       { try {
-          const auto bid_is_short = ( trx.bid_type == short_order );
-          const auto bid_type_str = string( !bid_is_short ? "bid" : "short" );
-          const auto ask_type_str = string( trx.ask_type == ask_order ? "ask" : "call" );
-
           auto okey_bid = _wallet_db.lookup_key( trx.bid_owner );
           if( okey_bid && okey_bid->has_private_key() )
           {
@@ -202,67 +198,72 @@ namespace bts { namespace wallet {
 
               auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner),
                                                                                   trx.bid_price.base_asset_id ).get_address() );
-              if( bal_rec )
-              {
-                  //wlog( "BAL RECORD ${R}", ("R", bal_rec) );
-                  _wallet_db.cache_balance( *bal_rec );
-              }
+              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
 
               bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner),
                                                                             trx.ask_price.quote_asset_id ).get_address() );
-
-              if( bal_rec )
-              {
-                  //wlog( "BAL RECORD ${R}", ("R", bal_rec) );
-                  _wallet_db.cache_balance( *bal_rec );
-              }
-              auto record = wallet_transaction_record();
-
-              /* What we paid */
-              auto out_entry = ledger_entry();
-              out_entry.from_account = okey_bid->public_key;
-              out_entry.amount = trx.bid_paid;
-              out_entry.memo = "pay " + bid_type_str + " @ " + _blockchain->to_pretty_price( trx.bid_price );
-
-              auto in_entry = ledger_entry();
-              /* What we received */
-              if( bid_is_short )
-              {
-                 in_entry.from_account = okey_bid->public_key;
-                 in_entry.to_account =  okey_bid->public_key;
-                 in_entry.amount = trx.bid_received;
-                 in_entry.memo = "short collateral @ " + _blockchain->to_pretty_price( trx.bid_price );
-                 record.ledger_entries.push_back( in_entry );
-
-                 in_entry = ledger_entry();
-                 in_entry.to_account =  okey_bid->public_key;
-                 in_entry.amount = trx.ask_paid;
-                 in_entry.memo = "market collateral @ " + _blockchain->to_pretty_price( trx.bid_price );
-                 record.ledger_entries.push_back( in_entry );
-              }
-              else
-              {
-                 in_entry.from_account = okey_bid->public_key;
-                 in_entry.to_account = bid_account_key->public_key;
-                 in_entry.amount = trx.bid_received;
-                 in_entry.memo = "bid proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
-                 record.ledger_entries.push_back( in_entry );
-              }
-              record.ledger_entries.push_back( out_entry );
+              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
 
               /* Construct a unique record id */
               std::stringstream id_ss;
               id_ss << block_num << string( trx.bid_owner ) << string( trx.ask_owner );
 
               // TODO: Don't blow away memo, etc.
+              auto record = wallet_transaction_record();
               record.record_id = fc::ripemd160::hash( id_ss.str() );
               record.block_num = block_num;
               record.is_virtual = true;
               record.is_confirmed = true;
               record.is_market = true;
-              //record.fee = trx.fees_collected;
               record.created_time = block_time;
               record.received_time = received_time;
+
+              if( trx.bid_type == bid_order )
+              {
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_bid->public_key;
+                      //entry.to_account = "MARKET";
+                      entry.amount = trx.bid_paid;
+                      entry.memo = "pay bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_bid->public_key;
+                      entry.to_account = bid_account_key->public_key;
+                      entry.amount = trx.bid_received;
+                      entry.memo = "bid proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+              }
+              else /* if( trx.bid_type == short_order ) */
+              {
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_bid->public_key;
+                      entry.to_account = okey_bid->public_key;
+                      entry.amount = trx.bid_received;
+                      entry.memo = "add collateral @ " + _blockchain->to_pretty_price( trx.bid_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+                  {
+                      auto entry = ledger_entry();
+                      //entry.from_account = "MARKET";
+                      entry.to_account =  okey_bid->public_key;
+                      entry.amount = trx.ask_paid;
+                      entry.memo = "add collateral @ " + _blockchain->to_pretty_price( trx.bid_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_bid->public_key;
+                      //entry.to_account = "MARKET";
+                      entry.amount = trx.bid_paid;
+                      entry.memo = "short proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+              }
 
               _wallet_db.store_transaction( record );
           }
@@ -274,87 +275,74 @@ namespace bts { namespace wallet {
 
               auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
                                                                                   trx.ask_price.base_asset_id ).get_address() );
-              if( bal_rec )
-              {
-                //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
-                _wallet_db.cache_balance( *bal_rec );
-              }
+              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
 
               bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
                                                                             trx.ask_price.quote_asset_id ).get_address() );
-
-              if( bal_rec )
-              {
-                //wlog( "ASK BAL RECORD ${R}", ("R", bal_rec) );
-                _wallet_db.cache_balance( *bal_rec );
-              }
-
-              /* What we paid */
-              auto out_entry = ledger_entry();
-
-              /* What we received */
-              auto record = wallet_transaction_record();
-              auto in_entry = ledger_entry();
-              if( trx.ask_type == cover_order )
-              {
-
-                 out_entry = ledger_entry();
-                 out_entry.from_account = okey_ask->public_key;
-                 out_entry.amount = trx.ask_paid;
-                 out_entry.memo = "sell collateral @ " + _blockchain->to_pretty_price( trx.ask_price );
-                 record.ledger_entries.push_back( out_entry );
-
-
-                 //in_entry.from_account = okey_ask->public_key;
-                 //in_entry.to_account = ask_account_key->public_key;
-                 in_entry.to_account = okey_ask->public_key;
-                 in_entry.amount = trx.ask_received;
-                 in_entry.memo = "payoff debt @ " + _blockchain->to_pretty_price( trx.ask_price );
-
-                 record.ledger_entries.push_back( in_entry );
-
-                 if( trx.fees_collected.amount ) 
-                 {
-                    out_entry.from_account = okey_ask->public_key;
-                    out_entry.to_account = ask_account_key->public_key;
-                    auto margin_call_change = trx.fees_collected;
-                    margin_call_change.amount *= 20; //10000;
-                    //margin_call_change.amount /= 500;
-                    out_entry.amount = margin_call_change; //trx.fees_collected;
-                    out_entry.memo = "call proceeds - 5% margin call fee";
-
-                    record.ledger_entries.push_back( out_entry );
-                    record.fee = trx.fees_collected;
-                 }
-              }
-              else
-              {
-                 out_entry.from_account = okey_ask->public_key;
-                 out_entry.amount = trx.ask_paid;
-                 out_entry.memo = "fill " + ask_type_str + " @ " + _blockchain->to_pretty_price( trx.ask_price );
-
-
-                 in_entry.from_account = okey_ask->public_key;
-                 in_entry.to_account = ask_account_key->public_key;
-                 in_entry.amount = trx.ask_received;
-                 in_entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
-                 record.ledger_entries.push_back( out_entry );
-                 record.ledger_entries.push_back( in_entry );
-              }
+              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
 
               /* Construct a unique record id */
               std::stringstream id_ss;
               id_ss << block_num << string( trx.ask_owner ) << string( trx.bid_owner );
 
               // TODO: Don't blow away memo, etc.
+              auto record = wallet_transaction_record();
               record.record_id = fc::ripemd160::hash( id_ss.str() );
               record.block_num = block_num;
               record.is_virtual = true;
               record.is_confirmed = true;
               record.is_market = true;
-              //record.fee = trx.fees_collected;
               record.created_time = block_time;
               record.received_time = received_time;
+
+              if( trx.ask_type == ask_order )
+              {
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_ask->public_key;
+                      //entry.to_account = "MARKET";
+                      entry.amount = trx.ask_paid;
+                      entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_ask->public_key;
+                      entry.to_account = ask_account_key->public_key;
+                      entry.amount = trx.ask_received;
+                      entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+              }
+              else /* if( trx.ask_type == cover_order ) */
+              {
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_ask->public_key;
+                      //entry.to_account = "MARKET";
+                      entry.amount = trx.ask_paid;
+                      entry.memo = "sell collateral @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+                  {
+                      auto entry = ledger_entry();
+                      //entry.from_account = "MARKET";
+                      entry.to_account = okey_ask->public_key;
+                      entry.amount = trx.ask_received;
+                      entry.memo = "payoff debt @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      record.ledger_entries.push_back( entry );
+                  }
+                  if( trx.fees_collected.amount > 0 )
+                  {
+                      auto entry = ledger_entry();
+                      entry.from_account = okey_ask->public_key;
+                      entry.to_account = ask_account_key->public_key;
+                      entry.amount = trx.fees_collected * 19;
+                      entry.memo = "cover proceeds - 5% margin call fee";
+                      record.ledger_entries.push_back( entry );
+                      record.fee = trx.fees_collected;
+                  }
+              }
 
               _wallet_db.store_transaction( record );
           }
@@ -512,8 +500,8 @@ namespace bts { namespace wallet {
       { try {
           const auto record_id = transaction.id();
           auto transaction_record = _wallet_db.lookup_transaction( record_id );
-          auto is_known = transaction_record.valid();
-          if( !is_known ) /* If new transaction */
+          const auto is_known = transaction_record.valid();
+          if( !is_known )
           {
               transaction_record = wallet_transaction_record();
               transaction_record->created_time = block_timestamp;
@@ -523,15 +511,9 @@ namespace bts { namespace wallet {
           transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
-
-          if( is_known )
-          {
-             _wallet_db.store_transaction( *transaction_record );
-             return;
-          }
           transaction_record->trx = transaction;
 
-          auto store_record = false; //is_known;
+          auto store_record = is_known;
 
           /* Clear amounts and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
@@ -542,7 +524,6 @@ namespace bts { namespace wallet {
 
           // Force scanning all withdrawals first because ledger reconstruction assumes such an ordering
           auto has_withdrawal = false;
-          bool has_cover = false;
           for( const auto& op : transaction.operations )
           {
               switch( operation_type_enum( op.type ) )
@@ -573,16 +554,6 @@ namespace bts { namespace wallet {
                       if( short_op.amount < 0 )
                           has_withdrawal |= scan_short( short_op, *transaction_record, total_fee );
                       break;
-                  }
-                  case cover_op_type:
-                  {
-                     has_cover = true;
-                     /*
-                      const auto short_op = op.as<short_operation>();
-                      if( short_op.amount < 0 )
-                          has_withdrawal |= scan_short( short_op, *transaction_record, total_fee );
-                      break;
-                      */
                   }
                   default:
                       break;
@@ -1118,8 +1089,9 @@ namespace bts { namespace wallet {
       bool wallet_impl::scan_deposit( const deposit_operation& op, const private_keys& keys,
                                       wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
-          if( op.condition.asset_id == total_fee.asset_id )
-              total_fee -= asset( op.amount, op.condition.asset_id );
+          auto amount = asset( op.amount, op.condition.asset_id );
+          if( amount.asset_id == total_fee.asset_id )
+              total_fee -= amount;
 
           bool cache_deposit = false;
           switch( (withdraw_condition_types) op.condition.type )
@@ -1134,7 +1106,7 @@ namespace bts { namespace wallet {
                 auto deposit = op.condition.as<withdraw_with_signature>();
                 // TODO: lookup if cached key and work with it only
                 // if( _wallet_db.has_private_key( deposit.owner ) )
-                if( deposit.memo )
+                if( deposit.memo ) /* titan transfer */
                 {
                    _scanner_thread->async( [&]()
                    {
@@ -1163,7 +1135,7 @@ namespace bts { namespace wallet {
                                     if( !entry.memo_from_account.valid() )
                                         entry.from_account = status->from;
                                     entry.to_account = key.get_public_key();
-                                    entry.amount = asset( op.amount, op.condition.asset_id );
+                                    entry.amount = amount;
                                     entry.memo = status->get_message();
                                     break;
                                 }
@@ -1172,7 +1144,7 @@ namespace bts { namespace wallet {
                                     auto entry = ledger_entry();
                                     entry.from_account = status->from;
                                     entry.to_account = key.get_public_key();
-                                    entry.amount = asset( op.amount, op.condition.asset_id );
+                                    entry.amount = amount;
                                     entry.memo = status->get_message();
                                     trx_rec.ledger_entries.push_back( entry );
                                 }
@@ -1190,7 +1162,7 @@ namespace bts { namespace wallet {
                                     new_entry = false;
                                     entry.from_account = key.get_public_key();
                                     entry.to_account = status->from;
-                                    entry.amount = asset( op.amount, op.condition.asset_id );
+                                    entry.amount = amount;
                                     entry.memo = status->get_message();
                                     break;
                                 }
@@ -1199,7 +1171,7 @@ namespace bts { namespace wallet {
                                     auto entry = ledger_entry();
                                     entry.from_account = key.get_public_key();
                                     entry.to_account = status->from;
-                                    entry.amount = asset( op.amount, op.condition.asset_id );
+                                    entry.amount = amount;
                                     entry.memo = status->get_message();
                                     trx_rec.ledger_entries.push_back( entry );
                                 }
@@ -1212,7 +1184,7 @@ namespace bts { namespace wallet {
                    }, "scan_deposit" ).wait();
                    break;
                 }
-                else /* i.e. deposit from market cancel operation */
+                else /* market cancel or cover proceeds */
                 {
                    const auto okey_rec = _wallet_db.lookup_key( deposit.owner );
                    if( okey_rec && okey_rec->has_private_key() )
@@ -1225,9 +1197,18 @@ namespace bts { namespace wallet {
                            if( !account_rec.valid() ) continue;
                            const auto account_key_rec = _wallet_db.lookup_key( account_rec->account_address );
                            if( !account_key_rec.valid() ) continue;
+                           if( !trx_rec.trx.is_cancel() ) /* cover proceeds */
+                           {
+                               if( entry.amount.asset_id != amount.asset_id ) continue;
+                           }
                            entry.to_account = account_key_rec->public_key;
-                           entry.amount = asset( op.amount, op.condition.asset_id );
+                           entry.amount = amount;
                            //entry.memo =
+                           if( !trx_rec.trx.is_cancel() ) /* cover proceeds */
+                           {
+                               if( amount.asset_id == total_fee.asset_id )
+                                   total_fee += amount;
+                           }
                            break;
                        }
                        cache_deposit = true;
@@ -4255,7 +4236,7 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "COVER-" + variant( address(order_key) ).as_string().substr(3,8);
+           key_rec->memo = "SHORT-" + variant( address(order_key) ).as_string().substr(3,8);
            my->_wallet_db.store_key(*key_rec);
        }
 
@@ -4300,6 +4281,8 @@ namespace bts { namespace wallet {
           amount_to_cover.amount = order_to_cover->state.balance;
        }
 
+       trx.cover( amount_to_cover, order_to_cover->market_index );
+
        my->withdraw_to_transaction( amount_to_cover,
                                     from_address,
                                     trx,
@@ -4307,13 +4290,11 @@ namespace bts { namespace wallet {
 
        auto required_fees = get_priority_fee();
 
-       trx.cover( amount_to_cover, order_to_cover->market_index );
-
        bool fees_paid = false;
-       asset collateral_recovered(0,0);
-       if( amount_to_cover.amount - order_to_cover->state.balance >= 0 )
+       auto collateral_recovered = asset();
+       if( amount_to_cover.amount >= order_to_cover->state.balance )
        {
-          if( *order_to_cover->collateral > required_fees.amount )
+          if( *order_to_cover->collateral >= required_fees.amount )
           {
              slate_id_type slate_id = 0;
 
@@ -4325,21 +4306,9 @@ namespace bts { namespace wallet {
                 trx.define_delegate_slate( new_slate );
              }
 
-             collateral_recovered = asset( *order_to_cover->collateral - required_fees.amount); 
+             collateral_recovered = asset( *order_to_cover->collateral - required_fees.amount);
              trx.deposit( order_to_cover->market_index.owner, collateral_recovered, slate_id );
              fees_paid = true;
-
-             auto bal_rec = my->_blockchain->get_balance_record( withdraw_condition( 
-                                     withdraw_with_signature(order_to_cover->market_index.owner), 0 ).get_address() );
-             if( bal_rec )
-             {
-                 //wlog( "BAL RECORD ${R}", ("R", bal_rec) );
-                 my->_wallet_db.cache_balance( *bal_rec );
-             }
-             else
-             {
-              // we need to create it...
-             }
           }
           else
           {
@@ -4348,36 +4317,32 @@ namespace bts { namespace wallet {
        }
        if( !fees_paid )
        {
-             my->withdraw_to_transaction( required_fees,
-                                          from_address,
-                                          trx,
-                                          required_signatures );
+           my->withdraw_to_transaction( required_fees, from_address, trx, required_signatures );
        }
 
        if( sign )
        {
            auto record = wallet_transaction_record();
-           record.is_market = false;
-
-           auto entry = ledger_entry();
-           entry.from_account = from_account_key;
-           entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
-           entry.amount = amount_to_cover;
-           entry.memo = "COVER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
-           record.ledger_entries.push_back( entry );
-
-           // change entry
-           if( collateral_recovered.amount )
-           {
-              entry = ledger_entry();
-              entry.to_account = from_account_key;
-              entry.from_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
-              entry.amount = collateral_recovered;
-              entry.memo = "collateral from COVER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
-              record.ledger_entries.push_back( entry );
-           }
-
+           record.is_market = true;
            record.fee = required_fees;
+
+           {
+               auto entry = ledger_entry();
+               entry.from_account = from_account_key;
+               entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
+               entry.amount = amount_to_cover;
+               entry.memo = "payoff COVER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
+               record.ledger_entries.push_back( entry );
+           }
+           if( collateral_recovered.amount > 0 )
+           {
+               auto entry = ledger_entry();
+               entry.from_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
+               entry.to_account = from_account_key;
+               entry.amount = collateral_recovered;
+               entry.memo = "cover proceeds";
+               record.ledger_entries.push_back( entry );
+           }
 
            sign_and_cache_transaction( trx, required_signatures, record );
        }
@@ -4481,19 +4446,25 @@ namespace bts { namespace wallet {
 
           /* I'm sorry - Vikram */
           /* You better be. - Dan */
-          if( pretty_entry.from_account.find( "COVER" ) == 0
-              && pretty_entry.to_account.find( "COVER" ) == 0 )
-              pretty_entry.from_account.replace(0, 8, "SHORT-CC" );
+          if( pretty_entry.from_account.find( "SHORT" ) == 0
+              && pretty_entry.to_account.find( "SHORT" ) == 0 )
+              pretty_entry.to_account.replace(0, 5, "COVER" );
 
-          if( !std::isupper( pretty_entry.from_account[0] ) &&
-              pretty_entry.to_account.find( "COVER" ) == 0 )
-          {
-             if( entry.memo[0] != 'C' )
-              pretty_entry.to_account.replace(0, 7, "SHORT-U" );
-          }
+          if( pretty_entry.from_account.find( "MARKET" ) == 0
+              && pretty_entry.to_account.find( "SHORT" ) == 0 )
+              pretty_entry.to_account.replace(0, 5, "COVER" );
 
-          if( pretty_entry.from_account.find( "COVER" ) == 0 && pretty_trx.is_market_cancel )
-              pretty_entry.from_account.replace(0, 7, "SHORT-F" );
+          if( pretty_entry.from_account.find( "SHORT" ) == 0
+              && pretty_entry.to_account.find( "MARKET" ) == 0 )
+              pretty_entry.from_account.replace(0, 5, "COVER" );
+
+          if( pretty_entry.to_account.find( "SHORT" ) == 0
+              && entry.memo.find( "payoff" ) == 0 )
+              pretty_entry.to_account.replace(0, 5, "COVER" );
+
+          if( pretty_entry.from_account.find( "SHORT" ) == 0
+              && entry.memo.find( "cover" ) == 0 )
+              pretty_entry.from_account.replace(0, 5, "COVER" );
 
           pretty_entry.amount = entry.amount;
           pretty_entry.memo = entry.memo;
@@ -4878,8 +4849,7 @@ namespace bts { namespace wallet {
            FC_ASSERT( !transaction_record.is_virtual && !transaction_record.is_confirmed );
            const auto error = my->_blockchain->get_transaction_error( transaction_record.trx, priority_fee );
            if( !error.valid() ) continue;
-           if( error->code() != bts::blockchain::duplicate_transaction().code() )
-              transaction_errors[ transaction_record.trx.id() ] = *error;
+           transaction_errors[ transaction_record.trx.id() ] = *error;
        }
        return transaction_errors;
    } FC_CAPTURE_AND_RETHROW() }

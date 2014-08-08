@@ -112,8 +112,8 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec(clientb, "wallet_market_cancel_order XTS7FDgYCCxD29WutqJtbvqyvaxdkxYeBVs7");
    produce_block(clientb);
    exec(clientb, "wallet_account_transaction_history delegate32");
+   exec(clienta, "balance" );
    exec(clientb, "balance");
-   return;
    exec(clientb, "wallet_account_transaction_history");
    exec(clienta, "blockchain_market_order_book BUSD XTS");
    exec(clienta, "wallet_transfer 95 BUSD delegate31 delegate32");
@@ -121,19 +121,15 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block(clienta);
    exec(clienta, "wallet_account_transaction_history");
    exec(clientb, "wallet_account_transaction_history");
-   exec(clienta, "balance" );
    exec(clientb, "balance" );
    exec(clientb, "wallet_market_cover delegate32 5 BUSD XTS7FDgYCCxD29WutqJtbvqyvaxdkxYeBVs7" );
    produce_block(clientb);
    exec(clientb, "balance" );
    exec(clientb, "wallet_market_cover delegate32 90 BUSD XTS7FDgYCCxD29WutqJtbvqyvaxdkxYeBVs7" );
    produce_block(clientb);
-   exec(clientb, "balance" );
    exec(clienta, "wallet_account_transaction_history");
    exec(clientb, "wallet_account_transaction_history delegate32");
    exec(clientb, "wallet_market_order_list BUSD XTS"); // TODO: this should filter by account
-   exec(clientb, "balance" );
-   exec(clientb, "rescan 0 0" );
    exec(clientb, "balance" );
    return;
 
