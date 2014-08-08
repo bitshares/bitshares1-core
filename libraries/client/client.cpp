@@ -1677,9 +1677,9 @@ config load_config( const fc::path& datadir )
       return errors;
     }
 
-    signed_transaction detail::client_impl::wallet_publish_slate( const string& account_name )
+    signed_transaction detail::client_impl::wallet_publish_slate( const string& publishing_account_name, const string& paying_account_name )
     {
-       auto trx = _wallet->publish_slate( account_name );
+       auto trx = _wallet->publish_slate( publishing_account_name, paying_account_name );
        network_broadcast_transaction( trx );
 
        return trx;

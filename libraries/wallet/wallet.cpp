@@ -2765,22 +2765,24 @@ namespace bts { namespace wallet {
 
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
 
-   signed_transaction wallet::publish_slate( const string& account_to_publish_under, bool sign )
+   signed_transaction wallet::publish_slate( const string& account_to_publish_under, const string& account_to_pay_with, bool sign )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
-       if( !is_receive_account( account_to_publish_under ) )
-           FC_THROW_EXCEPTION( unknown_account, "Unknown sending account name!", ("from_account_name",account_to_publish_under) );
+       if( !is_receive_account( account_to_pay_with ) )
+           FC_THROW_EXCEPTION( unknown_account, "Unknown paying account name!",
+                               ("paying_account_name",account_to_pay_with.empty()? account_to_publish_under : account_to_pay_with) );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
-      auto payer_public_key = get_account_public_key( account_to_publish_under );
+      auto payer_public_key = get_account_public_key( account_to_pay_with.empty()? account_to_publish_under : account_to_pay_with );
 
 
       auto slate_id = select_slate( trx, 0, vote_all );
+      FC_ASSERT(slate_id != 0, "Cannot publish the null slate!");
 
       fc::mutable_variant_object public_data;
       if( current_account->public_data.is_object()  )
@@ -2792,6 +2794,7 @@ namespace bts { namespace wallet {
                           current_account->delegate_pay_rate(),
                           fc::variant_object(public_data),
                           optional<public_key_type>() );
+      my->authorize_update( required_signatures, current_account );
 
       auto required_fees = get_priority_fee();
 
@@ -3396,9 +3399,13 @@ namespace bts { namespace wallet {
       auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
       {
+        try {
           auto parent_name = account_to_register.substr( pos+1, string::npos );
           auto parent_acct = get_account( parent_name );
           required_signatures.insert( parent_acct.active_address() );
+        } catch (unknown_account) {
+          FC_THROW_EXCEPTION (unknown_account, "Parent account was not found to authorize registration.");
+        }
       }
 
       auto required_fees = get_priority_fee();
