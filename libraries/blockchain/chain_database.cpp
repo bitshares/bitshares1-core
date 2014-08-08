@@ -6,6 +6,7 @@
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/time.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/checkpoints.hpp>
@@ -74,6 +75,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
+#include "original_market_engine.hpp"
             class market_engine
             {
                public:
@@ -1409,9 +1411,19 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
-           market_engine engine( pending_state, *this );
-           engine.execute( market_pair.first, market_pair.second, timestamp );
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           if( pending_state->get_head_block_num() < BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM )
+           {
+              original_market_engine engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+           else
+           {
+              market_engine engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+
         } 
         ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
         pending_state->set_dirty_markets( pending_state->_dirty_markets );

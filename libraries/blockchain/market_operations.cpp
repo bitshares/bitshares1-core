@@ -1,3 +1,4 @@
+#include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/market_operations.hpp>
@@ -146,12 +147,17 @@ namespace bts { namespace blockchain {
       }
       else
       {
-         auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
-         FC_ASSERT( median_delegate_price.valid() );
-         auto feed_max_short_bid = *median_delegate_price;
-         feed_max_short_bid.ratio *= 4;
-         feed_max_short_bid.ratio /= 3;
-         FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
+         if ( eval_state._current_state->get_head_block_num() > BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM) {
+            auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
+            FC_ASSERT( median_delegate_price.valid() );
+            auto feed_max_short_bid = *median_delegate_price;
+            feed_max_short_bid.ratio *= 4;
+            feed_max_short_bid.ratio /= 3;
+            FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
+         } else
+         {
+             // What's the old version?
+         }
       }
       /*
       if( this->short_index.order_price > asset_to_short->maximum_xts_price || 
