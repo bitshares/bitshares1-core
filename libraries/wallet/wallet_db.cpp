@@ -646,21 +646,23 @@ namespace bts { namespace wallet {
 
    void wallet_db::remove_contact_account( const string& account_name )
    {
-      auto opt_account = lookup_account( account_name );
+      const auto opt_account = lookup_account( account_name );
       FC_ASSERT( opt_account.valid() );
-      auto acct = *opt_account;
+      const auto acct = *opt_account;
       FC_ASSERT( ! has_private_key(address(acct.owner_key)), "you can only remove contact accounts");
 
-      accounts.erase( acct.wallet_record_index );
-      remove_item( acct.wallet_record_index );
-      keys.erase( address(acct.owner_key) );
-      address_to_account_wallet_record_index.erase( address(acct.owner_key) );
       for( const auto& time_key_pair : acct.active_key_history )
       {
           keys.erase( address(time_key_pair.second) );
           address_to_account_wallet_record_index.erase( address(time_key_pair.second) );
       }
+      remove_item( acct.wallet_record_index );
+
+      keys.erase( address(acct.owner_key) );
+      address_to_account_wallet_record_index.erase( address(acct.owner_key) );
+      account_id_to_wallet_record_index.erase( acct.id );
       name_to_account_wallet_record_index.erase( account_name );
+      accounts.erase( acct.wallet_record_index );
    }
 
    void wallet_db::rename_account(const public_key_type &old_account_key,
