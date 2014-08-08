@@ -2768,6 +2768,49 @@ namespace bts { namespace blockchain {
       return results;
    }
 
+   fc::variant_object chain_database::find_delegate_vote_discrepancies() const
+   {
+      unordered_map<account_id_type, share_type> calculated_balances;
+
+      for (auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr)
+      {
+        balance_record balance = balance_itr.value();
+        if (balance.delegate_slate_id() == 0)
+          continue;
+        if (balance.asset_id() == 0)
+        {
+          odelegate_slate slate = get_delegate_slate(balance.delegate_slate_id());
+          FC_ASSERT(slate.valid(), "Unknown slate ID found in balance.");
+
+          for (account_id_type delegate : slate->supported_delegates)
+            calculated_balances[delegate] += balance.balance;
+        }
+      }
+
+      fc::mutable_variant_object discrepancies;
+
+      for (auto vote_itr = my->_delegate_vote_index_db.begin(); vote_itr.valid(); ++vote_itr)
+      {
+        vote_del vote_record = vote_itr.key();
+        oaccount_record delegate_record = get_account_record(vote_record.delegate_id);
+        FC_ASSERT(delegate_record.valid(), "Unknown delegate ID in votes database.");
+
+        calculated_balances[delegate_record->id] += delegate_record->delegate_pay_balance();
+
+        if (vote_record.votes != delegate_record->net_votes() ||
+            vote_record.votes != calculated_balances[vote_record.delegate_id])
+        {
+          fc::mutable_variant_object discrepancy_record;
+          discrepancy_record["calculated_votes"] = calculated_balances[vote_record.delegate_id];
+          discrepancy_record["indexed_votes"] = vote_record.votes;
+          discrepancy_record["stored_votes"] = delegate_record->net_votes();
+          discrepancies[delegate_record->name] = discrepancy_record;
+        }
+      }
+
+      return discrepancies;
+   }
+
    fc::ripemd160 chain_database::get_current_random_seed()const
    {
       return get_property( last_random_seed_id ).as<fc::ripemd160>();
