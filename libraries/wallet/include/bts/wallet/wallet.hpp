@@ -437,7 +437,7 @@ namespace bts { namespace wallet {
                                                                             const string& asset_symbol = "" )const;
 
          void                               remove_transaction_record( const string& record_id );
-         signed_transaction                 publish_slate( const string& account, bool sign = true );
+         signed_transaction                 publish_slate(const string& account, const string& account_to_pay_with, bool sign = true );
          signed_transaction                 publish_price( const string& account, 
                                                            double amount_per_xts, 
                                                            const string& amount_asset_symbol, bool sign = true );
