@@ -1013,7 +1013,7 @@ namespace bts { namespace cli {
                             << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
                                : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
-                            << std::right << std::setw(30) << _client->get_chain()->to_pretty_price(bid_itr->get_price());
+                            << std::right << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(bid_itr->get_price()) )+ " " + quote_asset_record->symbol);
 
                       if( bid_itr->type == bts::blockchain::short_order )
                           *_out << '*';
@@ -1031,7 +1031,7 @@ namespace bts { namespace cli {
                     {
                       if( !ask_itr->collateral )
                       {
-                         *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                         *_out << std::left << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
                                << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                                << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
                           ++ask_itr;
@@ -1061,7 +1061,7 @@ namespace bts { namespace cli {
                          {
                              *_out << std::string(77, ' ');
                              *_out << "| ";
-                             *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                             *_out << std::left << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
                                   << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                                   << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
                                 *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
