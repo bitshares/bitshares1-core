@@ -31,7 +31,7 @@ namespace bts { namespace blockchain {
           if( NOT current_bid ) 
              FC_CAPTURE_AND_THROW( unknown_market_order, (bid_index) );
 
-          if( abs(this->amount) > current_bid->balance )
+          if( llabs(this->amount) > current_bid->balance )
              FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_bid->balance) );
 
           // add the delta amount to the eval state that we withdrew from the bid
@@ -87,7 +87,7 @@ namespace bts { namespace blockchain {
           if( NOT current_ask ) 
              FC_CAPTURE_AND_THROW( unknown_market_order, (ask_index) );
 
-          if( abs(this->amount) > current_ask->balance )
+          if( llabs(this->amount) > current_ask->balance )
              FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_ask->balance) );
 
           // add the delta amount to the eval state that we withdrew from the ask
@@ -102,6 +102,7 @@ namespace bts { namespace blockchain {
       }
       
       current_ask->balance     += this->amount;
+      FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
       auto market_stat = eval_state._current_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
 
@@ -169,7 +170,7 @@ namespace bts { namespace blockchain {
           if( NOT current_short ) 
              FC_CAPTURE_AND_THROW( unknown_market_order, (short_index) );
 
-          if( abs(this->amount) > current_short->balance )
+          if( llabs(this->amount) > current_short->balance )
              FC_CAPTURE_AND_THROW( insufficient_funds, (amount)(current_short->balance) );
 
           // add the delta amount to the eval state that we withdrew from the short
@@ -184,6 +185,7 @@ namespace bts { namespace blockchain {
       }
       
       current_short->balance     += this->amount;
+      FC_ASSERT( current_short->balance >= 0 );
 
       market_stat->bid_depth += delta_amount.amount;
 
