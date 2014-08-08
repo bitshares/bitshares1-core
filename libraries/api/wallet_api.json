@@ -1313,9 +1313,15 @@
          "return_type" : "signed_transaction",
          "parameters"  : [
             {
-                "name" : "account_name",
+                "name" : "publishing_account_name",
                 "type" : "account_name",
                 "description" : "The account to publish the slate ID under"
+            },
+            {
+                "name" : "paying_account_name",
+                "type" : "account_name",
+                "description" : "The account to pay transaction fees; leave empty to pay with publishing account.",
+                "default_value" : ""
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
