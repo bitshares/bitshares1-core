@@ -59,7 +59,7 @@
             },
             {
               "name" : "brain_key",
-              "type" : "new_passphrase",
+              "type" : "brainkey",
               "description" : "a strong passphrase that will be used to generate all private keys, defaults to a large random number",
               "default_value" : ""
             }

@@ -24,11 +24,11 @@
         "method_name": "blockchain_get_block_hash",
         "description": "Returns hash of block in best-block-chain at index provided",
         "return_type": "block_id_type",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "block_number", 
-              "type" : "uint32_t", 
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
               "description" : "index of the block",
               "example" : "42"
             }
@@ -61,14 +61,14 @@
         "return_type": "account_record_array",
         "parameters" : [
             {
-              "name" : "first_account_name", 
-              "type" : "account_name", 
+              "name" : "first_account_name",
+              "type" : "account_name",
               "description" : "the first account name to include. May be either a name or an index",
               "default_value" : ""
             },
             {
-              "name" : "limit", 
-              "type" : "int32_t", 
+              "name" : "limit",
+              "type" : "int32_t",
               "description" : "the maximum number of items to list",
               "default_value" : -1
             }
@@ -90,14 +90,14 @@
         "return_type": "asset_record_array",
         "parameters" : [
             {
-              "name" : "first_symbol", 
-              "type" : "asset_symbol", 
+              "name" : "first_symbol",
+              "type" : "asset_symbol",
               "description" : "the prefix of the first asset symbol name to include",
               "default_value" : ""
             },
             {
-              "name" : "limit", 
-              "type" : "int32_t", 
+              "name" : "limit",
+              "type" : "int32_t",
               "description" : "the maximum number of items to list",
               "default_value" : -1
             }
@@ -120,8 +120,8 @@
         "return_type": "optional_blockchain_transaction_record",
         "parameters" : [
             {
-              "name" : "transaction_id", 
-              "type" : "string", 
+              "name" : "transaction_id",
+              "type" : "string",
               "description" : "the base58 transaction ID to return"
             },
             {
@@ -227,14 +227,14 @@
         "return_type": "proposal_array",
         "parameters" : [
             {
-              "name" : "first", 
-              "type" : "uint32_t", 
+              "name" : "first",
+              "type" : "uint32_t",
               "description" : "",
               "default_value" : 0
             },
             {
-              "name" : "count", 
-              "type" : "uint32_t", 
+              "name" : "count",
+              "type" : "uint32_t",
               "description" : "",
               "default_value" : -1
             }
@@ -249,8 +249,8 @@
         "return_type": "proposal_vote_array",
         "parameters" : [
             {
-              "name" : "proposal_id", 
-              "type" : "proposal_id", 
+              "name" : "proposal_id",
+              "type" : "proposal_id",
               "description" : "The ID of the proposal that votes will be returned for."
             }
         ],
@@ -500,7 +500,7 @@
                "description" : "the maximum number of blocks to return. A negative value means to start at the head block and work backwards; a positive value means to start at the first block",
                "default_value" : -20
             }
-         ], 
+         ],
          "aliases" : ["list_blocks"],
          "prerequisites" : ["json_authenticated"]
       },
@@ -514,7 +514,7 @@
                "type" : "uint32_t",
                "description" : "The block to examine"
             }
-         ], 
+         ],
          "prerequisites" : ["json_authenticated"]
       },
       {
