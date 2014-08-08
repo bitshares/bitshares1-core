@@ -120,7 +120,6 @@
 
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       (BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
-#define BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE                 ( BTS_BLOCKCHAIN_MAX_BLOCK_SIZE / 2 )
 
 /** defines the target block size, fees will be adjusted to maintain this target */
 #define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                    (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
