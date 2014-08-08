@@ -3153,6 +3153,11 @@ config load_config( const fc::path& datadir )
     return _p2p_node->get_call_statistics();
   }
 
+  fc::variant_object client_impl::debug_verify_delegate_votes() const
+  {
+    return _chain_db->find_delegate_vote_discrepancies();
+  }
+
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
    {
       return _chain_db->export_fork_graph( start_block, end_block, filename );
