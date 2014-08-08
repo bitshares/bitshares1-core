@@ -100,6 +100,9 @@ namespace bts { namespace wallet {
 
          float   get_scan_progress()const;
 
+         void                   set_setting( const string& name, const variant& value );
+         fc::optional<variant>  get_setting( const string& name )const;
+
          ///@}
 
          /**
@@ -116,9 +119,6 @@ namespace bts { namespace wallet {
          void                               change_passphrase(const string& new_passphrase);
          ///@}
 
-         void set_setting(const string& name, const variant& value);
-         fc::optional<variant> get_setting(const string& name);
-
          /**
           *  @name Utility Methods
           */
@@ -134,7 +134,7 @@ namespace bts { namespace wallet {
           */
          bool is_valid_account_name( const string& account_name )const;
 
-         private_key_type get_account_private_key( const string& account_name )const;
+         private_key_type get_active_private_key( const string& account_name )const;
          public_key_type  get_account_public_key( const string& account_name )const;
 
          public_key_summary get_public_key_summary( const public_key_type& pubkey ) const;
@@ -178,7 +178,7 @@ namespace bts { namespace wallet {
          void     rename_account( const string& old_contact_name,
                                   const string& new_contact_name );
 
-         owallet_account_record  get_account_for_address( address addr );
+         owallet_account_record  get_account_for_address( address addr )const;
          ///@}
 
          /**
@@ -380,6 +380,11 @@ namespace bts { namespace wallet {
                                       uint8_t delegate_pay_rate = 255,
                                       bool sign = true );
 
+         signed_transaction update_active_key( const std::string& account_to_update,
+                                               const std::string& pay_from_account,
+                                               const std::string& new_active_key,
+                                               bool sign = true );
+
          signed_transaction create_proposal( const string& delegate_account_name,
                                              const string& subject,
                                              const string& body,
@@ -433,6 +438,9 @@ namespace bts { namespace wallet {
 
          void                               remove_transaction_record( const string& record_id );
          signed_transaction                 publish_slate( const string& account, bool sign = true );
+         signed_transaction                 publish_price( const string& account, 
+                                                           double amount_per_xts, 
+                                                           const string& amount_asset_symbol, bool sign = true );
 
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
 
@@ -461,8 +469,8 @@ namespace bts { namespace wallet {
 
          std::string login_start( const std::string& account_name );
          fc::variant login_finish(const public_key_type& server_key,
-                                            const public_key_type& client_key,
-                                            const fc::ecc::compact_signature& client_signature);
+                                  const public_key_type& client_key,
+                                  const fc::ecc::compact_signature& client_signature);
      private:
          unique_ptr<detail::wallet_impl> my;
    };

@@ -6,6 +6,7 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
+#include <bts/blockchain/feed_operations.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/io/raw_variant.hpp>
 
@@ -27,6 +28,7 @@ namespace bts { namespace blockchain {
    const operation_type_enum cover_operation::type             = cover_op_type;
    const operation_type_enum add_collateral_operation::type    = add_collateral_op_type;
    const operation_type_enum remove_collateral_operation::type = remove_collateral_op_type;
+   const operation_type_enum update_feed_operation::type       = update_feed_op_type;
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
@@ -47,6 +49,7 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<add_collateral_operation>();
       bts::blockchain::operation_factory::instance().register_operation<remove_collateral_operation>();
       bts::blockchain::operation_factory::instance().register_operation<define_delegate_slate_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<update_feed_operation>();
       return true;
    }();
 

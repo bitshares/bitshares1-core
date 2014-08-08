@@ -24,11 +24,11 @@
         "method_name": "blockchain_get_block_hash",
         "description": "Returns hash of block in best-block-chain at index provided",
         "return_type": "block_id_type",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "block_number", 
-              "type" : "uint32_t", 
+            {
+              "name" : "block_number",
+              "type" : "uint32_t",
               "description" : "index of the block",
               "example" : "42"
             }
@@ -61,18 +61,26 @@
         "return_type": "account_record_array",
         "parameters" : [
             {
-              "name" : "first_account_name", 
-              "type" : "account_name", 
+              "name" : "first_account_name",
+              "type" : "account_name",
               "description" : "the first account name to include. May be either a name or an index",
               "default_value" : ""
             },
             {
-              "name" : "limit", 
-              "type" : "int32_t", 
+              "name" : "limit",
+              "type" : "int32_t",
               "description" : "the maximum number of items to list",
               "default_value" : -1
             }
         ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "blockchain_list_recently_registered_accounts",
+        "description": "Returns a list of recently registered accounts",
+        "return_type": "account_record_array",
+        "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"]
       },
@@ -82,14 +90,14 @@
         "return_type": "asset_record_array",
         "parameters" : [
             {
-              "name" : "first_symbol", 
-              "type" : "asset_symbol", 
+              "name" : "first_symbol",
+              "type" : "asset_symbol",
               "description" : "the prefix of the first asset symbol name to include",
               "default_value" : ""
             },
             {
-              "name" : "limit", 
-              "type" : "int32_t", 
+              "name" : "limit",
+              "type" : "int32_t",
               "description" : "the maximum number of items to list",
               "default_value" : -1
             }
@@ -98,12 +106,13 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
-        "method_name": "blockchain_get_pending_transactions",
+        "method_name": "blockchain_list_pending_transactions",
         "description": "Return a list of transactions that are not yet in a block.",
         "return_type": "signed_transaction_array",
         "parameters" : [],
         "is_const" : true,
-        "prerequisites" : ["no_prerequisites"]
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["blockchain_get_pending_transactions", "list_pending"]
       },
       {
         "method_name": "blockchain_get_transaction",
@@ -111,8 +120,8 @@
         "return_type": "optional_blockchain_transaction_record",
         "parameters" : [
             {
-              "name" : "transaction_id", 
-              "type" : "string", 
+              "name" : "transaction_id",
+              "type" : "string",
               "description" : "the base58 transaction ID to return"
             },
             {
@@ -138,7 +147,7 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
-        "aliases" : ["get_block, getblock"]
+        "aliases" : ["get_block", "getblock"]
       },
       {
         "method_name": "blockchain_get_block_transactions",
@@ -185,19 +194,47 @@
         "aliases" : ["get_asset"]
       },
       {
+        "method_name": "blockchain_get_feeds_for_asset",
+        "description": "Retrieves all current feeds for the given asset",
+        "return_type": "feed_entry_list",
+        "parameters" : [
+            {
+              "name" : "asset",
+              "type" : "string",
+              "description" : "asset ticker symbol or ID to retrieve"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_get_feeds_from_delegate",
+        "description": "Retrieves all current feeds published by the given delegate",
+        "return_type": "feed_entry_list",
+        "parameters" : [
+            {
+              "name" : "delegate_name",
+              "type" : "string",
+              "description" : "the name of the delegate to list feeds from"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
+      },
+      {
         "method_name": "blockchain_list_proposals",
         "description": "Returns the list of proposals",
         "return_type": "proposal_array",
         "parameters" : [
             {
-              "name" : "first", 
-              "type" : "uint32_t", 
+              "name" : "first",
+              "type" : "uint32_t",
               "description" : "",
               "default_value" : 0
             },
             {
-              "name" : "count", 
-              "type" : "uint32_t", 
+              "name" : "count",
+              "type" : "uint32_t",
               "description" : "",
               "default_value" : -1
             }
@@ -212,8 +249,8 @@
         "return_type": "proposal_vote_array",
         "parameters" : [
             {
-              "name" : "proposal_id", 
-              "type" : "proposal_id", 
+              "name" : "proposal_id",
+              "type" : "proposal_id",
               "description" : "The ID of the proposal that votes will be returned for."
             }
         ],
@@ -463,7 +500,7 @@
                "description" : "the maximum number of blocks to return. A negative value means to start at the head block and work backwards; a positive value means to start at the first block",
                "default_value" : -20
             }
-         ], 
+         ],
          "aliases" : ["list_blocks"],
          "prerequisites" : ["json_authenticated"]
       },
@@ -477,7 +514,7 @@
                "type" : "uint32_t",
                "description" : "The block to examine"
             }
-         ], 
+         ],
          "prerequisites" : ["json_authenticated"]
       },
       {

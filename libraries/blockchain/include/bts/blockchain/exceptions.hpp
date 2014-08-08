@@ -8,7 +8,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_EXCEPTION( blockchain_exception, 30000, "Blockchain Exception" ); 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_pts_address, bts::blockchain::blockchain_exception, 30001, "invalid pts address" ); 
    FC_DECLARE_DERIVED_EXCEPTION( addition_overflow,   bts::blockchain::blockchain_exception, 30002, "addition overflow" ); 
-   FC_DECLARE_DERIVED_EXCEPTION( addition_underthrow, bts::blockchain::blockchain_exception, 30003, "addition underflow" ); 
+   FC_DECLARE_DERIVED_EXCEPTION( subtraction_overflow, bts::blockchain::blockchain_exception, 30003, "subtraction overflow" );
    FC_DECLARE_DERIVED_EXCEPTION( asset_type_mismatch, bts::blockchain::blockchain_exception, 30004, "asset/price mismatch" ); 
    FC_DECLARE_DERIVED_EXCEPTION( unsupported_chain_operation, bts::blockchain::blockchain_exception, 30005, "unsupported chain operation" ); 
    FC_DECLARE_DERIVED_EXCEPTION( unknown_transaction, bts::blockchain::blockchain_exception, 30006, "unknown transaction" ); 
@@ -29,6 +29,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( invalid_fee_rate, bts::blockchain::blockchain_exception, 30019, "invalid fee rate" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_block_digest, bts::blockchain::blockchain_exception, 30020, "invalid block digest" );
    FC_DECLARE_DERIVED_EXCEPTION( invalid_delegate_signee, bts::blockchain::blockchain_exception, 30021, "invalid delegate signee" );
+   FC_DECLARE_DERIVED_EXCEPTION( failed_checkpoint_verification, bts::blockchain::blockchain_exception, 30022, "failed checkpoint verification" );
 
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );
@@ -91,5 +92,6 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( shorting_base_shares,  bts::blockchain::evaluation_error, 37003, "shorting base shares" );
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_collateral,  bts::blockchain::evaluation_error, 37004, "insufficient collateral" );
    FC_DECLARE_DERIVED_EXCEPTION( insufficient_depth,  bts::blockchain::evaluation_error, 37005, "insufficient depth" );
+   FC_DECLARE_DERIVED_EXCEPTION( insufficient_feeds,  bts::blockchain::evaluation_error, 37006, "insufficient feeds" );
 
 } } // bts::blockchain

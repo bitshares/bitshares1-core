@@ -1,4 +1,12 @@
-default (unlocked) >>> debug_filter_output_for_tests true
+default (unlocked) >>> wallet_account_create test
+"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> help blockchain_get_block_transactions
 Usage:
@@ -10,59 +18,11 @@ Parameters:
 
 Returns:
   blockchain_transaction_record_map
-default (unlocked) >>> debug_wait 5
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
-OK
-default (unlocked) >>> blockchain_get_block_transactions 1
-[]
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 2 absolute
-OK
 default (unlocked) >>> blockchain_get_block_transactions 2
-[]
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
-OK
-default (unlocked) >>> blockchain_get_block_transactions 3
-[]
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 4 absolute
-OK
-default (unlocked) >>> blockchain_get_block_transactions 4
-[]
-default (unlocked) >>> wallet_account_create testaccount
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-[redacted]          PENDING   delegate0           testaccount         100.00000 XTS                                                       0.10000 XTS         [redacted]
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> history testaccount
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
-==============================================================================================================================================================================================
-[redacted]          5         delegate0           testaccount         100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         [redacted]
-default (unlocked) >>> balance testaccount
-ACCOUNT                         BALANCE                     
-============================================================
-testaccount                     100.00000 XTS               
-default (unlocked) >>> blockchain_get_block_transactions 5
 [[
-    "4626aee1ed34cd68e147337b78385d7bb0f44bf1",{
+    "cf139ec446f3ae34f4520f97167ee446e7e93155",{
       "trx": {
-        "expiration": "20140620T164100",
+        "expiration": "20140620T164030",
         "delegate_slate_id": null,
         "operations": [{
             "type": "withdraw_op_type",
@@ -80,10 +40,10 @@ default (unlocked) >>> blockchain_get_block_transactions 5
                 "delegate_slate_id": 0,
                 "type": "withdraw_signature_type",
                 "data": {
-                  "owner": "XTS42hnG6FzGaGYBFbNbQUijqqoMCN9zQG78",
+                  "owner": "XTSMSe2Qb4iw8mxJBrQHVt7Rk2fxw6EkckZ6",
                   "memo": {
-                    "one_time_key": "XTS8Xpna9Y9ZEDnByFYC5ZqBDCsDvV2F2NwkjnKxEunYZbszAxsko",
-                    "encrypted_memo_data": "66f7a6367c11ce46351d786b5f6612d118fd88851df971f4548040b263358b926240e07a0aa4b1b819f0d2e16e453c09c1500044dd57fe02391931ebc2d0cff1"
+                    "one_time_key": "XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU",
+                    "encrypted_memo_data": "1531ea6c9318088925beedfd0a6a0d9ef0a0c7bf7c7bfc3634689615d38f5b2794f0f748d761b8d4873c55a5723ad26aa674c10c254adda1fe0ed58e6b8889b5"
                   }
                 }
               }
@@ -91,7 +51,7 @@ default (unlocked) >>> blockchain_get_block_transactions 5
           }
         ],
         "signatures": [
-          "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749603a72bf5ae83690ce1288ebe857791781a496a01c9ea5efc9fd5887e1a21ccb79"
+          "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c2d958c8c457999674b52081c080b31ab9ed5530fcc135636cc66ae0fbd6b3623"
         ]
       },
       "signed_keys": [
@@ -104,7 +64,7 @@ default (unlocked) >>> blockchain_get_block_transactions 5
       "validation_error": null,
       "required_deposits": [],
       "provided_deposits": [[
-          "XTS5TcKpYbSAzxn9iqKQ6fJFbbExvVvay8ch",{
+          "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",{
             "amount": 10000000,
             "asset_id": 0
           }
@@ -131,7 +91,7 @@ default (unlocked) >>> blockchain_get_block_transactions 5
       ],
       "net_delegate_votes": [],
       "chain_location": {
-        "block_num": 5,
+        "block_num": 2,
         "trx_num": 0
       }
     }

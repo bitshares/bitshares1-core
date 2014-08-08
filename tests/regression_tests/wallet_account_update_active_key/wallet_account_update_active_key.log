@@ -1,0 +1,180 @@
+default (unlocked) >>> wallet_account_create test
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            100.00000 XTS               
+default (unlocked) >>> blockchain_get_account test
+No account found.
+default (unlocked) >>> wallet_account_register test test
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "register_account_op_type",
+      "data": {
+        "name": "test",
+        "public_data": null,
+        "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "delegate_pay_rate": 255,
+        "meta_data": null
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d99da522fbea68cb77a7dfce13043b0156a3586629df36f9577ca0535498637812"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+Not a delegate.
+default (unlocked) >>> wallet_account_update_registration test test null 100
+{
+  "expiration": "20140620T164050",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 102,
+        "public_data": null,
+        "active_key": null,
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22b48ddd2233ba3b8ec54d08bf000f355007895111020a19469cc878685fd3fa3b",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bf77401484806e4f52f1d135b87b477f0f2d586f1dd825bdb110c1849b274797b"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+
+default (unlocked) >>> balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            99.80000 XTS                
+default (unlocked) >>> balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,880.09801 XTS        
+default (unlocked) >>> wallet_account_update_active_key test test 5KgPRATnTBkT4nfNAy9AHrDDmCQxEQPkSwCgtm8cpSyZnGHrnJn
+Command failed with exception: key belongs to other account (20032)
+Key already belongs to another account!
+
+
+
+
+default (unlocked) >>> balance test
+ACCOUNT                         BALANCE                     
+============================================================
+test                            99.80000 XTS                
+default (unlocked) >>> balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,880.09801 XTS        
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+
+default (unlocked) >>> wallet_account_update_active_key test test
+{
+  "expiration": "20140620T164100",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 102,
+        "public_data": null,
+        "active_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b968774b9483af537faff233abeda05dec365d6a7c58f04d5051b8c93429c479c8",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f009b011e90e84f71656950a8a767d75de8321ed47d0a0a87d086e73bc733f4fbaf"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+- XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+
+default (unlocked) >>> 
+default (unlocked) >>> quit

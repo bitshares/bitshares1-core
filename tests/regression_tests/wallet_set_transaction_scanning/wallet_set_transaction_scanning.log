@@ -1,0 +1,50 @@
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": 0,
+  "priority_fee": "0.10000 XTS",
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": 100
+}
+default (unlocked) >>> wallet_set_transaction_scanning false
+false
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": false,
+  "last_scanned_block_num": 0,
+  "priority_fee": "0.10000 XTS",
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": 100
+}
+default (unlocked) >>> wallet_set_transaction_scanning true
+true
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": 0,
+  "priority_fee": "0.10000 XTS",
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": 100
+}
+default (unlocked) >>> quit

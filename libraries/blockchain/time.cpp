@@ -3,6 +3,8 @@
 
 #include <fc/exception/exception.hpp>
 #include <fc/network/ntp.hpp>
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/scoped_lock.hpp>
 
 #include <atomic>
 
@@ -16,6 +18,7 @@ time_discontinuity_signal_type time_discontinuity_signal;
 namespace detail
 {
   std::atomic<fc::ntp*> ntp_service(nullptr);
+  fc::mutex ntp_service_initialization_mutex;
 }
 
 fc::optional<fc::time_point> ntp_time()
@@ -23,13 +26,12 @@ fc::optional<fc::time_point> ntp_time()
   fc::ntp* actual_ntp_service = detail::ntp_service.load();
   if (!actual_ntp_service)
   {
-    actual_ntp_service = new fc::ntp;
-    fc::ntp* old_ntp_service = nullptr;
-    bool exchanged = detail::ntp_service.compare_exchange_strong(old_ntp_service, actual_ntp_service);
-    if (!exchanged)
+    fc::scoped_lock<fc::mutex> lock(detail::ntp_service_initialization_mutex);
+    actual_ntp_service = detail::ntp_service.load();
+    if (!actual_ntp_service)
     {
-      delete actual_ntp_service;
-      actual_ntp_service = old_ntp_service;
+      actual_ntp_service = new fc::ntp;
+      detail::ntp_service.store(actual_ntp_service);
     }
   }
   return actual_ntp_service->get_time();

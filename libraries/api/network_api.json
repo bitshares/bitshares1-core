@@ -6,17 +6,17 @@
         "method_name": "network_add_node",
         "description": "Attempts add or remove <node> from the peer list or try a connection to <node> once",
         "return_type": "void",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "node", 
-              "type" : "ip_endpoint", 
+            {
+              "name" : "node",
+              "type" : "string",
               "description" : "The node (see network_get_peer_info for nodes)",
               "example" : "192.168.1.5:5678"
             },
-            { 
-              "name" : "command", 
-              "type" : "std::string", 
+            {
+              "name" : "command",
+              "type" : "std::string",
               "description" : "'add' to add a node to the list, 'remove' to remove a node from the list, 'onetry' to try a connection to the node once",
               "example" : "add",
               "default_value" : "add"
@@ -38,11 +38,11 @@
         "method_name": "network_get_peer_info",
         "description": "Returns data about each connected node",
         "return_type": "json_object_array",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "not_firewalled", 
-              "type" : "bool", 
+            {
+              "name" : "not_firewalled",
+              "type" : "bool",
               "description" : "true to output only peers not behind a firewall and false otherwise",
               "default_value" : false
             }
@@ -54,11 +54,11 @@
         "method_name": "network_broadcast_transaction",
         "description": "Broadcast a previously-created signed transaction to the network",
         "return_type": "transaction_id",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "transaction_to_broadcast", 
-              "type" : "signed_transaction", 
+            {
+              "name" : "transaction_to_broadcast",
+              "type" : "signed_transaction",
               "description" : "The transaction to broadcast to the network"
             }
           ],
@@ -68,11 +68,11 @@
         "method_name": "network_set_advanced_node_parameters",
         "description": "Sets advanced node parameters, used for setting up automated tests",
         "return_type": "void",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "params", 
-              "type" : "json_object", 
+            {
+              "name" : "params",
+              "type" : "json_object",
               "description" : "A JSON object containing the name/value pairs for the parameters to set"
             }
           ],
@@ -90,11 +90,11 @@
         "method_name": "network_get_transaction_propagation_data",
         "description": "Returns the time the transaction was first seen by this client",
         "return_type": "message_propagation_data",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "transaction_id", 
-              "type" : "transaction_id", 
+            {
+              "name" : "transaction_id",
+              "type" : "transaction_id",
               "description" : "the id of the transaction"
             }
           ],
@@ -105,11 +105,11 @@
         "method_name": "network_get_block_propagation_data",
         "description": "Returns the time the block was first seen by this client",
         "return_type": "message_propagation_data",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "block_hash", 
-              "type" : "block_id_type", 
+            {
+              "name" : "block_hash",
+              "type" : "block_id_type",
               "description" : "the id of the block"
             }
           ],
@@ -120,11 +120,11 @@
         "method_name": "network_set_allowed_peers",
         "description": "Sets the list of peers this node is allowed to connect to",
         "return_type": "void",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "allowed_peers", 
-              "type" : "node_id_list", 
+            {
+              "name" : "allowed_peers",
+              "type" : "node_id_list",
               "description" : "the list of allowable peers"
             }
           ],

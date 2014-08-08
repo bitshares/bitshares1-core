@@ -1,9 +1,3 @@
-default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -43,13 +37,15 @@ default (unlocked) >>> wallet_account_register test-account delegate0
     "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960c4d5cf606a73366be313a4a390189fee977e0a3d97532ec165dfa3eacd9536e1"
   ]
 }
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,801,829.99801 XTS        
 default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
 OK
 default (unlocked) >>> debug_wait 2
 OK

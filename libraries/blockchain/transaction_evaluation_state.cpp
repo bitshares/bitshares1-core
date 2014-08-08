@@ -70,12 +70,15 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::validate_required_fee()
    { try {
-      share_type required_fee = _current_state->calculate_data_fee( trx.data_size() );
+      asset xts_fees;
       auto fee_itr = balance.find( 0 );
-      if( fee_itr == balance.end() ||
-          fee_itr->second < required_fee ) 
+      if( fee_itr != balance.end() ) xts_fees += asset( fee_itr->second, 0);
+      
+      xts_fees += alt_fees_paid;
+
+      if( required_fees > xts_fees )
       {
-         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fee) );
+         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fees)(alt_fees_paid)(xts_fees)  )
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -84,18 +87,21 @@ namespace bts { namespace blockchain {
     */
    void transaction_evaluation_state::post_evaluate()
    { try {
-      required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
+      // NOTE:  this line was removed in favor of trusting delegates to set the required fees rather
+      // than charging per byte.  This allows the network to scale without hard fork.
+      //
+      // By removing this check I am reducing restrictions so the current blockchain should still validate
+      //
+      // required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
 
+      // Should this be here? We may not have fees in XTS now...
       balance[0]; // make sure we have something for this.
       for( auto fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
-         if( fee.second > 0 )
-         {
-            if( fee.first == 0  )
-               continue;
-            // check to see if there are any open bids to buy the asset
-         }
+         // if the fee is already in XTS or the fee balance is zero, move along...
+         if( fee.first == 0 || fee.second == 0 )
+           continue;
 
          // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
          // is an amount of USD which can be converted to price*USD XTS provided we
@@ -103,36 +109,8 @@ namespace bts { namespace blockchain {
          omarket_order lowest_ask = _current_state->get_lowest_ask_record( fee.first, 0 );
          if( lowest_ask )
          {
-            // do we have enough funds in the ask to cover the fees?
-            asset required_order_balance = asset( fee.second, fee.first ) * 
-                                            lowest_ask->market_index.order_price;  
-            
-            if( required_order_balance.amount <= lowest_ask->state.balance )
-            {
-               balance[0] += required_order_balance.amount;
-
-               auto balance_id = withdraw_condition( 
-                                   withdraw_with_signature( lowest_ask->market_index.owner ), 
-                                   fee.first       ).get_address(); 
-
-
-               auto balance_rec = _current_state->get_balance_record( balance_id );
-               if( balance_rec )
-               {
-                  balance_rec->balance += fee.second; 
-               }
-               else
-               {
-                  balance_rec = balance_record( lowest_ask->market_index.owner, 
-                                              asset( fee.second, fee.first ), 0 );
-
-               }
-               _current_state->store_balance_record( *balance_rec );
-
-               lowest_ask->state.balance -= required_order_balance.amount;
-               _current_state->store_ask_record( lowest_ask->market_index, lowest_ask->state );
-            }
-            // trade fee.second 
+            // fees paid in something other than XTS are discounted 50% 
+            alt_fees_paid += asset( fee.second/2, fee.first ) * lowest_ask->market_index.order_price;  
          }
       }
 
@@ -140,17 +118,15 @@ namespace bts { namespace blockchain {
       for( auto fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
-         if( fee.second > 0 )
+         if( fee.second > 0 ) // if a fee was paid...
          {
-            if( fee.first == 0 && fee.second < required_fees.amount )
-               FC_CAPTURE_AND_THROW( insufficient_fee, (fee)(required_fees.amount) );
-
             auto asset_record = _current_state->get_asset_record( fee.first );
             if( !asset_record )
               FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
 
             asset_record->collected_fees += fee.second;
-            asset_record->current_share_supply -= fee.second;
+            // collecting fees should not decrease share supply.
+            // asset_record->current_share_supply -= fee.second;
             _current_state->store_asset_record( *asset_record );
          }
       }
@@ -179,9 +155,16 @@ namespace bts { namespace blockchain {
         if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
+        /**
+         * Removing transaction size limit from chain validation rules.
+         *
+         * Note: this is to give delegates maximum flexibility without having to
+         * introduce hard forks to support larger transaction sizes.
+         *
         auto trx_size = fc::raw::pack_size(trx_arg);
         if(  trx_size > BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE )
            FC_CAPTURE_AND_THROW( oversized_transaction, (trx_size ) );
+        */
        
         auto trx_id = trx_arg.id();
 

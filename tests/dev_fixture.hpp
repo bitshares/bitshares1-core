@@ -183,12 +183,13 @@ struct chain_fixture
       clientb->start();
       ilog( "... " );
 
+      enable_logging();
       exec(clienta, "wallet_create walleta masterpassword 123456ddddaxxx123456789012345678901234567890");
-      exec(clienta, "wallet_delegate_set_transaction_scanning true");
+      exec(clienta, "wallet_set_transaction_scanning true");
       exec(clienta, "wallet_unlock 99999999999 masterpassword");
 
       exec(clientb, "wallet_create walletb masterpassword 123456a123456789012345678901234567890");
-      exec(clientb, "wallet_delegate_set_transaction_scanning true");
+      exec(clientb, "wallet_set_transaction_scanning true");
       exec(clientb, "wallet_unlock 99999999999 masterpassword");
 
       int even = 0;
@@ -204,7 +205,7 @@ struct chain_fixture
             {
                 exec( clientb, "wallet_import_private_key " + key_to_wif( key  ) ); 
             }
-            if( even >= 34 ) break;
+            if( even >= 54 ) break;
          }
          else ++even;
       }
@@ -235,6 +236,7 @@ struct chain_fixture
       auto b = my_client->get_chain()->generate_block(*next_block_time);
       my_client->get_wallet()->sign_block( b );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
+      fc::usleep( fc::microseconds( 2000 ) );
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
       bts::blockchain::advance_time( 7 );
    }
