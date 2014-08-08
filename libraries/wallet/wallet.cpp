@@ -127,6 +127,7 @@ namespace bts { namespace wallet {
                                           const address& from_account_address,
                                           signed_transaction& trx,
                                           unordered_set<address>& required_fees );
+            void authorize_update( unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key = false );
 
             owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
 
@@ -464,6 +465,44 @@ namespace bts { namespace wallet {
          auto available = _blockchain->to_pretty_asset( amount_to_withdraw - amount_remaining );
          FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available) );
       } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_address)(trx)(required_signatures) ) }
+
+      void wallet_impl::authorize_update(unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key )
+      {
+        owallet_key_record oauthority_key = _wallet_db.lookup_key(account->owner_key);
+
+        // We do this check a lot and it doesn't fit conveniently into a loop because we're interested in two types of keys.
+        // Instead, we extract it into a function.
+        auto accept_key = [&]()->bool
+        {
+          if( oauthority_key.valid() && oauthority_key->has_private_key() )
+          {
+            required_signatures.insert( oauthority_key->get_address() );
+            return true;
+          }
+          return false;
+        };
+
+        if( accept_key() ) return;
+
+        if( !need_owner_key )
+        {
+          oauthority_key = _wallet_db.lookup_key(account->active_address());
+          if( accept_key() ) return;
+        }
+
+        auto dot = account->name.find('.');
+        while( dot != string::npos )
+        {
+          account = _blockchain->get_account_record( account->name.substr(dot+1) );
+          FC_ASSERT( account.valid(), "Parent account is not valid; this should never happen." );
+          oauthority_key = _wallet_db.lookup_key(account->active_address());
+          if( accept_key() ) return;
+          oauthority_key = _wallet_db.lookup_key(account->owner_key);
+          if( accept_key() ) return;
+
+          dot = account->name.find('.');
+        }
+      }
 
       secret_hash_type wallet_impl::get_secret( uint32_t block_num,
                                                 const private_key_type& delegate_key )const
@@ -3592,17 +3631,7 @@ namespace bts { namespace wallet {
                                    required_signatures );
 
       //Either this account or any parent may authorize this action. Find a key that can do it.
-      oaccount_record authority(account);
-      owallet_key_record oauthority_key = my->_wallet_db.lookup_key(authority->active_address());
-      while( !oauthority_key.valid() || !oauthority_key->has_private_key() )
-      {
-        auto dot = authority->name.find('.');
-        FC_ASSERT( dot != string::npos, "Cannot authorize account update; do not have private key of account to update or a parent" );
-        authority = my->_blockchain->get_account_record( authority->name.substr(dot+1) );
-        //TODO: This currently only checks for parents' active keys; do we want to check for their owner keys as well?
-        oauthority_key = my->_wallet_db.lookup_key(authority->active_address());
-      }
-      required_signatures.insert( authority->active_key() );
+      my->authorize_update( required_signatures, account );
 
       trx.update_account( account->id, delegate_pay_rate, public_data, optional<public_key_type>() );
 
@@ -3673,18 +3702,8 @@ namespace bts { namespace wallet {
                                    trx,
                                    required_signatures );
 
-      //Either this account or any parent may authorize this action. Find a key that can do it.
-      oaccount_record authority(account);
-      owallet_key_record oauthority_key = my->_wallet_db.lookup_key(authority->owner_key);
-      while( !oauthority_key.valid() || !oauthority_key->has_private_key() )
-      {
-        auto dot = authority->name.find('.');
-        FC_ASSERT( dot != string::npos, "Cannot authorize active key update; do not have owner key of account to update or a parent" );
-        authority = my->_blockchain->get_account_record( authority->name.substr(dot+1) );
-        //TODO: This currently only checks for parents' owner keys; do we want to check for their active keys as well?
-        oauthority_key = my->_wallet_db.lookup_key(authority->owner_key);
-      }
-      required_signatures.insert( authority->owner_key );
+      //Either this account (owner key only) or any parent may authorize this action. Find a key that can do it.
+      my->authorize_update( required_signatures, account, true );
 
       trx.update_account( account->id, account->delegate_pay_rate(), optional<variant>(), account_public_key );
 
