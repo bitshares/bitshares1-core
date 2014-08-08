@@ -11,7 +11,13 @@ if len(sys.argv) < 5:
 user = sys.argv[1]
 password = sys.argv[2]
 port = int(sys.argv[3])
-delegates = eval(sys.argv[4])
+delegates = []
+if len(sys.argv[4]) < 3:
+    for i in range(30):
+       delegates.append("init" + str(i))
+else:
+    delegates = eval(sys.argv[4])
+
 
 print delegates
 
@@ -40,6 +46,7 @@ while True:
 
 
     url = "http://" + user + ":" + password + "@localhost:" + str(port) + "/rpc"
+    print url
 
     for name in delegates:
         payload = {
@@ -49,10 +56,17 @@ while True:
             "id": 0,
         }
 
-        headers = {'content-type': 'application/json'}
+        print payload
+
+        headers = {
+          'content-type': 'application/json',
+          'Authorization': "Basic YTph"
+        }
+        print headers
         response = requests.post(url, data=json.dumps(payload), headers=headers)
+        print response
         print response.json()
 
 
 
-    time.sleep(10)
+    time.sleep(600)
