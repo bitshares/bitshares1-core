@@ -74,6 +74,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
+#include "original_market_engine.hpp"
             class market_engine
             {
                public:
@@ -1409,9 +1410,19 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second ) 
-           market_engine engine( pending_state, *this );
-           engine.execute( market_pair.first, market_pair.second, timestamp );
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           if( pending_state->get_head_block_num() < 100 )
+           {
+              original_market_engine engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+           else
+           {
+              market_engine engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+
         } 
         ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
