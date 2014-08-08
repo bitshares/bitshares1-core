@@ -39,6 +39,7 @@ if( WIN32 )
 
     set( ZLIB_LIBRARIES "" )
     set( LEVEL_DB_DIR vendor/leveldb-win )
+    add_subdirectory( "${LEVEL_DB_DIR}"    )
 
     SET( DEFAULT_EXECUTABLE_INSTALL_DIR bin/ )
 
@@ -53,7 +54,21 @@ if( WIN32 )
 else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
-    set( LEVEL_DB_DIR vendor/leveldb-1.12.0 )
+
+    set( LEVEL_DB_DIR "${CMAKE_SOURCE_DIR}/libraries/leveldb" )
+    include( ExternalProject )
+    ExternalProject_Add( LevelDB
+        PREFIX "${LEVEL_DB_DIR}"
+        SOURCE_DIR "${LEVEL_DB_DIR}"
+        BUILD_IN_SOURCE 1
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND "$(MAKE)"
+        INSTALL_COMMAND ""
+        )
+    include_directories( "${LEVEL_DB_DIR}" "${LEVEL_DB_DIR}/include" )
+    add_library( leveldb STATIC IMPORTED )
+    add_dependencies( leveldb LevelDB )
+    set_property(TARGET leveldb PROPERTY IMPORTED_LOCATION "${LEVEL_DB_DIR}/libleveldb.a" )
 
     #find_library(READLINE_LIBRARIES NAMES readline)
     #find_path(READLINE_INCLUDE_DIR readline/readline.h)
@@ -113,7 +128,6 @@ ENDIF()
 set( CUSTOM_URL_SCHEME "xts" )
 
 add_subdirectory( libraries )
-add_subdirectory( "${LEVEL_DB_DIR}"    )
 add_subdirectory( vendor/miniupnp/miniupnpc )
 add_subdirectory( programs )
 add_subdirectory( tests )

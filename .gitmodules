@@ -10,3 +10,7 @@
 [submodule "programs/qt_wallet"]
 	path = programs/qt_wallet
 	url = https://github.com/BitShares/qt_wallet.git
+[submodule "libraries/leveldb"]
+	path = libraries/leveldb
+	url = https://github.com/bitcoin/leveldb.git
+    ignore = dirty
