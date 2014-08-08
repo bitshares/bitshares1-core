@@ -2721,8 +2721,6 @@ namespace bts { namespace wallet {
                         current_account->id, fc::variant( quote_price_shares )  );
 
       auto required_fees = get_priority_fee();
-      //auto size_fee = fc::raw::pack_size( trx );
-      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       if( required_fees.amount <  current_account->delegate_pay_balance() )
       {
@@ -2783,8 +2781,6 @@ namespace bts { namespace wallet {
                           optional<public_key_type>() );
 
       auto required_fees = get_priority_fee();
-      //auto size_fee = fc::raw::pack_size( trx );
-      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       if( required_fees.amount <  current_account->delegate_pay_balance() )
       {
@@ -3400,13 +3396,6 @@ namespace bts { namespace wallet {
         as_delegate = true;
       }
 
-      // No longer needed I believe
-      //auto size_fee = fc::raw::pack_size( public_data );
-      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
-
-      // TODO: adjust fee based upon blockchain price per byte and
-      // the size of trx... 'recursively'
-
       my->withdraw_to_transaction( required_fees,
                                    from_account_address,
                                    trx,
@@ -3451,13 +3440,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      // TODO: adjust fee based upon blockchain price per byte and
-      // the size of trx... 'recursively'
       auto required_fees = get_priority_fee();
-
-      // No longer necessary I believe
-      //auto size_fee = fc::raw::pack_size( data );
-      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
 
       required_fees += asset(my->_blockchain->get_asset_registration_fee(),0);
 
@@ -3622,9 +3605,6 @@ namespace bts { namespace wallet {
          }
       }
 
-      //auto size_fee = fc::raw::pack_size( public_data );
-      //required_fees += asset( my->_blockchain->calculate_data_fee(size_fee) );
-
       my->withdraw_to_transaction( required_fees,
                                    payer_public_key,
                                    trx,
@@ -3748,7 +3728,6 @@ namespace bts { namespace wallet {
       auto required_fees = get_priority_fee();
 
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
-      required_fees += asset( my->_blockchain->calculate_data_fee( fc::raw::pack_size(trx) ), 0 );
 
       /*
       my->withdraw_to_transaction( required_fees,
@@ -3809,7 +3788,6 @@ namespace bts { namespace wallet {
       trx.vote_proposal( proposal_id, delegate_account->id, vote, message );
 
       auto required_fees = get_priority_fee();
-      required_fees += asset( my->_blockchain->calculate_data_fee(fc::raw::pack_size(trx)), 0 );
 
       /*
       my->withdraw_to_transaction( required_fees,
