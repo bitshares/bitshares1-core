@@ -3403,6 +3403,7 @@ namespace bts { namespace wallet {
                                              bool sign  )
    { try {
 
+      FC_ASSERT( create_asset_operation::is_power_of_ten( precision ) );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol_name( symbol ) ); // valid length and characters
