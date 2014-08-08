@@ -133,4 +133,48 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ============================================================================================================================
 102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
+default (unlocked) >>> wallet_account_update_active_key test test
+{
+  "expiration": "20140620T164100",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
+        "amount": 10000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 102,
+        "public_data": null,
+        "active_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b968774b9483af537faff233abeda05dec365d6a7c58f04d5051b8c93429c479c8",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f009b011e90e84f71656950a8a767d75de8321ed47d0a0a87d086e73bc733f4fbaf"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+- XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b, last used [redacted]
+
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
+============================================================================================================================
+102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+
+default (unlocked) >>> 
 default (unlocked) >>> quit
