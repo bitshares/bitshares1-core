@@ -2,10 +2,6 @@ BitShares X [![Build Status](https://travis-ci.org/dacsunlimited/bitsharesx.png)
 ===============================
 A DAC built with [BitShares Toolkit](https://github.com/BitShares/bitshares_toolkit)
 
-Latest Stable Version
-------------------
-[v0.2.3](https://github.com/dacsunlimited/bitsharesx/releases/tag/0.2.3)
-
 Build Instructions
 ------------------
 BitShares Toolkit uses git submodules for managing certain external dependencies. Before
