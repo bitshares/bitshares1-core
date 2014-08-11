@@ -3993,7 +3993,8 @@ namespace bts { namespace wallet {
        asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
        asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
 
-       auto quote_price_shares = price_shares / base_one_quantity;
+       //auto quote_price_shares = price_shares / base_one_quantity;
+       price quote_price_shares( (quote_price * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
        ilog( "quote price float: ${p}", ("p",quote_price) );
        ilog( "quote price shares: ${p}", ("p",quote_price_shares) );
 
@@ -4104,7 +4105,8 @@ namespace bts { namespace wallet {
        asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
        asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
 
-       auto quote_price_shares = price_shares / base_one_quantity;
+       // auto quote_price_shares = price_shares / base_one_quantity;
+       price quote_price_shares( (quote_price * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
        ilog( "quote price float: ${p}", ("p",quote_price) );
        ilog( "quote price shares: ${p}", ("p",quote_price_shares) );
 
