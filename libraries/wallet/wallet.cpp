@@ -2528,6 +2528,14 @@ namespace bts { namespace wallet {
 
        // TODO: Handle pagination
 
+       const auto errors = get_pending_transaction_errors();
+       for( auto& trx : pretties )
+       {
+           if( trx.is_virtual || trx.is_confirmed ) continue;
+           if( errors.count( trx.trx_id ) <= 0 ) continue;
+           trx.error = errors.at( trx.trx_id );
+       }
+
        /* Don't care if not filtering by account */
        if( account_name.empty() ) return pretties;
 

@@ -49,6 +49,7 @@ struct pretty_transaction
     fc::time_point_sec          created_time;
     fc::time_point_sec          received_time;
     fc::time_point_sec          expiration_time;
+    optional<fc::exception>     error;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }
@@ -208,6 +209,7 @@ FC_REFLECT( bts::wallet::pretty_transaction,
         (created_time)
         (received_time)
         (expiration_time)
+        (error)
         );
 
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));

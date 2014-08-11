@@ -411,8 +411,6 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     const auto line_size = !is_filtered ? 166 : 190;
     out << pretty_line( !any_group ? line_size : line_size + 2 ) << "\n";
 
-    const auto errors = client->get_wallet()->get_pending_transaction_errors();
-
     auto group = true;
     for( const auto& transaction : transactions )
     {
@@ -438,9 +436,9 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 {
                     out << transaction.block_num;
                 }
-                else if( errors.count( transaction.trx_id ) > 0 )
+                else if( transaction.error.valid() )
                 {
-                    auto name = string( errors.at( transaction.trx_id ).name() );
+                    auto name = string( transaction.error->name() );
                     name = name.substr( 0, name.find( "_" ) );
                     boost::to_upper( name );
                     out << name.substr(0, 9 );
