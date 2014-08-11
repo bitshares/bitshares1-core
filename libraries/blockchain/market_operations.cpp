@@ -128,6 +128,10 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
 
       asset delta_amount  = this->get_amount();
+      asset delta_quote   = delta_amount * this->short_index.order_price;
+
+      /** if the USD amount of the order is effectively then don't bother */
+      FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );

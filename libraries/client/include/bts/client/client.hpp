@@ -117,7 +117,7 @@ namespace bts { namespace client {
 
          virtual ~client();
 
-         void start_networking();
+         void start_networking(std::function<void()> network_started_callback = std::function<void()>());
          void configure_from_command_line(int argc, char** argv);
          fc::future<void> start();
          void open( const path& data_dir, 

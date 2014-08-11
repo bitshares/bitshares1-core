@@ -10,3 +10,6 @@
 [submodule "programs/qt_wallet"]
 	path = programs/qt_wallet
 	url = https://github.com/dacsunlimited/qt_wallet.git
+[submodule "libraries/leveldb"]
+	path = libraries/leveldb
+	url = https://github.com/bitcoin/leveldb.git

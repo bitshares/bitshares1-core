@@ -1112,7 +1112,7 @@ namespace bts { namespace cli {
               }
               else if (method_name == "blockchain_market_order_history")
               {
-                  vector<market_transaction> orders = result.as<vector<market_transaction>>();
+                  vector<order_history_record> orders = result.as<vector<order_history_record>>();
                   if( orders.empty() )
                   {
                     *_out << "No Orders.\n";
@@ -1123,19 +1123,22 @@ namespace bts { namespace cli {
                         << std::setw(20) << "PRICE"
                         << std::setw(25) << "PAID"
                         << std::setw(25) << "RECEIVED"
-                        << "\n" << std::string(77,'-') << "\n";
+                        << std::setw(23) << "TIMESTAMP"
+                        << "\n" << std::string(100,'-') << "\n";
 
-                  for( market_transaction order : orders )
+                  for( order_history_record order : orders )
                   {
                     *_out << std::setw(7) << "Buy"
                           << std::setw(20) << _client->get_chain()->to_pretty_price(order.bid_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_received)
+                          << std::setw(23) << pretty_timestamp(order.timestamp)
                           << "\n"
                           << std::setw(7) << "Sell"
                           << std::setw(20) << _client->get_chain()->to_pretty_price(order.ask_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_received)
+                          << std::setw(23) << pretty_timestamp(order.timestamp)
                           << "\n";
                   }
               }
@@ -1152,15 +1155,20 @@ namespace bts { namespace cli {
                           << std::setw(20) << "HIGHEST BID"
                           << std::setw(20) << "LOWEST ASK"
                           << std::setw(20) << "TRADING VOLUME"
-                          << "\n" << std::string(80,'-') << "\n";
+                          << std::setw(20) << "MEDIAN FEED"
+                          << "\n" << std::string(100,'-') << "\n";
 
                   for( auto point : points )
                   {
                     *_out << std::setw(20) << pretty_timestamp(point.timestamp)
                           << std::setw(20) << point.highest_bid
                           << std::setw(20) << point.lowest_ask
-                          << std::setw(20) << point.volume
-                          << "\n";
+                          << std::setw(20) << _client->get_chain()->to_pretty_asset(asset(point.volume));
+                    if(point.median_feed)
+                      *_out << std::setw(20) << *point.median_feed;
+                    else
+                      *_out << std::setw(20) << "N/A";
+                    *_out << "\n";
                   }
               }
               else if (method_name == "network_list_potential_peers")

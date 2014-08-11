@@ -567,6 +567,16 @@
         "contained_type": "market_transaction"
       },
       {
+        "type_name" : "order_history_record",
+        "cpp_return_type": "bts::blockchain::order_history_record",
+        "cpp_include_file": "bts/blockchain/market_records.hpp"
+      },
+      {
+        "type_name" : "order_history_record_array",
+        "container_type": "array",
+        "contained_type": "order_history_record"
+      },
+      {
         "type_name" : "market_history_points",
         "cpp_return_type" : "bts::blockchain::market_history_points",
         "cpp_include_file" : "bts/blockchain/market_records.hpp"

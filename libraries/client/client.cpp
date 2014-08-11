@@ -1880,11 +1880,14 @@ config load_config( const fc::path& datadir )
             auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
             if( !delegate )
               FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
-            string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
             double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
 
-            result_feeds.push_back({asset, delegate->name, price, feed.last_update});
+            result_feeds.push_back({delegate->name, price, feed.last_update});
         }
+
+        auto omedian_price = _chain_db->get_median_delegate_price(asset_id);
+        if( omedian_price )
+          result_feeds.push_back({"MARKET", 0, _chain_db->now(), _chain_db->get_asset_symbol(asset_id), _chain_db->to_pretty_price_double(*omedian_price)});
 
         return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
@@ -1903,8 +1906,11 @@ config load_config( const fc::path& datadir )
               FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
             string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
             double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
+            auto omedian_price = _chain_db->get_median_delegate_price(feed.feed.feed_id);
+            fc::optional<double> median_price;
+            if( omedian_price ) median_price = _chain_db->to_pretty_price_double(*omedian_price);
 
-            result_feeds.push_back({asset, delegate->name, price, feed.last_update});
+            result_feeds.push_back({delegate->name, price, feed.last_update, asset, median_price});
         }
 
         return result_feeds;
@@ -2158,7 +2164,7 @@ config load_config( const fc::path& datadir )
 
     //JSON-RPC Method Implementations END
 
-    void client::start_networking()
+    void client::start_networking(std::function<void()> network_started_callback)
     {
       //Start chain_downloader if there are chain_servers to connect to; otherwise, just start p2p immediately
       if( !my->_config.chain_servers.empty() )
@@ -2168,15 +2174,19 @@ config load_config( const fc::path& datadir )
         auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
           my->_chain_db->push_block(new_block);
         }, my->_chain_db->get_head_block_num() + 1);
-        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
+        download_future.on_complete([this,chain_downloader,network_started_callback](const fc::exception_ptr& e) {
           if( e )
             elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
           delete chain_downloader;
           connect_to_p2p_network();
+          if( network_started_callback ) network_started_callback();
         });
       }
       else
+      {
         connect_to_p2p_network();
+        if( network_started_callback ) network_started_callback();
+      }
     }
 
     //RPC server and CLI configuration rules:
@@ -2305,35 +2315,36 @@ config load_config( const fc::path& datadir )
         get_node()->clear_peer_database();
       }
 
-      start_networking();
-      fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
-      std::ostringstream port_stream;
-      if (actual_p2p_endpoint.get_address() == fc::ip::address())
-        port_stream << "port " << actual_p2p_endpoint.port();
-      else
-        port_stream << (string)actual_p2p_endpoint;
+      start_networking([=]{
+        fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
+        std::ostringstream port_stream;
+        if (actual_p2p_endpoint.get_address() == fc::ip::address())
+          port_stream << "port " << actual_p2p_endpoint.port();
+        else
+          port_stream << (string)actual_p2p_endpoint;
 
-      if( option_variables.count("log-commands") <= 0) /* Was breaking regression tests */
-          ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
+        if( option_variables.count("log-commands") <= 0) /* Was breaking regression tests */
+            ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
 
-      if (option_variables.count("p2p-port"))
-      {
-        uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
-        if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
-          ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
-      }
+        if (option_variables.count("p2p-port"))
+        {
+          uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
+          if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
+            ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
+        }
 
-      if (option_variables.count("connect-to"))
-      {
-        std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
-        for( auto peer : hosts )
-          this->connect_to_peer( peer );
-      }
-      else if (!option_variables.count("disable-default-peers"))
-      {
-        for (string default_peer : my->_config.default_peers)
-          this->connect_to_peer(default_peer);
-      }
+        if (option_variables.count("connect-to"))
+        {
+          std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
+          for( auto peer : hosts )
+            this->connect_to_peer( peer );
+        }
+        else if (!option_variables.count("disable-default-peers"))
+        {
+          for (string default_peer : my->_config.default_peers)
+            this->connect_to_peer(default_peer);
+        }
+      });
 
       if (my->_config.chain_server.enabled)
       {
@@ -2969,7 +2980,7 @@ config load_config( const fc::path& datadir )
       return std::make_pair(bids, asks);
    }
 
-   std::vector<market_transaction> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
+   std::vector<order_history_record> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
                                                                                 const std::string &base_symbol,
                                                                                 uint32_t skip_count,
                                                                                 uint32_t limit) const
@@ -2988,6 +2999,7 @@ config load_config( const fc::path& datadir )
       //Filter out orders not in our current market of interest
       orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
 
+      //While the next entire block of orders should be skipped...
       while( skip_count > 0 && head_block_num > 0 && orders.size() <= skip_count ) {
         ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", head_block_num));
         skip_count -= orders.size();
@@ -2995,25 +3007,36 @@ config load_config( const fc::path& datadir )
         orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
       }
 
-      if( orders.size() <= skip_count )
+      if( head_block_num == 0 && orders.size() <= skip_count )
         // Skip count is greater or equal to the total number of relevant orders on the blockchain.
-        return vector<market_transaction>();
+        return vector<order_history_record>();
 
+      //If there are still some orders from the last block inspected to skip, remove them
       if( skip_count > 0 )
         orders.erase(orders.begin(), orders.begin() + skip_count);
       ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
 
+      std::vector<order_history_record> results;
+      results.reserve(limit);
+      fc::time_point_sec stamp = _chain_db->get_block_header(head_block_num).timestamp;
+      for( const auto& rec : orders )
+        results.push_back(order_history_record(rec, stamp));
+
+      //While we still need more orders to reach our limit...
       while( head_block_num > 0 && orders.size() < limit )
       {
         auto more_orders = _chain_db->get_market_transactions(--head_block_num);
         more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
         ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", head_block_num));
-        std::move(more_orders.begin(), more_orders.end(), std::back_inserter(orders));
+        stamp = _chain_db->get_block_header(head_block_num).timestamp;
+        for( const auto& rec : more_orders )
+          if( results.size() < limit )
+            results.push_back(order_history_record(rec, stamp));
+          else
+            return results;
       }
 
-      if( orders.size() > limit )
-        orders.resize(limit);
-      return orders;
+      return results;
    }
 
    market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
