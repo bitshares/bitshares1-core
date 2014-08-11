@@ -207,7 +207,7 @@ namespace bts { namespace db {
           } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" );
         }
 
-        void store( const Key& k, const Value& v )
+        void store( const Key& k, const Value& v, bool sync = false )
         {
           try
           {
@@ -215,7 +215,7 @@ namespace bts { namespace db {
              auto vec = fc::raw::pack(v);
              ldb::Slice vs( vec.data(), vec.size() );
              
-             auto status = _db->Put( _sync_options, ks, vs );
+             auto status = _db->Put( sync ? _sync_options : _write_options, ks, vs );
              if( !status.ok() )
              {
                  FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
@@ -223,12 +223,12 @@ namespace bts { namespace db {
           } FC_RETHROW_EXCEPTIONS( warn, "error storing ${key} = ${value}", ("key",k)("value",v) );
         }
 
-        void remove( const Key& k )
+        void remove( const Key& k, bool sync = false )
         {
           try
           {
             ldb::Slice ks( (char*)&k, sizeof(k) );
-            auto status = _db->Delete( _sync_options, ks );
+             auto status = _db->Delete( sync ? _sync_options : _write_options, ks );
 
             if( status.IsNotFound() )
             {
@@ -265,6 +265,7 @@ namespace bts { namespace db {
         key_compare                     _comparer;
         ldb::ReadOptions                _read_options;
         ldb::ReadOptions                _iter_options;
+        ldb::WriteOptions               _write_options;
         ldb::WriteOptions               _sync_options;
   };
 
