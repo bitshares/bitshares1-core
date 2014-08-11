@@ -2765,20 +2765,24 @@ namespace bts { namespace wallet {
 
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
 
-   signed_transaction wallet::publish_slate( const string& account_to_publish_under, const string& account_to_pay_with, bool sign )
+   signed_transaction wallet::publish_slate( const string& account_to_publish_under, string account_to_pay_with, bool sign )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
+
+       if( account_to_pay_with.empty() )
+         account_to_pay_with = account_to_publish_under;
+
        if( !is_receive_account( account_to_pay_with ) )
            FC_THROW_EXCEPTION( unknown_account, "Unknown paying account name!",
-                               ("paying_account_name",account_to_pay_with.empty()? account_to_publish_under : account_to_pay_with) );
+                               ("paying_account_name", account_to_pay_with) );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
-      auto payer_public_key = get_account_public_key( account_to_pay_with.empty()? account_to_publish_under : account_to_pay_with );
+      auto payer_public_key = get_account_public_key( account_to_pay_with );
 
 
       auto slate_id = select_slate( trx, 0, vote_all );
