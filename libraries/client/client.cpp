@@ -1585,12 +1585,6 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_head_block_num();
     }
 
-    void detail::client_impl::wallet_open_file(const fc::path& wallet_filename)
-    {
-      _wallet->open_file( wallet_filename );
-      reschedule_delegate_loop();
-    }
-
     void detail::client_impl::wallet_open(const string& wallet_name)
     {
       _wallet->open(fc::trim(wallet_name));

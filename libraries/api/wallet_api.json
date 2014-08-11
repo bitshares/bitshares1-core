@@ -12,21 +12,6 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "wallet_open_file",
-        "description": "Opens the wallet at the given path",
-        "return_type": "void",
-        "parameters" :
-          [
-            {
-              "name" : "wallet_file",
-              "type" : "filename",
-              "description" : "the full path and filename of the wallet to open",
-              "example" : "/path/to/wallet.dat"
-            }
-          ],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
         "method_name": "wallet_open",
         "description": "Opens the wallet of the given name",
         "return_type": "void",
