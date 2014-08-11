@@ -62,7 +62,7 @@ else( WIN32 )
         SOURCE_DIR "${LEVEL_DB_DIR}"
         BUILD_IN_SOURCE 1
         CONFIGURE_COMMAND ""
-        BUILD_COMMAND "${MAKE}"
+        BUILD_COMMAND "$(MAKE)"
         INSTALL_COMMAND ""
         )
     include_directories( "${LEVEL_DB_DIR}" "${LEVEL_DB_DIR}/include" )
