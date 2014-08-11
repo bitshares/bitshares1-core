@@ -2993,6 +2993,7 @@ config load_config( const fc::path& datadir )
       //Filter out orders not in our current market of interest
       orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
 
+      //While the next entire block of orders should be skipped...
       while( skip_count > 0 && head_block_num > 0 && orders.size() <= skip_count ) {
         ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", head_block_num));
         skip_count -= orders.size();
@@ -3000,14 +3001,16 @@ config load_config( const fc::path& datadir )
         orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
       }
 
-      if( orders.size() <= skip_count )
+      if( head_block_num == 0 && orders.size() <= skip_count )
         // Skip count is greater or equal to the total number of relevant orders on the blockchain.
         return vector<market_transaction>();
 
+      //If there are still some orders from the last block inspected to skip, remove them
       if( skip_count > 0 )
         orders.erase(orders.begin(), orders.begin() + skip_count);
       ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
 
+      //While we still need more orders to reach our limit...
       while( head_block_num > 0 && orders.size() < limit )
       {
         auto more_orders = _chain_db->get_market_transactions(--head_block_num);
