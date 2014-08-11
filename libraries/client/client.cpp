@@ -1684,41 +1684,53 @@ config load_config( const fc::path& datadir )
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
     }
 
-    signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer,
-                                                       const string& asset_symbol,
-                                                       const string& from_account_name,
-                                                       const string& to_account_name,
-                                                       const string& memo_message,
-                                                       const vote_selection_method& selection_method
-                                                       )
+    wallet_transaction_record detail::client_impl::wallet_transfer(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& from_account_name,
+            const string& to_account_name,
+            const string& memo_message,
+            const vote_selection_method& selection_method
+            )
     {
-         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                  from_account_name, from_account_name,
-                                                  to_account_name,
-                                                  memo_message, selection_method, true );
+        const auto record = _wallet->transfer_asset(
+                amount_to_transfer,
+                asset_symbol,
+                from_account_name,
+                from_account_name,
+                to_account_name,
+                memo_message,
+                selection_method,
+                true
+                );
 
-         network_broadcast_transaction( trx );
-
-         return trx;
+        network_broadcast_transaction( record.trx );
+        return record;
     }
 
-    signed_transaction detail::client_impl::wallet_transfer_from(double amount_to_transfer,
-                                                       const string& asset_symbol,
-                                                       const string& paying_account_name,
-                                                       const string& from_account_name,
-                                                       const string& to_account_name,
-                                                       const string& memo_message,
-                                                       const vote_selection_method& selection_method
-                                                       )
+    wallet_transaction_record detail::client_impl::wallet_transfer_from(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& paying_account_name,
+            const string& from_account_name,
+            const string& to_account_name,
+            const string& memo_message,
+            const vote_selection_method& selection_method
+            )
     {
-         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                  paying_account_name,
-                                                  from_account_name, to_account_name,
-                                                  memo_message, selection_method, true );
+        const auto record = _wallet->transfer_asset(
+                amount_to_transfer,
+                asset_symbol,
+                paying_account_name,
+                from_account_name,
+                to_account_name,
+                memo_message,
+                selection_method,
+                true
+                );
 
-         network_broadcast_transaction( trx );
-
-         return trx;
+        network_broadcast_transaction( record.trx );
+        return record;
     }
 
     bts::blockchain::signed_transaction detail::client_impl::wallet_asset_create(const string& symbol,

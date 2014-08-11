@@ -497,7 +497,7 @@
       {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
-        "return_type": "signed_transaction",
+        "return_type": "transaction_record",
         "parameters" :
           [
             {
@@ -539,7 +539,7 @@
       {
         "method_name": "wallet_transfer_from",
         "description": "Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
-        "return_type": "signed_transaction",
+        "return_type": "transaction_record",
         "parameters" :
           [
             {

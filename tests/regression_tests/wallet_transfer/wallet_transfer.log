@@ -23,7 +23,7 @@ Parameters:
   vote_method (vote_selection_method, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
 
 Returns:
-  signed_transaction
+  transaction_record
 
 aliases: transfer
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
