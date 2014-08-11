@@ -376,7 +376,7 @@
       {
         "method_name": "blockchain_market_order_history",
         "description": "Returns a list of recently filled orders in a given market, in reverse order of execution.",
-        "return_type": "market_transaction_array",
+        "return_type": "order_history_record_array",
         "parameters" : [
            {
               "name" : "quote_symbol",

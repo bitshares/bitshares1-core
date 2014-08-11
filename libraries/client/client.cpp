@@ -2974,7 +2974,7 @@ config load_config( const fc::path& datadir )
       return std::make_pair(bids, asks);
    }
 
-   std::vector<market_transaction> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
+   std::vector<order_history_record> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
                                                                                 const std::string &base_symbol,
                                                                                 uint32_t skip_count,
                                                                                 uint32_t limit) const
@@ -3003,12 +3003,18 @@ config load_config( const fc::path& datadir )
 
       if( head_block_num == 0 && orders.size() <= skip_count )
         // Skip count is greater or equal to the total number of relevant orders on the blockchain.
-        return vector<market_transaction>();
+        return vector<order_history_record>();
 
       //If there are still some orders from the last block inspected to skip, remove them
       if( skip_count > 0 )
         orders.erase(orders.begin(), orders.begin() + skip_count);
       ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
+
+      std::vector<order_history_record> results;
+      results.reserve(limit);
+      fc::time_point_sec stamp = _chain_db->get_block_header(head_block_num).timestamp;
+      for( const auto& rec : orders )
+        results.push_back(order_history_record(rec, stamp));
 
       //While we still need more orders to reach our limit...
       while( head_block_num > 0 && orders.size() < limit )
@@ -3016,12 +3022,15 @@ config load_config( const fc::path& datadir )
         auto more_orders = _chain_db->get_market_transactions(--head_block_num);
         more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
         ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", head_block_num));
-        std::move(more_orders.begin(), more_orders.end(), std::back_inserter(orders));
+        stamp = _chain_db->get_block_header(head_block_num).timestamp;
+        for( const auto& rec : more_orders )
+          if( results.size() < limit )
+            results.push_back(order_history_record(rec, stamp));
+          else
+            return results;
       }
 
-      if( orders.size() > limit )
-        orders.resize(limit);
-      return orders;
+      return results;
    }
 
    market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
