@@ -126,11 +126,25 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block(clientb);
    exec(clientb, "balance" );
    exec(clientb, "wallet_market_cover delegate32 90 BUSD XTS7FDgYCCxD29WutqJtbvqyvaxdkxYeBVs7" );
+   exec( clienta, "ask delegate31 100 XTS .001 BUSD" );
+   produce_block(clientb);
    produce_block(clientb);
    exec(clienta, "wallet_account_transaction_history");
    exec(clientb, "wallet_account_transaction_history delegate32");
    exec(clientb, "wallet_market_order_list BUSD XTS"); // TODO: this should filter by account
    exec(clientb, "balance" );
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clientb, "wallet_market_cancel_order XTS7zGp53nKGbxm6ASmfJrkDyYXmQ9qH6WtE");
+   produce_block(clientb);
+   exec(clientb, "balance" );
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clientb, "wallet_market_order_list BUSD XTS");
+
+   exec(clientb, "wallet_account_transaction_history delegate32");
+   exec(clientb, "balance" );
+
+   exec(clienta, "wallet_account_transaction_history delegate31");
+   exec(clienta, "balance" );
    return;
 
    exec( clientb, "wallet_account_create b-account" );

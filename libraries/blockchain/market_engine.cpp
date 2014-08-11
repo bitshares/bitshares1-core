@@ -621,6 +621,7 @@ class market_engine
             if( cover_ask.get_price().quote_asset_id == _quote_id &&
                 cover_ask.get_price().base_asset_id == _base_id )
             {
+#if 0 // we will cover at any price that is within range of the price feed.
                 if( _current_bid->get_price() < cover_ask.get_highest_cover_price()  )
                 {
                    // cover position has been blown out, current bid is not able to
@@ -637,6 +638,7 @@ class market_engine
                    --_collateral_itr;
                    continue;
                 }
+#endif
                 // max bid must be greater than call price
                 if( _current_bid->get_price() < cover_ask.get_price() )
                 {
