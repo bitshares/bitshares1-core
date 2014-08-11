@@ -3023,7 +3023,7 @@ config load_config( const fc::path& datadir )
         results.push_back(order_history_record(rec, stamp));
 
       //While we still need more orders to reach our limit...
-      while( head_block_num > 0 && orders.size() < limit )
+      while( head_block_num > 1 && orders.size() < limit )
       {
         auto more_orders = _chain_db->get_market_transactions(--head_block_num);
         more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
