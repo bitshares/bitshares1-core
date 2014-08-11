@@ -162,6 +162,16 @@ namespace bts { namespace blockchain {
    };
    typedef optional<market_order> omarket_order;
 
+   struct order_history_record : public market_transaction
+   {
+      order_history_record(const market_transaction& market_trans = market_transaction(), fc::time_point_sec timestamp = fc::time_point_sec())
+        : market_transaction(market_trans),
+          timestamp(timestamp)
+      {}
+
+      fc::time_point_sec                        timestamp;
+   };
+
    struct collateral_record
    {
       collateral_record(share_type c = 0, share_type p = 0):collateral_balance(c),payoff_balance(p){}
@@ -243,3 +253,4 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (ask_type)
             (fees_collected) 
           )
+FC_REFLECT_DERIVED( bts::blockchain::order_history_record, (bts::blockchain::market_transaction), (timestamp) )

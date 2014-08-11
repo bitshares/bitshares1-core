@@ -1013,7 +1013,7 @@ namespace bts { namespace cli {
                             << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order?
                                  _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
                                : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
-                            << std::right << std::setw(30) << _client->get_chain()->to_pretty_price(bid_itr->get_price());
+                            << std::right << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(bid_itr->get_price()) )+ " " + quote_asset_record->symbol);
 
                       if( bid_itr->type == bts::blockchain::short_order )
                           *_out << '*';
@@ -1031,7 +1031,7 @@ namespace bts { namespace cli {
                     {
                       if( !ask_itr->collateral )
                       {
-                         *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                         *_out << std::left << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
                                << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                                << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
                           ++ask_itr;
@@ -1061,7 +1061,7 @@ namespace bts { namespace cli {
                          {
                              *_out << std::string(77, ' ');
                              *_out << "| ";
-                             *_out << std::left << std::setw(30) << _client->get_chain()->to_pretty_price(ask_itr->get_price())
+                             *_out << std::left << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
                                   << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                                   << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
                                 *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
@@ -1112,7 +1112,7 @@ namespace bts { namespace cli {
               }
               else if (method_name == "blockchain_market_order_history")
               {
-                  vector<market_transaction> orders = result.as<vector<market_transaction>>();
+                  vector<order_history_record> orders = result.as<vector<order_history_record>>();
                   if( orders.empty() )
                   {
                     *_out << "No Orders.\n";
@@ -1123,19 +1123,22 @@ namespace bts { namespace cli {
                         << std::setw(20) << "PRICE"
                         << std::setw(25) << "PAID"
                         << std::setw(25) << "RECEIVED"
-                        << "\n" << std::string(77,'-') << "\n";
+                        << std::setw(23) << "TIMESTAMP"
+                        << "\n" << std::string(100,'-') << "\n";
 
-                  for( market_transaction order : orders )
+                  for( order_history_record order : orders )
                   {
                     *_out << std::setw(7) << "Buy"
                           << std::setw(20) << _client->get_chain()->to_pretty_price(order.bid_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_received)
+                          << std::setw(23) << pretty_timestamp(order.timestamp)
                           << "\n"
                           << std::setw(7) << "Sell"
                           << std::setw(20) << _client->get_chain()->to_pretty_price(order.ask_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_received)
+                          << std::setw(23) << pretty_timestamp(order.timestamp)
                           << "\n";
                   }
               }

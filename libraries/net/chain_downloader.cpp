@@ -83,8 +83,9 @@ namespace bts { namespace net {
 
               ulog("Finished fast-syncing ${num} blocks at ${rate} blocks/sec.",
                    ("num", blocks_in)("rate", blocks_in/((fc::time_point::now() - start_time).count() / 1000000.0)));
-              ilog("Finished getting ${num} blocks from ${remote}",
-                   ("num", blocks_in)("remote", _client_socket->remote_endpoint()));
+              wlog("Finished getting ${num} blocks from ${remote} at ${rate} blocks/sec.",
+                   ("num", blocks_in)("remote", _client_socket->remote_endpoint())
+                   ("rate", blocks_in/((fc::time_point::now() - start_time).count() / 1000000.0)));
               fc::raw::pack(*_client_socket, finish);
             } FC_RETHROW_EXCEPTIONS(error, "", ("first_block_number", first_block_number))
           }
