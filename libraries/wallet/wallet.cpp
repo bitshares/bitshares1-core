@@ -1427,8 +1427,6 @@ namespace bts { namespace wallet {
 
               if( current_version < 101 )
               {
-                  self->set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
-
                   /* Check for old index format market order virtual transactions */
                   auto present = false;
                   const auto items = _wallet_db.get_transactions();
@@ -2529,6 +2527,14 @@ namespace bts { namespace wallet {
                   } );
 
        // TODO: Handle pagination
+
+       const auto errors = get_pending_transaction_errors();
+       for( auto& trx : pretties )
+       {
+           if( trx.is_virtual || trx.is_confirmed ) continue;
+           if( errors.count( trx.trx_id ) <= 0 ) continue;
+           trx.error = errors.at( trx.trx_id );
+       }
 
        /* Don't care if not filtering by account */
        if( account_name.empty() ) return pretties;
@@ -4295,6 +4301,18 @@ namespace bts { namespace wallet {
        }
        FC_ASSERT( order_to_cover.valid() );
 
+       const auto pending = my->_blockchain->get_pending_transactions();
+       for( const auto& eval : pending )
+       {
+           for( const auto& op : eval->trx.operations )
+           {
+               if( operation_type_enum( op.type ) != cover_op_type ) continue;
+               const auto cover_op = op.as<cover_operation>();
+               if( cover_op.cover_index.owner == order_to_cover->get_owner() )
+                   FC_THROW_EXCEPTION( double_cover, "You cannot cover a short twice in the same block!" );
+           }
+       }
+
        signed_transaction trx;
        unordered_set<address>     required_signatures;
        required_signatures.insert( order_to_cover->market_index.owner );
@@ -4501,6 +4519,7 @@ namespace bts { namespace wallet {
       pretty_trx.fee = trx_rec.fee;
       pretty_trx.created_time = trx_rec.created_time;
       pretty_trx.received_time = trx_rec.received_time;
+      pretty_trx.expiration_time = trx_rec.trx.expiration;
 
       if( trx_rec.is_virtual ) return pretty_trx;
 
