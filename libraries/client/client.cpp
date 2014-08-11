@@ -1880,11 +1880,14 @@ config load_config( const fc::path& datadir )
             auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
             if( !delegate )
               FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
-            string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
             double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
 
-            result_feeds.push_back({asset, delegate->name, price, feed.last_update});
+            result_feeds.push_back({delegate->name, price, feed.last_update});
         }
+
+        auto omedian_price = _chain_db->get_median_delegate_price(asset_id);
+        if( omedian_price )
+          result_feeds.push_back({"MARKET", 0, _chain_db->now(), _chain_db->get_asset_symbol(asset_id), _chain_db->to_pretty_price_double(*omedian_price)});
 
         return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
@@ -1903,8 +1906,11 @@ config load_config( const fc::path& datadir )
               FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
             string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
             double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
+            auto omedian_price = _chain_db->get_median_delegate_price(feed.feed.feed_id);
+            fc::optional<double> median_price;
+            if( omedian_price ) median_price = _chain_db->to_pretty_price_double(*omedian_price);
 
-            result_feeds.push_back({asset, delegate->name, price, feed.last_update});
+            result_feeds.push_back({delegate->name, price, feed.last_update, asset, median_price});
         }
 
         return result_feeds;

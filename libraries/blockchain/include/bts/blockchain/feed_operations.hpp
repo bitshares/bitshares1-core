@@ -33,10 +33,11 @@ namespace bts { namespace blockchain {
 
   struct feed_entry
   {
-      string           asset_symbol;
-      string           delegate_name;
-      double           price;
-      time_point_sec   last_update;
+      string                         delegate_name;
+      double                         price;
+      time_point_sec                 last_update;
+      fc::optional<string>           asset_symbol;
+      fc::optional<double>           median_price;
   };
 
   /**
@@ -59,5 +60,5 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::feed_index, (feed_id)(delegate_id) )
 FC_REFLECT( bts::blockchain::feed_record, (feed)(value)(last_update) )
-FC_REFLECT( bts::blockchain::feed_entry, (asset_symbol)(delegate_name)(price)(last_update) );
+FC_REFLECT( bts::blockchain::feed_entry, (delegate_name)(price)(last_update)(asset_symbol)(median_price) );
 FC_REFLECT( bts::blockchain::update_feed_operation, (feed)(value) )

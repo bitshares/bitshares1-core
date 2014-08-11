@@ -183,6 +183,10 @@ namespace bts { namespace blockchain {
                                   break;
 
                                push_market_transaction(mtrx);
+                               if( mtrx.ask_received.asset_id == 0 )
+                                 trading_volume += mtrx.ask_received;
+                               else if( mtrx.bid_received.asset_id == 0 )
+                                 trading_volume += mtrx.bid_received;
 
                                if( mtrx.ask_type == ask_order )
                                   pay_current_ask( mtrx );
@@ -379,6 +383,10 @@ namespace bts { namespace blockchain {
 
 
                             push_market_transaction(mtrx);
+                            if( mtrx.ask_received.asset_id == 0 )
+                              trading_volume += mtrx.ask_received;
+                            else if( mtrx.bid_received.asset_id == 0 )
+                              trading_volume += mtrx.bid_received;
                             accumulate_fees( mtrx, *quote_asset );
                          } // while( next bid && next ask )
 
@@ -386,6 +394,62 @@ namespace bts { namespace blockchain {
                          // update any fees collected
                          _pending_state->store_asset_record( *quote_asset );
 
+                         if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
+                         {
+                           market_history_key key(quote_id, base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
+                           market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
+                           //LevelDB iterators are dumb and don't support proper past-the-end semantics.
+                           auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
+                           if( !last_key_itr.valid() )
+                             last_key_itr = _db_impl._market_history_db.last();
+                           else
+                             --last_key_itr;
+
+                           key.timestamp = timestamp;
+
+                           //Unless the previous record for this market is the same as ours...
+                           if( (!(last_key_itr.valid()
+                               && last_key_itr.key().quote_id == quote_id
+                               && last_key_itr.key().base_id == base_id
+                               && last_key_itr.key().granularity == market_history_key::each_block
+                               && last_key_itr.value() == new_record)) )
+                           {
+                             //...add a new entry to the history table.
+                             _pending_state->market_history[key] = new_record;
+                           }
+
+                           fc::time_point_sec start_of_this_hour = timestamp - (timestamp.sec_since_epoch() % (60*60));
+                           market_history_key old_key(quote_id, base_id, market_history_key::each_hour, start_of_this_hour);
+                           if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
+                           {
+                             auto old_record = *opt;
+                             old_record.volume += new_record.volume;
+                             if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
+                             {
+                               old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
+                               old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                               _pending_state->market_history[old_key] = old_record;
+                             }
+                           }
+                           else
+                             _pending_state->market_history[old_key] = new_record;
+
+                           fc::time_point_sec start_of_this_day = timestamp - (timestamp.sec_since_epoch() % (60*60*24));
+                           old_key = market_history_key(quote_id, base_id, market_history_key::each_day, start_of_this_day);
+                           if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
+                           {
+                             auto old_record = *opt;
+                             old_record.volume += new_record.volume;
+                             if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
+                             {
+                               old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
+                               old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                               _pending_state->market_history[old_key] = old_record;
+                             }
+                           }
+                           else
+                             _pending_state->market_history[old_key] = new_record;
+                         }
 
                          market_stat->last_error.reset();
 
