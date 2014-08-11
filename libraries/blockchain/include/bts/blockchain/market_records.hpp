@@ -71,10 +71,12 @@ namespace bts { namespace blockchain {
    {
        market_history_record(price highest_bid = price(),
                              price lowest_ask = price(),
-                             share_type volume = 0)
+                             share_type volume = 0,
+                             fc::optional<price> median_feed = fc::optional<price>())
          : highest_bid(highest_bid),
            lowest_ask(lowest_ask),
-           volume(volume)
+           volume(volume),
+           median_feed(median_feed)
        {}
 
        price highest_bid;
@@ -99,7 +101,7 @@ namespace bts { namespace blockchain {
        double lowest_ask;
        share_type volume;
 
-       fc::optional<price> median_feed;
+       fc::optional<double> median_feed;
    };
    typedef vector<market_history_point> market_history_points;
 

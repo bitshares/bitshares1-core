@@ -398,6 +398,11 @@ namespace bts { namespace blockchain {
                          {
                            market_history_key key(quote_id, base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
                            market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
+                           auto asset_rec = _db_impl.self->get_asset_record(quote_id);
+                           FC_ASSERT(asset_rec, "There is trading volume on an asset that doesn't exist??");
+                           if(base_id == 0 && asset_rec->is_market_issued())
+                             new_record.median_feed = _db_impl.self->get_median_delegate_price(quote_id);
+
                            //LevelDB iterators are dumb and don't support proper past-the-end semantics.
                            auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
                            if( !last_key_itr.valid() )
@@ -428,6 +433,7 @@ namespace bts { namespace blockchain {
                              {
                                old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                                old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                               old_record.median_feed = new_record.median_feed;
                                _pending_state->market_history[old_key] = old_record;
                              }
                            }
@@ -444,6 +450,7 @@ namespace bts { namespace blockchain {
                              {
                                old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                                old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                               old_record.median_feed = new_record.median_feed;
                                _pending_state->market_history[old_key] = old_record;
                              }
                            }
@@ -3265,7 +3272,8 @@ namespace bts { namespace blockchain {
                              record_itr.key().timestamp,
                              fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             record_itr.value().volume
+                             record_itr.value().volume,
+                             record_itr.value().median_feed? to_pretty_price_double(*record_itr.value().median_feed) : fc::optional<double>()
                            } );
         ++record_itr;
       }

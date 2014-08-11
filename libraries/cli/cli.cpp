@@ -1155,15 +1155,20 @@ namespace bts { namespace cli {
                           << std::setw(20) << "HIGHEST BID"
                           << std::setw(20) << "LOWEST ASK"
                           << std::setw(20) << "TRADING VOLUME"
-                          << "\n" << std::string(80,'-') << "\n";
+                          << std::setw(20) << "MEDIAN FEED"
+                          << "\n" << std::string(100,'-') << "\n";
 
                   for( auto point : points )
                   {
                     *_out << std::setw(20) << pretty_timestamp(point.timestamp)
                           << std::setw(20) << point.highest_bid
                           << std::setw(20) << point.lowest_ask
-                          << std::setw(20) << point.volume
-                          << "\n";
+                          << std::setw(20) << _client->get_chain()->to_pretty_asset(asset(point.volume));
+                    if(point.median_feed)
+                      *_out << std::setw(20) << *point.median_feed;
+                    else
+                      *_out << std::setw(20) << "N/A";
+                    *_out << "\n";
                   }
               }
               else if (method_name == "network_list_potential_peers")
