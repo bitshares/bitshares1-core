@@ -4301,6 +4301,18 @@ namespace bts { namespace wallet {
        }
        FC_ASSERT( order_to_cover.valid() );
 
+       const auto pending = my->_blockchain->get_pending_transactions();
+       for( const auto& eval : pending )
+       {
+           for( const auto& op : eval->trx.operations )
+           {
+               if( operation_type_enum( op.type ) != cover_op_type ) continue;
+               const auto cover_op = op.as<cover_operation>();
+               if( cover_op.cover_index.owner == order_to_cover->get_owner() )
+                   FC_THROW_EXCEPTION( double_cover, "You cannot cover a short twice in the same block!" );
+           }
+       }
+
        signed_transaction trx;
        unordered_set<address>     required_signatures;
        required_signatures.insert( order_to_cover->market_index.owner );
