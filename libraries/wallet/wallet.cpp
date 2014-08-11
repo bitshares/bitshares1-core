@@ -2734,7 +2734,8 @@ namespace bts { namespace wallet {
       asset price_shares( amount_per_xts *  quote_asset_record->get_precision(), quote_asset_record->id );
       asset base_one_quantity( base_asset_record->get_precision(), 0 );
 
-      auto quote_price_shares = price_shares / base_one_quantity;
+     // auto quote_price_shares = price_shares / base_one_quantity;
+      price quote_price_shares( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
       trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
                         current_account->id, fc::variant( quote_price_shares )  );
