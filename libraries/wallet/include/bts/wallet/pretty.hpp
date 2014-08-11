@@ -48,6 +48,7 @@ struct pretty_transaction
     asset                       fee;
     fc::time_point_sec          created_time;
     fc::time_point_sec          received_time;
+    fc::time_point_sec          expiration_time;
 
     template<typename T>
     void add_operation( const T& op ) { operations.push_back( fc::variant(op) ); }
@@ -186,8 +187,29 @@ struct pretty_remove_collateral_op
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
-FC_REFLECT( bts::wallet::pretty_ledger_entry, (from_account)(to_account)(amount)(memo)(running_balances) );
-FC_REFLECT( bts::wallet::pretty_transaction, (is_virtual)(is_confirmed)(is_market)(is_market_cancel)(trx_id)(block_num)(ledger_entries)(fee)(created_time)(received_time) );
+
+FC_REFLECT( bts::wallet::pretty_ledger_entry,
+        (from_account)
+        (to_account)
+        (amount)
+        (memo)
+        (running_balances)
+        );
+
+FC_REFLECT( bts::wallet::pretty_transaction,
+        (is_virtual)
+        (is_confirmed)
+        (is_market)
+        (is_market_cancel)
+        (trx_id)
+        (block_num)
+        (ledger_entries)
+        (fee)
+        (created_time)
+        (received_time)
+        (expiration_time)
+        );
+
 FC_REFLECT( bts::wallet::pretty_withdraw_op, (op_name)(owner)(amount));
 FC_REFLECT( bts::wallet::pretty_deposit_op, (op_name)(owner)(amount)(vote));
 FC_REFLECT( bts::wallet::pretty_reserve_name_op, (op_name)(name)(json_data)(owner_key)(active_key)(is_delegate));

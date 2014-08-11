@@ -1427,8 +1427,6 @@ namespace bts { namespace wallet {
 
               if( current_version < 101 )
               {
-                  self->set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
-
                   /* Check for old index format market order virtual transactions */
                   auto present = false;
                   const auto items = _wallet_db.get_transactions();
@@ -4501,6 +4499,7 @@ namespace bts { namespace wallet {
       pretty_trx.fee = trx_rec.fee;
       pretty_trx.created_time = trx_rec.created_time;
       pretty_trx.received_time = trx_rec.received_time;
+      pretty_trx.expiration_time = trx_rec.trx.expiration;
 
       if( trx_rec.is_virtual ) return pretty_trx;
 
