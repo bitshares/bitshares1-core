@@ -126,7 +126,7 @@ class market_engine
                    quote_asset->collected_fees -= mtrx.bid_paid.amount;
                    _pending_state->store_asset_record(*quote_asset);
                    _pending_state->store_asset_record(*base_asset);
-                   // TODO: pay XTS to delegates
+
                    auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
                    _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.ask_paid.amount );
                 }
@@ -233,8 +233,6 @@ class market_engine
                    mtrx.ask_price = mtrx.bid_price;
                    auto usd_exchanged = std::min( current_bid_balance, current_ask_balance );
                   
-                   // TODO: verify that ask_price is within the valid range (median feed)
-
                    mtrx.bid_paid     = usd_exchanged;
                    mtrx.ask_received = usd_exchanged;
                    mtrx.ask_paid     = usd_exchanged * mtrx.bid_price;
@@ -562,7 +560,8 @@ class market_engine
                 // when executing a cover order, it always takes the exact price of the
                 // highest bid, so there should be no fees paid *except* this.
                 FC_ASSERT( mtrx.fees_collected.amount == 0 );
-               // TODO: these go to the network... as dividends..
+
+                // these go to the network... as dividends..
                 mtrx.fees_collected  += asset(fee,0);
 
                 auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
