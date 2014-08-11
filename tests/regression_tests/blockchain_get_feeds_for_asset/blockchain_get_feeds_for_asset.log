@@ -58,7 +58,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9334c03d890bcc9341dfc55678a3a2c478b5ae24c493afa7279c7a5213e5bc4ee"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9334c03d890bcc9341dfc55678a3a2c478b5ae24c493afa7279c7a5213e5bc4ee",
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749602ed7c5bf432afe37b0fed2c97706465c6b145e14f7ba9c926f730631e202280b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
@@ -88,7 +89,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749608a9d118709d6bbd9989a38c15de2ed257c4a118ae38dcb08c42e80335690816f"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2211fda5a26230e5791f587846deeada3c201a651d931c72e4f9b9c66658a1b58d",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b4ae6402f1ee765aadf2b99676877472a400261d75d46ffcfc474681c21cff2d6"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
@@ -118,7 +120,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22cff078ca48314528466e718b03c87bc73932c3432960e289275df18aa6e12e1a"
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c0e4f4ae346febf54a036c73f8171a7940f4c82a16bffc08fdeaab47315dddeb40",
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9b8b5c64afe0544a84ce82947f734860715db432b6d05890db9c28aee8853538b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
@@ -155,7 +158,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
     }
   ],
   "signatures": [
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98ba87b06940a6f52e8d9d04535f6af4abcb075a888df3cd7dfab118437c62508ae"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0028e9a22867436c24ebc9a0e1aca4f822e8b84da58a4d5f0eed5b99763b7d16fa",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e6670f3ad49388c338281c3002979696d24dfff6b78469d99e2df9d8970f09b6323"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
@@ -192,7 +196,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
     }
   ],
   "signatures": [
-    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c01834fcfa439bc21afafcf838283affe9fbc7b29e55d3e82bf878307fe5c1fa87"
+    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c1baa7b5b8e4e9b9b3d092126d0562eced5b7a618bf29db614535d079ca26e419",
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907d646655d7fd1f10531c4d97a2d594b730ff3850c20607afba06f2d253a327e9e"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
@@ -222,7 +227,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9eb69c9cac0553ecdc4f0eceba0f3adf1909e5659fffd0c9aab89b2c3c7e778c5"
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a71b535fe655c6352318e4f2341164059d8e35d51e17aa4ba8b5654ae04fa65c0",
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f628d529320d0d2f56f88427e7b65bafbc26120c0e702daec07fd508c35f4ccf9"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -238,74 +244,50 @@ Parameters:
   asset (string, required): asset ticker symbol or ID to retrieve
 
 Returns:
-  feed_record_list
+  feed_entry_list
 default (unlocked) >>> blockchain_get_feeds_for_asset XMO
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 1
-    },
-    "value": {
-      "ratio": "0.002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate0",
+    "price": 2,
+    "last_update": "20140620T144040",
+    "asset_symbol": null,
+    "median_price": null
   },{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 2
-    },
-    "value": {
-      "ratio": "0.0002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate1",
+    "price": 0.20000000000000001,
+    "last_update": "20140620T144040",
+    "asset_symbol": null,
+    "median_price": null
   },{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 3
-    },
-    "value": {
-      "ratio": "0.001",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate2",
+    "price": 1,
+    "last_update": "20140620T144040",
+    "asset_symbol": null,
+    "median_price": null
   },{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 5
-    },
-    "value": {
-      "ratio": "0.0025",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate4",
+    "price": 2.5,
+    "last_update": "20140620T144040",
+    "asset_symbol": null,
+    "median_price": null
   },{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 7
-    },
-    "value": {
-      "ratio": "0.00001",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate6",
+    "price": 0.01,
+    "last_update": "20140620T144040",
+    "asset_symbol": null,
+    "median_price": null
   },{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 8
-    },
-    "value": {
-      "ratio": "0.002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate7",
+    "price": 2,
+    "last_update": "20140620T144040",
+    "asset_symbol": null,
+    "median_price": null
+  },{
+    "delegate_name": "MARKET",
+    "price": 0,
+    "last_update": "20140620T144050",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> quit

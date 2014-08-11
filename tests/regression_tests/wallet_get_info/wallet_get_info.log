@@ -21,6 +21,6 @@ default (unlocked) >>> wallet_get_info
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 100
+  "version": 101
 }
 default (unlocked) >>> quit

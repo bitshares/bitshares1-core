@@ -13,7 +13,7 @@ default (locked) >>> wallet_get_info
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": 100
+  "version": 101
 }
 default (locked) >>> help wallet_unlock
 Usage:
@@ -62,7 +62,7 @@ default (locked) >>> wallet_get_info
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": 100
+  "version": 101
 }
 default (locked) >>> debug_wait 6
 OK
@@ -79,6 +79,6 @@ default (locked) >>> wallet_get_info
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": 100
+  "version": 101
 }
 default (locked) >>> quit
