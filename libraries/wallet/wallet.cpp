@@ -1300,8 +1300,15 @@ namespace bts { namespace wallet {
       {
           fc::time_point now = fc::time_point::now();
           ilog( "Starting wallet relocker task at time: ${t}", ("t", now) );
-          if( !_scheduled_lock_time || now >= *_scheduled_lock_time )
+          if( !_scheduled_lock_time.valid() || now >= *_scheduled_lock_time )
           {
+              /* Don't relock if we have enabled delegates */
+              if( !self->get_my_delegates( enabled_delegate_status ).empty() )
+              {
+                  ulog( "Wallet not automatically relocking because there are enabled delegates!" );
+                  return;
+              }
+
               self->lock();
           }
           else
@@ -2244,6 +2251,7 @@ namespace bts { namespace wallet {
 
       if( !get_transaction_scanning() )
       {
+         my->_scan_progress = -1;
          ulog( "Wallet transaction scanning is disabled!" );
          return;
       }
@@ -2640,7 +2648,7 @@ namespace bts { namespace wallet {
           //ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
           set_transaction_scanning( false );
       }
-      else
+      else /* if( empty_after ) */
       {
           // TODO: This line was breaking regression tests by getting included in console.log
           //ulog( "Wallet transaction scanning has been automatically re-enabled!" );

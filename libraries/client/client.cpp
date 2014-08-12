@@ -2999,12 +2999,16 @@ config load_config( const fc::path& datadir )
    }
 
    std::vector<order_history_record> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
-                                                                                const std::string &base_symbol,
-                                                                                uint32_t skip_count,
-                                                                                uint32_t limit) const
+                                                                                  const std::string &base_symbol,
+                                                                                  uint32_t skip_count,
+                                                                                  uint32_t limit,
+                                                                                  uint32_t block_limit) const
    {
-      auto head_block_num = _chain_db->get_head_block_num();
-      auto orders = _chain_db->get_market_transactions(head_block_num);
+      FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
+
+      auto current_block_num = _chain_db->get_head_block_num();
+      auto head_block_num = current_block_num;
+      auto orders = _chain_db->get_market_transactions(current_block_num);
 
       std::function<bool(const market_transaction&)> order_is_uninteresting =
           [&quote_symbol,&base_symbol,this](const market_transaction& order) -> bool
@@ -3018,14 +3022,14 @@ config load_config( const fc::path& datadir )
       orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
 
       //While the next entire block of orders should be skipped...
-      while( skip_count > 0 && head_block_num > 0 && orders.size() <= skip_count ) {
-        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", head_block_num));
+      while( skip_count > 0 && current_block_num > 0 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count ) {
+        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", current_block_num));
         skip_count -= orders.size();
-        orders = _chain_db->get_market_transactions(--head_block_num);
+        orders = _chain_db->get_market_transactions(--current_block_num);
         orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
       }
 
-      if( head_block_num == 0 && orders.size() <= skip_count )
+      if( current_block_num == 0 && orders.size() <= skip_count )
         // Skip count is greater or equal to the total number of relevant orders on the blockchain.
         return vector<order_history_record>();
 
@@ -3036,17 +3040,17 @@ config load_config( const fc::path& datadir )
 
       std::vector<order_history_record> results;
       results.reserve(limit);
-      fc::time_point_sec stamp = _chain_db->get_block_header(head_block_num).timestamp;
+      fc::time_point_sec stamp = _chain_db->get_block_header(current_block_num).timestamp;
       for( const auto& rec : orders )
         results.push_back(order_history_record(rec, stamp));
 
       //While we still need more orders to reach our limit...
-      while( head_block_num > 1 && orders.size() < limit )
+      while( current_block_num > 1 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count )
       {
-        auto more_orders = _chain_db->get_market_transactions(--head_block_num);
+        auto more_orders = _chain_db->get_market_transactions(--current_block_num);
         more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
-        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", head_block_num));
-        stamp = _chain_db->get_block_header(head_block_num).timestamp;
+        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", current_block_num));
+        stamp = _chain_db->get_block_header(current_block_num).timestamp;
         for( const auto& rec : more_orders )
           if( results.size() < limit )
             results.push_back(order_history_record(rec, stamp));
