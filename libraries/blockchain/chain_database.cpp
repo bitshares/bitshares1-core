@@ -12,6 +12,7 @@
 
 #include <fc/thread/mutex.hpp>
 #include <fc/thread/unique_lock.hpp>
+#include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/io/fstream.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -1287,6 +1288,13 @@ namespace bts { namespace blockchain {
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
       fc::unique_lock<fc::mutex> lock( my->_push_block_mutex );
+
+      // The above check probably isn't enough.  We need to make certain that 
+      // no other code sees the chain_database in an inconsistent state.
+      // The lock above prevents two push_blocks from happening at the same time,
+      // but we also need to ensure the wallet, blockchain, delegate, &c. loops don't
+      // see partially-applied blocks
+      ASSERT_TASK_NOT_PREEMPTED();
 
       auto processing_start_time = time_point::now();
       auto block_id = block_data.id();
