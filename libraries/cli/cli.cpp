@@ -438,86 +438,13 @@ namespace bts { namespace cli {
 
             fc::variant execute_interactive_command(const string& command, const fc::variants& arguments)
             {
-              if(command == "wallet_rescan_blockchain")
-              {
-                  if ( ! _client->get_wallet()->is_open() )
-                      interactive_open_wallet();
-                  if( ! _client->get_wallet()->is_unlocked() )
-                  {
-                    // unlock wallet for 5 minutes
-                    fc::istream_ptr argument_stream = std::make_shared<fc::stringstream>("300");
-                    try
-                    {
-                      parse_and_execute_interactive_command( "wallet_unlock", argument_stream );
-                    }
-                    catch( const fc::canceled_exception& )
-                    {
-                    }
-                  } 
-
-                  *_out << "Rescanning blockchain...\n";
-                  uint32_t start;
-                  if (arguments.size() == 0)
-                      start = 0;
-                  else
-                      start = arguments[0].as<uint32_t>();
-                  while(true)
-                  {
-                      try {
-                        if (!FILTER_OUTPUT_FOR_TESTS)
-                        {
-                          *_out << "|";
-                          for(int i = 0; i < 100; i++)
-                              *_out << "-";
-                          *_out << "|\n|=";
-                          uint32_t next_step = 0;
-                          //TODO: improve documentation for how this works
-                          auto cb = [=](uint32_t cur, uint32_t last) mutable
-                          {
-                              if (start > last || cur >= last) // if WTF
-                                  return;
-                              if (((100*(1 + cur - start)) / (1 + last - start)) > next_step)
-                              {
-                                  *_out << "=";
-                                  next_step++;
-                              }
-                          };
-                          _client->get_wallet()->scan_chain(start, -1, cb);
-                          *_out << "|\n";
-                        }
-                        else
-                        {
-                          _client->get_wallet()->scan_chain(start, -1);
-                        }
-                        *_out << "Scan complete.\n";
-                        return fc::variant("Scan complete.");
-                      }
-                      catch( const rpc_wallet_open_needed_exception& )
-                      {
-                          interactive_open_wallet();
-                      }                
-                      catch( const rpc_wallet_unlock_needed_exception& )
-                      {
-                        // unlock wallet for 5 minutes
-                        fc::istream_ptr argument_stream = std::make_shared<fc::stringstream>("300");
-                        try
-                        {
-                          parse_and_execute_interactive_command( "wallet_unlock", argument_stream );
-                        }
-                        catch( const fc::canceled_exception& )
-                        {
-                        }
-                      }
- 
-                  }
-              }
-              else if(command == "quit" || command == "stop" || command == "exit")
+              if( command == "quit" || command == "stop" || command == "exit" )
               {
                 _quit = true;
-                FC_THROW_EXCEPTION(fc::canceled_exception, "quit command issued");
+                FC_THROW_EXCEPTION( fc::canceled_exception, "quit command issued" );
               }
               
-              return execute_command(command, arguments);
+              return execute_command( command, arguments );
             }
 
             fc::variant execute_command(const string& command, const fc::variants& arguments)

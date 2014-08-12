@@ -1300,8 +1300,15 @@ namespace bts { namespace wallet {
       {
           fc::time_point now = fc::time_point::now();
           ilog( "Starting wallet relocker task at time: ${t}", ("t", now) );
-          if( !_scheduled_lock_time || now >= *_scheduled_lock_time )
+          if( !_scheduled_lock_time.valid() || now >= *_scheduled_lock_time )
           {
+              /* Don't relock if we have enabled delegates */
+              if( !self->get_my_delegates( enabled_delegate_status ).empty() )
+              {
+                  ulog( "Wallet not automatically relocking because there are enabled delegates!" );
+                  return;
+              }
+
               self->lock();
           }
           else
@@ -2244,6 +2251,7 @@ namespace bts { namespace wallet {
 
       if( !get_transaction_scanning() )
       {
+         my->_scan_progress = -1;
          ulog( "Wallet transaction scanning is disabled!" );
          return;
       }
@@ -2640,7 +2648,7 @@ namespace bts { namespace wallet {
           //ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
           set_transaction_scanning( false );
       }
-      else
+      else /* if( empty_after ) */
       {
           // TODO: This line was breaking regression tests by getting included in console.log
           //ulog( "Wallet transaction scanning has been automatically re-enabled!" );
@@ -2717,7 +2725,7 @@ namespace bts { namespace wallet {
           FC_THROW_EXCEPTION( unknown_receive_account, "You cannot publish from this account!",
                               ("delegate_account",account_to_publish_under) );
 
-      if( amount_per_xts <= 0 )
+      if( amount_per_xts < 0 )
           FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",amount_per_xts) );
 
       signed_transaction     trx;
@@ -2737,8 +2745,16 @@ namespace bts { namespace wallet {
      // auto quote_price_shares = price_shares / base_one_quantity;
       price quote_price_shares( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
-      trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
-                        current_account->id, fc::variant( quote_price_shares )  );
+      if( amount_per_xts > 0 )
+      {
+         trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
+                           current_account->id, fc::variant( quote_price_shares )  );
+      }
+      else
+      {
+         trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
+                           current_account->id, fc::variant()  );
+      }
 
       auto required_fees = get_priority_fee();
 
