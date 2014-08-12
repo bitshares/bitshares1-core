@@ -2612,7 +2612,10 @@ namespace bts { namespace blockchain {
    }
    void             chain_database::set_feed( const feed_record& r )
    {
-      my->_feed_db.store( r.feed, r );
+      if( r.is_null() )
+         my->_feed_db.remove( r.feed );
+      else
+         my->_feed_db.store( r.feed, r );
    }
 
    ofeed_record     chain_database::get_feed( const feed_index& i )const
