@@ -7,7 +7,7 @@
  */
 #define BTS_BLOCKCHAIN_VERSION                              (109)
 #define BTS_WALLET_VERSION                                  uint32_t(101)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (121)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (122)
 
 /**
  *  The address prepended to string representation of
@@ -15,10 +15,10 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                  "XTS"
-#define BTS_BLOCKCHAIN_SYMBOL                               "XTS"
-#define BTS_BLOCKCHAIN_NAME                                 "BitShares XTS"
-#define BTS_BLOCKCHAIN_DESCRIPTION                          "Stake in future BitShares X chains"
+#define BTS_ADDRESS_PREFIX                                  "TNG"
+#define BTS_BLOCKCHAIN_SYMBOL                               "TNG"
+#define BTS_BLOCKCHAIN_NAME                                 "BitShares The Next Generation"
+#define BTS_BLOCKCHAIN_DESCRIPTION                          "To boldly go where no Chain has gone Before!"
 #define BTS_BLOCKCHAIN_PRECISION                            (100000)
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC   (60*60*2)
