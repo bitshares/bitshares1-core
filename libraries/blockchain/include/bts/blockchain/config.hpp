@@ -45,12 +45,12 @@
  * we check the connection count.  This means no blocks get produced
  * until at least a minimum number of clients are on line.
  */
-#define BTS_MIN_DELEGATE_CONNECTION_COUNT               (1)
+#define BTS_MIN_DELEGATE_CONNECTION_COUNT                   (1)
 
 /**
  * Defines the number of seconds that should elapse between blocks
  */
-#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC               int64_t(10)
+#define BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC                   int64_t(10)
 
 /**
  *  The maximum size of the raw data contained in the blockchain, this size is
@@ -101,7 +101,7 @@
  *
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
-#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/1000)
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/100)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
