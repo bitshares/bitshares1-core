@@ -1,5 +1,3 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> wallet_account_create testaccount2
 
 
