@@ -738,10 +738,8 @@ namespace bts { namespace cli {
               }
               else if (method_name == "wallet_transfer")
               {
-                  const auto& transaction = result.as<signed_transaction>();
-                  const auto& transaction_record = _client->get_wallet()->lookup_transaction( transaction.id() );
-                  FC_ASSERT( transaction_record.valid() );
-                  const auto& pretty = _client->get_wallet()->to_pretty_trx( *transaction_record );
+                  const auto& record = result.as<wallet_transaction_record>();
+                  const auto& pretty = _client->get_wallet()->to_pretty_trx( record );
                   const std::vector<pretty_transaction> transactions = { pretty };
                   *_out << pretty_transaction_list( transactions, _client );
               }

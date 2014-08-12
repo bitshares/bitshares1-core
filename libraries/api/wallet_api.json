@@ -12,21 +12,6 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "wallet_open_file",
-        "description": "Opens the wallet at the given path",
-        "return_type": "void",
-        "parameters" :
-          [
-            {
-              "name" : "wallet_file",
-              "type" : "filename",
-              "description" : "the full path and filename of the wallet to open",
-              "example" : "/path/to/wallet.dat"
-            }
-          ],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
         "method_name": "wallet_open",
         "description": "Opens the wallet of the given name",
         "return_type": "void",
@@ -512,7 +497,7 @@
       {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
-        "return_type": "signed_transaction",
+        "return_type": "transaction_record",
         "parameters" :
           [
             {
@@ -554,7 +539,7 @@
       {
         "method_name": "wallet_transfer_from",
         "description": "Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
-        "return_type": "signed_transaction",
+        "return_type": "transaction_record",
         "parameters" :
           [
             {

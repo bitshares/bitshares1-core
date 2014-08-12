@@ -78,8 +78,7 @@ namespace bts { namespace blockchain {
             #include "original_market_engine.hpp"
             #include "market_engine.cpp" 
 
-            void                                        initialize_genesis(fc::optional<fc::path> genesis_file);
-
+            digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
             void                                        clear_pending(  const full_block& blk );
@@ -1009,7 +1008,6 @@ namespace bts { namespace blockchain {
 
    void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
    { try {
-      wlog( "....." );
       bool is_new_data_dir = !fc::exists( data_dir );
       try
       {
@@ -1029,14 +1027,13 @@ namespace bts { namespace blockchain {
              my->_head_block_id = last_block_id;
           }
 
-
           if( last_block_num == uint32_t(-1) )
           {
              close();
              fc::remove_all( data_dir / "index" );
              fc::create_directories( data_dir / "index");
              my->open_database( data_dir );
-             my->initialize_genesis(genesis_file);
+             my->initialize_genesis( genesis_file );
 
              std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
 
@@ -1056,8 +1053,11 @@ namespace bts { namespace blockchain {
              }
              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in " << (blockchain::now() - start_time).to_seconds() << " seconds.\n" << std::flush;
           }
-          my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
-
+          const auto db_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
+          const auto genesis_chain_id = my->initialize_genesis( genesis_file, true );
+          if( db_chain_id != genesis_chain_id )
+              FC_THROW_EXCEPTION( wrong_chain_id, "Wrong chain ID!", ("database_id",db_chain_id)("genesis_id",genesis_chain_id) );
+          my->_chain_id = db_chain_id;
 
           //  process the pending transactions to cache by fees
           auto pending_itr = my->_pending_transaction_db.begin();
@@ -1674,13 +1674,14 @@ namespace bts { namespace blockchain {
       return next_block;
    } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
-   void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
+   digest_type detail::chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
    { try {
-      if( self->chain_id() != digest_type() )
+      auto chain_id = self->chain_id();
+      if( chain_id != digest_type() && !chain_id_only )
       {
          self->sanity_check();
          ilog( "Genesis state already initialized" );
-         return;
+         return chain_id;
       }
 
       genesis_block_config config;
@@ -1714,7 +1715,9 @@ namespace bts { namespace blockchain {
 
       fc::sha256::encoder enc;
       fc::raw::pack( enc, config );
-      _chain_id = enc.result();
+      chain_id = enc.result();
+      if( chain_id_only ) return chain_id;
+      _chain_id = chain_id;
       self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
 
       fc::uint128 total_unscaled = 0;
@@ -1842,6 +1845,7 @@ namespace bts { namespace blockchain {
       self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
       self->sanity_check();
+      return _chain_id;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void chain_database::add_observer( chain_observer* observer )

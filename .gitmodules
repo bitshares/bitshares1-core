@@ -13,3 +13,4 @@
 [submodule "libraries/leveldb"]
 	path = libraries/leveldb
 	url = https://github.com/bitcoin/leveldb.git
+    ignore = dirty

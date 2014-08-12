@@ -7,7 +7,7 @@
  */
 #define BTS_BLOCKCHAIN_VERSION                              (109)
 #define BTS_WALLET_VERSION                                  uint32_t(101)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (121)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (122)
 
 /**
  *  The address prepended to string representation of
@@ -71,7 +71,7 @@
  *  The maximum amount that can be issued for user assets.
  *
  *  10^18 / 2^63 < 1  however, to support representing all share values as a double in
- *  languages like java script, we must stay within the epsilon so 
+ *  languages like java script, we must stay within the epsilon so
  *
  *  10^15 / 2^53 < 1 allows all values to be represented as a double or an int64
  */
@@ -86,14 +86,14 @@
 /**
  *   How much XTS must be allocated between the short/ask sides of the market before
  *   trading can begin.   The purpose of this is to prevent trading shorts/asks/covers
- *   when there is not enough depth to represent meaningful consensus.  
+ *   when there is not enough depth to represent meaningful consensus.
  *
  *   In theory someone with BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT shares could cause
  *   a bitasset to start at any price they like.  If they start the price too low then
  *   the asset will never be able to track.   The assumption is that when a new DAC is
  *   launched anyone with 1% or more has no financial interest in attacking and if they
  *   did their stake could be removed and the chain relaunched or a new BitAsset could
- *   be created.  
+ *   be created.
  *
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
@@ -115,7 +115,7 @@
 #define BTS_BLOCKCHAIN_BLOCKS_PER_YEAR                      (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*int64_t(365))
 
 #define BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE                     (512) // just a random assumption used to calibrate TRX per SEC
-#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (1) // (10) 
+#define BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND                   (1) // (10)
 #define BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE               (5) // (BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC)
 
 /** defines the maximum block size allowed, 2 MB per hour */

@@ -2734,7 +2734,8 @@ namespace bts { namespace wallet {
       asset price_shares( amount_per_xts *  quote_asset_record->get_precision(), quote_asset_record->id );
       asset base_one_quantity( base_asset_record->get_precision(), 0 );
 
-      auto quote_price_shares = price_shares / base_one_quantity;
+     // auto quote_price_shares = price_shares / base_one_quantity;
+      price quote_price_shares( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
       trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
                         current_account->id, fc::variant( quote_price_shares )  );
@@ -3265,7 +3266,7 @@ namespace bts { namespace wallet {
                               ("to_address_amounts",to_address_amounts)
                               ("memo_message",memo_message) ) }
 
-   signed_transaction wallet::transfer_asset( double real_amount_to_transfer,
+   wallet_transaction_record wallet::transfer_asset( double real_amount_to_transfer,
                                         const string& amount_to_transfer_symbol,
                                         const string& paying_account_name,
                                         const string& from_account_name,
@@ -3352,8 +3353,9 @@ namespace bts { namespace wallet {
                               from_memo
                               );
 
-      if( sign )
-      {
+      /* TODO: Fix this when we don't sign and broadcast transactions without user confirmation */
+      //if( sign )
+      //{
          auto entry = ledger_entry();
          entry.from_account = payer_public_key;
          entry.to_account = receiver_public_key;
@@ -3367,8 +3369,9 @@ namespace bts { namespace wallet {
          record.fee = required_fees;
 
          sign_and_cache_transaction( trx, required_signatures, record );
-      }
-      return trx;
+      //}
+      //return trx;
+      return record;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)
                              (amount_to_transfer_symbol)
                              (paying_account_name)

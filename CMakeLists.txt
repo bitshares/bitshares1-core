@@ -55,20 +55,23 @@ else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
 
-    set( LEVEL_DB_DIR "${CMAKE_SOURCE_DIR}/libraries/leveldb" )
-    include( ExternalProject )
-    ExternalProject_Add( LevelDB
-        PREFIX "${LEVEL_DB_DIR}"
-        SOURCE_DIR "${LEVEL_DB_DIR}"
-        BUILD_IN_SOURCE 1
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND "${MAKE}"
-        INSTALL_COMMAND ""
-        )
-    include_directories( "${LEVEL_DB_DIR}" "${LEVEL_DB_DIR}/include" )
-    add_library( leveldb STATIC IMPORTED )
-    add_dependencies( leveldb LevelDB )
-    set_property(TARGET leveldb PROPERTY IMPORTED_LOCATION "${LEVEL_DB_DIR}/libleveldb.a" )
+    #set( LEVEL_DB_DIR "${CMAKE_SOURCE_DIR}/libraries/leveldb" )
+    #include( ExternalProject )
+    #ExternalProject_Add( LevelDB
+    #PREFIX "${LEVEL_DB_DIR}"
+    #SOURCE_DIR "${LEVEL_DB_DIR}"
+    #BUILD_IN_SOURCE 1
+    #CONFIGURE_COMMAND ""
+    #BUILD_COMMAND "$(MAKE)"
+    #INSTALL_COMMAND ""
+    #)
+    #include_directories( "${LEVEL_DB_DIR}" "${LEVEL_DB_DIR}/include" )
+    #add_library( leveldb STATIC IMPORTED )
+    #add_dependencies( leveldb LevelDB )
+    #set_property(TARGET leveldb PROPERTY IMPORTED_LOCATION "${LEVEL_DB_DIR}/libleveldb.a" )
+
+    set( LEVEL_DB_DIR vendor/leveldb-1.12.0 )
+    add_subdirectory( "${LEVEL_DB_DIR}"    )
 
     #find_library(READLINE_LIBRARIES NAMES readline)
     #find_path(READLINE_INCLUDE_DIR readline/readline.h)

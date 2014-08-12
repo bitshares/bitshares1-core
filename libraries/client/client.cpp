@@ -1531,6 +1531,15 @@ config load_config( const fc::path& datadir )
             my->_chain_db->open( data_dir / "chain", genesis_file_path );
           }
         }
+        catch( const fc::exception& e )
+        {
+          if( dynamic_cast<const wrong_chain_id*>( &e ) != nullptr )
+          {
+            elog("Wrong chain ID. Deleting database and attempting to recover.");
+            fc::remove_all( data_dir / "chain" );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          }
+        }
 
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
@@ -1583,12 +1592,6 @@ config load_config( const fc::path& datadir )
     uint32_t detail::client_impl::blockchain_get_block_count() const
     {
       return _chain_db->get_head_block_num();
-    }
-
-    void detail::client_impl::wallet_open_file(const fc::path& wallet_filename)
-    {
-      _wallet->open_file( wallet_filename );
-      reschedule_delegate_loop();
     }
 
     void detail::client_impl::wallet_open(const string& wallet_name)
@@ -1690,41 +1693,53 @@ config load_config( const fc::path& datadir )
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
     }
 
-    signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer,
-                                                       const string& asset_symbol,
-                                                       const string& from_account_name,
-                                                       const string& to_account_name,
-                                                       const string& memo_message,
-                                                       const vote_selection_method& selection_method
-                                                       )
+    wallet_transaction_record detail::client_impl::wallet_transfer(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& from_account_name,
+            const string& to_account_name,
+            const string& memo_message,
+            const vote_selection_method& selection_method
+            )
     {
-         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                  from_account_name, from_account_name,
-                                                  to_account_name,
-                                                  memo_message, selection_method, true );
+        const auto record = _wallet->transfer_asset(
+                amount_to_transfer,
+                asset_symbol,
+                from_account_name,
+                from_account_name,
+                to_account_name,
+                memo_message,
+                selection_method,
+                true
+                );
 
-         network_broadcast_transaction( trx );
-
-         return trx;
+        network_broadcast_transaction( record.trx );
+        return record;
     }
 
-    signed_transaction detail::client_impl::wallet_transfer_from(double amount_to_transfer,
-                                                       const string& asset_symbol,
-                                                       const string& paying_account_name,
-                                                       const string& from_account_name,
-                                                       const string& to_account_name,
-                                                       const string& memo_message,
-                                                       const vote_selection_method& selection_method
-                                                       )
+    wallet_transaction_record detail::client_impl::wallet_transfer_from(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& paying_account_name,
+            const string& from_account_name,
+            const string& to_account_name,
+            const string& memo_message,
+            const vote_selection_method& selection_method
+            )
     {
-         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                  paying_account_name,
-                                                  from_account_name, to_account_name,
-                                                  memo_message, selection_method, true );
+        const auto record = _wallet->transfer_asset(
+                amount_to_transfer,
+                asset_symbol,
+                paying_account_name,
+                from_account_name,
+                to_account_name,
+                memo_message,
+                selection_method,
+                true
+                );
 
-         network_broadcast_transaction( trx );
-
-         return trx;
+        network_broadcast_transaction( record.trx );
+        return record;
     }
 
     bts::blockchain::signed_transaction detail::client_impl::wallet_asset_create(const string& symbol,
@@ -3023,7 +3038,7 @@ config load_config( const fc::path& datadir )
         results.push_back(order_history_record(rec, stamp));
 
       //While we still need more orders to reach our limit...
-      while( head_block_num > 0 && orders.size() < limit )
+      while( head_block_num > 1 && orders.size() < limit )
       {
         auto more_orders = _chain_db->get_market_transactions(--head_block_num);
         more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
