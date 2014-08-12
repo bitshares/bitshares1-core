@@ -1000,6 +1000,9 @@ namespace bts { namespace blockchain {
       bool is_new_data_dir = !fc::exists( data_dir );
       try
       {
+          //This function will yield the first time it is called. Do that now, before calling push_block
+          now(); //NOW, DANG IT!
+
           fc::create_directories( data_dir );
 
           my->open_database( data_dir );
