@@ -15,17 +15,17 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                  "XTS"
-#define BTS_BLOCKCHAIN_SYMBOL                               "XTS"
-#define BTS_BLOCKCHAIN_NAME                                 "BitShares XTS"
-#define BTS_BLOCKCHAIN_DESCRIPTION                          "Stake in future BitShares X chains"
+#define BTS_ADDRESS_PREFIX                                  "TNG"
+#define BTS_BLOCKCHAIN_SYMBOL                               "TNG"
+#define BTS_BLOCKCHAIN_NAME                                 "BitShares TNG"
+#define BTS_BLOCKCHAIN_DESCRIPTION                          "To boldly go where no chain has gone before."
 #define BTS_BLOCKCHAIN_PRECISION                            (100000)
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC   (60*60*2)
 
 #define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                (false)
 
-#define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE                 (10000) // XTS
+#define BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE                 (10000) // XTS 
 
 /**
  * The number of delegates that the blockchain is designed to support
