@@ -2251,6 +2251,7 @@ namespace bts { namespace wallet {
 
       if( !get_transaction_scanning() )
       {
+         my->_scan_progress = -1;
          ulog( "Wallet transaction scanning is disabled!" );
          return;
       }
