@@ -1900,7 +1900,7 @@ namespace bts { namespace net { namespace detail {
       std::unique_ptr<std::vector<item_hash_t> > original_ids_of_items_to_get(new std::vector<item_hash_t>(peer->ids_of_items_to_get.begin(), peer->ids_of_items_to_get.end()));
       
       std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
-      FC_ASSERT(reference_point == item_hash_t() || !synopsis.empty());
+      assert(reference_point == item_hash_t() || !synopsis.empty());
       
       // if we passed in a reference point, we believe it is one the client has already accepted and should
       // be able to generate a synopsis based on it
@@ -1919,7 +1919,7 @@ namespace bts { namespace net { namespace detail {
           low_block_num += ( (true_high_block_num - low_block_num + 2 ) / 2 );
         }
         while ( low_block_num <= true_high_block_num );
-        FC_ASSERT(synopsis.back() == original_ids_of_items_to_get->back());
+        assert(synopsis.back() == original_ids_of_items_to_get->back());
       }
       return synopsis;
     }

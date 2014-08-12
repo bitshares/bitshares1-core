@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+/* Set to true only for test network */
+#define BTS_TEST_NETWORK                                    (true)
+#define BTS_TEST_NETWORK_VERSION                            (15)
+
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
