@@ -350,7 +350,7 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
 #elif defined( __APPLE__ )
 #else
      std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
-     dir_name.erase( dir_name, dir_name.end() );
+     dir_name.erase( end_pos, dir_name.end() );
      dir_name = "." + dir_name;
 #endif
 
