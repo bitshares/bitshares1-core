@@ -1531,6 +1531,15 @@ config load_config( const fc::path& datadir )
             my->_chain_db->open( data_dir / "chain", genesis_file_path );
           }
         }
+        catch( const fc::exception& e )
+        {
+          if( dynamic_cast<const wrong_chain_id*>( &e ) != nullptr )
+          {
+            elog("Wrong chain ID. Deleting database and attempting to recover.");
+            fc::remove_all( data_dir / "chain" );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          }
+        }
 
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
