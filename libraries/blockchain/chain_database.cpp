@@ -244,7 +244,6 @@ namespace bts { namespace blockchain {
                 rebuild_index = true;
               }
               self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
-              self->set_property( chain_property_enum::current_fee_rate, BTS_BLOCKCHAIN_MIN_FEE );
               self->set_property( chain_property_enum::accumulated_fees, 0 );
               self->set_property( chain_property_enum::dirty_markets, variant( map<asset_id_type,asset_id_type>() ) );
           }
@@ -623,10 +622,6 @@ namespace bts { namespace blockchain {
             if( block_data.timestamp >  (now + BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*2) )
                 FC_CAPTURE_AND_THROW( time_in_future, (block_data.timestamp)(now)(delta_seconds) );
 
-
-            // TODO: move to state update
-            //auto   expected_next_fee = block_data.next_fee( self->get_fee_rate(),  block_size );
-
             digest_block digest_data(block_data);
             if( NOT digest_data.validate_digest() )
               FC_CAPTURE_AND_THROW( invalid_block_digest );
@@ -819,9 +814,6 @@ namespace bts { namespace blockchain {
             update_active_delegate_list( block_data, pending_state );
 
             update_random_seed( block_data.previous_secret, pending_state );
-
-            // update fee rate
-            pending_state->set_fee_rate( block_data.next_fee( pending_state->get_fee_rate(), block_data.block_size() ) );
 
             save_undo_state( block_id, pending_state );
 

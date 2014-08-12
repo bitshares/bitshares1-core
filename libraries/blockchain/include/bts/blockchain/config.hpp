@@ -11,7 +11,7 @@
  */
 #define BTS_BLOCKCHAIN_VERSION                              (109)
 #define BTS_WALLET_VERSION                                  uint32_t(101)
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (123)
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     (124)
 
 /**
  *  The address prepended to string representation of
@@ -125,15 +125,7 @@
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       (10 * BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
 
-/** defines the target block size, fees will be adjusted to maintain this target */
-#define BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE                    (BTS_BLOCKCHAIN_MAX_BLOCK_SIZE/2)
-
 #define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                     (10)  // 10% per year
-
-/**
- *  defines the min fee in milli-shares per byte
- */
-#define BTS_BLOCKCHAIN_MIN_FEE                              (1000)
 
 /**
     This constant defines the number of blocks a delegate must produce before

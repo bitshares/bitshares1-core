@@ -26,13 +26,11 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( invalid_block_time,                bts::blockchain::blockchain_exception, 30017, "invalid block time" );
    FC_DECLARE_DERIVED_EXCEPTION( time_in_past,                      bts::blockchain::blockchain_exception, 30018, "time is in the past" );
    FC_DECLARE_DERIVED_EXCEPTION( time_in_future,                    bts::blockchain::blockchain_exception, 30019, "time is in the future" );
-   FC_DECLARE_DERIVED_EXCEPTION( invalid_fee_rate,                  bts::blockchain::blockchain_exception, 30020, "invalid fee rate" );
-   FC_DECLARE_DERIVED_EXCEPTION( invalid_block_digest,              bts::blockchain::blockchain_exception, 30021, "invalid block digest" );
-   FC_DECLARE_DERIVED_EXCEPTION( invalid_delegate_signee,           bts::blockchain::blockchain_exception, 30022, "invalid delegate signee" );
-   FC_DECLARE_DERIVED_EXCEPTION( failed_checkpoint_verification,    bts::blockchain::blockchain_exception, 30023, "failed checkpoint verification" );
-   FC_DECLARE_DERIVED_EXCEPTION( wrong_chain_id,                    bts::blockchain::blockchain_exception, 30024, "wrong chain id" );
-   FC_DECLARE_DERIVED_EXCEPTION( unknown_block,                     bts::blockchain::blockchain_exception, 30025, "unknown block" );
-
+   FC_DECLARE_DERIVED_EXCEPTION( invalid_block_digest,              bts::blockchain::blockchain_exception, 30020, "invalid block digest" );
+   FC_DECLARE_DERIVED_EXCEPTION( invalid_delegate_signee,           bts::blockchain::blockchain_exception, 30021, "invalid delegate signee" );
+   FC_DECLARE_DERIVED_EXCEPTION( failed_checkpoint_verification,    bts::blockchain::blockchain_exception, 30022, "failed checkpoint verification" );
+   FC_DECLARE_DERIVED_EXCEPTION( wrong_chain_id,                    bts::blockchain::blockchain_exception, 30023, "wrong chain id" );
+   FC_DECLARE_DERIVED_EXCEPTION( unknown_block,                     bts::blockchain::blockchain_exception, 30024, "unknown block" );
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );
    FC_DECLARE_DERIVED_EXCEPTION( negative_deposit,                  bts::blockchain::evaluation_error, 31001, "negative deposit" );
@@ -66,7 +64,6 @@ namespace bts { namespace blockchain {
 
    //FC_DECLARE_DERIVED_EXCEPTION( invalid_fire_operation,            bts::blockchain::evaluation_error, 33001, "invalid fire operation" );
    FC_DECLARE_DERIVED_EXCEPTION( not_a_delegate_signature,          bts::blockchain::evaluation_error, 33002, "not delegates signature" );
-
 
    FC_DECLARE_DERIVED_EXCEPTION( invalid_vote_message_size,         bts::blockchain::evaluation_error, 34001, "invalid vote message size" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_proposal_id,               bts::blockchain::evaluation_error, 34002, "unknown proposal id" );

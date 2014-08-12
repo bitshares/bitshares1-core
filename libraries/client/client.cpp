@@ -2577,12 +2577,10 @@ config load_config( const fc::path& datadir )
        info["genesis_timestamp"]            = _chain_db->get_genesis_timestamp();
 
        info["block_interval"]               = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["target_block_size"]            = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
        info["max_block_size"]               = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
        info["max_blockchain_size"]          = BTS_BLOCKCHAIN_MAX_SIZE;
 
        info["address_prefix"]               = BTS_ADDRESS_PREFIX;
-       info["min_block_fee"]                = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
        info["inactivity_fee_apr"]           = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
        info["priority_fee"]                 = _chain_db->get_priority_fee();
 
