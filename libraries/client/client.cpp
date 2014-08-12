@@ -3074,9 +3074,10 @@ config load_config( const fc::path& datadir )
 
    vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                const string& base_symbol,
-                                                               int64_t limit  )
+                                                               int64_t limit,
+                                                               const string& account_name  )
    {
-      return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
+      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }
 
    signed_transaction client_impl::wallet_market_cancel_order( const address& order_address )

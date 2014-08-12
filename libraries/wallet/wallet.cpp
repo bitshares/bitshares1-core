@@ -5370,7 +5370,8 @@ namespace bts { namespace wallet {
       return account_keys;
    }
 
-   vector<market_order>  wallet::get_market_orders( const string& quote_symbol, const string& base_symbol )const
+   vector<market_order>  wallet::get_market_orders( const string& quote_symbol, const string& base_symbol,
+                                                    int32_t limit, const string& account_name)const
    { try {
       auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
       auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );
@@ -5379,28 +5380,77 @@ namespace bts { namespace wallet {
 
       vector<market_order> result;
 
+      uint32_t count = 0;
+
       for( const auto& order : bids )
       {
-         if( my->_wallet_db.has_private_key( order.get_owner() ) )
-            result.push_back( order );
+         if( count >= limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
       }
 
+      count = 0;
       for( const auto& order : asks )
       {
-         if( my->_wallet_db.has_private_key( order.get_owner() ) )
-            result.push_back( order );
+         if( count >= limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
       }
 
+      count = 0;
       for( const auto& order : shorts )
       {
-         if( my->_wallet_db.has_private_key( order.get_owner() ) )
-            result.push_back( order );
+         if( count > limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
       }
 
+      count = 0;
       for( const auto& order : covers )
       {
-         if( my->_wallet_db.has_private_key( order.get_owner() ) )
-            result.push_back( order );
+         if( count > limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
       }
       return result;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
