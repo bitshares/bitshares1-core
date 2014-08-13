@@ -204,6 +204,7 @@ namespace bts { namespace net
       bool is_transaction_fetching_inhibited() const;
       fc::sha512 get_shared_secret() const;
       void clear_old_inventory_advertised_to_peer();
+      bool is_inventory_advertised_to_us_list_full_for_transactions() const;
       bool is_inventory_advertised_to_us_list_full() const;
     private:
       void send_queued_messages_task();

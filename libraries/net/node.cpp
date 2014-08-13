@@ -923,6 +923,8 @@ namespace bts { namespace net { namespace detail {
         _items_to_fetch_updated = false;
         dlog( "beginning an iteration of fetch items (${count} items to fetch)", ("count", _items_to_fetch.size() ) );
 
+        fc::time_point next_peer_unblocked_time = fc::time_point::maximum();
+
         std::forward_list< std::pair<peer_connection_ptr, item_id> > fetch_messages_to_send;
         std::vector< fc::future<void> >  write_ops;
         for( auto iter = _items_to_fetch.begin(); iter != _items_to_fetch.end();  )
@@ -931,16 +933,22 @@ namespace bts { namespace net { namespace detail {
           for( const peer_connection_ptr& peer : _active_connections )
           {
             if( peer->idle() &&
-                peer->inventory_peer_advertised_to_us.find(iter->item) != peer->inventory_peer_advertised_to_us.end() &&
-                (iter->item.item_type != bts::client::trx_message_type || !peer->is_transaction_fetching_inhibited()) )
+                peer->inventory_peer_advertised_to_us.find(iter->item) != peer->inventory_peer_advertised_to_us.end() )
             {
-              dlog( "requesting item ${hash} from peer ${endpoint}", ("hash", iter->item.item_hash )("endpoint", peer->get_remote_endpoint() ) );
-              peer->items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(iter->item, fc::time_point::now() ) );
-              item_id item_id_to_fetch = iter->item;
-              iter = _items_to_fetch.erase( iter );
-              item_fetched = true;
-              fetch_messages_to_send.emplace_front(std::make_pair(peer, item_id_to_fetch));
-              break;
+              if (peer->is_transaction_fetching_inhibited() && iter->item.item_type == bts::client::trx_message_type)
+              {
+                next_peer_unblocked_time = std::min(peer->transaction_fetching_inhibited_until, next_peer_unblocked_time);
+              }
+              else
+              {
+                dlog( "requesting item ${hash} from peer ${endpoint}", ("hash", iter->item.item_hash )("endpoint", peer->get_remote_endpoint() ) );
+                peer->items_requested_from_peer.insert( peer_connection::item_to_time_map_type::value_type(iter->item, fc::time_point::now() ) );
+                item_id item_id_to_fetch = iter->item;
+                iter = _items_to_fetch.erase( iter );
+                item_fetched = true;
+                fetch_messages_to_send.emplace_front(std::make_pair(peer, item_id_to_fetch));
+                break;
+              }
             }
           }
           if( !item_fetched )
@@ -955,7 +963,18 @@ namespace bts { namespace net { namespace detail {
         if( !_items_to_fetch_updated )
         {
           _retrigger_fetch_item_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("bts::net::retrigger_fetch_item_loop") );
-          _retrigger_fetch_item_loop_promise->wait();
+          fc::microseconds time_until_retrigger = fc::microseconds::maximum();
+          if (next_peer_unblocked_time != fc::time_point::maximum())
+            time_until_retrigger = next_peer_unblocked_time - fc::time_point::now();
+          try
+          {
+            if (time_until_retrigger > fc::microseconds(0))
+              _retrigger_fetch_item_loop_promise->wait(time_until_retrigger);
+          }
+          catch (const fc::timeout_exception&)
+          {
+            dlog("Resuming fetch_items_loop due to timeout -- one of our peers should no longer be throttled");
+          }
           _retrigger_fetch_item_loop_promise.reset();
         }
       } // while ( !canceled )
@@ -2244,15 +2263,22 @@ namespace bts { namespace net { namespace detail {
         }
 
         // if we have already advertised it to a peer, we must have it, no need to do anything else
-        if( !we_advertised_this_item_to_a_peer && !originating_peer->is_inventory_advertised_to_us_list_full())
+        if (!we_advertised_this_item_to_a_peer)
         {
+          // if the peer has flooded us with transactions, don't add these to the inventory to prevent our 
+          // inventory list from growing without bound.  We try to allow fetching blocks even when 
+          // we've stopped fetching transactions.
+          if ((item_ids_inventory_message_received.item_type == bts::client::trx_message_type &&
+               originating_peer->is_inventory_advertised_to_us_list_full_for_transactions()) ||
+              originating_peer->is_inventory_advertised_to_us_list_full())
+            break;
           originating_peer->inventory_peer_advertised_to_us.insert( advertised_item_id );
           if( !we_requested_this_item_from_a_peer )
           {
             auto insert_result = _items_to_fetch.insert(prioritized_item_id(advertised_item_id, _items_to_fetch_sequence_counter++));
             if (insert_result.second)
             {
-              dlog( "addinged item ${item_hash} from inventory message to our list of items to fetch",
+              dlog( "adding item ${item_hash} from inventory message to our list of items to fetch",
                    ( "item_hash", item_hash ) );
               trigger_fetch_items_loop();
             }
