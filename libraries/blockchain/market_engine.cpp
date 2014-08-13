@@ -428,6 +428,7 @@ class market_engine
                        market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT 
                      )
                    {
+                      _market_transactions.clear(); // nothing should have executed
                      std::string reason = "After executing orders there was insufficient depth remaining";
                      FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
                    }

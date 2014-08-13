@@ -1127,6 +1127,12 @@
                "type" : "int64_t",
                "description" : "the maximum number of items to return",
                "default_value" : -1
+            },
+            {
+               "name" : "account_name",
+               "type" : "account_name",
+               "description" : "the account for which to get the orders, or 'ALL' to get them all",
+               "default_value" : "ALL"
             }
          ],
          "prerequisites" : ["wallet_open"],
