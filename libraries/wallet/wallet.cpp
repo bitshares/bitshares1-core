@@ -2572,10 +2572,15 @@ namespace bts { namespace wallet {
                    if( ( running_balances[ amount_asset_id ] - entry.amount ) >= asset( 0, amount_asset_id ) )
                        running_balances[ amount_asset_id ] -= entry.amount;
 
-                   if( !trx.is_virtual && ( !any_from_me || trx.is_market_cancel ) )
+                   /* Subtract fee once on the first entry */
+                   if( !trx.is_virtual && !any_from_me )
                        running_balances[ fee_asset_id ] -= trx.fee;
                }
                any_from_me |= from_me;
+
+               /* Special case to subtract fee if we canceled a bid */
+               if( !trx.is_virtual && trx.is_market_cancel && amount_asset_id != fee_asset_id )
+                   running_balances[ fee_asset_id ] -= trx.fee;
 
                auto to_me = false;
                to_me |= account_name == entry.to_account;
