@@ -28,10 +28,24 @@ namespace bts { namespace db {
         void open( const fc::path& dir, bool create = true )
         {
            ldb::Options opts;
+           opts.comparator = &_comparer;
            opts.create_if_missing = create;
-           opts.comparator = & _comparer;
+           /*
+           if( ldb::kMajorVersion > 1 || ( leveldb::kMajorVersion == 1 && leveldb::kMinorVersion >= 16 ) )
+           {
+               // LevelDB versions before 1.16 consider short writes to be corruption. Only trigger error
+               // on corruption in later versions.
+               opts.paranoid_checks = true;
+           }
+           opts.max_open_files = 64;
 
-           /// \waring Given path must exist to succeed toNativeAnsiPath
+           _read_options.verify_checksums = true;
+           _iter_options.verify_checksums = true;
+           _iter_options.fill_cache = false;
+           _sync_options.sync = true;
+           */
+
+           /// \warning Given path must exist to succeed toNativeAnsiPath
            fc::create_directories(dir);
 
            std::string ldbPath = dir.to_native_ansi_path();
@@ -48,6 +62,7 @@ namespace bts { namespace db {
            _db.reset(ndb);
            try_upgrade_db( dir,ndb, fc::get_typename<Value>::name(),sizeof(Value) );
         }
+
         bool is_open()const { return !!_db; }
 
         void close()
@@ -231,7 +246,7 @@ namespace bts { namespace db {
           } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" );
         }
 
-        void store( const Key& k, const Value& v )
+        void store( const Key& k, const Value& v, bool sync = false )
         {
           try
           {
@@ -251,7 +266,7 @@ namespace bts { namespace db {
           } FC_RETHROW_EXCEPTIONS( warn, "error storing ${key} = ${value}", ("key",k)("value",v) );
         }
 
-        void remove( const Key& k )
+        void remove( const Key& k, bool sync = false )
         {
           try
           {
@@ -293,10 +308,14 @@ namespace bts { namespace db {
             void FindShortSuccessor( std::string* )const{};
         };
 
-        key_compare                  _comparer;
-
-public: //DLNFIX temporary, remove this
-        std::unique_ptr<leveldb::DB> _db;
+        std::unique_ptr<leveldb::DB>    _db;
+        key_compare                     _comparer;
+        /*
+        ldb::ReadOptions                _read_options;
+        ldb::ReadOptions                _iter_options;
+        ldb::WriteOptions               _write_options;
+        ldb::WriteOptions               _sync_options;
+        */
   };
 
 } } // bts::db

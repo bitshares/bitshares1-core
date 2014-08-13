@@ -168,7 +168,7 @@ namespace bts { namespace blockchain {
         price p;
         auto l = a; auto r = b;
         if( l.asset_id < r.asset_id ) { std::swap(l,r); }
-        ilog( "${a} / ${b}", ("a",l)("b",r) );
+        //ilog( "${a} / ${b}", ("a",l)("b",r) );
 
         if( r.amount == 0 )
            FC_CAPTURE_AND_THROW( asset_divide_by_zero, (r) );
@@ -213,7 +213,7 @@ namespace bts { namespace blockchain {
             rtn.amount = amnt.to_int64();
             rtn.asset_id = p.quote_asset_id;
 
-            ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",rtn) );
+            //ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",rtn) );
             return rtn;
         }
         else if( a.asset_id == p.quote_asset_id )

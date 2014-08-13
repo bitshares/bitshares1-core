@@ -13,12 +13,15 @@ wallet (unlocked) >>> wallet_get_info
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 100
+  "version": 101
 }
 wallet (unlocked) >>> wallet_set_automatic_backups false
 false
 wallet (unlocked) >>> wallet_account_create testaccount
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:testaccount:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 wallet (unlocked) >>> wallet_account_balance testaccount
 No balances found.
 wallet (unlocked) >>> wallet_list_my_accounts 
@@ -102,7 +105,7 @@ wallet (unlocked) >>> wallet_get_info
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 100
+  "version": 101
 }
 wallet (unlocked) >>> wallet_close
 OK

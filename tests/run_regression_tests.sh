@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+sudo launchctl limit maxfiles 1000000 1000000
 ulimit -n 100000
 
 for regression_test in `ls regression_tests | grep -v "^\\_"`; do

@@ -249,90 +249,60 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 1
-    },
-    "value": {
-      "ratio": "0.002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate0",
+    "price": 2,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 2
-    },
-    "value": {
-      "ratio": "0.0002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate1",
+    "price": 0.20000000000000001,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate2
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 3
-    },
-    "value": {
-      "ratio": "0.001",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate2",
+    "price": 1,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate3
 []
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate4
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 5
-    },
-    "value": {
-      "ratio": "0.0025",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate4",
+    "price": 2.5,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate5
 []
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate6
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 7
-    },
-    "value": {
-      "ratio": "0.00001",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate6",
+    "price": 0.01,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 8
-    },
-    "value": {
-      "ratio": "0.002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate7",
+    "price": 2,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
@@ -347,7 +317,7 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
           "delegate_id": 1
         },
         "value": {
-          "ratio": "99.999",
+          "ratio": "99.998999999999995264",
           "quote_asset_id": 1,
           "base_asset_id": 0
         }
@@ -362,8 +332,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
     }
   ],
   "signatures": [
-    "1f54e72a315d17c29cd01dacc9cae8a820b97886b13a3b4442c4cf45d4aede3e5f135a8f0c620ba95ef250713a9c8071834702f9933ef50993bc176ac0cbe4f095",
-    "1fc630e99ecb62dc41eda3012b64c0ab0dd090651f41eaf6cb0965e3e46c80926aa302449cb387fb27cabef3cded936b07f13e4633b0430f1876b6f84fb4fe82a1"
+    "1f54e72a315d17c29cd01dacc9cae8a820b97886b13a3b4442c4cf45d4aede3e5f3c5e323e00b9d57d150ff23c1ae98456a6a3745ccfaf54c35196ea4e97c91b64",
+    "1fc630e99ecb62dc41eda3012b64c0ab0dd090651f41eaf6cb0965e3e46c80926a7a1c39c913ebc2f8765b2320a58dd9fb14cd817dac6fd0e3678512bff9ea49a6"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
@@ -378,7 +348,7 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
           "delegate_id": 2
         },
         "value": {
-          "ratio": "0.",
+          "ratio": "0.00000002",
           "quote_asset_id": 1,
           "base_asset_id": 0
         }
@@ -393,36 +363,26 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
     }
   ],
   "signatures": [
-    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38e8d0795fab8a75f1875fe64f642762d8cf7a7024965015c44aa8e8832ccdf9de7",
-    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a734144ac4e9802f7ec240406677cf5c7bf5800c2725075e748dd1c6c1d968f50f"
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38eefd074bedec5f202a9f72cbcd2be1246ec86667949c9c9063336725befd81420",
+    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a767d15059043ddd79057f765398b3b47327598284802bd6b3da787d48e81015a6"
   ]
 }
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 1
-    },
-    "value": {
-      "ratio": "0.002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate0",
+    "price": 2,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 2
-    },
-    "value": {
-      "ratio": "0.0002",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144040"
+    "delegate_name": "delegate1",
+    "price": 0.20000000000000001,
+    "last_update": "20140620T144040",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -431,30 +391,20 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 1
-    },
-    "value": {
-      "ratio": "99.999",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144050"
+    "delegate_name": "delegate0",
+    "price": 99999,
+    "last_update": "20140620T144050",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
-    "feed": {
-      "feed_id": 1,
-      "delegate_id": 2
-    },
-    "value": {
-      "ratio": "0.",
-      "quote_asset_id": 1,
-      "base_asset_id": 0
-    },
-    "last_update": "20140620T144050"
+    "delegate_name": "delegate1",
+    "price": 2.0000000000000002e-05,
+    "last_update": "20140620T144050",
+    "asset_symbol": "XMO",
+    "median_price": 2
   }
 ]
 default (unlocked) >>> quit

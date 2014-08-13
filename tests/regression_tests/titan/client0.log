@@ -9,7 +9,10 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           account-for-client1 150.00000 XTS           send this back                              0.10000 XTS         [redacted]
 default (unlocked) >>> wallet_account_create test-account
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test-account:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_register test-account delegate0
 {
   "expiration": "20140620T164030",

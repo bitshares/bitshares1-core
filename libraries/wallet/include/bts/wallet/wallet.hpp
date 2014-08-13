@@ -284,7 +284,7 @@ namespace bts { namespace wallet {
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output.
           */
-         signed_transaction  transfer_asset(double real_amount_to_transfer,
+         wallet_transaction_record transfer_asset(double real_amount_to_transfer,
                                               const string& amount_to_transfer_symbol,
                                               const string& paying_account_name,
                                               const string& from_account_name,
@@ -425,7 +425,8 @@ namespace bts { namespace wallet {
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         vector<market_order>               get_market_orders( const string& quote, const string& base )const;
+         vector<market_order>               get_market_orders( const string& quote, const string& base,
+                                                               int32_t limit, const string& account_name )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
                                                                      uint32_t start_block_num = 0,
@@ -437,7 +438,7 @@ namespace bts { namespace wallet {
                                                                             const string& asset_symbol = "" )const;
 
          void                               remove_transaction_record( const string& record_id );
-         signed_transaction                 publish_slate( const string& account, bool sign = true );
+         signed_transaction                 publish_slate(const string& account, string account_to_pay_with, bool sign = true );
          signed_transaction                 publish_price( const string& account, 
                                                            double amount_per_xts, 
                                                            const string& amount_asset_symbol, bool sign = true );

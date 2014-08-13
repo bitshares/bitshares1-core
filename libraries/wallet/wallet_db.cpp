@@ -1,9 +1,9 @@
 #include <bts/blockchain/time.hpp>
-#include <bts/wallet/wallet_db.hpp>
 #include <bts/db/level_map.hpp>
+#include <bts/wallet/wallet_db.hpp>
+
 #include <fc/crypto/aes.hpp>
 #include <fc/io/json.hpp>
-
 #include <fc/log/logger.hpp>
 
 namespace bts { namespace wallet {
@@ -17,12 +17,12 @@ namespace bts { namespace wallet {
            wallet_db*                                        self;
            bts::db::level_map<int32_t,generic_wallet_record> _records;
 
-           void store_generic_record( const generic_wallet_record& record )
+           void store_generic_record( const generic_wallet_record& record, bool sync )
            { try {
                auto index = record.get_wallet_record_index();
                FC_ASSERT( index != 0 );
                FC_ASSERT( _records.is_open() );
-               _records.store( index, record );
+               _records.store( index, record, sync );
                load_generic_record( record );
            } FC_CAPTURE_AND_RETHROW( (record) ) }
 
@@ -218,10 +218,10 @@ namespace bts { namespace wallet {
 
    bool wallet_db::is_open()const { return my->_records.is_open(); }
 
-   void wallet_db::store_generic_record( const generic_wallet_record& record )
+   void wallet_db::store_generic_record( const generic_wallet_record& record, bool sync )
    {
        FC_ASSERT( is_open() );
-       my->store_generic_record( record );
+       my->store_generic_record( record, sync );
    }
 
    int32_t wallet_db::new_wallet_record_index()
@@ -363,8 +363,8 @@ namespace bts { namespace wallet {
             auto oacct = lookup_account( key_to_store.account_address );
             FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
             oacct->is_my_account = true;
-            store_record(*oacct);
-            cache_account(*oacct);
+            store_record( *oacct );
+            cache_account( *oacct );
             ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
                   ("key",key_to_store.public_key)
                   ("account",key_to_store.account_address)
@@ -381,12 +381,12 @@ namespace bts { namespace wallet {
          }
          ilog( "storing key" );
 
-         store_record( key_itr->second );
+         store_record( key_itr->second, true );
       }
       else
       {
          auto r = wallet_key_record( key_to_store, new_wallet_record_index() );
-         store_record( keys[key_to_store.get_address()] = r );
+         store_record( keys[key_to_store.get_address()] = r, true );
 
          auto key = key_to_store.public_key;
          auto bts_addr = key_to_store.get_address();
@@ -420,6 +420,10 @@ namespace bts { namespace wallet {
       std::vector<generic_wallet_record> records;
       for( auto itr = my->_records.begin(); itr.valid(); ++itr )
           records.push_back( itr.value() );
+
+      const auto dir = fc::absolute( filename ).parent_path();
+      if( !fc::exists( dir ) )
+          fc::create_directories( dir );
 
       fc::json::save_to_file( records, filename, true );
    }
@@ -533,7 +537,7 @@ namespace bts { namespace wallet {
       if( current_key.valid() )
       {
          current_key->account_address = address(blockchain_account.owner_key);
-         store_record( *current_key );
+         store_record( *current_key, true );
       }
       else
       {
@@ -587,7 +591,7 @@ namespace bts { namespace wallet {
       if( current_key )
       {
          current_key->account_address = address(new_account_key);
-         store_record( *current_key );
+         store_record( *current_key, true );
       }
       else
       {
@@ -646,21 +650,23 @@ namespace bts { namespace wallet {
 
    void wallet_db::remove_contact_account( const string& account_name )
    {
-      auto opt_account = lookup_account( account_name );
+      const auto opt_account = lookup_account( account_name );
       FC_ASSERT( opt_account.valid() );
-      auto acct = *opt_account;
+      const auto acct = *opt_account;
       FC_ASSERT( ! has_private_key(address(acct.owner_key)), "you can only remove contact accounts");
 
-      accounts.erase( acct.wallet_record_index );
-      remove_item( acct.wallet_record_index );
-      keys.erase( address(acct.owner_key) );
-      address_to_account_wallet_record_index.erase( address(acct.owner_key) );
       for( const auto& time_key_pair : acct.active_key_history )
       {
           keys.erase( address(time_key_pair.second) );
           address_to_account_wallet_record_index.erase( address(time_key_pair.second) );
       }
+      remove_item( acct.wallet_record_index );
+
+      keys.erase( address(acct.owner_key) );
+      address_to_account_wallet_record_index.erase( address(acct.owner_key) );
+      account_id_to_wallet_record_index.erase( acct.id );
       name_to_account_wallet_record_index.erase( account_name );
+      accounts.erase( acct.wallet_record_index );
    }
 
    void wallet_db::rename_account(const public_key_type &old_account_key,
@@ -730,7 +736,7 @@ namespace bts { namespace wallet {
       master_key key;
       key.encrypt_key(new_password,extended_key);
       auto key_record = wallet_master_key_record( key, -1 );
-      store_record( key_record );
+      store_record( key_record, true );
    }
 
    void wallet_db::change_password( const fc::sha512& old_password,
@@ -747,7 +753,7 @@ namespace bts { namespace wallet {
          {
             auto priv_key = key.second.decrypt_private_key( old_password );
             key.second.encrypt_private_key( new_password, priv_key );
-            store_record( key.second );
+            store_record( key.second, true );
          }
       }
    } FC_CAPTURE_AND_RETHROW() }

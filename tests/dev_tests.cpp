@@ -99,6 +99,52 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec(clienta, "wallet_market_order_list BUSD XTS");
    exec(clienta, "wallet_account_transaction_history delegate31");
    exec(clienta, "wallet_account_transaction_history");
+   exec(clienta, "balance");
+   exec(clientb, "balance");
+   exec( clientb, "short delegate32 300 .69 BUSD" );
+   produce_block(clientb);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   produce_block(clientb);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clienta, "wallet_account_transaction_history");
+   exec(clientb, "wallet_account_transaction_history");
+   exec(clientb, "wallet_market_order_list BUSD XTS"); // TODO: this should filter by account
+   exec(clientb, "wallet_market_cancel_order XTS7FDgYCCxD29WutqJtbvqyvaxdkxYeBVs7");
+   produce_block(clientb);
+   exec(clientb, "wallet_account_transaction_history delegate32");
+   exec(clienta, "balance" );
+   exec(clientb, "balance");
+   exec(clientb, "wallet_account_transaction_history");
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clienta, "wallet_transfer 95 BUSD delegate31 delegate32");
+   produce_block(clienta);
+   produce_block(clienta);
+   exec(clienta, "wallet_account_transaction_history");
+   exec(clientb, "wallet_account_transaction_history");
+   exec(clientb, "balance" );
+   exec(clientb, "wallet_market_cover delegate32 5 BUSD XTS7FDgYCCxD29WutqJtbvqyvaxdkxYeBVs7" );
+   produce_block(clientb);
+   exec(clientb, "balance" );
+   exec(clientb, "wallet_market_cover delegate32 90 BUSD XTS7FDgYCCxD29WutqJtbvqyvaxdkxYeBVs7" );
+   exec( clienta, "ask delegate31 100 XTS .001 BUSD" );
+   produce_block(clientb);
+   produce_block(clientb);
+   exec(clienta, "wallet_account_transaction_history");
+   exec(clientb, "wallet_account_transaction_history delegate32");
+   exec(clientb, "wallet_market_order_list BUSD XTS"); // TODO: this should filter by account
+   exec(clientb, "balance" );
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clientb, "wallet_market_cancel_order XTS7zGp53nKGbxm6ASmfJrkDyYXmQ9qH6WtE");
+   produce_block(clientb);
+   exec(clientb, "balance" );
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clientb, "wallet_market_order_list BUSD XTS");
+
+   exec(clientb, "wallet_account_transaction_history delegate32");
+   exec(clientb, "balance" );
+
+   exec(clienta, "wallet_account_transaction_history delegate31");
+   exec(clienta, "balance" );
    return;
 
    exec( clientb, "wallet_account_create b-account" );

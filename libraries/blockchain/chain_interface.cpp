@@ -122,6 +122,17 @@ namespace bts{ namespace blockchain {
       return active.end() != std::find( active.begin(), active.end(), delegate_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_id",delegate_id) ) }
 
+   double chain_interface::to_pretty_price_double( const price& price_to_pretty_print )const
+   {
+      auto obase_asset = get_asset_record( price_to_pretty_print.base_asset_id );
+      if( !obase_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.base_asset_id) );
+
+      auto oquote_asset = get_asset_record( price_to_pretty_print.quote_asset_id );
+      if( !oquote_asset ) FC_CAPTURE_AND_THROW( unknown_asset_id, (price_to_pretty_print.quote_asset_id) );
+
+      return fc::variant(string(price_to_pretty_print.ratio * obase_asset->get_precision() / oquote_asset->get_precision())).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000);
+   }
+
    string chain_interface::to_pretty_price( const price& price_to_pretty_print )const
    { try {
       auto obase_asset = get_asset_record( price_to_pretty_print.base_asset_id );

@@ -3929,6 +3929,7 @@ namespace bts { namespace net { namespace detail {
       network_node_info->messages_to_deliver.emplace(item_to_broadcast);
       if (!network_node_info->message_sender_task_done.valid() || network_node_info->message_sender_task_done.ready())
         network_node_info->message_sender_task_done = fc::async([=](){ message_sender(network_node_info); }, "simulated_network_sender");
+        network_node_info->message_sender_task_done.wait();
     }
   }
 

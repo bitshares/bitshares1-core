@@ -293,31 +293,31 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     cfg.appenders.push_back(fc::appender_config( "p2p", "file", fc::variant(ac_p2p)));
 
     fc::logger_config dlc;
-    dlc.level = fc::log_level::warn;
+    dlc.level = fc::log_level::debug;
     dlc.name = "default";
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_client;
-    dlc_client.level = fc::log_level::warn;
+    dlc_client.level = fc::log_level::debug;
     dlc_client.name = "client";
     dlc_client.appenders.push_back("default");
     dlc_client.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_rpc;
-    dlc_rpc.level = fc::log_level::warn;
+    dlc_rpc.level = fc::log_level::debug;
     dlc_rpc.name = "rpc";
     dlc_rpc.appenders.push_back("rpc");
 
     fc::logger_config dlc_blockchain;
-    dlc_blockchain.level = fc::log_level::warn;
+    dlc_blockchain.level = fc::log_level::debug;
     dlc_blockchain.name = "blockchain";
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    dlc_p2p.level = fc::log_level::warn;
+    dlc_p2p.level = fc::log_level::debug;
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -345,16 +345,19 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
    }
    else
    {
+     auto dir_name = string( BTS_BLOCKCHAIN_NAME );
 #ifdef WIN32
-     datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #elif defined( __APPLE__ )
-     datadir =  fc::app_path() / BTS_BLOCKCHAIN_NAME;
 #else
-     std::string blockchain_name(BTS_BLOCKCHAIN_NAME);
-     std::string::iterator end_pos = std::remove(blockchain_name.begin(), blockchain_name.end(), ' ');
-     blockchain_name.erase(end_pos, blockchain_name.end());
-     datadir = fc::app_path() / ("." + blockchain_name);
+     std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
+     dir_name.erase( end_pos, dir_name.end() );
+     dir_name = "." + dir_name;
 #endif
+
+     if( BTS_TEST_NETWORK )
+         dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
+
+     datadir = fc::app_path() / dir_name;
    }
    return datadir;
 
@@ -1531,6 +1534,15 @@ config load_config( const fc::path& datadir )
             my->_chain_db->open( data_dir / "chain", genesis_file_path );
           }
         }
+        catch( const fc::exception& e )
+        {
+          if( dynamic_cast<const wrong_chain_id*>( &e ) != nullptr )
+          {
+            elog("Wrong chain ID. Deleting database and attempting to recover.");
+            fc::remove_all( data_dir / "chain" );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          }
+        }
 
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
         my->_wallet->set_data_directory( data_dir / "wallets" );
@@ -1583,12 +1595,6 @@ config load_config( const fc::path& datadir )
     uint32_t detail::client_impl::blockchain_get_block_count() const
     {
       return _chain_db->get_head_block_num();
-    }
-
-    void detail::client_impl::wallet_open_file(const fc::path& wallet_filename)
-    {
-      _wallet->open_file( wallet_filename );
-      reschedule_delegate_loop();
     }
 
     void detail::client_impl::wallet_open(const string& wallet_name)
@@ -1677,9 +1683,9 @@ config load_config( const fc::path& datadir )
       return errors;
     }
 
-    signed_transaction detail::client_impl::wallet_publish_slate( const string& account_name )
+    signed_transaction detail::client_impl::wallet_publish_slate( const string& publishing_account_name, const string& paying_account_name )
     {
-       auto trx = _wallet->publish_slate( account_name );
+       auto trx = _wallet->publish_slate( publishing_account_name, paying_account_name );
        network_broadcast_transaction( trx );
 
        return trx;
@@ -1690,41 +1696,53 @@ config load_config( const fc::path& datadir )
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
     }
 
-    signed_transaction detail::client_impl::wallet_transfer(double amount_to_transfer,
-                                                       const string& asset_symbol,
-                                                       const string& from_account_name,
-                                                       const string& to_account_name,
-                                                       const string& memo_message,
-                                                       const vote_selection_method& selection_method
-                                                       )
+    wallet_transaction_record detail::client_impl::wallet_transfer(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& from_account_name,
+            const string& to_account_name,
+            const string& memo_message,
+            const vote_selection_method& selection_method
+            )
     {
-         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                  from_account_name, from_account_name,
-                                                  to_account_name,
-                                                  memo_message, selection_method, true );
+        const auto record = _wallet->transfer_asset(
+                amount_to_transfer,
+                asset_symbol,
+                from_account_name,
+                from_account_name,
+                to_account_name,
+                memo_message,
+                selection_method,
+                true
+                );
 
-         network_broadcast_transaction( trx );
-
-         return trx;
+        network_broadcast_transaction( record.trx );
+        return record;
     }
 
-    signed_transaction detail::client_impl::wallet_transfer_from(double amount_to_transfer,
-                                                       const string& asset_symbol,
-                                                       const string& paying_account_name,
-                                                       const string& from_account_name,
-                                                       const string& to_account_name,
-                                                       const string& memo_message,
-                                                       const vote_selection_method& selection_method
-                                                       )
+    wallet_transaction_record detail::client_impl::wallet_transfer_from(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& paying_account_name,
+            const string& from_account_name,
+            const string& to_account_name,
+            const string& memo_message,
+            const vote_selection_method& selection_method
+            )
     {
-         auto trx = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                  paying_account_name,
-                                                  from_account_name, to_account_name,
-                                                  memo_message, selection_method, true );
+        const auto record = _wallet->transfer_asset(
+                amount_to_transfer,
+                asset_symbol,
+                paying_account_name,
+                from_account_name,
+                to_account_name,
+                memo_message,
+                selection_method,
+                true
+                );
 
-         network_broadcast_transaction( trx );
-
-         return trx;
+        network_broadcast_transaction( record.trx );
+        return record;
     }
 
     bts::blockchain::signed_transaction detail::client_impl::wallet_asset_create(const string& symbol,
@@ -1864,22 +1882,56 @@ config load_config( const fc::path& datadir )
       return oasset_record();
     }
 
-    vector<feed_record> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
+    //TODO: Refactor: most of these next two functions are identical. Should extract a function.
+    vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
     { try {
         asset_id_type asset_id;
-          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
-              asset_id = _chain_db->get_asset_id(asset);
-          else
-              asset_id = std::stoi( asset );
+        if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+            asset_id = _chain_db->get_asset_id(asset);
+        else
+            asset_id = std::stoi( asset );
 
-          return _chain_db->get_feeds_for_asset(asset_id);
+        auto raw_feeds = _chain_db->get_feeds_for_asset(asset_id);
+        vector<feed_entry> result_feeds;
+        for( auto feed : raw_feeds )
+        {
+            auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
+            if( !delegate )
+              FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
+            double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
+
+            result_feeds.push_back({delegate->name, price, feed.last_update});
+        }
+
+        auto omedian_price = _chain_db->get_median_delegate_price(asset_id);
+        if( omedian_price )
+          result_feeds.push_back({"MARKET", 0, _chain_db->now(), _chain_db->get_asset_symbol(asset_id), _chain_db->to_pretty_price_double(*omedian_price)});
+
+        return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
 
-    vector<feed_record> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
+    vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
     { try {
         auto delegate_record = _chain_db->get_account_record(delegate_name);
         FC_ASSERT( delegate_record.valid(), "Unknown account name." );
-        return _chain_db->get_feeds_from_delegate(delegate_record->id);
+
+        auto raw_feeds = _chain_db->get_feeds_from_delegate(delegate_record->id);
+        vector<feed_entry> result_feeds;
+        for( auto feed : raw_feeds )
+        {
+            auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
+            if( !delegate )
+              FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
+            string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
+            double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
+            auto omedian_price = _chain_db->get_median_delegate_price(feed.feed.feed_id);
+            fc::optional<double> median_price;
+            if( omedian_price ) median_price = _chain_db->to_pretty_price_double(*omedian_price);
+
+            result_feeds.push_back({delegate->name, price, feed.last_update, asset, median_price});
+        }
+
+        return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name", delegate_name) ) }
 
     int8_t detail::client_impl::wallet_account_set_approval( const string& account_name, int8_t approval )
@@ -2130,7 +2182,7 @@ config load_config( const fc::path& datadir )
 
     //JSON-RPC Method Implementations END
 
-    void client::start_networking()
+    void client::start_networking(std::function<void()> network_started_callback)
     {
       //Start chain_downloader if there are chain_servers to connect to; otherwise, just start p2p immediately
       if( !my->_config.chain_servers.empty() )
@@ -2140,15 +2192,19 @@ config load_config( const fc::path& datadir )
         auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
           my->_chain_db->push_block(new_block);
         }, my->_chain_db->get_head_block_num() + 1);
-        download_future.on_complete([this,chain_downloader](const fc::exception_ptr& e) {
+        download_future.on_complete([this,chain_downloader,network_started_callback](const fc::exception_ptr& e) {
           if( e )
             elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
           delete chain_downloader;
           connect_to_p2p_network();
+          if( network_started_callback ) network_started_callback();
         });
       }
       else
+      {
         connect_to_p2p_network();
+        if( network_started_callback ) network_started_callback();
+      }
     }
 
     //RPC server and CLI configuration rules:
@@ -2277,35 +2333,36 @@ config load_config( const fc::path& datadir )
         get_node()->clear_peer_database();
       }
 
-      start_networking();
-      fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
-      std::ostringstream port_stream;
-      if (actual_p2p_endpoint.get_address() == fc::ip::address())
-        port_stream << "port " << actual_p2p_endpoint.port();
-      else
-        port_stream << (string)actual_p2p_endpoint;
+      start_networking([=]{
+        fc::ip::endpoint actual_p2p_endpoint = this->get_p2p_listening_endpoint();
+        std::ostringstream port_stream;
+        if (actual_p2p_endpoint.get_address() == fc::ip::address())
+          port_stream << "port " << actual_p2p_endpoint.port();
+        else
+          port_stream << (string)actual_p2p_endpoint;
 
-      if( option_variables.count("log-commands") <= 0) /* Was breaking regression tests */
-          ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
+        if( option_variables.count("log-commands") <= 0) /* Was breaking regression tests */
+            ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
 
-      if (option_variables.count("p2p-port"))
-      {
-        uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
-        if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
-          ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
-      }
+        if (option_variables.count("p2p-port"))
+        {
+          uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
+          if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
+            ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
+        }
 
-      if (option_variables.count("connect-to"))
-      {
-        std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
-        for( auto peer : hosts )
-          this->connect_to_peer( peer );
-      }
-      else if (!option_variables.count("disable-default-peers"))
-      {
-        for (string default_peer : my->_config.default_peers)
-          this->connect_to_peer(default_peer);
-      }
+        if (option_variables.count("connect-to"))
+        {
+          std::vector<string> hosts = option_variables["connect-to"].as<std::vector<string>>();
+          for( auto peer : hosts )
+            this->connect_to_peer( peer );
+        }
+        else if (!option_variables.count("disable-default-peers"))
+        {
+          for (string default_peer : my->_config.default_peers)
+            this->connect_to_peer(default_peer);
+        }
+      });
 
       if (my->_config.chain_server.enabled)
       {
@@ -2941,13 +2998,17 @@ config load_config( const fc::path& datadir )
       return std::make_pair(bids, asks);
    }
 
-   std::vector<market_transaction> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
-                                                                                const std::string &base_symbol,
-                                                                                uint32_t skip_count,
-                                                                                uint32_t limit) const
+   std::vector<order_history_record> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
+                                                                                  const std::string &base_symbol,
+                                                                                  uint32_t skip_count,
+                                                                                  uint32_t limit,
+                                                                                  uint32_t block_limit) const
    {
-      auto head_block_num = _chain_db->get_head_block_num();
-      auto orders = _chain_db->get_market_transactions(head_block_num);
+      FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
+
+      auto current_block_num = _chain_db->get_head_block_num();
+      auto head_block_num = current_block_num;
+      auto orders = _chain_db->get_market_transactions(current_block_num);
 
       std::function<bool(const market_transaction&)> order_is_uninteresting =
           [&quote_symbol,&base_symbol,this](const market_transaction& order) -> bool
@@ -2960,32 +3021,44 @@ config load_config( const fc::path& datadir )
       //Filter out orders not in our current market of interest
       orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
 
-      while( skip_count > 0 && head_block_num > 0 && orders.size() <= skip_count ) {
-        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", head_block_num));
+      //While the next entire block of orders should be skipped...
+      while( skip_count > 0 && current_block_num > 0 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count ) {
+        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", current_block_num));
         skip_count -= orders.size();
-        orders = _chain_db->get_market_transactions(--head_block_num);
+        orders = _chain_db->get_market_transactions(--current_block_num);
         orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
       }
 
-      if( orders.size() <= skip_count )
+      if( current_block_num == 0 && orders.size() <= skip_count )
         // Skip count is greater or equal to the total number of relevant orders on the blockchain.
-        return vector<market_transaction>();
+        return vector<order_history_record>();
 
+      //If there are still some orders from the last block inspected to skip, remove them
       if( skip_count > 0 )
         orders.erase(orders.begin(), orders.begin() + skip_count);
       ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
 
-      while( head_block_num > 0 && orders.size() < limit )
+      std::vector<order_history_record> results;
+      results.reserve(limit);
+      fc::time_point_sec stamp = _chain_db->get_block_header(current_block_num).timestamp;
+      for( const auto& rec : orders )
+        results.push_back(order_history_record(rec, stamp));
+
+      //While we still need more orders to reach our limit...
+      while( current_block_num > 1 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count )
       {
-        auto more_orders = _chain_db->get_market_transactions(--head_block_num);
+        auto more_orders = _chain_db->get_market_transactions(--current_block_num);
         more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
-        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", head_block_num));
-        std::move(more_orders.begin(), more_orders.end(), std::back_inserter(orders));
+        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", current_block_num));
+        stamp = _chain_db->get_block_header(current_block_num).timestamp;
+        for( const auto& rec : more_orders )
+          if( results.size() < limit )
+            results.push_back(order_history_record(rec, stamp));
+          else
+            return results;
       }
 
-      if( orders.size() > limit )
-        orders.resize(limit);
-      return orders;
+      return results;
    }
 
    market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
@@ -3001,9 +3074,10 @@ config load_config( const fc::path& datadir )
 
    vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                const string& base_symbol,
-                                                               int64_t limit  )
+                                                               int64_t limit,
+                                                               const string& account_name  )
    {
-      return _wallet->get_market_orders( quote_symbol, base_symbol/*, limit*/ );
+      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }
 
    signed_transaction client_impl::wallet_market_cancel_order( const address& order_address )
@@ -3123,6 +3197,11 @@ config load_config( const fc::path& datadir )
   fc::variant_object client_impl::debug_get_call_statistics() const
   {
     return _p2p_node->get_call_statistics();
+  }
+
+  fc::variant_object client_impl::debug_verify_delegate_votes() const
+  {
+    return _chain_db->find_delegate_vote_discrepancies();
   }
 
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const

@@ -12,6 +12,7 @@
 
 #include <fc/thread/mutex.hpp>
 #include <fc/thread/unique_lock.hpp>
+#include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/io/fstream.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/raw_variant.hpp>
@@ -74,640 +75,9 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
-            class market_engine
-            {
-               public:
-                  market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
-                  :_pending_state(ps),_db_impl(cdi)
-                  {
-                      _pending_state = std::make_shared<pending_chain_state>( ps );
-                      _prior_state = ps;
-                  }
+            #include "market_engine.cpp" 
 
-                  void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
-                  {
-                     try {
-                         _quote_id = quote_id;
-                         _base_id = base_id;
-                         auto quote_asset = _pending_state->get_asset_record( _quote_id );
-                         auto base_asset = _pending_state->get_asset_record( _base_id );
-
-                         // DISABLE MARKET ISSUED ASSETS
-                         if( quote_asset->is_market_issued() )
-                         {
-                         //   return; // don't execute anything.
-                         }
-
-
-                         // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
-                         // next market class and then back up one
-                         auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
-                         _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
-                         _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-                         _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
-                         _collateral_itr = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
-                   
-                         if( !_ask_itr.valid() )
-                         {
-                            wlog( "ask iter invalid..." );
-                            _ask_itr = _db_impl._ask_db.begin();
-                         }
-                   
-                         if( _short_itr.valid() ) --_short_itr;
-                         else _short_itr = _db_impl._short_db.last();
-                   
-                         if( _bid_itr.valid() )   --_bid_itr;
-                         else _bid_itr = _db_impl._bid_db.last();
-                   
-                         if( _collateral_itr.valid() )   --_collateral_itr;
-                         else _collateral_itr = _db_impl._collateral_db.last();
-                   
-                         asset consumed_bid_depth(0,base_id);
-                         asset consumed_ask_depth(0,base_id);
-                   
-                         asset trading_volume(0, base_id);
-                   
-                         omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-                         if( !market_stat ) market_stat = market_status( quote_id, base_id, 0, 0 );
-
-                         price max_short_bid;
-                         price min_cover_ask;
-
-                         // while bootstraping we use this metric
-                         auto median_price = _db_impl.self->get_median_delegate_price( quote_id );
-
-                         // convert any fees collected in quote unit to XTS 
-                         if( base_id == 0 )
-                         {
-                            if( quote_asset->is_market_issued() )
-                            {
-                               if( !median_price )
-                                  FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
-                               auto feed_max_short_bid = *median_price;
-                               feed_max_short_bid.ratio *= 4;
-                               feed_max_short_bid.ratio /= 3;
-
-                               auto feed_min_ask = *median_price;
-                               feed_min_ask.ratio *= 2;
-                               feed_min_ask.ratio /= 3;
-
-                               max_short_bid = feed_max_short_bid; //std::min( market_stat->maximum_bid(), feed_max_short_bid );
-                               min_cover_ask = feed_min_ask; //std::max( market_stat->minimum_ask(), feed_min_ask );
-                               edump( (max_short_bid)(min_cover_ask) );
-                            }
-
-                            wlog( "==========================  LIQUIDATE FEES ${amount}  =========================\n", ("amount", quote_asset->collected_fees) );
-
-                            get_next_bid(); // this is necessary for get_next_ask to work with collateral
-                            while( get_next_ask() && quote_asset->collected_fees > 0 )
-                            {
-                               idump( (_current_ask) );
-                               market_transaction mtrx;
-                               mtrx.bid_price = _current_ask->get_price();
-                               mtrx.ask_price = _current_ask->get_price();
-                               mtrx.bid_owner = address();
-                               mtrx.ask_owner = _current_ask->get_owner();
-                               mtrx.bid_type  = bid_order;
-                               mtrx.ask_type  = _current_ask->type;
-
-                               auto ask_quote_quantity = _current_ask->get_quote_quantity();
-                               auto quote_quantity_usd = std::min( quote_asset->collected_fees, ask_quote_quantity.amount );
-                               mtrx.ask_received = asset(quote_quantity_usd,quote_id);
-                               mtrx.ask_paid     = mtrx.ask_received * mtrx.ask_price;
-                               mtrx.bid_paid     = mtrx.ask_received;
-                               mtrx.bid_received = mtrx.ask_paid; // these get directed to accumulated fees
-
-                               mtrx.fees_collected = mtrx.ask_paid;
-
-                               if( mtrx.ask_paid.amount == 0 )
-                                  break;
-
-                               push_market_transaction(mtrx);
-
-                               if( mtrx.ask_type == ask_order )
-                                  pay_current_ask( mtrx );
-                               else
-                                  pay_current_cover( mtrx, *quote_asset );
-
-                               market_stat->ask_depth -= mtrx.ask_paid.amount;
-
-                               quote_asset->collected_fees -= mtrx.bid_paid.amount;
-                               _pending_state->store_asset_record(*quote_asset);
-                               // TODO: pay XTS to delegates
-                               auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                               _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.ask_paid.amount );
-                            }
-                            wlog( "==========================  DONE LIQUIDATE FEES BALANCE: ${amount}=========================\n", ("amount", quote_asset->collected_fees) );
-                         }
-                         edump( (_current_bid) );
-                         edump( (_current_ask) );
-
-                         while( get_next_bid() && get_next_ask() )
-                         {
-                            idump((_current_bid) );
-                            idump((_current_ask) );
-
-                            auto bid_quantity_xts = _current_bid->get_quantity();
-                            auto ask_quantity_xts = _current_ask->get_quantity();
-
-                            asset xts_paid_by_short( 0, base_id );
-                            asset current_bid_balance  = _current_bid->get_balance();
-                            asset current_ask_balance  = _current_ask->get_balance();
-
-                            /** the market transaction we are filling out */
-                            market_transaction mtrx;
-                            mtrx.bid_price = _current_bid->get_price();
-                            mtrx.ask_price = _current_ask->get_price();
-                            mtrx.bid_owner = _current_bid->get_owner();
-                            mtrx.ask_owner = _current_ask->get_owner();
-                            mtrx.bid_type  = _current_bid->type;
-                            mtrx.ask_type  = _current_ask->type;
-
-                            if( _current_ask->type == cover_order && _current_bid->type == short_order )
-                            {
-                               elog( "CURRENT ASK IS COVER" );
-                               FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
-                               if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
-                                  break;
-
-                               // in the event that there is a margin call, we must accept the
-                               // bid price assuming the bid price is reasonable 
-                               if( mtrx.bid_price < min_cover_ask )
-                               {
-                                  wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
-                                  _current_ask.reset();
-                                  continue;
-                               }
-                               mtrx.ask_price = mtrx.bid_price;
-
-                               // we want to sell enough XTS to cover our balance.
-                               ask_quantity_xts  = current_ask_balance * mtrx.ask_price;
-                               auto quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
-
-                               mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
-                               mtrx.ask_received   = quantity_xts * mtrx.ask_price;
-                               mtrx.ask_paid       = quantity_xts;
-                               mtrx.bid_received   = quantity_xts;
-
-                               // the short always pays the quantity.
-                               xts_paid_by_short = quantity_xts;
-
-                               FC_ASSERT( xts_paid_by_short <= current_bid_balance );
-
-                               if( mtrx.ask_paid.amount > *_current_ask->collateral )
-                               {
-                                  wlog( "skipping margin call because best bid is insufficient to cover" );
-                                  // skip it... 
-                                  _current_ask.reset();
-                                  continue;
-                               }
-
-                               if( mtrx.bid_price < min_cover_ask )
-                               {
-                                  wlog( "skipping short price ${x} < min_cover_ask ${b}", ("x",_current_bid->get_price())("b", min_cover_ask)  );
-                                  _current_ask.reset();
-                                  continue;
-                               }
-
-                               pay_current_short( mtrx, xts_paid_by_short, *quote_asset );
-                               pay_current_cover( mtrx, *quote_asset );
-
-                               market_stat->bid_depth -= xts_paid_by_short.amount;
-                               market_stat->ask_depth += xts_paid_by_short.amount;
-                               market_stat->ask_depth -= mtrx.ask_paid.amount;
-                            }
-                            else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
-                            {
-                               elog( "CURRENT ASK IS COVER" );
-                               FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
-                               if( mtrx.ask_price < mtrx.bid_price ) 
-                                  break; // the call price has not been reached
-
-                               mtrx.ask_price = mtrx.bid_price;
-                               auto usd_exchanged = std::min( current_bid_balance, current_ask_balance );
-                              
-                               // TODO: verify that ask_price is within the valid range (median feed)
-
-                               mtrx.bid_paid     = usd_exchanged;
-                               mtrx.ask_received = usd_exchanged;
-                               mtrx.ask_paid     = usd_exchanged * mtrx.bid_price;
-                               mtrx.bid_received = mtrx.ask_paid;
-
-                               /**
-                                *  Don't cover at prices below the minimum cover price this is designed to prevent manipulation
-                                *  where the cover must accept very low USD valuations 
-                                */
-                               if( mtrx.bid_price < min_cover_ask )
-                               {
-                                  wlog( "skipping ${x} < min_cover_ask ${b}", ("x",_current_bid->get_price())("b", min_cover_ask)  );
-                                  _current_ask.reset();
-                                  continue;
-                               }
-
-                               if( mtrx.ask_paid.amount > *_current_ask->collateral )
-                               {
-                                  wlog( "skipping margin call because best bid is insufficient to cover" );
-                                  // skip it... 
-                                  _current_ask.reset();
-                                  continue;
-                               }
-                               pay_current_bid( mtrx );
-                               pay_current_cover( mtrx, *quote_asset );
-                               market_stat->ask_depth -= mtrx.ask_paid.amount;
-                            }
-                            else if( _current_ask->type == ask_order && _current_bid->type == short_order )
-                            {
-                               if( mtrx.bid_price < mtrx.ask_price ) break;
-                               FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
-                               auto quantity_xts   = std::min( bid_quantity_xts, ask_quantity_xts );
-
-                               mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
-                               mtrx.ask_paid       = quantity_xts;
-                               mtrx.bid_received   = mtrx.ask_paid;
-                               mtrx.ask_received   = mtrx.ask_paid * mtrx.ask_price;
-
-                               xts_paid_by_short   = quantity_xts;
-
-                               if( mtrx.bid_price > max_short_bid )
-                               {
-                                  wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                                  _current_bid.reset();
-                                  continue;
-                               }
-
-                               FC_ASSERT( xts_paid_by_short <= _current_bid->get_balance() );
-                               pay_current_short( mtrx, xts_paid_by_short, *quote_asset );
-                               pay_current_ask( mtrx );
-
-                               market_stat->bid_depth -= xts_paid_by_short.amount;
-                               market_stat->ask_depth += xts_paid_by_short.amount;
-                            }
-                            else if( _current_ask->type == ask_order && _current_bid->type == bid_order )
-                            {
-                               if( mtrx.bid_price < mtrx.ask_price ) break;
-                               auto quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
-
-                               mtrx.bid_paid       = quantity_xts * mtrx.bid_price;
-                               // ask gets exactly what they asked for
-                               mtrx.ask_received   = quantity_xts * mtrx.ask_price;
-                               mtrx.ask_paid       = quantity_xts;
-                               mtrx.bid_received   = quantity_xts;
-
-                               // because there could be rounding errors, we assume that if we are 
-                               // filling the bid quantity we are paying the full balance rather
-                               // than suffer rounding errors.
-                               if( quantity_xts == bid_quantity_xts )
-                               {
-                                  mtrx.bid_paid = current_bid_balance;
-                               }
-                               pay_current_bid( mtrx );
-                               pay_current_ask( mtrx );
-
-                               market_stat->ask_depth -= mtrx.ask_paid.amount;
-                            }
-                            mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
-
-
-                            push_market_transaction(mtrx);
-                            accumulate_fees( mtrx, *quote_asset );
-                         } // while( next bid && next ask )
-
-
-                         // update any fees collected
-                         _pending_state->store_asset_record( *quote_asset );
-
-
-                         market_stat->last_error.reset();
-
-                         if( market_stat->avg_price_24h.ratio == fc::uint128_t() && median_price )
-                         {
-                            market_stat->avg_price_24h = *median_price;
-                         }
-                         else
-                         {
-                            if( _current_bid && _current_ask )
-                            {
-                               // after the market is running solid we can use this metric...
-                               market_stat->avg_price_24h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1);
-                               market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
-                               market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
-                               market_stat->avg_price_24h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY+1);
-                            }
-                         
-                            if( quote_asset->is_market_issued() )
-                            {
-                               if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT ||
-                                   market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT 
-                                 )
-                               {
-                                 std::string reason = "After executing orders there was insufficient depth remaining";
-                                 FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
-                               }
-                            }
-                         }
-                         _pending_state->store_market_status( *market_stat );
-
-                         wlog( "done matching orders" );
-                         _pending_state->apply_changes();
-                    } 
-                    catch( const fc::exception& e )
-                    {
-                       wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
-                       auto market_state = _prior_state->get_market_status( quote_id, base_id );
-                       if( !market_state )
-                          market_state = market_status( quote_id, base_id, 0, 0 );
-                       market_state->last_error = e;
-                       _prior_state->store_market_status( *market_state );
-                    }
-                  } // execute(...)
-                  void push_market_transaction( const market_transaction& mtrx )
-                  { try {
-                      FC_ASSERT( mtrx.bid_paid.amount >= 0 );
-                      FC_ASSERT( mtrx.ask_paid.amount >= 0 );
-                      FC_ASSERT( mtrx.bid_received.amount >= 0 );
-                      FC_ASSERT( mtrx.ask_received .amount>= 0 );
-                      FC_ASSERT( mtrx.bid_paid >= mtrx.ask_received );
-                      FC_ASSERT( mtrx.ask_paid >= mtrx.bid_received );
-                      FC_ASSERT( mtrx.fees_collected.amount >= 0 );
-
-                      //elog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
-
-                      _market_transactions.push_back(mtrx);
-                  } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
-
-                  void pay_current_short(const market_transaction& mtrx, const asset& xts_paid_by_short, asset_record& quote_asset  ) 
-                  { try {
-                      FC_ASSERT( _current_bid->type == short_order );
-                      FC_ASSERT( mtrx.bid_type == short_order );
-
-                      FC_ASSERT( mtrx.ask_paid == xts_paid_by_short, "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
-
-                      quote_asset.current_share_supply += mtrx.bid_paid.amount;
-
-                      auto collateral  = xts_paid_by_short + xts_paid_by_short;
-
-                      auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
-
-                      market_index_key cover_index( cover_price, _current_bid->get_owner() );
-                      auto ocover_record = _pending_state->get_collateral_record( cover_index );
-          
-                      if( NOT ocover_record ) ocover_record = collateral_record();
-          
-                      ocover_record->collateral_balance += collateral.amount;
-                      ocover_record->payoff_balance += mtrx.bid_paid.amount;
-
-                      FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
-                      FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));
-
-                      _current_bid->state.balance -= xts_paid_by_short.amount;
-                      FC_ASSERT( _current_bid->state.balance >= 0 );
-
-                      _pending_state->store_collateral_record( cover_index, *ocover_record );
-                      _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
-                  } FC_CAPTURE_AND_RETHROW( (mtrx)  ) }
-
-                  void pay_current_bid( const market_transaction& mtrx )
-                  { try {
-                      FC_ASSERT( _current_bid->type == bid_order );
-                      FC_ASSERT( mtrx.bid_type == bid_order );
-                      _current_bid->state.balance -= mtrx.bid_paid.amount; 
-                      FC_ASSERT( _current_bid->state.balance >= 0 );
-          
-                      auto bid_payout = _pending_state->get_balance_record( 
-                                                withdraw_condition( withdraw_with_signature(mtrx.bid_owner), _base_id ).get_address() );
-                      if( !bid_payout )
-                         bid_payout = balance_record( mtrx.bid_owner, asset(0,_base_id), 0 );
-
-                      bid_payout->balance += mtrx.bid_received.amount;
-                      bid_payout->last_update = _pending_state->now();
-                      _pending_state->store_balance_record( *bid_payout );
-                      _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
-                  } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
-
-                  void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset )
-                  { try {
-                      FC_ASSERT( _current_ask->type == cover_order );
-                      FC_ASSERT( mtrx.ask_type == cover_order );
-
-                      // we are in the margin call range... 
-                      _current_ask->state.balance  -= mtrx.bid_paid.amount;
-                      *(_current_ask->collateral)  -= mtrx.ask_paid.amount; 
-
-                      quote_asset.current_share_supply -= mtrx.ask_received.amount;
-          
-                      FC_ASSERT( _current_ask->state.balance >= 0 );
-                      FC_ASSERT( *_current_ask->collateral >= 0, "", ("mtrx",mtrx)("_current_ask", _current_ask)  );
-
-                      if( _current_ask->state.balance == 0 ) // no more USD left
-                      { // send collateral home to mommy & daddy
-                            wlog( "            collateral balance is now 0!" ); 
-                            auto ask_balance_address = withdraw_condition( 
-                                                              withdraw_with_signature(_current_ask->get_owner()), 
-                                                              _base_id ).get_address();
-          
-                            auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
-                            if( !ask_payout )
-                               ask_payout = balance_record( _current_ask->get_owner(), asset(0,_base_id), 0 );
-
-                            auto left_over_collateral = (*_current_ask->collateral);
-
-                            /** charge 5% fee for having a margin call */
-                            auto fee = (left_over_collateral * 95 )/100;
-                            left_over_collateral -= fee;
-                            // when executing a cover order, it always takes the exact price of the
-                            // highest bid, so there should be no fees paid *except* this.
-                            FC_ASSERT( mtrx.fees_collected.amount == 0 );
-                            mtrx.fees_collected  = asset(fee,0);
-
-                            auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                            _pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
-
-                            ask_payout->balance += left_over_collateral;
-                            ask_payout->last_update = _pending_state->now();
-          
-                            _pending_state->store_balance_record( *ask_payout );
-                            _current_ask->collateral = 0;
-          
-                      }
-                      wlog( "storing collateral ${c}", ("c",_current_ask) );
-
-                      // the collateral position is now worse than before, if we don't update the market index then
-                      // the index price will be "wrong"... ie: the call price should move up based upon the fact
-                      // that we consumed more collateral than USD...  
-                      //
-                      // If we leave it as is, then chances are we will end up covering the entire amount this time, 
-                      // but we cannot use the price on the call for anything other than a trigger.  
-                      _pending_state->store_collateral_record( _current_ask->market_index, 
-                                                               collateral_record( *_current_ask->collateral, 
-                                                                                  _current_ask->state.balance ) );
-                  } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
-
-                  void pay_current_ask( const market_transaction& mtrx )
-                  { try {
-                      if( _current_ask->type == ask_order ) // update ask + payout
-                      {
-                         _current_ask->state.balance -= mtrx.ask_paid.amount; 
-                         FC_ASSERT( _current_ask->state.balance >= 0 );
-             
-                         auto ask_balance_address = withdraw_condition( withdraw_with_signature(mtrx.ask_owner), _quote_id ).get_address();
-                         auto ask_payout = _pending_state->get_balance_record( ask_balance_address );
-                         if( !ask_payout )
-                            ask_payout = balance_record( mtrx.ask_owner, asset(0,_quote_id), 0 );
-                         ask_payout->balance += mtrx.ask_received.amount; 
-                         ask_payout->last_update = _pending_state->now();
-             
-                         _pending_state->store_balance_record( *ask_payout );
-                         _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
-
-                      } else { // if cover_order
-                      }
-                  } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
-
-                  void accumulate_fees( const market_transaction& mtrx, asset_record& quote_asset )
-                  {
-                     if( mtrx.fees_collected.amount == 0 ) return;
-                     if( mtrx.fees_collected.asset_id == 0 )
-                     {
-                         auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                         _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.fees_collected.amount );
-                     }
-                     else
-                     {
-                        FC_ASSERT( quote_asset.id == mtrx.fees_collected.asset_id );
-                        quote_asset.collected_fees += mtrx.fees_collected.amount; 
-                     }
-                  }
-
-                  bool get_next_bid()
-                  { try {
-                     if( _current_bid && _current_bid->get_quantity().amount > 0 ) 
-                        return _current_bid.valid();
-
-                     _current_bid.reset();
-                     if( _bid_itr.valid() )
-                     {
-                        auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
-                        if( bid.get_price().quote_asset_id == _quote_id && 
-                            bid.get_price().base_asset_id == _base_id )
-                        {
-                            _current_bid = bid;
-                        }
-                     }
-
-                     if( _short_itr.valid() )
-                     {
-                        auto bid = market_order( short_order, _short_itr.key(), _short_itr.value() );
-                        //wlog( "SHORT ITER VALID: ${o}", ("o",bid) );
-                        if( bid.get_price().quote_asset_id == _quote_id && 
-                            bid.get_price().base_asset_id == _base_id )
-                        {
-                            if( !_current_bid || _current_bid->get_price() < bid.get_price() )
-                            {
-                               --_short_itr;
-                               _current_bid = bid;
-                               return _current_bid.valid();
-                            }
-                        }
-                     }
-                     else
-                     {
-                        // wlog( "           No Shorts         ****   " );
-                     }
-                     if( _bid_itr.valid() ) --_bid_itr;
-                     return _current_bid.valid();
-                  } FC_CAPTURE_AND_RETHROW() }
-
-                  bool get_next_ask()
-                  { try {
-                     if( _current_ask && _current_ask->state.balance > 0 )
-                     {
-                        idump( (_current_ask) );
-                        return _current_ask.valid();
-                     }
-                     _current_ask.reset();
-
-                     /**
-                      *  Margin calls take priority over all other ask orders
-                      */
-                     while( _current_bid && _collateral_itr.valid() )
-                     {
-                        auto cover_ask = market_order( cover_order,
-                                                 _collateral_itr.key(), 
-                                                 order_record(_collateral_itr.value().payoff_balance), 
-                                                 _collateral_itr.value().collateral_balance  );
-
-                        if( cover_ask.get_price().quote_asset_id == _quote_id &&
-                            cover_ask.get_price().base_asset_id == _base_id )
-                        {
-                            if( _current_bid->get_price() < cover_ask.get_highest_cover_price()  )
-                            {
-                               // cover position has been blown out, current bid is not able to
-                               // cover the position, so it will sit until the price recovers 
-                               // enough to fill it.  
-                               //
-                               // The idea here is that the longs have agreed to a maximum 
-                               // protection equal to the collateral.  If they would like to
-                               // sell their USD for XTS this is the best price the short is
-                               // obligated to offer.  
-                               //
-                               // In other words, this ask MUST be filled before any thing else
-                               FC_CAPTURE_AND_THROW( insufficient_collateral, (_current_bid)(cover_ask)(cover_ask.get_highest_cover_price()));
-                               --_collateral_itr;
-                               continue;
-                            }
-                            // max bid must be greater than call price
-                            if( _current_bid->get_price() < cover_ask.get_price() )
-                            {
-                             //  if( _current_ask->get_price() > cover_ask.get_price() )
-                               {
-                                  _current_ask = cover_ask;
-                                  _current_payoff_balance = _collateral_itr.value().payoff_balance;
-                                  wlog( "--collateral_iter" );
-                                  --_collateral_itr;
-                                  idump( (_current_ask) );
-                                  return _current_ask.valid();
-                               }
-                            }
-                        }
-                        break;
-                     }
-
-                     if( _ask_itr.valid() )
-                     {
-                        auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
-                        wlog( "ASK ITER VALID: ${o}", ("o",ask) );
-                        if( ask.get_price().quote_asset_id == _quote_id && 
-                            ask.get_price().base_asset_id == _base_id )
-                        {
-                            _current_ask = ask;
-                        }
-                        ++_ask_itr;
-                        idump( (_current_ask) );
-                        return true;
-                     }
-                     return _current_ask.valid();
-                  } FC_CAPTURE_AND_RETHROW() }
-
-                  pending_chain_state_ptr     _pending_state;
-                  pending_chain_state_ptr     _prior_state;
-                  chain_database_impl&        _db_impl;
-                  
-                  optional<market_order>      _current_bid;
-                  optional<market_order>      _current_ask;
-                  share_type                  _current_payoff_balance;
-                  asset_id_type               _quote_id;
-                  asset_id_type               _base_id;
-
-                  vector<market_transaction>  _market_transactions;
-
-                  bts::db::level_map< market_index_key, order_record >::iterator       _bid_itr;
-                  bts::db::level_map< market_index_key, order_record >::iterator       _ask_itr;
-                  bts::db::level_map< market_index_key, order_record >::iterator       _short_itr;
-                  bts::db::level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
-            };
-
-            void                                        initialize_genesis(fc::optional<fc::path> genesis_file);
-
+            digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
 
             std::pair<block_id_type, block_fork_data>   store_and_index( const block_id_type& id, const full_block& blk );
             void                                        clear_pending(  const full_block& blk );
@@ -1487,7 +857,9 @@ namespace bts { namespace blockchain {
          {
             try { 
                ilog( "... block applied ... " );
-               o->block_applied( summary );
+               //Schedule the observer notifications for later; the chain is in a
+               //non-premptable state right now, and observers may yield.
+               fc::async([o,summary]{o->block_applied( summary );});
             } catch ( const fc::exception& e )
             {
                wlog( "${e}", ("e",e.to_detail_string() ) );
@@ -1628,10 +1000,12 @@ namespace bts { namespace blockchain {
 
    void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
    { try {
-      wlog( "....." );
       bool is_new_data_dir = !fc::exists( data_dir );
       try
       {
+          //This function will yield the first time it is called. Do that now, before calling push_block
+          now(); //NOW, DANG IT!
+
           fc::create_directories( data_dir );
 
           my->open_database( data_dir );
@@ -1648,14 +1022,13 @@ namespace bts { namespace blockchain {
              my->_head_block_id = last_block_id;
           }
 
-
           if( last_block_num == uint32_t(-1) )
           {
              close();
              fc::remove_all( data_dir / "index" );
              fc::create_directories( data_dir / "index");
              my->open_database( data_dir );
-             my->initialize_genesis(genesis_file);
+             my->initialize_genesis( genesis_file );
 
              std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
 
@@ -1675,8 +1048,11 @@ namespace bts { namespace blockchain {
              }
              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in " << (blockchain::now() - start_time).to_seconds() << " seconds.\n" << std::flush;
           }
-          my->_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
-
+          const auto db_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
+          const auto genesis_chain_id = my->initialize_genesis( genesis_file, true );
+          if( db_chain_id != genesis_chain_id )
+              FC_THROW_EXCEPTION( wrong_chain_id, "Wrong chain ID!", ("database_id",db_chain_id)("genesis_id",genesis_chain_id) );
+          my->_chain_id = db_chain_id;
 
           //  process the pending transactions to cache by fees
           auto pending_itr = my->_pending_transaction_db.begin();
@@ -1917,6 +1293,13 @@ namespace bts { namespace blockchain {
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
       fc::unique_lock<fc::mutex> lock( my->_push_block_mutex );
+
+      // The above check probably isn't enough.  We need to make certain that 
+      // no other code sees the chain_database in an inconsistent state.
+      // The lock above prevents two push_blocks from happening at the same time,
+      // but we also need to ensure the wallet, blockchain, delegate, &c. loops don't
+      // see partially-applied blocks
+      ASSERT_TASK_NOT_PREEMPTED();
 
       auto processing_start_time = time_point::now();
       auto block_id = block_data.id();
@@ -2293,13 +1676,14 @@ namespace bts { namespace blockchain {
       return next_block;
    } FC_CAPTURE_AND_RETHROW( (timestamp) ) }
 
-   void detail::chain_database_impl::initialize_genesis(fc::optional<fc::path> genesis_file)
+   digest_type detail::chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
    { try {
-      if( self->chain_id() != digest_type() )
+      auto chain_id = self->chain_id();
+      if( chain_id != digest_type() && !chain_id_only )
       {
          self->sanity_check();
          ilog( "Genesis state already initialized" );
-         return;
+         return chain_id;
       }
 
       genesis_block_config config;
@@ -2333,7 +1717,9 @@ namespace bts { namespace blockchain {
 
       fc::sha256::encoder enc;
       fc::raw::pack( enc, config );
-      _chain_id = enc.result();
+      chain_id = enc.result();
+      if( chain_id_only ) return chain_id;
+      _chain_id = chain_id;
       self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
 
       fc::uint128 total_unscaled = 0;
@@ -2461,6 +1847,7 @@ namespace bts { namespace blockchain {
       self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
       self->sanity_check();
+      return _chain_id;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void chain_database::add_observer( chain_observer* observer )
@@ -2755,6 +2142,49 @@ namespace bts { namespace blockchain {
          ++current_itr;
       }
       return results;
+   }
+
+   fc::variant_object chain_database::find_delegate_vote_discrepancies() const
+   {
+      unordered_map<account_id_type, share_type> calculated_balances;
+
+      for (auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr)
+      {
+        balance_record balance = balance_itr.value();
+        if (balance.delegate_slate_id() == 0)
+          continue;
+        if (balance.asset_id() == 0)
+        {
+          odelegate_slate slate = get_delegate_slate(balance.delegate_slate_id());
+          FC_ASSERT(slate.valid(), "Unknown slate ID found in balance.");
+
+          for (account_id_type delegate : slate->supported_delegates)
+            calculated_balances[delegate] += balance.balance;
+        }
+      }
+
+      fc::mutable_variant_object discrepancies;
+
+      for (auto vote_itr = my->_delegate_vote_index_db.begin(); vote_itr.valid(); ++vote_itr)
+      {
+        vote_del vote_record = vote_itr.key();
+        oaccount_record delegate_record = get_account_record(vote_record.delegate_id);
+        FC_ASSERT(delegate_record.valid(), "Unknown delegate ID in votes database.");
+
+        calculated_balances[delegate_record->id] += delegate_record->delegate_pay_balance();
+
+        if (vote_record.votes != delegate_record->net_votes() ||
+            vote_record.votes != calculated_balances[vote_record.delegate_id])
+        {
+          fc::mutable_variant_object discrepancy_record;
+          discrepancy_record["calculated_votes"] = calculated_balances[vote_record.delegate_id];
+          discrepancy_record["indexed_votes"] = vote_record.votes;
+          discrepancy_record["stored_votes"] = delegate_record->net_votes();
+          discrepancies[delegate_record->name] = discrepancy_record;
+        }
+      }
+
+      return discrepancies;
    }
 
    fc::ripemd160 chain_database::get_current_random_seed()const
@@ -3147,7 +2577,8 @@ namespace bts { namespace blockchain {
                              record_itr.key().timestamp,
                              fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             record_itr.value().volume
+                             record_itr.value().volume,
+                             record_itr.value().median_feed? to_pretty_price_double(*record_itr.value().median_feed) : fc::optional<double>()
                            } );
         ++record_itr;
       }
@@ -3194,7 +2625,10 @@ namespace bts { namespace blockchain {
    }
    void             chain_database::set_feed( const feed_record& r )
    {
-      my->_feed_db.store( r.feed, r );
+      if( r.is_null() )
+         my->_feed_db.remove( r.feed );
+      else
+         my->_feed_db.store( r.feed, r );
    }
 
    ofeed_record     chain_database::get_feed( const feed_index& i )const

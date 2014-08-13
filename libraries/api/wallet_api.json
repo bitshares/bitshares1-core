@@ -12,21 +12,6 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "wallet_open_file",
-        "description": "Opens the wallet at the given path",
-        "return_type": "void",
-        "parameters" :
-          [
-            {
-              "name" : "wallet_file",
-              "type" : "filename",
-              "description" : "the full path and filename of the wallet to open",
-              "example" : "/path/to/wallet.dat"
-            }
-          ],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
         "method_name": "wallet_open",
         "description": "Opens the wallet of the given name",
         "return_type": "void",
@@ -59,7 +44,7 @@
             },
             {
               "name" : "brain_key",
-              "type" : "new_passphrase",
+              "type" : "brainkey",
               "description" : "a strong passphrase that will be used to generate all private keys, defaults to a large random number",
               "default_value" : ""
             }
@@ -512,7 +497,7 @@
       {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
-        "return_type": "signed_transaction",
+        "return_type": "transaction_record",
         "parameters" :
           [
             {
@@ -554,7 +539,7 @@
       {
         "method_name": "wallet_transfer_from",
         "description": "Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
-        "return_type": "signed_transaction",
+        "return_type": "transaction_record",
         "parameters" :
           [
             {
@@ -617,7 +602,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["scan"]
+        "aliases" : ["scan", "rescan"]
       },
       {
         "method_name": "wallet_transaction_scan",
@@ -1041,22 +1026,22 @@
                "description" : "the account that will provide funds for the ask"
             },
             {
-               "name" : "quantity",
+               "name" : "sell_quantity",
                "type" : "real_amount",
                "description" : "the quantity of items you would like to sell"
             },
             {
-               "name" : "quantity_symbol",
+               "name" : "sell_quantity_symbol",
                "type" : "asset_symbol",
                "description" : "the type of items you would like to sell"
             },
             {
-               "name" : "base_price",
+               "name" : "ask_price",
                "type" : "real_amount",
-               "description" : "the price you would like to sell"
+               "description" : "the price per unit sold."
             },
             {
-               "name" : "base_symbol",
+               "name" : "ask_price_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to be paid"
             }
@@ -1075,19 +1060,19 @@
                "description" : "the account that will provide funds for the ask"
             },
             {
-               "name" : "quantity",
+               "name" : "short_quantity",
                "type" : "real_amount",
-               "description" : "the quantity of items you would like to sell"
+               "description" : "the quantity of items you would like to short sell (borrow into existance and sell)"
             },
             {
-               "name" : "base_price",
+               "name" : "short_price",
                "type" : "real_amount",
-               "description" : "the price you would like to sell"
+               "description" : "the price (ie: 2.0 USD) per XTS that you would like to short at"
             },
             {
-               "name" : "base_symbol",
+               "name" : "short_symbol",
                "type" : "asset_symbol",
-               "description" : "the type of asset you would like to be paid"
+               "description" : "the type of asset you would like to short, ie: USD"
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1142,6 +1127,12 @@
                "type" : "int64_t",
                "description" : "the maximum number of items to return",
                "default_value" : -1
+            },
+            {
+               "name" : "account_name",
+               "type" : "account_name",
+               "description" : "the account for which to get the orders, or 'ALL' to get them all",
+               "default_value" : "ALL"
             }
          ],
          "prerequisites" : ["wallet_open"],
@@ -1313,9 +1304,15 @@
          "return_type" : "signed_transaction",
          "parameters"  : [
             {
-                "name" : "account_name",
+                "name" : "publishing_account_name",
                 "type" : "account_name",
                 "description" : "The account to publish the slate ID under"
+            },
+            {
+                "name" : "paying_account_name",
+                "type" : "account_name",
+                "description" : "The account to pay transaction fees; leave empty to pay with publishing account.",
+                "default_value" : ""
             }
          ],
          "prerequisites" : ["wallet_unlocked"]
