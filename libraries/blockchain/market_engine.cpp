@@ -81,15 +81,15 @@ class market_engine
 
                    max_short_bid = feed_max_short_bid; //std::min( market_stat->maximum_bid(), feed_max_short_bid );
                    min_cover_ask = feed_min_ask; //std::max( market_stat->minimum_ask(), feed_min_ask );
-                   edump( (max_short_bid)(min_cover_ask) );
+                   //edump( (max_short_bid)(min_cover_ask) );
                 }
 
-                wlog( "==========================  LIQUIDATE FEES ${amount}  =========================\n", ("amount", quote_asset->collected_fees) );
+                //wlog( "==========================  LIQUIDATE FEES ${amount}  =========================\n", ("amount", quote_asset->collected_fees) );
 
                 get_next_bid(); // this is necessary for get_next_ask to work with collateral
                 while( get_next_ask() && (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount > (10000 * BTS_BLOCKCHAIN_PRECISION) )
                 {
-                   idump( (_current_ask) );
+              //     idump( (_current_ask) );
                    market_transaction mtrx;
                    mtrx.bid_price = _current_ask->get_price();
                    mtrx.ask_price = _current_ask->get_price();
@@ -130,15 +130,15 @@ class market_engine
                    auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
                    _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.ask_paid.amount );
                 }
-                wlog( "==========================  DONE LIQUIDATE FEES BALANCE: ${amount}=========================\n", ("amount", quote_asset->collected_fees) );
+              //  wlog( "==========================  DONE LIQUIDATE FEES BALANCE: ${amount}=========================\n", ("amount", quote_asset->collected_fees) );
              }
-             edump( (_current_bid) );
+             //edump( (_current_bid) );
              edump( (_current_ask) );
 
              while( get_next_bid() && get_next_ask() )
              {
-                idump((_current_bid) );
-                idump((_current_ask) );
+                //idump((_current_bid) );
+                //idump((_current_ask) );
 
                 auto bid_quantity_xts = _current_bid->get_quantity();
                 auto ask_quantity_xts = _current_ask->get_quantity();
@@ -158,7 +158,7 @@ class market_engine
 
                 if( _current_ask->type == cover_order && _current_bid->type == short_order )
                 {
-                   elog( "CURRENT ASK IS COVER" );
+                   //elog( "CURRENT ASK IS COVER" );
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
@@ -225,7 +225,7 @@ class market_engine
                 }
                 else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
                 {
-                   elog( "CURRENT ASK IS COVER" );
+                   //elog( "CURRENT ASK IS COVER" );
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.ask_price < mtrx.bid_price ) 
                       break; // the call price has not been reached
@@ -677,7 +677,7 @@ class market_engine
       { try {
          if( _current_ask && _current_ask->state.balance > 0 )
          {
-            idump( (_current_ask) );
+            //idump( (_current_ask) );
             return _current_ask.valid();
          }
          _current_ask.reset();
@@ -720,9 +720,9 @@ class market_engine
                    {
                       _current_ask = cover_ask;
                       _current_payoff_balance = _collateral_itr.value().payoff_balance;
-                      wlog( "--collateral_iter" );
+                      //wlog( "--collateral_iter" );
                       --_collateral_itr;
-                      idump( (_current_ask) );
+                      //idump( (_current_ask) );
                       return _current_ask.valid();
                    }
                 }
@@ -733,14 +733,14 @@ class market_engine
          if( _ask_itr.valid() )
          {
             auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
-            wlog( "ASK ITER VALID: ${o}", ("o",ask) );
+            //wlog( "ASK ITER VALID: ${o}", ("o",ask) );
             if( ask.get_price().quote_asset_id == _quote_id && 
                 ask.get_price().base_asset_id == _base_id )
             {
                 _current_ask = ask;
             }
             ++_ask_itr;
-            idump( (_current_ask) );
+            //idump( (_current_ask) );
             return true;
          }
          return _current_ask.valid();
