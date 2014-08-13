@@ -50,6 +50,7 @@ OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 ===================================================================================================================
+3       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
 2       [redacted]          [redacted]                      1       318     0.10000 XTS     [redacted][redacted]     
 1       [redacted]          [redacted]                      1       410     0.10000 XTS     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
@@ -118,8 +119,8 @@ default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b98333c06c3664ca84a005d112eae7e202aa7a31db0979ce66ba93b55a44442d5a",
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f005a19744b5524a029a1562f8de7f7643d5ce38e8044b906e0ad88e1d4dbb40c99"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0077a347d31f3166f2cdc009add70950a28ac7761088870c064047195162cbaf91",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e6621a5d4db1ca1db248b6f8b73919d4e0b9e45ab3c0961c3e71b2acad7a8d920d4"
   ]
 }
 default (unlocked) >>> balance testaccount2
@@ -149,7 +150,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
 [redacted]          1         delegate0           testaccount2        10,000.00000 XTS                                                    0.10000 XTS         [redacted]
 [redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
-[redacted]          5         testaccount2        ASK-MVVWT3x5        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.10000 XTS         [redacted]
+[redacted]          6         testaccount2        ASK-MVVWT3x5        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.10000 XTS         [redacted]
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -168,7 +169,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
 [redacted]          1         delegate0           testaccount2        10,000.00000 XTS                                                    0.10000 XTS         [redacted]
 [redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.10000 XTS         [redacted]
-[redacted]          5         testaccount2        ASK-MVVWT3x5        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.10000 XTS         [redacted]
+[redacted]          6         testaccount2        ASK-MVVWT3x5        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.10000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
