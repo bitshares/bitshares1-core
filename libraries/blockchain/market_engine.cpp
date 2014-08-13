@@ -87,7 +87,7 @@ class market_engine
                 wlog( "==========================  LIQUIDATE FEES ${amount}  =========================\n", ("amount", quote_asset->collected_fees) );
 
                 get_next_bid(); // this is necessary for get_next_ask to work with collateral
-                while( get_next_ask() && quote_asset->collected_fees > 0 )
+                while( get_next_ask() && (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount > (10000 * BTS_BLOCKCHAIN_PRECISION) )
                 {
                    idump( (_current_ask) );
                    market_transaction mtrx;
@@ -481,7 +481,10 @@ class market_engine
              return;
           }
 
-          auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
+          auto cover_price = mtrx.bid_price;
+          cover_price.ratio *= 3;
+          cover_price.ratio /= 4;
+         // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
 
           market_index_key cover_index( cover_price, _current_bid->get_owner() );
           auto ocover_record = _pending_state->get_collateral_record( cover_index );
