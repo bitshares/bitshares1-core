@@ -967,72 +967,89 @@ namespace bts { namespace cli {
                     *_out << "\n";
                   }
 
-                  *_out << std::string(175, '-') << "\n";
-                  *_out << std::string(38, ' ') << " " 
-                        << std::string(38, ' ') << "| " 
-                        << std::string(34, ' ') << "MARGIN" 
-                        << std::string(34, ' ') << "\n"
-                        << std::left << std::setw(26) << " " 
-                        << std::setw(20) << " " 
-                        << std::right << std::setw(30) << " "
-                        << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" <<"   COLLATERAL" << "\n"
-                        << std::string(175, '-') << "\n";
-
+                  if( quote_asset_record->is_market_issued() && base_id == 0 )
                   {
-                     auto ask_itr = bids_asks.second.rbegin();
-                     while(  ask_itr != bids_asks.second.rend() )
+                     *_out << std::string(175, '-') << "\n";
+                     *_out << std::string(38, ' ') << " " 
+                           << std::string(38, ' ') << "| " 
+                           << std::string(34, ' ') << "MARGIN" 
+                           << std::string(34, ' ') << "\n"
+                           << std::left << std::setw(26) << " " 
+                           << std::setw(20) << " " 
+                           << std::right << std::setw(30) << " "
+                           << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" <<"   COLLATERAL" << "\n"
+                           << std::string(175, '-') << "\n";
+
                      {
-                         if( ask_itr->collateral )
-                         {
-                             *_out << std::string(77, ' ');
-                             *_out << "| ";
-                             *_out << std::left << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
-                                  << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-                                  << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
-                                *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
-                                *_out << "\n";
-                         }
-                        ++ask_itr;
+                        auto ask_itr = bids_asks.second.rbegin();
+                        while(  ask_itr != bids_asks.second.rend() )
+                        {
+                            if( ask_itr->collateral )
+                            {
+                                *_out << std::string(77, ' ');
+                                *_out << "| ";
+                                *_out << std::left << std::setw(30) << std::setprecision(8) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
+                                     << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+                                     << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+                                   *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
+                                   *_out << "\n";
+                            }
+                           ++ask_itr;
+                        }
                      }
-                  }
 
-                 auto median_feed = _client->get_chain()->get_median_delegate_price( quote_id );
-                 *_out << "\nMedian Feed Price: " 
-                       << (median_feed ? _client->get_chain()->to_pretty_price( *median_feed ) : "NO FEEDS" )
-                       <<"     ";
+                    auto median_feed = _client->get_chain()->get_median_delegate_price( quote_id );
+                    *_out << "\nMedian Feed Price: " 
+                          << (median_feed ? _client->get_chain()->to_pretty_price( *median_feed ) : "NO FEEDS" )
+                          <<"     ";
 
-                 auto status = _client->get_chain()->get_market_status( quote_id, base_id );
-                 if( status )
-                 {
-                    if( median_feed )
+                    auto status = _client->get_chain()->get_market_status( quote_id, base_id );
+                    if( status )
                     {
-                       auto maximum_short_price = *median_feed;
-                       maximum_short_price.ratio *= 4;
-                       maximum_short_price.ratio /= 3;
-                       auto minimum_cover_price = *median_feed;
-                       minimum_cover_price.ratio *= 2;
-                       minimum_cover_price.ratio /= 3;
-                       *_out << "Maximum Short Price: " 
-                             << _client->get_chain()->to_pretty_price( maximum_short_price )
-                             <<"     ";
-                       *_out << "Minimum Cover Price: " 
-                             << _client->get_chain()->to_pretty_price( minimum_cover_price )
-                             <<"\n";
-                    }
-                    *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
-                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"     ";
-                    *_out << "Min Depth: " << _client->get_chain()->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) ) <<"\n";
-                    if(  status->last_error )
-                    {
-                       *_out << "Last Error:  ";
-                       *_out << status->last_error->to_string() << "\n";
-                       if( true || status->last_error->code() != 37005 /* insufficient funds */ )
+                       if( median_feed )
                        {
-                          *_out << "Details:\n";
-                          *_out << status->last_error->to_detail_string() << "\n";
+                          auto maximum_short_price = *median_feed;
+                          maximum_short_price.ratio *= 4;
+                          maximum_short_price.ratio /= 3;
+                          auto minimum_cover_price = *median_feed;
+                          minimum_cover_price.ratio *= 2;
+                          minimum_cover_price.ratio /= 3;
+                          *_out << "Maximum Short Price: " 
+                                << _client->get_chain()->to_pretty_price( maximum_short_price )
+                                <<"     ";
+                          *_out << "Minimum Cover Price: " 
+                                << _client->get_chain()->to_pretty_price( minimum_cover_price )
+                                <<"\n";
+                       }
+                       *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
+                       *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"     ";
+                       *_out << "Min Depth: " << _client->get_chain()->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) ) <<"\n";
+                       if(  status->last_error )
+                       {
+                          *_out << "Last Error:  ";
+                          *_out << status->last_error->to_string() << "\n";
+                          if( true || status->last_error->code() != 37005 /* insufficient funds */ )
+                          {
+                             *_out << "Details:\n";
+                             *_out << status->last_error->to_detail_string() << "\n";
+                          }
                        }
                     }
-                 }
+                  } // end call section that only applies to market issued assets vs XTS
+                  else
+                  {
+                     auto status = _client->get_chain()->get_market_status( quote_id, base_id );
+                     if(  status->last_error )
+                     {
+                        *_out << "Last Error:  ";
+                        *_out << status->last_error->to_string() << "\n";
+                        if( true || status->last_error->code() != 37005 /* insufficient funds */ )
+                        {
+                           *_out << "Details:\n";
+                           *_out << status->last_error->to_detail_string() << "\n";
+                        }
+                     }
+                  }
 
               }
               else if (method_name == "blockchain_market_order_history")
