@@ -87,8 +87,10 @@ class market_engine
                 //wlog( "==========================  LIQUIDATE FEES ${amount}  =========================\n", ("amount", quote_asset->collected_fees) );
 
                 get_next_bid(); // this is necessary for get_next_ask to work with collateral
-                while( get_next_ask() && (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount > (10000 * BTS_BLOCKCHAIN_PRECISION) )
+                while( get_next_ask() )
                 {
+                   if( (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount < (10000 * BTS_BLOCKCHAIN_PRECISION) )
+                      break;
               //     idump( (_current_ask) );
                    market_transaction mtrx;
                    mtrx.bid_price = _current_ask->get_price();
@@ -133,7 +135,7 @@ class market_engine
               //  wlog( "==========================  DONE LIQUIDATE FEES BALANCE: ${amount}=========================\n", ("amount", quote_asset->collected_fees) );
              }
              //edump( (_current_bid) );
-             edump( (_current_ask) );
+             //edump( (_current_ask) );
 
              while( get_next_bid() && get_next_ask() )
              {
@@ -469,11 +471,16 @@ class market_engine
           FC_ASSERT( _current_bid->type == short_order );
           FC_ASSERT( mtrx.bid_type == short_order );
 
-          FC_ASSERT( mtrx.ask_paid == xts_paid_by_short, "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
+          /** NOTE: the short may pay extra XTS to the collateral in the event rounding occurs.  This
+           * just checks to make sure it is reasonable. 
+           */
+          FC_ASSERT( mtrx.ask_paid <= xts_paid_by_short, "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
+          /** sanity check to make sure that the only difference is rounding error */
+          FC_ASSERT( mtrx.ask_paid.amount >= (xts_paid_by_short.amount - BTS_BLOCKCHAIN_PRECISION), "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
 
           quote_asset.current_share_supply += mtrx.bid_paid.amount;
 
-          auto collateral  = xts_paid_by_short + xts_paid_by_short;
+          auto collateral  = xts_paid_by_short + mtrx.ask_paid;
           if( mtrx.bid_paid.amount <= 0 )
           {
              //ulog( "bid paid ${c}  collateral ${xts} \nbid: ${current}\nask: ${ask}", ("c",mtrx.bid_paid)("xts",xts_paid_by_short)("current", (*_current_bid))("ask",*_current_ask) );
