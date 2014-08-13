@@ -1045,24 +1045,27 @@ namespace bts { namespace cli {
                   }
 
                   *_out << std::setw(7) << "TYPE"
-                        << std::setw(20) << "PRICE"
+                        << std::setw(30) << "PRICE"
                         << std::setw(25) << "PAID"
                         << std::setw(25) << "RECEIVED"
+                        << std::setw(20) << "FEES"
                         << std::setw(23) << "TIMESTAMP"
-                        << "\n" << std::string(100,'-') << "\n";
+                        << "\n" << std::string(130,'-') << "\n";
 
                   for( order_history_record order : orders )
                   {
                     *_out << std::setw(7) << "Buy"
-                          << std::setw(20) << _client->get_chain()->to_pretty_price(order.bid_price)
+                          << std::setw(30) << _client->get_chain()->to_pretty_price(order.bid_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_received)
+                          << std::setw(20) << _client->get_chain()->to_pretty_asset(order.bid_paid - order.ask_received)
                           << std::setw(23) << pretty_timestamp(order.timestamp)
                           << "\n"
                           << std::setw(7) << "Sell"
-                          << std::setw(20) << _client->get_chain()->to_pretty_price(order.ask_price)
+                          << std::setw(30) << _client->get_chain()->to_pretty_price(order.ask_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_received)
+                          << std::setw(20) << _client->get_chain()->to_pretty_asset(order.ask_paid - order.bid_received)
                           << std::setw(23) << pretty_timestamp(order.timestamp)
                           << "\n";
                   }
