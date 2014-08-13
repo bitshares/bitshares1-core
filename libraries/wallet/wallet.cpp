@@ -4400,7 +4400,7 @@ namespace bts { namespace wallet {
                entry.from_account = from_account_key;
                entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
                entry.amount = amount_to_cover;
-               entry.memo = "payoff cover";
+               entry.memo = "payoff debt";
                record.ledger_entries.push_back( entry );
            }
            if( collateral_recovered.amount > 0 )
