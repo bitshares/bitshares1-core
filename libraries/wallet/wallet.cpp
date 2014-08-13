@@ -1762,7 +1762,8 @@ namespace bts { namespace wallet {
       auto backup_path = fc::path();
       while( true )
       {
-          auto backup_filename = wallet_name + "-" + blockchain::now().to_iso_string();
+          const auto now = time_point_sec( time_point::now() );
+          auto backup_filename = wallet_name + "-" + now.to_iso_string();
           if( !reason.empty() ) backup_filename += "-" + reason;
           backup_filename += ".json";
           backup_path = wallet_dir / ".backups" / wallet_name / backup_filename;
