@@ -1762,7 +1762,8 @@ namespace bts { namespace wallet {
       auto backup_path = fc::path();
       while( true )
       {
-          auto backup_filename = wallet_name + "-" + blockchain::now().to_iso_string();
+          const auto now = time_point_sec( time_point::now() );
+          auto backup_filename = wallet_name + "-" + now.to_iso_string();
           if( !reason.empty() ) backup_filename += "-" + reason;
           backup_filename += ".json";
           backup_path = wallet_dir / ".backups" / wallet_name / backup_filename;
@@ -4339,7 +4340,7 @@ namespace bts { namespace wallet {
        auto quote_asset_record = my->_blockchain->get_asset_record( order_to_cover->market_index.order_price.quote_asset_id );
        FC_ASSERT( quote_asset_record.valid() );
        asset amount_to_cover( real_quantity_usd * quote_asset_record->precision, quote_asset_record->id );
-       if( real_quantity_usd == 0 )
+       if( real_quantity_usd == 0 || real_quantity_usd > order_to_cover->state.balance )
        {
           amount_to_cover.amount = order_to_cover->state.balance;
        }
@@ -4394,7 +4395,7 @@ namespace bts { namespace wallet {
                entry.from_account = from_account_key;
                entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
                entry.amount = amount_to_cover;
-               entry.memo = "payoff COVER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
+               entry.memo = "payoff cover";
                record.ledger_entries.push_back( entry );
            }
            if( collateral_recovered.amount > 0 )
@@ -4511,23 +4512,23 @@ namespace bts { namespace wallet {
           /* You better be. - Dan */
           if( pretty_entry.from_account.find( "SHORT" ) == 0
               && pretty_entry.to_account.find( "SHORT" ) == 0 )
-              pretty_entry.to_account.replace(0, 5, "COVER" );
+              pretty_entry.to_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.from_account.find( "MARKET" ) == 0
               && pretty_entry.to_account.find( "SHORT" ) == 0 )
-              pretty_entry.to_account.replace(0, 5, "COVER" );
+              pretty_entry.to_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.from_account.find( "SHORT" ) == 0
               && pretty_entry.to_account.find( "MARKET" ) == 0 )
-              pretty_entry.from_account.replace(0, 5, "COVER" );
+              pretty_entry.from_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.to_account.find( "SHORT" ) == 0
               && entry.memo.find( "payoff" ) == 0 )
-              pretty_entry.to_account.replace(0, 5, "COVER" );
+              pretty_entry.to_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.from_account.find( "SHORT" ) == 0
               && entry.memo.find( "cover" ) == 0 )
-              pretty_entry.from_account.replace(0, 5, "COVER" );
+              pretty_entry.from_account.replace(0, 5, "MARGIN" );
 
           pretty_entry.amount = entry.amount;
           pretty_entry.memo = entry.memo;
