@@ -4394,7 +4394,7 @@ namespace bts { namespace wallet {
                entry.from_account = from_account_key;
                entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
                entry.amount = amount_to_cover;
-               entry.memo = "payoff COVER-" + variant( address( order_to_cover->get_owner() ) ).as_string().substr(3,8);
+               entry.memo = "payoff cover";
                record.ledger_entries.push_back( entry );
            }
            if( collateral_recovered.amount > 0 )
@@ -4511,23 +4511,23 @@ namespace bts { namespace wallet {
           /* You better be. - Dan */
           if( pretty_entry.from_account.find( "SHORT" ) == 0
               && pretty_entry.to_account.find( "SHORT" ) == 0 )
-              pretty_entry.to_account.replace(0, 5, "COVER" );
+              pretty_entry.to_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.from_account.find( "MARKET" ) == 0
               && pretty_entry.to_account.find( "SHORT" ) == 0 )
-              pretty_entry.to_account.replace(0, 5, "COVER" );
+              pretty_entry.to_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.from_account.find( "SHORT" ) == 0
               && pretty_entry.to_account.find( "MARKET" ) == 0 )
-              pretty_entry.from_account.replace(0, 5, "COVER" );
+              pretty_entry.from_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.to_account.find( "SHORT" ) == 0
               && entry.memo.find( "payoff" ) == 0 )
-              pretty_entry.to_account.replace(0, 5, "COVER" );
+              pretty_entry.to_account.replace(0, 5, "MARGIN" );
 
           if( pretty_entry.from_account.find( "SHORT" ) == 0
               && entry.memo.find( "cover" ) == 0 )
-              pretty_entry.from_account.replace(0, 5, "COVER" );
+              pretty_entry.from_account.replace(0, 5, "MARGIN" );
 
           pretty_entry.amount = entry.amount;
           pretty_entry.memo = entry.memo;
