@@ -4340,7 +4340,7 @@ namespace bts { namespace wallet {
        auto quote_asset_record = my->_blockchain->get_asset_record( order_to_cover->market_index.order_price.quote_asset_id );
        FC_ASSERT( quote_asset_record.valid() );
        asset amount_to_cover( real_quantity_usd * quote_asset_record->precision, quote_asset_record->id );
-       if( real_quantity_usd == 0 )
+       if( real_quantity_usd == 0 || real_quantity_usd > order_to_cover->state.balance )
        {
           amount_to_cover.amount = order_to_cover->state.balance;
        }
