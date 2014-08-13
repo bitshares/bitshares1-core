@@ -547,11 +547,6 @@ namespace bts { namespace blockchain {
                pending_state->store_transaction( trx.id(), record );
                ++trx_num;
 
-               // TODO: remove this once performance picks up, but for now
-               // we don't want to block very long, so we yield a bit
-               if( trx_num % 20 == 19 ) 
-                  fc::usleep( fc::microseconds( 200 ) );
-
                total_fees += record.get_fees();
             }
             /* Collect fees in block record */
