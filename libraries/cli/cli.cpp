@@ -999,7 +999,7 @@ namespace bts { namespace cli {
                      }
 
                     auto recent_average_price = _client->get_chain()->get_median_delegate_price( quote_id );
-                    *_out << "\Average Price in Recent Trades: "
+                    *_out << "Average Price in Recent Trades: "
                           << (recent_average_price ? _client->get_chain()->to_pretty_price( *recent_average_price ) : "NO FEEDS" )
                           <<"     ";
 
