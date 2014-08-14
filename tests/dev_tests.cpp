@@ -53,7 +53,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_delegate_set_block_production delegate32 true" );
    exec(clientb, "wallet_set_transaction_scanning true");
 
-   exec( clientb, "wallet_asset_create BUSD BitUSD delegate30 \"paper bucks\" null 1000000000 1000 true" );
+   exec( clientb, "wallet_asset_create BUSD BitUSD delegate30 \"paper bucks\" null 1000000000 10000 true" );
    produce_block(clientb);
 
    exec(clientb, "wallet_publish_price_feed delegate22 1 BUSD" );
