@@ -1168,7 +1168,7 @@
             }
           ],
          "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "cancel_order" ]
+         "aliases" : [ "cancel", "cancel_order" ]
       },
       {
          "method_name" : "wallet_dump_private_key",
