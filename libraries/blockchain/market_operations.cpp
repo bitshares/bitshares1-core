@@ -144,7 +144,7 @@ namespace bts { namespace blockchain {
       /** in a future hard-fork we can switch over to the 24h moving avg, for now
        * we just use the price feed
        */
-      if( false && market_stat->avg_price_24h.quote_asset_id != 0 )
+      if( market_stat->avg_price_24h.quote_asset_id != 0 )
       {
          FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
       }
