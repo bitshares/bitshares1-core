@@ -190,10 +190,10 @@ namespace bts { namespace wallet {
           auto okey_bid = _wallet_db.lookup_key( trx.bid_owner );
           if( okey_bid && okey_bid->has_private_key() )
           {
-              auto ord = _blockchain->get_market_bid( market_index_key(trx.bid_price, trx.bid_owner) );
-              if( ord ) _wallet_db.update_market_order(trx.bid_owner, ord, transaction_id_type());
-              ord = _blockchain->get_market_short( market_index_key(trx.bid_price, trx.bid_owner) );
-              if( ord ) _wallet_db.update_market_order(trx.bid_owner, ord, transaction_id_type());
+              auto ord = _blockchain->get_market_bid( market_index_key( trx.bid_price, trx.bid_owner ) );
+              if( ord ) _wallet_db.update_market_order( trx.bid_owner, ord, transaction_id_type() );
+              ord = _blockchain->get_market_short( market_index_key( trx.bid_price, trx.bid_owner) );
+              if( ord ) _wallet_db.update_market_order( trx.bid_owner, ord, transaction_id_type() );
 
               auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
@@ -272,6 +272,9 @@ namespace bts { namespace wallet {
           auto okey_ask = _wallet_db.lookup_key( trx.ask_owner );
           if( okey_ask && okey_ask->has_private_key() )
           {
+              auto ord = _blockchain->get_market_ask( market_index_key( trx.ask_price, trx.ask_owner ) );
+              if( ord ) _wallet_db.update_market_order( trx.ask_owner, ord, transaction_id_type() );
+
               auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
               auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
