@@ -78,7 +78,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
 default (unlocked) >>> help wallet_market_submit_ask
 Usage:
-wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol>   Used to place a request to sell a quantity of assets at a price specified in another asset
+wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask]   Used to place a request to sell a quantity of assets at a price specified in another asset
 Used to place a request to sell a quantity of assets at a price specified in another asset
 
 Parameters:
@@ -87,6 +87,7 @@ Parameters:
   sell_quantity_symbol (asset_symbol, required): the type of items you would like to sell
   ask_price (real_amount, required): the price per unit sold.
   ask_price_symbol (asset_symbol, required): the type of asset you would like to be paid
+  allow_stupid_ask (bool, optional, defaults to "false"): Allow user to place ask at more than 5% below the current buy price.
 
 Returns:
   signed_transaction

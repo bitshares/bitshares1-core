@@ -19,8 +19,8 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "db_version": 122,
   "genesis_timestamp": "[redacted]",
   "block_interval": 10,
-  "target_block_size": 1280,
-  "max_block_size": 2560,
+  "target_block_size": 25600,
+  "max_block_size": 51200,
   "max_blockchain_size": 107374182400,
   "address_prefix": "XTS",
   "min_block_fee": "0.00001 XTS",
@@ -37,7 +37,7 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "asset_shares_max": 1000000000000000,
   "min_market_depth": "2,000,000.00000 XTS",
   "proposal_vote_message_max": 1024,
-  "max_pending_queue_size": 5,
+  "max_pending_queue_size": 10,
   "max_trx_per_second": 1
 }
 (wallet closed) >>> quit

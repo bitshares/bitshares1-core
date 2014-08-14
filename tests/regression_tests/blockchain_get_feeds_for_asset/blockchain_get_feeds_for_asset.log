@@ -282,12 +282,6 @@ default (unlocked) >>> blockchain_get_feeds_for_asset XMO
     "last_update": "20140620T144040",
     "asset_symbol": null,
     "median_price": null
-  },{
-    "delegate_name": "MARKET",
-    "price": 0,
-    "last_update": "20140620T144050",
-    "asset_symbol": "XMO",
-    "median_price": 2
   }
 ]
 default (unlocked) >>> quit

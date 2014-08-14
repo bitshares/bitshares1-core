@@ -137,7 +137,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
 default (unlocked) >>> help wallet_market_submit_bid 
 Usage:
-wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol>   Used to place a request to buy a quantity of assets at a price specified in another asset
+wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid]   Used to place a request to buy a quantity of assets at a price specified in another asset
 Used to place a request to buy a quantity of assets at a price specified in another asset
 
 Parameters:
@@ -146,6 +146,7 @@ Parameters:
   quantity_symbol (asset_symbol, required): the type of items you would like to buy
   base_price (real_amount, required): the price you would like to pay
   base_symbol (asset_symbol, required): the type of asset you would like to pay with
+  allow_stupid_bid (bool, optional, defaults to "false"): Allow user to place bid at more than 5% above the current sell price.
 
 Returns:
   signed_transaction
