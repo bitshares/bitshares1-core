@@ -20,13 +20,6 @@ class market_engine
              auto quote_asset = _pending_state->get_asset_record( _quote_id );
              auto base_asset = _pending_state->get_asset_record( _base_id );
 
-             // DISABLE MARKET ISSUED ASSETS
-             if( quote_asset->is_market_issued() )
-             {
-             //   return; // don't execute anything.
-             }
-
-
              // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
              // next market class and then back up one
              auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
@@ -69,8 +62,18 @@ class market_engine
              {
                 if( quote_asset->is_market_issued() )
                 {
-                   if( !median_price )
-                      FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
+                   if( market_stat->avg_price_24h.ratio == fc::uint128_t() )
+                   {
+                      if( !median_price )
+                      {
+                         FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
+                      }
+                      else
+                      {
+                         market_stat->avg_price_24h = *median_price;
+                      }
+                   }
+                   /*
                    auto feed_max_short_bid = *median_price;
                    feed_max_short_bid.ratio *= 4;
                    feed_max_short_bid.ratio /= 3;
@@ -78,10 +81,10 @@ class market_engine
                    auto feed_min_ask = *median_price;
                    feed_min_ask.ratio *= 2;
                    feed_min_ask.ratio /= 3;
+                   */
 
-                   max_short_bid = feed_max_short_bid; //std::min( market_stat->maximum_bid(), feed_max_short_bid );
-                   min_cover_ask = feed_min_ask; //std::max( market_stat->minimum_ask(), feed_min_ask );
-                   //edump( (max_short_bid)(min_cover_ask) );
+                   max_short_bid = market_stat->maximum_bid();//std::min( market_stat->maximum_bid(), feed_max_short_bid );
+                   min_cover_ask = market_stat->minimum_ask();//std::max( market_stat->minimum_ask(), feed_min_ask );
                 }
 
                 //wlog( "==========================  LIQUIDATE FEES ${amount}  =========================\n", ("amount", quote_asset->collected_fees) );
@@ -409,31 +412,25 @@ class market_engine
 
              market_stat->last_error.reset();
 
-             if( market_stat->avg_price_24h.ratio == fc::uint128_t() && median_price )
+             if( _current_bid && _current_ask )
              {
-                market_stat->avg_price_24h = *median_price;
+                // after the market is running solid we can use this metric...
+                // TODO: rename avg_price_24h to average_price_1h 
+                market_stat->avg_price_24h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
+                market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
+                market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
+                market_stat->avg_price_24h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
              }
-             else
-             {
-                if( _current_bid && _current_ask )
-                {
-                   // after the market is running solid we can use this metric...
-                   market_stat->avg_price_24h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1);
-                   market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
-                   market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
-                   market_stat->avg_price_24h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_DAY+1);
-                }
              
-                if( quote_asset->is_market_issued() )
+             if( quote_asset->is_market_issued() )
+             {
+                if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT ||
+                    market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT 
+                  )
                 {
-                   if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT ||
-                       market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT 
-                     )
-                   {
-                      _market_transactions.clear(); // nothing should have executed
-                     std::string reason = "After executing orders there was insufficient depth remaining";
-                     FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
-                   }
+                   _market_transactions.clear(); // nothing should have executed
+                  std::string reason = "After executing orders there was insufficient depth remaining";
+                  FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
                 }
              }
              _pending_state->store_market_status( *market_stat );
