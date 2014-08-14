@@ -2855,8 +2855,17 @@ config load_config( const fc::path& datadir )
 
    signed_transaction client_impl::wallet_market_submit_bid( const string& from_account,
                                                              double quantity, const string& quantity_symbol,
-                                                             double quote_price, const string& quote_symbol )
+                                                             double quote_price, const string& quote_symbol,
+                                                             bool allow_stupid_bid )
    {
+      vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).second;
+
+      if (!allow_stupid_bid && lowest_ask.size()
+          && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
+        FC_THROW_EXCEPTION(stupid_order, "You are attempting to bid at more than 5% above the buy price. "
+                                         "This bid is based on economically unsound principles, and is ill-advised. "
+                                         "If you're sure you want to do this, place your bid again and set allow_stupid_bid to true.");
+
       auto trx = _wallet->submit_bid( from_account, quantity, quantity_symbol,
                                                     quote_price, quote_symbol, true );
 
@@ -2866,8 +2875,17 @@ config load_config( const fc::path& datadir )
 
    signed_transaction client_impl::wallet_market_submit_ask( const string& from_account,
                                                              double quantity, const string& quantity_symbol,
-                                                             double quote_price, const string& quote_symbol )
+                                                             double quote_price, const string& quote_symbol,
+                                                             bool allow_stupid_ask )
    {
+      vector<market_order> highest_bid = blockchain_market_order_book(quote_symbol, quantity_symbol, 1).first;
+
+      if (!allow_stupid_ask && highest_bid.size()
+          && fc::variant(quote_price).as_double() < _chain_db->to_pretty_price_double(highest_bid.front().get_price()) * .95)
+        FC_THROW_EXCEPTION(stupid_order, "You are attempting to ask at more than 5% below the buy price. "
+                                         "This ask is based on economically unsound principles, and is ill-advised. "
+                                         "If you're sure you want to do this, place your ask again and set allow_stupid_ask to true.");
+
       auto trx = _wallet->submit_ask( from_account, quantity, quantity_symbol,
                                                     quote_price, quote_symbol, true );
 
@@ -2877,8 +2895,17 @@ config load_config( const fc::path& datadir )
 
    signed_transaction client_impl::wallet_market_submit_short( const string& from_account,
                                                              double quantity,
-                                                             double quote_price, const string& quote_symbol )
+                                                             double quote_price, const string& quote_symbol,
+                                                             bool allow_stupid_short )
    {
+      vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, _chain_db->get_asset_symbol(0), 1).second;
+
+      if (!allow_stupid_short && lowest_ask.size()
+          && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
+        FC_THROW_EXCEPTION(stupid_order, "You are attempting to short at more than 5% above the buy price. "
+                                         "This short is based on economically unsound principles, and is ill-advised. "
+                                         "If you're sure you want to do this, place your short again and set allow_stupid_short to true.");
+
       auto trx = _wallet->submit_short( from_account, quantity, quote_price, quote_symbol, true );
 
       network_broadcast_transaction( trx );
