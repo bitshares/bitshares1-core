@@ -998,20 +998,20 @@ namespace bts { namespace cli {
                         }
                      }
 
-                    auto median_feed = _client->get_chain()->get_median_delegate_price( quote_id );
-                    *_out << "\nMedian Feed Price: " 
-                          << (median_feed ? _client->get_chain()->to_pretty_price( *median_feed ) : "NO FEEDS" )
+                    auto recent_average_price = _client->get_chain()->get_median_delegate_price( quote_id );
+                    *_out << "\Average Price in Recent Trades: "
+                          << (recent_average_price ? _client->get_chain()->to_pretty_price( *recent_average_price ) : "NO FEEDS" )
                           <<"     ";
 
                     auto status = _client->get_chain()->get_market_status( quote_id, base_id );
                     if( status )
                     {
-                       if( median_feed )
+                       if( recent_average_price )
                        {
-                          auto maximum_short_price = *median_feed;
+                          auto maximum_short_price = *recent_average_price;
                           maximum_short_price.ratio *= 4;
                           maximum_short_price.ratio /= 3;
-                          auto minimum_cover_price = *median_feed;
+                          auto minimum_cover_price = *recent_average_price;
                           minimum_cover_price.ratio *= 2;
                           minimum_cover_price.ratio /= 3;
                           *_out << "Maximum Short Price: " 
@@ -1100,7 +1100,7 @@ namespace bts { namespace cli {
                           << std::setw(20) << "HIGHEST BID"
                           << std::setw(20) << "LOWEST ASK"
                           << std::setw(20) << "TRADING VOLUME"
-                          << std::setw(20) << "MEDIAN FEED"
+                          << std::setw(20) << "AVERAGE PRICE"
                           << "\n" << std::string(100,'-') << "\n";
 
                   for( auto point : points )
@@ -1109,8 +1109,8 @@ namespace bts { namespace cli {
                           << std::setw(20) << point.highest_bid
                           << std::setw(20) << point.lowest_ask
                           << std::setw(20) << _client->get_chain()->to_pretty_asset(asset(point.volume));
-                    if(point.median_feed)
-                      *_out << std::setw(20) << *point.median_feed;
+                    if(point.recent_average_price)
+                      *_out << std::setw(20) << *point.recent_average_price;
                     else
                       *_out << std::setw(20) << "N/A";
                     *_out << "\n";

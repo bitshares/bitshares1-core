@@ -352,8 +352,8 @@ class market_engine
                market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
                auto asset_rec = _db_impl.self->get_asset_record(quote_id);
                FC_ASSERT(asset_rec, "There is trading volume on an asset that doesn't exist??");
-               if(base_id == 0 && asset_rec->is_market_issued())
-                 new_record.median_feed = _db_impl.self->get_median_delegate_price(quote_id);
+               if(market_stat)
+                 new_record.recent_average_price = market_stat->avg_price_24h;
 
                //LevelDB iterators are dumb and don't support proper past-the-end semantics.
                auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
@@ -385,7 +385,7 @@ class market_engine
                  {
                    old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                    old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                   old_record.median_feed = new_record.median_feed;
+                   old_record.recent_average_price = new_record.recent_average_price;
                    _pending_state->market_history[old_key] = old_record;
                  }
                }
@@ -402,7 +402,7 @@ class market_engine
                  {
                    old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                    old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                   old_record.median_feed = new_record.median_feed;
+                   old_record.recent_average_price = new_record.recent_average_price;
                    _pending_state->market_history[old_key] = old_record;
                  }
                }

@@ -2573,7 +2573,7 @@ namespace bts { namespace blockchain {
                              fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              record_itr.value().volume,
-                             record_itr.value().median_feed? to_pretty_price_double(*record_itr.value().median_feed) : fc::optional<double>()
+                             record_itr.value().recent_average_price? to_pretty_price_double(*record_itr.value().recent_average_price) : fc::optional<double>()
                            } );
         ++record_itr;
       }
