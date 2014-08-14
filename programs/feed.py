@@ -62,10 +62,27 @@ while True:
           'content-type': 'application/json',
           'Authorization': "Basic YTph"
         }
-        print headers
         response = requests.post(url, data=json.dumps(payload), headers=headers)
         print response
         print response.json()
+
+        payload = {
+            "method": "wallet_publish_price_feed",
+            "params": [name, btc_per_btsx, "BTC"],
+            "jsonrpc": "2.0",
+            "id": 0,
+        }
+
+        print payload
+
+        headers = {
+          'content-type': 'application/json',
+          'Authorization': "Basic YTph"
+        }
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        print response
+        print response.json()
+
 
 
 

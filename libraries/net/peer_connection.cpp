@@ -298,8 +298,13 @@ namespace bts { namespace net
       //unsigned number_of_elements_to_discard = std::distance(begin_iter, oldest_inventory_to_keep_iter);
       inventory_advertised_to_peer.get<timestamp_index>().erase(begin_iter, oldest_inventory_to_keep_iter);
     }
-    bool peer_connection::is_inventory_advertised_to_us_list_full() const
+    // we have a higher limit for blocks than transactions so we will still fetch blocks even when transactions are throttled
+    bool peer_connection::is_inventory_advertised_to_us_list_full_for_transactions() const
     {
       return inventory_peer_advertised_to_us.size() > BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60;
+    }
+    bool peer_connection::is_inventory_advertised_to_us_list_full() const
+    {
+      return inventory_peer_advertised_to_us.size() > BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60 + 5;
     }
 } } // end namespace bts::net

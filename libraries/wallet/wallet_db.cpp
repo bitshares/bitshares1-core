@@ -421,7 +421,7 @@ namespace bts { namespace wallet {
       for( auto itr = my->_records.begin(); itr.valid(); ++itr )
           records.push_back( itr.value() );
 
-      const auto dir = filename.parent_path();
+      const auto dir = fc::absolute( filename ).parent_path();
       if( !fc::exists( dir ) )
           fc::create_directories( dir );
 

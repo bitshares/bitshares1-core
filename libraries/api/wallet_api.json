@@ -1010,6 +1010,12 @@
                "name" : "base_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to pay with"
+            },
+            {
+               "name" : "allow_stupid_bid",
+               "type" : "bool",
+               "description" : "Allow user to place bid at more than 5% above the current sell price.",
+               "default_value" : "false"
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1044,6 +1050,12 @@
                "name" : "ask_price_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to be paid"
+            },
+            {
+               "name" : "allow_stupid_ask",
+               "type" : "bool",
+               "description" : "Allow user to place ask at more than 5% below the current buy price.",
+               "default_value" : "false"
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1073,6 +1085,12 @@
                "name" : "short_symbol",
                "type" : "asset_symbol",
                "description" : "the type of asset you would like to short, ie: USD"
+            },
+            {
+               "name" : "allow_stupid_short",
+               "type" : "bool",
+               "description" : "Allow user to place short at more than 5% above the current sell price.",
+               "default_value" : "false"
             }
          ],
          "prerequisites" : ["wallet_unlocked"],

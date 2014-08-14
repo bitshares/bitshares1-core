@@ -549,11 +549,6 @@ namespace bts { namespace blockchain {
                pending_state->store_transaction( trx.id(), record );
                ++trx_num;
 
-               // TODO: remove this once performance picks up, but for now
-               // we don't want to block very long, so we yield a bit
-               if( trx_num % 20 == 19 ) 
-                  fc::usleep( fc::microseconds( 200 ) );
-
                total_fees += record.get_fees();
             }
             /* Collect fees in block record */
@@ -868,7 +863,9 @@ namespace bts { namespace blockchain {
          {
             try { 
                ilog( "... block applied ... " );
-               o->block_applied( summary );
+               //Schedule the observer notifications for later; the chain is in a
+               //non-premptable state right now, and observers may yield.
+               fc::async([o,summary]{o->block_applied( summary );});
             } catch ( const fc::exception& e )
             {
                wlog( "${e}", ("e",e.to_detail_string() ) );
@@ -2587,7 +2584,7 @@ namespace bts { namespace blockchain {
                              fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              record_itr.value().volume,
-                             record_itr.value().median_feed? to_pretty_price_double(*record_itr.value().median_feed) : fc::optional<double>()
+                             record_itr.value().recent_average_price? to_pretty_price_double(*record_itr.value().recent_average_price) : fc::optional<double>()
                            } );
         ++record_itr;
       }
