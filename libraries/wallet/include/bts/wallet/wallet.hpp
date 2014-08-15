@@ -46,6 +46,8 @@ namespace bts { namespace wallet {
 
          //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
          fc::signal<void( bool )>  wallet_lock_state_changed;
+         //Emitted when wallet claims a new transaction. Argument is new ledger entry.
+         fc::signal<void( ledger_entry )> wallet_claimed_transaction;
 
          /**
           *  To generate predictable test results we need an option

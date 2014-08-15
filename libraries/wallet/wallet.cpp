@@ -550,6 +550,8 @@ namespace bts { namespace wallet {
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
           }
+          
+          bool new_transaction = !transaction_record->is_confirmed;
 
           transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
@@ -639,6 +641,9 @@ namespace bts { namespace wallet {
               }
           }
           store_record |= has_deposit;
+          
+          if( has_deposit )
+              self->wallet_claimed_transaction(transaction_record->ledger_entries.back());
 
           /* Reconstruct fee */
           if( has_withdrawal && !has_deposit )
