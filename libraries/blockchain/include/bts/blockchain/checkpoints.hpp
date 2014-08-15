@@ -6,5 +6,5 @@
 
 const static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS {
     {1, bts::blockchain::block_id_type("8abcfb93c52f999e3ef5288c4f837f4f15af5521")},
-    {206632, bts::blockchain::block_id_type("565ab0f92e3af4369d11ecd0ea0b95c93eb74a1c")}
+    {225000, bts::blockchain::block_id_type("2e09195c3e4ef6d58736151ea22f78f08556e6a9")}
 };
