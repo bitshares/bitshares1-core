@@ -29,6 +29,8 @@
 #include <bts/bitcoin/armory.hpp>
 #include <bts/keyhotee/import_keyhotee_id.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace wallet {
 
    FC_REGISTER_EXCEPTIONS( (wallet_exception)
@@ -2727,6 +2729,9 @@ namespace bts { namespace wallet {
                                                double amount_per_xts,
                                                const string& amount_asset_symbol, bool sign )
    { try {
+      if( my->_blockchain->get_pending_state()->get_head_block_num() < BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM )
+          FC_THROW_EXCEPTION( invalid_operation, "Price feeds can only be published after the market hardfork!" );
+
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
