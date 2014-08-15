@@ -2,6 +2,8 @@
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain { 
 
    transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state, digest_type chain_id )
@@ -88,11 +90,11 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::post_evaluate()
    { try {
       // NOTE:  this line was removed in favor of trusting delegates to set the required fees rather
-      // than charging per byte.  This allows the network to scale without hard fork.
+      // than charging per byte. This allows the network to scale without hard fork.
       //
       // By removing this check I am reducing restrictions so the current blockchain should still validate
-      //
-      // required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
+      if( _current_state->get_head_block_num() < BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM )
+          required_fees += asset( _current_state->calculate_data_fee( fc::raw::pack_size( trx ) ), 0 );
 
       // Should this be here? We may not have fees in XTS now...
       balance[0]; // make sure we have something for this.
@@ -160,11 +162,13 @@ namespace bts { namespace blockchain {
          *
          * Note: this is to give delegates maximum flexibility without having to
          * introduce hard forks to support larger transaction sizes.
-         *
-        auto trx_size = fc::raw::pack_size(trx_arg);
-        if(  trx_size > BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE )
-           FC_CAPTURE_AND_THROW( oversized_transaction, (trx_size ) );
-        */
+         */
+        if( _current_state->get_head_block_num() < BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM )
+        {
+            auto trx_size = fc::raw::pack_size( trx_arg );
+            if( trx_size > 1280 )
+               FC_CAPTURE_AND_THROW( oversized_transaction, (trx_size ) );
+        }
        
         auto trx_id = trx_arg.id();
 
