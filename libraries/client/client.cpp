@@ -22,7 +22,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
 
-#include <bts/network/node.hpp>
+//#include <bts/network/node.hpp>
 
 #include <bts/db/level_map.hpp>
 
