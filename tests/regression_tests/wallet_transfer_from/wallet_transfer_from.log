@@ -32,7 +32,7 @@ Returns:
 default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
 {
   "index": 414,
-  "record_id": "7ed593209d21850d6a9991f42d5fa2234838f2bc",
+  "record_id": "9f0fad037607d57266cb20d94ed39e5b4cce8f7a",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
@@ -44,7 +44,7 @@ default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
         "type": "withdraw_op_type",
         "data": {
           "balance_id": "XTS3V5xQc7Rgzs5SogiQWuVGq5wfK8EFrBoL",
-          "amount": 10010000,
+          "amount": 10050000,
           "claim_input_data": ""
         }
       },{
@@ -67,7 +67,7 @@ default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
       }
     ],
     "signatures": [
-      "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c8e50f3f576bb9521302aafc1131592ab343e56b0b0c8a7dbdfd52361385827cc"
+      "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c5426665c551f38d03382e1df95d53955bc09be226812e0cca5d96d53b516167d"
     ]
   },
   "ledger_entries": [{
@@ -82,7 +82,7 @@ default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
     }
   ],
   "fee": {
-    "amount": 10000,
+    "amount": 50000,
     "asset_id": 0
   },
   "created_time": "20140620T144030",
@@ -104,7 +104,7 @@ delegate0                       19,801,980.19801 XTS
 default (unlocked) >>> wallet_account_balance delegate1
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate1                       19,801,880.09801 XTS        
+delegate1                       19,801,879.69801 XTS        
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
