@@ -642,8 +642,8 @@ namespace bts { namespace wallet {
           }
           store_record |= has_deposit;
           
-          if( has_deposit )
-              self->wallet_claimed_transaction(transaction_record->ledger_entries.back());
+          if( new_transaction && has_deposit )
+              self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
 
           /* Reconstruct fee */
           if( has_withdrawal && !has_deposit )
