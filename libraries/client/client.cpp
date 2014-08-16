@@ -1139,11 +1139,9 @@ config load_config( const fc::path& datadir )
           }
           return false;
         }
-        catch (const bts::blockchain::insufficient_priority_fee& original_exception)
+        catch (const bts::blockchain::insufficient_relay_fee& original_exception)
         {
-          // was just going to FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, (original_exception));
-          // but I get errors with reflection?
-          FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, "Insufficient priority fee, do not propagate.", 
+          FC_THROW_EXCEPTION(bts::net::insufficient_relay_fee, "Insufficient relay fee; do not propagate!",
                              ("original_exception", original_exception.to_detail_string()));
         }
       }
@@ -2582,7 +2580,7 @@ config load_config( const fc::path& datadir )
 
        info["address_prefix"]               = BTS_ADDRESS_PREFIX;
        info["inactivity_fee_apr"]           = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       info["priority_fee"]                 = _chain_db->get_priority_fee();
+       info["relay_fee"]                    = _chain_db->get_relay_fee();
 
        info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
        info["delegate_reg_fee"]             = _chain_db->get_delegate_registration_fee();
@@ -2937,12 +2935,12 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
-   asset client_impl::wallet_set_priority_fee( double fee )
+   asset client_impl::wallet_set_transaction_fee( double fee )
    { try {
       oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
       FC_ASSERT( asset_record.valid() );
-      _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
-      return _wallet->get_priority_fee();
+      _wallet->set_transaction_fee( asset( fee * asset_record->precision ) );
+      return _wallet->get_transaction_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
    bool client_impl::blockchain_is_synced() const

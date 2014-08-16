@@ -83,7 +83,7 @@ namespace bts { namespace net {
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
                           (send_queue_overflow)
-                          (insufficient_priority_fee)
+                          (insufficient_relay_fee)
                           (already_connected_to_requested_peer) )
 
   namespace detail 
@@ -2727,12 +2727,12 @@ namespace bts { namespace net { namespace detail {
           _delegate->handle_message(message_to_process, false);
           message_validated_time = fc::time_point::now();
         }
-        catch ( const insufficient_priority_fee& )
+        catch ( const insufficient_relay_fee& )
         {
           // flooding control.  The message was valid but we can't handle it now.  
           assert(message_to_process.msg_type == bts::client::trx_message_type); // we only support throttling transactions.
           if (message_to_process.msg_type == bts::client::trx_message_type)
-            originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC);
+            originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_RELAY_FEE_PENALTY_SEC);
           return;
         }
         catch ( const fc::exception& e )

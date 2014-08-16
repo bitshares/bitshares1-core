@@ -1412,7 +1412,7 @@ namespace bts { namespace wallet {
                   self->set_automatic_backups( true );
                   self->auto_backup( "version_upgrade" );
                   self->set_transaction_scanning( self->get_my_delegates( enabled_delegate_status ).empty() );
-                  self->set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
+                  self->set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
 
                   /* Check for old index format genesis claim virtual transactions */
                   auto present = false;
@@ -1469,6 +1469,11 @@ namespace bts { namespace wallet {
                               scan_market_transaction( market_trx, block_num, block_timestamp, block_timestamp );
                       }
                   }
+              }
+
+              if( current_version < 102 )
+              {
+                  self->set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
               }
 
               if( _unlocked_upgrade_tasks.empty() )
@@ -1605,7 +1610,7 @@ namespace bts { namespace wallet {
           set_automatic_backups( true );
           set_transaction_scanning( true );
           my->_wallet_db.set_property( last_unlocked_scanned_block_number, variant( my->_blockchain->get_head_block_num() ) );
-          set_priority_fee( asset( BTS_BLOCKCHAIN_DEFAULT_PRIORITY_FEE ) );
+          set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
@@ -2770,7 +2775,7 @@ namespace bts { namespace wallet {
                            current_account->id, fc::variant()  );
       }
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       if( required_fees.amount <  current_account->delegate_pay_balance() )
       {
@@ -2837,7 +2842,7 @@ namespace bts { namespace wallet {
                           optional<public_key_type>() );
       my->authorize_update( required_signatures, current_account );
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       if( required_fees.amount <  current_account->delegate_pay_balance() )
       {
@@ -2936,7 +2941,7 @@ namespace bts { namespace wallet {
        share_type amount_to_transfer((share_type)(real_amount_to_transfer * precision));
        asset asset_to_transfer( amount_to_transfer, asset_id );
 
-       //FC_ASSERT( amount_to_transfer > get_priority_fee( amount_to_transfer_symbol ).amount );
+       //FC_ASSERT( amount_to_transfer > get_transaction_fee( amount_to_transfer_symbol ).amount );
 
        /**
         *  TODO: until we support paying fees in other assets, this will not function
@@ -2954,7 +2959,7 @@ namespace bts { namespace wallet {
        public_key_type  sender_public_key   = sender_private_key.get_public_key();
        address          sender_account_address( sender_private_key.get_public_key() );
 
-       asset total_fee = get_priority_fee();
+       asset total_fee = get_transaction_fee();
 
        asset amount_collected( 0, asset_id );
        const auto items = my->_wallet_db.get_balances();
@@ -3106,7 +3111,7 @@ namespace bts { namespace wallet {
        FC_ASSERT( delegate_account_record.valid() );
        FC_ASSERT( delegate_account_record->is_delegate() );
 
-       auto required_fees = get_priority_fee();
+       auto required_fees = get_transaction_fee();
        FC_ASSERT( delegate_account_record->delegate_info->pay_balance >= (amount_to_withdraw + required_fees.amount), "",
                   ("delegate_account_record",delegate_account_record));
 
@@ -3179,7 +3184,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      const auto required_fees = get_priority_fee();
+      const auto required_fees = get_transaction_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
@@ -3249,7 +3254,7 @@ namespace bts { namespace wallet {
          unordered_set<address> required_signatures;
 
          asset total_asset_to_transfer( 0, asset_id );
-         auto required_fees = get_priority_fee();
+         auto required_fees = get_transaction_fee();
 
          vector<address> to_addresses;
          for( const auto& address_amount : to_address_amounts )
@@ -3342,7 +3347,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      const auto required_fees = get_priority_fee();
+      const auto required_fees = get_transaction_fee();
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
@@ -3451,7 +3456,7 @@ namespace bts { namespace wallet {
         }
       }
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       bool as_delegate = false;
       if( delegate_pay_rate <= 100  )
@@ -3504,7 +3509,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       required_fees += asset(my->_blockchain->get_asset_registration_fee(),0);
 
@@ -3571,7 +3576,7 @@ namespace bts { namespace wallet {
       signed_transaction         trx;
       unordered_set<address>     required_signatures;
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       auto asset_record = my->_blockchain->get_asset_record( symbol );
       FC_ASSERT(asset_record.valid(), "no such asset record");
@@ -3654,7 +3659,7 @@ namespace bts { namespace wallet {
         FC_THROW_EXCEPTION( unknown_account, "Unknown account!", ("account_to_update",account_to_update) );
 
       auto account_public_key = get_account_public_key( account_to_update );
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       if( account->is_delegate() )
       {
@@ -3739,7 +3744,7 @@ namespace bts { namespace wallet {
         my->_wallet_db.store_key(new_key);
       }
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       my->withdraw_to_transaction( required_fees,
                                    payer_public_key,
@@ -3789,7 +3794,7 @@ namespace bts { namespace wallet {
       auto delegate_account = my->_blockchain->get_account_record( delegate_account_name );
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account_name));
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       trx.submit_proposal( delegate_account->id, subject, body, proposal_type, data );
 
@@ -3851,7 +3856,7 @@ namespace bts { namespace wallet {
       FC_ASSERT(message.size() < BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE );
       trx.vote_proposal( proposal_id, delegate_account->id, vote, message );
 
-      auto required_fees = get_priority_fee();
+      auto required_fees = get_transaction_fee();
 
       /*
       my->withdraw_to_transaction( required_fees,
@@ -3926,7 +3931,7 @@ namespace bts { namespace wallet {
 
         edump( (order) );
 
-        auto required_fees = get_priority_fee();
+        auto required_fees = get_transaction_fee();
 
         if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
 
@@ -4047,7 +4052,7 @@ namespace bts { namespace wallet {
        private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
-       auto required_fees = get_priority_fee();
+       auto required_fees = get_transaction_fee();
 
        if( cost_shares.asset_id == 0 )
        {
@@ -4159,7 +4164,7 @@ namespace bts { namespace wallet {
        private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
-       auto required_fees = get_priority_fee();
+       auto required_fees = get_transaction_fee();
 
        if( cost_shares.asset_id == 0 )
        {
@@ -4270,7 +4275,7 @@ namespace bts { namespace wallet {
        private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
-       auto required_fees = get_priority_fee();
+       auto required_fees = get_transaction_fee();
 
        idump( (cost_shares)(required_fees) );
        my->withdraw_to_transaction( cost_shares + required_fees,
@@ -4365,7 +4370,7 @@ namespace bts { namespace wallet {
                                     trx,
                                     required_signatures );
 
-       auto required_fees = get_priority_fee();
+       auto required_fees = get_transaction_fee();
 
        bool fees_paid = false;
        auto collateral_recovered = asset();
@@ -4426,17 +4431,17 @@ namespace bts { namespace wallet {
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(owner_address)(sign) ) }
 
-   void wallet::set_priority_fee( const asset& fee )
+   void wallet::set_transaction_fee( const asset& fee )
    { try {
       FC_ASSERT( is_open() );
 
       if( fee.amount < 0 || fee.asset_id != 0 )
-          FC_THROW_EXCEPTION( invalid_fee, "Invalid priority fee!", ("fee",fee) );
+          FC_THROW_EXCEPTION( invalid_fee, "Invalid transaction fee!", ("fee",fee) );
 
       my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
-   asset wallet::get_priority_fee()const
+   asset wallet::get_transaction_fee()const
    { try {
       FC_ASSERT( is_open() );
       // TODO: support price conversion using price from blockchain
@@ -4921,11 +4926,11 @@ namespace bts { namespace wallet {
    { try {
        map<transaction_id_type, fc::exception> transaction_errors;
        const auto& transaction_records = get_pending_transactions();
-       const auto priority_fee = my->_blockchain->get_priority_fee();
+       const auto relay_fee = my->_blockchain->get_relay_fee();
        for( const auto& transaction_record : transaction_records )
        {
            FC_ASSERT( !transaction_record.is_virtual && !transaction_record.is_confirmed );
-           const auto error = my->_blockchain->get_transaction_error( transaction_record.trx, priority_fee );
+           const auto error = my->_blockchain->get_transaction_error( transaction_record.trx, relay_fee );
            if( !error.valid() ) continue;
            transaction_errors[ transaction_record.trx.id() ] = *error;
        }
@@ -5024,7 +5029,7 @@ namespace bts { namespace wallet {
 
    /**
     *  Looks up the public key for an account whether local or in the blockchain, with
-    *  the blockchain taking priority.
+    *  the blockchain taking precendence.
     */
    public_key_type wallet::get_account_public_key( const string& account_name )const
    { try {
@@ -5318,7 +5323,7 @@ namespace bts { namespace wallet {
        info["automatic_backups"]                        = variant();
        info["transaction_scanning"]                     = variant();
        info["last_scanned_block_num"]                   = variant();
-       info["priority_fee"]                             = variant();
+       info["transaction_fee"]                          = variant();
 
        info["unlocked"]                                 = variant();
        info["unlocked_until"]                           = variant();
@@ -5334,7 +5339,7 @@ namespace bts { namespace wallet {
          info["automatic_backups"]                      = get_automatic_backups();
          info["transaction_scanning"]                   = get_transaction_scanning();
          info["last_scanned_block_num"]                 = my->_wallet_db.get_property( last_unlocked_scanned_block_number ).as<uint32_t>();
-         info["priority_fee"]                           = get_priority_fee();
+         info["transaction_fee"]                        = get_transaction_fee();
 
          info["unlocked"]                               = is_unlocked();
 

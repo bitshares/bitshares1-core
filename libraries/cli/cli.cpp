@@ -1141,7 +1141,7 @@ namespace bts { namespace cli {
                       *_out << "\n";
                   }
               }
-              else if( method_name == "wallet_set_priority_fee" )
+              else if( method_name == "wallet_set_transaction_fee" )
               {
                   const auto fee = result.as<asset>();
                   *_out << _client->get_chain()->to_pretty_asset( fee ) << "\n";

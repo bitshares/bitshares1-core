@@ -97,8 +97,8 @@ namespace bts { namespace wallet {
          void    set_transaction_scanning( bool enabled );
          bool    get_transaction_scanning()const;
 
-         void    set_priority_fee( const asset& fee );
-         asset   get_priority_fee()const;
+         void    set_transaction_fee( const asset& fee );
+         asset   get_transaction_fee()const;
 
          float   get_scan_progress()const;
 

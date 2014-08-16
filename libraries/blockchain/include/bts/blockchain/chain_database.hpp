@@ -98,8 +98,8 @@ namespace bts { namespace blockchain {
          void add_observer( chain_observer* observer );
          void remove_observer( chain_observer* observer );
 
-         void set_priority_fee( share_type shares );
-         share_type get_priority_fee();
+         void set_relay_fee( share_type shares );
+         share_type get_relay_fee();
 
          void sanity_check()const;
 

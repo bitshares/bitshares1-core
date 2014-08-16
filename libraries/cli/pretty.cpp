@@ -182,8 +182,8 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     const auto inactivity_fee = info["inactivity_fee_apr"].as<share_type>();
     info["inactivity_fee_apr"] = client->get_chain()->to_pretty_asset( asset( inactivity_fee ) );
 
-    const auto priority_fee = info["priority_fee"].as<share_type>();
-    info["priority_fee"] = client->get_chain()->to_pretty_asset( asset( priority_fee ) );
+    const auto relay_fee = info["relay_fee"].as<share_type>();
+    info["relay_fee"] = client->get_chain()->to_pretty_asset( asset( relay_fee ) );
 
     const auto delegate_reg_fee = info["delegate_reg_fee"].as<share_type>();
     info["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
@@ -223,10 +223,10 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
         info["scan_progress"] = pretty_percent( scan_progress, 1 );
     }
 
-    if( !info["priority_fee"].is_null() )
+    if( !info["transaction_fee"].is_null() )
     {
-        const auto priority_fee = info["priority_fee"].as<asset>();
-        info["priority_fee"] = client->get_chain()->to_pretty_asset( priority_fee );
+        const auto transaction_fee = info["transaction_fee"].as<asset>();
+        info["transaction_fee"] = client->get_chain()->to_pretty_asset( transaction_fee );
     }
 
     out << fc::json::to_pretty_string( info ) << "\n";
