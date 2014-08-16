@@ -3161,7 +3161,9 @@ namespace bts { namespace net { namespace detail {
       {
         _node_configuration = detail::node_configuration();
         ilog( "generating new private key for this node" );
-        _node_configuration.listen_endpoint.set_port( BTS_NETWORK_DEFAULT_P2P_PORT );
+        uint32_t port = BTS_NET_DEFAULT_P2P_PORT;
+        if( BTS_TEST_NETWORK ) port += BTS_TEST_NETWORK_VERSION;
+        _node_configuration.listen_endpoint.set_port( port );
         _node_configuration.wait_if_endpoint_is_busy = false;
         _node_configuration.private_key = fc::ecc::private_key::generate();
       }

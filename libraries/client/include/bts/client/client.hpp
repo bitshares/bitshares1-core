@@ -71,10 +71,12 @@ namespace bts { namespace client {
           delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
           default_delegate_peers( vector<string>({"107.170.30.182:9988"}) )
           {
-             default_peers[0]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT );
-             default_peers[1]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+1 );
-             default_peers[2]+=fc::to_string( BTS_NETWORK_DEFAULT_P2P_PORT+2 );
-             logging = fc::logging_config::default_config();
+              uint32_t port = BTS_NET_DEFAULT_P2P_PORT;
+              if( BTS_TEST_NETWORK ) port += BTS_TEST_NETWORK_VERSION;
+              default_peers[0] += fc::to_string( port );
+              default_peers[1] += fc::to_string( port + 100 );
+              default_peers[2] += fc::to_string( port + 200 );
+              logging = fc::logging_config::default_config();
           }
 
           rpc_server_config   rpc;
