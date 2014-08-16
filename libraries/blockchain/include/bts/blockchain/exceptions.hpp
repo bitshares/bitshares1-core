@@ -31,6 +31,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( invalid_delegate_signee,           bts::blockchain::blockchain_exception, 30022, "invalid delegate signee" );
    FC_DECLARE_DERIVED_EXCEPTION( failed_checkpoint_verification,    bts::blockchain::blockchain_exception, 30023, "failed checkpoint verification" );
    FC_DECLARE_DERIVED_EXCEPTION( wrong_chain_id,                    bts::blockchain::blockchain_exception, 30024, "wrong chain id" );
+   FC_DECLARE_DERIVED_EXCEPTION( unknown_block,                     bts::blockchain::blockchain_exception, 30025, "unknown block" );
 
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );

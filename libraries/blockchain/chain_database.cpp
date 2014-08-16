@@ -1213,9 +1213,12 @@ namespace bts { namespace blockchain {
        return optional<fc::exception>();
    } FC_CAPTURE_AND_RETHROW( (transaction) ) }
 
-   signed_block_header  chain_database::get_block_header( const block_id_type& block_id )const
+   signed_block_header chain_database::get_block_header( const block_id_type& block_id )const
    { try {
-      return *get_block_record( block_id );
+      const auto record = get_block_record( block_id );
+      if( !record.valid() )
+          FC_THROW_EXCEPTION( unknown_block, "Unknown block!", ("block_id",block_id) );
+      return *record;
    } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
    signed_block_header  chain_database::get_block_header( uint32_t block_num )const
@@ -1252,28 +1255,29 @@ namespace bts { namespace blockchain {
       }
       return result;
    }
-   digest_block  chain_database::get_block_digest( const block_id_type& block_id )const
+   digest_block chain_database::get_block_digest( const block_id_type& block_id )const
    {
       return my->_block_id_to_block_record_db.fetch(block_id);
    }
-   digest_block  chain_database::get_block_digest( uint32_t block_num )const
+
+   digest_block chain_database::get_block_digest( uint32_t block_num )const
    {
       auto block_id = my->_block_num_to_id_db.fetch( block_num );
       return get_block_digest( block_id );
    }
 
-   full_block           chain_database::get_block( const block_id_type& block_id )const
+   full_block chain_database::get_block( const block_id_type& block_id )const
    { try {
       return my->_block_id_to_block_data_db.fetch(block_id);
    } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
-   full_block           chain_database::get_block( uint32_t block_num )const
+   full_block chain_database::get_block( uint32_t block_num )const
    { try {
       auto block_id = my->_block_num_to_id_db.fetch( block_num );
       return get_block( block_id );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num) ) }
 
-   signed_block_header  chain_database::get_head_block()const
+   signed_block_header chain_database::get_head_block()const
    {
       return my->_head_block_header;
    }
@@ -2311,26 +2315,29 @@ namespace bts { namespace blockchain {
     *   @return a value betwee 0 and 100
     */
    double chain_database::get_average_delegate_participation()const
-   {
-      int32_t head_num = get_head_block_num();
-      if( head_num < 1 ) return 0;
-      auto now         = bts::blockchain::now();
-      if( head_num <  BTS_BLOCKCHAIN_NUM_DELEGATES )
+   { try {
+      const auto head_num = get_head_block_num();
+      const auto now = bts::blockchain::now();
+      if( head_num < 1 )
+      {
+          return 0;
+      }
+      else if( head_num <  BTS_BLOCKCHAIN_NUM_DELEGATES )
       {
          // what percent of the maximum total blocks that could have been produced 
          // have been produced.
-         auto expected_blocks = (now - get_block_header( 1 ).timestamp).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; 
-         return 100*double(head_num) / expected_blocks;
+         const auto expected_blocks = (now - get_block_header( 1 ).timestamp).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+         return 100*double( head_num ) / expected_blocks;
       }
       else 
       {
          // if 10*N blocks ago is longer than 10*N*INTERVAL_SEC ago then we missed blocks, calculate
          // in terms of percentage time rather than percentage blocks.
-         auto starting_time =  get_block_header( head_num - BTS_BLOCKCHAIN_NUM_DELEGATES ).timestamp;
-         auto expected_production = (now - starting_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC; 
-         return  100*double(BTS_BLOCKCHAIN_NUM_DELEGATES) / expected_production;
+         const auto starting_time = get_block_header( head_num - BTS_BLOCKCHAIN_NUM_DELEGATES ).timestamp;
+         const auto expected_production = (now - starting_time).to_seconds() / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+         return 100*double( BTS_BLOCKCHAIN_NUM_DELEGATES ) / expected_production;
       }
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    optional<market_order> chain_database::get_market_bid( const market_index_key& key )const
    { try {
