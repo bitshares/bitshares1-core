@@ -122,5 +122,3 @@ endif (false )
 
 add_subdirectory( bitcoin )
 #add_subdirectory( client_rpc_tests )
-
-#add_subdirectory( dns )
