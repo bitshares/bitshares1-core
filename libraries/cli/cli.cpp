@@ -998,29 +998,27 @@ namespace bts { namespace cli {
                         }
                      }
 
-                    auto recent_average_price = _client->get_chain()->get_median_delegate_price( quote_id );
+                    auto recent_average_price = _client->get_chain()->get_market_status(quote_id, base_id)->avg_price_24h;
                     *_out << "Average Price in Recent Trades: "
-                          << (recent_average_price ? _client->get_chain()->to_pretty_price( *recent_average_price ) : "NO FEEDS" )
-                          <<"     ";
+                          << _client->get_chain()->to_pretty_price(recent_average_price)
+                          << "     ";
 
                     auto status = _client->get_chain()->get_market_status( quote_id, base_id );
                     if( status )
                     {
-                       if( recent_average_price )
-                       {
-                          auto maximum_short_price = *recent_average_price;
-                          maximum_short_price.ratio *= 4;
-                          maximum_short_price.ratio /= 3;
-                          auto minimum_cover_price = *recent_average_price;
-                          minimum_cover_price.ratio *= 2;
-                          minimum_cover_price.ratio /= 3;
-                          *_out << "Maximum Short Price: " 
-                                << _client->get_chain()->to_pretty_price( maximum_short_price )
-                                <<"     ";
-                          *_out << "Minimum Cover Price: " 
-                                << _client->get_chain()->to_pretty_price( minimum_cover_price )
-                                <<"\n";
-                       }
+                       auto maximum_short_price = recent_average_price;
+                       maximum_short_price.ratio *= 4;
+                       maximum_short_price.ratio /= 3;
+                       auto minimum_cover_price = recent_average_price;
+                       minimum_cover_price.ratio *= 2;
+                       minimum_cover_price.ratio /= 3;
+                       *_out << "Maximum Short Price: "
+                             << _client->get_chain()->to_pretty_price( maximum_short_price )
+                             <<"     ";
+                       *_out << "Minimum Cover Price: "
+                             << _client->get_chain()->to_pretty_price( minimum_cover_price )
+                             <<"\n";
+
                        *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
                        *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"     ";
                        *_out << "Min Depth: " << _client->get_chain()->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) ) <<"\n";
