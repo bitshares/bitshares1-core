@@ -89,7 +89,8 @@ asset market_order::get_quote_quantity()const
      default:
         FC_ASSERT( !"Not Implemented" );
   }
-  return get_balance() * get_price();
+  // NEVER GET HERE..... 
+ // return get_balance() * get_price();
 }
 
 } } // bts::blockchain
