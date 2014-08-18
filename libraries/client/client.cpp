@@ -960,6 +960,14 @@ config load_config( const fc::path& datadir )
 
        void client_impl::rebroadcast_pending()
        {
+#ifndef NDEBUG
+          static bool currently_running = false;
+          struct checker {
+            bool& var;
+            checker(bool& var) : var(var) { assert(!var); var = true; }
+            ~checker() { var = false; }
+          } _checker(currently_running);
+#endif // !NDEBUG
           if (_sync_mode)
           {
             wlog("skip rebroadcast_pending while syncing");
