@@ -4,7 +4,7 @@
 
 /* Set to true only for test network */
 #define BTS_TEST_NETWORK                                    true
-#define BTS_TEST_NETWORK_VERSION                            16
+#define BTS_TEST_NETWORK_VERSION                            17
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
