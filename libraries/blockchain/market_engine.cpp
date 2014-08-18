@@ -536,7 +536,7 @@ class market_engine
           quote_asset.current_share_supply -= mtrx.ask_received.amount;
           if( *_current_ask->collateral == 0 )
           {
-              quote_asset.current_share_supply -= _current_ask->state.balance;
+              quote_asset.collected_fees -= _current_ask->state.balance;
               _current_ask->state.balance = 0;
           }
 
