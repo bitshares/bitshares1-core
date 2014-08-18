@@ -2636,7 +2636,8 @@ config load_config( const fc::path& datadir )
       info["blockchain_next_round_timestamp"]                   = variant();
       if( head_block_num > 0 )
       {
-          const auto next_round_timestamp                       = head_block_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+          const auto current_round_timestamp                    = blockchain::get_slot_start_time( now );
+          const auto next_round_timestamp                       = current_round_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
           info["blockchain_next_round_time"]                    = ( next_round_timestamp - now ).to_seconds();
           info["blockchain_next_round_timestamp"]               = next_round_timestamp;
       }

@@ -115,7 +115,7 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         info["blockchain_next_round_timestamp"] = pretty_timestamp( *next_round_timestamp );
 
         if( !info["blockchain_next_round_time"].is_null() )
-            info["blockchain_next_round_time"] = pretty_age( *next_round_timestamp, true );
+            info["blockchain_next_round_time"] = "at least " + pretty_age( *next_round_timestamp, true );
     }
 
     const auto data_dir = info["client_data_dir"].as<path>();
@@ -148,15 +148,14 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     if( !info["wallet_next_block_production_timestamp"].is_null() )
     {
         const auto next_block_timestamp = info["wallet_next_block_production_timestamp"].as<time_point_sec>();
+        info["wallet_next_block_production_timestamp"] = pretty_timestamp( next_block_timestamp );
         if( !next_round_timestamp.valid() || next_block_timestamp < *next_round_timestamp )
         {
-            info["wallet_next_block_production_timestamp"] = pretty_timestamp( next_block_timestamp );
             if( !info["wallet_next_block_production_time"].is_null() )
                 info["wallet_next_block_production_time"] = pretty_age( next_block_timestamp, true );
         }
         else
         {
-            info["wallet_next_block_production_timestamp"] = variant();
             if( !info["wallet_next_block_production_time"].is_null() )
                 info["wallet_next_block_production_time"] = "at least " + pretty_age( *next_round_timestamp, true );
         }
