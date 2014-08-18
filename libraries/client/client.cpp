@@ -1477,7 +1477,7 @@ config load_config( const fc::path& datadir )
        my->_simulate_disconnect = state;
     }
 
-    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
+    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(uint32_t)> reindex_status_callback )
     { try {
         my->_config   = load_config(data_dir);
 
@@ -1526,7 +1526,7 @@ config load_config( const fc::path& datadir )
 
         try
         {
-          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
         }
         catch( const db::db_in_use_exception& e )
         {
@@ -1534,7 +1534,7 @@ config load_config( const fc::path& datadir )
           {
             elog("Chain database corrupted. Deleting it and attempting to recover.");
             fc::remove_all( data_dir / "chain" );
-            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
           }
         }
         catch( const fc::exception& e )
