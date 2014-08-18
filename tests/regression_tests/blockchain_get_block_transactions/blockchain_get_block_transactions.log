@@ -6,7 +6,7 @@ xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
+[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 2
@@ -23,7 +23,7 @@ Returns:
   blockchain_transaction_record_map
 default (unlocked) >>> blockchain_get_block_transactions 2
 [[
-    "cf139ec446f3ae34f4520f97167ee446e7e93155",{
+    "63e2c073d5a52ab66cf97bfa948affdcef7e66fb",{
       "trx": {
         "expiration": "20140620T164030",
         "delegate_slate_id": null,
@@ -31,7 +31,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
             "type": "withdraw_op_type",
             "data": {
               "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-              "amount": 10010000,
+              "amount": 10050000,
               "claim_input_data": ""
             }
           },{
@@ -54,7 +54,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           }
         ],
         "signatures": [
-          "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c2d958c8c457999674b52081c080b31ab9ed5530fcc135636cc66ae0fbd6b3623"
+          "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6ceedfb97d0948e4d36a66a3b5b4c9f5c7153ca920b47d94e819cb80f9964d4fac"
         ]
       },
       "signed_keys": [
@@ -82,14 +82,14 @@ default (unlocked) >>> blockchain_get_block_transactions 2
       ],
       "withdraws": [[
           0,{
-            "amount": 10010000,
+            "amount": 10050000,
             "asset_id": 0
           }
         ]
       ],
       "balance": [[
           0,
-          10000
+          50000
         ]
       ],
       "net_delegate_votes": [],

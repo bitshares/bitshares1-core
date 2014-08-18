@@ -24,17 +24,7 @@ aliases: get_asset
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0,
-  "price_feed_id": 0,
-  "minimum_xts_price": {
-    "ratio": "0.",
-    "quote_asset_id": 0,
-    "base_asset_id": 0
-  },
-  "maximum_xts_price": {
-    "ratio": "0.",
-    "quote_asset_id": 0,
-    "base_asset_id": 0
-  }
+  "price_feed_id": 0
 }
 (wallet closed) >>> blockchain_get_asset 0
 {
@@ -50,16 +40,6 @@ aliases: get_asset
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0,
-  "price_feed_id": 0,
-  "minimum_xts_price": {
-    "ratio": "0.",
-    "quote_asset_id": 0,
-    "base_asset_id": 0
-  },
-  "maximum_xts_price": {
-    "ratio": "0.",
-    "quote_asset_id": 0,
-    "base_asset_id": 0
-  }
+  "price_feed_id": 0
 }
 (wallet closed) >>> quit

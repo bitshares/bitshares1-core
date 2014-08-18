@@ -16,16 +16,14 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "symbol": "XTS",
   "name": "BitShares XTS",
   "version": 109,
-  "db_version": 122,
+  "db_version": 124,
   "genesis_timestamp": "[redacted]",
   "block_interval": 10,
-  "target_block_size": 25600,
   "max_block_size": 51200,
   "max_blockchain_size": 107374182400,
   "address_prefix": "XTS",
-  "min_block_fee": "0.00001 XTS",
   "inactivity_fee_apr": "0.00010 XTS",
-  "priority_fee": "0.10000 XTS",
+  "relay_fee": "0.10000 XTS",
   "delegate_num": 101,
   "delegate_reg_fee": "0.00000 XTS",
   "name_size_max": 63,
@@ -38,6 +36,7 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "min_market_depth": "2,000,000.00000 XTS",
   "proposal_vote_message_max": 1024,
   "max_pending_queue_size": 10,
-  "max_trx_per_second": 1
+  "max_trx_per_second": 1,
+  "min_block_fee": "0.00000 XTS"
 }
 (wallet closed) >>> quit

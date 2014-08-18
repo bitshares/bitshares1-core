@@ -6,7 +6,7 @@ xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
+[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -35,13 +35,13 @@ default (unlocked) >>> wallet_account_register test test null 100
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9ee026a13194fc0fcccee50edf0fd5b900f76985acdd325cee664204d48bdb80d"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9cb73612ea738d13db87cb7454b300c8ce5429f4b5be41b8d6df4aad52172212d"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -63,7 +63,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            99.90000 XTS                
+test                            99.50000 XTS                
 default (unlocked) >>> wallet_account_update_active_key test test
 {
   "expiration": "20140620T164050",
@@ -72,7 +72,7 @@ default (unlocked) >>> wallet_account_update_active_key test test
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     },{
@@ -86,14 +86,14 @@ default (unlocked) >>> wallet_account_update_active_key test test
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2294546c3a65fd3978d92449c82e0402a2c95e6981d00b5a0156d179f73fa9075b",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bde106ed7c1f00f87a00b4f2fa6a383c2e1b3306bf69b31cb7cfdf57f7f30e4a4"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2270caa623d8028b0a6847e7d927d129bf6c37b96681a16d402431abf7ca21d9ce",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b0d95e677fbf04840782b65f904f561982bc4fbfb4e0577d1813ff4566813cf6c"
   ]
 }
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            99.80000 XTS                
+test                            99.00000 XTS                
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> wallet_rescan_blockchain 
@@ -103,7 +103,7 @@ OK
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            99.80000 XTS                
+test                            99.00000 XTS                
 default (unlocked) >>> wallet_account_update_active_key test test
 Command failed with exception: insufficient funds (20010)
 
@@ -115,5 +115,5 @@ Command failed with exception: insufficient funds (20010)
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            99.80000 XTS                
+test                            99.00000 XTS                
 default (unlocked) >>> quit

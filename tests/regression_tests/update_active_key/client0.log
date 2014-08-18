@@ -10,7 +10,7 @@ default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS813o8XNCGxjSvE9zUKRvi1p5SiizkWyWs",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     },{
@@ -24,8 +24,8 @@ default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
     }
   ],
   "signatures": [
-    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6a87a2e52401a78780e622dbe44958f0fb4a87663c31d483a447fe4d31aac5d4f",
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9e59e6490f828633dd97833f8ced0febfd0eae14c2969dd3cbde84fe8e7d238ac"
+    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f63f8d8f4304c7d3eb8d005c152d6247bfb7f35798a45648b39e7fa747c385243a",
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d94f0a1aba55f27a4e16ff7688e20cb53d93536ec658c7734b62043070d72f487c"
   ]
 }
 default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR"
@@ -36,7 +36,7 @@ default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JD
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSCYxycACPxN2L78BcRdtSUcomALMaYZiJf",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     },{
@@ -50,8 +50,8 @@ default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JD
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960238261f97dc0b381d3b0da39fe757d15795fb509c3bf63f40c8f211378f7c909",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22f86209201ed1a6d4ac5ecea8fd31e8b091894d51bc3d7049ddd98f921c8b2c0c"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749605c8bc38abd638281290b3f704bded2a08619e072a61b50492a9e78259635a0be",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22d1075afe4024bc865a8e2fbb3a5e0eea2396e5e135dde4caf34663807dc98fb5"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -133,7 +133,7 @@ OK
 default (unlocked) >>> transfer 30 XTS delegate0 delegate4
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
+[redacted]          PENDING   delegate0           delegate4           30.00000 XTS                                                        0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 4
@@ -166,7 +166,7 @@ default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSEXfr9hUi5jMRvLAQ5x4Q1bnWckdSB4dDj",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     },{
@@ -180,8 +180,8 @@ default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
     }
   ],
   "signatures": [
-    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38e5f9a26860147f8ee9aef20894ffa32c7a10a982a422e2678b4b1edcb1ce03176",
-    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a79407f3aa93759956d912a2844668a949d99c749cc5161f26151f86fbd84bb6ca"
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38edc20efd26aae4d5bcec62b2a1fde62281c426a6ffbc79a9012ebd3c608f542db",
+    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a7f6813160c66bc4329fa76653bfe836531f6106fd58000bff8aeb8debbe4a1783"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -199,8 +199,8 @@ default (unlocked) >>> history delegate4
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
 [redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    19,801,980.19801 XTS    0.00000 XTS         [redacted]
-[redacted]          2         delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,980.09801 XTS    0.10000 XTS         [redacted]
-[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        19,802,010.09801 XTS    0.00000 XTS         [redacted]
-[redacted]          7         delegate4           delegate5           10.00000 XTS                                                        19,801,999.99801 XTS    0.10000 XTS         [redacted]
-[redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,999.89801 XTS    0.10000 XTS         [redacted]
+[redacted]          2         delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,979.69801 XTS    0.50000 XTS         [redacted]
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        19,802,009.69801 XTS    0.00000 XTS         [redacted]
+[redacted]          7         delegate4           delegate5           10.00000 XTS                                                        19,801,999.19801 XTS    0.50000 XTS         [redacted]
+[redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4 active key                 19,801,998.69801 XTS    0.50000 XTS         [redacted]
 default (unlocked) >>> quit

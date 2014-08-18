@@ -8,12 +8,12 @@ default (locked) >>> wallet_get_info
   "automatic_backups": false,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "0.10000 XTS",
+  "transaction_fee": "0.50000 XTS",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": 101
+  "version": 102
 }
 default (locked) >>> help wallet_unlock
 Usage:
@@ -57,12 +57,12 @@ default (locked) >>> wallet_get_info
   "automatic_backups": false,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "0.10000 XTS",
+  "transaction_fee": "0.50000 XTS",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": 101
+  "version": 102
 }
 default (locked) >>> debug_wait 6
 OK
@@ -74,11 +74,11 @@ default (locked) >>> wallet_get_info
   "automatic_backups": false,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "0.10000 XTS",
+  "transaction_fee": "0.50000 XTS",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": 101
+  "version": 102
 }
 default (locked) >>> quit

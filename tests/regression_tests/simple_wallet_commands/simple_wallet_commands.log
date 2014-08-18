@@ -8,12 +8,12 @@ wallet (unlocked) >>> wallet_get_info
   "automatic_backups": true,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "0.10000 XTS",
+  "transaction_fee": "0.50000 XTS",
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 101
+  "version": 102
 }
 wallet (unlocked) >>> wallet_set_automatic_backups false
 false
@@ -100,12 +100,12 @@ wallet (unlocked) >>> wallet_get_info
   "automatic_backups": false,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "99,999.00000 XTS",
+  "transaction_fee": "99,999.00000 XTS",
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 101
+  "version": 102
 }
 wallet (unlocked) >>> wallet_close
 OK

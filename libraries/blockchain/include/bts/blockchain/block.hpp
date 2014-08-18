@@ -10,8 +10,6 @@ namespace bts { namespace blockchain {
 
        block_header():block_num(0){}
 
-       share_type   next_fee( share_type prev_fee_rate, size_t block_size )const;
-
        block_id_type        previous;
        uint32_t             block_num;
        fc::time_point_sec   timestamp;

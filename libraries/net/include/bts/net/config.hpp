@@ -2,10 +2,10 @@
 
 #define BTS_NET_PROTOCOL_VERSION                        104
 
-/** 
+/**
  * Define this to enable debugging code in the p2p network interface.
  * This is code that would never be executed in normal operation, but is
- * used for automated testing (creating artificial net splits, 
+ * used for automated testing (creating artificial net splits,
  * tracking where messages came from and when)
  */
 #define ENABLE_P2P_DEBUGGING_API                        1
@@ -26,14 +26,14 @@
 
 #define BTS_NET_PEER_DISCONNECT_TIMEOUT                 20
 
-#define BTS_NETWORK_DEFAULT_P2P_PORT                    1776
+#define BTS_NET_DEFAULT_P2P_PORT                        1700
 #define BTS_NET_DEFAULT_DESIRED_CONNECTIONS             8
 #define BTS_NET_DELEGATE_DESIRED_CONNECTIONS            100
 #define BTS_NET_DEFAULT_MAX_CONNECTIONS                 200
 
 #define BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES        (1024 * 1024)
 
-/** 
+/**
  * We prevent a peer from offering us a list of blocks which, if we fetched them
  * all, would result in a blockchain that extended into the future.
  * This parameter gives us some wiggle room, allowing a peer to give us blocks
@@ -42,7 +42,7 @@
  */
 #define BTS_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC     (60 * 60)
 
-#define BTS_NET_INSUFFICIENT_PRIORITY_FEE_PENALTY_SEC   15
+#define BTS_NET_INSUFFICIENT_RELAY_FEE_PENALTY_SEC      15
 
 #define BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES           2
 

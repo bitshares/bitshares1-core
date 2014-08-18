@@ -968,18 +968,18 @@
          "aliases" : ["pay_delegate"]
       },
       {
-         "method_name"  : "wallet_set_priority_fee",
-         "description"  : "Set the priority fee to add to new transactions",
+         "method_name"  : "wallet_set_transaction_fee",
+         "description"  : "Set the fee to add to new transactions",
          "return_type"  : "asset",
          "parameters"   : [
          {
             "name" : "fee",
             "type" : "real_amount",
-            "description" : "the wallet priority fee to set"
+            "description" : "the wallet transaction fee to set"
          }
          ],
          "prerequisites" : ["wallet_open"],
-         "aliases" : ["set_priority_fee", "settrxfee"]
+         "aliases" : ["wallet_set_priority_fee", "set_priority_fee", "settrxfee", "setfee", "set_fee"]
       },
       {
          "method_name" : "wallet_market_submit_bid",

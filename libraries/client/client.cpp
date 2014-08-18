@@ -22,7 +22,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
 
-#include <bts/network/node.hpp>
+//#include <bts/network/node.hpp>
 
 #include <bts/db/level_map.hpp>
 
@@ -1139,11 +1139,9 @@ config load_config( const fc::path& datadir )
           }
           return false;
         }
-        catch (const bts::blockchain::insufficient_priority_fee& original_exception)
+        catch (const bts::blockchain::insufficient_relay_fee& original_exception)
         {
-          // was just going to FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, (original_exception));
-          // but I get errors with reflection?
-          FC_THROW_EXCEPTION(bts::net::insufficient_priority_fee, "Insufficient priority fee, do not propagate.", 
+          FC_THROW_EXCEPTION(bts::net::insufficient_relay_fee, "Insufficient relay fee; do not propagate!",
                              ("original_exception", original_exception.to_detail_string()));
         }
       }
@@ -1479,7 +1477,7 @@ config load_config( const fc::path& datadir )
        my->_simulate_disconnect = state;
     }
 
-    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
+    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(uint32_t)> reindex_status_callback )
     { try {
         my->_config   = load_config(data_dir);
 
@@ -1528,7 +1526,7 @@ config load_config( const fc::path& datadir )
 
         try
         {
-          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
         }
         catch( const db::db_in_use_exception& e )
         {
@@ -1536,7 +1534,7 @@ config load_config( const fc::path& datadir )
           {
             elog("Chain database corrupted. Deleting it and attempting to recover.");
             fc::remove_all( data_dir / "chain" );
-            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
           }
         }
         catch( const fc::exception& e )
@@ -2577,14 +2575,12 @@ config load_config( const fc::path& datadir )
        info["genesis_timestamp"]            = _chain_db->get_genesis_timestamp();
 
        info["block_interval"]               = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-       info["target_block_size"]            = BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
        info["max_block_size"]               = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
        info["max_blockchain_size"]          = BTS_BLOCKCHAIN_MAX_SIZE;
 
        info["address_prefix"]               = BTS_ADDRESS_PREFIX;
-       info["min_block_fee"]                = BTS_BLOCKCHAIN_MIN_FEE / double( 1000 );
        info["inactivity_fee_apr"]           = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
-       info["priority_fee"]                 = _chain_db->get_priority_fee();
+       info["relay_fee"]                    = _chain_db->get_relay_fee();
 
        info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
        info["delegate_reg_fee"]             = _chain_db->get_delegate_registration_fee();
@@ -2648,7 +2644,8 @@ config load_config( const fc::path& datadir )
       info["blockchain_next_round_timestamp"]                   = variant();
       if( head_block_num > 0 )
       {
-          const auto next_round_timestamp                       = head_block_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+          const auto current_round_timestamp                    = blockchain::get_slot_start_time( now );
+          const auto next_round_timestamp                       = current_round_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
           info["blockchain_next_round_time"]                    = ( next_round_timestamp - now ).to_seconds();
           info["blockchain_next_round_timestamp"]               = next_round_timestamp;
       }
@@ -2939,12 +2936,12 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
-   asset client_impl::wallet_set_priority_fee( double fee )
+   asset client_impl::wallet_set_transaction_fee( double fee )
    { try {
       oasset_record asset_record = _chain_db->get_asset_record( asset_id_type() );
       FC_ASSERT( asset_record.valid() );
-      _wallet->set_priority_fee( asset( fee * asset_record->precision ) );
-      return _wallet->get_priority_fee();
+      _wallet->set_transaction_fee( asset( fee * asset_record->precision ) );
+      return _wallet->get_transaction_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
    bool client_impl::blockchain_is_synced() const
