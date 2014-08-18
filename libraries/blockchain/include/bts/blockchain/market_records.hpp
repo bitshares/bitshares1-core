@@ -71,15 +71,19 @@ namespace bts { namespace blockchain {
    {
        market_history_record(price highest_bid = price(),
                              price lowest_ask = price(),
-                             share_type volume = 0)
+                             share_type volume = 0,
+                             fc::optional<price> recent_average_price = fc::optional<price>())
          : highest_bid(highest_bid),
            lowest_ask(lowest_ask),
-           volume(volume)
+           volume(volume),
+           recent_average_price(recent_average_price)
        {}
 
        price highest_bid;
        price lowest_ask;
        share_type volume;
+
+       fc::optional<price> recent_average_price;
 
        bool operator == ( const market_history_record& other ) const
        {
@@ -96,6 +100,8 @@ namespace bts { namespace blockchain {
        double highest_bid;
        double lowest_ask;
        share_type volume;
+
+       fc::optional<double> recent_average_price;
    };
    typedef vector<market_history_point> market_history_points;
 
@@ -157,9 +163,20 @@ namespace bts { namespace blockchain {
       asset                                     ask_paid;
       asset                                     ask_received;
       fc::enum_type<uint8_t, order_type_enum>   bid_type;
+      fc::enum_type<uint8_t, order_type_enum>   ask_type;
       asset                                     fees_collected;
    };
    typedef optional<market_order> omarket_order;
+
+   struct order_history_record : public market_transaction
+   {
+      order_history_record(const market_transaction& market_trans = market_transaction(), fc::time_point_sec timestamp = fc::time_point_sec())
+        : market_transaction(market_trans),
+          timestamp(timestamp)
+      {}
+
+      fc::time_point_sec                        timestamp;
+   };
 
    struct collateral_record
    {
@@ -192,8 +209,8 @@ namespace bts { namespace blockchain {
        price maximum_bid()const
        {
          auto avg = avg_price_24h;
-         avg.ratio *= 3;
-         avg.ratio /= 2;
+         avg.ratio *= 4;
+         avg.ratio /= 3;
          return avg;
        }
 
@@ -221,9 +238,9 @@ FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (null_order)(bid_order)(ask_o
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
 FC_REFLECT( bts::blockchain::market_status,  (quote_id)(base_id)(bid_depth)(ask_depth)(avg_price_24h)(last_error) );
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
-FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(volume) )
+FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(volume)(recent_average_price) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
-FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(volume) )
+FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(volume)(recent_average_price) )
 FC_REFLECT( bts::blockchain::order_record, (balance) )
 FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance) )
 FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral) )
@@ -239,5 +256,7 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (ask_paid)
             (ask_received)
             (bid_type)
+            (ask_type)
             (fees_collected) 
           )
+FC_REFLECT_DERIVED( bts::blockchain::order_history_record, (bts::blockchain::market_transaction), (timestamp) )

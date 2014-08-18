@@ -1,27 +1,91 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> wallet_account_create test
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
-default (unlocked) >>> debug_wait_block_interval 1
+[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
 test                            100.00000 XTS               
-default (unlocked) >>> debug_enable_output false
->>>  wallet_account_register test test null 100
->>>  debug_enable_output true
+default (unlocked) >>> blockchain_get_account test
+No account found.
+default (unlocked) >>> wallet_account_register test test
+{
+  "expiration": "20140620T164040",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "register_account_op_type",
+      "data": {
+        "name": "test",
+        "public_data": null,
+        "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+        "delegate_pay_rate": 255,
+        "meta_data": null
+      }
+    },{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
+        "amount": 50000,
+        "claim_input_data": ""
+      }
+    }
+  ],
+  "signatures": [
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9908d44a1072a96019509eb417cc6310cf96842392d1e121af9399b7aaebce27b"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait_block_interval 1
+default (unlocked) >>> debug_wait 2
 OK
-default (unlocked) >>> blockchain_list_accounts test
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
--------------------------------------------------------------------------------------------------------------------------------------------------------
-test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
+default (unlocked) >>> blockchain_get_account test
+Name: test
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+Not a delegate.
+default (unlocked) >>> wallet_account_update_registration test test null 100
+{
+  "expiration": "20140620T164050",
+  "delegate_slate_id": null,
+  "operations": [{
+      "type": "withdraw_op_type",
+      "data": {
+        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
+        "amount": 50000,
+        "claim_input_data": ""
+      }
+    },{
+      "type": "update_account_op_type",
+      "data": {
+        "account_id": 102,
+        "public_data": null,
+        "active_key": null,
+        "delegate_pay_rate": 100
+      }
+    }
+  ],
+  "signatures": [
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d229026e377bca18e8af5cfc1b88a2a4fc3746583ff543fe7342a428ed1a5eacb14",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b08454c7f337ba9f9e33f0c9e991d56205039564fec8550511fbf55a43b3bc9c0"
+  ]
+}
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
 default (unlocked) >>> blockchain_get_account test
 Name: test
 Registered: [redacted]
@@ -33,84 +97,5 @@ Active Key History:
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
 102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
-default (unlocked) >>> help wallet_account_update_registration
-Usage:
-wallet_account_update_registration <account_name> <pay_from_account> [public_data] [delegate_pay_rate]   Updates the data published about a given account
-Updates the data published about a given account
-
-Parameters:
-  account_name (account_name, required): the account that will be updated
-  pay_from_account (account_name, required): the account from which fees will be paid
-  public_data (json_variant, optional, defaults to null): public data about the account
-  delegate_pay_rate (uint8_t, optional, defaults to 255): delegate pay rate: 0 to 100 if updating or upgrading to a delegate, and 255 for a normal account
-
-Returns:
-  signed_transaction
-
-aliases: update_registration
-default (unlocked) >>> debug_enable_output false
->>> wallet_account_update_registration test test null 10 XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55
->>> debug_enable_output true
-OK
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 10
-OK
-default (unlocked) >>> blockchain_get_account test
-Name: test
-Registered: [redacted]
-Last Updated: [redacted]
-Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
-Active Key History:
-- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-102   test                            0.0000000000 % 0        0        N/A           10 %     0.00000 XTS         NONE      
-
-default (unlocked) >>> blockchain_list_accounts test
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
--------------------------------------------------------------------------------------------------------------------------------------------------------
-test *                             XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            0              0              
-default (unlocked) >>> blockchain_list_accounts delegate0 1
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
--------------------------------------------------------------------------------------------------------------------------------------------------------
-delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            0              0              
-default (unlocked) >>> blockchain_get_account delegate0
-Name: delegate0
-Registered: Genesis (Keyhotee Founder)
-Last Updated: [redacted]
-Owner Key: XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z
-Active Key History:
-- XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
-default (unlocked) >>> debug_enable_output false
->>> wallet_account_update_registration  delegate0 delegate0 null 10  XTS75VFyFThZbSj9vwnfhDR6pcttquMtUPxTwKBgVJfWEt9UdRtmM
->>> debug_enable_output true
-OK
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 10
-OK
-default (unlocked) >>> blockchain_list_accounts delegate0 1
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
--------------------------------------------------------------------------------------------------------------------------------------------------------
-delegate0 *                        XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z           [redacted]            0              0              
-default (unlocked) >>> blockchain_get_account delegate0
-Name: delegate0
-Registered: Genesis (Keyhotee Founder)
-Last Updated: [redacted]
-Owner Key: XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z
-Active Key History:
-- XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-1     delegate0                       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> quit

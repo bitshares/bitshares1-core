@@ -1,5 +1,8 @@
 default (unlocked) >>> wallet_account_create test
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -8,6 +11,8 @@ default (unlocked) >>> wallet_account_balance delegate1
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate1                       19,801,980.19801 XTS        
+default (unlocked) >>> wallet_account_balance test
+No balances found.
 default (unlocked) >>> help wallet_transfer_from
 Usage:
 wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <from_account_name> <to_account_name> [memo_message] [vote_method]   Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
@@ -23,11 +28,75 @@ Parameters:
   vote_method (vote_selection_method, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
 
 Returns:
-  signed_transaction
-default (unlocked) >>> debug_enable_output false
->>> wallet_transfer_from 100 XTS delegate1 delegate0 test
->>> debug_enable_output true
+  transaction_record
+default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
+{
+  "index": 414,
+  "record_id": "9f0fad037607d57266cb20d94ed39e5b4cce8f7a",
+  "block_num": 0,
+  "is_virtual": false,
+  "is_confirmed": false,
+  "is_market": false,
+  "trx": {
+    "expiration": "20140620T164030",
+    "delegate_slate_id": null,
+    "operations": [{
+        "type": "withdraw_op_type",
+        "data": {
+          "balance_id": "XTS3V5xQc7Rgzs5SogiQWuVGq5wfK8EFrBoL",
+          "amount": 10050000,
+          "claim_input_data": ""
+        }
+      },{
+        "type": "deposit_op_type",
+        "data": {
+          "amount": 10000000,
+          "condition": {
+            "asset_id": 0,
+            "delegate_slate_id": 0,
+            "type": "withdraw_signature_type",
+            "data": {
+              "owner": "XTSMSe2Qb4iw8mxJBrQHVt7Rk2fxw6EkckZ6",
+              "memo": {
+                "one_time_key": "XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU",
+                "encrypted_memo_data": "1531ea6c9318088925beedfd0a6a0d9ef0a0c7bf7c7bfc3634689615d38f5b2794f0f748d761b8d4873c55a5723ad26aa674c10c254adda1fe0ed58e6b8889b5"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "signatures": [
+      "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c5426665c551f38d03382e1df95d53955bc09be226812e0cca5d96d53b516167d"
+    ]
+  },
+  "ledger_entries": [{
+      "from_account": "XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54",
+      "to_account": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+      "amount": {
+        "amount": 10000000,
+        "asset_id": 0
+      },
+      "memo": "",
+      "memo_from_account": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z"
+    }
+  ],
+  "fee": {
+    "amount": 50000,
+    "asset_id": 0
+  },
+  "created_time": "20140620T144030",
+  "received_time": "20140620T144030",
+  "extra_addresses": []
+}
+default (unlocked) >>> debug_advance_time 1 blocks
 OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> history test
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+[redacted]          2         delegate1 as del... test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         [redacted]
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -35,17 +104,7 @@ delegate0                       19,801,980.19801 XTS
 default (unlocked) >>> wallet_account_balance delegate1
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate1                       19,801,880.09801 XTS        
-default (unlocked) >>> debug_wait_block_interval 1
-OK
-default (unlocked) >>> wallet_account_balance delegate0
-ACCOUNT                         BALANCE                     
-============================================================
-delegate0                       19,801,980.19801 XTS        
-default (unlocked) >>> wallet_account_balance delegate1
-ACCOUNT                         BALANCE                     
-============================================================
-delegate1                       19,801,880.09801 XTS        
+delegate1                       19,801,879.69801 XTS        
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================

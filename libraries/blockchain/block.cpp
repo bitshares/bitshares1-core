@@ -46,13 +46,6 @@ namespace bts { namespace blockchain {
       return fc::sha256::hash( enc.result() );
    }
 
-   int64_t block_header::next_fee( int64_t current_fee, size_t block_size )const
-   {
-     uint64_t next_fee_base = block_size * current_fee / BTS_BLOCKCHAIN_TARGET_BLOCK_SIZE;
-     uint64_t next_fee = ((BTS_BLOCKCHAIN_BLOCKS_PER_DAY-1)*current_fee + next_fee_base) / BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
-     return std::max<uint64_t>(next_fee,BTS_BLOCKCHAIN_MIN_FEE);
-   }
-
    full_block::operator digest_block()const
    {
       digest_block db( (signed_block_header&)*this );

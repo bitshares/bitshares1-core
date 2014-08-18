@@ -1,58 +1,50 @@
-default (unlocked) >>> wallet_account_balance delegate0
-ACCOUNT                         BALANCE                     
-============================================================
-delegate0                       19,801,980.19801 XTS        
-default (unlocked) >>> wallet_account_create test
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_account_balance test
-No balances found.
-default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
-default (unlocked) >>> debug_wait_block_interval 1
-OK
-default (unlocked) >>> wallet_account_balance delegate0
-ACCOUNT                         BALANCE                     
-============================================================
-delegate0                       19,801,880.09801 XTS        
-default (unlocked) >>> wallet_account_balance test
-ACCOUNT                         BALANCE                     
-============================================================
-test                            100.00000 XTS               
-default (unlocked) >>> wallet_delegate_set_block_production ALL false
-Wallet transaction scanning has been automatically re-enabled!
-OK
-default (unlocked) >>> wallet_delegate_set_block_production ALL true
-Wallet transaction scanning has been automatically disabled due to enabled delegates!
-OK
-default (unlocked) >>> wallet_transfer 50 XTS delegate0 test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
-======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                50.00000 XTS                                                        0.10000 XTS         [redacted]
-default (unlocked) >>> debug_wait_block_interval 1
-OK
-default (unlocked) >>> wallet_rescan_blockchain
-Rescanning blockchain...
-Wallet transaction scanning is disabled!
-Scan complete.
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> wallet_account_balance test
-ACCOUNT                         BALANCE                     
-============================================================
-test                            100.00000 XTS               
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": 0,
+  "transaction_fee": "0.50000 XTS",
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": 102
+}
+default (unlocked) >>> wallet_set_transaction_scanning false
+false
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": false,
+  "last_scanned_block_num": 0,
+  "transaction_fee": "0.50000 XTS",
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": 102
+}
 default (unlocked) >>> wallet_set_transaction_scanning true
 true
-default (unlocked) >>> wallet_rescan_blockchain
-Rescanning blockchain...
-Scan complete.
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> wallet_account_balance test
-ACCOUNT                         BALANCE                     
-============================================================
-test                            150.00000 XTS               
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": 0,
+  "transaction_fee": "0.50000 XTS",
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": 102
+}
 default (unlocked) >>> quit

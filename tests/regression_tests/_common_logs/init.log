@@ -1,0 +1,5 @@
+(wallet closed) >>> debug_enable_output false
+>>> debug_start_simulated_time "20140620T144030.000000"
+>>> debug_filter_output_for_tests true
+>>> debug_enable_output true
+OK

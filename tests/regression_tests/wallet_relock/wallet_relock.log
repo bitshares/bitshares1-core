@@ -1,28 +1,19 @@
-(wallet closed) >>> debug_filter_output_for_tests true
-OK
-(wallet closed) >>> wallet_create default 123456789
-OK
-default (unlocked) >>> wallet_close
-OK
-(wallet closed) >>> wallet_open default
+default (unlocked) >>> wallet_lock
 OK
 default (locked) >>> wallet_get_info
 {
   "data_dir": "[redacted]",
   "open": true,
   "name": "default",
-  "automatic_backups": true,
+  "automatic_backups": false,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "0.10000 XTS",
+  "transaction_fee": "0.50000 XTS",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "block_production_enabled": null,
-  "next_block_production_time": null,
-  "next_block_production_timestamp": null,
-  "version": 100
+  "version": 102
 }
 default (locked) >>> help wallet_unlock
 Usage:
@@ -52,43 +43,42 @@ Invalid timeout!
 
 
 default (locked) >>> wallet_unlock 5 123456789
-OK
-default (unlocked) >>> wallet_get_info
+Command failed with exception: invalid password (20001)
+Invalid password!
+
+
+
+
+default (locked) >>> wallet_get_info
 {
   "data_dir": "[redacted]",
   "open": true,
   "name": "default",
-  "automatic_backups": true,
+  "automatic_backups": false,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "0.10000 XTS",
-  "unlocked": true,
-  "unlocked_until": "[redacted]",
-  "unlocked_until_timestamp": "[redacted]",
-  "scan_progress": "100.00 %",
-  "block_production_enabled": false,
-  "next_block_production_time": null,
-  "next_block_production_timestamp": null,
-  "version": 100
+  "transaction_fee": "0.50000 XTS",
+  "unlocked": false,
+  "unlocked_until": null,
+  "unlocked_until_timestamp": null,
+  "scan_progress": null,
+  "version": 102
 }
-default (unlocked) >>> debug_wait 6
+default (locked) >>> debug_wait 6
 OK
 default (locked) >>> wallet_get_info
 {
   "data_dir": "[redacted]",
   "open": true,
   "name": "default",
-  "automatic_backups": true,
+  "automatic_backups": false,
   "transaction_scanning": true,
   "last_scanned_block_num": 0,
-  "priority_fee": "0.10000 XTS",
+  "transaction_fee": "0.50000 XTS",
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "block_production_enabled": null,
-  "next_block_production_time": null,
-  "next_block_production_timestamp": null,
-  "version": 100
+  "version": 102
 }
 default (locked) >>> quit

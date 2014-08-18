@@ -42,11 +42,11 @@
         "method_name": "debug_wait",
         "description": "wait for specified amount of time",
         "return_type": "void",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "wait_time", 
-              "type" : "uint32_t", 
+            {
+              "name" : "wait_time",
+              "type" : "uint32_t",
               "description" : "time in seconds to wait before accepting more input"
             }
           ],
@@ -79,11 +79,11 @@
         "method_name": "debug_wait_block_interval",
         "description": "wait for n block intervals",
         "return_type": "void",
-        "parameters" : 
+        "parameters" :
           [
-            { 
+            {
               "name" : "wait_time_in_block_intervals",
-              "type" : "uint32_t", 
+              "type" : "uint32_t",
               "description" : "time in block intervals to wait before accepting more input"
             }
           ],
@@ -95,11 +95,11 @@
         "method_name": "debug_enable_output",
         "description": "enables or disables output from the CLI",
         "return_type": "void",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "enable_flag", 
-              "type" : "bool", 
+            {
+              "name" : "enable_flag",
+              "type" : "bool",
               "description" : "true to enable output, false to disable it"
             }
           ],
@@ -111,11 +111,11 @@
         "method_name": "debug_filter_output_for_tests",
         "description": "prevents printing any times or other unpredictable data",
         "return_type": "void",
-        "parameters" : 
+        "parameters" :
           [
-            { 
-              "name" : "enable_flag", 
-              "type" : "bool", 
+            {
+              "name" : "enable_flag",
+              "type" : "bool",
               "description" : "true to enable filtering, false to disable it"
             }
           ],
@@ -127,7 +127,7 @@
           "method_name" : "debug_list_errors",
           "description" : "returns a list of notable errors",
           "return_type" : "error_map",
-          "parameters"  : [ 
+          "parameters"  : [
                {
                   "name" : "first_error_number",
                   "description" : "the first error to list",
@@ -155,7 +155,7 @@
           "method_name" : "debug_list_errors_brief",
           "description" : "returns a list of short summaries of notable errors",
           "return_type" : "brief_error_map",
-          "parameters"  : [ 
+          "parameters"  : [
                {
                   "name" : "first_error_number",
                   "description" : "the first error to list",
@@ -182,19 +182,19 @@
           "method_name" : "debug_write_errors_to_file",
           "description" : "writes a list of notable errors to a file",
           "return_type" : "void",
-          "parameters"  : [ 
+          "parameters"  : [
                {
-                  "name" : "path", 
+                  "name" : "path",
                   "description" : "Where to dump the log file",
-                  "type" : "string", 
+                  "type" : "string",
                   "default_value" : ""
                },
                {
-                  "name" : "start_time", 
+                  "name" : "start_time",
                   "description" : "time of the first error",
-                  "type" : "timestamp", 
+                  "type" : "timestamp",
                   "default_value" : "19700101T000000"
-               } 
+               }
         ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
@@ -237,6 +237,14 @@
       {
         "method_name": "debug_get_call_statistics",
         "description": "Returns call timings for node_delegate callbacks",
+        "return_type": "json_object",
+        "parameters" : [],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "debug_verify_delegate_votes",
+        "description": "Adds up delegate votes using balances, and reports any discrepancies with the stored values in the database",
         "return_type": "json_object",
         "parameters" : [],
         "is_const"   : true,

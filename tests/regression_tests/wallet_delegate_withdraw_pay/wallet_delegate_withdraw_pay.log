@@ -1,5 +1,3 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> wallet_set_priority_fee 100000
 100,000.00000 XTS
 default (unlocked) >>> wallet_asset_create XBC ASSET1 delegate0 "CREATING ASSET1" null 500 100
@@ -134,18 +132,16 @@ default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2 
 OK
-default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait 2
-OK
 default (unlocked) >>> wallet_set_priority_fee .1
 0.10000 XTS
 default (unlocked) >>> wallet_account_create test
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
 ===================================================================================================================
-6       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
 5       [redacted]          [redacted]                      1       381     799,993.10080 XTS[redacted][redacted]     
 4       [redacted]          [redacted]                      1       381     399,997.73440 XTS[redacted][redacted]     
 3       [redacted]          [redacted]                      1       381     199,998.84160 XTS[redacted][redacted]     
@@ -202,11 +198,11 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-45    delegate44                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+45    delegate44                      0.0000000413 % 1        0        100.00 %      100 %    0.82671 XTS         3         
 
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
 {
-  "expiration": "20140620T164120",
+  "expiration": "20140620T164110",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_pay_op_type",
@@ -223,10 +219,10 @@ default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw
           "delegate_slate_id": 0,
           "type": "withdraw_signature_type",
           "data": {
-            "owner": "XTS5RGH3r7HjkmRanTFLGRh6nkzsXbo8ZNSe",
+            "owner": "XTS3C3sU1jTufVF52hdUWF2t6pBnJyssyoiF",
             "memo": {
-              "one_time_key": "XTS64mncWuqqWPwY8um8DhGvwKtVjdMgeKHE5DXAYV4v5p7petzU7",
-              "encrypted_memo_data": "4d09e66d65f3370a7829f3bba16dd5b553ce877d8cbe14ba9f4725739c5675d3370ca7c6a48610d5f04d3bff857d4430b5a2d5192f1fcadd5ce4e592e96cf297"
+              "one_time_key": "XTS6ZS5L2szhzQmGztoQAwTxeLRsNext9Pfp3fktDn3ZJN7Ct54Yj",
+              "encrypted_memo_data": "700b5f126b94592b6009e1065bbce56769757a2227e92dc62876f65647d7ab1f627703f885a8dce8c798284ae0d25b0c2d339d4dbd94409ba1fb10f1918924f9"
             }
           }
         }
@@ -234,7 +230,7 @@ default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw
     }
   ],
   "signatures": [
-    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96ff20fe56437c30abfa56847e5042e5732de644c225431f8f1d315b3233e68e3ea"
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a55f6ff4180d5b558be5f196ba1626c69d2b4cf851328bfba38561b1cf9b022a5"
   ]
 }
 default (unlocked) >>> balance delegate44
@@ -252,11 +248,11 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-45    delegate44                      0.0000000414 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+45    delegate44                      0.0000000413 % 1        0        100.00 %      100 %    0.82671 XTS         3         
 
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 5
+default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     

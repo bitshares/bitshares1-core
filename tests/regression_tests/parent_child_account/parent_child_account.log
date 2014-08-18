@@ -1,109 +1,122 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> wallet_account_create parent
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_account_create unregaccount
-"XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b"
-default (unlocked) >>> debug_enable_output false
->>>  wallet_account_register parent delegate0 null 100
->>>  debug_enable_output true
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> blockchain_list_accounts parent
-NAME (* delegate)                  KEY                                                             REGISTERED            VOTES FOR      APPROVAL       
--------------------------------------------------------------------------------------------------------------------------------------------------------
-default (unlocked) >>> blockchain_get_account parent
-No account found.
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:parent:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_create testaccount1.parent
-"XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:testaccount1.parent:XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b
 default (unlocked) >>> wallet_account_create testaccount2.parent
-"XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:testaccount2.parent:XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM
 default (unlocked) >>> wallet_account_create testaccount3.parent
-"XTS6gMFVtK34mYn7T7iGCWZJVT2Q4r7Vr2Tb8GHTnBrpgTBa9U87m"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:testaccount3.parent:XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg
 default (unlocked) >>> wallet_account_create test1.testaccount1.parent
-"XTS5muxe9bjq7GCmxwMGdXCPhtX6XagLmAq5EDCbLWbpPjk6XLxbn"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test1.testaccount1.parent:XTS6gMFVtK34mYn7T7iGCWZJVT2Q4r7Vr2Tb8GHTnBrpgTBa9U87m
 default (unlocked) >>> wallet_account_create test2.testaccount1.parent
-"XTS6ML8aX5VuMwrGTypcUCQUw1Xeo2AxudDmKUWc9KAb3hqoFRZQc"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test2.testaccount1.parent:XTS5muxe9bjq7GCmxwMGdXCPhtX6XagLmAq5EDCbLWbpPjk6XLxbn
+default (unlocked) >>> wallet_account_create unregaccount
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:unregaccount:XTS6ML8aX5VuMwrGTypcUCQUw1Xeo2AxudDmKUWc9KAb3hqoFRZQc
 default (unlocked) >>> wallet_account_create accwithoutregparent.unregaccount
-"XTS85bkFJvGccokScekeaQnQYSnLHSFuKvLWNfxsTLratubbroPh9"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:accwithoutregparent.unregaccount:XTS85bkFJvGccokScekeaQnQYSnLHSFuKvLWNfxsTLratubbroPh9
 default (unlocked) >>> debug_enable_output false
->>> wallet_account_register testaccount1.parent delegate0 null 100
->>> debug_wait_block_interval 1
->>> wallet_account_register testaccount2.parent delegate0 null 100
->>> debug_wait_block_interval 1
->>> wallet_account_register testaccount3.parent delegate0 null 100
->>> debug_wait_block_interval 1
->>> wallet_account_register test1.testaccount1.parent delegate0 null 100
->>> debug_wait_block_interval 1
->>> wallet_account_register test2.testaccount1.parent delegate0 null 100
->>> debug_wait_block_interval 1
->>> wallet_account_register accwithoutregparent.unregaccount delegate0 null 100
->>> debug_wait_block_interval 1
+>>> wallet_account_register parent delegate0
+>>> debug_advance_time 1 blocks
+>>> debug_wait 2
 >>> debug_enable_output true
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> blockchain_get_account parent
+Name: parent
+Registered: [redacted]
+Last Updated: [redacted]
+Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Active Key History:
+- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+Not a delegate.
+default (unlocked) >>> debug_enable_output false
+>>> wallet_account_register testaccount1.parent delegate0
+>>> wallet_account_register testaccount2.parent delegate0
+>>> wallet_account_register testaccount3.parent delegate0
+>>> wallet_account_register accwithoutregparent.unregaccount delegate0
+>>> debug_advance_time 1 blocks
+>>> debug_wait 2
+>>> debug_enable_output true
 OK
 default (unlocked) >>> blockchain_get_account testaccount1.parent
 Name: testaccount1.parent
 Registered: [redacted]
 Last Updated: [redacted]
+Owner Key: XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b
+Active Key History:
+- XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b, last used [redacted]
+Not a delegate.
+default (unlocked) >>> blockchain_get_account testaccount2.parent
+Name: testaccount2.parent
+Registered: [redacted]
+Last Updated: [redacted]
 Owner Key: XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM
 Active Key History:
 - XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-103   testaccount1.parent             0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
-default (unlocked) >>> blockchain_get_account testaccount2.parent
-Name: testaccount2.parent
+Not a delegate.
+default (unlocked) >>> blockchain_get_account testaccount3.parent
+Name: testaccount3.parent
 Registered: [redacted]
 Last Updated: [redacted]
 Owner Key: XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg
 Active Key History:
 - XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-104   testaccount2.parent             0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
-default (unlocked) >>> blockchain_get_account testaccount3.parent
-Name: testaccount3.parent
+Not a delegate.
+default (unlocked) >>> blockchain_get_account test1.testaccount1.parent
+No account found.
+default (unlocked) >>> blockchain_get_account test2.testaccount1.parent
+No account found.
+default (unlocked) >>> blockchain_get_account unregaccount
+No account found.
+default (unlocked) >>> blockchain_get_account accwithoutregparent.unregaccount
+No account found.
+default (unlocked) >>> debug_enable_output false
+>>> wallet_account_register test1.testaccount1.parent delegate0
+>>> wallet_account_register test2.testaccount1.parent delegate0
+>>> wallet_account_register accwithoutregparent.unregaccount delegate0
+>>> debug_advance_time 1 blocks
+>>> debug_wait 2
+>>> debug_enable_output true
+OK
+default (unlocked) >>> blockchain_get_account test1.testaccount1.parent
+Name: test1.testaccount1.parent
 Registered: [redacted]
 Last Updated: [redacted]
 Owner Key: XTS6gMFVtK34mYn7T7iGCWZJVT2Q4r7Vr2Tb8GHTnBrpgTBa9U87m
 Active Key History:
 - XTS6gMFVtK34mYn7T7iGCWZJVT2Q4r7Vr2Tb8GHTnBrpgTBa9U87m, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-105   testaccount3.parent             0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
-default (unlocked) >>> blockchain_get_account test1.testaccount1.parent
-Name: test1.testaccount1.parent
+Not a delegate.
+default (unlocked) >>> blockchain_get_account test2.testaccount1.parent
+Name: test2.testaccount1.parent
 Registered: [redacted]
 Last Updated: [redacted]
 Owner Key: XTS5muxe9bjq7GCmxwMGdXCPhtX6XagLmAq5EDCbLWbpPjk6XLxbn
 Active Key History:
 - XTS5muxe9bjq7GCmxwMGdXCPhtX6XagLmAq5EDCbLWbpPjk6XLxbn, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-106   test1.testaccount1.parent       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
-default (unlocked) >>> blockchain_get_account test2.testaccount1.parent
-Name: test2.testaccount1.parent
-Registered: [redacted]
-Last Updated: [redacted]
-Owner Key: XTS6ML8aX5VuMwrGTypcUCQUw1Xeo2AxudDmKUWc9KAb3hqoFRZQc
-Active Key History:
-- XTS6ML8aX5VuMwrGTypcUCQUw1Xeo2AxudDmKUWc9KAb3hqoFRZQc, last used [redacted]
-
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-107   test2.testaccount1.parent       0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
-
+Not a delegate.
 default (unlocked) >>> blockchain_get_account unregaccount
 No account found.
 default (unlocked) >>> blockchain_get_account accwithoutregparent.unregaccount

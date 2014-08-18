@@ -56,10 +56,17 @@ string pretty_age( const time_point_sec& timestamp, bool from_now, const string&
 
 string pretty_percent( double part, double whole, int precision )
 {
-    FC_ASSERT( part >= 0 );
-    FC_ASSERT( whole >= 0 );
-    FC_ASSERT( precision >= 0 );
-    FC_ASSERT( part <= whole );
+    try
+    {
+        FC_ASSERT( part >= 0 );
+        FC_ASSERT( whole >= 0 );
+        FC_ASSERT( precision >= 0 );
+        FC_ASSERT( part <= whole );
+    }
+    catch( ... )
+    {
+        return "? %";
+    }
     if( whole <= 0 ) return "N/A";
     const auto percent = 100 * part / whole;
     std::stringstream ss;
@@ -175,8 +182,8 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     const auto inactivity_fee = info["inactivity_fee_apr"].as<share_type>();
     info["inactivity_fee_apr"] = client->get_chain()->to_pretty_asset( asset( inactivity_fee ) );
 
-    const auto priority_fee = info["priority_fee"].as<share_type>();
-    info["priority_fee"] = client->get_chain()->to_pretty_asset( asset( priority_fee ) );
+    const auto relay_fee = info["relay_fee"].as<share_type>();
+    info["relay_fee"] = client->get_chain()->to_pretty_asset( asset( relay_fee ) );
 
     const auto delegate_reg_fee = info["delegate_reg_fee"].as<share_type>();
     info["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
@@ -216,10 +223,10 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
         info["scan_progress"] = pretty_percent( scan_progress, 1 );
     }
 
-    if( !info["priority_fee"].is_null() )
+    if( !info["transaction_fee"].is_null() )
     {
-        const auto priority_fee = info["priority_fee"].as<asset>();
-        info["priority_fee"] = client->get_chain()->to_pretty_asset( priority_fee );
+        const auto transaction_fee = info["transaction_fee"].as<asset>();
+        info["transaction_fee"] = client->get_chain()->to_pretty_asset( transaction_fee );
     }
 
     out << fc::json::to_pretty_string( info ) << "\n";
@@ -404,8 +411,6 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     const auto line_size = !is_filtered ? 166 : 190;
     out << pretty_line( !any_group ? line_size : line_size + 2 ) << "\n";
 
-    const auto errors = client->get_wallet()->get_pending_transaction_errors();
-
     auto group = true;
     for( const auto& transaction : transactions )
     {
@@ -431,9 +436,9 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 {
                     out << transaction.block_num;
                 }
-                else if( errors.count( transaction.trx_id ) > 0 )
+                else if( transaction.error.valid() )
                 {
-                    auto name = string( errors.at( transaction.trx_id ).name() );
+                    auto name = string( transaction.error->name() );
                     name = name.substr( 0, name.find( "_" ) );
                     boost::to_upper( name );
                     out << name.substr(0, 9 );

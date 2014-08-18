@@ -20,14 +20,14 @@ namespace bts { namespace blockchain {
   {
      FC_ASSERT( asset_id == o.asset_id );
 
-     auto old = *this;
-     amount += o.amount;
-
-     if( amount < old.amount ) 
+     if (((o.amount > 0) && (amount > (INT64_MAX - o.amount))) ||
+         ((o.amount < 0) && (amount < (INT64_MIN - o.amount))))
      {
-       FC_THROW_EXCEPTION( addition_overflow, "asset addition overflowed  ${a} + ${b} = ${c}", 
-                            ("a", old)("b",o)("c",*this) );
+       FC_THROW_EXCEPTION( addition_overflow, "asset addition overflow  ${a} + ${b}",
+                            ("a", *this)("b",o) );
      }
+
+     amount += o.amount;
      return *this;
   }
 
@@ -42,13 +42,15 @@ namespace bts { namespace blockchain {
   asset& asset::operator -= ( const asset& o )
   {
      FC_ASSERT( asset_id == o.asset_id );
-     auto old = *this;;
-     amount -= o.amount;
-     if( amount > old.amount ) 
+
+     if ((o.amount > 0 && amount < INT64_MIN + o.amount) ||
+         (o.amount < 0 && amount > INT64_MAX + o.amount))
      {
-        FC_THROW_EXCEPTION( addition_underthrow, "asset addition underflow  ${a} - ${b} = ${c}", 
-                            ("a", old)("b",o)("c",*this) );
+        FC_THROW_EXCEPTION( subtraction_overflow, "asset subtraction underflow  ${a} - ${b}",
+                            ("a", *this)("b",o) );
      }
+
+     amount -= o.amount;
      return *this;
   }
 
@@ -166,7 +168,7 @@ namespace bts { namespace blockchain {
         price p;
         auto l = a; auto r = b;
         if( l.asset_id < r.asset_id ) { std::swap(l,r); }
-        ilog( "${a} / ${b}", ("a",l)("b",r) );
+        //ilog( "${a} / ${b}", ("a",l)("b",r) );
 
         if( r.amount == 0 )
            FC_CAPTURE_AND_THROW( asset_divide_by_zero, (r) );
@@ -211,7 +213,7 @@ namespace bts { namespace blockchain {
             rtn.amount = amnt.to_int64();
             rtn.asset_id = p.quote_asset_id;
 
-            ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",rtn) );
+            //ilog( "${a} * ${p} => ${rtn}", ("a", a)("p",p )("rtn",rtn) );
             return rtn;
         }
         else if( a.asset_id == p.quote_asset_id )

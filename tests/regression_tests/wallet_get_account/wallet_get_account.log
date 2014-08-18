@@ -1,5 +1,8 @@
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
+default (unlocked) >>> wallet_account_create testaccount
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:testaccount:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> help wallet_get_account
 Usage:
 wallet_get_account <account_name>                                                                     Get the account record for a given name
@@ -10,132 +13,6 @@ Parameters:
 
 Returns:
   wallet_account_record
-default (unlocked) >>> wallet_account_create testaccount
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
-default (unlocked) >>> wallet_get_account delegate0
-{
-  "index": 7,
-  "id": 1,
-  "name": "delegate0",
-  "public_data": null,
-  "owner_key": "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z",
-  "active_key_history": [[
-      "20140620T144027",
-      "XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z"
-    ]
-  ],
-  "registration_date": "20140620T144027",
-  "last_update": "20140620T144027",
-  "delegate_info": {
-    "votes_for": 0,
-    "blocks_produced": 0,
-    "blocks_missed": 0,
-    "pay_rate": 100,
-    "pay_balance": 0,
-    "next_secret_hash": "0000000000000000000000000000000000000000",
-    "last_block_num_produced": 0
-  },
-  "meta_data": null,
-  "account_address": "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF",
-  "private_data": null,
-  "is_my_account": true,
-  "approved": 0,
-  "is_favorite": false,
-  "block_production_enabled": true
-}
-default (unlocked) >>> wallet_get_account delegate1
-{
-  "index": 9,
-  "id": 2,
-  "name": "delegate1",
-  "public_data": null,
-  "owner_key": "XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54",
-  "active_key_history": [[
-      "20140620T144027",
-      "XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54"
-    ]
-  ],
-  "registration_date": "20140620T144027",
-  "last_update": "20140620T144027",
-  "delegate_info": {
-    "votes_for": 0,
-    "blocks_produced": 0,
-    "blocks_missed": 0,
-    "pay_rate": 100,
-    "pay_balance": 0,
-    "next_secret_hash": "0000000000000000000000000000000000000000",
-    "last_block_num_produced": 0
-  },
-  "meta_data": null,
-  "account_address": "XTSG1WQZ6JPbDfsZB72btAPZ37UjpxW8wU6D",
-  "private_data": null,
-  "is_my_account": true,
-  "approved": 0,
-  "is_favorite": false,
-  "block_production_enabled": true
-}
-default (unlocked) >>> wallet_get_account delegate2
-{
-  "index": 11,
-  "id": 3,
-  "name": "delegate2",
-  "public_data": null,
-  "owner_key": "XTS6dvBki8EnzCY796an4p2DTwA5bqyrY2xHH9nm9rQVALGgFdn33",
-  "active_key_history": [[
-      "20140620T144027",
-      "XTS6dvBki8EnzCY796an4p2DTwA5bqyrY2xHH9nm9rQVALGgFdn33"
-    ]
-  ],
-  "registration_date": "20140620T144027",
-  "last_update": "20140620T144027",
-  "delegate_info": {
-    "votes_for": 0,
-    "blocks_produced": 0,
-    "blocks_missed": 0,
-    "pay_rate": 100,
-    "pay_balance": 0,
-    "next_secret_hash": "0000000000000000000000000000000000000000",
-    "last_block_num_produced": 0
-  },
-  "meta_data": null,
-  "account_address": "XTSHxAqiK4EwK34gF5yZDeJKYTFh1kdHbfiY",
-  "private_data": null,
-  "is_my_account": true,
-  "approved": 0,
-  "is_favorite": false,
-  "block_production_enabled": true
-}
-default (unlocked) >>> wallet_get_account delegate3
-{
-  "index": 13,
-  "id": 4,
-  "name": "delegate3",
-  "public_data": null,
-  "owner_key": "XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU",
-  "active_key_history": [[
-      "20140620T144027",
-      "XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU"
-    ]
-  ],
-  "registration_date": "20140620T144027",
-  "last_update": "20140620T144027",
-  "delegate_info": {
-    "votes_for": 0,
-    "blocks_produced": 0,
-    "blocks_missed": 0,
-    "pay_rate": 100,
-    "pay_balance": 0,
-    "next_secret_hash": "0000000000000000000000000000000000000000",
-    "last_block_num_produced": 0
-  },
-  "meta_data": null,
-  "account_address": "XTS6Q8ZUzbg3uon7GSWdTS6Rh87ybt37q85M",
-  "private_data": null,
-  "is_my_account": true,
-  "approved": 0,
-  "is_favorite": false,
-  "block_production_enabled": true
-}
 default (unlocked) >>> wallet_get_account testaccount
 {
   "index": 413,

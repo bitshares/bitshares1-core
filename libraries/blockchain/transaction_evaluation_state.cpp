@@ -58,7 +58,7 @@ namespace bts { namespace blockchain {
    {
       auto asset_rec = _current_state->get_asset_record( asset_id_type() );
 
-      for( auto del_vote : net_delegate_votes )
+      for( const auto& del_vote : net_delegate_votes )
       {
          auto del_rec = _current_state->get_account_record( del_vote.first );
          FC_ASSERT( !!del_rec );
@@ -70,7 +70,6 @@ namespace bts { namespace blockchain {
 
    void transaction_evaluation_state::validate_required_fee()
    { try {
-      share_type required_fee = _current_state->calculate_data_fee( trx.data_size() );
       asset xts_fees;
       auto fee_itr = balance.find( 0 );
       if( fee_itr != balance.end() ) xts_fees += asset( fee_itr->second, 0);
@@ -79,7 +78,7 @@ namespace bts { namespace blockchain {
 
       if( required_fees > xts_fees )
       {
-         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fee)(alt_fees_paid)(xts_fees)  );
+         FC_CAPTURE_AND_THROW( insufficient_fee, (required_fees)(alt_fees_paid)(xts_fees)  )
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -88,18 +87,14 @@ namespace bts { namespace blockchain {
     */
    void transaction_evaluation_state::post_evaluate()
    { try {
-      required_fees += asset(_current_state->calculate_data_fee(fc::raw::pack_size(trx)),0);
-
+      // Should this be here? We may not have fees in XTS now...
       balance[0]; // make sure we have something for this.
-      for( auto fee : balance )
+      for( const auto& fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
-         if( fee.second > 0 )
-         {
-            if( fee.first == 0  )
-               continue;
-            // check to see if there are any open bids to buy the asset
-         }
+         // if the fee is already in XTS or the fee balance is zero, move along...
+         if( fee.first == 0 || fee.second == 0 )
+           continue;
 
          // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
          // is an amount of USD which can be converted to price*USD XTS provided we
@@ -112,8 +107,7 @@ namespace bts { namespace blockchain {
          }
       }
 
-
-      for( auto fee : balance )
+      for( const auto& fee : balance )
       {
          if( fee.second < 0 ) FC_CAPTURE_AND_THROW( negative_fee, (fee) );
          if( fee.second > 0 ) // if a fee was paid...
@@ -129,8 +123,7 @@ namespace bts { namespace blockchain {
          }
       }
 
-
-      for( auto required_deposit : required_deposits )
+      for( const auto& required_deposit : required_deposits )
       {
          auto provided_itr = provided_deposits.find( required_deposit.first );
          
@@ -153,9 +146,16 @@ namespace bts { namespace blockchain {
         if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
+        /**
+         * Removing transaction size limit from chain validation rules.
+         *
+         * Note: this is to give delegates maximum flexibility without having to
+         * introduce hard forks to support larger transaction sizes.
+         *
         auto trx_size = fc::raw::pack_size(trx_arg);
         if(  trx_size > BTS_BLOCKCHAIN_MAX_TRANSACTION_SIZE )
            FC_CAPTURE_AND_THROW( oversized_transaction, (trx_size ) );
+        */
        
         auto trx_id = trx_arg.id();
 
@@ -166,7 +166,7 @@ namespace bts { namespace blockchain {
         if( !_skip_signature_check )
         {
            auto digest = trx_arg.digest( _chain_id );
-           for( auto sig : trx.signatures )
+           for( const auto& sig : trx.signatures )
            {
               auto key = fc::ecc::public_key( sig, digest ).serialize();
               signed_keys.insert( address(key) );
@@ -176,7 +176,7 @@ namespace bts { namespace blockchain {
               signed_keys.insert( address(pts_address(key,true,0) )   );
            }
         }
-        for( auto op : trx.operations )
+        for( const auto& op : trx.operations )
         {
            evaluate_operation( op );
         }
@@ -202,7 +202,7 @@ namespace bts { namespace blockchain {
       {
          auto slate = _current_state->get_delegate_slate( slate_id );
          if( !slate ) FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
-         for( auto delegate_id : slate->supported_delegates )
+         for( const auto& delegate_id : slate->supported_delegates )
          {
             if( BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES && delegate_id < signed_int(0) ) 
                net_delegate_votes[abs(delegate_id)].votes_for -= amount;

@@ -29,7 +29,19 @@ bool asset_record::is_null()const
 /** the asset is issued by the market and not by any user */
 bool asset_record::is_market_issued()const
 {
-    return issuer_account_id == market_issued_asset;
+   switch( issuer_account_id )
+   {
+      case market_issued_asset:
+      case market_feed_issued_asset:
+         return true;
+      default:
+         return false;
+   }
+}
+
+bool asset_record::uses_market_feed()const
+{
+  return issuer_account_id == market_feed_issued_asset;
 }
 
 asset_record asset_record::make_null()const

@@ -1,0 +1,63 @@
+default (unlocked) >>> debug_wait_for_block_by_number 3
+OK
+default (unlocked) >>> wallet_import_private_key "5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L" delegate4 true true
+"delegate4"
+default (unlocked) >>> wallet_import_private_key "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR" delegate5 true true
+"delegate5"
+default (unlocked) >>> wallet_list_my_accounts
+NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
+delegate4 *                        XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           [redacted]            NO             0              NO                       
+delegate5 *                        XTS5SZFvjmRrxgaR9iR4Gw1s98uaXzBrgRyEeVfVZpY4NrxqkrQac           [redacted]            NO             0              NO                       
+default (unlocked) >>> debug_wait_for_block_by_number 5
+OK
+default (unlocked) >>> history
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.50000 XTS         [redacted]
+default (unlocked) >>> wallet_account_balance
+ACCOUNT                         BALANCE                     
+============================================================
+delegate4                       30.00000 XTS                
+default (unlocked) >>> wallet_delegate_set_block_production ALL true
+OK
+default (unlocked) >>> wallet_set_transaction_scanning true
+true
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 6
+OK
+default (unlocked) >>> transfer 10 XTS delegate4 delegate5
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate4           delegate5           10.00000 XTS                                                        0.50000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 7
+OK
+default (unlocked) >>> debug_wait 1
+OK
+default (unlocked) >>> balance
+ACCOUNT                         BALANCE                     
+============================================================
+delegate4                       19.50000 XTS                
+delegate5                       10.00000 XTS                
+default (unlocked) >>> debug_wait_for_block_by_number 10
+OK
+default (unlocked) >>> transfer 1 XTS delegate4 delegate10 "should fail"
+Command failed with exception: unknown account (20006)
+Unknown paying account name!
+
+
+
+
+default (unlocked) >>> debug_wait_for_block_by_number 11
+OK
+default (unlocked) >>> debug_wait 1
+OK
+default (unlocked) >>> history
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.50000 XTS         [redacted]
+[redacted]          7         delegate4           delegate5           10.00000 XTS                                                        0.50000 XTS         [redacted]
+[redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4                            0.50000 XTS         [redacted]
+default (unlocked) >>> quit

@@ -450,6 +450,10 @@ namespace bts { namespace blockchain {
       shorts[key] = rec;
       _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
    }
+   void pending_chain_state::set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) 
+   {
+      _dirty_markets[quote_id] = base_id;
+   }
 
    void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& rec ) 
    {
@@ -512,5 +516,10 @@ namespace bts { namespace blockchain {
 
       chain_interface_ptr prev_state = _prev_state.lock();
       return prev_state->get_feed(i);
+   }
+   oprice    pending_chain_state::get_median_delegate_price( asset_id_type asset_id )const
+   {
+      chain_interface_ptr prev_state = _prev_state.lock();
+      return prev_state->get_median_delegate_price( asset_id );
    }
 } } // bts::blockchain

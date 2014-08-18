@@ -1,9 +1,3 @@
-default (unlocked) >>> debug_wait_for_block_by_number 1 absolute
-OK
-default (unlocked) >>> debug_wait 2
-OK
-default (unlocked) >>> debug_filter_output_for_tests true
-OK
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -13,9 +7,12 @@ OK
 default (unlocked) >>> wallet_transfer 150 XTS delegate0 account-for-client1 "send this back"
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           account-for-client1 150.00000 XTS           send this back                              0.10000 XTS         [redacted]
+[redacted]          PENDING   delegate0           account-for-client1 150.00000 XTS           send this back                              0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_account_create test-account
-"XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+
+
+Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
+xts:test-account:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_register test-account delegate0
 {
   "expiration": "20140620T164030",
@@ -34,22 +31,24 @@ default (unlocked) >>> wallet_account_register test-account delegate0
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960c4d5cf606a73366be313a4a390189fee977e0a3d97532ec165dfa3eacd9536e1"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f067496065ca1cb6aac6dd0c1b29d318239268bc5231d9fdb65ca3a555c0a4c7d5acdcea"
   ]
 }
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,801,829.99801 XTS        
+delegate0                       19,801,829.19801 XTS        
 default (unlocked) >>> debug_advance_time 1 blocks
-OK
-default (unlocked) >>> debug_wait_for_block_by_number 3 absolute
 OK
 default (unlocked) >>> debug_wait 2
 OK
