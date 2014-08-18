@@ -13,7 +13,7 @@ OK
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_account_balance
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -29,7 +29,7 @@ OK
 default (unlocked) >>> transfer 10 XTS delegate4 delegate5
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate4           delegate5           10.00000 XTS                                                        0.10000 XTS         [redacted]
+[redacted]          PENDING   delegate4           delegate5           10.00000 XTS                                                        0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 7
@@ -39,7 +39,7 @@ OK
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate4                       19.90000 XTS                
+delegate4                       19.50000 XTS                
 delegate5                       10.00000 XTS                
 default (unlocked) >>> debug_wait_for_block_by_number 10
 OK
@@ -57,7 +57,7 @@ OK
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.10000 XTS         [redacted]
-[redacted]          7         delegate4           delegate5           10.00000 XTS                                                        0.10000 XTS         [redacted]
-[redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4                            0.10000 XTS         [redacted]
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.50000 XTS         [redacted]
+[redacted]          7         delegate4           delegate5           10.00000 XTS                                                        0.50000 XTS         [redacted]
+[redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4                            0.50000 XTS         [redacted]
 default (unlocked) >>> quit

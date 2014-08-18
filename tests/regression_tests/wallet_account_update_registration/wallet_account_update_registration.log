@@ -6,7 +6,7 @@ xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.10000 XTS         [redacted]
+[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -35,13 +35,13 @@ default (unlocked) >>> wallet_account_register test test
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d99da522fbea68cb77a7dfce13043b0156a3586629df36f9577ca0535498637812"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9908d44a1072a96019509eb417cc6310cf96842392d1e121af9399b7aaebce27b"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -64,7 +64,7 @@ default (unlocked) >>> wallet_account_update_registration test test null 100
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     },{
@@ -78,8 +78,8 @@ default (unlocked) >>> wallet_account_update_registration test test null 100
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22b48ddd2233ba3b8ec54d08bf000f355007895111020a19469cc878685fd3fa3b",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bf77401484806e4f52f1d135b87b477f0f2d586f1dd825bdb110c1849b274797b"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d229026e377bca18e8af5cfc1b88a2a4fc3746583ff543fe7342a428ed1a5eacb14",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b08454c7f337ba9f9e33f0c9e991d56205039564fec8550511fbf55a43b3bc9c0"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks

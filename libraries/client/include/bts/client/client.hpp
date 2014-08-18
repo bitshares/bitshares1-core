@@ -63,12 +63,12 @@ namespace bts { namespace client {
 
     struct config
     {
-       config( ) : 
+       config( ) :
           default_peers(vector<string>{
-                  "178.62.50.61:1776", 
-                  "178.62.50.61:1777", 
-                  "178.62.50.61:1778", 
-                  "80.240.133.79:1776", 
+                  "178.62.50.61:1776",
+                  "178.62.50.61:1777",
+                  "178.62.50.61:1778",
+                  "80.240.133.79:1776",
                   "80.240.133.79:1777",
                   "5.101.106.138:1777",
                   "5.101.106.138:1778",
@@ -84,7 +84,7 @@ namespace bts { namespace client {
           delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
           default_delegate_peers( vector<string>({"178.62.50.61:9988"}) )
           {
-             logging = fc::logging_config::default_config();
+              logging = fc::logging_config::default_config();
           }
 
           rpc_server_config   rpc;
@@ -106,7 +106,7 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client : public bts::rpc_stubs::common_api_client, 
+    class client : public bts::rpc_stubs::common_api_client,
                    public std::enable_shared_from_this<client>
     {
        public:
@@ -120,11 +120,12 @@ namespace bts { namespace client {
          void start_networking(std::function<void()> network_started_callback = std::function<void()>());
          void configure_from_command_line(int argc, char** argv);
          fc::future<void> start();
-         void open( const path& data_dir, 
-                    optional<fc::path> genesis_file_path = optional<fc::path>());
+         void open(const path& data_dir,
+                   optional<fc::path> genesis_file_path = optional<fc::path>(),
+                   std::function<void(uint32_t)> reindex_status_callback = std::function<void(uint32_t)>());
 
          void init_cli();
-         void set_daemon_mode(bool daemon_mode); 
+         void set_daemon_mode(bool daemon_mode);
 
          void add_node( const string& ep );
 
@@ -182,7 +183,7 @@ extern const std::string BTS_MESSAGE_MAGIC;
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
-FC_REFLECT( bts::client::config, 
+FC_REFLECT( bts::client::config,
             (rpc)(default_peers)(chain_servers)(chain_server)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers) )

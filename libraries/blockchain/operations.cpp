@@ -1,34 +1,42 @@
-#include <bts/blockchain/operations.hpp>
-//#include <bts/blockchain/fire_operation.hpp>
-#include <bts/blockchain/operation_factory.hpp>
-#include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
-#include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
+#include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
-#include <fc/reflect/variant.hpp>
+#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/operation_factory.hpp>
+#include <bts/blockchain/operations.hpp>
+#include <bts/blockchain/proposal_operations.hpp>
+
 #include <fc/io/raw_variant.hpp>
+#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace blockchain {
-   const operation_type_enum define_delegate_slate_operation::type = define_delegate_slate_op_type;
-   const operation_type_enum withdraw_operation::type          = withdraw_op_type;
-   const operation_type_enum deposit_operation::type           = deposit_op_type;
-   const operation_type_enum create_asset_operation::type      = create_asset_op_type;
-   const operation_type_enum update_asset_operation::type      = update_asset_op_type;
-   const operation_type_enum issue_asset_operation::type       = issue_asset_op_type;
-   const operation_type_enum register_account_operation::type  = register_account_op_type;
-   const operation_type_enum update_account_operation::type    = update_account_op_type;
-   const operation_type_enum withdraw_pay_operation::type      = withdraw_pay_op_type;
-   const operation_type_enum submit_proposal_operation::type   = submit_proposal_op_type;
-   const operation_type_enum vote_proposal_operation::type     = vote_proposal_op_type;
-   const operation_type_enum bid_operation::type               = bid_op_type;
-   const operation_type_enum ask_operation::type               = ask_op_type;
-   const operation_type_enum short_operation::type             = short_op_type;
-   const operation_type_enum cover_operation::type             = cover_op_type;
-   const operation_type_enum add_collateral_operation::type    = add_collateral_op_type;
-   const operation_type_enum remove_collateral_operation::type = remove_collateral_op_type;
-   const operation_type_enum update_feed_operation::type       = update_feed_op_type;
+   const operation_type_enum withdraw_operation::type               = withdraw_op_type;
+   const operation_type_enum deposit_operation::type                = deposit_op_type;
+
+   const operation_type_enum register_account_operation::type       = register_account_op_type;
+   const operation_type_enum update_account_operation::type         = update_account_op_type;
+   const operation_type_enum withdraw_pay_operation::type           = withdraw_pay_op_type;
+
+   const operation_type_enum create_asset_operation::type           = create_asset_op_type;
+   const operation_type_enum update_asset_operation::type           = update_asset_op_type;
+   const operation_type_enum issue_asset_operation::type            = issue_asset_op_type;
+
+   //const operation_type_enum fire_delegate_operation::type          = fire_delegate_op_type;
+
+   const operation_type_enum submit_proposal_operation::type        = submit_proposal_op_type;
+   const operation_type_enum vote_proposal_operation::type          = vote_proposal_op_type;
+
+   const operation_type_enum bid_operation::type                    = bid_op_type;
+   const operation_type_enum ask_operation::type                    = ask_op_type;
+   const operation_type_enum short_operation::type                  = short_op_type;
+   const operation_type_enum cover_operation::type                  = cover_op_type;
+   const operation_type_enum add_collateral_operation::type         = add_collateral_op_type;
+   const operation_type_enum remove_collateral_operation::type      = remove_collateral_op_type;
+
+   const operation_type_enum define_delegate_slate_operation::type  = define_delegate_slate_op_type;
+
+   const operation_type_enum update_feed_operation::type            = update_feed_op_type;
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();

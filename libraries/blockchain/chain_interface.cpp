@@ -35,11 +35,6 @@ namespace bts{ namespace blockchain {
       return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
    }
    
-   share_type chain_interface::calculate_data_fee(size_t bytes) const
-   {
-      return (get_fee_rate() * bytes)/1000;
-   }
-
    bool chain_interface::is_valid_account_name( const std::string& str )const
    {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
@@ -200,15 +195,6 @@ namespace bts{ namespace blockchain {
    {
       set_property( accumulated_fees, variant(fees) );
    }
-   share_type  chain_interface::get_fee_rate()const
-   {
-      return get_property( current_fee_rate ).as_int64();
-   }
-
-   void  chain_interface::set_fee_rate( share_type fees )
-   {
-      set_property( current_fee_rate, variant(fees) );
-   }
 
    map<asset_id_type, asset_id_type>  chain_interface::get_dirty_markets()const
    {
@@ -219,6 +205,7 @@ namespace bts{ namespace blockchain {
          return map<asset_id_type,asset_id_type>();
       }
    }
+
    void  chain_interface::set_dirty_markets( const map<asset_id_type,asset_id_type>& d )
    {
       set_property( dirty_markets, fc::variant(d) );

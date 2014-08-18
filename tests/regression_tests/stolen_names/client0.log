@@ -21,13 +21,13 @@ default (unlocked) >>> wallet_account_register thief delegate0
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f63a4b789a9ffd271a44a05f482aaa272d8301efceb86449dc69120942a3491ede"
+    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6ff688caad972a7c41933e0ce98dc27e1aade6a7ff2f886f9d81783bdbaae1400"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
