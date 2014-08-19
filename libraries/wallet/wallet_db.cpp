@@ -720,6 +720,7 @@ namespace bts { namespace wallet {
       }
       catch( const fc::key_not_found_exception& )
       {
+          wlog("wallet_db tried to remove nonexistent index: ${i}", ("i",index) );
       }
    }
 
