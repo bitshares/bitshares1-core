@@ -321,70 +321,6 @@ class market_engine
              _pending_state->store_asset_record( *quote_asset );
              _pending_state->store_asset_record( *base_asset );
 
-             if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
-             {
-               market_history_key key(quote_id, base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-               market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
-               auto asset_rec = _db_impl.self->get_asset_record(quote_id);
-               FC_ASSERT(asset_rec, "There is trading volume on an asset that doesn't exist??");
-               if(market_stat)
-                 new_record.recent_average_price = market_stat->avg_price_24h;
-
-               //LevelDB iterators are dumb and don't support proper past-the-end semantics.
-               auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
-               if( !last_key_itr.valid() )
-                 last_key_itr = _db_impl._market_history_db.last();
-               else
-                 --last_key_itr;
-
-               key.timestamp = timestamp;
-
-               //Unless the previous record for this market is the same as ours...
-               if( (!(last_key_itr.valid()
-                   && last_key_itr.key().quote_id == quote_id
-                   && last_key_itr.key().base_id == base_id
-                   && last_key_itr.key().granularity == market_history_key::each_block
-                   && last_key_itr.value() == new_record)) )
-               {
-                 //...add a new entry to the history table.
-                 _pending_state->market_history[key] = new_record;
-               }
-
-               fc::time_point_sec start_of_this_hour = timestamp - (timestamp.sec_since_epoch() % (60*60));
-               market_history_key old_key(quote_id, base_id, market_history_key::each_hour, start_of_this_hour);
-               if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
-               {
-                 auto old_record = *opt;
-                 old_record.volume += new_record.volume;
-                 if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
-                 {
-                   old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
-                   old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                   old_record.recent_average_price = new_record.recent_average_price;
-                   _pending_state->market_history[old_key] = old_record;
-                 }
-               }
-               else
-                 _pending_state->market_history[old_key] = new_record;
-
-               fc::time_point_sec start_of_this_day = timestamp - (timestamp.sec_since_epoch() % (60*60*24));
-               old_key = market_history_key(quote_id, base_id, market_history_key::each_day, start_of_this_day);
-               if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
-               {
-                 auto old_record = *opt;
-                 old_record.volume += new_record.volume;
-                 if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
-                 {
-                   old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
-                   old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                   old_record.recent_average_price = new_record.recent_average_price;
-                   _pending_state->market_history[old_key] = old_record;
-                 }
-               }
-               else
-                 _pending_state->market_history[old_key] = new_record;
-             }
-
              market_stat->last_error.reset();
 
              if( _current_bid && _current_ask && order_did_execute )
@@ -419,6 +355,8 @@ class market_engine
                 }
              }
              _pending_state->store_market_status( *market_stat );
+
+             update_market_history( trading_volume, market_stat, timestamp );
 
              wlog( "done matching orders" );
              _pending_state->apply_changes();
@@ -739,6 +677,78 @@ class market_engine
          }
          return _current_ask.valid();
       } FC_CAPTURE_AND_RETHROW() }
+
+
+      /**
+       *  This method should not effect market execution or validation and
+       *  is for historical purposes only.
+       */
+      void update_market_history( const asset& trading_volume, const omarket_status& market_stat, const fc::time_point_sec& timestamp )
+      {
+             if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
+             {
+               market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
+               market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
+               auto asset_rec = _db_impl.self->get_asset_record(_quote_id);
+               FC_ASSERT(asset_rec, "There is trading volume on an asset that doesn't exist??");
+               if(market_stat)
+                 new_record.recent_average_price = market_stat->avg_price_24h;
+
+               //LevelDB iterators are dumb and don't support proper past-the-end semantics.
+               auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
+               if( !last_key_itr.valid() )
+                 last_key_itr = _db_impl._market_history_db.last();
+               else
+                 --last_key_itr;
+
+               key.timestamp = timestamp;
+
+               //Unless the previous record for this market is the same as ours...
+               if( (!(last_key_itr.valid()
+                   && last_key_itr.key().quote_id == _quote_id
+                   && last_key_itr.key().base_id == _base_id
+                   && last_key_itr.key().granularity == market_history_key::each_block
+                   && last_key_itr.value() == new_record)) )
+               {
+                 //...add a new entry to the history table.
+                 _pending_state->market_history[key] = new_record;
+               }
+
+               fc::time_point_sec start_of_this_hour = timestamp - (timestamp.sec_since_epoch() % (60*60));
+               market_history_key old_key(_quote_id, _base_id, market_history_key::each_hour, start_of_this_hour);
+               if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
+               {
+                 auto old_record = *opt;
+                 old_record.volume += new_record.volume;
+                 if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
+                 {
+                   old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
+                   old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                   old_record.recent_average_price = new_record.recent_average_price;
+                   _pending_state->market_history[old_key] = old_record;
+                 }
+               }
+               else
+                 _pending_state->market_history[old_key] = new_record;
+
+               fc::time_point_sec start_of_this_day = timestamp - (timestamp.sec_since_epoch() % (60*60*24));
+               old_key = market_history_key(_quote_id, _base_id, market_history_key::each_day, start_of_this_day);
+               if( auto opt = _db_impl._market_history_db.fetch_optional(old_key) )
+               {
+                 auto old_record = *opt;
+                 old_record.volume += new_record.volume;
+                 if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
+                 {
+                   old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
+                   old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
+                   old_record.recent_average_price = new_record.recent_average_price;
+                   _pending_state->market_history[old_key] = old_record;
+                 }
+               }
+               else
+                 _pending_state->market_history[old_key] = new_record;
+             }
+      }
 
       pending_chain_state_ptr     _pending_state;
       pending_chain_state_ptr     _prior_state;
