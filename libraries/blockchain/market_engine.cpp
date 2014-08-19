@@ -689,10 +689,9 @@ class market_engine
              {
                market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
                market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
-               auto asset_rec = _db_impl.self->get_asset_record(_quote_id);
-               FC_ASSERT(asset_rec, "There is trading volume on an asset that doesn't exist??");
-               if(market_stat)
-                 new_record.recent_average_price = market_stat->avg_price_24h;
+
+               FC_ASSERT( market_stat );
+               new_record.recent_average_price = market_stat->avg_price_24h;
 
                //LevelDB iterators are dumb and don't support proper past-the-end semantics.
                auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
