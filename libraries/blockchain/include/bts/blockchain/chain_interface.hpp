@@ -35,10 +35,9 @@ namespace bts { namespace blockchain {
        */
       confirmation_requirement = 6,
       database_version         = 7, // database version, to know when we need to upgrade
-      current_fee_rate         = 8, // database version, to know when we need to upgrade
-      accumulated_fees         = 9, // database version, to know when we need to upgrade
-      dirty_markets            = 10,
-      last_feed_id             = 11 // used for allocating new data feeds
+      accumulated_fees         = 8,
+      dirty_markets            = 9,
+      last_feed_id             = 10 // used for allocating new data feeds
    };
    typedef uint32_t chain_property_type;
 
@@ -79,17 +78,12 @@ namespace bts { namespace blockchain {
          share_type                         get_accumulated_fees()const;
          void                               set_accumulated_fees( share_type fees );
 
-         share_type                         get_fee_rate()const;
-         void                               set_fee_rate( share_type fees );
-
-         /** return the current fee rate in millishares */
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const             = 0;
          virtual void                       store_delegate_slate( slate_id_type id,
                                                                   const delegate_slate& slate )     = 0;
 
          virtual share_type                 get_delegate_registration_fee()const;
          virtual share_type                 get_asset_registration_fee()const;
-         virtual share_type                 calculate_data_fee(size_t bytes) const;
 
          virtual int64_t                    get_required_confirmations()const;
          virtual fc::variant                get_property( chain_property_enum property_id )const    = 0;
@@ -185,7 +179,6 @@ FC_REFLECT_ENUM( bts::blockchain::chain_property_enum,
                  (chain_id)
                  (confirmation_requirement)
                  (database_version)
-                 (current_fee_rate)
                  (accumulated_fees)
                  (dirty_markets)
                  (last_feed_id)

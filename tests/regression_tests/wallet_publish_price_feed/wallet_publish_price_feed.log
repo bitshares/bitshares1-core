@@ -6,7 +6,7 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     },{
@@ -23,8 +23,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
     }
   ],
   "signatures": [
-    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e067a4c81e7d9a5bf03480ac9cf60ab15d9f1f9db054c7be4e94e3226e55ad36f",
-    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c7841c10c0f72f696cfe8d55980ace721e7e6a8480d5a123e04e7439b62d8d815"
+    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8ec9bb67add33345b1aca42c0875db882615dfeb141448c980f7cdf6fc1e44786c",
+    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6cdb88f77fa54974af600bbe50780d93087af5f1ac831c482d9c9140d41169346f"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -64,14 +64,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9334c03d890bcc9341dfc55678a3a2c478b5ae24c493afa7279c7a5213e5bc4ee",
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749602ed7c5bf432afe37b0fed2c97706465c6b145e14f7ba9c926f730631e202280b"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d96d0cd6e9d62f2b75f1afa99ce13574307636c01955bd3f267432cf47853f0e2e",
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749606caa0dae3966c31393cfdccd006db3efa5646d48df5c63e88f39fe415e21857b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
@@ -95,14 +95,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS3V5xQc7Rgzs5SogiQWuVGq5wfK8EFrBoL",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2211fda5a26230e5791f587846deeada3c201a651d931c72e4f9b9c66658a1b58d",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b4ae6402f1ee765aadf2b99676877472a400261d75d46ffcfc474681c21cff2d6"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22533f3192aa6b5e8e793ed8e928332f265886c74c4c3bfcbbb21aad9639bee47b",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98ba9582c206d1ad18432862ba84b98bf889db54bb96577404ff3bde132875da254"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
@@ -126,14 +126,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSAaFwcyBGLmPChJgmp2mzZoHsXBi8CkYf5",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c0e4f4ae346febf54a036c73f8171a7940f4c82a16bffc08fdeaab47315dddeb40",
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9b8b5c64afe0544a84ce82947f734860715db432b6d05890db9c28aee8853538b"
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c007f8c94b1d79db57c2518ab9cba6d3227049eca16204dec8cb0e6e7694dd5d50",
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b99f221892261cc98594c6ef72d2cbab5c10e55a2576ac5fbb4ad76f2b0fe9cb0b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
@@ -164,14 +164,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS813o8XNCGxjSvE9zUKRvi1p5SiizkWyWs",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0028e9a22867436c24ebc9a0e1aca4f822e8b84da58a4d5f0eed5b99763b7d16fa",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e6670f3ad49388c338281c3002979696d24dfff6b78469d99e2df9d8970f09b6323"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0028fa16e9eda18c1c9e80fd897d9b86e4a4cbe96a59abf4e86b5a5c5344423000",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66d89dc9cb055f3e91b451d03eedb07cfc2c1dcaac8ce8e0f94930e47d91577cee"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
@@ -202,14 +202,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSCLchKcwkBbqVmgGAkQYwXZRVFhc8ukdSX",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c1baa7b5b8e4e9b9b3d092126d0562eced5b7a618bf29db614535d079ca26e419",
-    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907d646655d7fd1f10531c4d97a2d594b730ff3850c20607afba06f2d253a327e9e"
+    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c0e830975aa2eaa785867889fa6e7ccd275a11f1bb6d57dc18fdd7bfc57dabc20",
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907459412a44fe04bec5fdaf612d7517df672c662a71b52f0bed3dda739c9a36651"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
@@ -233,14 +233,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTSARFWU4ENn4FrB3bdHux3YZaqmz8pEZfx9",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a71b535fe655c6352318e4f2341164059d8e35d51e17aa4ba8b5654ae04fa65c0",
-    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f628d529320d0d2f56f88427e7b65bafbc26120c0e702daec07fd508c35f4ccf9"
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31ae8c8b137dd9da799bdba72fd341109f77fa5d23313f7b9d1aad801958782e45f",
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f2c598d48e206f177e3452ab29f8e3ca24935ca74d82f301e63c9aaed0584be30"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -253,7 +253,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
     "price": 2,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
@@ -262,7 +262,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
     "price": 0.20000000000000001,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate2
@@ -271,7 +271,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate2
     "price": 1,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate3
@@ -282,7 +282,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate4
     "price": 2.5,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate5
@@ -293,7 +293,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate6
     "price": 0.01,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
@@ -302,7 +302,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
     "price": 2,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
@@ -326,14 +326,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1f54e72a315d17c29cd01dacc9cae8a820b97886b13a3b4442c4cf45d4aede3e5f3c5e323e00b9d57d150ff23c1ae98456a6a3745ccfaf54c35196ea4e97c91b64",
-    "1fc630e99ecb62dc41eda3012b64c0ab0dd090651f41eaf6cb0965e3e46c80926a7a1c39c913ebc2f8765b2320a58dd9fb14cd817dac6fd0e3678512bff9ea49a6"
+    "1f54e72a315d17c29cd01dacc9cae8a820b97886b13a3b4442c4cf45d4aede3e5fe4f69fd9efc9c66308077cad36b22c02f722a57e34fa0f7a51400064ae75b925",
+    "1fc630e99ecb62dc41eda3012b64c0ab0dd090651f41eaf6cb0965e3e46c80926a1daeabab66984b9aca45afa7b0413a005b1c651cd42388c1c6cfb1a68f4eb206"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
@@ -357,14 +357,14 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
       "type": "withdraw_op_type",
       "data": {
         "balance_id": "XTS3V5xQc7Rgzs5SogiQWuVGq5wfK8EFrBoL",
-        "amount": 10000,
+        "amount": 50000,
         "claim_input_data": ""
       }
     }
   ],
   "signatures": [
-    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38eefd074bedec5f202a9f72cbcd2be1246ec86667949c9c9063336725befd81420",
-    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a767d15059043ddd79057f765398b3b47327598284802bd6b3da787d48e81015a6"
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38ed0caf725d7d098702ed3acbfd3afa6fbe3ff05b89329ed1c63d1207381557017",
+    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a7e578f012204fefffe2426e8a08b5ed107cc0932630aae52600020239f9e8c121"
   ]
 }
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
@@ -373,7 +373,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
     "price": 2,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
@@ -382,7 +382,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
     "price": 0.20000000000000001,
     "last_update": "20140620T144040",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -395,7 +395,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
     "price": 99999,
     "last_update": "20140620T144050",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
@@ -404,7 +404,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
     "price": 2.0000000000000002e-05,
     "last_update": "20140620T144050",
     "asset_symbol": "XMO",
-    "median_price": null
+    "median_price": 2
   }
 ]
 default (unlocked) >>> quit

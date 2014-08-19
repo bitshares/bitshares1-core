@@ -715,7 +715,13 @@ namespace bts { namespace wallet {
 
    void wallet_db::remove_item( int32_t index )
    {
-      my->_records.remove( index );
+      try
+      {
+          my->_records.remove( index );
+      }
+      catch( const fc::key_not_found_exception& )
+      {
+      }
    }
 
    bool wallet_db::validate_password( const fc::sha512& password )const
