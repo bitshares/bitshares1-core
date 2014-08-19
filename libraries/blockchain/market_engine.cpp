@@ -332,11 +332,15 @@ class market_engine
                 // limit the maximum movement rate of the price.
                 if( _current_bid->get_price() > min_cover_ask )
                    market_stat->avg_price_24h.ratio += _current_bid->get_price().ratio;
+                else if( _current_bid->get_price() < max_short_bid )
+                   market_stat->avg_price_24h.ratio += max_short_bid.ratio;
                 else
                    market_stat->avg_price_24h.ratio += min_cover_ask.ratio;
 
                 if( _current_ask->get_price() < max_short_bid )
                    market_stat->avg_price_24h.ratio += _current_ask->get_price().ratio;
+                else if( _current_ask->get_price() > min_cover_ask )
+                   market_stat->avg_price_24h.ratio += min_cover_ask.ratio;
                 else
                    market_stat->avg_price_24h.ratio += max_short_bid.ratio;
 
