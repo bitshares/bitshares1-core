@@ -20,10 +20,16 @@ if exist leveldb-win (
 
 cd %WORKSPACE%
 call bitshares_toolkit/setenv.bat || exit /b 26
+
+call npm install grunt
+call npm install lineman -g --prefix=%NPM_INSTALL_PREFIX%
+call npm install lineman-angular
+call npm install lineman-less
+
 if exist build (
   rmdir /Q /S build || exit /b 27
 )
 mkdir build
 cd build
-cmake -G "Visual Studio 12" ../bitshares_toolkit || exit /b 28
+cmake -DINCLUDE_QT_WALLET=TRUE -DFORCE_BUILDWEB_GENERATION=TRUE -G "Visual Studio 12" ../bitshares_toolkit || exit /b 28
 msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebinfo /p:Platform=Win32 /target:rebuild /clp:ErrorsOnly BitShares.sln || exit /b 30

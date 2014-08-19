@@ -4,13 +4,13 @@
 
 /* Set to true only for test network */
 #define BTS_TEST_NETWORK                                    true
-#define BTS_TEST_NETWORK_VERSION                            16
+#define BTS_TEST_NETWORK_VERSION                            18
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     124
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     125
 
 /**
  *  The address prepended to string representation of

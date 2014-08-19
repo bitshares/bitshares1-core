@@ -985,7 +985,7 @@ namespace bts { namespace blockchain {
       return sorted_delegates;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file )
+   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file, std::function<void(uint32_t)> reindex_status_callback )
    { try {
       bool is_new_data_dir = !fc::exists( data_dir );
       try
@@ -1017,16 +1017,22 @@ namespace bts { namespace blockchain {
              my->open_database( data_dir );
              my->initialize_genesis( genesis_file );
 
-             std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
+             if( !reindex_status_callback )
+                std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
+             else
+                 reindex_status_callback(0u);
 
              const char spinner[] = "-\\|/";
-             int blocks_indexed = 0;
+             uint32_t blocks_indexed = 0;
 
              auto start_time = blockchain::now();
              auto block_itr = my->_block_id_to_block_data_db.begin();
              while( block_itr.valid() )
              {
-                 std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed++ % 4] << "]" << std::flush;
+                 if( !reindex_status_callback )
+                     std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed++ % 4] << "]" << std::flush;
+                 else
+                     reindex_status_callback(blocks_indexed);
 
                  auto block = block_itr.value();
                  ++block_itr;

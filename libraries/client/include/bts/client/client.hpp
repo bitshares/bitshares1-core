@@ -112,8 +112,9 @@ namespace bts { namespace client {
          void start_networking(std::function<void()> network_started_callback = std::function<void()>());
          void configure_from_command_line(int argc, char** argv);
          fc::future<void> start();
-         void open( const path& data_dir, 
-                    optional<fc::path> genesis_file_path = optional<fc::path>());
+         void open(const path& data_dir,
+                   optional<fc::path> genesis_file_path = optional<fc::path>(),
+                   std::function<void(uint32_t)> reindex_status_callback = std::function<void(uint32_t)>());
 
          void init_cli();
          void set_daemon_mode(bool daemon_mode); 

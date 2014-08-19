@@ -92,7 +92,12 @@ namespace bts { namespace blockchain {
          chain_database();
          virtual ~chain_database()override;
 
-         void open( const fc::path& data_dir, fc::optional<fc::path> genesis_file );
+         /**
+          * @brief open Open the databases, reindexing as necessary
+          * @param reindex_status_callback Called for each reindexed block, with the count of blocks reindexed so far
+          */
+         void open(const fc::path& data_dir, fc::optional<fc::path> genesis_file ,
+                   std::function<void(uint32_t)> reindex_status_callback = std::function<void(uint32_t)>());
          void close();
 
          void add_observer( chain_observer* observer );

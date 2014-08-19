@@ -1477,7 +1477,7 @@ config load_config( const fc::path& datadir )
        my->_simulate_disconnect = state;
     }
 
-    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path )
+    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(uint32_t)> reindex_status_callback )
     { try {
         my->_config   = load_config(data_dir);
 
@@ -1526,7 +1526,7 @@ config load_config( const fc::path& datadir )
 
         try
         {
-          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
         }
         catch( const db::db_in_use_exception& e )
         {
@@ -1534,7 +1534,7 @@ config load_config( const fc::path& datadir )
           {
             elog("Chain database corrupted. Deleting it and attempting to recover.");
             fc::remove_all( data_dir / "chain" );
-            my->_chain_db->open( data_dir / "chain", genesis_file_path );
+            my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
           }
         }
         catch( const fc::exception& e )
@@ -2644,7 +2644,8 @@ config load_config( const fc::path& datadir )
       info["blockchain_next_round_timestamp"]                   = variant();
       if( head_block_num > 0 )
       {
-          const auto next_round_timestamp                       = head_block_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+          const auto current_round_timestamp                    = blockchain::get_slot_start_time( now );
+          const auto next_round_timestamp                       = current_round_timestamp + (blocks_left * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
           info["blockchain_next_round_time"]                    = ( next_round_timestamp - now ).to_seconds();
           info["blockchain_next_round_timestamp"]               = next_round_timestamp;
       }
