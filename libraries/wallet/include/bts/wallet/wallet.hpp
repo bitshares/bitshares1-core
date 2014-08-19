@@ -216,18 +216,26 @@ namespace bts { namespace wallet {
          vector<wallet_account_record> list_unregistered_accounts()const;
          vector<wallet_account_record> list_my_accounts()const;
 
-         void import_bitcoin_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name );
-         void import_multibit_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name );
-         void import_electrum_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name );
-         void import_armory_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name );
+         uint32_t import_bitcoin_wallet(
+                 const path& wallet_dat,
+                 const string& wallet_dat_passphrase,
+                 const string& account_name
+                 );
+         uint32_t import_multibit_wallet(
+                 const path& wallet_dat,
+                 const string& wallet_dat_passphrase,
+                 const string& account_name
+                 );
+         uint32_t import_electrum_wallet(
+                 const path& wallet_dat,
+                 const string& wallet_dat_passphrase,
+                 const string& account_name
+                 );
+         uint32_t import_armory_wallet(
+                 const path& wallet_dat,
+                 const string& wallet_dat_passphrase,
+                 const string& account_name
+                 );
 
          void import_keyhotee( const string& firstname,
                             const string& middlename,
