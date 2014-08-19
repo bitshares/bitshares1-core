@@ -199,11 +199,11 @@ namespace bts { namespace wallet {
 
               auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner),
                                                                                   trx.bid_price.base_asset_id ).get_address() );
-              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
+              if( bal_rec.valid() ) sync_balance_with_blockchain( bal_rec->id() );
 
               bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner),
                                                                             trx.ask_price.quote_asset_id ).get_address() );
-              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
+              if( bal_rec.valid() ) sync_balance_with_blockchain( bal_rec->id() );
 
               /* Construct a unique record id */
               std::stringstream id_ss;
@@ -279,11 +279,11 @@ namespace bts { namespace wallet {
 
               auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
                                                                                   trx.ask_price.base_asset_id ).get_address() );
-              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
+              if( bal_rec.valid() ) sync_balance_with_blockchain( bal_rec->id() );
 
               bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
                                                                             trx.ask_price.quote_asset_id ).get_address() );
-              if( bal_rec.valid() ) _wallet_db.cache_balance( *bal_rec );
+              if( bal_rec.valid() ) sync_balance_with_blockchain( bal_rec->id() );
 
               /* Construct a unique record id */
               std::stringstream id_ss;
@@ -378,7 +378,7 @@ namespace bts { namespace wallet {
               const auto key_rec = _wallet_db.lookup_key( bal_rec.owner() );
               if( key_rec.valid() && key_rec->has_private_key() )
               {
-                _wallet_db.cache_balance( bal_rec );
+                sync_balance_with_blockchain( bal_rec.id() );
 
                 if( bal_rec.genesis_info.valid() ) /* Create virtual transactions for genesis claims */
                 {
@@ -755,7 +755,6 @@ namespace bts { namespace wallet {
             const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
             if( key_rec.valid() && key_rec->has_private_key() ) /* If we own this balance */
             {
-                // TODO: Refactor this
                 auto new_entry = true;
                 for( auto& entry : trx_rec.ledger_entries )
                 {
@@ -802,7 +801,6 @@ namespace bts { namespace wallet {
          const auto key_rec =_wallet_db.lookup_key( account_rec->owner_key );
          if( key_rec.valid() && key_rec->has_private_key() ) /* If we own this account */
          {
-             // TODO: Refactor this
              auto new_entry = true;
              for( auto& entry : trx_rec.ledger_entries )
              {
@@ -859,7 +857,6 @@ namespace bts { namespace wallet {
           tmp = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
-          // TODO: Refactor this
           for( auto& entry : trx_rec.ledger_entries )
           {
               if( !entry.to_account.valid() )
@@ -904,7 +901,6 @@ namespace bts { namespace wallet {
           if( !opt_account->is_my_account )
             return false;
 
-          // TODO: Refactor this
           for( auto& entry : trx_rec.ledger_entries )
           {
               if( !entry.to_account.valid() )
@@ -933,7 +929,6 @@ namespace bts { namespace wallet {
             auto opt_key_rec = _wallet_db.lookup_key( oissuer->owner_key );
             if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
             {
-               // TODO: Refactor this
                for( auto& entry : trx_rec.ledger_entries )
                {
                    if( !entry.to_account.valid() )
@@ -956,7 +951,6 @@ namespace bts { namespace wallet {
 
       bool wallet_impl::scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec )
       {
-         // TODO: Refactor this
          for( auto& entry : trx_rec.ledger_entries )
          {
              if( entry.from_account.valid() )
@@ -987,7 +981,6 @@ namespace bts { namespace wallet {
              //FC_ASSERT( order.valid() );
              _wallet_db.update_market_order( op.bid_index.owner, order, trx_rec.trx.id() );
 
-             // TODO: Refactor this
              for( auto& entry : trx_rec.ledger_entries )
              {
                  if( amount.amount >= 0 )
@@ -1040,7 +1033,6 @@ namespace bts { namespace wallet {
              auto order = _blockchain->get_market_ask( op.ask_index );
              _wallet_db.update_market_order( op.ask_index.owner, order, trx_rec.trx.id() );
 
-             // TODO: Refactor this
              for( auto& entry : trx_rec.ledger_entries )
              {
                  if( amount.amount >= 0 )
@@ -1093,7 +1085,6 @@ namespace bts { namespace wallet {
              auto order = _blockchain->get_market_short( op.short_index );
              _wallet_db.update_market_order( op.short_index.owner, order, trx_rec.trx.id() );
 
-             // TODO: Refactor this
              for( auto& entry : trx_rec.ledger_entries )
              {
                  if( amount.amount >= 0 )
@@ -1168,7 +1159,6 @@ namespace bts { namespace wallet {
                              auto new_entry = true;
                              if( status->memo_flags == from_memo )
                              {
-                                // TODO: Refactor this
                                 for( auto& entry : trx_rec.ledger_entries )
                                 {
                                     if( !entry.from_account.valid() ) continue;
@@ -1199,7 +1189,6 @@ namespace bts { namespace wallet {
                              }
                              else // to_memo
                              {
-                                // TODO: Refactor this
                                 for( auto& entry : trx_rec.ledger_entries )
                                 {
                                     if( !entry.from_account.valid() ) continue;
@@ -1237,7 +1226,6 @@ namespace bts { namespace wallet {
                    const auto okey_rec = _wallet_db.lookup_key( deposit.owner );
                    if( okey_rec && okey_rec->has_private_key() )
                    {
-                       // TODO: Refactor this
                        for( auto& entry : trx_rec.ledger_entries )
                        {
                            if( !entry.from_account.valid() ) continue;
@@ -1294,8 +1282,10 @@ namespace bts { namespace wallet {
       {
          const auto pending_state = _blockchain->get_pending_state();
          const auto balance_record = pending_state->get_balance_record( balance_id );
-         if( !balance_record.valid() ) _wallet_db.remove_balance( balance_id );
-         else _wallet_db.cache_balance( *balance_record );
+         if( !balance_record.valid() || balance_record->balance <= 0 )
+             _wallet_db.remove_balance( balance_id );
+         else
+             _wallet_db.cache_balance( *balance_record );
       }
 
       void wallet_impl::reschedule_relocker()
@@ -1474,6 +1464,13 @@ namespace bts { namespace wallet {
               if( current_version < 102 )
               {
                   self->set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
+              }
+
+              if( current_version < 103 )
+              {
+                  const auto items = _wallet_db.get_balances();
+                  for( const auto& balance_item : items )
+                      sync_balance_with_blockchain( balance_item.first );
               }
 
               if( _unlocked_upgrade_tasks.empty() )
@@ -1661,13 +1658,6 @@ namespace bts { namespace wallet {
           my->_wallet_db.open( wallet_file_path );
           my->upgrade_version();
           set_data_directory( fc::absolute( wallet_file_path.parent_path() ) );
-
-          const auto items = my->_wallet_db.get_balances();
-          for( const auto& balance_item : items )
-          {
-              const auto balance_id = balance_item.first;
-              my->sync_balance_with_blockchain( balance_id );
-          }
       }
       catch( ... )
       {
@@ -2374,11 +2364,10 @@ namespace bts { namespace wallet {
         record.received_time = now;
         my->_wallet_db.store_transaction( record );
 
-        const auto items = my->_wallet_db.get_balances();
-        for( const auto& balance_item : items )
+        for( const auto& op : transaction.operations )
         {
-            const auto balance_id = balance_item.first;
-            my->sync_balance_with_blockchain( balance_id );
+            if( operation_type_enum( op.type ) == withdraw_op_type )
+                my->sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
         }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -3064,10 +3053,10 @@ namespace bts { namespace wallet {
        if( sign ) // don't store invalid trxs..
        {
           //const auto now = blockchain::now();
-          for( const auto& rec : balances_to_store )
-          {
-              my->_wallet_db.cache_balance( rec );
-          }
+          //for( const auto& rec : balances_to_store )
+          //{
+              //my->_wallet_db.cache_balance( rec );
+          //}
           for( uint32_t i = 0 ; i < trxs.size(); ++i )
           {
               // TODO: FIXME
