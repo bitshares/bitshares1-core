@@ -51,6 +51,21 @@ if( WIN32 )
 
     # Probably cmake has a bug and vcxproj generated for executable in Debug conf. has disabled debug info
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /DEBUG")
+
+    # On windows tcl should be installed to the directory pointed by setenv.bat script
+    SET(TCL_INCLUDE_PATH $ENV{TCL_ROOT}/include)
+    MESSAGE(STATUS "tcl INCLUDE PATH: ${TCL_INCLUDE_PATH}")
+
+    FIND_PACKAGE(TCL)
+    MESSAGE(STATUS "tcl_library: ${TCL_LIBRARY}")
+
+    SET(TCL_LIBS "optimized;${TCL_LIBRARY};debug;")
+    get_filename_component(TCL_LIB_PATH "${TCL_LIBRARY}" PATH)
+    get_filename_component(TCL_LIB_NAME "${TCL_LIBRARY}" NAME_WE)
+    get_filename_component(TCL_LIB_EXT "${TCL_LIBRARY}" EXT)
+
+    SET(TCL_LIBS "${TCL_LIBS}${TCL_LIB_PATH}/${TCL_LIB_NAME}g${TCL_LIB_EXT}")
+    SET(TCL_LIBRARY ${TCL_LIBS})
 else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
