@@ -917,7 +917,9 @@ namespace bts { namespace cli {
 
                   auto quote_asset_record = _client->get_chain()->get_asset_record( quote_id );
                   // fee order is the market order to convert fees from other asset classes to XTS
-                  bool show_fee_order_record = base_id == 0 && quote_asset_record->collected_fees > 0;
+                  bool show_fee_order_record = base_id == 0
+                                               && !quote_asset_record->is_market_issued()
+                                               && quote_asset_record->collected_fees > 0;
 
                   while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
                   {
@@ -1033,6 +1035,9 @@ namespace bts { namespace cli {
                           }
                        }
                     }
+
+                  // TODO: print insurance fund for market issued assets
+
                   } // end call section that only applies to market issued assets vs XTS
                   else
                   {
