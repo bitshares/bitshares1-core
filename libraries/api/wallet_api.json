@@ -95,7 +95,7 @@
       {
         "method_name": "wallet_import_bitcoin",
         "description": "Imports a Bitcoin Core or BitShares PTS wallet",
-        "return_type": "void",
+        "return_type": "uint32_t",
         "parameters" : [
            {
               "name" : "wallet_filename",
@@ -118,7 +118,7 @@
       {
         "method_name": "wallet_import_armory",
         "description": "Imports an Armory wallet",
-        "return_type": "void",
+        "return_type": "uint32_t",
         "parameters" : [
            {
               "name" : "wallet_filename",
@@ -141,7 +141,7 @@
       {
         "method_name": "wallet_import_electrum",
         "description": "Imports an Electrum wallet",
-        "return_type": "void",
+        "return_type": "uint32_t",
         "parameters" : [
            {
               "name" : "wallet_filename",
@@ -164,7 +164,7 @@
       {
         "method_name": "wallet_import_multibit",
         "description": "Imports a Multibit wallet",
-        "return_type": "void",
+        "return_type": "uint32_t",
         "parameters" : [
            {
               "name" : "wallet_filename",

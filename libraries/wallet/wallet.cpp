@@ -1336,7 +1336,7 @@ namespace bts { namespace wallet {
          try
          {
            _scan_progress = 0;
-           auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
+           const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
 
            for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
@@ -4690,9 +4690,11 @@ namespace bts { namespace wallet {
       return pretty_trx;
    }
 
-   void wallet::import_bitcoin_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name )
+   uint32_t wallet::import_bitcoin_wallet(
+           const path& wallet_dat,
+           const string& wallet_dat_passphrase,
+           const string& account_name
+           )
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -4706,12 +4708,15 @@ namespace bts { namespace wallet {
 
       scan_chain( 0, 1 );
       ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
+      return keys.size();
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
-   void wallet::import_multibit_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name )
+   uint32_t wallet::import_multibit_wallet(
+           const path& wallet_dat,
+           const string& wallet_dat_passphrase,
+           const string& account_name
+           )
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -4726,12 +4731,15 @@ namespace bts { namespace wallet {
 
       scan_chain( 0, 1 );
       ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
+      return keys.size();
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
-   void wallet::import_electrum_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name )
+   uint32_t wallet::import_electrum_wallet(
+           const path& wallet_dat,
+           const string& wallet_dat_passphrase,
+           const string& account_name
+           )
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -4746,12 +4754,15 @@ namespace bts { namespace wallet {
 
       scan_chain( 0, 1 );
       ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
+      return keys.size();
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 
-   void wallet::import_armory_wallet( const path& wallet_dat,
-                                     const string& wallet_dat_passphrase,
-                                     const string& account_name )
+   uint32_t wallet::import_armory_wallet(
+           const path& wallet_dat,
+           const string& wallet_dat_passphrase,
+           const string& account_name
+           )
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -4766,6 +4777,7 @@ namespace bts { namespace wallet {
 
       scan_chain( 0, 1 );
       ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
+      return keys.size();
    } FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
                             ("wallet_dat",wallet_dat)("account_name",account_name) ) }
 

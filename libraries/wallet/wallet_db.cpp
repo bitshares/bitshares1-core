@@ -474,8 +474,7 @@ namespace bts { namespace wallet {
                 keys.push_back( key_rec->decrypt_private_key( password ) );
              } catch ( const fc::exception& e )
              {
-                wlog( "error decrypting private key: ${e}", ("e", e.to_detail_string() ) );
-                throw; // TODO... don't thtrow here, just log
+                elog( "error decrypting private key: ${e}", ("e", e.to_detail_string() ) );
              }
           }
        };
@@ -721,6 +720,7 @@ namespace bts { namespace wallet {
       }
       catch( const fc::key_not_found_exception& )
       {
+          wlog("wallet_db tried to remove nonexistent index: ${i}", ("i",index) );
       }
    }
 
