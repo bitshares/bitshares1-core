@@ -47,7 +47,7 @@ namespace bts { namespace wallet {
    fc::ecc::private_key key_data::decrypt_private_key( const fc::sha512& password )const
    { try {
       FC_ASSERT( password != fc::sha512() );
-      auto plain_text = fc::aes_decrypt( password, encrypted_private_key );
+      const auto plain_text = fc::aes_decrypt( password, encrypted_private_key );
       return fc::raw::unpack<fc::ecc::private_key>( plain_text );
    } FC_CAPTURE_AND_RETHROW() }
 

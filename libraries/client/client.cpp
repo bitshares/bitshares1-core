@@ -1964,45 +1964,59 @@ config load_config( const fc::path& datadir )
       return optional<digest_block>();
     }
 
-    void detail::client_impl::wallet_import_bitcoin(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
+    uint32_t detail::client_impl::wallet_import_bitcoin(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
     {
       try
       {
-          _wallet->import_bitcoin_wallet(filename, "", account_name);
+          const auto count = _wallet->import_bitcoin_wallet(filename, "", account_name);
           _wallet->auto_backup( "bitcoin_import" );
-          return;
+          return count;
       }
       catch( const fc::exception& e )
       {
           ilog( "import_bitcoin_wallet failed with empty password: ${e}", ("e",e.to_detail_string() ) );
       }
 
-      _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
+      const auto count = _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
       _wallet->auto_backup( "bitcoin_import" );
-    }
-    void detail::client_impl::wallet_import_multibit(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
-    {
-      _wallet->import_multibit_wallet(filename, passphrase, account_name);
-      _wallet->auto_backup( "multibit_import" );
-    }
-    void detail::client_impl::wallet_import_electrum(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
-    {
-      _wallet->import_electrum_wallet(filename, passphrase, account_name);
-      _wallet->auto_backup( "electrum_import" );
+      return count;
     }
 
-    void detail::client_impl::wallet_import_armory(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
+    uint32_t detail::client_impl::wallet_import_multibit(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
     {
-      _wallet->import_armory_wallet(filename, passphrase, account_name);
+      const auto count = _wallet->import_multibit_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "multibit_import" );
+      return count;
+    }
+
+    uint32_t detail::client_impl::wallet_import_electrum(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
+    {
+      const auto count = _wallet->import_electrum_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "electrum_import" );
+      return count;
+    }
+
+    uint32_t detail::client_impl::wallet_import_armory(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
+    {
+      const auto count = _wallet->import_armory_wallet(filename, passphrase, account_name);
       _wallet->auto_backup( "armory_import" );
+      return count;
     }
 
     void detail::client_impl::wallet_import_keyhotee(const string& firstname,
