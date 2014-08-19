@@ -1330,7 +1330,7 @@ namespace bts { namespace wallet {
          try
          {
            _scan_progress = 0;
-           auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
+           const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
 
            for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
