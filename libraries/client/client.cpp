@@ -575,7 +575,16 @@ config load_config( const fc::path& datadir )
 
             void start()
             {
+              try
+              {
                 _cli->start();
+              }
+              catch (...)
+              {
+                if (_notifier)
+                  _notifier->client_exiting_unexpectedly();
+                throw;
+              }
             }
 
             void reschedule_delegate_loop();

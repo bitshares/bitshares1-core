@@ -34,6 +34,12 @@ namespace bts { namespace client {
       notification_type.icon = _bitshares_icon;
       _notifier.add_notification_type(notification_type);
 
+      notification_type.name = "client_exiting_unexpectedly";
+      notification_type.display_name = "Client Exiting Unexpectedly";
+      notification_type.enabled = true;
+      notification_type.icon = _bitshares_icon;
+      _notifier.add_notification_type(notification_type);
+
       _notifier.register_notifications();
     }
   }
@@ -56,6 +62,13 @@ namespace bts { namespace client {
     message << "The BitShares client's peer connection count dropped to " << current_connection_count << 
                ", which is below the warning threshold of " << notification_threshold;
     my->_notifier.send_notification("connection_count_below_threshold", "Connection Count Below Threshold", message.str(), my->_bitshares_icon);
+  }
+
+  void bts_gntp_notifier::client_exiting_unexpectedly()
+  {
+    std::ostringstream message;
+    message << "The BitShares client is exiting due to an unhandled exception";
+    my->_notifier.send_notification("client_exiting_unexpectedly", "Client Exiting Unexpectedly", message.str(), my->_bitshares_icon);
   }
 
   namespace detail
