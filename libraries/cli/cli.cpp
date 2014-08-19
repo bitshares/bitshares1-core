@@ -147,7 +147,7 @@ namespace bts { namespace cli {
               }
               catch( const fc::canceled_exception&)
               {
-                *_out << "Command aborted.\n";
+                 throw;
               }
               catch( const fc::exception& e)
               {
