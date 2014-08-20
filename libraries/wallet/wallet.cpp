@@ -238,6 +238,7 @@ namespace bts { namespace wallet {
                       entry.amount = trx.bid_received;
                       entry.memo = "bid proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
                       record.ledger_entries.push_back( entry );
+                      self->wallet_claimed_transaction( entry );
                   }
               }
               else /* if( trx.bid_type == short_order ) */
@@ -265,6 +266,7 @@ namespace bts { namespace wallet {
                       entry.amount = trx.bid_paid;
                       entry.memo = "short proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
                       record.ledger_entries.push_back( entry );
+                      self->update_margin_position( entry );
                   }
               }
 
@@ -318,6 +320,7 @@ namespace bts { namespace wallet {
                       entry.amount = trx.ask_received;
                       entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
                       record.ledger_entries.push_back( entry );
+                      self->wallet_claimed_transaction( entry );
                   }
               }
               else /* if( trx.ask_type == cover_order ) */
@@ -346,6 +349,7 @@ namespace bts { namespace wallet {
                       entry.amount = trx.fees_collected * 19;
                       entry.memo = "cover proceeds - 5% margin call fee";
                       record.ledger_entries.push_back( entry );
+                      self->wallet_claimed_transaction( entry );
                       record.fee = trx.fees_collected;
                   }
               }
@@ -610,12 +614,14 @@ namespace bts { namespace wallet {
 
           // Force scanning all deposits next because ledger reconstruction assumes such an ordering
           auto has_deposit = false;
+          bool is_deposit = false;
           for( const auto& op : transaction.operations )
           {
               switch( operation_type_enum( op.type ) )
               {
                   case deposit_op_type:
-                      has_deposit |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
+                      is_deposit = scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
+                      has_deposit |= is_deposit;
                       break;
                   case bid_op_type:
                   {
@@ -644,7 +650,7 @@ namespace bts { namespace wallet {
           }
           store_record |= has_deposit;
           
-          if( new_transaction && has_deposit )
+          if( new_transaction && is_deposit )
               self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
 
           /* Reconstruct fee */

@@ -851,10 +851,11 @@ namespace bts { namespace blockchain {
          }
 
          // just in case something changes while calling observer
-         for( const auto& o : _observers )
+         const auto observers = _observers;
+         for( const auto& o : observers )
          {
             try {
-               ilog( "... block applied ... " );
+               //ilog( "... block applied ... " );
                //Schedule the observer notifications for later; the chain is in a
                //non-premptable state right now, and observers may yield.
                fc::async([o,summary]{o->block_applied( summary );});
