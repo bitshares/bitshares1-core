@@ -32,6 +32,39 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVers
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
+# Warning Boost libraries must be detected before processing leveldb cmake (included below) since
+# Boost_Include_Dir variable is referenced there.
+
+SET(BOOST_COMPONENTS)
+LIST(APPEND BOOST_COMPONENTS thread
+                             date_time
+                             system
+                             filesystem
+                             program_options
+                             signals
+                             serialization
+                             chrono
+                             unit_test_framework
+                             context
+                             locale)
+
+set(Boost_USE_STATIC_LIBS ON)
+IF( WIN32 )
+  SET(BOOST_ROOT $ENV{BOOST_ROOT})
+  set(Boost_USE_MULTITHREADED ON)
+  set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
+ENDIF(WIN32)
+
+FIND_PACKAGE(Boost 1.53 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+# For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
+IF(NOT "${Boost_VERSION}" MATCHES "1.53(.*)")
+   SET(BOOST_LIBRARIES_TEMP ${Boost_LIBRARIES})
+   FIND_PACKAGE(Boost 1.54 REQUIRED COMPONENTS coroutine)
+   LIST(APPEND BOOST_COMPONENTS coroutine)
+   SET(Boost_LIBRARIES ${BOOST_LIBRARIES_TEMP} ${Boost_LIBRARIES})
+ENDIF()
+
+
 if( WIN32 )
     message( STATUS "Configuring BitShares on WIN32")
     set( DB_VERSION 60 )
@@ -113,35 +146,6 @@ else( WIN32 )
 endif( WIN32 )
 
 find_package( BerkeleyDB )
-
-SET(BOOST_COMPONENTS)
-LIST(APPEND BOOST_COMPONENTS thread
-                             date_time
-                             system
-                             filesystem
-                             program_options
-                             signals
-                             serialization
-                             chrono
-                             unit_test_framework
-                             context
-                             locale)
-
-set(Boost_USE_STATIC_LIBS ON)
-IF( WIN32 )
-  SET(BOOST_ROOT $ENV{BOOST_ROOT})
-  set(Boost_USE_MULTITHREADED ON)
-  set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
-ENDIF(WIN32)
-
-FIND_PACKAGE(Boost 1.53 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
-# For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
-IF(NOT "${Boost_VERSION}" MATCHES "1.53(.*)")
-   SET(BOOST_LIBRARIES_TEMP ${Boost_LIBRARIES})
-   FIND_PACKAGE(Boost 1.54 REQUIRED COMPONENTS coroutine)
-   LIST(APPEND BOOST_COMPONENTS coroutine)
-   SET(Boost_LIBRARIES ${BOOST_LIBRARIES_TEMP} ${Boost_LIBRARIES})
-ENDIF()
 
 set( CUSTOM_URL_SCHEME "xts" )
 
