@@ -555,20 +555,11 @@ config load_config( const fc::path& datadir )
               {
                 _chain_db = std::make_shared<chain_database>();
               } FC_RETHROW_EXCEPTIONS(warn,"chain_db")
-              _rebroadcast_pending_loop = fc::async( [=]() { rebroadcast_pending(); },
-                                                     "rebroadcast_pending");
             } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
             virtual ~client_impl() override 
             {
-              try
-              {
-                _rebroadcast_pending_loop.cancel_and_wait();
-              }
-              catch (const fc::exception& e)
-              {
-                wlog("Unexpected error from rebroadcast_pending(): ${e}", ("e", e));
-              }
+              cancel_rebroadcast_pending_loop();
               _p2p_node.reset();
               delete _cli;
             }
@@ -593,8 +584,10 @@ config load_config( const fc::path& datadir )
             void delegate_loop();
             void set_target_connections( uint32_t target );
 
-            void rebroadcast_pending();
-            fc::future<void> _rebroadcast_pending_loop;
+            void start_rebroadcast_pending_loop();
+            void cancel_rebroadcast_pending_loop();
+            void rebroadcast_pending_loop();
+            fc::future<void> _rebroadcast_pending_loop_done;
 
             void configure_rpc_server(config& cfg, 
                                       const program_options::variables_map& option_variables);
@@ -974,7 +967,27 @@ config load_config( const fc::path& datadir )
          return trxs;
        }
 
-       void client_impl::rebroadcast_pending()
+       void client_impl::start_rebroadcast_pending_loop()
+       {
+         if (!_rebroadcast_pending_loop_done.valid() || _rebroadcast_pending_loop_done.ready())
+           _rebroadcast_pending_loop_done = fc::schedule( [=](){ rebroadcast_pending_loop(); }, 
+                                                          fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC * 1.3)),
+                                                          "rebroadcast_pending" );
+       }
+
+       void client_impl::cancel_rebroadcast_pending_loop()
+       {
+          try
+          {
+            _rebroadcast_pending_loop_done.cancel_and_wait();
+          }
+          catch (const fc::exception& e)
+          {
+            wlog("Unexpected error from rebroadcast_pending(): ${e}", ("e", e));
+          }
+       }
+
+       void client_impl::rebroadcast_pending_loop()
        {
 #ifndef NDEBUG
           static bool currently_running = false;
@@ -1004,10 +1017,10 @@ config load_config( const fc::path& datadir )
               wlog( "error rebroadcasting transacation: ${e}", ("e",e.to_detail_string() ) );
             }
           }
-          if (!_rebroadcast_pending_loop.canceled())
-            _rebroadcast_pending_loop = fc::schedule( [=](){ rebroadcast_pending(); }, 
-                                                      fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC*1.3)),
-                                                      "rebroadcast_pending" );
+          if (!_rebroadcast_pending_loop_done.canceled())
+            _rebroadcast_pending_loop_done = fc::schedule( [=](){ rebroadcast_pending_loop(); }, 
+                                                           fc::time_point::now() + fc::seconds((int64_t)(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC * 1.3)),
+                                                           "rebroadcast_pending" );
        }
 
        ///////////////////////////////////////////////////////
@@ -1573,10 +1586,10 @@ config load_config( const fc::path& datadir )
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
-        {
           my->_p2p_node = std::make_shared<bts::net::node>();
-        }
         my->_p2p_node->set_node_delegate(my.get());
+
+        my->start_rebroadcast_pending_loop();
     } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
     client::~client()
@@ -1985,45 +1998,59 @@ config load_config( const fc::path& datadir )
       return optional<digest_block>();
     }
 
-    void detail::client_impl::wallet_import_bitcoin(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
+    uint32_t detail::client_impl::wallet_import_bitcoin(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
     {
       try
       {
-          _wallet->import_bitcoin_wallet(filename, "", account_name);
+          const auto count = _wallet->import_bitcoin_wallet(filename, "", account_name);
           _wallet->auto_backup( "bitcoin_import" );
-          return;
+          return count;
       }
       catch( const fc::exception& e )
       {
           ilog( "import_bitcoin_wallet failed with empty password: ${e}", ("e",e.to_detail_string() ) );
       }
 
-      _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
+      const auto count = _wallet->import_bitcoin_wallet(filename, passphrase, account_name);
       _wallet->auto_backup( "bitcoin_import" );
-    }
-    void detail::client_impl::wallet_import_multibit(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
-    {
-      _wallet->import_multibit_wallet(filename, passphrase, account_name);
-      _wallet->auto_backup( "multibit_import" );
-    }
-    void detail::client_impl::wallet_import_electrum(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
-    {
-      _wallet->import_electrum_wallet(filename, passphrase, account_name);
-      _wallet->auto_backup( "electrum_import" );
+      return count;
     }
 
-    void detail::client_impl::wallet_import_armory(const fc::path& filename,
-                                                    const string& passphrase,
-                                                    const string& account_name )
+    uint32_t detail::client_impl::wallet_import_multibit(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
     {
-      _wallet->import_armory_wallet(filename, passphrase, account_name);
+      const auto count = _wallet->import_multibit_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "multibit_import" );
+      return count;
+    }
+
+    uint32_t detail::client_impl::wallet_import_electrum(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
+    {
+      const auto count = _wallet->import_electrum_wallet(filename, passphrase, account_name);
+      _wallet->auto_backup( "electrum_import" );
+      return count;
+    }
+
+    uint32_t detail::client_impl::wallet_import_armory(
+            const fc::path& filename,
+            const string& passphrase,
+            const string& account_name
+            )
+    {
+      const auto count = _wallet->import_armory_wallet(filename, passphrase, account_name);
       _wallet->auto_backup( "armory_import" );
+      return count;
     }
 
     void detail::client_impl::wallet_import_keyhotee(const string& firstname,

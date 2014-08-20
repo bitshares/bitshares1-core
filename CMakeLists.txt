@@ -32,6 +32,39 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVers
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
+# Warning Boost libraries must be detected before processing leveldb cmake (included below) since
+# Boost_Include_Dir variable is referenced there.
+
+SET(BOOST_COMPONENTS)
+LIST(APPEND BOOST_COMPONENTS thread
+                             date_time
+                             system
+                             filesystem
+                             program_options
+                             signals
+                             serialization
+                             chrono
+                             unit_test_framework
+                             context
+                             locale)
+
+set(Boost_USE_STATIC_LIBS ON)
+IF( WIN32 )
+  SET(BOOST_ROOT $ENV{BOOST_ROOT})
+  set(Boost_USE_MULTITHREADED ON)
+  set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
+ENDIF(WIN32)
+
+FIND_PACKAGE(Boost 1.53 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+# For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
+IF(NOT "${Boost_VERSION}" MATCHES "1.53(.*)")
+   SET(BOOST_LIBRARIES_TEMP ${Boost_LIBRARIES})
+   FIND_PACKAGE(Boost 1.54 REQUIRED COMPONENTS coroutine)
+   LIST(APPEND BOOST_COMPONENTS coroutine)
+   SET(Boost_LIBRARIES ${BOOST_LIBRARIES_TEMP} ${Boost_LIBRARIES})
+ENDIF()
+
+
 if( WIN32 )
     message( STATUS "Configuring BitShares on WIN32")
     set( DB_VERSION 60 )
@@ -51,6 +84,21 @@ if( WIN32 )
 
     # Probably cmake has a bug and vcxproj generated for executable in Debug conf. has disabled debug info
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /DEBUG")
+
+    # On windows tcl should be installed to the directory pointed by setenv.bat script
+    SET(TCL_INCLUDE_PATH $ENV{TCL_ROOT}/include)
+    MESSAGE(STATUS "tcl INCLUDE PATH: ${TCL_INCLUDE_PATH}")
+
+    FIND_PACKAGE(TCL)
+    MESSAGE(STATUS "tcl_library: ${TCL_LIBRARY}")
+
+    SET(TCL_LIBS "optimized;${TCL_LIBRARY};debug;")
+    get_filename_component(TCL_LIB_PATH "${TCL_LIBRARY}" PATH)
+    get_filename_component(TCL_LIB_NAME "${TCL_LIBRARY}" NAME_WE)
+    get_filename_component(TCL_LIB_EXT "${TCL_LIBRARY}" EXT)
+
+    SET(TCL_LIBS "${TCL_LIBS}${TCL_LIB_PATH}/${TCL_LIB_NAME}g${TCL_LIB_EXT}")
+    SET(TCL_LIBRARY ${TCL_LIBS})
 else( WIN32 )
     # Apple AND Linux Options Here
     find_package( ZLIB REQUIRED )
@@ -98,35 +146,6 @@ else( WIN32 )
 endif( WIN32 )
 
 find_package( BerkeleyDB )
-
-SET(BOOST_COMPONENTS)
-LIST(APPEND BOOST_COMPONENTS thread
-                             date_time
-                             system
-                             filesystem
-                             program_options
-                             signals
-                             serialization
-                             chrono
-                             unit_test_framework
-                             context
-                             locale)
-
-set(Boost_USE_STATIC_LIBS ON)
-IF( WIN32 )
-  SET(BOOST_ROOT $ENV{BOOST_ROOT})
-  set(Boost_USE_MULTITHREADED ON)
-  set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
-ENDIF(WIN32)
-
-FIND_PACKAGE(Boost 1.53 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
-# For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
-IF(NOT "${Boost_VERSION}" MATCHES "1.53(.*)")
-   SET(BOOST_LIBRARIES_TEMP ${Boost_LIBRARIES})
-   FIND_PACKAGE(Boost 1.54 REQUIRED COMPONENTS coroutine)
-   LIST(APPEND BOOST_COMPONENTS coroutine)
-   SET(Boost_LIBRARIES ${BOOST_LIBRARIES_TEMP} ${Boost_LIBRARIES})
-ENDIF()
 
 set( CUSTOM_URL_SCHEME "xts" )
 
