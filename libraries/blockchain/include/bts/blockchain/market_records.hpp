@@ -202,15 +202,15 @@ namespace bts { namespace blockchain {
        price minimum_ask()const
        {
          auto avg = avg_price_24h;
-         avg.ratio *= 2;
-         avg.ratio /= 3;
+         avg.ratio *= 9;
+         avg.ratio /= 10;
          return avg;
        }
        price maximum_bid()const
        {
          auto avg = avg_price_24h;
-         avg.ratio *= 4;
-         avg.ratio /= 3;
+         avg.ratio *= 10;
+         avg.ratio /= 9;
          return avg;
        }
 
