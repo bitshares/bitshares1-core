@@ -172,14 +172,27 @@ class market_engine
                    mtrx.ask_price = mtrx.bid_price;
 
                    // we want to sell enough XTS to cover our balance.
+                   //ulog("Current ask balance:  ${ask_balance},  current bid price: ${bid_price}",
+                   //     ("ask_balance", current_ask_balance)("bid_price", mtrx.bid_price));
                    ask_quantity_xts  = current_ask_balance * mtrx.bid_price;
 
+                   /*
+                   ulog("Current bid:  ${bid} \n  Current ask: ${ask}", 
+                           ("bid", _current_bid)
+                           ("ask", _current_ask)
+                           ("ask_quantity_xts",ask_quantity_xts));
+                           */
                    if( ask_quantity_xts.amount > *_current_ask->collateral )
                       ask_quantity_xts.amount = *_current_ask->collateral;
 
                    auto quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
 
-                   mtrx.bid_paid      = quantity_xts * mtrx.bid_price;
+                   if( quantity_xts == ask_quantity_xts )
+                        mtrx.bid_paid      = current_ask_balance;
+                   else
+                        mtrx.bid_paid      = quantity_xts * mtrx.bid_price;
+                   //ulog( "mtrx: ${mtrx}", ("mtrx",mtrx) );
+
                    mtrx.ask_received  = mtrx.bid_paid;
                    xts_paid_by_short  = quantity_xts;
 
@@ -298,6 +311,7 @@ class market_engine
                    {
                       mtrx.bid_paid = current_bid_balance;
                    }
+
                    order_did_execute = true;
                    pay_current_bid( mtrx, *quote_asset );
                    pay_current_ask( mtrx, *base_asset );
