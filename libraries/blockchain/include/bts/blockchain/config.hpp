@@ -33,7 +33,7 @@
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                        101
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       BTS_BLOCKCHAIN_NUM_DELEGATES
-#define BTS_BLOCKCHAIN_MIN_FEEDS                            3 // ((BTS_BLOCKCHAIN_NUM_DELEGATES/2) + 1)
+#define BTS_BLOCKCHAIN_MIN_FEEDS                            ((BTS_BLOCKCHAIN_NUM_DELEGATES/2) + 1)
 #define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     (BTS_BLOCKCHAIN_NUM_DELEGATES*4)
 
 #define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                false
