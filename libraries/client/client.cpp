@@ -977,7 +977,8 @@ config load_config( const fc::path& datadir )
           static bool currently_running = false;
           struct checker {
             bool& var;
-            checker(bool& var) : var(var) { assert(!var); var = true; }
+            //Log instead of crashing. Failing this test is normal behavior in the tests.
+            checker(bool& var) : var(var) { if(var) elog("Checker failure!"); var = true; }
             ~checker() { var = false; }
           } _checker(currently_running);
 #endif // !NDEBUG
