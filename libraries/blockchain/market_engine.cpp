@@ -132,13 +132,13 @@ class market_engine
              bool order_did_execute = false;
              while( get_next_bid() && get_next_ask() )
              {
+                // make sure that at least one order was matched 
+                // every time we enter the loop.
                 if( _orders_filled == last_orders_filled )
                 {
                    FC_ASSERT( _orders_filled != last_orders_filled, "we appear caught in a order matching loop" );
                 }
-
-                if( last_orders_filled == -1 ) 
-                   last_orders_filled = _orders_filled;
+                last_orders_filled = _orders_filled;
 
                 auto bid_quantity_xts = _current_bid->get_quantity();
                 auto ask_quantity_xts = _current_ask->get_quantity();
