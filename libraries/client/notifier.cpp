@@ -1,4 +1,6 @@
 #include <bts/client/notifier.hpp>
+#include <bts/blockchain/config.hpp>
+#include <bts/blockchain/time.hpp>
 
 #include <fc/network/gntp.hpp>
 
@@ -13,6 +15,13 @@ namespace bts { namespace client {
       fc::gntp_notifier _notifier;
       fc::gntp_icon_ptr _bitshares_icon;
 
+      uint32_t _last_reported_connection_count;
+      uint32_t _connection_count_notification_threshold;
+      bool     _shutting_down;
+      fc::time_point _last_head_block_too_old_notification_time;
+      fc::microseconds _last_head_block_too_old_notification_interval;
+      uint32_t _missed_block_count_threshold;
+
       bts_gntp_notifier_impl();
       void register_notification_types();
     };
@@ -20,6 +29,11 @@ namespace bts { namespace client {
     extern unsigned bitshares_icon_png_len;
 
     bts_gntp_notifier_impl::bts_gntp_notifier_impl() :
+      _last_reported_connection_count(0),
+      _connection_count_notification_threshold(5),
+      _shutting_down(false),
+      _last_head_block_too_old_notification_interval(fc::seconds(300)),
+      _missed_block_count_threshold(3),
       _bitshares_icon(std::make_shared<fc::gntp_icon>((const char*)bitshares_icon_png, bitshares_icon_png_len))
     {
     }
@@ -40,6 +54,12 @@ namespace bts { namespace client {
       notification_type.icon = _bitshares_icon;
       _notifier.add_notification_type(notification_type);
 
+      notification_type.name = "head_block_too_old";
+      notification_type.display_name = "Head Block is Too Old";
+      notification_type.enabled = true;
+      notification_type.icon = _bitshares_icon;
+      _notifier.add_notification_type(notification_type);
+
       _notifier.register_notifications();
     }
   }
@@ -56,20 +76,50 @@ namespace bts { namespace client {
   {
   }
 
-  void bts_gntp_notifier::connection_count_dropped_below_threshold(uint32_t current_connection_count, uint32_t notification_threshold)
+  void bts_gntp_notifier::client_is_shutting_down()
   {
-    std::ostringstream message;
-    message << "The BitShares client's peer connection count dropped to " << current_connection_count << 
-               ", which is below the warning threshold of " << notification_threshold;
-    my->_notifier.send_notification("connection_count_below_threshold", "Connection Count Below Threshold", message.str(), my->_bitshares_icon);
+    my->_shutting_down = true;
   }
 
-  void bts_gntp_notifier::client_exiting_unexpectedly()
+  void bts_gntp_notifier::notify_connection_count_changed(uint32_t new_connection_count)
+  {
+    if (new_connection_count < my->_connection_count_notification_threshold && 
+        my->_last_reported_connection_count >= my->_connection_count_notification_threshold)
+      {
+      std::ostringstream message;
+      message << "The BitShares client's peer connection count dropped to " << new_connection_count << 
+                 ", which is below the warning threshold of " << my->_connection_count_notification_threshold;
+      my->_notifier.send_notification("connection_count_below_threshold", "Connection Count Below Threshold", message.str(), my->_bitshares_icon);
+      my->_last_reported_connection_count = new_connection_count;
+      }
+  }
+
+  void bts_gntp_notifier::notify_client_exiting_unexpectedly()
   {
     std::ostringstream message;
     message << "The BitShares client is exiting due to an unhandled exception";
     my->_notifier.send_notification("client_exiting_unexpectedly", "Client Exiting Unexpectedly", message.str(), my->_bitshares_icon);
   }
+
+  void bts_gntp_notifier::notify_head_block_too_old(const fc::time_point_sec& head_block_age)
+  {
+    fc::time_point block_age_cutoff = fc::time_point::now() - fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC * my->_missed_block_count_threshold);
+    if (head_block_age < block_age_cutoff)
+    {
+      fc::time_point notification_time_cutoff = fc::time_point::now() - my->_last_head_block_too_old_notification_interval;
+      if (my->_last_head_block_too_old_notification_time < notification_time_cutoff)
+      {
+        std::ostringstream message;
+        uint32_t age_in_sec = bts::blockchain::now().sec_since_epoch() - head_block_age.sec_since_epoch();
+        uint32_t missed_block_count = age_in_sec / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+        message << "The last block on our blockchain is " << fc::get_approximate_relative_time_string(head_block_age, bts::blockchain::now(), " old") << 
+                   " seconds old, meaning we've missed " << missed_block_count << " blocks";
+        my->_notifier.send_notification("head_block_too_old", "Head Block is Too Old", message.str(), my->_bitshares_icon);
+        my->_last_head_block_too_old_notification_time = fc::time_point::now();    
+      }
+    }
+  }
+
 
   namespace detail
   {

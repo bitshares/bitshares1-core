@@ -3,6 +3,8 @@
 #include <string>
 #include <stdint.h>
 
+#include <fc/time.hpp>
+
 namespace bts { namespace client { 
   namespace detail {
     class bts_gntp_notifier_impl;
@@ -13,8 +15,10 @@ namespace bts { namespace client {
     bts_gntp_notifier();
     ~bts_gntp_notifier();
 
-    void connection_count_dropped_below_threshold(uint32_t current_connection_count, uint32_t notification_threshold);
-    void client_exiting_unexpectedly();
+    void client_is_shutting_down();
+    void notify_connection_count_changed(uint32_t new_connection_count);
+    void notify_client_exiting_unexpectedly();
+    void notify_head_block_too_old(const fc::time_point_sec& head_block_age);
   private:
     std::unique_ptr<detail::bts_gntp_notifier_impl> my;
   };
