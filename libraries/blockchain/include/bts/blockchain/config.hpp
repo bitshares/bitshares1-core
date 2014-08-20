@@ -10,7 +10,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     125
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     126
 
 /**
  *  The address prepended to string representation of
@@ -33,7 +33,7 @@
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                        101
 #define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       BTS_BLOCKCHAIN_NUM_DELEGATES
-#define BTS_BLOCKCHAIN_MIN_FEEDS                            3 // ((BTS_BLOCKCHAIN_NUM_DELEGATES/2) + 1)
+#define BTS_BLOCKCHAIN_MIN_FEEDS                            ((BTS_BLOCKCHAIN_NUM_DELEGATES/2) + 1)
 #define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     (BTS_BLOCKCHAIN_NUM_DELEGATES*4)
 
 #define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                false
