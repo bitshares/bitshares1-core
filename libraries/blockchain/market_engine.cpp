@@ -6,7 +6,7 @@ class market_engine
 {
    public:
       market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
-      :_pending_state(ps),_db_impl(cdi)
+      :_pending_state(ps),_db_impl(cdi),_orders_filled(0)
       {
           _pending_state = std::make_shared<pending_chain_state>( ps );
           _prior_state = ps;
@@ -127,9 +127,19 @@ class market_engine
                 }
              }
 
+             int last_orders_filled = -1;
+
              bool order_did_execute = false;
              while( get_next_bid() && get_next_ask() )
              {
+                // make sure that at least one order was matched 
+                // every time we enter the loop.
+                if( _orders_filled == last_orders_filled )
+                {
+                   FC_ASSERT( _orders_filled != last_orders_filled, "we appear caught in a order matching loop" );
+                }
+                last_orders_filled = _orders_filled;
+
                 auto bid_quantity_xts = _current_bid->get_quantity();
                 auto ask_quantity_xts = _current_ask->get_quantity();
 
@@ -590,6 +600,7 @@ class market_engine
          if( _current_bid && _current_bid->get_quantity().amount > 0 ) 
             return _current_bid.valid();
 
+         ++_orders_filled;
          _current_bid.reset();
          if( _bid_itr.valid() )
          {
@@ -632,6 +643,7 @@ class market_engine
             return _current_ask.valid();
          }
          _current_ask.reset();
+         ++_orders_filled;
 
          /**
           *  Margin calls take priority over all other ask orders
@@ -777,6 +789,8 @@ class market_engine
       share_type                  _current_payoff_balance;
       asset_id_type               _quote_id;
       asset_id_type               _base_id;
+
+      int                         _orders_filled;
 
       vector<market_transaction>  _market_transactions;
 
