@@ -17,18 +17,73 @@ public:
 
         produce_block(clienta);
 
-        exec(clientb, "wallet_publish_price_feed delegate22 .02 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate24 .02 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate26 .02 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate28 .02 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate23 .02 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate25 .02 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate27 .02 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate29 .02 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate31 .02 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate33 .02 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate2 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate4 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate6 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate8 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate10 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate12 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate14 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate16 .2 USD" );
+        produce_block(clienta);
+        produce_block(clientb);
+        exec(clientb, "wallet_publish_price_feed delegate18 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate20 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate22 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate24 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate26 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate28 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate30 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate32 .2 USD" );
+        produce_block(clienta);
+        produce_block(clientb);
+        exec(clientb, "wallet_publish_price_feed delegate34 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate36 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate38 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate40 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate42 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate44 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate46 .2 USD" );
+        produce_block(clienta);
+        produce_block(clientb);
+        exec(clientb, "wallet_publish_price_feed delegate48 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate50 .2 USD" );
+        exec(clientb, "wallet_publish_price_feed delegate52 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate1 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate3 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate5 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate7 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate9 .2 USD" );
+        produce_block(clienta);
+        produce_block(clientb);
+        exec(clienta, "wallet_publish_price_feed delegate11 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate13 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate15 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate17 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate19 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate21 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate23 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate25 .2 USD" );
+        produce_block(clienta);
+        produce_block(clientb);
+        exec(clienta, "wallet_publish_price_feed delegate27 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate29 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate31 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate33 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate35 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate37 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate39 .2 USD" );
+        produce_block(clienta);
+        produce_block(clientb);
+        exec(clienta, "wallet_publish_price_feed delegate41 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate43 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate45 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate47 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate49 .2 USD" );
+        exec(clienta, "wallet_publish_price_feed delegate51 .2 USD" );
 
         produce_block(clienta);
+        produce_block(clientb);
         std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
     }
 
@@ -122,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE( printing_dollars, nathan_fixture )
     exec(clientb, "ask delegate20 9000000 XTS .005 USD");
 
     //Approximately 1.5 market hours of trading at .002 USD/XTS
-    for (int i = 0; i < 360 - 92; ++i)
+    for (int i = 0; i < 360; ++i)
     {
         exec(clienta, "ask delegate23 100 XTS .002 USD");
         exec(clientb, "bid delegate22 100 XTS .002 USD");
