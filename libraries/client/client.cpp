@@ -1260,7 +1260,7 @@ config load_config( const fc::path& datadir )
             {
               // block is a block we know about and is on the main chain
               uint32_t reference_point_block_num = _chain_db->get_block_num(reference_point);
-              FC_ASSERT(reference_point_block_num > 0);
+              assert(reference_point_block_num > 0);
               high_block_num = reference_point_block_num;
               non_fork_high_block_num = high_block_num;
             }
@@ -1270,26 +1270,24 @@ config load_config( const fc::path& datadir )
               try
               {
                 fork_history = _chain_db->get_fork_history(reference_point);
-                FC_ASSERT(fork_history.size() >= 2);
-                FC_ASSERT(fork_history.front() == reference_point);
+                assert(fork_history.size() >= 2);
+                assert(fork_history.front() == reference_point);
                 block_id_type last_non_fork_block = fork_history.back();
                 fork_history.pop_back();
                 boost::reverse(fork_history);
                 try
                 {
                   if( last_non_fork_block == block_id_type() )
-                     return synopsis;
-                  non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
-                  FC_ASSERT(non_fork_high_block_num > 0, "", 
-                            ("non_fork_high_block_num",non_fork_high_block_num)
-                            ("last_non_fork_block",last_non_fork_block) );
+                    non_fork_high_block_num = 0;
+                  else
+                    non_fork_high_block_num = _chain_db->get_block_num(last_non_fork_block);
                 }
                 catch (const fc::key_not_found_exception&)
                 {
-                  FC_ASSERT(!"get_fork_history() returned a history that doesn't link to the main chain");
+                  assert(!"get_fork_history() returned a history that doesn't link to the main chain");
                 }
                 high_block_num = non_fork_high_block_num + fork_history.size();
-                FC_ASSERT(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
+                assert(high_block_num == _chain_db->get_block_header(fork_history.back()).block_num);
               }
               catch (const fc::exception& e)
               {
@@ -1303,7 +1301,7 @@ config load_config( const fc::path& datadir )
           }
           catch (const fc::key_not_found_exception&)
           {
-            FC_ASSERT(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
+            assert(false); // the logic in the p2p networking code shouldn't call this with a reference_point that we've never seen
             // we've never seen this block
             return synopsis;
           }
@@ -1321,6 +1319,9 @@ config load_config( const fc::path& datadir )
         uint32_t low_block_num = 1;
         do
         {
+          // for each block in the synopsis, figure out where to pull the block id from.
+          // if it's <= non_fork_high_block_num, we grab it from the main blockchain;
+          // if it's not, we pull it from the fork history
           if (low_block_num <= non_fork_high_block_num)
             synopsis.push_back(_chain_db->get_block(low_block_num).id());
           else
