@@ -197,19 +197,14 @@ struct chain_fixture
       int even = 0;
       for( auto key : delegate_private_keys )
       {
-         if( even >= 20 )
+         if( (even++)%2 )
          {
-            if( (even++)%2 )
-            {
-                exec( clienta, "wallet_import_private_key " + key_to_wif( key  ) ); 
-            }
-            else
-            {
-                exec( clientb, "wallet_import_private_key " + key_to_wif( key  ) ); 
-            }
-            if( even >= 54 ) break;
+             exec( clienta, "wallet_import_private_key " + key_to_wif( key  ) );
          }
-         else ++even;
+         else
+         {
+             exec( clientb, "wallet_import_private_key " + key_to_wif( key  ) );
+         }
       }
       
       } catch ( const fc::exception& e )
