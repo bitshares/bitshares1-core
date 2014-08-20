@@ -319,7 +319,11 @@ namespace bts { namespace blockchain {
          // This was changed from waiting on the old _revalidate_pending to prevent yielding
          // during the middle of pushing a block.  If that happens, the database is in an
          // inconsistent state and it confuses the p2p network code.
-         if( !_revalidate_pending.valid() || _revalidate_pending.ready() )
+         // We skip this step if we are dealing with blocks prior to the last checkpointed block
+         uint32_t last_checkpoint_block_num = 0;
+         if( !CHECKPOINT_BLOCKS.empty() )
+             last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
+         if( (!_revalidate_pending.valid() || _revalidate_pending.ready()) && _head_block_header.block_num >= last_checkpoint_block_num )
            _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
