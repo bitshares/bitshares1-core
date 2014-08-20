@@ -147,7 +147,6 @@ endif( WIN32 )
 
 find_package( BerkeleyDB )
 
-<<<<<<< HEAD
 SET(BOOST_COMPONENTS)
 LIST(APPEND BOOST_COMPONENTS thread
                              date_time
