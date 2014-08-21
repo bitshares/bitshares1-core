@@ -151,6 +151,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
        ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
        ("log-commands", "Log all command input and output")
        ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
+       ("growl-password", program_options::value<std::string>(), "Password for authenticating to a Growl server")
        ;
 
   program_options::variables_map option_variables;
@@ -2425,7 +2426,10 @@ config load_config( const fc::path& datadir )
           port_to_notify = boost::lexical_cast<uint16_t>(host_to_notify.substr(colon_pos + 1));
           host_to_notify = host_to_notify.substr(0, colon_pos);
         }
-        my->_notifier = std::make_shared<bts_gntp_notifier>(host_to_notify, port_to_notify);
+        fc::optional<std::string> growl_password;
+        if (option_variables.count("growl-password"))
+          growl_password = option_variables["growl-password"].as<std::string>();
+        my->_notifier = std::make_shared<bts_gntp_notifier>(host_to_notify, port_to_notify, growl_password);
         my->_blocks_too_old_monitor_done = fc::schedule([=]() { my->blocks_too_old_monitor_task(); },
                                                         fc::time_point::now() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC),
                                                         "block_monitor_task");

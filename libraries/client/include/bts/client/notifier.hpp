@@ -12,7 +12,8 @@ namespace bts { namespace client {
 
   class bts_gntp_notifier {
   public:
-    bts_gntp_notifier(const std::string& host_to_notify = "127.0.0.1", uint16_t port = 23053);
+    bts_gntp_notifier(const std::string& host_to_notify = "127.0.0.1", uint16_t port = 23053,
+                      const fc::optional<std::string>& password = fc::optional<std::string>());
     ~bts_gntp_notifier();
 
     void client_is_shutting_down();

@@ -25,19 +25,21 @@ namespace bts { namespace client {
       fc::microseconds _head_block_too_old_notification_interval;
       uint32_t _missed_block_count_threshold;
 
-      bts_gntp_notifier_impl(const std::string& host_to_notify = "127.0.0.1", uint16_t port = 23053);
+      bts_gntp_notifier_impl(const std::string& host_to_notify = "127.0.0.1", uint16_t port = 23053,
+                             const fc::optional<std::string>& password = fc::optional<std::string>());
       void register_notification_types();
     };
     extern unsigned char bitshares_icon_png[];
     extern unsigned bitshares_icon_png_len;
 
-    bts_gntp_notifier_impl::bts_gntp_notifier_impl(const std::string&  host_to_notify /* = "127.0.0.1" */, uint16_t port /* = 23053 */) :
-      _notifier(host_to_notify, port),
+    bts_gntp_notifier_impl::bts_gntp_notifier_impl(const std::string&  host_to_notify /* = "127.0.0.1" */, uint16_t port /* = 23053 */,
+                                                   const fc::optional<std::string>& password /* = optional<std::string>() */) :
+      _notifier(host_to_notify, port, password),
       _bitshares_icon(std::make_shared<fc::gntp_icon>((const char*)bitshares_icon_png, bitshares_icon_png_len)),
       _shutting_down(false),
       _last_reported_connection_count(0),
       _connection_count_notification_interval(fc::seconds(300)),
-      _connection_count_notification_threshold(5),
+      _connection_count_notification_threshold(1),
       _head_block_too_old_notification_interval(fc::seconds(300)),
       _missed_block_count_threshold(3)
     {
@@ -69,8 +71,9 @@ namespace bts { namespace client {
     }
   }
 
-  bts_gntp_notifier::bts_gntp_notifier(const std::string& host_to_notify /* = "127.0.0.1" */, uint16_t port /* = 23053 */) : 
-    my(new detail::bts_gntp_notifier_impl(host_to_notify, port))
+  bts_gntp_notifier::bts_gntp_notifier(const std::string& host_to_notify /* = "127.0.0.1" */, uint16_t port /* = 23053 */,
+                                       const fc::optional<std::string>& password /* = fc::optional<std::string>() */) : 
+    my(new detail::bts_gntp_notifier_impl(host_to_notify, port, password))
   {
     my->_notifier.set_application_name("BitShares");
     my->_notifier.set_application_icon(my->_bitshares_icon);
@@ -90,8 +93,7 @@ namespace bts { namespace client {
   {
     // notify any time we drop below the threshold, unless we've already done so recently
     // (to cut down on noise if we're oscillating around the threshold)
-    if (new_connection_count >= my->_connection_count_notification_threshold && 
-        my->_last_reported_connection_count < my->_connection_count_notification_threshold)
+    if (new_connection_count >= my->_connection_count_notification_threshold)
       my->_last_reported_connection_count = new_connection_count;
     else if (new_connection_count < my->_connection_count_notification_threshold && 
              my->_last_reported_connection_count >= my->_connection_count_notification_threshold)
@@ -104,6 +106,7 @@ namespace bts { namespace client {
                    ", which is below the warning threshold of " << my->_connection_count_notification_threshold;
         my->_notifier.send_notification("connection_count_below_threshold", "Connection Count Below Threshold", message.str(), my->_bitshares_icon);
         my->_last_reported_connection_count = new_connection_count;
+        my->_last_connection_count_notification_time = fc::time_point::now();
       }
     }
   }
