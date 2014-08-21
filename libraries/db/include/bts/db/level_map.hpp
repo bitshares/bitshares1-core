@@ -196,6 +196,8 @@ namespace bts { namespace db {
 
         iterator lower_bound( const Key& key )const
         { try {
+           FC_ASSERT(is_open(), "Database is not open!");
+
            std::vector<char> kslice = fc::raw::pack( key );
            ldb::Slice key_slice( kslice.data(), kslice.size() );
 
@@ -206,6 +208,8 @@ namespace bts { namespace db {
 
         iterator last( )const
         { try {
+           FC_ASSERT(is_open(), "Database is not open!");
+
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->SeekToLast();
            return itr;
@@ -214,6 +218,8 @@ namespace bts { namespace db {
         bool last( Key& k )
         {
           try {
+             FC_ASSERT(is_open(), "Database is not open!");
+
              std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
              FC_ASSERT( it != nullptr );
              it->SeekToLast();
@@ -230,6 +236,8 @@ namespace bts { namespace db {
         bool last( Key& k, Value& v )
         {
           try {
+           FC_ASSERT(is_open(), "Database is not open!");
+
            std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
            FC_ASSERT( it != nullptr );
            it->SeekToLast();
@@ -250,7 +258,7 @@ namespace bts { namespace db {
         {
           try
           {
-             FC_ASSERT( _db != nullptr );
+             FC_ASSERT(is_open(), "Database is not open!");
 
              std::vector<char> kslice = fc::raw::pack( k );
              ldb::Slice ks( kslice.data(), kslice.size() );
@@ -270,7 +278,7 @@ namespace bts { namespace db {
         {
           try
           {
-             FC_ASSERT( _db != nullptr );
+             FC_ASSERT(is_open(), "Database is not open!");
 
              std::vector<char> kslice = fc::raw::pack( k );
              ldb::Slice ks( kslice.data(), kslice.size() );
