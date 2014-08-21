@@ -423,7 +423,7 @@ namespace bts { namespace wallet {
       if( !fc::exists( dir ) )
           fc::create_directories( dir );
 
-      auto fs = std::ofstream( filename.string() );
+      std::ofstream fs( filename.string() );
       fs.write( "[\n", 2 );
       for( auto itr = my->_records.begin(); itr.valid(); ++itr )
       {

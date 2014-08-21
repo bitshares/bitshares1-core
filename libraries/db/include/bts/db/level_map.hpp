@@ -63,7 +63,10 @@ namespace bts { namespace db {
            try_upgrade_db( dir,ndb, fc::get_typename<Value>::name(),sizeof(Value) );
         }
 
-        bool is_open()const { return !!_db; }
+        bool is_open()const
+        {
+          return !!_db;
+        }
 
         void close()
         {
@@ -78,26 +81,24 @@ namespace bts { namespace db {
         }
 
         Value fetch( const Key& k )
-        {
-          try {
-             std::vector<char> kslice = fc::raw::pack( k );
-             ldb::Slice ks( kslice.data(), kslice.size() );
-             std::string value;
-             auto status = _db->Get( ldb::ReadOptions(), ks, &value );
-             if( status.IsNotFound() )
-             {
-               FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
-             }
-             if( !status.ok() )
-             {
-                 FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
-             }
-             fc::datastream<const char*> ds(value.c_str(), value.size());
-             Value tmp;
-             fc::raw::unpack(ds, tmp);
-             return tmp;
-          } FC_RETHROW_EXCEPTIONS( warn, "error fetching key ${key}", ("key",k) );
-        }
+        { try {
+           std::vector<char> kslice = fc::raw::pack( k );
+           ldb::Slice ks( kslice.data(), kslice.size() );
+           std::string value;
+           auto status = _db->Get( ldb::ReadOptions(), ks, &value );
+           if( status.IsNotFound() )
+           {
+             FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
+           }
+           if( !status.ok() )
+           {
+               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
+           }
+           fc::datastream<const char*> ds(value.c_str(), value.size());
+           Value tmp;
+           fc::raw::unpack(ds, tmp);
+           return tmp;
+        } FC_RETHROW_EXCEPTIONS( warn, "error fetching key ${key}", ("key",k) ); }
 
         class iterator
         {
@@ -140,7 +141,8 @@ namespace bts { namespace db {
 
         iterator begin() const
         { try {
-           FC_ASSERT( is_open(), "Database is not open!");
+           FC_ASSERT( is_open(), "Database is not open!" );
+
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->SeekToFirst();
 
@@ -162,11 +164,11 @@ namespace bts { namespace db {
 
         iterator find( const Key& key )
         { try {
-           FC_ASSERT(is_open(), "Database is not open!");
+           FC_ASSERT( is_open(), "Database is not open!" );
 
            ldb::Slice key_slice;
 
-           /** avoid dynamic memory allocation at this step if possible, most 
+           /** avoid dynamic memory allocation at this step if possible, most
             * keys should be relatively small in size and not require dynamic
             * memory allocation to seralize the key.
             */
@@ -196,7 +198,7 @@ namespace bts { namespace db {
 
         iterator lower_bound( const Key& key )const
         { try {
-           FC_ASSERT(is_open(), "Database is not open!");
+           FC_ASSERT( is_open(), "Database is not open!" );
 
            std::vector<char> kslice = fc::raw::pack( key );
            ldb::Slice key_slice( kslice.data(), kslice.size() );
@@ -208,7 +210,7 @@ namespace bts { namespace db {
 
         iterator last( )const
         { try {
-           FC_ASSERT(is_open(), "Database is not open!");
+           FC_ASSERT( is_open(), "Database is not open!" );
 
            iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
            itr._it->SeekToLast();
@@ -216,27 +218,24 @@ namespace bts { namespace db {
         } FC_RETHROW_EXCEPTIONS( warn, "error finding last" ) }
 
         bool last( Key& k )
-        {
-          try {
-             FC_ASSERT(is_open(), "Database is not open!");
+        { try {
+           FC_ASSERT( is_open(), "Database is not open!" );
 
-             std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
-             FC_ASSERT( it != nullptr );
-             it->SeekToLast();
-             if( !it->Valid() )
-             {
-               return false;
-             }
-             fc::datastream<const char*> ds2( it->key().data(), it->key().size() );
-             fc::raw::unpack( ds2, k );
-             return true;
-          } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" );
-        }
+           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
+           FC_ASSERT( it != nullptr );
+           it->SeekToLast();
+           if( !it->Valid() )
+           {
+             return false;
+           }
+           fc::datastream<const char*> ds2( it->key().data(), it->key().size() );
+           fc::raw::unpack( ds2, k );
+           return true;
+        } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" ); }
 
         bool last( Key& k, Value& v )
-        {
-          try {
-           FC_ASSERT(is_open(), "Database is not open!");
+        { try {
+           FC_ASSERT( is_open(), "Database is not open!" );
 
            std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
            FC_ASSERT( it != nullptr );
@@ -251,48 +250,41 @@ namespace bts { namespace db {
            fc::datastream<const char*> ds2( it->key().data(), it->key().size() );
            fc::raw::unpack( ds2, k );
            return true;
-          } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" );
-        }
+        } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" ); }
 
         void store( const Key& k, const Value& v, bool sync = false )
-        {
-          try
-          {
-             FC_ASSERT(is_open(), "Database is not open!");
+        { try {
+           FC_ASSERT( is_open(), "Database is not open!" );
 
-             std::vector<char> kslice = fc::raw::pack( k );
-             ldb::Slice ks( kslice.data(), kslice.size() );
+           std::vector<char> kslice = fc::raw::pack( k );
+           ldb::Slice ks( kslice.data(), kslice.size() );
 
-             auto vec = fc::raw::pack(v);
-             ldb::Slice vs( vec.data(), vec.size() );
+           auto vec = fc::raw::pack(v);
+           ldb::Slice vs( vec.data(), vec.size() );
 
-             auto status = _db->Put( ldb::WriteOptions(), ks, vs );
-             if( !status.ok() )
-             {
-                 FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
-             }
-          } FC_RETHROW_EXCEPTIONS( warn, "error storing ${key} = ${value}", ("key",k)("value",v) );
-        }
+           auto status = _db->Put( ldb::WriteOptions(), ks, vs );
+           if( !status.ok() )
+           {
+               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
+           }
+        } FC_RETHROW_EXCEPTIONS( warn, "error storing ${key} = ${value}", ("key",k)("value",v) ); }
 
         void remove( const Key& k, bool sync = false )
-        {
-          try
-          {
-             FC_ASSERT(is_open(), "Database is not open!");
+        { try {
+           FC_ASSERT( is_open(), "Database is not open!" );
 
-             std::vector<char> kslice = fc::raw::pack( k );
-             ldb::Slice ks( kslice.data(), kslice.size() );
-             auto status = _db->Delete( ldb::WriteOptions(), ks );
-             if( status.IsNotFound() )
-             {
-               FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
-             }
-             if( !status.ok() )
-             {
-                 FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
-             }
-          } FC_RETHROW_EXCEPTIONS( warn, "error removing ${key}", ("key",k) );
-        }
+           std::vector<char> kslice = fc::raw::pack( k );
+           ldb::Slice ks( kslice.data(), kslice.size() );
+           auto status = _db->Delete( ldb::WriteOptions(), ks );
+           if( status.IsNotFound() )
+           {
+             FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
+           }
+           if( !status.ok() )
+           {
+               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
+           }
+        } FC_RETHROW_EXCEPTIONS( warn, "error removing ${key}", ("key",k) ); }
 
      private:
         class key_compare : public leveldb::Comparator

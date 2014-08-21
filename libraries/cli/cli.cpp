@@ -663,7 +663,8 @@ namespace bts { namespace cli {
                   const auto& balances = result.as<account_balance_summary_type>();
                   *_out << pretty_balances( balances, _client );
               }
-              else if (method_name == "wallet_transfer")
+              else if( method_name == "wallet_transfer"
+                       || method_name == "wallet_get_transaction" )
               {
                   const auto& record = result.as<wallet_transaction_record>();
                   const auto& pretty = _client->get_wallet()->to_pretty_trx( record );
