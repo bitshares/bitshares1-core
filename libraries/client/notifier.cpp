@@ -88,8 +88,13 @@ namespace bts { namespace client {
 
   void bts_gntp_notifier::notify_connection_count_changed(uint32_t new_connection_count)
   {
-    if (new_connection_count < my->_connection_count_notification_threshold && 
-        my->_last_reported_connection_count >= my->_connection_count_notification_threshold)
+    // notify any time we drop below the threshold, unless we've already done so recently
+    // (to cut down on noise if we're oscillating around the threshold)
+    if (new_connection_count >= my->_connection_count_notification_threshold && 
+        my->_last_reported_connection_count < my->_connection_count_notification_threshold)
+      my->_last_reported_connection_count = new_connection_count;
+    else if (new_connection_count < my->_connection_count_notification_threshold && 
+             my->_last_reported_connection_count >= my->_connection_count_notification_threshold)
     {
       fc::time_point notification_time_cutoff = fc::time_point::now() - my->_connection_count_notification_interval;
       if (my->_last_connection_count_notification_time < notification_time_cutoff)

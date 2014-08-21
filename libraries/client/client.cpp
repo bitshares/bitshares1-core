@@ -539,8 +539,7 @@ config load_config( const fc::path& datadir )
               _last_sync_status_message_indicated_in_sync(true),
               _last_sync_status_head_block(0),
               _remaining_items_to_sync(0),
-              _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5),
-              _shutting_down(false)
+              _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5)
             { 
             try 
             {
