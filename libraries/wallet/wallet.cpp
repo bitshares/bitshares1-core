@@ -2548,7 +2548,6 @@ namespace bts { namespace wallet {
        {
            if( trx.is_virtual || trx.is_confirmed ) continue;
            if( errors.count( trx.trx_id ) <= 0 ) continue;
-           const auto error = errors.at( trx.trx_id );
            const auto trx_rec = my->_blockchain->get_transaction( trx.trx_id );
            if( trx_rec.valid() )
            {
@@ -2556,7 +2555,7 @@ namespace bts { namespace wallet {
                trx.is_confirmed = true;
                continue;
            }
-           trx.error = error;
+           trx.error = errors.at( trx.trx_id );
        }
 
        /* Don't care if not filtering by account */
