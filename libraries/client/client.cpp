@@ -666,7 +666,7 @@ config load_config( const fc::path& datadir )
       void client_impl::configure_rpc_server(config& cfg,
                                              const program_options::variables_map& option_variables)
       {
-        if( option_variables.count("server") || option_variables.count("daemon") )
+        if( option_variables.count("server") || option_variables.count("daemon") || cfg.rpc.enable )
         {
           // the user wants us to launch the RPC server.
           // First, override any config parameters they
