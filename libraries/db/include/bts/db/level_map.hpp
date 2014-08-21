@@ -75,6 +75,8 @@ namespace bts { namespace db {
 
         fc::optional<Value> fetch_optional( const Key& k )
         {
+           FC_ASSERT( is_open(), "Database is not open!" );
+
            auto itr = find( k );
            if( itr.valid() ) return itr.value();
            return fc::optional<Value>();
@@ -82,6 +84,8 @@ namespace bts { namespace db {
 
         Value fetch( const Key& k )
         { try {
+           FC_ASSERT( is_open(), "Database is not open!" );
+
            std::vector<char> kslice = fc::raw::pack( k );
            ldb::Slice ks( kslice.data(), kslice.size() );
            std::string value;
