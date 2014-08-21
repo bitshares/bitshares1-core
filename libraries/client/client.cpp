@@ -2726,7 +2726,9 @@ config load_config( const fc::path& datadir )
           info["wallet_unlocked_until_timestamp"]               = *unlocked_until;
 
           const auto last_scanned_block_num                     = _wallet->get_last_scanned_block_number();
-          info["wallet_last_scanned_block_timestamp"]           = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+          if( last_scanned_block_num > 0 )
+              info["wallet_last_scanned_block_timestamp"]       = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+
           info["wallet_scan_progress"]                          = _wallet->get_scan_progress();
 
           const auto enabled_delegates                          = _wallet->get_my_delegates( enabled_delegate_status );
