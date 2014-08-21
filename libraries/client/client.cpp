@@ -2758,6 +2758,11 @@ config load_config( const fc::path& datadir )
        _wallet->scan_transactions( block_num, transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
 
+    wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
+    { try {
+       return _wallet->get_transaction( transaction_id );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
+
     bts::blockchain::blockchain_security_state client_impl::blockchain_get_security_state()const
     {
         blockchain_security_state state;

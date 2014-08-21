@@ -148,7 +148,7 @@ namespace bts { namespace wallet {
          vector<public_key_type> get_public_keys_in_account( const string& account_name )const;
          ///@}
 
-         owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
+         wallet_transaction_record get_transaction( const string& transaction_id_prefix )const;
 
          vector<wallet_transaction_record>          get_pending_transactions()const;
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
@@ -453,8 +453,8 @@ namespace bts { namespace wallet {
 
          void                               remove_transaction_record( const string& record_id );
          signed_transaction                 publish_slate(const string& account, string account_to_pay_with, bool sign = true );
-         signed_transaction                 publish_price( const string& account, 
-                                                           double amount_per_xts, 
+         signed_transaction                 publish_price( const string& account,
+                                                           double amount_per_xts,
                                                            const string& amount_asset_symbol, bool sign = true );
 
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);

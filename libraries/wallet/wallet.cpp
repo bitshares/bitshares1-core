@@ -129,8 +129,6 @@ namespace bts { namespace wallet {
                                           unordered_set<address>& required_fees );
             void authorize_update( unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key = false );
 
-            owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
-
             void scan_chain_task( uint32_t start, uint32_t end,
                                   const scan_progress_callback& progress_callback,
                                   const time_point_sec& received_time );
@@ -554,7 +552,7 @@ namespace bts { namespace wallet {
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
           }
-          
+
           bool new_transaction = !transaction_record->is_confirmed;
 
           transaction_record->block_num = block_num;
@@ -645,7 +643,7 @@ namespace bts { namespace wallet {
               }
           }
           store_record |= has_deposit;
-          
+
           if( new_transaction && is_deposit )
               self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
 
@@ -2314,7 +2312,6 @@ namespace bts { namespace wallet {
 
       for( const auto& transaction : block.user_transactions )
       {
-          const auto transaction_id = string( transaction.id() );
           if( string( transaction.id() ).find( transaction_id_prefix ) != 0 ) continue;
           my->scan_transaction( transaction, block_num, block.timestamp, keys, now );
           found = true;
@@ -4936,9 +4933,21 @@ namespace bts { namespace wallet {
       return receive_accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
-   owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
+   wallet_transaction_record wallet::get_transaction( const string& transaction_id_prefix )const
    {
-       return my->_wallet_db.lookup_transaction(trx_id);
+       FC_ASSERT( is_open() );
+
+       if( transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+           FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction ID!", ("transaction_id_prefix",transaction_id_prefix) );
+
+       const auto& items = my->_wallet_db.get_transactions();
+       for( const auto& item : items )
+       {
+           if( string( item.first ).find( transaction_id_prefix ) == 0 )
+               return item.second;
+       }
+
+       FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
    }
 
    vector<wallet_transaction_record> wallet::get_pending_transactions()const
