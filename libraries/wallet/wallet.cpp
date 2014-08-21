@@ -557,10 +557,8 @@ namespace bts { namespace wallet {
           
           bool new_transaction = !transaction_record->is_confirmed;
 
-          transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
-          transaction_record->trx = transaction;
 
           auto store_record = is_known;
 
@@ -2550,7 +2548,15 @@ namespace bts { namespace wallet {
        {
            if( trx.is_virtual || trx.is_confirmed ) continue;
            if( errors.count( trx.trx_id ) <= 0 ) continue;
-           trx.error = errors.at( trx.trx_id );
+           const auto error = errors.at( trx.trx_id );
+           const auto trx_rec = my->_blockchain->get_transaction( trx.trx_id );
+           if( trx_rec.valid() )
+           {
+               trx.block_num = trx_rec->chain_location.block_num;
+               trx.is_confirmed = true;
+               continue;
+           }
+           trx.error = error;
        }
 
        /* Don't care if not filtering by account */
