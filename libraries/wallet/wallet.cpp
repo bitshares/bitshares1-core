@@ -5372,9 +5372,14 @@ namespace bts { namespace wallet {
          info["name"]                                   = my->_current_wallet_path.filename().string();
          info["automatic_backups"]                      = get_automatic_backups();
          info["transaction_scanning"]                   = get_transaction_scanning();
+
          const auto last_scanned_block_num              = get_last_scanned_block_number();
-         info["last_scanned_block_num"]                 = last_scanned_block_num;
-         info["last_scanned_block_timestamp"]           = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+         if( last_scanned_block_num > 0 )
+         {
+             info["last_scanned_block_num"]             = last_scanned_block_num;
+             info["last_scanned_block_timestamp"]       = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+         }
+
          info["transaction_fee"]                        = get_transaction_fee();
 
          info["unlocked"]                               = is_unlocked();
