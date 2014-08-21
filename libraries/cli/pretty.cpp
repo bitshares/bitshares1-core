@@ -139,6 +139,12 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
             info["wallet_unlocked_until"] = pretty_age( unlocked_until_timestamp, true );
     }
 
+    if( !info["wallet_last_scanned_block_timestamp"].is_null() )
+    {
+        const auto last_scanned_block_timestamp = info["wallet_last_scanned_block_timestamp"].as<time_point_sec>();
+        info["wallet_last_scanned_block_timestamp"] = pretty_timestamp( last_scanned_block_timestamp );
+    }
+
     if( !info["wallet_scan_progress"].is_null() )
     {
         const auto scan_progress = info["wallet_scan_progress"].as<float>();
@@ -216,16 +222,22 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
             info["unlocked_until"] = pretty_age( unlocked_until_timestamp, true );
     }
 
-    if( !info["scan_progress"].is_null() )
+    if( !info["last_scanned_block_timestamp"].is_null() )
     {
-        const auto scan_progress = info["scan_progress"].as<float>();
-        info["scan_progress"] = pretty_percent( scan_progress, 1 );
+        const auto last_scanned_block_timestamp = info["last_scanned_block_timestamp"].as<time_point_sec>();
+        info["last_scanned_block_timestamp"] = pretty_timestamp( last_scanned_block_timestamp );
     }
 
     if( !info["transaction_fee"].is_null() )
     {
         const auto transaction_fee = info["transaction_fee"].as<asset>();
         info["transaction_fee"] = client->get_chain()->to_pretty_asset( transaction_fee );
+    }
+
+    if( !info["scan_progress"].is_null() )
+    {
+        const auto scan_progress = info["scan_progress"].as<float>();
+        info["scan_progress"] = pretty_percent( scan_progress, 1 );
     }
 
     out << fc::json::to_pretty_string( info ) << "\n";
