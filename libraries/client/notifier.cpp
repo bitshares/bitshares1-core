@@ -25,13 +25,14 @@ namespace bts { namespace client {
       fc::microseconds _head_block_too_old_notification_interval;
       uint32_t _missed_block_count_threshold;
 
-      bts_gntp_notifier_impl();
+      bts_gntp_notifier_impl(const std::string& host_to_notify = "127.0.0.1", uint16_t port = 23053);
       void register_notification_types();
     };
     extern unsigned char bitshares_icon_png[];
     extern unsigned bitshares_icon_png_len;
 
-    bts_gntp_notifier_impl::bts_gntp_notifier_impl() :
+    bts_gntp_notifier_impl::bts_gntp_notifier_impl(const std::string&  host_to_notify /* = "127.0.0.1" */, uint16_t port /* = 23053 */) :
+      _notifier(host_to_notify, port),
       _bitshares_icon(std::make_shared<fc::gntp_icon>((const char*)bitshares_icon_png, bitshares_icon_png_len)),
       _shutting_down(false),
       _last_reported_connection_count(0),
@@ -68,8 +69,8 @@ namespace bts { namespace client {
     }
   }
 
-  bts_gntp_notifier::bts_gntp_notifier() : 
-    my(new detail::bts_gntp_notifier_impl)
+  bts_gntp_notifier::bts_gntp_notifier(const std::string& host_to_notify /* = "127.0.0.1" */, uint16_t port /* = 23053 */) : 
+    my(new detail::bts_gntp_notifier_impl(host_to_notify, port))
   {
     my->_notifier.set_application_name("BitShares");
     my->_notifier.set_application_icon(my->_bitshares_icon);
