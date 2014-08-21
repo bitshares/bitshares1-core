@@ -1025,7 +1025,7 @@ namespace bts { namespace blockchain {
              if( !reindex_status_callback )
                 std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
              else
-                 reindex_status_callback(0u);
+                 reindex_status_callback(0);
 
              const char spinner[] = "-\\|/";
              uint32_t blocks_indexed = 0;
