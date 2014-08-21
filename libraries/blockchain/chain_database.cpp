@@ -1303,8 +1303,11 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
-      FC_ASSERT( block_data.block_num > (get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY),
-                 "", ("BTS_BLOCKCHAIN_MAX_UNDO_HISTORY", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) );
+      if( get_head_block_num() > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
+      {
+         FC_ASSERT( block_data.block_num > (get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY),
+                    "", ("BTS_BLOCKCHAIN_MAX_UNDO_HISTORY", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) );
+      }
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
       fc::unique_lock<fc::mutex> lock( my->_push_block_mutex );
