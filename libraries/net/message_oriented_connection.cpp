@@ -71,6 +71,12 @@ namespace bts { namespace net {
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
       ilog( "in ~message_oriented_connection_impl()" );
+
+      if (_send_message_in_progress)
+        elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
+             "The task calling send_message() should have been canceled already");
+      assert(!_send_message_in_progress);
+
       try 
       { 
         _read_loop_done.cancel_and_wait();
