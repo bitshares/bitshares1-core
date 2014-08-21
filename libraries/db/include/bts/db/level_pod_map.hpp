@@ -73,31 +73,33 @@ namespace bts { namespace db {
 
         fc::optional<Value> fetch_optional( const Key& k )
         {
+           FC_ASSERT( is_open(), "Database is not open!" );
+
            auto itr = find( k );
            if( itr.valid() ) return itr.value();
            return fc::optional<Value>();
         }
 
         Value fetch( const Key& key )
-        {
-          try {
-             ldb::Slice key_slice( (char*)&key, sizeof(key) );
-             std::string value;
-             auto status = _db->Get( ldb::ReadOptions(), key_slice, &value );
-             if( status.IsNotFound() )
-             {
-               FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",key) );
-             }
-             if( !status.ok() )
-             {
-                 FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
-             }
-             fc::datastream<const char*> datastream(value.c_str(), value.size());
-             Value tmp;
-             fc::raw::unpack(datastream, tmp);
-             return tmp;
-          } FC_RETHROW_EXCEPTIONS( warn, "error fetching key ${key}", ("key",key) );
-        }
+        { try {
+           FC_ASSERT( is_open(), "Database is not open!" );
+
+           ldb::Slice key_slice( (char*)&key, sizeof(key) );
+           std::string value;
+           auto status = _db->Get( ldb::ReadOptions(), key_slice, &value );
+           if( status.IsNotFound() )
+           {
+             FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",key) );
+           }
+           if( !status.ok() )
+           {
+               FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
+           }
+           fc::datastream<const char*> datastream(value.c_str(), value.size());
+           Value tmp;
+           fc::raw::unpack(datastream, tmp);
+           return tmp;
+        } FC_RETHROW_EXCEPTIONS( warn, "error fetching key ${key}", ("key",key) ); }
 
         class iterator
         {
