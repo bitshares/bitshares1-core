@@ -84,7 +84,7 @@ namespace bts { namespace net
         {}
       };
       size_t _total_queued_messages_size;
-      std::queue<queued_message> _queued_messages;
+      std::queue<queued_message, std::list<queued_message> > _queued_messages;
       fc::future<void> _send_queued_messages_done;
     public:
       fc::time_point connection_initiation_time;

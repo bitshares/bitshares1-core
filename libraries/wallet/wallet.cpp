@@ -129,8 +129,6 @@ namespace bts { namespace wallet {
                                           unordered_set<address>& required_fees );
             void authorize_update( unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key = false );
 
-            owallet_transaction_record lookup_transaction( const transaction_id_type& trx_id )const;
-
             void scan_chain_task( uint32_t start, uint32_t end,
                                   const scan_progress_callback& progress_callback,
                                   const time_point_sec& received_time );
@@ -162,10 +160,10 @@ namespace bts { namespace wallet {
 
       void wallet_impl::state_changed( const pending_chain_state_ptr& state )
       {
-          uint32_t last_unlocked_scanned_number = _wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
+          const auto last_unlocked_scanned_number = self->get_last_scanned_block_number();
           if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
           {
-            _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( _blockchain->get_head_block_num() ) );
+              self->set_last_scanned_block_number( _blockchain->get_head_block_num() );
           }
       }
 
@@ -177,7 +175,7 @@ namespace bts { namespace wallet {
           const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
           const auto now = blockchain::now();
           scan_block( summary.block_data.block_num, account_priv_keys, now );
-          _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( summary.block_data.block_num ) );
+          self->set_last_scanned_block_number( summary.block_data.block_num );
       }
 
       void wallet_impl::scan_market_transaction(
@@ -554,7 +552,7 @@ namespace bts { namespace wallet {
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
           }
-          
+
           bool new_transaction = !transaction_record->is_confirmed;
 
           transaction_record->block_num = block_num;
@@ -645,7 +643,7 @@ namespace bts { namespace wallet {
               }
           }
           store_record |= has_deposit;
-          
+
           if( new_transaction && is_deposit )
               self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
 
@@ -1342,7 +1340,7 @@ namespace bts { namespace wallet {
               if( progress_callback )
                  progress_callback( block_num, min_end );
               _scan_progress = float(block_num-start)/(min_end-start+1);
-              _wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( block_num ) );
+              self->set_last_scanned_block_number( block_num );
            }
 
            const auto accounts = _wallet_db.get_accounts();
@@ -1610,7 +1608,7 @@ namespace bts { namespace wallet {
           my->_wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
           set_automatic_backups( true );
           set_transaction_scanning( true );
-          my->_wallet_db.set_property( last_unlocked_scanned_block_number, variant( my->_blockchain->get_head_block_num() ) );
+          set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
           set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
 
           my->_wallet_db.close();
@@ -1835,7 +1833,7 @@ namespace bts { namespace wallet {
           ilog( "Wallet unlocked until time: ${t}", ("t", fc::time_point_sec(*my->_scheduled_lock_time)) );
 
           /* Scan blocks we have missed while locked */
-          uint32_t first = my->_wallet_db.get_property( last_unlocked_scanned_block_number).as<uint32_t>();
+          const uint32_t first = get_last_scanned_block_number();
           scan_chain( first,
                       my->_blockchain->get_head_block_num(),
                       [first](uint32_t current, uint32_t end){
@@ -2314,7 +2312,6 @@ namespace bts { namespace wallet {
 
       for( const auto& transaction : block.user_transactions )
       {
-          const auto transaction_id = string( transaction.id() );
           if( string( transaction.id() ).find( transaction_id_prefix ) != 0 ) continue;
           my->scan_transaction( transaction, block_num, block.timestamp, keys, now );
           found = true;
@@ -2548,7 +2545,6 @@ namespace bts { namespace wallet {
        {
            if( trx.is_virtual || trx.is_confirmed ) continue;
            if( errors.count( trx.trx_id ) <= 0 ) continue;
-           const auto error = errors.at( trx.trx_id );
            const auto trx_rec = my->_blockchain->get_transaction( trx.trx_id );
            if( trx_rec.valid() )
            {
@@ -2556,7 +2552,7 @@ namespace bts { namespace wallet {
                trx.is_confirmed = true;
                continue;
            }
-           trx.error = error;
+           trx.error = errors.at( trx.trx_id );
        }
 
        /* Don't care if not filtering by account */
@@ -4449,6 +4445,18 @@ namespace bts { namespace wallet {
       return my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
    } FC_CAPTURE_AND_RETHROW() }
 
+   void wallet::set_last_scanned_block_number( uint32_t block_num )
+   {
+       FC_ASSERT( is_open() );
+       my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( block_num ) );
+   }
+
+   uint32_t wallet::get_last_scanned_block_number()const
+   {
+       FC_ASSERT( is_open() );
+       return my->_wallet_db.get_property( last_unlocked_scanned_block_number ).as<uint32_t>();
+   }
+
    float wallet::get_scan_progress()const
    {
        FC_ASSERT( is_open() );
@@ -4925,9 +4933,21 @@ namespace bts { namespace wallet {
       return receive_accounts;
    } FC_CAPTURE_AND_RETHROW() }
 
-   owallet_transaction_record wallet::lookup_transaction( const transaction_id_type& trx_id )const
+   wallet_transaction_record wallet::get_transaction( const string& transaction_id_prefix )const
    {
-       return my->_wallet_db.lookup_transaction(trx_id);
+       FC_ASSERT( is_open() );
+
+       if( transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+           FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction ID!", ("transaction_id_prefix",transaction_id_prefix) );
+
+       const auto& items = my->_wallet_db.get_transactions();
+       for( const auto& item : items )
+       {
+           if( string( item.first ).find( transaction_id_prefix ) == 0 )
+               return item.second;
+       }
+
+       FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
    }
 
    vector<wallet_transaction_record> wallet::get_pending_transactions()const
@@ -5336,6 +5356,7 @@ namespace bts { namespace wallet {
        info["automatic_backups"]                        = variant();
        info["transaction_scanning"]                     = variant();
        info["last_scanned_block_num"]                   = variant();
+       info["last_scanned_block_timestamp"]             = variant();
        info["transaction_fee"]                          = variant();
 
        info["unlocked"]                                 = variant();
@@ -5351,7 +5372,9 @@ namespace bts { namespace wallet {
          info["name"]                                   = my->_current_wallet_path.filename().string();
          info["automatic_backups"]                      = get_automatic_backups();
          info["transaction_scanning"]                   = get_transaction_scanning();
-         info["last_scanned_block_num"]                 = my->_wallet_db.get_property( last_unlocked_scanned_block_number ).as<uint32_t>();
+         const auto last_scanned_block_num              = get_last_scanned_block_number();
+         info["last_scanned_block_num"]                 = last_scanned_block_num;
+         info["last_scanned_block_timestamp"]           = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
          info["transaction_fee"]                        = get_transaction_fee();
 
          info["unlocked"]                               = is_unlocked();

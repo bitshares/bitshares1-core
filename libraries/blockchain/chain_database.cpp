@@ -1025,7 +1025,7 @@ namespace bts { namespace blockchain {
              if( !reindex_status_callback )
                 std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
              else
-                 reindex_status_callback(0u);
+                 reindex_status_callback(0);
 
              const char spinner[] = "-\\|/";
              uint32_t blocks_indexed = 0;
@@ -1059,7 +1059,7 @@ namespace bts { namespace blockchain {
           {
              try {
                 auto trx = pending_itr.value();
-                wlog( " laoding pending transaction ${trx}", ("trx",trx) );
+                wlog( " loading pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
                 auto eval_state = evaluate_transaction( trx, my->_relay_fee );
                 share_type fees = eval_state->get_fees();
@@ -1292,6 +1292,11 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
+      if( get_head_block_num() > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
+      {
+         FC_ASSERT( block_data.block_num > (get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY),
+                    "", ("BTS_BLOCKCHAIN_MAX_UNDO_HISTORY", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) );
+      }
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
       fc::unique_lock<fc::mutex> lock( my->_push_block_mutex );

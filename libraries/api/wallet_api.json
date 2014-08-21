@@ -605,6 +605,21 @@
         "aliases" : ["scan", "rescan"]
       },
       {
+        "method_name": "wallet_get_transaction",
+        "description": "Queries your wallet for the specified transaction",
+        "return_type": "transaction_record",
+        "parameters" :
+          [
+            {
+              "name" : "transaction_id",
+              "type" : "string",
+              "description" : "the id (or id prefix) of the transaction"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases" : ["get_transaction"]
+      },
+      {
         "method_name": "wallet_transaction_scan",
         "description": "Scans the specified transaction",
         "return_type": "void",
