@@ -3411,6 +3411,12 @@ config load_config( const fc::path& datadir )
       FC_ASSERT( oresult );
       return *oresult;
    }
+
+   bts::blockchain::asset client_impl::blockchain_unclaimed_genesis() const
+   {
+        return _chain_db->unclaimed_genesis();
+   }
+
    bts::blockchain::signed_transaction client_impl::wallet_publish_price_feed( const std::string& delegate_account,
                                                                                double real_amount_per_xts,
                                                                                const std::string& real_amount_symbol )
