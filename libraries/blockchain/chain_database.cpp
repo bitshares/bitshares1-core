@@ -1292,10 +1292,10 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
-      if( get_head_block_num() > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
+      if( int32_t(get_head_block_num()) > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
       {
-         FC_ASSERT( block_data.block_num > (get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY),
-                    "", ("BTS_BLOCKCHAIN_MAX_UNDO_HISTORY", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) );
+         FC_ASSERT( int32_t(block_data.block_num) > (int32_t(get_head_block_num()) - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY),
+                    "", ("BTS_BLOCKCHAIN_MAX_UNDO_HISTORY", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY)("head_block_num",get_head_block_num()) );
       }
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
