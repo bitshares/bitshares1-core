@@ -3392,6 +3392,9 @@ namespace bts { namespace net { namespace detail {
              ( "in_sync_with_us", !peer->peer_needs_sync_items_from_us )("in_sync_with_them", !peer->we_need_sync_items_from_peer ) );
         if( peer->we_need_sync_items_from_peer )
           ilog( "              above peer has ${count} sync items we might need", ("count", peer->ids_of_items_to_get.size() ) );
+        if (peer->inhibit_fetching_sync_blocks)
+          ilog( "              we are not fetching sync blocks from the above peer (inhibit_fetching_sync_blocks == true)" );
+
       }
       for( const peer_connection_ptr& peer : _handshaking_connections )
       {
