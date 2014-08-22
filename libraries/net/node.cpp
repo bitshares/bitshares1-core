@@ -871,20 +871,23 @@ namespace bts { namespace net { namespace detail {
                 sync_item_requests_to_send.find(peer) == sync_item_requests_to_send.end() && // if we've already scheduled a request for this peer, don't consider scheduling another
                 peer->idle() )
             {
-              // loop through the items it has that we don't yet have on our blockchain
-              for( unsigned i = 0; i < peer->ids_of_items_to_get.size(); ++i )
+              if (!peer->inhibit_fetching_sync_blocks)
               {
-                item_hash_t item_to_potentially_request = peer->ids_of_items_to_get[i];
-                // if we don't already have this item in our temporary storage and we haven't requested from another syncing peer
-                if( !have_already_received_sync_item(item_to_potentially_request) && // already got it, but for some reson it's still in our list of items to fetch
-                    sync_items_to_request.find(item_to_potentially_request) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
-                    _active_sync_requests.find(item_to_potentially_request) == _active_sync_requests.end() ) // we've requested it in a previous iteration and we're still waiting for it to arrive
+                // loop through the items it has that we don't yet have on our blockchain
+                for( unsigned i = 0; i < peer->ids_of_items_to_get.size(); ++i )
                 {
-                  // then schedule a request from this peer
-                  sync_item_requests_to_send[peer].push_back(item_to_potentially_request);
-                  sync_items_to_request.insert( item_to_potentially_request );
-                  if (sync_item_requests_to_send[peer].size() >= BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
-                    break;
+                  item_hash_t item_to_potentially_request = peer->ids_of_items_to_get[i];
+                  // if we don't already have this item in our temporary storage and we haven't requested from another syncing peer
+                  if( !have_already_received_sync_item(item_to_potentially_request) && // already got it, but for some reson it's still in our list of items to fetch
+                      sync_items_to_request.find(item_to_potentially_request) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
+                      _active_sync_requests.find(item_to_potentially_request) == _active_sync_requests.end() ) // we've requested it in a previous iteration and we're still waiting for it to arrive
+                  {
+                    // then schedule a request from this peer
+                    sync_item_requests_to_send[peer].push_back(item_to_potentially_request);
+                    sync_items_to_request.insert( item_to_potentially_request );
+                    if (sync_item_requests_to_send[peer].size() >= BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
+                      break;
+                  }
                 }
               }
             }
@@ -1436,7 +1439,11 @@ namespace bts { namespace net { namespace detail {
         break;
 
       default:
-        process_ordinary_message( originating_peer, received_message, message_hash );
+        // ignore any message in between core_message_type_first and _last that we don't handle above
+        // to allow us to add messages in the future
+        if (received_message.msg_type < core_message_type_enum::core_message_type_first ||
+            received_message.msg_type > core_message_type_enum::core_message_type_last)
+          process_ordinary_message( originating_peer, received_message, message_hash );
         break;
       }
     }
@@ -1810,7 +1817,7 @@ namespace bts { namespace net { namespace detail {
     }
 
     void node_impl::on_fetch_blockchain_item_ids_message( peer_connection* originating_peer, 
-                                                        const fetch_blockchain_item_ids_message& fetch_blockchain_item_ids_message_received )
+                                                          const fetch_blockchain_item_ids_message& fetch_blockchain_item_ids_message_received )
     {
       VERIFY_CORRECT_THREAD();
       item_id peers_last_item_seen;
@@ -1828,6 +1835,7 @@ namespace bts { namespace net { namespace detail {
                                                                     reply_message.total_remaining_item_count );
       reply_message.item_type = fetch_blockchain_item_ids_message_received.item_type;
 
+      bool disconnect_from_inhibited_peer = false;
       // if our client doesn't have any items after the item the peer requested, it will send back
       // a list containing the last item the peer requested
       if( reply_message.item_hashes_available.empty() ) 
@@ -1835,8 +1843,12 @@ namespace bts { namespace net { namespace detail {
       else if( !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() &&
                reply_message.item_hashes_available.size() == 1 &&
                reply_message.item_hashes_available.back() == fetch_blockchain_item_ids_message_received.blockchain_synopsis.back() )
+        {
         /* the last item in the peer's list matches the last item in our list */
         originating_peer->peer_needs_sync_items_from_us = false;
+        if (originating_peer->inhibit_fetching_sync_blocks)
+          disconnect_from_inhibited_peer = true; // delay disconnecting until after we send our reply to this fetch_blockchain_item_ids_message
+        }
       else
         originating_peer->peer_needs_sync_items_from_us = true;
 
@@ -1866,6 +1878,13 @@ namespace bts { namespace net { namespace detail {
         }
       }
       originating_peer->send_message( reply_message );
+
+      if (disconnect_from_inhibited_peer)
+        {
+        // the peer has all of our blocks, and we don't want any of theirs, so disconnect them
+        disconnect_from_peer(originating_peer, "you are on a fork that I'm unable to switch to");
+        return;
+        }
 
       if( originating_peer->direction == peer_connection_direction::inbound &&
           _handshaking_connections.find( originating_peer->shared_from_this() ) != _handshaking_connections.end() )
@@ -2395,21 +2414,6 @@ namespace bts { namespace net { namespace detail {
               potential_first_block = true;
               break;
             }
-#if 0 // just extra debugging
-          if( potential_first_block )
-          {
-            dlog( "block ${block_id} is a potential first block", ("block_id", received_block_iter->block_id ) );
-          }
-          else
-          {
-            dlog( "block ${block_id} is not a potential first block.  potential first blocks are:", ("block_id", received_block_iter->block_id ) );
-            for( const peer_connection_ptr& peer : _active_connections )
-            {
-              if( !peer->ids_of_items_to_get.empty() )
-                dlog( " Peer ${peer}: ${id}", ("peer", peer->get_remote_endpoint() )("id", peer->ids_of_items_to_get.front() ) );
-            }
-          }
-#endif
 
           // if it is, process it, remove it from all sync peers lists
           if( potential_first_block )
@@ -2418,6 +2422,7 @@ namespace bts { namespace net { namespace detail {
             _received_sync_items.erase( received_block_iter );
 
             fc::oexception handle_message_exception;
+            bool discontinue_fetching_blocks_from_peer = false;
 
             bool client_accepted_block = false;
             try
@@ -2440,6 +2445,12 @@ namespace bts { namespace net { namespace detail {
                 dlog( "Already received and accepted this block (presumably through normal inventory mechanism), treating it as accepted" );
 
               client_accepted_block = true;
+            }
+            catch ( const block_older_than_undo_history& e)
+            {
+              wlog( "sync: block is on a fork older than our undo history would allow us to switch to.  We'll stay connected to this client to provide it blocks, but we won't fetch any more blocks from them" );
+              handle_message_exception = e;
+              discontinue_fetching_blocks_from_peer = true;
             }
             catch ( fc::exception& e )
             {
@@ -2514,15 +2525,23 @@ namespace bts { namespace net { namespace detail {
             else
             {
               // invalid message received
-              std::list<peer_connection_ptr> peers_to_disconnect;
+              std::list<peer_connection_ptr> peers_with_rejected_block;
               for( const peer_connection_ptr& peer : _active_connections )
                 if( !peer->ids_of_items_to_get.empty() &&
                     peer->ids_of_items_to_get.front() == block_message_to_process.block_id )
-                  peers_to_disconnect.push_back( peer );
-              for( const peer_connection_ptr& peer : peers_to_disconnect )
+                  peers_with_rejected_block.push_back( peer );
+              for( const peer_connection_ptr& peer : peers_with_rejected_block )
               {
-                wlog( "disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint() ) );
-                disconnect_from_peer( peer.get(), "You offered us a block that we reject as invalid", true, handle_message_exception );
+                if (discontinue_fetching_blocks_from_peer)
+                {
+                  wlog( "inhibiting fetching sync blocks from peer ${endpoint} because it is on a fork that's too old", ("endpoint", peer->get_remote_endpoint() ) );
+                  peer->inhibit_fetching_sync_blocks = true;
+                }
+                else
+                {
+                  wlog( "disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint() ) );
+                  disconnect_from_peer( peer.get(), "You offered us a block that we reject as invalid", true, handle_message_exception );
+                }
               }
               break;
             }              
@@ -2750,10 +2769,13 @@ namespace bts { namespace net { namespace detail {
     void node_impl::start_synchronizing_with_peer( const peer_connection_ptr& peer )
     {
       VERIFY_CORRECT_THREAD();
+      peer->ids_of_items_to_get.clear();
+      peer->number_of_unfetched_item_ids = 0;
       peer->we_need_sync_items_from_peer = true;
       peer->last_block_delegate_has_seen = item_hash_t();
       peer->last_block_number_delegate_has_seen = 0;
       peer->last_block_time_delegate_has_seen = _delegate->get_block_time(item_hash_t());
+      peer->inhibit_fetching_sync_blocks = false;
       fetch_next_batch_of_item_ids_from_peer( peer.get() );
     }
 

@@ -31,6 +31,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( failed_checkpoint_verification,    bts::blockchain::blockchain_exception, 30022, "failed checkpoint verification" );
    FC_DECLARE_DERIVED_EXCEPTION( wrong_chain_id,                    bts::blockchain::blockchain_exception, 30023, "wrong chain id" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_block,                     bts::blockchain::blockchain_exception, 30024, "unknown block" );
+   FC_DECLARE_DERIVED_EXCEPTION( block_older_than_undo_history,     bts::blockchain::blockchain_exception, 30025, "block is older than our undo history allows us to process" );
 
    FC_DECLARE_EXCEPTION( evaluation_error, 31000, "Evaluation Error" );
    FC_DECLARE_DERIVED_EXCEPTION( negative_deposit,                  bts::blockchain::evaluation_error, 31001, "negative deposit" );

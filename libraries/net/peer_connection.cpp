@@ -24,6 +24,7 @@ namespace bts { namespace net
       peer_needs_sync_items_from_us(true),
       we_need_sync_items_from_peer(true),
       last_block_number_delegate_has_seen(0),
+      inhibit_fetching_sync_blocks(false),
       transaction_fetching_inhibited_until(fc::time_point::min())
     {
     }

@@ -40,6 +40,7 @@ namespace bts { namespace net {
   {
     trx_message_type                           = 1000,
     block_message_type                         = 1001,
+    core_message_type_first                    = 5000,
     item_ids_inventory_message_type            = 5001,
     blockchain_item_ids_inventory_message_type = 5002,
     fetch_blockchain_item_ids_message_type     = 5003,
@@ -54,7 +55,8 @@ namespace bts { namespace net {
     current_time_request_message_type          = 5012,
     current_time_reply_message_type            = 5013,
     check_firewall_message_type                = 5014,
-    check_firewall_reply_message_type          = 5015
+    check_firewall_reply_message_type          = 5015,
+    core_message_type_last                     = 5099
   };
 
   const uint32_t core_protocol_version = BTS_NET_PROTOCOL_VERSION;
@@ -319,6 +321,7 @@ namespace bts { namespace net {
 FC_REFLECT_ENUM( bts::net::core_message_type_enum, 
                  (trx_message_type)
                  (block_message_type)
+                 (core_message_type_first)
                  (item_ids_inventory_message_type)
                  (blockchain_item_ids_inventory_message_type)
                  (fetch_blockchain_item_ids_message_type)
@@ -333,7 +336,8 @@ FC_REFLECT_ENUM( bts::net::core_message_type_enum,
                  (current_time_request_message_type)
                  (current_time_reply_message_type)
                  (check_firewall_message_type)
-                 (check_firewall_reply_message_type) )
+                 (check_firewall_reply_message_type)
+                 (core_message_type_last) )
 FC_REFLECT( bts::net::item_id, (item_type)
                                (item_hash) )
 FC_REFLECT( bts::net::item_ids_inventory_message, (item_type)

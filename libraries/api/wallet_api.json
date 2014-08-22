@@ -284,6 +284,21 @@
         "aliases" : ["auto_backup", "autobackup"]
       },
       {
+        "method_name": "wallet_set_transaction_expiration_time",
+        "description": "Set transaction expiration time",
+        "return_type": "uint32_t",
+        "parameters" :
+          [
+            {
+              "name" : "seconds",
+              "type" : "uint32_t",
+              "description" : "seconds before new transactions expire"
+            }
+          ],
+        "prerequisites" : ["wallet_open"],
+        "aliases" : ["set_expiration"]
+      },
+      {
         "method_name": "wallet_account_transaction_history",
         "description": "Lists transaction history for the specified account",
         "return_type": "pretty_transactions",
