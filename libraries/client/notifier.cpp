@@ -39,7 +39,7 @@ namespace bts { namespace client {
       _shutting_down(false),
       _last_reported_connection_count(0),
       _connection_count_notification_interval(fc::seconds(300)),
-      _connection_count_notification_threshold(1),
+      _connection_count_notification_threshold(5),
       _head_block_too_old_notification_interval(fc::seconds(300)),
       _missed_block_count_threshold(3)
     {
