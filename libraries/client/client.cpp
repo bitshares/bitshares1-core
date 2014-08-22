@@ -1670,6 +1670,12 @@ config load_config( const fc::path& datadir )
         return _wallet->get_automatic_backups();
     }
 
+    uint32_t detail::client_impl::wallet_set_transaction_expiration_time( uint32_t secs )
+    {
+        _wallet->set_transaction_expiration( secs );
+        return _wallet->get_transaction_expiration();
+    }
+
     void detail::client_impl::wallet_lock()
     {
       _wallet->lock();

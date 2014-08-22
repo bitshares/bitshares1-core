@@ -39,6 +39,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( key_already_registered,  bts::wallet::wallet_exception, 20032, "key belongs to other account" );
   FC_DECLARE_DERIVED_EXCEPTION( double_cover,            bts::wallet::wallet_exception, 20033, "double cover" );
   FC_DECLARE_DERIVED_EXCEPTION( stupid_order,            bts::wallet::wallet_exception, 20034, "stupid order" );
+  FC_DECLARE_DERIVED_EXCEPTION( invalid_expiration_time, bts::wallet::wallet_exception, 20035, "invalid expiration time" );
   // registered in wallet.cpp
 
 } } // bts::wallet
