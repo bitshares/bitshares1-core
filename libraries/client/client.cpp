@@ -123,6 +123,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
           "fresh copy of the entire blockchain from the network")
 
        ("p2p-port", program_options::value<uint16_t>(), "Set network port to listen on")
+       ("accept-incoming-connections", program_options::value<bool>()->default_value(true), "Set to false to reject incoming p2p connections and only establish outbound connections")
        ("upnp", program_options::value<bool>()->default_value(true), "Enable UPNP")
 
        ("max-connections", program_options::value<uint16_t>(),
@@ -2305,6 +2306,8 @@ config load_config( const fc::path& datadir )
         uint16_t p2pport = option_variables["p2p-port"].as<uint16_t>();
         listen_on_port(p2pport, option_variables.count("p2p-port") != 0);
       }
+      accept_incoming_p2p_connections(option_variables["accept-incoming-connections"].as<bool>());
+        
       // else we use the default set in bts::net::node
 
       //initialize cli
@@ -2433,7 +2436,12 @@ config load_config( const fc::path& datadir )
 
     void client::listen_on_port(uint16_t port_to_listen, bool wait_if_not_available)
     {
-        my->_p2p_node->listen_on_port(port_to_listen, wait_if_not_available);
+      my->_p2p_node->listen_on_port(port_to_listen, wait_if_not_available);
+    }
+
+    void client::accept_incoming_p2p_connections(bool accept)
+    {
+      my->_p2p_node->accept_incoming_connections(accept);
     }
 
     const config& client::configure( const fc::path& configuration_directory )
