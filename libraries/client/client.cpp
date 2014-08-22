@@ -1158,6 +1158,11 @@ config load_config( const fc::path& datadir )
           FC_THROW_EXCEPTION(bts::net::insufficient_relay_fee, "Insufficient relay fee; do not propagate!",
                              ("original_exception", original_exception.to_detail_string()));
         }
+        catch (const bts::blockchain::block_older_than_undo_history& original_exception)
+        {
+          FC_THROW_EXCEPTION(bts::net::block_older_than_undo_history, "Block is older than undo history, stop fetching blocks!",
+                             ("original_exception", original_exception.to_detail_string()));
+        }
       }
 
       /**

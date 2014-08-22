@@ -1292,11 +1292,14 @@ namespace bts { namespace blockchain {
     */
    block_fork_data chain_database::push_block( const full_block& block_data )
    { try {
-      if( int32_t(get_head_block_num()) > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY )
-      {
-         FC_ASSERT( int32_t(block_data.block_num) > (int32_t(get_head_block_num()) - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY),
-                    "", ("BTS_BLOCKCHAIN_MAX_UNDO_HISTORY", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY)("head_block_num",get_head_block_num()) );
-      }
+      if( get_head_block_num() > BTS_BLOCKCHAIN_MAX_UNDO_HISTORY && 
+          block_data.block_num <= (get_head_block_num() - BTS_BLOCKCHAIN_MAX_UNDO_HISTORY) )
+        FC_THROW_EXCEPTION(block_older_than_undo_history, 
+                           "block ${new_block_hash} (number ${new_block_num}) is on a fork older than "
+                           "our undo history would allow us to switch to (current head block is number ${head_block_num}, undo history is ${undo_history})",
+                           ("new_block_hash", block_data.id())("new_block_num", block_data.block_num)
+                           ("head_block_num", get_head_block_num())("undo_history", BTS_BLOCKCHAIN_MAX_UNDO_HISTORY));
+
       // only allow a single fiber attempt to push blocks at any given time,
       // this method is not re-entrant.
       fc::unique_lock<fc::mutex> lock( my->_push_block_mutex );
