@@ -93,19 +93,22 @@ namespace bts { namespace wallet {
           */
          ///@{
 
-         void       set_automatic_backups( bool enabled );
-         bool       get_automatic_backups()const;
+         void                   set_automatic_backups( bool enabled );
+         bool                   get_automatic_backups()const;
 
-         void       set_transaction_scanning( bool enabled );
-         bool       get_transaction_scanning()const;
+         void                   set_transaction_scanning( bool enabled );
+         bool                   get_transaction_scanning()const;
 
-         void       set_transaction_fee( const asset& fee );
-         asset      get_transaction_fee()const;
+         void                   set_last_scanned_block_number( uint32_t block_num );
+         uint32_t               get_last_scanned_block_number()const;
 
-         void       set_last_scanned_block_number( uint32_t block_num );
-         uint32_t   get_last_scanned_block_number()const;
+         void                   set_transaction_fee( const asset& fee );
+         asset                  get_transaction_fee()const;
 
-         float      get_scan_progress()const;
+         void                   set_transaction_expiration( uint32_t secs );
+         uint32_t               get_transaction_expiration()const;
+
+         float                  get_scan_progress()const;
 
          void                   set_setting( const string& name, const variant& value );
          fc::optional<variant>  get_setting( const string& name )const;
