@@ -620,6 +620,14 @@
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "blockchain_unclaimed_genesis",
+        "description": "Returns the total shares in the genesis block which have never been fully or partially claimed.",
+        "return_type": "asset",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }
