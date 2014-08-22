@@ -659,6 +659,19 @@ namespace bts { namespace wallet {
           }
           transaction_record->fee = total_fee;
 
+          /* For market orders with only the fee being a withdrawal for asset 0 (bids) */
+          if( transaction_record->ledger_entries.size() > 1 )
+          {
+              const auto entries = transaction_record->ledger_entries;
+              transaction_record->ledger_entries.clear();
+              for( const auto& entry : entries )
+              {
+                  if( entry.amount != transaction_record->fee )
+                      transaction_record->ledger_entries.push_back( entry );
+              }
+
+          }
+
           for( const auto& op : transaction.operations )
           {
               switch( operation_type_enum( op.type ) )
