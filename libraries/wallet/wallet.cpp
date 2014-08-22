@@ -560,7 +560,7 @@ namespace bts { namespace wallet {
 
           auto store_record = is_known;
 
-          /* Clear amounts and we will reconstruct them below */
+          /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
               entry.amount.amount = 0;
 
@@ -767,13 +767,17 @@ namespace bts { namespace wallet {
                     if( !a2.valid() ) continue;
                     if( a1->name != a2->name ) continue;
 
-                    new_entry = false;
                     // TODO: We should probably really have a map of asset ids to amounts per ledger entry
                     if( entry.amount.asset_id == amount.asset_id )
+                    {
                         entry.amount += amount;
+                        new_entry = false;
+                    }
                     else if( entry.amount.amount == 0 )
+                    {
                         entry.amount = amount;
-                    break;
+                        new_entry = false;
+                    }
                 }
                 if( new_entry )
                 {
