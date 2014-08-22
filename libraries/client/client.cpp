@@ -2388,13 +2388,19 @@ config load_config( const fc::path& datadir )
           port_stream << (string)actual_p2p_endpoint;
 
         if( option_variables.count("log-commands") <= 0) /* Was breaking regression tests */
-            ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
-
-        if (option_variables.count("p2p-port"))
         {
-          uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
-          if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
-            ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
+          if (option_variables["accept-incoming-connections"].as<bool>())
+          {
+            ulog("Listening for P2P connections on ${port}",("port",port_stream.str()));
+            if (option_variables.count("p2p-port"))
+            {
+              uint16_t p2p_port = option_variables["p2p-port"].as<uint16_t>();
+              if (p2p_port != 0 && p2p_port != actual_p2p_endpoint.port())
+                ulog(" (unable to bind to the desired port ${p2p_port} )", ("p2p_port",p2p_port));
+            }
+          }
+          else
+            ulog("Not accepting incoming P2P connections");
         }
 
         if (option_variables.count("connect-to"))

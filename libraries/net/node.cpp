@@ -1659,57 +1659,6 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_connection_accepted_message( peer_connection* originating_peer, const connection_accepted_message& connection_accepted_message_received )
     {
       VERIFY_CORRECT_THREAD();
-#if 0
-      bool already_connected_to_this_peer = is_already_connected_to_id( hello_reply_message_received.node_id );
-
-      // store off the data provided in the hello message
-      originating_peer->user_agent = hello_reply_message_received.user_agent;
-      originating_peer->node_id = hello_reply_message_received.node_id;
-      originating_peer->core_protocol_version = hello_reply_message_received.core_protocol_version;
-      parse_hello_user_data_for_peer( originating_peer, hello_reply_message_received.user_data );
-
-      // report whether this peer will think we're behind a firewall
-      if( originating_peer->inbound_port != 0 )
-      {
-        // if we sent inbound_port = 0 we were telling them that we're firewalled and don't accept incoming connections
-        if( originating_peer->inbound_address == hello_reply_message_received.remote_endpoint.get_address() &&
-            originating_peer->outbound_port == hello_reply_message_received.remote_endpoint.port() )
-          dlog( "peer ${peer} does not think we're behind a firewall", ("peer", originating_peer->get_remote_endpoint() ) );
-        else
-          dlog( "peer ${peer} thinks we're firewalled (we think we were connecting from ${we_saw}, they saw ${they_saw})",
-               ( "peer", originating_peer->get_remote_endpoint() )
-               ( "we_saw", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port ) )
-               ( "they_saw", hello_reply_message_received.remote_endpoint ) );
-      }
-      if( originating_peer->state == peer_connection::hello_sent && 
-          originating_peer->direction == peer_connection_direction::outbound )
-      {
-        if( already_connected_to_this_peer )
-        {
-          dlog( "Established a connection with peer ${peer}, but I'm already connected to it.  Closing the connection", 
-               ( "peer", originating_peer->get_remote_endpoint() ) );
-          disconnect_from_peer( originating_peer, "I'm already connected to you" );
-        }
-#ifdef ENABLE_P2P_DEBUGGING_API
-        else if( !_allowed_peers.empty() && 
-                 _allowed_peers.find( originating_peer->node_id ) == _allowed_peers.end() )
-        {
-          dlog( "Established a connection with peer ${peer}, but it's not in my _accepted_peers list.  Closing the connection", 
-               ( "peer", originating_peer->get_remote_endpoint() ) );
-          disconnect_from_peer( originating_peer, "You're not in my accepted_peers list" );
-        }
-#endif // ENABLE_P2P_DEBUGGING_API        
-        else
-        {
-          dlog( "Received a reply to my \"hello\" from ${peer}, connection is accepted", ("peer", originating_peer->get_remote_endpoint() ) );
-          dlog( "Remote server sees my connection as ${endpoint}", ("endpoint", hello_reply_message_received.remote_endpoint ) );
-          originating_peer->state = peer_connection::connected;
-          originating_peer->send_message( address_request_message() );
-        }
-      }
-      else
-        FC_THROW( "unexpected hello_reply_message from peer" );
-#endif
       dlog( "Received a connection_accepted in response to my \"hello\" from ${peer}", ("peer", originating_peer->get_remote_endpoint() ) );
       originating_peer->negotiation_status = peer_connection::connection_negotiation_status::peer_connection_accepted;
       originating_peer->our_state = peer_connection::our_connection_state::connection_accepted;
@@ -3139,7 +3088,7 @@ namespace bts { namespace net { namespace detail {
 
       fc::ip::endpoint local_endpoint = new_peer->get_local_endpoint();
       new_peer->inbound_address = local_endpoint.get_address();
-      new_peer->inbound_port = _actual_listening_endpoint.port();
+      new_peer->inbound_port = _node_configuration.accept_incoming_connections ? _actual_listening_endpoint.port() : 0;
       new_peer->outbound_port = local_endpoint.port();
 
       new_peer->our_state = peer_connection::our_connection_state::just_connected;
