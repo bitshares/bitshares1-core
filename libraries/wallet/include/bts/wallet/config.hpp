@@ -1,6 +1,6 @@
 #pragma once
 
-#define BTS_WALLET_VERSION                  uint32_t(103)
+#define BTS_WALLET_VERSION                  uint32_t(104)
 
 #define BTS_WALLET_MIN_PASSWORD_LENGTH      (8)
 #define BTS_WALLET_MIN_BRAINKEY_LENGTH      (32)
