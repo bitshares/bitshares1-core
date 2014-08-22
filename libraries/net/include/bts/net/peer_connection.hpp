@@ -19,7 +19,7 @@
 #include <boost/multi_index/hashed_index.hpp>
 
 #include <queue>
-#include <deque>
+#include <boost/container/deque.hpp>
 
 namespace bts { namespace net 
   {
@@ -129,7 +129,7 @@ namespace bts { namespace net
 
       /// blockchain synchronization state data
       /// @{
-      std::deque<item_hash_t> ids_of_items_to_get; /// id of items in the blockchain that this peer has told us about
+      boost::container::deque<item_hash_t> ids_of_items_to_get; /// id of items in the blockchain that this peer has told us about
       uint32_t number_of_unfetched_item_ids; /// number of items in the blockchain that follow ids_of_items_to_get but the peer hasn't yet told us their ids
       bool peer_needs_sync_items_from_us;
       bool we_need_sync_items_from_peer;
