@@ -78,9 +78,6 @@ namespace bts { namespace client {
                   "180.153.142.120:1777",
                   "84.238.140.192:42577"
                   }),
-          chain_servers(vector<string>{
-                  "69.90.132.209:1375"
-                  }),
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
