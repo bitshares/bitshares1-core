@@ -131,7 +131,7 @@ namespace bts { namespace client {
          bool                is_connected() const;
          bts::net::node_id_t get_node_id() const;
 
-         void configure( const fc::path& configuration_directory );
+         const config& configure(const fc::path& configuration_directory);
 
          // functions for taking command-line parameters and passing them on to the p2p node
          void listen_on_port( uint16_t port_to_listen, bool wait_if_not_available);

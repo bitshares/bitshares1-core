@@ -2425,10 +2425,12 @@ config load_config( const fc::path& datadir )
         my->_p2p_node->listen_on_port(port_to_listen, wait_if_not_available);
     }
 
-    void client::configure( const fc::path& configuration_directory )
+    const config& client::configure( const fc::path& configuration_directory )
     {
       my->_data_dir = configuration_directory;
       my->_p2p_node->load_configuration( my->_data_dir );
+
+      return my->_config;
     }
 
     void client::init_cli()
