@@ -1070,7 +1070,7 @@ namespace bts { namespace blockchain {
           {
              try {
                 auto trx = pending_itr.value();
-                wlog( " laoding pending transaction ${trx}", ("trx",trx) );
+                wlog( " loading pending transaction ${trx}", ("trx",trx) );
                 auto trx_id = trx.id();
                 auto eval_state = evaluate_transaction( trx, my->_relay_fee );
                 share_type fees = eval_state->get_fees();

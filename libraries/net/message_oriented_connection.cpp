@@ -30,7 +30,8 @@ namespace bts { namespace net {
       fc::time_point _connected_time;
       fc::time_point _last_message_received_time;
       fc::time_point _last_message_sent_time;
-      fc::mutex _send_mutex;
+      
+      bool _send_message_in_progress;
 
 
 
@@ -63,12 +64,19 @@ namespace bts { namespace net {
     : _self(self),
       _delegate(delegate),
       _bytes_received(0),
-      _bytes_sent(0)
+      _bytes_sent(0),
+      _send_message_in_progress(false)
     {
     }
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
       ilog( "in ~message_oriented_connection_impl()" );
+
+      if (_send_message_in_progress)
+        elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
+             "The task calling send_message() should have been canceled already");
+      assert(!_send_message_in_progress);
+
       try 
       { 
         _read_loop_done.cancel_and_wait();
@@ -182,6 +190,18 @@ namespace bts { namespace net {
 
     void message_oriented_connection_impl::send_message(const message& message_to_send)
     {
+      struct verify_no_send_in_progress {
+        bool& var;
+        verify_no_send_in_progress(bool& var) : var(var) 
+        {
+          if (var)
+            elog("Error: two tasks are calling message_oriented_connection::send_message() at the same time");
+          assert(!var);
+          var = true; 
+        }
+        ~verify_no_send_in_progress() { var = false; }
+      } _verify_no_send_in_progress(_send_message_in_progress);
+
       try 
       {
         size_t size_of_message_and_header = sizeof(message_header) + message_to_send.size;
@@ -190,10 +210,7 @@ namespace bts { namespace net {
         std::unique_ptr<char[]> padded_message(new char[size_with_padding]);
         memcpy(padded_message.get(), (char*)&message_to_send, sizeof(message_header));
         memcpy(padded_message.get() + sizeof(message_header), message_to_send.data.data(), message_to_send.size );
-        {
-          fc::scoped_lock<fc::mutex> lock(_send_mutex);
-          _sock.write(padded_message.get(), size_with_padding);
-        }
+        _sock.write(padded_message.get(), size_with_padding);
         _sock.flush();
         _bytes_sent += size_with_padding;
         _last_message_sent_time = fc::time_point::now();

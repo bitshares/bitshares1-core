@@ -562,7 +562,7 @@ namespace bts { namespace wallet {
 
           auto store_record = is_known;
 
-          /* Clear amounts and we will reconstruct them below */
+          /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
               entry.amount.amount = 0;
 
@@ -769,13 +769,17 @@ namespace bts { namespace wallet {
                     if( !a2.valid() ) continue;
                     if( a1->name != a2->name ) continue;
 
-                    new_entry = false;
                     // TODO: We should probably really have a map of asset ids to amounts per ledger entry
                     if( entry.amount.asset_id == amount.asset_id )
+                    {
                         entry.amount += amount;
+                        new_entry = false;
+                    }
                     else if( entry.amount.amount == 0 )
+                    {
                         entry.amount = amount;
-                    break;
+                        new_entry = false;
+                    }
                 }
                 if( new_entry )
                 {
@@ -5377,9 +5381,14 @@ namespace bts { namespace wallet {
          info["name"]                                   = my->_current_wallet_path.filename().string();
          info["automatic_backups"]                      = get_automatic_backups();
          info["transaction_scanning"]                   = get_transaction_scanning();
+
          const auto last_scanned_block_num              = get_last_scanned_block_number();
-         info["last_scanned_block_num"]                 = last_scanned_block_num;
-         info["last_scanned_block_timestamp"]           = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+         if( last_scanned_block_num > 0 )
+         {
+             info["last_scanned_block_num"]             = last_scanned_block_num;
+             info["last_scanned_block_timestamp"]       = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+         }
+
          info["transaction_fee"]                        = get_transaction_fee();
 
          info["unlocked"]                               = is_unlocked();
