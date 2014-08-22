@@ -745,53 +745,51 @@ namespace bts { namespace wallet {
       // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
       bool wallet_impl::scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
-         const auto chain_bal_rec = _blockchain->get_balance_record( op.balance_id );
-         FC_ASSERT( chain_bal_rec.valid() );
-         const auto amount = asset( op.amount, chain_bal_rec->condition.asset_id );
+         const auto bal_rec = _blockchain->get_balance_record( op.balance_id );
+         FC_ASSERT( bal_rec.valid() );
+         const auto amount = asset( op.amount, bal_rec->condition.asset_id );
 
          if( amount.asset_id == total_fee.asset_id )
             total_fee += amount;
 
-         const auto bal_rec = _wallet_db.lookup_balance( op.balance_id );
-         if( bal_rec.valid() )
+         // TODO: Only if withdraw by signature or by name
+         const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
+         if( key_rec.valid() && key_rec->has_private_key() ) /* If we own this balance */
          {
-            // TODO: Only if withdraw by signature or by name
-            const auto key_rec =_wallet_db.lookup_key( bal_rec->owner() );
-            if( key_rec.valid() && key_rec->has_private_key() ) /* If we own this balance */
-            {
-                auto new_entry = true;
-                for( auto& entry : trx_rec.ledger_entries )
-                {
-                    if( !entry.from_account.valid() ) continue;
-                    const auto a1 = self->get_account_for_address( *entry.from_account );
-                    if( !a1.valid() ) continue;
-                    const auto a2 = self->get_account_for_address( key_rec->account_address );
-                    if( !a2.valid() ) continue;
-                    if( a1->name != a2->name ) continue;
+             auto new_entry = true;
+             for( auto& entry : trx_rec.ledger_entries )
+             {
+                 if( !entry.from_account.valid() ) continue;
+                 const auto a1 = self->get_account_for_address( *entry.from_account );
+                 if( !a1.valid() ) continue;
+                 const auto a2 = self->get_account_for_address( key_rec->account_address );
+                 if( !a2.valid() ) continue;
+                 if( a1->name != a2->name ) continue;
 
-                    // TODO: We should probably really have a map of asset ids to amounts per ledger entry
-                    if( entry.amount.asset_id == amount.asset_id )
-                    {
-                        entry.amount += amount;
-                        new_entry = false;
-                    }
-                    else if( entry.amount.amount == 0 )
-                    {
-                        entry.amount = amount;
-                        new_entry = false;
-                    }
-                }
-                if( new_entry )
-                {
-                    auto entry = ledger_entry();
-                    entry.from_account = key_rec->public_key;
-                    entry.amount = amount;
-                    trx_rec.ledger_entries.push_back( entry );
-                }
-            }
+                 // TODO: We should probably really have a map of asset ids to amounts per ledger entry
+                 if( entry.amount.asset_id == amount.asset_id )
+                 {
+                     entry.amount += amount;
+                     new_entry = false;
+                     break;
+                 }
+                 else if( entry.amount.amount == 0 )
+                 {
+                     entry.amount = amount;
+                     new_entry = false;
+                     break;
+                 }
+             }
+             if( new_entry )
+             {
+                 auto entry = ledger_entry();
+                 entry.from_account = key_rec->public_key;
+                 entry.amount = amount;
+                 trx_rec.ledger_entries.push_back( entry );
+             }
 
-            sync_balance_with_blockchain( op.balance_id );
-            return true;
+             sync_balance_with_blockchain( op.balance_id );
+             return true;
          }
          return false;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -819,15 +817,21 @@ namespace bts { namespace wallet {
                   if( !a2.valid() ) continue;
                   if( a1->name != a2->name ) continue;
 
-                  new_entry = false;
                   // TODO: We should probably really have a map of asset ids to amounts per ledger entry
                   if( entry.amount.asset_id == amount.asset_id )
+                  {
                       entry.amount += amount;
+                      if( entry.memo.empty() ) entry.memo = "withdraw pay";
+                      new_entry = false;
+                      break;
+                  }
                   else if( entry.amount.amount == 0 )
+                  {
                       entry.amount = amount;
-
-                  if( entry.memo.empty() ) entry.memo = "withdraw pay";
-                  break;
+                      if( entry.memo.empty() ) entry.memo = "withdraw pay";
+                      new_entry = false;
+                      break;
+                  }
              }
              if( new_entry )
              {
@@ -1290,7 +1294,7 @@ namespace bts { namespace wallet {
       {
          const auto pending_state = _blockchain->get_pending_state();
          const auto balance_record = pending_state->get_balance_record( balance_id );
-         if( !balance_record.valid() || balance_record->balance <= 0 )
+         if( !balance_record.valid() || balance_record->balance == 0 )
              _wallet_db.remove_balance( balance_id );
          else
              _wallet_db.cache_balance( *balance_record );
@@ -1479,6 +1483,40 @@ namespace bts { namespace wallet {
                   const auto items = _wallet_db.get_balances();
                   for( const auto& balance_item : items )
                       sync_balance_with_blockchain( balance_item.first );
+              }
+
+              if( current_version < 104 )
+              {
+                  /* Transaction scanning was broken by commit 00ece3a78b2775c4b8817e394f59b6225dded80b */
+                  const auto broken_time = time_point_sec( 1408463100 ); // 2014-08-19 11:45:00 am EDT
+                  auto broken_trxs = vector<transaction_id_type>();
+                  const auto items = _wallet_db.get_transactions();
+                  for( const auto& item : items )
+                  {
+                      const auto id = item.first;
+                      const auto trx_rec = item.second;
+                      if( trx_rec.is_confirmed && trx_rec.created_time >= broken_time )
+                          broken_trxs.push_back( id );
+                  }
+                  if( broken_trxs.size() > 0 )
+                  {
+                      const function<void( void )> rescan = [broken_trxs, this]()
+                      {
+                          for( const auto& id : broken_trxs )
+                          {
+                              const auto trx_rec = _wallet_db.lookup_transaction( id );
+                              if( !trx_rec.valid() ) continue;
+                              try
+                              {
+                                  self->scan_transaction( trx_rec->block_num, trx_rec->record_id );
+                              }
+                              catch( ... )
+                              {
+                              }
+                          }
+                      };
+                      _unlocked_upgrade_tasks.push_back( rescan );
+                  }
               }
 
               if( _unlocked_upgrade_tasks.empty() )
@@ -3307,14 +3345,16 @@ namespace bts { namespace wallet {
                               ("to_address_amounts",to_address_amounts)
                               ("memo_message",memo_message) ) }
 
-   wallet_transaction_record wallet::transfer_asset( double real_amount_to_transfer,
-                                        const string& amount_to_transfer_symbol,
-                                        const string& paying_account_name,
-                                        const string& from_account_name,
-                                        const string& to_account_name,
-                                        const string& memo_message,
-                                        vote_selection_method selection_method,
-                                        bool sign )
+   wallet_transaction_record wallet::transfer_asset(
+           double real_amount_to_transfer,
+           const string& amount_to_transfer_symbol,
+           const string& paying_account_name,
+           const string& from_account_name,
+           const string& to_account_name,
+           const string& memo_message,
+           vote_selection_method selection_method,
+           bool sign
+           )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );

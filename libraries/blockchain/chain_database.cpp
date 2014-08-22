@@ -2663,7 +2663,23 @@ namespace bts { namespace blockchain {
 
    ofeed_record     chain_database::get_feed( const feed_index& i )const
    {
-      return my->_feed_db.fetch_optional( i );
+       return my->_feed_db.fetch_optional( i );
+   }
+
+   asset chain_database::unclaimed_genesis()
+   {
+        auto balance = my->_balance_db.begin();
+        asset unclaimed_total(0);
+        auto genesis_date = get_genesis_timestamp();
+
+        while (balance.valid()) {
+            if (balance.value().last_update <= genesis_date)
+                unclaimed_total += balance.value().get_balance();
+
+            ++balance;
+        }
+
+        return unclaimed_total;
    }
 
    /**

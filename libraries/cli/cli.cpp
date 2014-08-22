@@ -1120,6 +1120,8 @@ namespace bts { namespace cli {
                     *_out << "\n";
                   }
               }
+              else if (method_name == "blockchain_unclaimed_genesis")
+                  *_out << _client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
               else if (method_name == "network_list_potential_peers")
               {
                   auto peers = result.as<std::vector<net::potential_peer_record>>();

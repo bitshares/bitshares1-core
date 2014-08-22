@@ -2425,10 +2425,12 @@ config load_config( const fc::path& datadir )
         my->_p2p_node->listen_on_port(port_to_listen, wait_if_not_available);
     }
 
-    void client::configure( const fc::path& configuration_directory )
+    const config& client::configure( const fc::path& configuration_directory )
     {
       my->_data_dir = configuration_directory;
       my->_p2p_node->load_configuration( my->_data_dir );
+
+      return my->_config;
     }
 
     void client::init_cli()
@@ -3411,6 +3413,12 @@ config load_config( const fc::path& datadir )
       FC_ASSERT( oresult );
       return *oresult;
    }
+
+   bts::blockchain::asset client_impl::blockchain_unclaimed_genesis() const
+   {
+        return _chain_db->unclaimed_genesis();
+   }
+
    bts::blockchain::signed_transaction client_impl::wallet_publish_price_feed( const std::string& delegate_account,
                                                                                double real_amount_per_xts,
                                                                                const std::string& real_amount_symbol )
