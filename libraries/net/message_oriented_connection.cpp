@@ -14,6 +14,12 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
+#ifndef NDEBUG
+# define VERIFY_CORRECT_THREAD() assert(_thread->is_current())
+#else
+# define VERIFY_CORRECT_THREAD() do {} while (0)
+#endif
+
 namespace bts { namespace net {
   namespace detail
   {
@@ -33,7 +39,9 @@ namespace bts { namespace net {
       
       bool _send_message_in_progress;
 
-
+#ifndef NDEBUG
+      fc::thread* _thread;
+#endif
 
       void read_loop();
       void start_read_loop();
@@ -66,10 +74,14 @@ namespace bts { namespace net {
       _bytes_received(0),
       _bytes_sent(0),
       _send_message_in_progress(false)
+#ifndef NDEBUG
+      ,_thread(&fc::thread::current())
+#endif
     {
     }
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
+      VERIFY_CORRECT_THREAD();
       ilog( "in ~message_oriented_connection_impl()" );
 
       if (_send_message_in_progress)
@@ -93,11 +105,13 @@ namespace bts { namespace net {
 
     fc::tcp_socket& message_oriented_connection_impl::get_socket()
     {
+      VERIFY_CORRECT_THREAD();
       return _sock.get_socket();
     }
 
     void message_oriented_connection_impl::accept()
     {
+      VERIFY_CORRECT_THREAD();
       _sock.accept();
       assert(!_read_loop_done.valid()); // check to be sure we never launch two read loops
       _read_loop_done = fc::async([=](){ read_loop(); }, "message read_loop");
@@ -105,6 +119,7 @@ namespace bts { namespace net {
 
     void message_oriented_connection_impl::connect_to(const fc::ip::endpoint& remote_endpoint)
     {
+      VERIFY_CORRECT_THREAD();
       _sock.connect_to(remote_endpoint);
       assert(!_read_loop_done.valid()); // check to be sure we never launch two read loops
       _read_loop_done = fc::async([=](){ read_loop(); }, "message read_loop");
@@ -112,12 +127,14 @@ namespace bts { namespace net {
 
     void message_oriented_connection_impl::bind(const fc::ip::endpoint& local_endpoint)
     {
+      VERIFY_CORRECT_THREAD();
       _sock.bind(local_endpoint);
     }
 
 
     void message_oriented_connection_impl::read_loop()
     {
+      VERIFY_CORRECT_THREAD();
       const int BUFFER_SIZE = 16;
       const int LEFTOVER = BUFFER_SIZE - sizeof(message_header);
       static_assert(BUFFER_SIZE >= sizeof(message_header), "insufficient buffer");
@@ -190,6 +207,7 @@ namespace bts { namespace net {
 
     void message_oriented_connection_impl::send_message(const message& message_to_send)
     {
+      VERIFY_CORRECT_THREAD();
       struct verify_no_send_in_progress {
         bool& var;
         verify_no_send_in_progress(bool& var) : var(var) 
@@ -219,31 +237,37 @@ namespace bts { namespace net {
 
     void message_oriented_connection_impl::close_connection()
     {
+      VERIFY_CORRECT_THREAD();
       _sock.close();
     }
 
     uint64_t message_oriented_connection_impl::get_total_bytes_sent() const
     {
+      VERIFY_CORRECT_THREAD();
       return _bytes_sent;
     }
 
     uint64_t message_oriented_connection_impl::get_total_bytes_received() const
     {
+      VERIFY_CORRECT_THREAD();
       return _bytes_received;
     }
 
     fc::time_point message_oriented_connection_impl::get_last_message_sent_time() const
     {
+      VERIFY_CORRECT_THREAD();
       return _last_message_sent_time;
     }
 
     fc::time_point message_oriented_connection_impl::get_last_message_received_time() const
     {
+      VERIFY_CORRECT_THREAD();
       return _last_message_received_time;
     }
 
     fc::sha512 message_oriented_connection_impl::get_shared_secret() const
     {
+      VERIFY_CORRECT_THREAD();
       return _sock.get_shared_secret();
     }
 

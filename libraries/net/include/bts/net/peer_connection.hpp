@@ -170,6 +170,11 @@ namespace bts { namespace net
 
       // 
       fc::future<void> accept_or_connect_task_done;
+
+#ifndef NDEBUG
+    private:
+      fc::thread* _thread;
+#endif
     private:
       peer_connection(peer_connection_delegate* delegate);
       void destroy();

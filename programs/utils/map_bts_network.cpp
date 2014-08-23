@@ -10,6 +10,7 @@
 
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/net/peer_connection.hpp>
+#include <bts/client/client.hpp>
 
 class peer_probe : public bts::net::peer_connection_delegate
 {
@@ -176,12 +177,10 @@ int main(int argc, char** argv)
   fc::path data_dir = fc::temp_directory_path() / "map_bts_network";
   fc::create_directories(data_dir);
 
-  fc::ip::endpoint seed_node1 = fc::ip::endpoint::from_string("178.62.50.61:1776");
-  nodes_to_visit.push(seed_node1);
-  nodes_to_visit.push(fc::ip::endpoint::from_string("178.62.50.61:1777"));
-  nodes_to_visit.push(fc::ip::endpoint::from_string("178.62.50.61:1778"));
-  nodes_to_visit.push(fc::ip::endpoint::from_string("80.240.133.79:1776"));
-  nodes_to_visit.push(fc::ip::endpoint::from_string("80.240.133.79:1777"));
+  bts::client::config default_client_config;
+  for (const std::string default_peer : default_client_config.default_peers)
+    nodes_to_visit.push(fc::ip::endpoint::from_string(default_peer));
+  fc::ip::endpoint seed_node1 = nodes_to_visit.front();
 
   fc::ecc::private_key my_node_id = fc::ecc::private_key::generate();
   bts::blockchain::chain_database_ptr chain_db = std::make_shared<bts::blockchain::chain_database>();
