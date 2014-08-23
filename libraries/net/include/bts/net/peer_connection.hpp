@@ -174,6 +174,7 @@ namespace bts { namespace net
 #ifndef NDEBUG
     private:
       fc::thread* _thread;
+      unsigned _send_message_queue_tasks_running; // temporary debugging
 #endif
     private:
       peer_connection(peer_connection_delegate* delegate);

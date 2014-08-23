@@ -208,6 +208,13 @@ namespace bts { namespace net {
     void message_oriented_connection_impl::send_message(const message& message_to_send)
     {
       VERIFY_CORRECT_THREAD();
+#ifndef NDEBUG
+      struct scope_logger {
+        const fc::ip::endpoint& endpoint;
+        scope_logger(const fc::ip::endpoint& endpoint) : endpoint(endpoint) { dlog("entering message_oriented_connection::send_message() for peer ${endpoint}", ("endpoint", endpoint)); }
+        ~scope_logger() { dlog("leaving message_oriented_connection::send_message() for peer ${endpoint}", ("endpoint", endpoint)); }
+      } send_message_scope_logger(_sock.get_socket().remote_endpoint());
+#endif
       struct verify_no_send_in_progress {
         bool& var;
         verify_no_send_in_progress(bool& var) : var(var) 

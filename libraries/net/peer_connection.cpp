@@ -32,7 +32,8 @@ namespace bts { namespace net
       inhibit_fetching_sync_blocks(false),
       transaction_fetching_inhibited_until(fc::time_point::min())
 #ifndef NDEBUG
-      ,_thread(&fc::thread::current())
+      ,_thread(&fc::thread::current()),
+      _send_message_queue_tasks_running(0)
 #endif
     {
     }
@@ -187,12 +188,24 @@ namespace bts { namespace net
     void peer_connection::send_queued_messages_task()
     {
       VERIFY_CORRECT_THREAD();
+#ifndef NDEBUG
+      struct counter {
+        unsigned& _send_message_queue_tasks_counter;
+        counter(unsigned& var) : _send_message_queue_tasks_counter(var) { dlog("entering peer_connection::send_queued_messages_task()"); assert(_send_message_queue_tasks_counter == 0); ++_send_message_queue_tasks_counter; }
+        ~counter() { assert(_send_message_queue_tasks_counter == 1); --_send_message_queue_tasks_counter; dlog("leaving peer_connection::send_queued_messages_task()"); }
+      } concurrent_invocation_counter(_send_message_queue_tasks_running);
+#endif
       while (!_queued_messages.empty())
       {
         _queued_messages.front().transmission_start_time = fc::time_point::now();
         try
         {
+          dlog("peer_connection::send_queued_messages_task() calling message_oriented_connection::send_message() "
+               "to send message of type ${type} for peer ${endpoint}",
+               ("type", _queued_messages.front().message_to_send.msg_type)("endpoint", get_remote_endpoint()));
           _message_connection.send_message(_queued_messages.front().message_to_send);
+          dlog("peer_connection::send_queued_messages_task()'s call to message_oriented_connection::send_message() completed normally for peer ${endpoint}",
+               ("endpoint", get_remote_endpoint()));
         }
         catch (const fc::exception& send_error)
         {
@@ -207,15 +220,26 @@ namespace bts { namespace net
           }
           return;
         }
+        catch (const std::exception& e)
+        {
+          elog("message_oriented_exception::send_message() threw a std::exception(): ${what}", ("what", e.what()));
+        }
+        catch (...)
+        {
+          elog("message_oriented_exception::send_message() threw an unhandled exception");
+        }
         _queued_messages.front().transmission_finish_time = fc::time_point::now();
         _total_queued_messages_size -= _queued_messages.front().message_to_send.size;
         _queued_messages.pop();
       }
+      dlog("leaving peer_connection::send_queued_messages_task() due to queue exhaustion");
     }
 
     void peer_connection::send_message( const message& message_to_send )
     {
       VERIFY_CORRECT_THREAD();
+      dlog("peer_connection::send_message() enqueueing message of type ${type} for peer ${endpoint}",
+           ("type", message_to_send.msg_type)("endpoint", get_remote_endpoint()));
       _queued_messages.emplace(queued_message(message_to_send));
       _total_queued_messages_size += message_to_send.size;
       if (_total_queued_messages_size > BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES)
@@ -237,7 +261,13 @@ namespace bts { namespace net
         FC_THROW_EXCEPTION(fc::exception, "Attempting to send a message on a connection that is being shut down");
 
       if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
-           _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); }, "send_queued_messages_task");
+      {
+        dlog("peer_connection::send_message() is firing up send_queued_message_task");
+        _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); }, "send_queued_messages_task");
+      }
+      else
+        dlog("peer_connection::send_message() doesn't need to fire up send_queued_message_task, it's already running");
+
     }
 
     void peer_connection::close_connection()
