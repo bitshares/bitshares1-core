@@ -3149,9 +3149,11 @@ namespace bts { namespace net { namespace detail {
       {
         _node_configuration = detail::node_configuration();
 
+#ifdef BTS_TEST_NETWORK
+        uint32_t port = BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION;
+#else
         uint32_t port = BTS_NET_DEFAULT_P2P_PORT;
-        if( BTS_TEST_NETWORK ) 
-          port += BTS_TEST_NETWORK_VERSION;
+#endif
         _node_configuration.listen_endpoint.set_port( port );
         _node_configuration.accept_incoming_connections = true;
         _node_configuration.wait_if_endpoint_is_busy = false;
