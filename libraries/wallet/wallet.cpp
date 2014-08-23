@@ -1539,14 +1539,11 @@ namespace bts { namespace wallet {
 
               if( current_version < 106 )
               {
-                  const function<void( void )> rescan = [&]()
-                  {
-                      /* Transaction scanning was broken by commit d93521c7a2916eb0995dfadacd5ee74760f29d4b */
-                      const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
-                      self->scan_chain( broken_block_num );
-                      _wallet_db.remove_transaction( transaction_id_type( 0 ) );
-                  };
-                  _unlocked_upgrade_tasks.push_back( rescan );
+                  /* Transaction scanning was broken by commit d93521c7a2916eb0995dfadacd5ee74760f29d4b */
+                  const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
+                  const auto block_num = std::min( broken_block_num, self->get_last_scanned_block_number() );
+                  self->set_last_scanned_block_number( block_num );
+                  _wallet_db.remove_transaction( transaction_id_type( 0 ) );
               }
 
               if( _unlocked_upgrade_tasks.empty() )
