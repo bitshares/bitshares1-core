@@ -1295,12 +1295,16 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
+      dlog("in delayed_peer_deletion_task with ${count} in queue", ("count", _peers_to_delete.size()));
       _peers_to_delete.clear();
+      dlog("_peers_to_delete cleared");
     }
 
     void node_impl::schedule_peer_for_deletion(const peer_connection_ptr& peer_to_delete)
     {
       VERIFY_CORRECT_THREAD();
+      dlog("scheduling peer for deletion: ${peer}", ("peer", originating_peer->get_remote_endpoint));
+
       assert(_handshaking_connections.find(peer_to_delete) == _handshaking_connections.end());
       assert(_active_connections.find(peer_to_delete) == _active_connections.end());
       assert(_closing_connections.find(peer_to_delete) == _closing_connections.end());
@@ -1962,10 +1966,10 @@ namespace bts { namespace net { namespace detail {
         dlog( "sync: received a list of ${count} available items from ${peer_endpoint}", 
              ( "count", blockchain_item_ids_inventory_message_received.item_hashes_available.size() )
              ( "peer_endpoint", originating_peer->get_remote_endpoint() ) );
-        for( const item_hash_t& item_hash : blockchain_item_ids_inventory_message_received.item_hashes_available )
-        {
-          dlog( "sync:     ${hash}", ("hash", item_hash ) );
-        }
+        //for( const item_hash_t& item_hash : blockchain_item_ids_inventory_message_received.item_hashes_available )
+        //{
+        //  dlog( "sync:     ${hash}", ("hash", item_hash ) );
+        //}
 
         // if the peer doesn't have any items after the one we asked for
         if( blockchain_item_ids_inventory_message_received.total_remaining_item_count == 0 &&
@@ -2091,18 +2095,6 @@ namespace bts { namespace net { namespace detail {
                                true, error_for_peer);
           return;
         }
-#ifndef NDEBUG
-        else if (originating_peer->number_of_unfetched_item_ids > 100000)
-        {
-          wlog("Just received a chunk of blocks from peer ${peer} and number_of_unfetched_item_ids = ${unfetched}. "
-               "Our last_block_time_delegate_has_seen is ${last_block_time_delegate_has_seen}, " 
-               "which means the last block they're offering is at ${minimum_time_of_last_offered_block}", 
-               ("peer", originating_peer->get_remote_endpoint())
-               ("unfetched", originating_peer->number_of_unfetched_item_ids)
-               ("last_block_time_delegate_has_seen", originating_peer->last_block_time_delegate_has_seen)
-               ("minimum_time_of_last_offered_block", minimum_time_of_last_offered_block));
-        }
-#endif
 
         uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
         if( new_number_of_unfetched_items != _total_number_of_unfetched_items )

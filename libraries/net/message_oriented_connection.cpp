@@ -82,7 +82,7 @@ namespace bts { namespace net {
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
       VERIFY_CORRECT_THREAD();
-      ilog( "in ~message_oriented_connection_impl()" );
+      ilog( "in ~message_oriented_connection_impl() for ${endpoint}", ("endpoint", _sock.get_socket().remote_endpoint()) );
 
       if (_send_message_in_progress)
         elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
@@ -197,9 +197,16 @@ namespace bts { namespace net {
 
         FC_RETHROW_EXCEPTION( e, warn, "disconnected ${e}", ("e", e.to_detail_string() ) );
       }
+      catch ( std::exception& e )
+      {
+        elog( "disconnected ${er}", ("er", e.what() ) );
+        _delegate->on_connection_closed(_self);
+
+        FC_RETHROW_EXCEPTION( e, warn, "disconnected ${e}", ("e", e.what() ) );
+      }
       catch ( ... )
       {
-         elog( "something else happened" );
+         elog( "unexpected exception" );
         _delegate->on_connection_closed(_self);
         FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected: {e}", ("e", fc::except_str() ) );
       }

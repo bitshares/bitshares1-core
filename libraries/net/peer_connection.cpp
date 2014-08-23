@@ -55,17 +55,31 @@ namespace bts { namespace net
     void peer_connection::destroy()
     {
       VERIFY_CORRECT_THREAD();
+
+#ifndef NDEBUG
+      struct scope_logger {
+        fc::optional<fc::ip::endpoint> endpoint;
+        scope_logger(const fc::optional<fc::ip::endpoint>& endpoint) : endpoint(endpoint) { dlog("entering peer_connection::destroy() for peer ${endpoint}", ("endpoint", endpoint)); }
+        ~scope_logger() { dlog("leaving peer_connection::destroy() for peer ${endpoint}", ("endpoint", endpoint)); }
+      } send_message_scope_logger(get_remote_endpoint());
+#endif
+
       try 
       {
+        dlog("calling close_connection()");
         close_connection();
+        dlog("close_connection completed normally");
       } 
       catch ( ... ) 
       {
+        dlog("close_connection threw");
       }
 
       try 
-      { 
+      {
+        dlog("canceling _send_queued_messages task");
         _send_queued_messages_done.cancel_and_wait(); 
+        dlog("cancel_and_wait completed normally");
       } 
       catch( const fc::exception& e )
       {
@@ -78,7 +92,9 @@ namespace bts { namespace net
       
       try 
       { 
+        dlog("canceling accept_or_connect_task");
         accept_or_connect_task_done.cancel_and_wait(); 
+        dlog("accept_or_connect_task completed normally");
       } 
       catch( const fc::exception& e )
       {
@@ -105,6 +121,12 @@ namespace bts { namespace net
     void peer_connection::accept_connection()
     {
       VERIFY_CORRECT_THREAD();
+
+      struct scope_logger {
+        scope_logger() { dlog("entering peer_connection::accept_connection()"); }
+        ~scope_logger() { dlog("leaving peer_connection::accept_connection()"); }
+      } accept_connection_scope_logger;
+
       try
       {
         assert( our_state == our_connection_state::disconnected &&
