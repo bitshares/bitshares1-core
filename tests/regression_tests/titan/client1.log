@@ -20,4 +20,31 @@ default (unlocked) >>> wallet_account_balance account-for-client1
 ACCOUNT                         BALANCE                     
 ============================================================
 account-for-client1             49.50000 XTS                
+default (unlocked) >>> debug_wait_for_block_by_number 4
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance account-for-client1
+ACCOUNT                         BALANCE                     
+============================================================
+account-for-client1             99.50000 XTS                
+default (unlocked) >>> wallet_transfer 50 XTS account-for-client1 test-account "take this again"
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   account-for-client1 test-account        50.00000 XTS            take this again                             0.50000 XTS         [redacted]
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> wallet_account_balance account-for-client1
+ACCOUNT                         BALANCE                     
+============================================================
+account-for-client1             49.00000 XTS                
+default (unlocked) >>> history account-for-client1
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+==============================================================================================================================================================================================
+[redacted]          2         delegate0           account-for-client1 150.00000 XTS           send this back                              150.00000 XTS           0.00000 XTS         [redacted]
+[redacted]          3         account-for-client1 test-account        100.00000 XTS           take this                                   49.50000 XTS            0.50000 XTS         [redacted]
+[redacted]          4         test-account        account-for-client1 50.00000 XTS            again                                       99.50000 XTS            0.00000 XTS         [redacted]
+[redacted]          5         account-for-client1 test-account        50.00000 XTS            take this again                             49.00000 XTS            0.50000 XTS         [redacted]
 default (unlocked) >>> quit
