@@ -26,7 +26,7 @@ namespace bts { namespace db {
   {
      public:
         void open( const fc::path& dir, bool create = true )
-        {
+        { try {
            ldb::Options opts;
            opts.comparator = &_comparer;
            opts.create_if_missing = create;
@@ -61,7 +61,7 @@ namespace bts { namespace db {
            }
            _db.reset(ndb);
            try_upgrade_db( dir,ndb, fc::get_typename<Value>::name(),sizeof(Value) );
-        }
+        } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
         bool is_open()const
         {
@@ -74,13 +74,13 @@ namespace bts { namespace db {
         }
 
         fc::optional<Value> fetch_optional( const Key& k )
-        {
+        { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
            auto itr = find( k );
            if( itr.valid() ) return itr.value();
            return fc::optional<Value>();
-        }
+        } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
         Value fetch( const Key& k )
         { try {
