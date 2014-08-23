@@ -1543,7 +1543,7 @@ namespace bts { namespace wallet {
                   const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
                   const auto block_num = std::min( broken_block_num, self->get_last_scanned_block_number() );
                   self->set_last_scanned_block_number( block_num );
-                  _wallet_db.remove_transaction( transaction_id_type( 0 ) );
+                  _wallet_db.remove_transaction( transaction_id_type() );
               }
 
               if( _unlocked_upgrade_tasks.empty() )
