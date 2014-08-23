@@ -202,6 +202,8 @@ namespace bts { namespace blockchain {
          if( prev_value ) undo_state->set_feed( *prev_value );
          else undo_state->set_feed( feed_record{item.first} );
       }
+
+      /* NOTE: Recent operations are currently not rewound on undo */
    }
 
    /** load the state from a variant */
