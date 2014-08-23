@@ -551,13 +551,14 @@ namespace bts { namespace wallet {
               transaction_record = wallet_transaction_record();
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
-              transaction_record->record_id = record_id;
           }
 
           bool new_transaction = !transaction_record->is_confirmed;
 
+          transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
+          transaction_record->trx = transaction;
 
           auto store_record = is_known;
 
@@ -1500,7 +1501,7 @@ namespace bts { namespace wallet {
               if( current_version < 104 )
               {
                   /* Transaction scanning was broken by commit 00ece3a78b2775c4b8817e394f59b6225dded80b */
-                  const auto broken_time = time_point_sec( 1408463100 ); // 2014-08-19 11:45:00 am EDT
+                  const auto broken_time = time_point_sec( 1408463100 ); // 2014-08-19T15:45:00
                   auto broken_trxs = vector<transaction_id_type>();
                   const auto items = _wallet_db.get_transactions();
                   for( const auto& item : items )
@@ -1534,6 +1535,18 @@ namespace bts { namespace wallet {
               if( current_version < 105 )
               {
                   self->set_transaction_expiration( BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC );
+              }
+
+              if( current_version < 106 )
+              {
+                  const function<void( void )> rescan = [&]()
+                  {
+                      /* Transaction scanning was broken by commit d93521c7a2916eb0995dfadacd5ee74760f29d4b */
+                      const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
+                      self->scan_chain( broken_block_num );
+                      _wallet_db.remove_transaction( transaction_id_type( 0 ) );
+                  };
+                  _unlocked_upgrade_tasks.push_back( rescan );
               }
 
               if( _unlocked_upgrade_tasks.empty() )
