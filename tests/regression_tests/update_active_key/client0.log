@@ -60,7 +60,7 @@ default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> wallet_get_account delegate4
 {
-  "index": 15,
+  "index": 16,
   "id": 5,
   "name": "delegate4",
   "public_data": null,
@@ -94,7 +94,7 @@ default (unlocked) >>> wallet_get_account delegate4
 }
 default (unlocked) >>> wallet_get_account delegate5
 {
-  "index": 17,
+  "index": 18,
   "id": 6,
   "name": "delegate5",
   "public_data": null,

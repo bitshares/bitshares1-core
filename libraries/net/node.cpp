@@ -192,7 +192,10 @@ namespace bts { namespace net {
     // in the configuration directory (application data directory)
     struct node_configuration
     {
+      node_configuration() : accept_incoming_connections(true), wait_if_endpoint_is_busy(true) {}
+
       fc::ip::endpoint listen_endpoint;
+      bool accept_incoming_connections;
       bool wait_if_endpoint_is_busy;
       /**
        * Originally, our p2p code just had a 'node-id' that was a random number identifying this node
@@ -206,6 +209,7 @@ namespace bts { namespace net {
 
 } } } // end namespace bts::net::detail
 FC_REFLECT(bts::net::detail::node_configuration, (listen_endpoint)
+                                                 (accept_incoming_connections)
                                                  (wait_if_endpoint_is_busy)
                                                  (private_key));
 
@@ -592,6 +596,7 @@ namespace bts { namespace net { namespace detail {
       void add_node( const fc::ip::endpoint& ep );
       void connect_to( const fc::ip::endpoint& ep );
       void listen_on_endpoint( const fc::ip::endpoint& ep );
+      void accept_incoming_connections(bool accept);
       void listen_on_port( uint16_t port, bool wait_if_not_available );
 
       fc::ip::endpoint         get_actual_listening_endpoint() const;
@@ -1654,57 +1659,6 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_connection_accepted_message( peer_connection* originating_peer, const connection_accepted_message& connection_accepted_message_received )
     {
       VERIFY_CORRECT_THREAD();
-#if 0
-      bool already_connected_to_this_peer = is_already_connected_to_id( hello_reply_message_received.node_id );
-
-      // store off the data provided in the hello message
-      originating_peer->user_agent = hello_reply_message_received.user_agent;
-      originating_peer->node_id = hello_reply_message_received.node_id;
-      originating_peer->core_protocol_version = hello_reply_message_received.core_protocol_version;
-      parse_hello_user_data_for_peer( originating_peer, hello_reply_message_received.user_data );
-
-      // report whether this peer will think we're behind a firewall
-      if( originating_peer->inbound_port != 0 )
-      {
-        // if we sent inbound_port = 0 we were telling them that we're firewalled and don't accept incoming connections
-        if( originating_peer->inbound_address == hello_reply_message_received.remote_endpoint.get_address() &&
-            originating_peer->outbound_port == hello_reply_message_received.remote_endpoint.port() )
-          dlog( "peer ${peer} does not think we're behind a firewall", ("peer", originating_peer->get_remote_endpoint() ) );
-        else
-          dlog( "peer ${peer} thinks we're firewalled (we think we were connecting from ${we_saw}, they saw ${they_saw})",
-               ( "peer", originating_peer->get_remote_endpoint() )
-               ( "we_saw", fc::ip::endpoint(originating_peer->inbound_address, originating_peer->outbound_port ) )
-               ( "they_saw", hello_reply_message_received.remote_endpoint ) );
-      }
-      if( originating_peer->state == peer_connection::hello_sent && 
-          originating_peer->direction == peer_connection_direction::outbound )
-      {
-        if( already_connected_to_this_peer )
-        {
-          dlog( "Established a connection with peer ${peer}, but I'm already connected to it.  Closing the connection", 
-               ( "peer", originating_peer->get_remote_endpoint() ) );
-          disconnect_from_peer( originating_peer, "I'm already connected to you" );
-        }
-#ifdef ENABLE_P2P_DEBUGGING_API
-        else if( !_allowed_peers.empty() && 
-                 _allowed_peers.find( originating_peer->node_id ) == _allowed_peers.end() )
-        {
-          dlog( "Established a connection with peer ${peer}, but it's not in my _accepted_peers list.  Closing the connection", 
-               ( "peer", originating_peer->get_remote_endpoint() ) );
-          disconnect_from_peer( originating_peer, "You're not in my accepted_peers list" );
-        }
-#endif // ENABLE_P2P_DEBUGGING_API        
-        else
-        {
-          dlog( "Received a reply to my \"hello\" from ${peer}, connection is accepted", ("peer", originating_peer->get_remote_endpoint() ) );
-          dlog( "Remote server sees my connection as ${endpoint}", ("endpoint", hello_reply_message_received.remote_endpoint ) );
-          originating_peer->state = peer_connection::connected;
-          originating_peer->send_message( address_request_message() );
-        }
-      }
-      else
-        FC_THROW( "unexpected hello_reply_message from peer" );
-#endif
       dlog( "Received a connection_accepted in response to my \"hello\" from ${peer}", ("peer", originating_peer->get_remote_endpoint() ) );
       originating_peer->negotiation_status = peer_connection::connection_negotiation_status::peer_connection_accepted;
       originating_peer->our_state = peer_connection::our_connection_state::connection_accepted;
@@ -3068,11 +3022,12 @@ namespace bts { namespace net { namespace detail {
       fc::ecc::compact_signature signature = _node_configuration.private_key.sign_compact(shared_secret_encoder.result());
 
       fc::ip::endpoint local_endpoint(peer->get_socket().local_endpoint());
+      uint16_t listening_port = _node_configuration.accept_incoming_connections ? _actual_listening_endpoint.port() : 0;
 
       hello_message hello(_user_agent_string, 
                           core_protocol_version, 
                           local_endpoint.get_address(),
-                          _actual_listening_endpoint.port(), 
+                          listening_port, 
                           local_endpoint.port(),
                           _node_id,
                           signature,
@@ -3133,7 +3088,7 @@ namespace bts { namespace net { namespace detail {
 
       fc::ip::endpoint local_endpoint = new_peer->get_local_endpoint();
       new_peer->inbound_address = local_endpoint.get_address();
-      new_peer->inbound_port = _actual_listening_endpoint.port();
+      new_peer->inbound_port = _node_configuration.accept_incoming_connections ? _actual_listening_endpoint.port() : 0;
       new_peer->outbound_port = local_endpoint.port();
 
       new_peer->our_state = peer_connection::our_connection_state::just_connected;
@@ -3182,11 +3137,15 @@ namespace bts { namespace net { namespace detail {
       if( !node_configuration_loaded )      
       {
         _node_configuration = detail::node_configuration();
-        ilog( "generating new private key for this node" );
+
         uint32_t port = BTS_NET_DEFAULT_P2P_PORT;
-        if( BTS_TEST_NETWORK ) port += BTS_TEST_NETWORK_VERSION;
+        if( BTS_TEST_NETWORK ) 
+          port += BTS_TEST_NETWORK_VERSION;
         _node_configuration.listen_endpoint.set_port( port );
+        _node_configuration.accept_incoming_connections = true;
         _node_configuration.wait_if_endpoint_is_busy = false;
+
+        ilog( "generating new private key for this node" );
         _node_configuration.private_key = fc::ecc::private_key::generate();
       }
 
@@ -3219,6 +3178,12 @@ namespace bts { namespace net { namespace detail {
     void node_impl::listen_to_p2p_network()
     {
       VERIFY_CORRECT_THREAD();
+      if (!_node_configuration.accept_incoming_connections)
+      {
+        wlog("accept_incoming_connections is false, p2p network will not accept any incoming connections");
+        return;
+      }
+
       assert( _node_id != fc::ecc::public_key_data() );
 
       fc::ip::endpoint listen_endpoint = _node_configuration.listen_endpoint;
@@ -3311,7 +3276,8 @@ namespace bts { namespace net { namespace detail {
              !_fetch_updated_peer_lists_loop_done.valid() &&
              !_bandwidth_monitor_loop_done.valid() &&
              !_dump_node_status_task_done.valid());
-      _accept_loop_complete = fc::async( [=](){ accept_loop(); }, "accept_loop");
+      if (_node_configuration.accept_incoming_connections)
+        _accept_loop_complete = fc::async( [=](){ accept_loop(); }, "accept_loop");
       _p2p_network_connect_loop_done = fc::async( [=]() { p2p_network_connect_loop(); }, "p2p_network_connect_loop" );
       _fetch_sync_items_loop_done = fc::async( [=]() { fetch_sync_items_loop(); }, "fetch_sync_items_loop" );
       _fetch_item_loop_done = fc::async( [=]() { fetch_items_loop(); }, "fetch_items_loop" );
@@ -3426,6 +3392,9 @@ namespace bts { namespace net { namespace detail {
              ( "in_sync_with_us", !peer->peer_needs_sync_items_from_us )("in_sync_with_them", !peer->we_need_sync_items_from_peer ) );
         if( peer->we_need_sync_items_from_peer )
           ilog( "              above peer has ${count} sync items we might need", ("count", peer->ids_of_items_to_get.size() ) );
+        if (peer->inhibit_fetching_sync_blocks)
+          ilog( "              we are not fetching sync blocks from the above peer (inhibit_fetching_sync_blocks == true)" );
+
       }
       for( const peer_connection_ptr& peer : _handshaking_connections )
       {
@@ -3500,6 +3469,13 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       _node_configuration.listen_endpoint = ep;
+      save_node_configuration();
+    }
+
+    void node_impl::accept_incoming_connections(bool accept)
+    {
+      VERIFY_CORRECT_THREAD();
+      _node_configuration.accept_incoming_connections = accept;
       save_node_configuration();
     }
 
@@ -3829,6 +3805,11 @@ namespace bts { namespace net { namespace detail {
   void node::listen_on_endpoint( const fc::ip::endpoint& ep )
   {
     INVOKE_IN_IMPL(listen_on_endpoint, ep);
+  }
+
+  void node::accept_incoming_connections(bool accept)
+  {
+    INVOKE_IN_IMPL(accept_incoming_connections, accept);
   }
 
   void node::listen_on_port( uint16_t port, bool wait_if_not_available )

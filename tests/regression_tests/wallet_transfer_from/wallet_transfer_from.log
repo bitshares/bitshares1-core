@@ -31,7 +31,7 @@ Returns:
   transaction_record
 default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
 {
-  "index": 414,
+  "index": 415,
   "record_id": "9f0fad037607d57266cb20d94ed39e5b4cce8f7a",
   "block_num": 0,
   "is_virtual": false,

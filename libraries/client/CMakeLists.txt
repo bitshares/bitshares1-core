@@ -3,6 +3,7 @@ file(GLOB HEADERS "include/bts/client/*.hpp")
 add_library( bts_client 
              client.cpp
              messages.cpp
+             notifier.cpp
              ${HEADERS} )
 
 target_link_libraries( bts_client  

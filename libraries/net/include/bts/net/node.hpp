@@ -176,6 +176,11 @@ namespace bts { namespace net {
         void      listen_on_endpoint( const fc::ip::endpoint& ep );
 
         /**
+         *  Call with true to enable listening for incoming connections
+         */
+        void accept_incoming_connections(bool accept);
+
+        /**
          *  Specifies the port upon which incoming connections should be accepted.
          *  @param port the port to listen on
          *  @param wait_if_not_available if true and the port is not available, enter a 
