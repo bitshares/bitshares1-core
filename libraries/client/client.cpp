@@ -670,6 +670,7 @@ config load_config( const fc::path& datadir )
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
+            bool                                                    _delegate_loop_first_run = true;
             fc::time_point                                          _last_sync_status_message_time;
             bool                                                    _last_sync_status_message_indicated_in_sync;
             uint32_t                                                _last_sync_status_head_block;
@@ -808,7 +809,12 @@ config load_config( const fc::path& datadir )
 
           const auto now = blockchain::now();
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
-          set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );
+
+          if( _delegate_loop_first_run )
+          {
+              set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );
+              _delegate_loop_first_run = false;
+          }
 
           const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
           if( next_block_time.valid() )
