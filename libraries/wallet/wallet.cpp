@@ -1532,13 +1532,10 @@ namespace bts { namespace wallet {
                   }
               }
 
-              if( current_version < 105 )
-              {
-                  self->set_transaction_expiration( BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC );
-              }
-
               if( current_version < 106 )
               {
+                  self->set_transaction_expiration( BTS_WALLET_DEFAULT_TRANSACTION_EXPIRATION_SEC );
+
                   /* Transaction scanning was broken by commit d93521c7a2916eb0995dfadacd5ee74760f29d4b */
                   const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
                   const auto block_num = std::min( broken_block_num, self->get_last_scanned_block_number() );
@@ -1681,7 +1678,7 @@ namespace bts { namespace wallet {
           set_transaction_scanning( true );
           set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
           set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
-          set_transaction_expiration( BTS_BLOCKCHAIN_DEFAULT_TRANSACTION_EXPIRATION_SEC );
+          set_transaction_expiration( BTS_WALLET_DEFAULT_TRANSACTION_EXPIRATION_SEC );
 
           my->_wallet_db.close();
           my->_wallet_db.open( wallet_file_path );
