@@ -551,6 +551,7 @@ namespace bts { namespace wallet {
               transaction_record = wallet_transaction_record();
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
+              transaction_record->record_id = record_id;
           }
 
           bool new_transaction = !transaction_record->is_confirmed;
