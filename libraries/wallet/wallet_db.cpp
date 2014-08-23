@@ -425,13 +425,17 @@ namespace bts { namespace wallet {
 
       std::ofstream fs( filename.string() );
       fs.write( "[\n", 2 );
-      for( auto itr = my->_records.begin(); itr.valid(); ++itr )
+
+      auto itr = my->_records.begin();
+      while( itr.valid() )
       {
-          const auto str = fc::json::to_pretty_string( itr.value() ) + ",\n";
+          auto str = fc::json::to_pretty_string( itr.value() );
+          if( (++itr).valid() ) str += ",";
+          str += "\n";
           fs.write( str.c_str(), str.size() );
       }
-      fs.seekp( uint64_t( fs.tellp() ) - 2 );
-      fs.write( "\n]", 2 );
+
+      fs.write( "]", 1 );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
 
    void wallet_db::import_from_json( const path& filename )
