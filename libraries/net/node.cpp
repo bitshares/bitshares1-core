@@ -2988,6 +2988,8 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       new_peer->accept_connection(); // this blocks until the secure connection is fully negotiated
       send_hello_message( new_peer );
+      if (get_connection_count() >= _desired_number_of_connections - 1)
+        disconnect_from_peer(new_peer.get(), "go away");
     }
 
     void node_impl::accept_loop()
@@ -3014,7 +3016,7 @@ namespace bts { namespace net { namespace detail {
 
           // limit the rate at which we accept connections to mitigate DOS attacks
           fc::usleep( fc::milliseconds(10) );
-        } FC_CAPTURE_AND_RETHROW(   ) 
+        } FC_CAPTURE_AND_RETHROW() 
       }
     } // accept_loop()
 
