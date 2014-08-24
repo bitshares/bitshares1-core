@@ -773,7 +773,22 @@ namespace bts { namespace blockchain {
            engine.execute( market_pair.first, market_pair.second, timestamp );
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
         }
-        ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
+        try
+        {
+          // We're logging market_transactions objects here, but when you try to sync to the real blockchain,
+          // this throws a bad_cast exception trying to convert an enum value into a string. (around block 25672)
+          // the likely cause is that the market_transaction object had a field added around Aug 5, but the 
+          // block in question was created earlier, so we're trying to read an old-format object into a new-format
+          // structure in memory, then we're trying to interpret something that's not an enum as an enum.
+          // If this is the case, we probably need to have a conversion routine that figures out what version
+          // of the structure it's reading in and initializes it correctly.  For now, catching the exception
+          // will allow people to sync past block 25672.
+          ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
+        }
+        catch (const fc::exception& e)
+        {
+          wlog( "market trxs: exception thrown while trying to log transactions: ${e}", ("e", e) );
+        }
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
