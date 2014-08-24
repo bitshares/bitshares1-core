@@ -229,6 +229,11 @@ namespace bts { namespace net
           dlog("peer_connection::send_queued_messages_task()'s call to message_oriented_connection::send_message() completed normally for peer ${endpoint}",
                ("endpoint", get_remote_endpoint()));
         }
+        catch (const fc::canceled_exception&)
+        {
+          dlog("message_oriented_connection::send_message() was canceled, rethrowing canceled_exception");
+          throw;
+        }
         catch (const fc::exception& send_error)
         {
           elog("Error sending message: ${exception}.  Closing connection.", ("exception", send_error));

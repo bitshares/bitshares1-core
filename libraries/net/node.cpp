@@ -1303,7 +1303,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::schedule_peer_for_deletion(const peer_connection_ptr& peer_to_delete)
     {
       VERIFY_CORRECT_THREAD();
-      dlog("scheduling peer for deletion: ${peer}", ("peer", originating_peer->get_remote_endpoint));
+      dlog("scheduling peer for deletion: ${peer}", ("peer", peer_to_delete->get_remote_endpoint()));
 
       assert(_handshaking_connections.find(peer_to_delete) == _handshaking_connections.end());
       assert(_active_connections.find(peer_to_delete) == _active_connections.end());

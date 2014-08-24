@@ -82,7 +82,10 @@ namespace bts { namespace net {
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
       VERIFY_CORRECT_THREAD();
-      ilog( "in ~message_oriented_connection_impl() for ${endpoint}", ("endpoint", _sock.get_socket().remote_endpoint()) );
+      fc::optional<fc::ip::endpoint> remote_endpoint;
+      if (_sock.get_socket().is_open())
+        remote_endpoint = _sock.get_socket().remote_endpoint();
+      ilog( "in ~message_oriented_connection_impl() for ${endpoint}", ("endpoint", remote_endpoint) );
 
       if (_send_message_in_progress)
         elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
@@ -184,6 +187,7 @@ namespace bts { namespace net {
       {
         wlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
         _delegate->on_connection_closed(_self);
+        throw;
       }
       catch ( const fc::eof_exception& e )
       {
@@ -202,7 +206,7 @@ namespace bts { namespace net {
         elog( "disconnected ${er}", ("er", e.what() ) );
         _delegate->on_connection_closed(_self);
 
-        FC_RETHROW_EXCEPTION( e, warn, "disconnected ${e}", ("e", e.what() ) );
+        FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected ${e}", ("e", e.what() ) );
       }
       catch ( ... )
       {
@@ -216,11 +220,14 @@ namespace bts { namespace net {
     {
       VERIFY_CORRECT_THREAD();
 #ifndef NDEBUG
+      fc::optional<fc::ip::endpoint> remote_endpoint;
+      if (_sock.get_socket().is_open())
+        remote_endpoint = _sock.get_socket().remote_endpoint();
       struct scope_logger {
-        const fc::ip::endpoint& endpoint;
-        scope_logger(const fc::ip::endpoint& endpoint) : endpoint(endpoint) { dlog("entering message_oriented_connection::send_message() for peer ${endpoint}", ("endpoint", endpoint)); }
+        const fc::optional<fc::ip::endpoint>& endpoint;
+        scope_logger(const fc::optional<fc::ip::endpoint>& endpoint) : endpoint(endpoint) { dlog("entering message_oriented_connection::send_message() for peer ${endpoint}", ("endpoint", endpoint)); }
         ~scope_logger() { dlog("leaving message_oriented_connection::send_message() for peer ${endpoint}", ("endpoint", endpoint)); }
-      } send_message_scope_logger(_sock.get_socket().remote_endpoint());
+      } send_message_scope_logger(remote_endpoint);
 #endif
       struct verify_no_send_in_progress {
         bool& var;
