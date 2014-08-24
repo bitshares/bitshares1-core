@@ -7,6 +7,7 @@
 #include <bts/blockchain/market_records.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/db/level_map.hpp>
+#include <bts/db/cached_level_map.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/checkpoints.hpp>
 
@@ -197,7 +198,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< string, account_id_type >                   _account_index_db;
             bts::db::level_map< string, asset_id_type >                     _symbol_index_db;
-            bts::db::level_map< vote_del, int >                             _delegate_vote_index_db;
+            bts::db::cached_level_map< vote_del, int >                      _delegate_vote_index_db;
 
             bts::db::level_map< time_point_sec, slot_record >               _slot_record_db;
 
@@ -591,6 +592,12 @@ namespace bts { namespace blockchain {
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
       { try {
+           uint32_t last_checkpoint_block_num = 0;
+           if( !CHECKPOINT_BLOCKS.empty() )
+                  last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
+           if( _head_block_header.block_num < last_checkpoint_block_num )
+                 return;  // don't bother saving it... 
+
            pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>(nullptr);
            pending_state->get_undo_state( undo_state );
            _undo_state_db.store( block_id, *undo_state );
