@@ -6,6 +6,11 @@
 #endif
 #define DEFAULT_LOGGER "p2p"
 
+#ifndef NDEBUG
+# define VERIFY_CORRECT_THREAD() assert(_thread->is_current())
+#else
+# define VERIFY_CORRECT_THREAD() do {} while (0)
+#endif
 
 namespace bts { namespace net
   {
@@ -26,6 +31,9 @@ namespace bts { namespace net
       last_block_number_delegate_has_seen(0),
       inhibit_fetching_sync_blocks(false),
       transaction_fetching_inhibited_until(fc::time_point::min())
+#ifndef NDEBUG
+      ,_thread(&fc::thread::current())
+#endif
     {
     }
 
@@ -45,6 +53,7 @@ namespace bts { namespace net
 
     void peer_connection::destroy()
     {
+      VERIFY_CORRECT_THREAD();
       try 
       {
         close_connection();
@@ -82,16 +91,19 @@ namespace bts { namespace net
 
     peer_connection::~peer_connection()
     {
+      VERIFY_CORRECT_THREAD();
       destroy();
     }
 
     fc::tcp_socket& peer_connection::get_socket()
     {
+      VERIFY_CORRECT_THREAD();
       return _message_connection.get_socket();
     }
 
     void peer_connection::accept_connection()
     {
+      VERIFY_CORRECT_THREAD();
       try
       {
         assert( our_state == our_connection_state::disconnected &&
@@ -122,6 +134,7 @@ namespace bts { namespace net
 
     void peer_connection::connect_to( const fc::ip::endpoint& remote_endpoint, fc::optional<fc::ip::endpoint> local_endpoint )
     {
+      VERIFY_CORRECT_THREAD();
       try
       {
         assert( our_state == our_connection_state::disconnected && 
@@ -160,17 +173,20 @@ namespace bts { namespace net
 
     void peer_connection::on_message( message_oriented_connection* originating_connection, const message& received_message )
     {
+      VERIFY_CORRECT_THREAD();
       _node->on_message( this, received_message );
     }
 
     void peer_connection::on_connection_closed( message_oriented_connection* originating_connection )
     {
+      VERIFY_CORRECT_THREAD();
       negotiation_status = connection_negotiation_status::closed;
       _node->on_connection_closed( this );
     }
 
     void peer_connection::send_queued_messages_task()
     {
+      VERIFY_CORRECT_THREAD();
       while (!_queued_messages.empty())
       {
         _queued_messages.front().transmission_start_time = fc::time_point::now();
@@ -199,6 +215,7 @@ namespace bts { namespace net
 
     void peer_connection::send_message( const message& message_to_send )
     {
+      VERIFY_CORRECT_THREAD();
       _queued_messages.emplace(queued_message(message_to_send));
       _total_queued_messages_size += message_to_send.size;
       if (_total_queued_messages_size > BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES)
@@ -225,6 +242,7 @@ namespace bts { namespace net
 
     void peer_connection::close_connection()
     {
+      VERIFY_CORRECT_THREAD();
       negotiation_status = connection_negotiation_status::closing;
       if (connection_terminated_time != fc::time_point::min())
         connection_terminated_time = fc::time_point::now();
@@ -233,66 +251,79 @@ namespace bts { namespace net
 
     void peer_connection::destroy_connection()
     {
+      VERIFY_CORRECT_THREAD();
       negotiation_status = connection_negotiation_status::closing;
       destroy();
     }
 
     uint64_t peer_connection::get_total_bytes_sent() const
     {
+      VERIFY_CORRECT_THREAD();
       return _message_connection.get_total_bytes_sent();
     }
 
     uint64_t peer_connection::get_total_bytes_received() const
     {
+      VERIFY_CORRECT_THREAD();
       return _message_connection.get_total_bytes_received();
     }
 
     fc::time_point peer_connection::get_last_message_sent_time() const
     {
+      VERIFY_CORRECT_THREAD();
       return _message_connection.get_last_message_sent_time();
     }
 
     fc::time_point peer_connection::get_last_message_received_time() const
     {
+      VERIFY_CORRECT_THREAD();
       return _message_connection.get_last_message_received_time();
     }
 
     fc::optional<fc::ip::endpoint> peer_connection::get_remote_endpoint()
     {
+      VERIFY_CORRECT_THREAD();
       return _remote_endpoint;
     }
     fc::ip::endpoint peer_connection::get_local_endpoint()
     {
+      VERIFY_CORRECT_THREAD();
       return _message_connection.get_socket().local_endpoint();
     }
 
     void peer_connection::set_remote_endpoint( fc::optional<fc::ip::endpoint> new_remote_endpoint )
     {
+      VERIFY_CORRECT_THREAD();
       _remote_endpoint = new_remote_endpoint;
     }
 
     bool peer_connection::busy() 
     { 
+      VERIFY_CORRECT_THREAD();
       return !items_requested_from_peer.empty() || !sync_items_requested_from_peer.empty() || item_ids_requested_from_peer;
     }
 
     bool peer_connection::idle()
     {
+      VERIFY_CORRECT_THREAD();
       return !busy();
     }
 
     bool peer_connection::is_transaction_fetching_inhibited() const
     {
+      VERIFY_CORRECT_THREAD();
       return transaction_fetching_inhibited_until > fc::time_point::now();
     }
 
     fc::sha512 peer_connection::get_shared_secret() const
     {
+      VERIFY_CORRECT_THREAD();
       return _message_connection.get_shared_secret();
     }
 
     void peer_connection::clear_old_inventory_advertised_to_peer()
     {
+      VERIFY_CORRECT_THREAD();
       fc::time_point_sec oldest_inventory_to_keep(fc::time_point::now() - fc::minutes(BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES));
       auto oldest_inventory_to_keep_iter = inventory_advertised_to_peer.get<timestamp_index>().lower_bound(oldest_inventory_to_keep);
       auto begin_iter = inventory_advertised_to_peer.get<timestamp_index>().begin();
@@ -302,10 +333,12 @@ namespace bts { namespace net
     // we have a higher limit for blocks than transactions so we will still fetch blocks even when transactions are throttled
     bool peer_connection::is_inventory_advertised_to_us_list_full_for_transactions() const
     {
+      VERIFY_CORRECT_THREAD();
       return inventory_peer_advertised_to_us.size() > BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60;
     }
     bool peer_connection::is_inventory_advertised_to_us_list_full() const
     {
+      VERIFY_CORRECT_THREAD();
       return inventory_peer_advertised_to_us.size() > BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES * BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND * 60 + 5;
     }
 } } // end namespace bts::net

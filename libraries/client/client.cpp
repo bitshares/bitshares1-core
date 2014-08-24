@@ -297,36 +297,51 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     cfg.appenders.push_back(fc::appender_config( "p2p", "file", fc::variant(ac_p2p)));
 
     fc::logger_config dlc;
-    if( BTS_TEST_NETWORK ) dlc.level = fc::log_level::debug;
-    else dlc.level = fc::log_level::warn;
+#ifdef BTS_TEST_NETWORK
+    dlc.level = fc::log_level::debug;
+#else
+    dlc.level = fc::log_level::warn;
+#endif
     dlc.name = "default";
     dlc.appenders.push_back("default");
     dlc.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_client;
-    if( BTS_TEST_NETWORK ) dlc_client.level = fc::log_level::debug;
-    else dlc_client.level = fc::log_level::warn;
+#ifdef BTS_TEST_NETWORK
+    dlc_client.level = fc::log_level::debug;
+#else
+    dlc_client.level = fc::log_level::warn;
+#endif
     dlc_client.name = "client";
     dlc_client.appenders.push_back("default");
     dlc_client.appenders.push_back("p2p");
    // dlc.appenders.push_back("stderr");
 
     fc::logger_config dlc_rpc;
-    if( BTS_TEST_NETWORK ) dlc_rpc.level = fc::log_level::debug;
-    else dlc_rpc.level = fc::log_level::warn;
+#ifdef BTS_TEST_NETWORK
+    dlc_rpc.level = fc::log_level::debug;
+#else
+    dlc_rpc.level = fc::log_level::warn;
+#endif
     dlc_rpc.name = "rpc";
     dlc_rpc.appenders.push_back("rpc");
 
     fc::logger_config dlc_blockchain;
-    if( BTS_TEST_NETWORK ) dlc_blockchain.level = fc::log_level::debug;
-    else dlc_blockchain.level = fc::log_level::warn;
+#ifdef BTS_TEST_NETWORK
+    dlc_blockchain.level = fc::log_level::debug;
+#else
+    dlc_blockchain.level = fc::log_level::warn;
+#endif
     dlc_blockchain.name = "blockchain";
     dlc_blockchain.appenders.push_back("blockchain");
 
     fc::logger_config dlc_p2p;
-    if( BTS_TEST_NETWORK ) dlc_p2p.level = fc::log_level::debug;
-    else dlc_p2p.level = fc::log_level::warn;
+#ifdef BTS_TEST_NETWORK
+    dlc_p2p.level = fc::log_level::debug;
+#else
+    dlc_p2p.level = fc::log_level::warn;
+#endif
     dlc_p2p.name = "p2p";
     dlc_p2p.appenders.push_back("p2p");
 
@@ -363,8 +378,9 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
      dir_name = "." + dir_name;
 #endif
 
-     if( BTS_TEST_NETWORK )
-         dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
+#ifdef BTS_TEST_NETWORK
+     dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
+#endif
 
      datadir = fc::app_path() / dir_name;
    }
@@ -654,6 +670,7 @@ config load_config( const fc::path& datadir )
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
+            bool                                                    _delegate_loop_first_run = true;
             fc::time_point                                          _last_sync_status_message_time;
             bool                                                    _last_sync_status_message_indicated_in_sync;
             uint32_t                                                _last_sync_status_head_block;
@@ -792,7 +809,12 @@ config load_config( const fc::path& datadir )
 
           const auto now = blockchain::now();
           ilog( "Starting delegate loop at time: ${t}", ("t",now) );
-          set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );
+
+          if( _delegate_loop_first_run )
+          {
+              set_target_connections( BTS_NET_DELEGATE_DESIRED_CONNECTIONS );
+              _delegate_loop_first_run = false;
+          }
 
           const auto next_block_time = _wallet->get_next_producible_block_timestamp( enabled_delegates );
           if( next_block_time.valid() )

@@ -36,6 +36,8 @@
 #include <fc/thread/thread.hpp>
 #include <fc/thread/future.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/scoped_lock.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/enum_type.hpp>
@@ -454,6 +456,7 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _dump_node_status_task_done;
 
+      fc::mutex _peers_to_delete_mutex;
       std::list<peer_connection_ptr> _peers_to_delete;
       fc::future<void> _delayed_peer_deletion_task_done;
 
@@ -1291,6 +1294,7 @@ namespace bts { namespace net { namespace detail {
     void node_impl::delayed_peer_deletion_task()
     {
       VERIFY_CORRECT_THREAD();
+      fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
       _peers_to_delete.clear();
     }
 
@@ -1302,7 +1306,10 @@ namespace bts { namespace net { namespace detail {
       assert(_closing_connections.find(peer_to_delete) == _closing_connections.end());
       assert(_terminating_connections.find(peer_to_delete) == _terminating_connections.end());
 
-      _peers_to_delete.emplace_back(peer_to_delete);
+      {
+        fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
+        _peers_to_delete.emplace_back(peer_to_delete);
+      }
       if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
         _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
     }
@@ -2900,7 +2907,11 @@ namespace bts { namespace net { namespace detail {
       _handshaking_connections.clear();
       _closing_connections.clear();
       all_peers.clear();
-      _peers_to_delete.clear();
+
+      {
+        fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
+        _peers_to_delete.clear();
+      }
 
       try 
       {
@@ -3138,9 +3149,11 @@ namespace bts { namespace net { namespace detail {
       {
         _node_configuration = detail::node_configuration();
 
+#ifdef BTS_TEST_NETWORK
+        uint32_t port = BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION;
+#else
         uint32_t port = BTS_NET_DEFAULT_P2P_PORT;
-        if( BTS_TEST_NETWORK ) 
-          port += BTS_TEST_NETWORK_VERSION;
+#endif
         _node_configuration.listen_endpoint.set_port( port );
         _node_configuration.accept_incoming_connections = true;
         _node_configuration.wait_if_endpoint_is_busy = false;

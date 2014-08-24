@@ -1001,7 +1001,7 @@ namespace bts { namespace cli {
                         }
                      }
 
-                    auto recent_average_price = _client->get_chain()->get_market_status(quote_id, base_id)->avg_price_24h;
+                    auto recent_average_price = _client->get_chain()->get_market_status(quote_id, base_id)->avg_price_1h;
                     *_out << "Average Price in Recent Trades: "
                           << _client->get_chain()->to_pretty_price(recent_average_price)
                           << "     ";
