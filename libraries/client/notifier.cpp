@@ -130,7 +130,7 @@ namespace bts { namespace client {
         uint32_t age_in_sec = bts::blockchain::now().sec_since_epoch() - head_block_age.sec_since_epoch();
         uint32_t missed_block_count = age_in_sec / BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
         message << "The last block on our blockchain is " << fc::get_approximate_relative_time_string(head_block_age, bts::blockchain::now(), " old") << 
-                   " seconds old, meaning we've missed " << missed_block_count << " blocks";
+                   ", meaning we've missed " << missed_block_count << " blocks";
         my->_notifier.send_notification("head_block_too_old", "Head Block is Too Old", message.str(), my->_bitshares_icon);
         my->_last_head_block_too_old_notification_time = fc::time_point::now();    
       }
