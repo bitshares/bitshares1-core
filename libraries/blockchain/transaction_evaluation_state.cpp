@@ -2,8 +2,6 @@
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
-#include <bts/blockchain/fork_blocks.hpp>
-
 namespace bts { namespace blockchain {
 
    transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state, digest_type chain_id )
@@ -147,19 +145,6 @@ namespace bts { namespace blockchain {
         }
         if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
-
-        /**
-         * Removing transaction size limit from chain validation rules.
-         *
-         * Note: this is to give delegates maximum flexibility without having to
-         * introduce hard forks to support larger transaction sizes.
-         */
-        if( _current_state->get_head_block_num() < BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM )
-        {
-            auto trx_size = fc::raw::pack_size( trx_arg );
-            if( trx_size > 1280 )
-               FC_CAPTURE_AND_THROW( oversized_transaction, (trx_size ) );
-        }
 
         auto trx_id = trx_arg.id();
 
