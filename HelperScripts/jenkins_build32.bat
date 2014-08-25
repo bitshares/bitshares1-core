@@ -31,5 +31,5 @@ if exist build (
 )
 mkdir build
 cd build
-cmake -DINCLUDE_QT_WALLET=TRUE -DFORCE_BUILDWEB_GENERATION=TRUE -G "Visual Studio 12" ../bitshares_toolkit || exit /b 28
-msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebinfo /p:Platform=Win32 /target:rebuild /clp:ErrorsOnly BitShares.sln || exit /b 30
+cmake -DINCLUDE_QT_WALLET=TRUE -G "Visual Studio 12" ../bitshares_toolkit || exit /b 28
+msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebinfo /p:Platform=Win32 /target:rebuild /v:diag BitShares.sln || exit /b 30
