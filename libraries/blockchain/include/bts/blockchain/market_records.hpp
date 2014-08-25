@@ -152,8 +152,6 @@ namespace bts { namespace blockchain {
 
    struct market_transaction
    {
-      market_transaction(){}
-
       address                                   bid_owner;
       address                                   ask_owner;
       price                                     bid_price;
@@ -162,8 +160,8 @@ namespace bts { namespace blockchain {
       asset                                     bid_received;
       asset                                     ask_paid;
       asset                                     ask_received;
-      fc::enum_type<uint8_t, order_type_enum>   bid_type;
-      fc::enum_type<uint8_t, order_type_enum>   ask_type;
+      fc::enum_type<uint8_t, order_type_enum>   bid_type = null_order;
+      fc::enum_type<uint8_t, order_type_enum>   ask_type = null_order;
       asset                                     fees_collected;
    };
    typedef optional<market_order> omarket_order;
