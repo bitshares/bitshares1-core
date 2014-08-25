@@ -70,6 +70,10 @@ namespace bts { namespace net
         close_connection();
         dlog("close_connection completed normally");
       } 
+      catch ( const fc::canceled_exception& )
+      {
+        assert(false && "the task that deletes peers should not be canceled because it will prevent us from cleaning up correctly");
+      }
       catch ( ... ) 
       {
         dlog("close_connection threw");
@@ -174,6 +178,10 @@ namespace bts { namespace net
           try
           {
             _message_connection.bind( *local_endpoint );
+          }
+          catch ( const fc::canceled_exception& )
+          {
+            throw;
           }
           catch ( const fc::exception& except )
           {

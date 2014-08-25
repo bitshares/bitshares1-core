@@ -234,6 +234,10 @@ namespace bts { namespace rpc {
                     status = fc::http::reply::NotFound;
                 }
              }
+             catch ( const fc::canceled_exception& )
+             {
+                    throw;
+             }
              catch ( const fc::exception& e )
              {
                     std::string message = "Internal Server Error\n";
@@ -289,6 +293,10 @@ namespace bts { namespace rpc {
                          status = fc::http::reply::OK;
                          s.set_status( status );
                       }
+                      catch ( const fc::canceled_exception& )
+                      {
+                          throw;
+                      }
                       catch ( const fc::exception& e )
                       {
                           status = fc::http::reply::InternalServerError;
@@ -318,6 +326,10 @@ namespace bts { namespace rpc {
                        s.write( reply.c_str(), reply.size() );
                        return status;
                    }
+                }
+                catch ( const fc::canceled_exception& )
+                {
+                    throw;
                 }
                 catch ( const fc::exception& e )
                 {
@@ -362,6 +374,10 @@ namespace bts { namespace rpc {
               try
               {
                 _tcp_serv->accept( *sock );
+              }
+              catch (const fc::canceled_exception&)
+              {
+                throw;
               }
               catch ( const fc::exception& e )
               {

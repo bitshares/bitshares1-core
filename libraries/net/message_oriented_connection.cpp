@@ -95,7 +95,7 @@ namespace bts { namespace net {
       try 
       { 
         _read_loop_done.cancel_and_wait();
-      } 
+      }
       catch ( const fc::exception& e )
       {
         wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring: ${e}", ("e",e) );
@@ -173,9 +173,9 @@ namespace bts { namespace net {
             _delegate->on_message(_self, m);
           } 
           /// Dedicated catches needed to distinguish from general fc::exception
-          catch ( fc::canceled_exception& e ) { throw e; }
-          catch ( fc::eof_exception& e ) { throw e; }
-          catch ( fc::exception& e) 
+          catch ( const fc::canceled_exception& e ) { throw e; }
+          catch ( const fc::eof_exception& e ) { throw e; }
+          catch ( const fc::exception& e) 
           { 
             /// Here loop should be continued so exception should be just caught locally.
             wlog( "message transmission failed ${er}", ("er", e.to_detail_string() ) );
@@ -201,7 +201,7 @@ namespace bts { namespace net {
 
         FC_RETHROW_EXCEPTION( e, warn, "disconnected ${e}", ("e", e.to_detail_string() ) );
       }
-      catch ( std::exception& e )
+      catch ( const std::exception& e )
       {
         elog( "disconnected ${er}", ("er", e.what() ) );
         _delegate->on_connection_closed(_self);

@@ -718,7 +718,11 @@ namespace bts { namespace net { namespace detail {
         {
           fc::json::save_to_file( _node_configuration, configuration_file_name );
         }
-        catch ( fc::exception& except )
+        catch (const fc::canceled_exception&)
+        {
+          throw;
+        }
+        catch ( const fc::exception& except )
         {
           elog( "error writing node configuration to file ${filename}: ${error}", 
                ( "filename", configuration_file_name )("error", except.to_detail_string() ) );
@@ -810,6 +814,10 @@ namespace bts { namespace net { namespace detail {
           {
           }  // catch
         } 
+        catch ( const fc::canceled_exception& )
+        {
+          throw;
+        }
         catch ( const fc::exception& e  )
         {
           elog(  "${e}", ("e",e.to_detail_string()  )  );
@@ -1227,6 +1235,10 @@ namespace bts { namespace net { namespace detail {
         try
         {
           active_peer->send_message(address_request_message());
+        }
+        catch ( const fc::canceled_exception& )
+        {
+          throw;
         }
         catch (const fc::exception& e)
         {
@@ -2409,7 +2421,11 @@ namespace bts { namespace net { namespace detail {
               handle_message_exception = e;
               discontinue_fetching_blocks_from_peer = true;
             }
-            catch ( fc::exception& e )
+            catch (const fc::canceled_exception&)
+            {
+              throw;
+            }
+            catch ( const fc::exception& e )
             {
               wlog( "sync: client rejected sync block sent by peer" );
               handle_message_exception = e;
@@ -2573,7 +2589,11 @@ namespace bts { namespace net { namespace detail {
         broadcast( block_message_to_process, propagation_data );
         _message_cache.block_accepted();
       }
-      catch ( fc::exception& e )
+      catch (const fc::canceled_exception&)
+      {
+        throw;
+      }
+      catch ( const fc::exception& e )
       {
         // client rejected the block.  Disconnect the client and any other clients that offered us this block
         wlog( "client rejected block sent by peer" );
@@ -2710,6 +2730,10 @@ namespace bts { namespace net { namespace detail {
           if (message_to_process.msg_type == bts::client::trx_message_type)
             originating_peer->transaction_fetching_inhibited_until = fc::time_point::now() + fc::seconds(BTS_NET_INSUFFICIENT_RELAY_FEE_PENALTY_SEC);
           return;
+        }
+        catch ( const fc::canceled_exception& )
+        {
+          throw;
         }
         catch ( const fc::exception& e )
         {
@@ -2906,21 +2930,20 @@ namespace bts { namespace net { namespace detail {
 
       {
         fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
+        try 
+        {
+          _delayed_peer_deletion_task_done.cancel_and_wait();
+          dlog("Delayed peer deletion task terminated");
+        } 
+        catch ( const fc::exception& e )
+        {
+          wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring: ${e}", ("e",e) );
+        }
+        catch (...)
+        {
+          wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring" );
+        }
         _peers_to_delete.clear();
-      }
-
-      try 
-      {
-        _delayed_peer_deletion_task_done.cancel_and_wait();
-        dlog("Delayed peer deletion task terminated");
-      } 
-      catch ( const fc::exception& e )
-      {
-        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring: ${e}", ("e",e) );
-      }
-      catch (...)
-      {
-        wlog( "Exception thrown while terminating Delayed peer deletion task, ignoring" );
       }
 
       // Now that there are no more peers that can call methods on us, there should be no
@@ -3070,7 +3093,7 @@ namespace bts { namespace net { namespace detail {
         updated_peer_record.last_seen_time = fc::time_point::now();
         _potential_peer_db.update_entry( updated_peer_record );
       }
-      catch ( fc::exception& except )
+      catch ( const fc::exception& except )
       {
         // connection failed.  record that in our database
         updated_peer_record.last_connection_disposition = last_connection_failed;
