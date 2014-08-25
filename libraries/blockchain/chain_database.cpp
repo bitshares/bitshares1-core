@@ -775,8 +775,6 @@ namespace bts { namespace blockchain {
         }
         ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
 
-        if( self->get_head_block_num() <  316000)
-            pending_state->set_dirty_markets( pending_state->_dirty_markets );
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
 
@@ -820,13 +818,9 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_id, pending_state, block_signee );
 
-            if( self->get_head_block_num() <  316000)
-                apply_transactions( block_data, block_data.user_transactions, pending_state );
-
             execute_markets( block_data.timestamp, pending_state );
 
-            if( self->get_head_block_num() >=  316000)
-                apply_transactions( block_data, block_data.user_transactions, pending_state );
+            apply_transactions( block_data, block_data.user_transactions, pending_state );
 
             update_active_delegate_list( block_data, pending_state );
 
@@ -1652,8 +1646,7 @@ namespace bts { namespace blockchain {
       auto start_time = time_point::now();
 
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-      if( get_head_block_num() >=  316000 )
-         my->execute_markets( timestamp, pending_state );
+      my->execute_markets( timestamp, pending_state );
       auto pending_trx = get_pending_transactions();
 
       full_block next_block;
