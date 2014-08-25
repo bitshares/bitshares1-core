@@ -41,7 +41,6 @@ namespace bts { namespace blockchain {
       share_type          current_share_supply;
       share_type          maximum_share_supply;
       share_type          collected_fees;
-      feed_id_type        price_feed_id;
    };
    typedef fc::optional<asset_record> oasset_record;
 
@@ -60,5 +59,4 @@ FC_REFLECT( bts::blockchain::asset_record,
             (current_share_supply)
             (maximum_share_supply)
             (collected_fees)
-            (price_feed_id)
           )

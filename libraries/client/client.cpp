@@ -2804,6 +2804,7 @@ config load_config( const fc::path& datadir )
       info["client_data_dir"]                                   = fc::absolute( _data_dir );
       //info["client_httpd_port"]                                 = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
       //info["client_rpc_port"]                                   = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+      info["client_version"]                                    = BTS_CLIENT_VERSION;
 
       /* Network */
       info["network_num_connections"]                           = network_get_connection_count();
@@ -3259,6 +3260,15 @@ config load_config( const fc::path& datadir )
                                                   start_time, duration, granularity );
    }
 
+   signed_transaction client_impl::wallet_market_add_collateral(const std::string &from_account_name,
+                                                                const address &short_id,
+                                                                const share_type &collateral_to_add)
+   {
+      auto trx = _wallet->add_collateral(from_account_name, short_id, collateral_to_add);
+      network_broadcast_transaction(trx);
+      return trx;
+   }
+
    vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                const string& base_symbol,
                                                                int64_t limit,
@@ -3520,7 +3530,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_transactions( block_num );
    }
 
-   bts::blockchain::market_status client_impl::blockchain_market_status( const std::string& quote, 
+   bts::blockchain::api_market_status client_impl::blockchain_market_status( const std::string& quote,
                                                                          const std::string& base )const
    {
       auto qrec = _chain_db->get_asset_record(quote);
@@ -3528,7 +3538,16 @@ config load_config( const fc::path& datadir )
       FC_ASSERT( qrec && brec );
       auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
       FC_ASSERT( oresult );
-      return *oresult;
+
+      api_market_status result(*oresult);
+      if( oresult->avg_price_1h.ratio == fc::uint128() )
+      {
+        oprice median_delegate_price = _chain_db->get_median_delegate_price(qrec->id);
+        result.avg_price_1h = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
+      }
+      else
+        result.avg_price_1h = _chain_db->to_pretty_price_double(oresult->avg_price_1h);
+      return result;
    }
 
    bts::blockchain::asset client_impl::blockchain_unclaimed_genesis() const

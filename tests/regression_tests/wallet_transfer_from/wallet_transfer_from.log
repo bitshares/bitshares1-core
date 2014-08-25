@@ -32,13 +32,13 @@ Returns:
 default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
 {
   "index": 415,
-  "record_id": "9f0fad037607d57266cb20d94ed39e5b4cce8f7a",
+  "record_id": "399a00b1fc740d528f98a37bb8bd3e6bfad24d12",
   "block_num": 0,
   "is_virtual": false,
   "is_confirmed": false,
   "is_market": false,
   "trx": {
-    "expiration": "20140620T164030",
+    "expiration": "20140620T154750",
     "delegate_slate_id": null,
     "operations": [{
         "type": "withdraw_op_type",
@@ -67,7 +67,7 @@ default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
       }
     ],
     "signatures": [
-      "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c5426665c551f38d03382e1df95d53955bc09be226812e0cca5d96d53b516167d"
+      "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c865354dd35450d59dfc0893e6a7ba00a5bd2471a978a47780a1a89583687cc41"
     ]
   },
   "ledger_entries": [{

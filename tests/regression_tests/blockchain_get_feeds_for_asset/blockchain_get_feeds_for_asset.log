@@ -1,6 +1,6 @@
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
-  "expiration": "20140620T164030",
+  "expiration": "20140620T154750",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -23,8 +23,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
     }
   ],
   "signatures": [
-    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8ec9bb67add33345b1aca42c0875db882615dfeb141448c980f7cdf6fc1e44786c",
-    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6cdb88f77fa54974af600bbe50780d93087af5f1ac831c482d9c9140d41169346f"
+    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e3eb94ffb57395dff9965e1f69569e26b9070f0e56a81eba1789ed8a11ab1f19d",
+    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c1325794bc19f1e79a0d9e634b27e42305f4165f18a96620ca53dda074b007e07"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -33,7 +33,7 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "update_feed_op_type",
@@ -58,13 +58,13 @@ default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d96d0cd6e9d62f2b75f1afa99ce13574307636c01955bd3f267432cf47853f0e2e",
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749606caa0dae3966c31393cfdccd006db3efa5646d48df5c63e88f39fe415e21857b"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d95fd47fc93c56b9553ebcf8aae1a2149112b399e4bcc1551300f43349537bd7b3",
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749604d9cc5af31825b91afc5571deacf0983543519be601cc6027ad5fc5722a9c77b"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "update_feed_op_type",
@@ -89,13 +89,13 @@ default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
     }
   ],
   "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22533f3192aa6b5e8e793ed8e928332f265886c74c4c3bfcbbb21aad9639bee47b",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98ba9582c206d1ad18432862ba84b98bf889db54bb96577404ff3bde132875da254"
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2296cc42a1b2010e6865b5947fd2f975b9e72ba7c0668435d3a2157bc64ac0a2b8",
+    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b0076580502454821a5f9254aa1c01c25b4e4fc073c8e39744f6f3202bfdad8fd"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "update_feed_op_type",
@@ -120,8 +120,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
     }
   ],
   "signatures": [
-    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c007f8c94b1d79db57c2518ab9cba6d3227049eca16204dec8cb0e6e7694dd5d50",
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b99f221892261cc98594c6ef72d2cbab5c10e55a2576ac5fbb4ad76f2b0fe9cb0b"
+    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c090b6587a928d6d5942d650461442ea0dfccf6e4380b9f7cdb79f4a1095ddfe26",
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b98429657733e46a7b5461974d9fba5982120847e9236fb1293927f596f38e583c"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
@@ -133,7 +133,7 @@ Invalid price!
 
 default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "update_feed_op_type",
@@ -158,8 +158,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0028fa16e9eda18c1c9e80fd897d9b86e4a4cbe96a59abf4e86b5a5c5344423000",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66d89dc9cb055f3e91b451d03eedb07cfc2c1dcaac8ce8e0f94930e47d91577cee"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f0077c0da9fb929063001a6c0bc064ca5a56d7adbed854c1dc46038bdaeba1c65db",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66b86730902a4946eeb26d209d9cd0b381b4bb796d25a3fc99ffe9bb6ff92845c9"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
@@ -171,7 +171,7 @@ Invalid price!
 
 default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "update_feed_op_type",
@@ -196,13 +196,13 @@ default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
     }
   ],
   "signatures": [
-    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c0e830975aa2eaa785867889fa6e7ccd275a11f1bb6d57dc18fdd7bfc57dabc20",
-    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be907459412a44fe04bec5fdaf612d7517df672c662a71b52f0bed3dda739c9a36651"
+    "20bfac1dcd372e3bcec5d453a614f5ed978275929cfed5235283433d3bbac5ac0c9f6f0a5d24ca6748ee2714c5dcb9c8eddfa58db541a5680c2792a5c89c1c7696",
+    "1fdc1f3d4d907a562b44d59ccdb8c4a5e7598a9d24b4d52ecc84f09a49ac1be90732da47c50eed419b4f8dab97d3da2292db52c56923cea2cd67725339c6060755"
   ]
 }
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "update_feed_op_type",
@@ -227,8 +227,8 @@ default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
     }
   ],
   "signatures": [
-    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31ae8c8b137dd9da799bdba72fd341109f77fa5d23313f7b9d1aad801958782e45f",
-    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f2c598d48e206f177e3452ab29f8e3ca24935ca74d82f301e63c9aaed0584be30"
+    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a55ebbe05ebcbac0c265968431771d141a2a89aeb79cca8fa8f70cad151cdff61",
+    "20d5486259515fea1ce8c892354db75ceda339f99b6e8f014264668e472b02b96f25e737108613f1ac82adc1baab4b0db5b139001e6b464e021ba488ea2417e311"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks

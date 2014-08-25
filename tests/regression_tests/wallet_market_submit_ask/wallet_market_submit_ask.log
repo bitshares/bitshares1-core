@@ -13,7 +13,7 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" null 5000000 100 true
 {
-  "expiration": "20140620T164030",
+  "expiration": "20140620T154750",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -36,7 +36,7 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASS
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960feed53136d3e2c104bfea159b5e1ff8a1ac188e00b403aee39c114f4bf2ffb62"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960da687c317979645c5e444f6b2fb329ed7bca6906bf2d0cc3ecddcb1f2ab8e67e"
   ]
 }
 default (unlocked) >>> wallet_account_balance testaccount2
@@ -95,7 +95,7 @@ Returns:
 aliases: ask
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
 {
-  "expiration": "20140620T164110",
+  "expiration": "20140620T154830",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -120,8 +120,8 @@ default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
     }
   ],
   "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00d9fabdf11461525421ffeafa616211712a076ca5e8d1e119d9c93e5ebd4cf618",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e6699ca979d32c60b40229d29d579206290a76e954cc59456897cd7dd1ce05f02ff"
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00c66aa855b32271140616bd62f15cfc0990b6a76112d2f8efac4736fcdd6e4a68",
+    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e66e3083c9fe9c4a1a8d5abd067e114f8da7c2cc7ddc2e473f27a74f7dc390ce7e7"
   ]
 }
 default (unlocked) >>> balance testaccount2
