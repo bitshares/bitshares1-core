@@ -1156,30 +1156,6 @@
          "aliases" : [ "cover" ]
       },
       {
-         "method_name" : "wallet_market_add_collateral",
-         "description" : "Add collateral to a short position",
-         "return_type" : "signed_transaction",
-         "parameters"  : [
-            {
-               "name" : "from_account_name",
-               "type" : "account_name",
-               "description" : "the account that will provide funds for the ask"
-            },
-            {
-               "name" : "short_id",
-               "type" : "address",
-               "description" : "the address of the order to recollateralize"
-            },
-            {
-               "name" : "collateral_to_add",
-               "type" : "share_type",
-               "description" : "Amount of collateral to add"
-            }
-          ],
-         "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "recollateralize" ]
-      },
-      {
          "method_name" : "wallet_market_order_list",
          "description" : "List an order list of a specific market",
          "return_type" : "market_order_array",
