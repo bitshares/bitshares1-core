@@ -1682,16 +1682,7 @@ namespace bts { namespace blockchain {
       for( const auto& item : pending_trx )
       {
          auto trx_size = item->trx.data_size();
-         if( get_head_block_num() + 1 < BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM )
-         {
-             if( block_size + trx_size > 2560 )
-                 break;
-         }
-         else
-         {
-             if( block_size + trx_size > BTS_BLOCKCHAIN_MAX_BLOCK_SIZE )
-                 break;
-         }
+         if( block_size + trx_size > BTS_BLOCKCHAIN_MAX_BLOCK_SIZE ) break;
          block_size += trx_size;
 
          /* Make modifications to temporary state */
