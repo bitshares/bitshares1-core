@@ -8,6 +8,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/fork_blocks.hpp>
 #include <bts/db/level_map.hpp>
+#include <bts/db/cached_level_map.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/blockchain/checkpoints.hpp>
 
@@ -199,7 +200,7 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< string, account_id_type >                   _account_index_db;
             bts::db::level_map< string, asset_id_type >                     _symbol_index_db;
-            bts::db::level_map< vote_del, int >                             _delegate_vote_index_db;
+            bts::db::cached_level_map< vote_del, int >                      _delegate_vote_index_db;
 
             bts::db::level_map< time_point_sec, slot_record >               _slot_record_db;
 
@@ -593,6 +594,12 @@ namespace bts { namespace blockchain {
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
       { try {
+           uint32_t last_checkpoint_block_num = 0;
+           if( !CHECKPOINT_BLOCKS.empty() )
+                  last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
+           if( _head_block_header.block_num < last_checkpoint_block_num )
+                 return;  // don't bother saving it... 
+
            pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>(nullptr);
            pending_state->get_undo_state( undo_state );
            _undo_state_db.store( block_id, *undo_state );
@@ -777,7 +784,22 @@ namespace bts { namespace blockchain {
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
         }
-        ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
+        try
+        {
+          // We're logging market_transactions objects here, but when you try to sync to the real blockchain,
+          // this throws a bad_cast exception trying to convert an enum value into a string. (around block 25672)
+          // the likely cause is that the market_transaction object had a field added around Aug 5, but the 
+          // block in question was created earlier, so we're trying to read an old-format object into a new-format
+          // structure in memory, then we're trying to interpret something that's not an enum as an enum.
+          // If this is the case, we probably need to have a conversion routine that figures out what version
+          // of the structure it's reading in and initializes it correctly.  For now, catching the exception
+          // will allow people to sync past block 25672.
+          ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
+        }
+        catch (const fc::exception& e)
+        {
+          wlog( "market trxs: exception thrown while trying to log transactions: ${e}", ("e", e) );
+        }
         pending_state->set_dirty_markets( pending_state->_dirty_markets );
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }

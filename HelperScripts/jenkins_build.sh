@@ -6,5 +6,5 @@ mkdir $WORKSPACE/build
 cd $WORKSPACE/build
 export BITSHARES_ROOT=$WORKSPACE
 . ../bitshares_toolkit/setenv.sh
-cmake -DCMAKE_TOOLCHAIN_FILE=$WORKSPACE/toolchain.invictus/toolchain.invictus.cmake ../bitshares_toolkit
+cmake -DINCLUDE_QT_WALLET=TRUE -DCMAKE_TOOLCHAIN_FILE=$WORKSPACE/toolchain.invictus/toolchain.invictus.cmake ../bitshares_toolkit
 make -j8
