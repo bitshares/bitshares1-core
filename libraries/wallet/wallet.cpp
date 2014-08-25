@@ -4382,6 +4382,54 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity) (quote_price)(quote_symbol)(sign) ) }
 
+   signed_transaction wallet::add_collateral(
+       const string& from_account_name,
+       const address& short_id,
+       share_type collateral_to_add,
+       bool sign)
+   { try {
+       if (!is_open()) FC_CAPTURE_AND_THROW (wallet_closed);
+       if (!is_unlocked()) FC_CAPTURE_AND_THROW (login_required);
+       if (!is_receive_account(from_account_name)) FC_CAPTURE_AND_THROW (unknown_receive_account);
+       if (collateral_to_add <= 0) FC_CAPTURE_AND_THROW (bad_collateral_amount);
+
+       auto order_itr = my->_wallet_db.get_market_orders().find(short_id);
+       if (order_itr == my->_wallet_db.get_market_orders().end()) FC_CAPTURE_AND_THROW (unknown_market_order);
+
+       auto     from_account_key = get_account_public_key(from_account_name);
+       address  from_address(from_account_key);
+
+       signed_transaction trx;
+       unordered_set<address> required_signatures;
+       required_signatures.insert(order_itr->second.order.get_owner());
+
+       trx.add_collateral(collateral_to_add, order_itr->second.order.market_index);
+
+       auto required_fees = get_transaction_fee();
+       my->withdraw_to_transaction (asset(collateral_to_add) + required_fees,
+                                    from_address,
+                                    trx,
+                                    required_signatures);
+
+       if (sign)
+       {
+         auto record = wallet_transaction_record();
+         record.is_market = true;
+         record.fee = required_fees;
+
+         auto entry = ledger_entry();
+         entry.from_account = from_account_key;
+         entry.to_account = get_private_key(order_itr->second.order.get_owner()).get_public_key();
+         entry.amount = asset(collateral_to_add);
+         entry.memo = "add collateral to short";
+         record.ledger_entries.push_back(entry);
+
+         sign_and_cache_transaction(trx, required_signatures, record);
+       }
+
+       return trx;
+   } FC_CAPTURE_AND_RETHROW((from_account_name)(short_id)(collateral_to_add)(sign)) }
+
    signed_transaction wallet::cover_short(
            const string& from_account_name,
            double real_quantity_usd,

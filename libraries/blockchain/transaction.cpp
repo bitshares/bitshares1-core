@@ -205,10 +205,16 @@ namespace bts { namespace blockchain {
    {
       operations.push_back( issue_asset_operation( amount_to_issue ) );
    }
-   void transaction::cover( const asset& cover_amount, 
+   void transaction::cover( const asset& cover_amount,
                             const market_index_key& order_idx )
    {
       operations.push_back( cover_operation(cover_amount.amount, order_idx) );
+   }
+
+   void transaction::add_collateral( share_type collateral_amount,
+                                     const market_index_key& order_idx )
+   {
+      operations.push_back( add_collateral_operation(collateral_amount, order_idx) );
    }
 
    void transaction::publish_feed( feed_id_type feed_id, 

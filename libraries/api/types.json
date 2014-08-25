@@ -588,7 +588,7 @@
       },
       {
         "type_name" : "market_status",
-        "cpp_return_type" : "bts::blockchain::market_status"
+        "cpp_return_type" : "bts::blockchain::api_market_status"
       },
       {
         "type_name" : "vote_selection_method",

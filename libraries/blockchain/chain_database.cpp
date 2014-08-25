@@ -2692,7 +2692,6 @@ namespace bts { namespace blockchain {
     */
    oprice       chain_database::get_median_delegate_price( asset_id_type asset_id )const
    { try {
-      auto active_delegates = get_active_delegates();
       auto feed_itr = my->_feed_db.lower_bound( feed_index{asset_id} );
       vector<price> prices;
       while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )

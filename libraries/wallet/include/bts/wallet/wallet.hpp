@@ -373,6 +373,11 @@ namespace bts { namespace wallet {
                                           const address& owner_address,
                                           bool sign = true );
 
+         signed_transaction  add_collateral( const string& from_account_name,
+                                             const address& short_id,
+                                             share_type collateral_to_add,
+                                             bool sign = true );
+
          signed_transaction  cancel_market_order( const address& owner_address );
 
          wallet_account_record get_account( const string& account_name )const;

@@ -232,11 +232,19 @@ namespace bts { namespace blockchain {
    };
    typedef optional<market_status> omarket_status;
 
+   struct api_market_status : public market_status {
+       api_market_status(const market_status& market_stat = market_status())
+         : market_status(market_stat)
+       {}
+       double                   avg_price_1h;
+   };
+
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (null_order)(bid_order)(ask_order)(short_order)(cover_order) )
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
-FC_REFLECT( bts::blockchain::market_status,  (quote_id)(base_id)(bid_depth)(ask_depth)(avg_price_1h)(last_error) );
+FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(bid_depth)(ask_depth)(avg_price_1h)(last_error) )
+FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (avg_price_1h) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(volume)(recent_average_price) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
