@@ -70,6 +70,7 @@ namespace bts { namespace blockchain {
          for( const auto& item : items.second )    prev_state->store_recent_operation( item );
       }
       prev_state->set_market_transactions( market_transactions );
+      prev_state->set_dirty_markets(_dirty_markets);
    }
 
    otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id, 
@@ -202,6 +203,9 @@ namespace bts { namespace blockchain {
          if( prev_value ) undo_state->set_feed( *prev_value );
          else undo_state->set_feed( feed_record{item.first} );
       }
+
+      auto dirty_markets = prev_state->get_dirty_markets();
+      undo_state->set_dirty_markets(dirty_markets);
 
       /* NOTE: Recent operations are currently not rewound on undo */
    }
