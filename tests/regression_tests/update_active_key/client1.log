@@ -57,6 +57,7 @@ OK
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
+[redacted]          4         delegate0           delegate4           30.00000 XTS                                                        0.50000 XTS         [redacted]
 [redacted]          7         delegate4           delegate5           10.00000 XTS                                                        0.50000 XTS         [redacted]
 [redacted]          10        delegate4           delegate4           0.00000 XTS             update delegate4                            0.50000 XTS         [redacted]
 default (unlocked) >>> quit

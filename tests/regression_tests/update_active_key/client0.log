@@ -4,7 +4,7 @@ default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -24,13 +24,13 @@ default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
     }
   ],
   "signatures": [
-    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f63f8d8f4304c7d3eb8d005c152d6247bfb7f35798a45648b39e7fa747c385243a",
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d94f0a1aba55f27a4e16ff7688e20cb53d93536ec658c7734b62043070d72f487c"
+    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f6a826b1175ed900fdf86508b4fd98738d23f349a4cdfb268287af6585d71d0349",
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9ec8ba290483887a8a53c08d026634127d4a5e177f3ffa388c77f97e0e0df4448"
   ]
 }
 default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JDQmM7RDjLr7LR9MVceuckKLE61BfiBePgJfqY1Eaa55whVaFR"
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -50,8 +50,8 @@ default (unlocked) >>> wallet_account_update_active_key delegate5 delegate5 "5JD
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749605c8bc38abd638281290b3f704bded2a08619e072a61b50492a9e78259635a0be",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22d1075afe4024bc865a8e2fbb3a5e0eea2396e5e135dde4caf34663807dc98fb5"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749602a8d87e6f2fa7781fe181ab83075737ecc78cd7606539fe5a03d0e0e6fb0d6c3",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d221fa32c2537795f287e0ca254467c9c6735867720f30a37101d91a13562de7534"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -160,7 +160,7 @@ default (unlocked) >>> debug_wait_for_block_by_number 9
 OK
 default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
 {
-  "expiration": "20140620T164220",
+  "expiration": "20140620T154940",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -180,8 +180,8 @@ default (unlocked) >>> wallet_account_update_active_key delegate4 delegate4
     }
   ],
   "signatures": [
-    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38edc20efd26aae4d5bcec62b2a1fde62281c426a6ffbc79a9012ebd3c608f542db",
-    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a7f6813160c66bc4329fa76653bfe836531f6106fd58000bff8aeb8debbe4a1783"
+    "1fc5c666f15451b2c5c022028ec5b0ea34e27957c6ffd97a12e74d7f47176fd38e4a8181ab9bd5366674ddab6225c2bfd6aedfc889bf2efd109ce0b447e4311389",
+    "1f455a71954b4076ff59ae182c2a126a6613aa460678af030cae007dd220eb55a770f63a5caf4ced8f9a0fbfd90e7ca65261d01b0c6005ad3fb852d2d5b1c213e5"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks

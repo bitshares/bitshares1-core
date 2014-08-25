@@ -2804,6 +2804,7 @@ config load_config( const fc::path& datadir )
       info["client_data_dir"]                                   = fc::absolute( _data_dir );
       //info["client_httpd_port"]                                 = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
       //info["client_rpc_port"]                                   = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+      info["client_version"]                                    = BTS_CLIENT_VERSION;
 
       /* Network */
       info["network_num_connections"]                           = network_get_connection_count();
