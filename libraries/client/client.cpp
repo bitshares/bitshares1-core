@@ -3260,15 +3260,6 @@ config load_config( const fc::path& datadir )
                                                   start_time, duration, granularity );
    }
 
-   signed_transaction client_impl::wallet_market_add_collateral(const std::string &from_account_name,
-                                                                const address &short_id,
-                                                                const share_type &collateral_to_add)
-   {
-      auto trx = _wallet->add_collateral(from_account_name, short_id, collateral_to_add);
-      network_broadcast_transaction(trx);
-      return trx;
-   }
-
    vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                const string& base_symbol,
                                                                int64_t limit,
