@@ -13,7 +13,7 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
-  "expiration": "20140620T164030",
+  "expiration": "20140620T154750",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -36,8 +36,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749609d2c89fb47f02766c0bd2dada70c6c5d4a796735a3c9a04ed07ec67518303ae8",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2289faeb2ea8c5ae9453f47529a16e4f02b2ead3a6734155bd1674e3ab3263c8f0"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960572b6063ae6a5d89e17602c0454e509731efe9c33832be9ccd08195c368caf21",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22c5a7be4eb20d05d9592b20818e97b7dcfb345ef11db7a650b9c025737a571a13"
   ]
 }
 default (unlocked) >>> wallet_account_balance test
@@ -58,7 +58,7 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
 default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -95,8 +95,8 @@ default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
     }
   ],
   "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9b1c81645a9144210499956207f89ce3a2f789ef45305364a8c229124ef787ba4",
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f006fbc2955382ee6ae4fa914efb6cb14a71a7cb9ec34bb63c643a60c3036e116ba"
+    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9f54b0da47506c99758cd95719f312de6c340e7450746a1ab579c544b96c64d59",
+    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00274c079c0e3ec9ce071b41bf9620ed7863790053fec4e976b0198e59dc566361"
   ]
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
