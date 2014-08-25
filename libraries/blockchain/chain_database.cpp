@@ -858,7 +858,7 @@ namespace bts { namespace blockchain {
                //ilog( "... block applied ... " );
                //Schedule the observer notifications for later; the chain is in a
                //non-premptable state right now, and observers may yield.
-               fc::async([o,summary]{o->block_applied( summary );});
+               fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
             } catch ( const fc::exception& e )
             {
                wlog( "${e}", ("e",e.to_detail_string() ) );
