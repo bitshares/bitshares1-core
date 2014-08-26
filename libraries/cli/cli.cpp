@@ -1147,10 +1147,11 @@ namespace bts { namespace cli {
                       *_out << "\n";
                   }
               }
-              else if( method_name == "wallet_set_transaction_fee" )
+              else if( method_name == "wallet_set_transaction_fee"
+                       || method_name == "blockchain_calculate_base_supply" )
               {
-                  const auto fee = result.as<asset>();
-                  *_out << _client->get_chain()->to_pretty_asset( fee ) << "\n";
+                  const auto asset_result = result.as<asset>();
+                  *_out << _client->get_chain()->to_pretty_asset( asset_result ) << "\n";
               }
               else
               {
