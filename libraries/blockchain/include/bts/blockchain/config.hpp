@@ -3,17 +3,17 @@
 #include <stdint.h>
 
 /* Define client version here */
-#define BTS_CLIENT_VERSION                                  "Dry Run 17"
+#define BTS_CLIENT_VERSION                                  "Dry Run NN"
 
 /* Comment out this line for a non-test network */
 #define BTS_TEST_NETWORK
-#define BTS_TEST_NETWORK_VERSION                            19
+#define BTS_TEST_NETWORK_VERSION                            20
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     130
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     131
 
 /**
  *  The address prepended to string representation of

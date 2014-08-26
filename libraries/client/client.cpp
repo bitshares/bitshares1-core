@@ -1975,6 +1975,13 @@ config load_config( const fc::path& datadir )
       return oaccount_record();
     }
 
+    balance_record detail::client_impl::blockchain_get_balance( const balance_id_type& balance_id )const
+    {
+        const auto balance_record = _chain_db->get_balance_record( balance_id );
+        FC_ASSERT( balance_record.valid() );
+        return *balance_record;
+    }
+
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
     {
       try
@@ -2850,7 +2857,15 @@ config load_config( const fc::path& datadir )
 
           const auto last_scanned_block_num                     = _wallet->get_last_scanned_block_number();
           if( last_scanned_block_num > 0 )
-              info["wallet_last_scanned_block_timestamp"]       = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+          {
+              try
+              {
+                  info["wallet_last_scanned_block_timestamp"]   = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+              }
+              catch( ... )
+              {
+              }
+          }
 
           info["wallet_scan_progress"]                          = _wallet->get_scan_progress();
 
@@ -2871,6 +2886,11 @@ config load_config( const fc::path& datadir )
       }
 
       return info;
+    }
+
+    asset client_impl::blockchain_calculate_base_supply()const
+    {
+        return _chain_db->calculate_base_supply();
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
