@@ -89,6 +89,7 @@ namespace bts{ namespace blockchain {
       return next_id;
    }
 
+#if 0
    proposal_id_type   chain_interface::last_proposal_id()const
    {
        return get_property( chain_property_enum::last_proposal_id ).as<proposal_id_type>();
@@ -100,6 +101,7 @@ namespace bts{ namespace blockchain {
       set_property( chain_property_enum::last_proposal_id, next_id );
       return next_id;
    }
+#endif
 
    vector<account_id_type> chain_interface::get_active_delegates()const
    { try {

@@ -8,7 +8,6 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
@@ -3842,6 +3841,7 @@ namespace bts { namespace wallet {
                                       ("pay_from_account",pay_from_account)
                                       ("sign",sign) ) }
 
+#if 0
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
                                        const string& subject,
                                        const string& body,
@@ -3945,6 +3945,7 @@ namespace bts { namespace wallet {
 
       return trx;
    }
+#endif
 
    /***
     *  @param from_account_name - the account that will fund the bid

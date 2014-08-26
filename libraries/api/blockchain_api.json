@@ -222,43 +222,6 @@
         "prerequisites" : ["json_authenticated"]
       },
       {
-        "method_name": "blockchain_list_proposals",
-        "description": "Returns the list of proposals",
-        "return_type": "proposal_array",
-        "parameters" : [
-            {
-              "name" : "first",
-              "type" : "uint32_t",
-              "description" : "",
-              "default_value" : 0
-            },
-            {
-              "name" : "count",
-              "type" : "uint32_t",
-              "description" : "",
-              "default_value" : -1
-            }
-        ],
-        "is_const" : true,
-        "aliases" : ["blockchain_get_proposals"],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
-        "method_name": "blockchain_get_proposal_votes",
-        "description": "Returns the list votes filed for a given proposal.",
-        "return_type": "proposal_vote_array",
-        "parameters" : [
-            {
-              "name" : "proposal_id",
-              "type" : "proposal_id",
-              "description" : "The ID of the proposal that votes will be returned for."
-            }
-        ],
-        "is_const" : true,
-        "aliases" : ["get_proposal_votes"],
-        "prerequisites" : ["json_authenticated"]
-      },
-      {
         "method_name" : "blockchain_market_list_bids",
         "description" : "Returns the bid side of the order book for a given market",
         "return_type" : "market_order_array",

@@ -54,11 +54,13 @@ namespace bts { namespace blockchain {
          virtual void                   store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
+#if 0
          virtual void                   store_proposal_record( const proposal_record& r )override;
          virtual oproposal_record       get_proposal_record( proposal_id_type id )const override;
                                                                                                     
          virtual void                   store_proposal_vote( const proposal_vote& r )override;
          virtual oproposal_vote         get_proposal_vote( proposal_vote_id_type id )const override;
+#endif
 
          virtual void                   store_asset_record( const asset_record& r )override;
          virtual void                   store_balance_record( const balance_record& r )override;
@@ -113,9 +115,11 @@ namespace bts { namespace blockchain {
          unordered_map< string, asset_id_type>                          symbol_id_index;
          unordered_map< transaction_id_type, transaction_record>        transactions;
          unordered_map< chain_property_type, variant>                   properties; 
+#if 0
          unordered_map<proposal_id_type, proposal_record>               proposals;
-         unordered_map<address, account_id_type>                        key_to_account;
          map< proposal_vote_id_type, proposal_vote>                     proposal_votes; 
+#endif
+         unordered_map<address, account_id_type>                        key_to_account;
          map< market_index_key, order_record>                           bids; 
          map< market_index_key, order_record>                           asks; 
          map< market_index_key, order_record>                           shorts; 
@@ -141,4 +145,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(proposals)(proposal_votes)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds)(_dirty_markets) )
+            (properties)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds)(_dirty_markets) )
