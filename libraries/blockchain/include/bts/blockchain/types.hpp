@@ -7,8 +7,8 @@
 
 #include <functional>
 
-namespace fc { 
-   class path; 
+namespace fc {
+   class path;
    class microseconds;
    class time_point;
    class time_point_sec;
@@ -29,9 +29,7 @@ namespace bts { namespace blockchain {
    typedef fc::signed_int                     account_id_type;
    typedef fc::signed_int                     feed_id_type;
    typedef fc::signed_int                     proposal_id_type;
-   typedef uint32_t                           tapos_type; 
    typedef int64_t                            share_type;
-   typedef int64_t                            bip_type;
    typedef uint64_t                           slate_id_type;
    typedef fc::optional<fc::ecc::private_key> oprivate_key;
 
@@ -55,7 +53,7 @@ namespace bts { namespace blockchain {
    using fc::unsigned_int;
    using fc::signed_int;
 
-   struct public_key_type 
+   struct public_key_type
    {
        struct binary_key
        {
@@ -65,7 +63,7 @@ namespace bts { namespace blockchain {
        };
 
        fc::ecc::public_key_data key_data;
- 
+
        public_key_type();
        public_key_type( const fc::ecc::public_key_data& data );
        public_key_type( const fc::ecc::public_key& pubkey );

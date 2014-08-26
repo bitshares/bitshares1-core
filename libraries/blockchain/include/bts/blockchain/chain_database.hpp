@@ -180,9 +180,9 @@ namespace bts { namespace blockchain {
          oblock_record               get_block_record( uint32_t block_num )const;
 
 
-         virtual oprice              get_median_delegate_price( asset_id_type )const override;
-         vector<feed_record>         get_feeds_for_asset( asset_id_type asset_id )const;
-         vector<feed_record>         get_feeds_from_delegate( account_id_type delegate_id )const;
+         virtual oprice              get_median_delegate_price( const asset_id_type& )const override;
+         vector<feed_record>         get_feeds_for_asset( const asset_id_type& asset_id )const;
+         vector<feed_record>         get_feeds_from_delegate( const account_id_type& delegate_id )const;
 
          virtual odelegate_slate     get_delegate_slate( slate_id_type id )const override;
          virtual void                store_delegate_slate( slate_id_type id,
@@ -250,7 +250,8 @@ namespace bts { namespace blockchain {
          vector<market_order>               get_market_covers( const string& quote_symbol,
                                                                uint32_t limit = uint32_t(-1) );
 
-         virtual omarket_order              get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual omarket_order              get_lowest_ask_record( const asset_id_type& quote_id,
+                                                                   const asset_id_type& base_id )override;
          optional<market_order>             get_market_ask( const market_index_key& )const;
          vector<market_order>               get_market_asks( const string& quote_symbol,
                                                              const string& base_symbol,
@@ -265,11 +266,11 @@ namespace bts { namespace blockchain {
                                                           const variant& property_value )override;
 
          bool                               is_valid_symbol( const string& asset_symbol )const;
-         string                             get_asset_symbol( asset_id_type asset_id )const;
+         string                             get_asset_symbol( const asset_id_type& asset_id )const;
          asset_id_type                      get_asset_id( const string& asset_symbol )const;
-         virtual oasset_record              get_asset_record( asset_id_type id )const override;
+         virtual oasset_record              get_asset_record( const asset_id_type& id )const override;
          virtual obalance_record            get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record            get_account_record( account_id_type id )const override;
+         virtual oaccount_record            get_account_record( const account_id_type& id )const override;
          virtual oaccount_record            get_account_record( const address& owner )const override;
 
          virtual oasset_record              get_asset_record( const string& symbol )const override;
@@ -303,12 +304,12 @@ namespace bts { namespace blockchain {
          virtual void                       store_slot_record( const slot_record& r )override;
          virtual oslot_record               get_slot_record( const time_point_sec& start_time )const override;
 
-         virtual omarket_status             get_market_status( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual omarket_status             get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )override;
          virtual void                       store_market_status( const market_status& s ) override;
          virtual void                       store_market_history_record( const market_history_key &key, const market_history_record &record ) override;
          virtual omarket_history_record     get_market_history_record( const market_history_key &key ) const override;
-         market_history_points              get_market_price_history(asset_id_type quote_id,
-                                                                      asset_id_type base_id,
+         market_history_points              get_market_price_history( const asset_id_type& quote_id,
+                                                                      const asset_id_type& base_id,
                                                                       const fc::time_point& start_time,
                                                                       const fc::microseconds& duration,
                                                                       market_history_key::time_granularity_enum granularity );
@@ -322,7 +323,11 @@ namespace bts { namespace blockchain {
          asset                              unclaimed_genesis();
 
          // TODO... only call on pending chain state
-         virtual void                       set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) override { FC_ASSERT( false, "this shouldn't be called directly" ); }
+         virtual void                       set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override
+         {
+             FC_ASSERT( false, "this shouldn't be called directly" );
+         }
+
       private:
          unique_ptr<detail::chain_database_impl> my;
    };

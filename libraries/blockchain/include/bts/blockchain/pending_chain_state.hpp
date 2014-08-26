@@ -18,15 +18,15 @@ namespace bts { namespace blockchain {
 
          virtual void                  set_feed( const feed_record&  ) override;
          virtual ofeed_record          get_feed( const feed_index& )const override;
-         virtual oprice                get_median_delegate_price( asset_id_type )const override;
-         virtual void                  set_market_dirty( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual oprice                get_median_delegate_price( const asset_id_type& )const override;
+         virtual void                  set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override;
 
 
          virtual fc::time_point_sec     now()const override;
 
-         virtual oasset_record          get_asset_record( asset_id_type id )const override;
+         virtual oasset_record          get_asset_record( const asset_id_type& id )const override;
          virtual obalance_record        get_balance_record( const balance_id_type& id )const override;
-         virtual oaccount_record        get_account_record( account_id_type id )const override;
+         virtual oaccount_record        get_account_record( const account_id_type& id )const override;
          virtual oaccount_record        get_account_record( const address& owner )const override;
 
          virtual odelegate_slate        get_delegate_slate( slate_id_type id )const override;
@@ -40,15 +40,16 @@ namespace bts { namespace blockchain {
          virtual oasset_record          get_asset_record( const string& symbol )const override;
          virtual oaccount_record        get_account_record( const string& name )const override;
 
-         virtual omarket_status         get_market_status( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual omarket_status         get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )override;
          virtual void                   store_market_status( const market_status& s ) override;
 
-         virtual omarket_order          get_lowest_ask_record( asset_id_type quote_id, asset_id_type base_id ) override;
+         virtual omarket_order          get_lowest_ask_record( const asset_id_type& quote_id,
+                                                               const asset_id_type& base_id )override;
          virtual oorder_record          get_bid_record( const market_index_key& )const override;
          virtual oorder_record          get_ask_record( const market_index_key& )const override;
          virtual oorder_record          get_short_record( const market_index_key& )const override;
          virtual ocollateral_record     get_collateral_record( const market_index_key& )const override;
-                                                                                                      
+
          virtual void                   store_bid_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_ask_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_short_record( const market_index_key& key, const order_record& ) override;
@@ -57,7 +58,7 @@ namespace bts { namespace blockchain {
 #if 0
          virtual void                   store_proposal_record( const proposal_record& r )override;
          virtual oproposal_record       get_proposal_record( proposal_id_type id )const override;
-                                                                                                    
+
          virtual void                   store_proposal_vote( const proposal_vote& r )override;
          virtual oproposal_vote         get_proposal_vote( proposal_vote_id_type id )const override;
 #endif
@@ -104,7 +105,7 @@ namespace bts { namespace blockchain {
          virtual void                   set_market_transactions( vector<market_transaction> trxs ) override;
 
 
-         // NOTE: this isn't really part of the chain state, but more part of the block state 
+         // NOTE: this isn't really part of the chain state, but more part of the block state
          vector<market_transaction>                                     market_transactions;
 
          unordered_map< asset_id_type, asset_record>                    assets;
@@ -114,16 +115,16 @@ namespace bts { namespace blockchain {
          unordered_map< string, account_id_type>                        account_id_index;
          unordered_map< string, asset_id_type>                          symbol_id_index;
          unordered_map< transaction_id_type, transaction_record>        transactions;
-         unordered_map< chain_property_type, variant>                   properties; 
+         unordered_map< chain_property_type, variant>                   properties;
 #if 0
          unordered_map<proposal_id_type, proposal_record>               proposals;
-         map< proposal_vote_id_type, proposal_vote>                     proposal_votes; 
+         map< proposal_vote_id_type, proposal_vote>                     proposal_votes;
 #endif
          unordered_map<address, account_id_type>                        key_to_account;
-         map< market_index_key, order_record>                           bids; 
-         map< market_index_key, order_record>                           asks; 
-         map< market_index_key, order_record>                           shorts; 
-         map< market_index_key, collateral_record>                      collateral; 
+         map< market_index_key, order_record>                           bids;
+         map< market_index_key, order_record>                           asks;
+         map< market_index_key, order_record>                           shorts;
+         map< market_index_key, collateral_record>                      collateral;
          map<time_point_sec, slot_record>                               slots;
          map<market_history_key, market_history_record>                 market_history;
          map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
@@ -131,7 +132,7 @@ namespace bts { namespace blockchain {
          map<feed_index, feed_record>                                   feeds;
 
          /**
-          * Set of markets that have had changes to their bids/asks and therefore must 
+          * Set of markets that have had changes to their bids/asks and therefore must
           * be executed   map<QUOTE,BASE>
           */
          map<asset_id_type, asset_id_type>                              _dirty_markets;
