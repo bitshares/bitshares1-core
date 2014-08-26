@@ -548,18 +548,21 @@ namespace bts { namespace wallet {
           if( !is_known )
           {
               transaction_record = wallet_transaction_record();
+              transaction_record->record_id = record_id;
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
+              transaction_record->trx = transaction;
           }
 
           bool new_transaction = !transaction_record->is_confirmed;
 
-          transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
-          transaction_record->trx = transaction;
 
-          auto store_record = is_known;
+          if( is_known ) /* Otherwise will get stored below if this is for me */
+              _wallet_db.store_transaction( *transaction_record );
+
+          auto store_record = false;
 
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
@@ -751,7 +754,10 @@ namespace bts { namespace wallet {
               }
           }
 
-          if( store_record ) _wallet_db.store_transaction( *transaction_record );
+          // TODO: Test that this doesn't break anything
+          /* Only overwrite existing record if you did not create it */
+          if( store_record && !is_known )
+              _wallet_db.store_transaction( *transaction_record );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
