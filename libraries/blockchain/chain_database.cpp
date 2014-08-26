@@ -1455,6 +1455,8 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
+#warning This might cause a hardfork in BTSX
+#if 0
        ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
@@ -1464,6 +1466,10 @@ namespace bts { namespace blockchain {
        {
           my->_balance_db.store( r.id(), r );
        }
+#endif
+       /* Currently we keep all balance records forever so we know the owner and asset ID on wallet rescan */
+       my->_balance_db.store( r.id(), r );
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
    void chain_database::store_account_record( const account_record& record_to_store )
