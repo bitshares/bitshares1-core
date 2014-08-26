@@ -227,8 +227,10 @@ namespace bts { namespace blockchain {
                                             
          vector<account_id_type>            get_delegates_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1) )const;
          vector<account_record>             get_delegate_records_by_vote( uint32_t first=0, uint32_t count = uint32_t(-1))const;
+#if 0
          vector<proposal_record>            get_proposals( uint32_t first=0, uint32_t count = uint32_t(-1))const;
          vector<proposal_vote>              get_proposal_votes( proposal_id_type proposal_id ) const;
+#endif
 
          fc::variant_object                 find_delegate_vote_discrepancies() const;
 
@@ -275,11 +277,13 @@ namespace bts { namespace blockchain {
          virtual vector<operation>          get_recent_operations( operation_type_enum t )override;
          virtual void                       store_recent_operation( const operation& o )override;
 
+#if 0
          virtual void                       store_proposal_record( const proposal_record& r )override;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const override;
                                                                                                           
          virtual void                       store_proposal_vote( const proposal_vote& r )override;
          virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const override;
+#endif
 
          virtual oorder_record              get_bid_record( const market_index_key& )const override;
          virtual oorder_record              get_ask_record( const market_index_key& )const override;

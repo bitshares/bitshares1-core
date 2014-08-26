@@ -2749,8 +2749,6 @@ config load_config( const fc::path& datadir )
 
        info["min_market_depth"]             = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
 
-       info["proposal_vote_message_max"]    = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
-
        info["max_pending_queue_size"]       = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]           = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -3111,16 +3109,6 @@ config load_config( const fc::path& datadir )
    bool client_impl::blockchain_is_synced() const
    {
      return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-   }
-
-   vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
-   {
-      return _chain_db->get_proposals( first, count );
-   }
-
-   vector<proposal_vote>    client_impl::blockchain_get_proposal_votes( const proposal_id_type& proposal_id ) const
-   {
-      return _chain_db->get_proposal_votes( proposal_id );
    }
 
    vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,

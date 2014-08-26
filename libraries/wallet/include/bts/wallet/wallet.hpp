@@ -407,6 +407,7 @@ namespace bts { namespace wallet {
                                                const std::string& new_active_key,
                                                bool sign = true );
 
+#if 0
          signed_transaction create_proposal( const string& delegate_account_name,
                                              const string& subject,
                                              const string& body,
@@ -419,6 +420,7 @@ namespace bts { namespace wallet {
                                            proposal_vote::vote_type vote,
                                            const string& message = string(),
                                            bool sign = true);
+#endif
 
 
          ///@} Transaction Generation Methods

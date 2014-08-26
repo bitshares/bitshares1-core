@@ -165,8 +165,10 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint32_t, std::vector<block_id_type> >       _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>               _fork_db;
             bts::db::level_map<uint32_t, fc::variant >                      _property_db;
+#if 0
             bts::db::level_map<proposal_id_type, proposal_record >          _proposal_db;
             bts::db::level_map<proposal_vote_id_type, proposal_vote >       _proposal_vote_db;
+#endif
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>           _undo_state_db;
@@ -256,8 +258,10 @@ namespace bts { namespace blockchain {
           _fork_number_db.open( data_dir / "index/fork_number_db" );
           _fork_db.open( data_dir / "index/fork_db" );
           _slate_db.open( data_dir / "index/slate_db" );
+#if 0
           _proposal_db.open( data_dir / "index/proposal_db" );
           _proposal_vote_db.open( data_dir / "index/proposal_vote_db" );
+#endif
 
           _undo_state_db.open( data_dir / "index/undo_state_db" );
 
@@ -577,7 +581,9 @@ namespace bts { namespace blockchain {
             const auto pay = ( pay_percent * pending_pay ) / 100;
 
             const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
-            pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
+#warning [HARDFORK] This will hardfork BTSX
+            //pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
+            pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
 
             delegate_record->delegate_info->pay_balance += pay;
             delegate_record->delegate_info->votes_for += pay;
@@ -1097,8 +1103,10 @@ namespace bts { namespace blockchain {
       my->_fork_db.close();
       my->_slate_db.close();
       my->_property_db.close();
+#if 0
       my->_proposal_db.close();
       my->_proposal_vote_db.close();
+#endif
 
       my->_undo_state_db.close();
 
@@ -2094,6 +2102,12 @@ namespace bts { namespace blockchain {
          my->_property_db.store( property_id, property_value );
    }
 
+   digest_type chain_database::chain_id()const
+   {
+         return my->_chain_id;
+   }
+
+#if 0
    void chain_database::store_proposal_record( const proposal_record& r )
    {
       if( r.is_null() )
@@ -2128,11 +2142,6 @@ namespace bts { namespace blockchain {
       return my->_proposal_vote_db.fetch_optional(id);
    }
 
-   digest_type chain_database::chain_id()const
-   {
-         return my->_chain_id;
-   }
-
    std::vector<proposal_record> chain_database::get_proposals( uint32_t first, uint32_t count )const
    {
       std::vector<proposal_record> results;
@@ -2161,6 +2170,7 @@ namespace bts { namespace blockchain {
       }
       return results;
    }
+#endif
 
    fc::variant_object chain_database::find_delegate_vote_discrepancies() const
    {

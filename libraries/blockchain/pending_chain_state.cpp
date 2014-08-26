@@ -53,8 +53,10 @@ namespace bts { namespace blockchain {
       for( const auto& item : assets )          prev_state->store_asset_record( item.second );
       for( const auto& item : accounts )        prev_state->store_account_record( item.second );
       for( const auto& item : balances )        prev_state->store_balance_record( item.second );
+#if 0
       for( const auto& item : proposals )       prev_state->store_proposal_record( item.second );
       for( const auto& item : proposal_votes )  prev_state->store_proposal_vote( item.second );
+#endif
       for( const auto& item : bids )            prev_state->store_bid_record( item.first, item.second );
       for( const auto& item : asks )            prev_state->store_ask_record( item.first, item.second );
       for( const auto& item : shorts )          prev_state->store_short_record( item.first, item.second );
@@ -127,6 +129,7 @@ namespace bts { namespace blockchain {
          if( !!prev_value ) undo_state->store_account_record( *prev_value );
          else undo_state->store_account_record( item.second.make_null() );
       }
+#if 0
       for( const auto& item : proposals )
       {
          auto prev_value = prev_state->get_proposal_record( item.first );
@@ -139,6 +142,7 @@ namespace bts { namespace blockchain {
          if( !!prev_value ) undo_state->store_proposal_vote( *prev_value );
          else { undo_state->store_proposal_vote( item.second.make_null() ); }
       }
+#endif
       for( const auto& item : balances ) 
       {
          auto prev_value = prev_state->get_balance_record( item.first );
@@ -360,6 +364,7 @@ namespace bts { namespace blockchain {
       properties[property_id] = property_value;
    }
 
+#if 0
    void pending_chain_state::store_proposal_record( const proposal_record& r )
    {
       proposals[r.id] = r;
@@ -387,6 +392,7 @@ namespace bts { namespace blockchain {
       else if( prev_state ) return prev_state->get_proposal_vote( id );
       return oproposal_vote();
    }
+#endif
 
    oorder_record pending_chain_state::get_bid_record( const market_index_key& key )const
    {
