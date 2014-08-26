@@ -2128,47 +2128,6 @@ namespace bts { namespace blockchain {
          return my->_chain_id;
    }
 
-   asset chain_database::calculate_base_supply()const
-   {
-      auto total = asset( 0, 0 );
-
-      for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
-      {
-        const balance_record balance = balance_itr.value();
-        if( balance.asset_id() != total.asset_id ) continue;
-        total += balance.get_balance();
-      }
-
-      total.amount += get_accumulated_fees();
-
-      for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
-      {
-        const account_record account = account_itr.value();
-        if( !account.delegate_info.valid() ) continue;
-        total.amount += account.delegate_info->pay_balance;
-      }
-
-      for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
-      {
-        const order_record ask = ask_itr.value();
-        total.amount += ask.balance;
-      }
-
-      for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
-      {
-        const order_record sh = short_itr.value();
-        total.amount += sh.balance;
-      }
-
-      for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
-      {
-        const collateral_record collateral = collateral_itr.value();
-        total.amount += collateral.collateral_balance;
-      }
-
-      return total;
-   }
-
 #if 0
    void chain_database::store_proposal_record( const proposal_record& r )
    {
@@ -2718,7 +2677,8 @@ namespace bts { namespace blockchain {
       if( tmp ) return *tmp;
       return vector<market_transaction>();
    }
-   void             chain_database::set_feed( const feed_record& r )
+
+   void chain_database::set_feed( const feed_record& r )
    {
       if( r.is_null() )
          my->_feed_db.remove( r.feed );
@@ -2726,9 +2686,50 @@ namespace bts { namespace blockchain {
          my->_feed_db.store( r.feed, r );
    }
 
-   ofeed_record     chain_database::get_feed( const feed_index& i )const
+   ofeed_record chain_database::get_feed( const feed_index& i )const
    {
        return my->_feed_db.fetch_optional( i );
+   }
+
+   asset chain_database::calculate_base_supply()const
+   {
+      auto total = asset( 0, 0 );
+
+      for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
+      {
+        const balance_record balance = balance_itr.value();
+        if( balance.asset_id() != total.asset_id ) continue;
+        total += balance.get_balance();
+      }
+
+      total.amount += get_accumulated_fees();
+
+      for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
+      {
+        const account_record account = account_itr.value();
+        if( !account.delegate_info.valid() ) continue;
+        total.amount += account.delegate_info->pay_balance;
+      }
+
+      for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+      {
+        const order_record ask = ask_itr.value();
+        total.amount += ask.balance;
+      }
+
+      for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
+      {
+        const order_record sh = short_itr.value();
+        total.amount += sh.balance;
+      }
+
+      for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
+      {
+        const collateral_record collateral = collateral_itr.value();
+        total.amount += collateral.collateral_balance;
+      }
+
+      return total;
    }
 
    asset chain_database::unclaimed_genesis()

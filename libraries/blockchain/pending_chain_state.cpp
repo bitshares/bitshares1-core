@@ -533,9 +533,52 @@ namespace bts { namespace blockchain {
       chain_interface_ptr prev_state = _prev_state.lock();
       return prev_state->get_feed(i);
    }
+
    oprice pending_chain_state::get_median_delegate_price( const asset_id_type& asset_id )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       return prev_state->get_median_delegate_price( asset_id );
    }
+
+   asset pending_chain_state::calculate_base_supply()const
+   {
+      auto total = asset( 0, 0 );
+
+      for( const auto& balance_item : balances )
+      {
+        const balance_record balance = balance_item.second;
+        if( balance.asset_id() != total.asset_id ) continue;
+        total += balance.get_balance();
+      }
+
+      total.amount += get_accumulated_fees();
+
+      for( const auto& account_item : accounts )
+      {
+        const account_record account = account_item.second;
+        if( !account.delegate_info.valid() ) continue;
+        total.amount += account.delegate_info->pay_balance;
+      }
+
+      for( const auto& ask_item : asks )
+      {
+        const order_record ask = ask_item.second;
+        total.amount += ask.balance;
+      }
+
+      for( const auto& short_item : shorts )
+      {
+        const order_record sh = short_item.second;
+        total.amount += sh.balance;
+      }
+
+      for( const auto& collateral_item : collateral )
+      {
+        const collateral_record col = collateral_item.second;
+        total.amount += col.collateral_balance;
+      }
+
+      return total;
+   }
+
 } } // bts::blockchain

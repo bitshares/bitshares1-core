@@ -76,7 +76,8 @@ namespace bts { namespace blockchain {
          virtual void                   store_slot_record( const slot_record& r ) override;
          virtual oslot_record           get_slot_record( const time_point_sec& start_time )const override;
 
-         virtual void                   store_market_history_record( const market_history_key& key, const market_history_record& record ) override;
+         virtual void                   store_market_history_record( const market_history_key& key,
+                                                                     const market_history_record& record )override;
          virtual omarket_history_record get_market_history_record( const market_history_key& key )const override;
 
          /**
@@ -102,8 +103,9 @@ namespace bts { namespace blockchain {
 
          virtual uint32_t               get_head_block_num()const override;
 
-         virtual void                   set_market_transactions( vector<market_transaction> trxs ) override;
+         virtual void                   set_market_transactions( vector<market_transaction> trxs )override;
 
+         virtual asset                  calculate_base_supply()const override;
 
          // NOTE: this isn't really part of the chain state, but more part of the block state
          vector<market_transaction>                                     market_transactions;

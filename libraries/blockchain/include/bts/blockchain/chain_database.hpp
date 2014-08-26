@@ -146,8 +146,6 @@ namespace bts { namespace blockchain {
           */
          digest_type                 chain_id()const;
 
-         asset                       calculate_base_supply()const;
-
          optional<block_fork_data>   get_block_fork_data( const block_id_type& )const; //is_known_block( const block_id_type& block_id )const;
          bool                        is_known_block( const block_id_type& id )const;
          bool                        is_included_block( const block_id_type& id )const;
@@ -314,15 +312,16 @@ namespace bts { namespace blockchain {
                                                                       const fc::microseconds& duration,
                                                                       market_history_key::time_granularity_enum granularity );
 
-         virtual void                       set_market_transactions( vector<market_transaction> trxs );
+         virtual void                       set_market_transactions( vector<market_transaction> trxs )override;
          vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;
 
-         virtual void                       set_feed( const feed_record&  ) override;
+         virtual void                       set_feed( const feed_record& )override;
          virtual ofeed_record               get_feed( const feed_index& )const override;
 
+         virtual asset                      calculate_base_supply()const override;
          asset                              unclaimed_genesis();
 
-         // TODO... only call on pending chain state
+         // TODO: Only call on pending chain state
          virtual void                       set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override
          {
              FC_ASSERT( false, "this shouldn't be called directly" );
