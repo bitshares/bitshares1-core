@@ -577,7 +577,8 @@ namespace bts { namespace blockchain {
             const auto pay = ( pay_percent * pending_pay ) / 100;
 
             const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
-            pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
+#warning [HARDFORK] This will hardfork BTSX
+            pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
 
             delegate_record->delegate_info->pay_balance += pay;
             delegate_record->delegate_info->votes_for += pay;
