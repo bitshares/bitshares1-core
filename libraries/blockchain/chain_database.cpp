@@ -1455,6 +1455,8 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
+#warning This might cause a hardfork in BTSX
+#if 0
        ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
@@ -1464,6 +1466,10 @@ namespace bts { namespace blockchain {
        {
           my->_balance_db.store( r.id(), r );
        }
+#endif
+       /* Currently we keep all balance records forever so we know the owner and asset ID on wallet rescan */
+       my->_balance_db.store( r.id(), r );
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
    void chain_database::store_account_record( const account_record& record_to_store )
@@ -2105,6 +2111,47 @@ namespace bts { namespace blockchain {
    digest_type chain_database::chain_id()const
    {
          return my->_chain_id;
+   }
+
+   asset chain_database::calculate_base_supply()const
+   {
+      auto total = asset( 0, 0 );
+
+      for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
+      {
+        const balance_record balance = balance_itr.value();
+        if( balance.asset_id() != total.asset_id ) continue;
+        total += balance.get_balance();
+      }
+
+      total.amount += get_accumulated_fees();
+
+      for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
+      {
+        const account_record account = account_itr.value();
+        if( !account.delegate_info.valid() ) continue;
+        total.amount += account.delegate_info->pay_balance;
+      }
+
+      for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+      {
+        const order_record ask = ask_itr.value();
+        total.amount += ask.balance;
+      }
+
+      for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
+      {
+        const order_record sh = short_itr.value();
+        total.amount += sh.balance;
+      }
+
+      for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
+      {
+        const collateral_record collateral = collateral_itr.value();
+        total.amount += collateral.collateral_balance;
+      }
+
+      return total;
    }
 
 #if 0

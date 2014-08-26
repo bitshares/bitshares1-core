@@ -5520,10 +5520,12 @@ namespace bts { namespace wallet {
          if( last_scanned_block_num > 0 )
          {
              info["last_scanned_block_num"]             = last_scanned_block_num;
-             try {
-               info["last_scanned_block_timestamp"]     = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
-             } catch (const fc::exception&) {
-               info["last_scanned_block_timestamp"]     = "Unknown";
+             try
+             {
+                 info["last_scanned_block_timestamp"]   = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+             }
+             catch( ... )
+             {
              }
          }
 

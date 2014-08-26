@@ -146,6 +146,8 @@ namespace bts { namespace blockchain {
           */
          digest_type                 chain_id()const;
 
+         asset                       calculate_base_supply()const;
+
          optional<block_fork_data>   get_block_fork_data( const block_id_type& )const; //is_known_block( const block_id_type& block_id )const;
          bool                        is_known_block( const block_id_type& id )const;
          bool                        is_included_block( const block_id_type& id )const;

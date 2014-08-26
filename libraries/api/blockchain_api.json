@@ -12,6 +12,15 @@
         "aliases" : ["getconfig","get_config", "config", "blockchain_get_config"]
       },
       {
+        "method_name": "blockchain_calculate_base_supply",
+        "description": "Calculate the total base supply from the current blockchain database state",
+        "return_type": "asset",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["supply", "calculate_supply"]
+      },
+      {
         "method_name": "blockchain_is_synced",
         "description": "Returns true if the local blockchain is synced with the network; false otherwise",
         "return_type": "bool",
@@ -177,6 +186,21 @@
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
         "aliases" : ["get_account"]
+      },
+      {
+        "method_name": "blockchain_get_balance",
+        "description": "Retrieves the balance record for the given address",
+        "return_type": "balance_record",
+        "parameters" : [
+            {
+              "name" : "balance_id",
+              "type" : "address",
+              "description" : "address of the balance"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["get_balance"]
       },
       {
         "method_name": "blockchain_get_asset",
