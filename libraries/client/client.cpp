@@ -1975,6 +1975,13 @@ config load_config( const fc::path& datadir )
       return oaccount_record();
     }
 
+    balance_record detail::client_impl::blockchain_get_balance( const balance_id_type& balance_id )const
+    {
+        const auto balance_record = _chain_db->get_balance_record( balance_id );
+        FC_ASSERT( balance_record.valid() );
+        return *balance_record;
+    }
+
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
     {
       try
@@ -2749,8 +2756,6 @@ config load_config( const fc::path& datadir )
 
        info["min_market_depth"]             = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
 
-       info["proposal_vote_message_max"]    = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
-
        info["max_pending_queue_size"]       = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]           = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -2852,7 +2857,15 @@ config load_config( const fc::path& datadir )
 
           const auto last_scanned_block_num                     = _wallet->get_last_scanned_block_number();
           if( last_scanned_block_num > 0 )
-              info["wallet_last_scanned_block_timestamp"]       = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+          {
+              try
+              {
+                  info["wallet_last_scanned_block_timestamp"]   = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+              }
+              catch( ... )
+              {
+              }
+          }
 
           info["wallet_scan_progress"]                          = _wallet->get_scan_progress();
 
@@ -2873,6 +2886,11 @@ config load_config( const fc::path& datadir )
       }
 
       return info;
+    }
+
+    asset client_impl::blockchain_calculate_base_supply()const
+    {
+        return _chain_db->calculate_base_supply();
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
@@ -3111,16 +3129,6 @@ config load_config( const fc::path& datadir )
    bool client_impl::blockchain_is_synced() const
    {
      return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
-   }
-
-   vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
-   {
-      return _chain_db->get_proposals( first, count );
-   }
-
-   vector<proposal_vote>    client_impl::blockchain_get_proposal_votes( const proposal_id_type& proposal_id ) const
-   {
-      return _chain_db->get_proposal_votes( proposal_id );
    }
 
    vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,

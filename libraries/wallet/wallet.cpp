@@ -8,7 +8,6 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
@@ -549,18 +548,21 @@ namespace bts { namespace wallet {
           if( !is_known )
           {
               transaction_record = wallet_transaction_record();
+              transaction_record->record_id = record_id;
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
+              transaction_record->trx = transaction;
           }
 
           bool new_transaction = !transaction_record->is_confirmed;
 
-          transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
-          transaction_record->trx = transaction;
 
-          auto store_record = is_known;
+          if( is_known ) /* Otherwise will get stored below if this is for me */
+              _wallet_db.store_transaction( *transaction_record );
+
+          auto store_record = false;
 
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
@@ -752,7 +754,10 @@ namespace bts { namespace wallet {
               }
           }
 
-          if( store_record ) _wallet_db.store_transaction( *transaction_record );
+          // TODO: Test that this doesn't break anything
+          /* Only overwrite existing record if you did not create it */
+          if( store_record && !is_known )
+              _wallet_db.store_transaction( *transaction_record );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
@@ -3842,6 +3847,7 @@ namespace bts { namespace wallet {
                                       ("pay_from_account",pay_from_account)
                                       ("sign",sign) ) }
 
+#if 0
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
                                        const string& subject,
                                        const string& body,
@@ -3945,6 +3951,7 @@ namespace bts { namespace wallet {
 
       return trx;
    }
+#endif
 
    /***
     *  @param from_account_name - the account that will fund the bid
@@ -5513,7 +5520,13 @@ namespace bts { namespace wallet {
          if( last_scanned_block_num > 0 )
          {
              info["last_scanned_block_num"]             = last_scanned_block_num;
-             info["last_scanned_block_timestamp"]       = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+             try
+             {
+                 info["last_scanned_block_timestamp"]   = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+             }
+             catch( ... )
+             {
+             }
          }
 
          info["transaction_fee"]                        = get_transaction_fee();

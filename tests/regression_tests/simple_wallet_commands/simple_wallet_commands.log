@@ -15,7 +15,7 @@ wallet (unlocked) >>> wallet_get_info
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 106
+  "version": "[redacted]"
 }
 wallet (unlocked) >>> wallet_set_automatic_backups false
 false
@@ -109,7 +109,7 @@ wallet (unlocked) >>> wallet_get_info
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 106
+  "version": "[redacted]"
 }
 wallet (unlocked) >>> wallet_close
 OK

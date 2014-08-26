@@ -29,6 +29,10 @@
         "default_example" : "Carol"
       },
       {
+         "type_name" : "balance_record",
+         "cpp_return_type" : "bts::blockchain::balance_record"
+      },
+      {
          "type_name" : "wallet_balance_record",
          "cpp_return_type" : "bts::wallet::wallet_balance_record"
       },

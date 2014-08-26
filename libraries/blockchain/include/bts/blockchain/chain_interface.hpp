@@ -6,7 +6,6 @@
 #include <bts/blockchain/block_record.hpp>
 #include <bts/blockchain/delegate_slate.hpp>
 #include <bts/blockchain/market_records.hpp>
-#include <bts/blockchain/proposal_record.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/types.hpp>
 
@@ -128,11 +127,13 @@ namespace bts { namespace blockchain {
          virtual oasset_record              get_asset_record( const std::string& symbol )const      = 0;
          virtual oaccount_record            get_account_record( const std::string& name )const      = 0;
 
+#if 0
          virtual void                       store_proposal_record( const proposal_record& r )       = 0;
          virtual oproposal_record           get_proposal_record( proposal_id_type id )const         = 0;
 
          virtual void                       store_proposal_vote( const proposal_vote& r )           = 0;
          virtual oproposal_vote             get_proposal_vote( proposal_vote_id_type id )const      = 0;
+#endif
 
          virtual void                       store_asset_record( const asset_record& r )             = 0;
          virtual void                       store_balance_record( const balance_record& r )         = 0;
@@ -149,8 +150,10 @@ namespace bts { namespace blockchain {
          virtual account_id_type            last_account_id()const;
          virtual account_id_type            new_account_id();
 
+#if 0
          virtual proposal_id_type           last_proposal_id()const;
          virtual proposal_id_type           new_proposal_id();
+#endif
 
          virtual uint32_t                   get_head_block_num()const                               = 0;
 

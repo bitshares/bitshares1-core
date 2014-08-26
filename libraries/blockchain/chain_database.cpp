@@ -165,8 +165,10 @@ namespace bts { namespace blockchain {
             bts::db::level_map<uint32_t, std::vector<block_id_type> >       _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>               _fork_db;
             bts::db::level_map<uint32_t, fc::variant >                      _property_db;
+#if 0
             bts::db::level_map<proposal_id_type, proposal_record >          _proposal_db;
             bts::db::level_map<proposal_vote_id_type, proposal_vote >       _proposal_vote_db;
+#endif
 
             /** the data required to 'undo' the changes a block made to the database */
             bts::db::level_map<block_id_type,pending_chain_state>           _undo_state_db;
@@ -256,8 +258,10 @@ namespace bts { namespace blockchain {
           _fork_number_db.open( data_dir / "index/fork_number_db" );
           _fork_db.open( data_dir / "index/fork_db" );
           _slate_db.open( data_dir / "index/slate_db" );
+#if 0
           _proposal_db.open( data_dir / "index/proposal_db" );
           _proposal_vote_db.open( data_dir / "index/proposal_vote_db" );
+#endif
 
           _undo_state_db.open( data_dir / "index/undo_state_db" );
 
@@ -577,7 +581,9 @@ namespace bts { namespace blockchain {
             const auto pay = ( pay_percent * pending_pay ) / 100;
 
             const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
-            pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
+#warning [HARDFORK] This will hardfork BTSX
+            //pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
+            pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
 
             delegate_record->delegate_info->pay_balance += pay;
             delegate_record->delegate_info->votes_for += pay;
@@ -1043,7 +1049,7 @@ namespace bts { namespace blockchain {
              {
                  if( !reindex_status_callback )
                      std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed++ % 4] << "]" << std::flush;
-                 else
+                 else if(blocks_indexed % 1000 == 0)
                      reindex_status_callback(blocks_indexed);
 
                  auto block = block_itr.value();
@@ -1097,8 +1103,10 @@ namespace bts { namespace blockchain {
       my->_fork_db.close();
       my->_slate_db.close();
       my->_property_db.close();
+#if 0
       my->_proposal_db.close();
       my->_proposal_vote_db.close();
+#endif
 
       my->_undo_state_db.close();
 
@@ -1447,6 +1455,8 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
+#warning This might cause a hardfork in BTSX
+#if 0
        ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
        {
@@ -1456,6 +1466,10 @@ namespace bts { namespace blockchain {
        {
           my->_balance_db.store( r.id(), r );
        }
+#endif
+       /* Currently we keep all balance records forever so we know the owner and asset ID on wallet rescan */
+       my->_balance_db.store( r.id(), r );
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("record", r) ) }
 
    void chain_database::store_account_record( const account_record& record_to_store )
@@ -2094,6 +2108,53 @@ namespace bts { namespace blockchain {
          my->_property_db.store( property_id, property_value );
    }
 
+   digest_type chain_database::chain_id()const
+   {
+         return my->_chain_id;
+   }
+
+   asset chain_database::calculate_base_supply()const
+   {
+      auto total = asset( 0, 0 );
+
+      for( auto balance_itr = my->_balance_db.begin(); balance_itr.valid(); ++balance_itr )
+      {
+        const balance_record balance = balance_itr.value();
+        if( balance.asset_id() != total.asset_id ) continue;
+        total += balance.get_balance();
+      }
+
+      total.amount += get_accumulated_fees();
+
+      for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
+      {
+        const account_record account = account_itr.value();
+        if( !account.delegate_info.valid() ) continue;
+        total.amount += account.delegate_info->pay_balance;
+      }
+
+      for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+      {
+        const order_record ask = ask_itr.value();
+        total.amount += ask.balance;
+      }
+
+      for( auto short_itr = my->_short_db.begin(); short_itr.valid(); ++short_itr )
+      {
+        const order_record sh = short_itr.value();
+        total.amount += sh.balance;
+      }
+
+      for( auto collateral_itr = my->_collateral_db.begin(); collateral_itr.valid(); ++collateral_itr )
+      {
+        const collateral_record collateral = collateral_itr.value();
+        total.amount += collateral.collateral_balance;
+      }
+
+      return total;
+   }
+
+#if 0
    void chain_database::store_proposal_record( const proposal_record& r )
    {
       if( r.is_null() )
@@ -2128,11 +2189,6 @@ namespace bts { namespace blockchain {
       return my->_proposal_vote_db.fetch_optional(id);
    }
 
-   digest_type chain_database::chain_id()const
-   {
-         return my->_chain_id;
-   }
-
    std::vector<proposal_record> chain_database::get_proposals( uint32_t first, uint32_t count )const
    {
       std::vector<proposal_record> results;
@@ -2161,6 +2217,7 @@ namespace bts { namespace blockchain {
       }
       return results;
    }
+#endif
 
    fc::variant_object chain_database::find_delegate_vote_discrepancies() const
    {

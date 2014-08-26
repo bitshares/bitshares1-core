@@ -22,10 +22,12 @@ namespace bts { namespace blockchain {
    const operation_type_enum update_asset_operation::type           = update_asset_op_type;
    const operation_type_enum issue_asset_operation::type            = issue_asset_op_type;
 
-   //const operation_type_enum fire_delegate_operation::type          = fire_delegate_op_type;
+#if 0
+   const operation_type_enum fire_delegate_operation::type          = fire_delegate_op_type;
 
    const operation_type_enum submit_proposal_operation::type        = submit_proposal_op_type;
    const operation_type_enum vote_proposal_operation::type          = vote_proposal_op_type;
+#endif
 
    const operation_type_enum bid_operation::type                    = bid_op_type;
    const operation_type_enum ask_operation::type                    = ask_op_type;
@@ -47,9 +49,11 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<register_account_operation>();
       bts::blockchain::operation_factory::instance().register_operation<withdraw_pay_operation>();
       bts::blockchain::operation_factory::instance().register_operation<update_account_operation>();
-      //bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
+#if 0
+      bts::blockchain::operation_factory::instance().register_operation<fire_delegate_operation>();
       bts::blockchain::operation_factory::instance().register_operation<submit_proposal_operation>();
       bts::blockchain::operation_factory::instance().register_operation<vote_proposal_operation>();
+#endif
       bts::blockchain::operation_factory::instance().register_operation<bid_operation>();
       bts::blockchain::operation_factory::instance().register_operation<ask_operation>();
       bts::blockchain::operation_factory::instance().register_operation<short_operation>();
