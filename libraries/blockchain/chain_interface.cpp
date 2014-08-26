@@ -34,7 +34,7 @@ namespace bts{ namespace blockchain {
    {
       return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
    }
-   
+
    bool chain_interface::is_valid_account_name( const std::string& str )const
    {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
@@ -89,6 +89,7 @@ namespace bts{ namespace blockchain {
       return next_id;
    }
 
+#if 0
    proposal_id_type   chain_interface::last_proposal_id()const
    {
        return get_property( chain_property_enum::last_proposal_id ).as<proposal_id_type>();
@@ -100,6 +101,7 @@ namespace bts{ namespace blockchain {
       set_property( chain_property_enum::last_proposal_id, next_id );
       return next_id;
    }
+#endif
 
    vector<account_id_type> chain_interface::get_active_delegates()const
    { try {
@@ -111,11 +113,11 @@ namespace bts{ namespace blockchain {
       set_property( active_delegate_list_id, fc::variant(delegate_ids) );
    }
 
-   bool chain_interface::is_active_delegate( account_id_type delegate_id ) const
+   bool chain_interface::is_active_delegate( const account_id_type& id )const
    { try {
-      auto active = get_active_delegates();
-      return active.end() != std::find( active.begin(), active.end(), delegate_id );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_id",delegate_id) ) }
+      const auto active = get_active_delegates();
+      return active.end() != std::find( active.begin(), active.end(), id );
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("id",id) ) }
 
    double chain_interface::to_pretty_price_double( const price& price_to_pretty_print )const
    {
@@ -165,7 +167,7 @@ namespace bts{ namespace blockchain {
 
    int64_t   chain_interface::get_required_confirmations()const
    {
-      return get_property( confirmation_requirement ).as_int64(); 
+      return get_property( confirmation_requirement ).as_int64();
    }
 
    bool chain_interface::is_valid_symbol_name( const string& name )const

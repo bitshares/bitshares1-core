@@ -121,7 +121,7 @@ namespace bts { namespace net {
     fc::future<void> chain_downloader::get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
                                                       uint32_t first_block_number)
     {
-        return fc::async([=]{my->get_all_blocks(new_block_callback, first_block_number);});
+        return fc::async([=]{my->get_all_blocks(new_block_callback, first_block_number);}, "get_all_blocks");
     }
 
   } } //namespace bts::blockchain

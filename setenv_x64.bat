@@ -12,9 +12,9 @@ set BOOST_ROOT=%BITSHARES_ROOT%\boost_1.55.x64
 set TCL_ROOT=%BITSHARES_ROOT%\tcl.x64
 set NPM_INSTALL_PREFIX=%BITSHARES_ROOT%\npm
 
-set PATH=%NPM_INSTALL_PREFIX%;%APPDATA%\npm;%QTDIR%\bin;%ICUROOT%\bin;%ICUROOT%\lib;%BITSHARES_ROOT%\bin;%BITSHARES_ROOT%\tcl.x64\bin;%BITSHARES_ROOT%\Cmake\bin;%BOOST_ROOT%\stage\lib;%PATH%
+set PATH=%NPM_INSTALL_PREFIX%;"%APPDATA%"\npm;%QTDIR%\bin;%ICUROOT%\bin;%ICUROOT%\lib;%BITSHARES_ROOT%\bin;%TCL_ROOT%\bin;%BITSHARES_ROOT%\Cmake\bin;%BOOST_ROOT%\stage\lib;%PATH%
 set CMAKE_PREFIX_PATH=%QTDIR%
 set QT_QPA_PLATFORM_PLUGIN_PATH=%QTDIR%\plugins\platforms
 
 echo Setting up VS2013 environment...
-call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" amd64
+call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" x86_amd64
