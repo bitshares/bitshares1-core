@@ -1,0 +1,29 @@
+default (unlocked) >>> help blockchain_get_security_state
+Usage:
+blockchain_get_security_state                                                                         Returns information about blockchain security level
+Returns information about blockchain security level
+
+Parameters:
+  (none)
+
+Returns:
+  blockchain_security_state
+
+aliases: alert_state, security_state
+default (unlocked) >>> blockchain_get_security_state
+{
+  "alert_level": "grey",
+  "estimated_confirmation_seconds": 2020,
+  "participation_rate": 0
+}
+default (unlocked) >>> wallet_delegate_set_block_production ALL true
+OK
+default (unlocked) >>> wallet_set_transaction_scanning true
+true
+default (unlocked) >>> blockchain_get_security_state
+{
+  "alert_level": "red",
+  "estimated_confirmation_seconds": 2010,
+  "participation_rate": 0
+}
+default (unlocked) >>> quit
