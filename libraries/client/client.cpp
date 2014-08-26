@@ -1105,17 +1105,22 @@ config load_config( const fc::path& datadir )
                         double current_sync_speed_in_blocks_per_sec = (double)blocks_since_last_status_message / seconds_since_last_status_message;
                         _sync_speed_accumulator(current_sync_speed_in_blocks_per_sec);
                         double average_sync_speed = boost::accumulators::rolling_mean(_sync_speed_accumulator);
-                        double remaining_seconds_to_sync = _remaining_items_to_sync / average_sync_speed;
-
                         std::ostringstream speed_message;
-                        speed_message << "--- currently syncing at ";
-                        if (average_sync_speed >= 10.)
-                          speed_message << (int)average_sync_speed << " blocks/sec, ";
-                        else if (average_sync_speed >= 0.1)
-                          speed_message << std::setprecision(2) << average_sync_speed << " blocks/sec, ";
-                        else if (average_sync_speed >= 0.1)
-                          speed_message << (int)(1./average_sync_speed) << " sec/block, ";
-                        speed_message << fc::get_approximate_relative_time_string(fc::time_point::now(), fc::time_point::now() + fc::seconds((int64_t)remaining_seconds_to_sync), "") << " remaining";
+                        if (average_sync_speed > 0)
+                        {
+                          double remaining_seconds_to_sync = _remaining_items_to_sync / average_sync_speed;
+
+                          speed_message << "--- currently syncing at ";
+                          if (average_sync_speed >= 10.)
+                            speed_message << (int)average_sync_speed << " blocks/sec, ";
+                          else if (average_sync_speed >= 0.1)
+                            speed_message << std::setprecision(2) << average_sync_speed << " blocks/sec, ";
+                          else
+                            speed_message << (int)(1./average_sync_speed) << " sec/block, ";
+                          speed_message << fc::get_approximate_relative_time_string(fc::time_point::now(), fc::time_point::now() + fc::seconds((int64_t)remaining_seconds_to_sync), "") << " remaining";
+                        }
+                        else
+                          speed_message << "--- currently syncing at an imperceptible rate";
                         ulog(speed_message.str());
                       }
                       _last_sync_status_message_time = now;
