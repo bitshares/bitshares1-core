@@ -1975,6 +1975,13 @@ config load_config( const fc::path& datadir )
       return oaccount_record();
     }
 
+    balance_record detail::client_impl::blockchain_get_balance( const balance_id_type& balance_id )const
+    {
+        const auto balance_record = _chain_db->get_balance_record( balance_id );
+        FC_ASSERT( balance_record.valid() );
+        return *balance_record;
+    }
+
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
     {
       try

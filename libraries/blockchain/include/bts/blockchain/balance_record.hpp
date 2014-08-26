@@ -39,7 +39,6 @@ namespace bts { namespace blockchain {
 
       share_type                 balance = share_type( 0 );
       withdraw_condition         condition;
-      // TODO: We can do better than this
       ogenesis_record            genesis_info;
       fc::time_point_sec         last_update;
    };
