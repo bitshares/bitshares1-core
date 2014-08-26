@@ -775,7 +775,7 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second )
-           if( pending_state->get_head_block_num() < BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM )
+           if( pending_state->get_head_block_num() < BTSX_MARKET_FORK_1_BLOCK_NUM )
            {
               original_market_engine engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
@@ -790,7 +790,7 @@ namespace bts { namespace blockchain {
         }
         ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
 
-        if( self->get_head_block_num() <  316000)
+        if( self->get_head_block_num() < BTSX_MARKET_FORK_2_BLOCK_NUM )
             pending_state->set_dirty_markets( pending_state->_dirty_markets );
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
@@ -835,12 +835,12 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_id, pending_state, block_signee );
 
-            if( self->get_head_block_num() <  316000)
+            if( self->get_head_block_num() < BTSX_MARKET_FORK_2_BLOCK_NUM )
                 apply_transactions( block_data, block_data.user_transactions, pending_state );
 
             execute_markets( block_data.timestamp, pending_state );
 
-            if( self->get_head_block_num() >=  316000)
+            if( self->get_head_block_num() >= BTSX_MARKET_FORK_2_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             update_active_delegate_list( block_data, pending_state );
@@ -1674,7 +1674,7 @@ namespace bts { namespace blockchain {
       auto start_time = time_point::now();
 
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-      if( get_head_block_num() >=  316000 )
+      if( get_head_block_num() >= BTSX_MARKET_FORK_2_BLOCK_NUM )
          my->execute_markets( timestamp, pending_state );
       auto pending_trx = get_pending_transactions();
 
