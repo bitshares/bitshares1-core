@@ -1455,7 +1455,6 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_balance_record( const balance_record& r )
    { try {
-#warning This might cause a hardfork in BTSX
 #if 0
        ilog( "balance record: ${r}", ("r",r) );
        if( r.is_null() )
@@ -1924,7 +1923,25 @@ namespace bts { namespace blockchain {
        return my->_head_block_id;
     }
 
-    std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t count )const
+    map<balance_id_type, balance_record> chain_database::get_balances( const string& first, uint32_t limit )const
+    { try {
+        map<balance_id_type, balance_record> balances;
+        bool found = false;
+        for( auto itr = my->_balance_db.begin(); itr.valid(); ++itr )
+        {
+            if( balances.size() >= limit )
+                break;
+
+            if( found || string( itr.key() ).find( first ) == 0 )
+            {
+                balances[ itr.key() ] = itr.value();
+                found = true;
+            }
+        }
+        return balances;
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
+
+    std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t limit )const
     { try {
        std::vector<account_record> names;
        auto itr = my->_account_index_db.begin();
@@ -1940,26 +1957,26 @@ namespace bts { namespace blockchain {
          itr = my->_account_index_db.lower_bound(first);
        }
 
-       while( itr.valid() && names.size() < count )
+       while( itr.valid() && names.size() < limit )
        {
           names.push_back( *get_account_record( itr.value() ) );
           ++itr;
        }
 
        return names;
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("count",count) )  }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
 
-    std::vector<asset_record> chain_database::get_assets( const string& first_symbol, uint32_t count )const
+    std::vector<asset_record> chain_database::get_assets( const string& first_symbol, uint32_t limit )const
     { try {
        auto itr = my->_symbol_index_db.lower_bound(first_symbol);
        std::vector<asset_record> assets;
-       while( itr.valid() && assets.size() < count )
+       while( itr.valid() && assets.size() < limit )
        {
           assets.push_back( *get_asset_record( itr.value() ) );
           ++itr;
        }
        return assets;
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("first_symbol",first_symbol)("count",count) )  }
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("first_symbol",first_symbol)("limit",limit) )  }
 
     std::string chain_database::export_fork_graph( uint32_t start_block, uint32_t end_block, const fc::path& filename )const
     {

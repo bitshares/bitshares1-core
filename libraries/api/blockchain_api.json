@@ -203,6 +203,28 @@
         "aliases" : ["get_balance"]
       },
       {
+        "method_name": "blockchain_list_balances",
+        "description": "Lists balance records starting at the given balance ID",
+        "return_type": "balance_record_map",
+        "parameters" : [
+            {
+              "name" : "first_balance_id",
+              "type" : "string",
+              "description" : "prefix of the first balance id to start at",
+              "default_value" : ""
+            },
+            {
+              "name" : "limit",
+              "type" : "uint32_t",
+              "description" : "the maximum number of items to list",
+              "default_value" : 4
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["list_balances"]
+      },
+      {
         "method_name": "blockchain_get_asset",
         "description": "Retrieves the record for the given asset ticker symbol or ID",
         "return_type": "optional_asset_record",
