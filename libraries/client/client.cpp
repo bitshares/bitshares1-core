@@ -2850,7 +2850,15 @@ config load_config( const fc::path& datadir )
 
           const auto last_scanned_block_num                     = _wallet->get_last_scanned_block_number();
           if( last_scanned_block_num > 0 )
-              info["wallet_last_scanned_block_timestamp"]       = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+          {
+              try
+              {
+                  info["wallet_last_scanned_block_timestamp"]   = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+              }
+              catch( ... )
+              {
+              }
+          }
 
           info["wallet_scan_progress"]                          = _wallet->get_scan_progress();
 
