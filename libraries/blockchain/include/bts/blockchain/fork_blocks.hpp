@@ -6,5 +6,5 @@
  *  @brief Defines global block number constants for when hardforks take effect
  */
 #define BTSX_MARKET_FORK_1_BLOCK_NUM    274000
-#define BTSX_MARKET_FORK_2_BLOCK_NUM    315999
+#define BTSX_MARKET_FORK_2_BLOCK_NUM    316001
 #define BTSX_MARKET_FORK_3_BLOCK_NUM    340000
