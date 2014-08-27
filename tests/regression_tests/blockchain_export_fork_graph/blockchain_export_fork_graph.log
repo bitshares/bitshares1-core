@@ -1,0 +1,85 @@
+default (unlocked) >>> debug_wait_for_block_by_number 1
+OK
+default (unlocked) >>> blockchain_list_blocks
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
+===================================================================================================================
+1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 2
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 3
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 4
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 5
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 6
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 7
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 8
+OK
+default (unlocked) >>> debug_advance_time 1 blocks
+OK
+default (unlocked) >>> debug_wait 2
+OK
+default (unlocked) >>> debug_wait_for_block_by_number 9
+OK
+default (unlocked) >>> blockchain_list_blocks
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
+===================================================================================================================
+9       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+8       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+7       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+6       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+5       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+4       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+3       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+2       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+default (unlocked) >>> help blockchain_export_fork_graph
+Usage:
+blockchain_export_fork_graph [start_block] [end_block] [filename]                                     dumps the fork data to graphviz format
+dumps the fork data to graphviz format
+
+Parameters:
+  start_block (uint32_t, optional, defaults to 1): the first block number to consider
+  end_block (uint32_t, optional, defaults to -1): the last block number to consider
+  filename (string, optional, defaults to ""): the filename to save to
+
+Returns:
+  std::string
+
+aliases: export_forks
+default (unlocked) >>> blockchain_export_fork_graph 1 -1 exported_fork.gv
+""
+default (unlocked) >>> blockchain_export_fork_graph 3 5 exported_fork2.gv
+""
+default (unlocked) >>> quit

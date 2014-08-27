@@ -26,11 +26,11 @@ struct public_key_summary
 
 struct pretty_ledger_entry
 {
-   string                       from_account;
-   string                       to_account;
-   asset                        amount;
-   string                       memo;
-   map<asset_id_type, asset>    running_balances;
+   string                                   from_account;
+   string                                   to_account;
+   asset                                    amount;
+   string                                   memo;
+   map<string, map<asset_id_type, asset>>   running_balances;
 };
 
 struct pretty_transaction

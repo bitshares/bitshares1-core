@@ -46,13 +46,13 @@ int main(int argc, char** argv) {
     int packed_file_count = 0;
     for (fc::recursive_directory_iterator itr(pack_dir); itr != fc::recursive_directory_iterator(); ++itr)
     {
-        string relative_path = (*itr).to_native_ansi_path().erase(0, pack_dir.to_native_ansi_path().size()+1);
+        string relative_path = (*itr).to_native_ansi_path().erase(0, pack_dir.to_native_ansi_path().size());
 
         if (!fc::is_regular_file(*itr))
             continue;
 
         ++packed_file_count;
-        cout << '.' << std::flush;
+        cout << relative_path << endl;
         std::ifstream infile((*itr).to_native_ansi_path());
         vector<char> file;
         file.reserve(fc::file_size(*itr));
