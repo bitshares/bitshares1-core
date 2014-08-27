@@ -2592,6 +2592,9 @@ namespace bts { namespace wallet {
                                                                       uint32_t end_block_num,
                                                                       const string& asset_symbol )const
    { try {
+
+       // TODO: Validate all input
+
        const auto& history = get_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
        vector<pretty_transaction> pretties;
        pretties.reserve( history.size() );
@@ -2629,56 +2632,72 @@ namespace bts { namespace wallet {
            trx.error = errors.at( trx.trx_id );
        }
 
-       /* Don't care if not filtering by account */
-       if( account_name.empty() ) return pretties;
+       vector<string> account_names;
+       bool account_specified = !account_name.empty();
+       if( !account_specified )
+       {
+           const auto accounts = list_my_accounts();
+           for( const auto& account : accounts )
+               account_names.push_back( account.name );
+       }
+       else
+       {
+           account_names.push_back( account_name );
+       }
 
        /* Tally up running balances */
-       auto running_balances = map<asset_id_type, asset>();
-       for( auto& trx : pretties )
+       for( const auto& name : account_names )
        {
-           const auto fee_asset_id = trx.fee.asset_id;
-           if( running_balances.count( fee_asset_id ) <= 0 )
-               running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
-
-           auto any_from_me = false;
-           for( auto& entry : trx.ledger_entries )
+           map<asset_id_type, asset> running_balances;
+           for( auto& trx : pretties )
            {
-               const auto amount_asset_id = entry.amount.asset_id;
-               if( running_balances.count( amount_asset_id ) <= 0 )
-                   running_balances[ amount_asset_id ] = asset( 0, amount_asset_id );
+               const auto fee_asset_id = trx.fee.asset_id;
+               if( running_balances.count( fee_asset_id ) <= 0 )
+                   running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
 
-               auto from_me = false;
-               from_me |= account_name == entry.from_account;
-               from_me |= ( entry.from_account.find( account_name + " " ) == 0 ); /* If payer != sender */
-               if( from_me )
+               auto any_from_me = false;
+               for( auto& entry : trx.ledger_entries )
                {
-                   /* Special check to ignore asset issuing */
-                   if( ( running_balances[ amount_asset_id ] - entry.amount ) >= asset( 0, amount_asset_id ) )
-                       running_balances[ amount_asset_id ] -= entry.amount;
+                   const auto amount_asset_id = entry.amount.asset_id;
+                   if( running_balances.count( amount_asset_id ) <= 0 )
+                       running_balances[ amount_asset_id ] = asset( 0, amount_asset_id );
 
-                   /* Subtract fee once on the first entry */
-                   if( !trx.is_virtual && !any_from_me )
+                   auto from_me = false;
+                   from_me |= name == entry.from_account;
+                   from_me |= ( entry.from_account.find( name + " " ) == 0 ); /* If payer != sender */
+                   if( from_me )
+                   {
+                       /* Special check to ignore asset issuing */
+                       if( ( running_balances[ amount_asset_id ] - entry.amount ) >= asset( 0, amount_asset_id ) )
+                           running_balances[ amount_asset_id ] -= entry.amount;
+
+                       /* Subtract fee once on the first entry */
+                       if( !trx.is_virtual && !any_from_me )
+                           running_balances[ fee_asset_id ] -= trx.fee;
+                   }
+                   any_from_me |= from_me;
+
+                   /* Special case to subtract fee if we canceled a bid */
+                   if( !trx.is_virtual && trx.is_market_cancel && amount_asset_id != fee_asset_id )
                        running_balances[ fee_asset_id ] -= trx.fee;
+
+                   auto to_me = false;
+                   to_me |= name == entry.to_account;
+                   to_me |= ( entry.to_account.find( name + " " ) == 0 ); /* If payer != sender */
+                   if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
+
+                   entry.running_balances[ name ][ amount_asset_id ] = running_balances[ amount_asset_id ];
+                   entry.running_balances[ name ][ fee_asset_id ] = running_balances[ fee_asset_id ];
                }
-               any_from_me |= from_me;
 
-               /* Special case to subtract fee if we canceled a bid */
-               if( !trx.is_virtual && trx.is_market_cancel && amount_asset_id != fee_asset_id )
-                   running_balances[ fee_asset_id ] -= trx.fee;
-
-               auto to_me = false;
-               to_me |= account_name == entry.to_account;
-               to_me |= ( entry.to_account.find( account_name + " " ) == 0 ); /* If payer != sender */
-               if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
-
-               entry.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
-               entry.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
-           }
-
-           /* Don't return fees we didn't pay */
-           if( trx.is_virtual || ( !any_from_me && !trx.is_market_cancel ) )
-           {
-               trx.fee = asset();
+               if( account_specified )
+               {
+                   /* Don't return fees we didn't pay */
+                   if( trx.is_virtual || ( !any_from_me && !trx.is_market_cancel ) )
+                   {
+                       trx.fee = asset();
+                   }
+               }
            }
        }
 

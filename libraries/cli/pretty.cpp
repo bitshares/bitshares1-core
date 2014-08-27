@@ -406,7 +406,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     if( transactions.empty() ) return "No transactions found.\n";
     FC_ASSERT( client != nullptr );
 
-    const auto is_filtered = !transactions.front().ledger_entries.front().running_balances.empty();
+    const bool account_specified = transactions.front().ledger_entries.front().running_balances.size() == 1;
 
     auto any_group = false;
     for( const auto& transaction : transactions )
@@ -423,12 +423,12 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     out << std::setw( 20 ) << "TO";
     out << std::setw( 24 ) << "AMOUNT";
     out << std::setw( 44 ) << "MEMO";
-    if( is_filtered ) out << std::setw( 24 ) << "BALANCE";
+    if( account_specified ) out << std::setw( 24 ) << "BALANCE";
     out << std::setw( 20 ) << "FEE";
     out << std::setw(  8 ) << "ID";
     out << "\n";
 
-    const auto line_size = !is_filtered ? 166 : 190;
+    const auto line_size = !account_specified ? 166 : 190;
     out << pretty_line( !any_group ? line_size : line_size + 2 ) << "\n";
 
     auto group = true;
@@ -480,13 +480,18 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
             out << std::setw( 44 ) << pretty_shorten( entry.memo, 43 );
 
-            if( is_filtered )
+            if( account_specified )
             {
                 out << std::setw( 24 );
                 if( !is_pending )
-                    out << client->get_chain()->to_pretty_asset( entry.running_balances.at( entry.amount.asset_id ) );
+                {
+                    const string name = entry.running_balances.begin()->first;
+                    out << client->get_chain()->to_pretty_asset( entry.running_balances.at( name ).at( entry.amount.asset_id ) );
+                }
                 else
+                {
                     out << "N/A";
+                }
             }
 
             if( count == 1 )
