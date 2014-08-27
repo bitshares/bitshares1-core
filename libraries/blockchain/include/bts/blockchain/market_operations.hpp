@@ -60,7 +60,8 @@ namespace bts { namespace blockchain {
    struct add_collateral_operation
    {
         static const operation_type_enum type; 
-        add_collateral_operation():amount(0){}
+        add_collateral_operation(share_type amount = 0, market_index_key cover_index = market_index_key())
+          : amount(amount), cover_index(cover_index){}
 
         asset            get_amount()const { return asset( amount, cover_index.order_price.base_asset_id ); }
         share_type       amount;

@@ -2,7 +2,6 @@
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/feed_operations.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/blockchain/transaction.hpp>
@@ -150,6 +149,7 @@ namespace bts { namespace blockchain {
       operations.push_back( op );
    }
 
+#if 0
    void transaction::submit_proposal(account_id_type delegate_id,
                                      const std::string& subject,
                                      const std::string& body,
@@ -179,6 +179,7 @@ namespace bts { namespace blockchain {
      op.message = message;
      operations.push_back(op);
    }
+#endif
 
    void transaction::create_asset( const std::string& symbol, 
                                    const std::string& name, 
@@ -205,10 +206,16 @@ namespace bts { namespace blockchain {
    {
       operations.push_back( issue_asset_operation( amount_to_issue ) );
    }
-   void transaction::cover( const asset& cover_amount, 
+   void transaction::cover( const asset& cover_amount,
                             const market_index_key& order_idx )
    {
       operations.push_back( cover_operation(cover_amount.amount, order_idx) );
+   }
+
+   void transaction::add_collateral( share_type collateral_amount,
+                                     const market_index_key& order_idx )
+   {
+      operations.push_back( add_collateral_operation(collateral_amount, order_idx) );
    }
 
    void transaction::publish_feed( feed_id_type feed_id, 

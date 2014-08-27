@@ -8,7 +8,6 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
@@ -549,18 +548,21 @@ namespace bts { namespace wallet {
           if( !is_known )
           {
               transaction_record = wallet_transaction_record();
+              transaction_record->record_id = record_id;
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
+              transaction_record->trx = transaction;
           }
 
           bool new_transaction = !transaction_record->is_confirmed;
 
-          transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
-          transaction_record->trx = transaction;
 
-          auto store_record = is_known;
+          if( is_known ) /* Otherwise will get stored below if this is for me */
+              _wallet_db.store_transaction( *transaction_record );
+
+          auto store_record = false;
 
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
@@ -752,7 +754,10 @@ namespace bts { namespace wallet {
               }
           }
 
-          if( store_record ) _wallet_db.store_transaction( *transaction_record );
+          // TODO: Test that this doesn't break anything
+          /* Only overwrite existing record if you did not create it */
+          if( store_record && !is_known )
+              _wallet_db.store_transaction( *transaction_record );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
@@ -3842,6 +3847,7 @@ namespace bts { namespace wallet {
                                       ("pay_from_account",pay_from_account)
                                       ("sign",sign) ) }
 
+#if 0
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
                                        const string& subject,
                                        const string& body,
@@ -3945,6 +3951,7 @@ namespace bts { namespace wallet {
 
       return trx;
    }
+#endif
 
    /***
     *  @param from_account_name - the account that will fund the bid
@@ -4381,6 +4388,54 @@ namespace bts { namespace wallet {
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity) (quote_price)(quote_symbol)(sign) ) }
+
+   signed_transaction wallet::add_collateral(
+       const string& from_account_name,
+       const address& short_id,
+       share_type collateral_to_add,
+       bool sign)
+   { try {
+       if (!is_open()) FC_CAPTURE_AND_THROW (wallet_closed);
+       if (!is_unlocked()) FC_CAPTURE_AND_THROW (login_required);
+       if (!is_receive_account(from_account_name)) FC_CAPTURE_AND_THROW (unknown_receive_account);
+       if (collateral_to_add <= 0) FC_CAPTURE_AND_THROW (bad_collateral_amount);
+
+       auto order_itr = my->_wallet_db.get_market_orders().find(short_id);
+       if (order_itr == my->_wallet_db.get_market_orders().end()) FC_CAPTURE_AND_THROW (unknown_market_order);
+
+       auto     from_account_key = get_account_public_key(from_account_name);
+       address  from_address(from_account_key);
+
+       signed_transaction trx;
+       unordered_set<address> required_signatures;
+       required_signatures.insert(order_itr->second.order.get_owner());
+
+       trx.add_collateral(collateral_to_add, order_itr->second.order.market_index);
+
+       auto required_fees = get_transaction_fee();
+       my->withdraw_to_transaction (asset(collateral_to_add) + required_fees,
+                                    from_address,
+                                    trx,
+                                    required_signatures);
+
+       if (sign)
+       {
+         auto record = wallet_transaction_record();
+         record.is_market = true;
+         record.fee = required_fees;
+
+         auto entry = ledger_entry();
+         entry.from_account = from_account_key;
+         entry.to_account = get_private_key(order_itr->second.order.get_owner()).get_public_key();
+         entry.amount = asset(collateral_to_add);
+         entry.memo = "add collateral to short";
+         record.ledger_entries.push_back(entry);
+
+         sign_and_cache_transaction(trx, required_signatures, record);
+       }
+
+       return trx;
+   } FC_CAPTURE_AND_RETHROW((from_account_name)(short_id)(collateral_to_add)(sign)) }
 
    signed_transaction wallet::cover_short(
            const string& from_account_name,
@@ -5465,7 +5520,13 @@ namespace bts { namespace wallet {
          if( last_scanned_block_num > 0 )
          {
              info["last_scanned_block_num"]             = last_scanned_block_num;
-             info["last_scanned_block_timestamp"]       = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+             try
+             {
+                 info["last_scanned_block_timestamp"]   = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+             }
+             catch( ... )
+             {
+             }
          }
 
          info["transaction_fee"]                        = get_transaction_fee();

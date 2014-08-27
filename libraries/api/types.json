@@ -29,6 +29,14 @@
         "default_example" : "Carol"
       },
       {
+         "type_name" : "balance_record",
+         "cpp_return_type" : "bts::blockchain::balance_record"
+      },
+      {
+         "type_name" : "balance_record_map",
+         "cpp_return_type" : "std::map<bts::blockchain::balance_id_type, bts::blockchain::balance_record>"
+      },
+      {
          "type_name" : "wallet_balance_record",
          "cpp_return_type" : "bts::wallet::wallet_balance_record"
       },
@@ -588,7 +596,7 @@
       },
       {
         "type_name" : "market_status",
-        "cpp_return_type" : "bts::blockchain::market_status"
+        "cpp_return_type" : "bts::blockchain::api_market_status"
       },
       {
         "type_name" : "vote_selection_method",

@@ -19,7 +19,7 @@ default (unlocked) >>> blockchain_get_account test
 No account found.
 default (unlocked) >>> wallet_account_register test test null 100
 {
-  "expiration": "20140620T164040",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "register_account_op_type",
@@ -41,7 +41,7 @@ default (unlocked) >>> wallet_account_register test test null 100
     }
   ],
   "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9cb73612ea738d13db87cb7454b300c8ce5429f4b5be41b8d6df4aad52172212d"
+    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d96f6b5ef695f4b2df1b3c1e61a10dc5b35ad6daffb13358ba15a7e51e53d6c887"
   ]
 }
 default (unlocked) >>> debug_advance_time 1 blocks

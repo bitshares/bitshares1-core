@@ -13,7 +13,7 @@ password = sys.argv[2]
 port = int(sys.argv[3])
 delegates = []
 if len(sys.argv[4]) < 3:
-    for i in range(30):
+    for i in range(60):
        delegates.append("init" + str(i))
 else:
     delegates = eval(sys.argv[4])

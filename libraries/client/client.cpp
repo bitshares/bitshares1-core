@@ -1105,17 +1105,22 @@ config load_config( const fc::path& datadir )
                         double current_sync_speed_in_blocks_per_sec = (double)blocks_since_last_status_message / seconds_since_last_status_message;
                         _sync_speed_accumulator(current_sync_speed_in_blocks_per_sec);
                         double average_sync_speed = boost::accumulators::rolling_mean(_sync_speed_accumulator);
-                        double remaining_seconds_to_sync = _remaining_items_to_sync / average_sync_speed;
-
                         std::ostringstream speed_message;
-                        speed_message << "--- currently syncing at ";
-                        if (average_sync_speed >= 10.)
-                          speed_message << (int)average_sync_speed << " blocks/sec, ";
-                        else if (average_sync_speed >= 0.1)
-                          speed_message << std::setprecision(2) << average_sync_speed << " blocks/sec, ";
-                        else if (average_sync_speed >= 0.1)
-                          speed_message << (int)(1./average_sync_speed) << " sec/block, ";
-                        speed_message << fc::get_approximate_relative_time_string(fc::time_point::now(), fc::time_point::now() + fc::seconds((int64_t)remaining_seconds_to_sync), "") << " remaining";
+                        if (average_sync_speed > 0)
+                        {
+                          double remaining_seconds_to_sync = _remaining_items_to_sync / average_sync_speed;
+
+                          speed_message << "--- currently syncing at ";
+                          if (average_sync_speed >= 10.)
+                            speed_message << (int)average_sync_speed << " blocks/sec, ";
+                          else if (average_sync_speed >= 0.1)
+                            speed_message << std::setprecision(2) << average_sync_speed << " blocks/sec, ";
+                          else
+                            speed_message << (int)(1./average_sync_speed) << " sec/block, ";
+                          speed_message << fc::get_approximate_relative_time_string(fc::time_point::now(), fc::time_point::now() + fc::seconds((int64_t)remaining_seconds_to_sync), "") << " remaining";
+                        }
+                        else
+                          speed_message << "--- currently syncing at an imperceptible rate";
                         ulog(speed_message.str());
                       }
                       _last_sync_status_message_time = now;
@@ -1970,6 +1975,13 @@ config load_config( const fc::path& datadir )
       return oaccount_record();
     }
 
+    balance_record detail::client_impl::blockchain_get_balance( const balance_id_type& balance_id )const
+    {
+        const auto balance_record = _chain_db->get_balance_record( balance_id );
+        FC_ASSERT( balance_record.valid() );
+        return *balance_record;
+    }
+
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
     {
       try
@@ -2174,12 +2186,17 @@ config load_config( const fc::path& datadir )
       return "key not found";
     }
 
-    vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t count) const
+    map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
     {
-      return _chain_db->get_accounts(first, count);
+      return _chain_db->get_balances( first, limit );
     }
 
-    vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts() const
+    vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t limit )const
+    {
+      return _chain_db->get_accounts( first, limit );
+    }
+
+    vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
     {
       vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
       vector<account_record> accounts;
@@ -2195,9 +2212,9 @@ config load_config( const fc::path& datadir )
       return accounts;
     }
 
-    vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t count) const
+    vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t limit )const
     {
-      return _chain_db->get_assets(first, count);
+      return _chain_db->get_assets( first, limit );
     }
 
     std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool not_firewalled )const
@@ -2744,8 +2761,6 @@ config load_config( const fc::path& datadir )
 
        info["min_market_depth"]             = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
 
-       info["proposal_vote_message_max"]    = BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE;
-
        info["max_pending_queue_size"]       = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]           = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -2804,6 +2819,7 @@ config load_config( const fc::path& datadir )
       info["client_data_dir"]                                   = fc::absolute( _data_dir );
       //info["client_httpd_port"]                                 = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
       //info["client_rpc_port"]                                   = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
+      info["client_version"]                                    = BTS_CLIENT_VERSION;
 
       /* Network */
       info["network_num_connections"]                           = network_get_connection_count();
@@ -2846,7 +2862,15 @@ config load_config( const fc::path& datadir )
 
           const auto last_scanned_block_num                     = _wallet->get_last_scanned_block_number();
           if( last_scanned_block_num > 0 )
-              info["wallet_last_scanned_block_timestamp"]       = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+          {
+              try
+              {
+                  info["wallet_last_scanned_block_timestamp"]   = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+              }
+              catch( ... )
+              {
+              }
+          }
 
           info["wallet_scan_progress"]                          = _wallet->get_scan_progress();
 
@@ -2867,6 +2891,11 @@ config load_config( const fc::path& datadir )
       }
 
       return info;
+    }
+
+    asset client_impl::blockchain_calculate_base_supply()const
+    {
+        return _chain_db->calculate_base_supply();
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
@@ -3107,16 +3136,6 @@ config load_config( const fc::path& datadir )
      return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
    }
 
-   vector<proposal_record>  client_impl::blockchain_list_proposals( uint32_t first, uint32_t count )const
-   {
-      return _chain_db->get_proposals( first, count );
-   }
-
-   vector<proposal_vote>    client_impl::blockchain_get_proposal_votes( const proposal_id_type& proposal_id ) const
-   {
-      return _chain_db->get_proposal_votes( proposal_id );
-   }
-
    vector<market_order>    client_impl::blockchain_market_list_bids( const string& quote_symbol,
                                                                        const string& base_symbol,
                                                                        uint32_t limit  )
@@ -3257,6 +3276,15 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_price_history( _chain_db->get_asset_id(quote_symbol),
                                                   _chain_db->get_asset_id(base_symbol),
                                                   start_time, duration, granularity );
+   }
+
+   signed_transaction client_impl::wallet_market_add_collateral(const std::string &from_account_name,
+                                                                const address &short_id,
+                                                                const share_type &collateral_to_add)
+   {
+      auto trx = _wallet->add_collateral(from_account_name, short_id, collateral_to_add);
+      network_broadcast_transaction(trx);
+      return trx;
    }
 
    vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
@@ -3520,7 +3548,7 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_transactions( block_num );
    }
 
-   bts::blockchain::market_status client_impl::blockchain_market_status( const std::string& quote, 
+   bts::blockchain::api_market_status client_impl::blockchain_market_status( const std::string& quote,
                                                                          const std::string& base )const
    {
       auto qrec = _chain_db->get_asset_record(quote);
@@ -3528,7 +3556,16 @@ config load_config( const fc::path& datadir )
       FC_ASSERT( qrec && brec );
       auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
       FC_ASSERT( oresult );
-      return *oresult;
+
+      api_market_status result(*oresult);
+      if( oresult->avg_price_1h.ratio == fc::uint128() )
+      {
+        oprice median_delegate_price = _chain_db->get_median_delegate_price(qrec->id);
+        result.avg_price_1h = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
+      }
+      else
+        result.avg_price_1h = _chain_db->to_pretty_price_double(oresult->avg_price_1h);
+      return result;
    }
 
    bts::blockchain::asset client_impl::blockchain_unclaimed_genesis() const

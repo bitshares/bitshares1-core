@@ -10,12 +10,12 @@ wallet (unlocked) >>> wallet_get_info
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",
-  "transaction_expiration_secs": 7200,
+  "transaction_expiration_secs": 4040,
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 105
+  "version": "[redacted]"
 }
 wallet (unlocked) >>> wallet_set_automatic_backups false
 false
@@ -104,12 +104,12 @@ wallet (unlocked) >>> wallet_get_info
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "99,999.00000 XTS",
-  "transaction_expiration_secs": 7200,
+  "transaction_expiration_secs": 4040,
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
   "scan_progress": "100.00 %",
-  "version": 105
+  "version": "[redacted]"
 }
 wallet (unlocked) >>> wallet_close
 OK

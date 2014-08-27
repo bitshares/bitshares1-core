@@ -99,6 +99,43 @@ public:
     }
 };
 
+BOOST_FIXTURE_TEST_CASE( simultaneous_cancel_buy, nathan_fixture )
+{ try {
+    //Get sufficient depth to execute trades
+    exec(clienta, "short delegate21 10000 .001 USD");
+    exec(clientb, "ask delegate20 10000000 XTS .05 USD");
+
+    produce_block(clienta);
+
+    //Give delegate22 some USD; give delegate23 a margin position created at .01 USD/XTS
+    exec(clienta, "short delegate23 100 .01 USD");
+    exec(clientb, "ask delegate22 10000 XTS .01 USD");
+
+    produce_block(clienta);
+    produce_block(clienta);
+
+    exec(clienta, "blockchain_market_order_book USD XTS");
+
+    exec(clienta, "ask delegate23 100 XTS .01 USD");
+
+    produce_block(clienta);
+    exec(clientb, "bid delegate22 100 XTS .01 USD");
+    produce_block(clienta);
+
+    exec(clienta, "cancel XTSK6TnnRSZymhLfKfLZiL9qLXE3KRmRBrFk");
+
+    produce_block(clienta);
+    produce_block(clienta);
+    produce_block(clienta);
+    produce_block(clienta);
+    produce_block(clienta);
+    produce_block(clienta);
+    produce_block(clienta);
+
+    prompt();
+} FC_LOG_AND_RETHROW() }
+
+/*
 BOOST_FIXTURE_TEST_CASE( rapid_price_change, nathan_fixture )
 { try {
     //Get sufficient depth to execute trades
@@ -205,3 +242,4 @@ BOOST_FIXTURE_TEST_CASE( printing_dollars, nathan_fixture )
     //Programmatically verify the carnage
     BOOST_CHECK_EQUAL(clienta->blockchain_get_asset("USD")->collected_fees, -200000);
 } FC_LOG_AND_RETHROW() }
+*/

@@ -121,6 +121,9 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     const auto data_dir = info["client_data_dir"].as<path>();
     info["client_data_dir"] = pretty_path( data_dir );
 
+    if( !info["client_version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
+        info["client_version"] = "[redacted]";
+
     if( !info["ntp_time"].is_null() )
     {
         const auto ntp_time = info["ntp_time"].as<time_point_sec>();
@@ -177,6 +180,9 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
 
     std::stringstream out;
     out << std::left;
+
+    if( !info["db_version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
+        info["db_version"] = "[redacted]";
 
     const auto timestamp = info["genesis_timestamp"].as<time_point_sec>();
     info["genesis_timestamp"] = pretty_timestamp( timestamp );
@@ -239,6 +245,9 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
         const auto scan_progress = info["scan_progress"].as<float>();
         info["scan_progress"] = pretty_percent( scan_progress, 1 );
     }
+
+    if( !info["version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
+        info["version"] = "[redacted]";
 
     out << fc::json::to_pretty_string( info ) << "\n";
     return out.str();
