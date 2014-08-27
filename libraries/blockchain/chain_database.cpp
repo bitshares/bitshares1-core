@@ -856,20 +856,10 @@ namespace bts { namespace blockchain {
             throw;
          }
 
-         // just in case something changes while calling observer
-         const auto observers = _observers;
-         for( const auto& o : observers )
-         {
-            try {
-               //ilog( "... block applied ... " );
-               //Schedule the observer notifications for later; the chain is in a
-               //non-premptable state right now, and observers may yield.
-               fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
-            } catch ( const fc::exception& e )
-            {
-               wlog( "${e}", ("e",e.to_detail_string() ) );
-            }
-         }
+         //Schedule the observer notifications for later; the chain is in a
+         //non-premptable state right now, and observers may yield.
+         for( chain_observer* o : _observers )
+            fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
       /**
@@ -933,8 +923,10 @@ namespace bts { namespace blockchain {
          _head_block_id = previous_block_id;
          _head_block_header = self->get_block_header( _head_block_id );
 
-         for( const auto& o : _observers )
-             o->state_changed( undo_state );
+         //Schedule the observer notifications for later; the chain is in a
+         //non-premptable state right now, and observers may yield.
+         for( chain_observer* o : _observers )
+            fc::async([o,undo_state]{ o->state_changed( undo_state ); }, "call_state_changed_observer");
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    } // namespace detail

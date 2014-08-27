@@ -159,6 +159,9 @@ namespace bts { namespace wallet {
 
       void wallet_impl::state_changed( const pending_chain_state_ptr& state )
       {
+          if( !self->is_open() || !self->is_unlocked() ) return;
+          if( !self->get_transaction_scanning() ) return;
+
           const auto last_unlocked_scanned_number = self->get_last_scanned_block_number();
           if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
           {
