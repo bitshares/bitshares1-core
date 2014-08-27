@@ -249,12 +249,9 @@ class market_engine
                    auto max_usd_purchase = asset(*_current_ask->collateral,0) * mtrx.bid_price;
                    auto usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
 
-                   if( _pending_state->get_head_block_num() > 340000 )
-                   {
-                      const auto required_usd_purchase = _current_ask->get_balance();
-                      if( required_usd_purchase < usd_exchanged )
-                         usd_exchanged = required_usd_purchase;
-                   }
+                   const auto required_usd_purchase = _current_ask->get_balance();
+                   if( required_usd_purchase < usd_exchanged )
+                      usd_exchanged = required_usd_purchase;
 
                    mtrx.bid_paid     = usd_exchanged;
                    mtrx.ask_received = usd_exchanged;
