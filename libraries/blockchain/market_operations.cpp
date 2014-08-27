@@ -146,21 +146,14 @@ namespace bts { namespace blockchain {
       {
          FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
       }
-      else
+      else if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_1_BLOCK_NUM )
       {
-         if ( eval_state._current_state->get_head_block_num() > BTSX_MARKET_FORK_1_BLOCK_NUM )
-         {
-            auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
-            FC_ASSERT( median_delegate_price.valid() );
-            auto feed_max_short_bid = *median_delegate_price;
-            feed_max_short_bid.ratio *= 4;
-            feed_max_short_bid.ratio /= 3;
-            FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
-         }
-         else
-         {
-             // What's the old version?
-         }
+         auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
+         FC_ASSERT( median_delegate_price.valid() );
+         auto feed_max_short_bid = *median_delegate_price;
+         feed_max_short_bid.ratio *= 4;
+         feed_max_short_bid.ratio /= 3;
+         FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
       }
       /*
       if( this->short_index.order_price > asset_to_short->maximum_xts_price || 
