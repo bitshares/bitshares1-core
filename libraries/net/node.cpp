@@ -1829,7 +1829,11 @@ namespace bts { namespace net { namespace detail {
       }
       else
       {
-        dlog( "sync: peer is out of sync, sending peer ${count} items ids: ${item_ids}", ("count", reply_message.item_hashes_available.size() )("item_ids", reply_message.item_hashes_available ) );
+        //dlog( "sync: peer is out of sync, sending peer ${count} items ids: ${item_ids}", ("count", reply_message.item_hashes_available.size() )("item_ids", reply_message.item_hashes_available ) );
+        dlog( "sync: peer is out of sync, sending peer ${count} items ids: first: ${first_item_id}, last: ${last_item_id}", 
+              ("count", reply_message.item_hashes_available.size())
+              ("first_item_id", reply_message.item_hashes_available.front())
+              ("last_item_id", reply_message.item_hashes_available.back()));
         if( !originating_peer->we_need_sync_items_from_peer &&
             !fetch_blockchain_item_ids_message_received.blockchain_synopsis.empty() &&
             !_delegate->has_item( peers_last_item_seen ) )

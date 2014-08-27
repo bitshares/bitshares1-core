@@ -352,11 +352,7 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "base_id": 0,
   "bid_depth": 0,
   "ask_depth": 10000000,
-  "avg_price_1h": {
-    "ratio": "0.",
-    "quote_asset_id": 0,
-    "base_asset_id": 0
-  },
+  "avg_price_1h": 0,
   "last_error": null
 }
 default (unlocked) >>> quit

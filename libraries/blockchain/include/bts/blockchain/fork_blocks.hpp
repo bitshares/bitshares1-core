@@ -3,6 +3,8 @@
 #include <stdint.h>
 
 /** @file bts/blockchain/fork_blocks.hpp
- *  @brief Defines global constants that hard forks happen
+ *  @brief Defines global block number constants for when hardforks take effect
  */
-#define BTS_BLOCKCHAIN_FORK_MARKET_BLOCK_NUM                  (274000)
+#define BTSX_MARKET_FORK_1_BLOCK_NUM    274000
+#define BTSX_MARKET_FORK_2_BLOCK_NUM    316000
+#define BTSX_MARKET_FORK_3_BLOCK_NUM    340000

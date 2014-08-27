@@ -8,7 +8,6 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/proposal_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <fc/thread/thread.hpp>
@@ -160,6 +159,9 @@ namespace bts { namespace wallet {
 
       void wallet_impl::state_changed( const pending_chain_state_ptr& state )
       {
+          if( !self->is_open() || !self->is_unlocked() ) return;
+          if( !self->get_transaction_scanning() ) return;
+
           const auto last_unlocked_scanned_number = self->get_last_scanned_block_number();
           if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
           {
@@ -549,18 +551,21 @@ namespace bts { namespace wallet {
           if( !is_known )
           {
               transaction_record = wallet_transaction_record();
+              transaction_record->record_id = record_id;
               transaction_record->created_time = block_timestamp;
               transaction_record->received_time = received_time;
+              transaction_record->trx = transaction;
           }
 
           bool new_transaction = !transaction_record->is_confirmed;
 
-          transaction_record->record_id = record_id;
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
-          transaction_record->trx = transaction;
 
-          auto store_record = is_known;
+          if( is_known ) /* Otherwise will get stored below if this is for me */
+              _wallet_db.store_transaction( *transaction_record );
+
+          auto store_record = false;
 
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
@@ -752,7 +757,10 @@ namespace bts { namespace wallet {
               }
           }
 
-          if( store_record ) _wallet_db.store_transaction( *transaction_record );
+          // TODO: Test that this doesn't break anything
+          /* Only overwrite existing record if you did not create it */
+          if( store_record && !is_known )
+              _wallet_db.store_transaction( *transaction_record );
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
@@ -2587,6 +2595,9 @@ namespace bts { namespace wallet {
                                                                       uint32_t end_block_num,
                                                                       const string& asset_symbol )const
    { try {
+
+       // TODO: Validate all input
+
        const auto& history = get_transaction_history( account_name, start_block_num, end_block_num, asset_symbol );
        vector<pretty_transaction> pretties;
        pretties.reserve( history.size() );
@@ -2624,56 +2635,72 @@ namespace bts { namespace wallet {
            trx.error = errors.at( trx.trx_id );
        }
 
-       /* Don't care if not filtering by account */
-       if( account_name.empty() ) return pretties;
+       vector<string> account_names;
+       bool account_specified = !account_name.empty();
+       if( !account_specified )
+       {
+           const auto accounts = list_my_accounts();
+           for( const auto& account : accounts )
+               account_names.push_back( account.name );
+       }
+       else
+       {
+           account_names.push_back( account_name );
+       }
 
        /* Tally up running balances */
-       auto running_balances = map<asset_id_type, asset>();
-       for( auto& trx : pretties )
+       for( const auto& name : account_names )
        {
-           const auto fee_asset_id = trx.fee.asset_id;
-           if( running_balances.count( fee_asset_id ) <= 0 )
-               running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
-
-           auto any_from_me = false;
-           for( auto& entry : trx.ledger_entries )
+           map<asset_id_type, asset> running_balances;
+           for( auto& trx : pretties )
            {
-               const auto amount_asset_id = entry.amount.asset_id;
-               if( running_balances.count( amount_asset_id ) <= 0 )
-                   running_balances[ amount_asset_id ] = asset( 0, amount_asset_id );
+               const auto fee_asset_id = trx.fee.asset_id;
+               if( running_balances.count( fee_asset_id ) <= 0 )
+                   running_balances[ fee_asset_id ] = asset( 0, fee_asset_id );
 
-               auto from_me = false;
-               from_me |= account_name == entry.from_account;
-               from_me |= ( entry.from_account.find( account_name + " " ) == 0 ); /* If payer != sender */
-               if( from_me )
+               auto any_from_me = false;
+               for( auto& entry : trx.ledger_entries )
                {
-                   /* Special check to ignore asset issuing */
-                   if( ( running_balances[ amount_asset_id ] - entry.amount ) >= asset( 0, amount_asset_id ) )
-                       running_balances[ amount_asset_id ] -= entry.amount;
+                   const auto amount_asset_id = entry.amount.asset_id;
+                   if( running_balances.count( amount_asset_id ) <= 0 )
+                       running_balances[ amount_asset_id ] = asset( 0, amount_asset_id );
 
-                   /* Subtract fee once on the first entry */
-                   if( !trx.is_virtual && !any_from_me )
+                   auto from_me = false;
+                   from_me |= name == entry.from_account;
+                   from_me |= ( entry.from_account.find( name + " " ) == 0 ); /* If payer != sender */
+                   if( from_me )
+                   {
+                       /* Special check to ignore asset issuing */
+                       if( ( running_balances[ amount_asset_id ] - entry.amount ) >= asset( 0, amount_asset_id ) )
+                           running_balances[ amount_asset_id ] -= entry.amount;
+
+                       /* Subtract fee once on the first entry */
+                       if( !trx.is_virtual && !any_from_me )
+                           running_balances[ fee_asset_id ] -= trx.fee;
+                   }
+                   any_from_me |= from_me;
+
+                   /* Special case to subtract fee if we canceled a bid */
+                   if( !trx.is_virtual && trx.is_market_cancel && amount_asset_id != fee_asset_id )
                        running_balances[ fee_asset_id ] -= trx.fee;
+
+                   auto to_me = false;
+                   to_me |= name == entry.to_account;
+                   to_me |= ( entry.to_account.find( name + " " ) == 0 ); /* If payer != sender */
+                   if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
+
+                   entry.running_balances[ name ][ amount_asset_id ] = running_balances[ amount_asset_id ];
+                   entry.running_balances[ name ][ fee_asset_id ] = running_balances[ fee_asset_id ];
                }
-               any_from_me |= from_me;
 
-               /* Special case to subtract fee if we canceled a bid */
-               if( !trx.is_virtual && trx.is_market_cancel && amount_asset_id != fee_asset_id )
-                   running_balances[ fee_asset_id ] -= trx.fee;
-
-               auto to_me = false;
-               to_me |= account_name == entry.to_account;
-               to_me |= ( entry.to_account.find( account_name + " " ) == 0 ); /* If payer != sender */
-               if( to_me ) running_balances[ amount_asset_id ] += entry.amount;
-
-               entry.running_balances[ amount_asset_id ] = running_balances[ amount_asset_id ];
-               entry.running_balances[ fee_asset_id ] = running_balances[ fee_asset_id ];
-           }
-
-           /* Don't return fees we didn't pay */
-           if( trx.is_virtual || ( !any_from_me && !trx.is_market_cancel ) )
-           {
-               trx.fee = asset();
+               if( account_specified )
+               {
+                   /* Don't return fees we didn't pay */
+                   if( trx.is_virtual || ( !any_from_me && !trx.is_market_cancel ) )
+                   {
+                       trx.fee = asset();
+                   }
+               }
            }
        }
 
@@ -3842,6 +3869,7 @@ namespace bts { namespace wallet {
                                       ("pay_from_account",pay_from_account)
                                       ("sign",sign) ) }
 
+#if 0
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
                                        const string& subject,
                                        const string& body,
@@ -3945,6 +3973,7 @@ namespace bts { namespace wallet {
 
       return trx;
    }
+#endif
 
    /***
     *  @param from_account_name - the account that will fund the bid
@@ -5513,7 +5542,13 @@ namespace bts { namespace wallet {
          if( last_scanned_block_num > 0 )
          {
              info["last_scanned_block_num"]             = last_scanned_block_num;
-             info["last_scanned_block_timestamp"]       = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+             try
+             {
+                 info["last_scanned_block_timestamp"]   = my->_blockchain->get_block_header( last_scanned_block_num ).timestamp;
+             }
+             catch( ... )
+             {
+             }
          }
 
          info["transaction_fee"]                        = get_transaction_fee();

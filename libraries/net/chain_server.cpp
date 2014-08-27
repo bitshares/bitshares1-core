@@ -31,7 +31,7 @@ namespace bts { namespace net {
                 _server_socket.set_reuse_address();
                 _server_socket.listen(port);
 
-                _accept_loop_handle = fc::async([this]{accept_loop();});
+                _accept_loop_handle = fc::async([this]{accept_loop();}, "accept_loop");
             }
 
             virtual ~chain_server_impl() {
@@ -56,7 +56,7 @@ namespace bts { namespace net {
                         delete connection_socket;
                         continue;
                     }
-                    auto finished_future = worker_thread->async([=]{serve_client(connection_socket);});
+                    auto finished_future = worker_thread->async([=]{serve_client(connection_socket);}, "serve_client");
                     auto master_thread = &fc::thread::current();
 
                     finished_future.on_complete([=](fc::exception_ptr ep) { master_thread->async([=] {
@@ -66,7 +66,7 @@ namespace bts { namespace net {
                             ilog("Resting thread; there are now ${i} idle and ${b} busy", ("i", _idle_threads.size())("b", _busy_threads.size()));
                         } else
                             kill_worker(worker_thread);
-                    });});
+                    }, "cleanup_chain_server_threads");});
                 }
             }
 

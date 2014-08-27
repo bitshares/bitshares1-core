@@ -3,17 +3,13 @@
 #include <stdint.h>
 
 /* Define client version here */
-#define BTS_CLIENT_VERSION                                  "0.4.8"
-
-/* Comment out this line for a non-test network */
-// #define BTS_TEST_NETWORK
-#define BTS_TEST_NETWORK_VERSION                            19
+#define BTS_CLIENT_VERSION                                  "0.4.9"
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     129
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     131
 
 /**
  *  The address prepended to string representation of
@@ -101,7 +97,7 @@
  *
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
-#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/100)
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/200)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC
