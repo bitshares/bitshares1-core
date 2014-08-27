@@ -777,7 +777,7 @@ namespace bts { namespace rpc {
     if (my->_tcp_serv)
       my->_tcp_serv->close();
     if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
-      my->_accept_loop_complete.cancel();
+      my->_accept_loop_complete.cancel(__FUNCTION__);
   }
 
   void rpc_server::wait_till_rpc_server_shutdown()

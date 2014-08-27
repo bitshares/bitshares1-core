@@ -94,7 +94,7 @@ namespace bts { namespace net {
 
       try 
       { 
-        _read_loop_done.cancel_and_wait();
+        _read_loop_done.cancel_and_wait(__FUNCTION__);
       }
       catch ( const fc::exception& e )
       {

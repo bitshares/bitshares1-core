@@ -793,6 +793,7 @@ namespace bts { namespace net { namespace detail {
          
           // if we broke out of the while loop, that means either we have connected to enough nodes, or
           // we don't have any good candidates to connect to right now.
+#if 0
           try
           {
             _retrigger_connect_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("bts::net::retrigger_connect_loop") );
@@ -813,6 +814,9 @@ namespace bts { namespace net { namespace detail {
           catch ( fc::timeout_exception& ) //intentionally not logged
           {
           }  // catch
+#else
+          fc::usleep(fc::seconds(10));
+#endif
         } 
         catch ( const fc::canceled_exception& )
         {
@@ -830,8 +834,8 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       dlog( "Triggering connect loop now" );
       _potential_peer_database_updated = true;
-      if( _retrigger_connect_loop_promise )
-        _retrigger_connect_loop_promise->set_value();
+      //if( _retrigger_connect_loop_promise )
+      //  _retrigger_connect_loop_promise->set_value();
     }
 
     bool node_impl::have_already_received_sync_item( const item_hash_t& item_hash )
@@ -2798,7 +2802,7 @@ namespace bts { namespace net { namespace detail {
 
       try 
       {
-        _accept_loop_complete.cancel_and_wait();
+        _accept_loop_complete.cancel_and_wait("node_impl::close()");
         dlog("P2P accept loop terminated");
       } 
       catch ( const fc::exception& e )
@@ -2813,7 +2817,7 @@ namespace bts { namespace net { namespace detail {
       // terminate all of our long-running loops (these run continuously instead of rescheduling themselves)
       try 
       {
-        _p2p_network_connect_loop_done.cancel();
+        _p2p_network_connect_loop_done.cancel("node_impl::close()");
         // cancel() is currently broken, so we need to wake up the task to allow it to finish
         trigger_p2p_network_connect_loop();
         _p2p_network_connect_loop_done.wait();
@@ -2834,7 +2838,7 @@ namespace bts { namespace net { namespace detail {
 
       try 
       {
-        _fetch_sync_items_loop_done.cancel();
+        _fetch_sync_items_loop_done.cancel("node_impl::close()");
         // cancel() is currently broken, so we need to wake up the task to allow it to finish
         trigger_fetch_sync_items_loop();
         _fetch_sync_items_loop_done.wait();
@@ -2855,7 +2859,7 @@ namespace bts { namespace net { namespace detail {
 
       try 
       {
-        _fetch_item_loop_done.cancel();
+        _fetch_item_loop_done.cancel("node_impl::close()");
         // cancel() is currently broken, so we need to wake up the task to allow it to finish
         trigger_fetch_items_loop();
         _fetch_item_loop_done.wait();
@@ -2876,7 +2880,7 @@ namespace bts { namespace net { namespace detail {
 
       try 
       {
-        _advertise_inventory_loop_done.cancel();
+        _advertise_inventory_loop_done.cancel("node_impl::close()");
         // cancel() is currently broken, so we need to wake up the task to allow it to finish
         trigger_advertise_inventory_loop();
         _advertise_inventory_loop_done.wait();
@@ -2932,7 +2936,7 @@ namespace bts { namespace net { namespace detail {
         fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
         try 
         {
-          _delayed_peer_deletion_task_done.cancel_and_wait();
+          _delayed_peer_deletion_task_done.cancel_and_wait("node_impl::close()");
           dlog("Delayed peer deletion task terminated");
         } 
         catch ( const fc::exception& e )
@@ -2951,7 +2955,7 @@ namespace bts { namespace net { namespace detail {
       // our loops now
       try 
       {
-        _terminate_inactive_connections_loop_done.cancel_and_wait();
+        _terminate_inactive_connections_loop_done.cancel_and_wait("node_impl::close()");
         dlog("Terminate inactive connections loop terminated");
       } 
       catch ( const fc::exception& e )
@@ -2965,7 +2969,7 @@ namespace bts { namespace net { namespace detail {
 
       try 
       {
-        _fetch_updated_peer_lists_loop_done.cancel_and_wait();
+        _fetch_updated_peer_lists_loop_done.cancel_and_wait("node_impl::close()");
         dlog("Fetch updated peer lists loop terminated");
       } 
       catch ( const fc::exception& e )
@@ -2979,7 +2983,7 @@ namespace bts { namespace net { namespace detail {
 
       try 
       {
-        _bandwidth_monitor_loop_done.cancel_and_wait();
+        _bandwidth_monitor_loop_done.cancel_and_wait("node_impl::close()");
         dlog("Bandwidth monitor loop terminated");
       } 
       catch ( const fc::exception& e )
@@ -2993,7 +2997,7 @@ namespace bts { namespace net { namespace detail {
 
       try 
       {
-        _dump_node_status_task_done.cancel_and_wait();
+        _dump_node_status_task_done.cancel_and_wait("node_impl::close()");
         dlog("Dump node status task terminated");
       } 
       catch ( const fc::exception& e )
@@ -3966,7 +3970,7 @@ namespace bts { namespace net { namespace detail {
   {
     for( node_info* network_node_info : network_nodes )
     {
-      network_node_info->message_sender_task_done.cancel_and_wait();
+      network_node_info->message_sender_task_done.cancel_and_wait("~simulated_network()");
       delete network_node_info;
     }
   }

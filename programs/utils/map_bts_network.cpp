@@ -46,7 +46,7 @@ public:
     catch (const fc::timeout_exception&)
     {
       ilog("timeout connecting to node ${endpoint}", ("endpoint", endpoint_to_probe));
-      connect_task.cancel();
+      connect_task.cancel(__FUNCTION__);
       throw;
     }
 

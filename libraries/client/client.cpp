@@ -790,7 +790,7 @@ config load_config( const fc::path& datadir )
           try
           {
             ilog( "Canceling delegate loop..." );
-            _delegate_loop_complete.cancel_and_wait();
+            _delegate_loop_complete.cancel_and_wait(__FUNCTION__);
             ilog( "Delegate loop canceled" );
           }
           catch( const fc::exception& e )
@@ -1009,7 +1009,7 @@ config load_config( const fc::path& datadir )
        {
           try
           {
-            _rebroadcast_pending_loop_done.cancel_and_wait();
+            _rebroadcast_pending_loop_done.cancel_and_wait(__FUNCTION__);
           }
           catch (const fc::exception& e)
           {
@@ -1560,7 +1560,7 @@ config load_config( const fc::path& datadir )
       {
         try
         {
-          _blocks_too_old_monitor_done.cancel_and_wait();
+          _blocks_too_old_monitor_done.cancel_and_wait(__FUNCTION__);
         }
         catch( const fc::exception& e )
         {

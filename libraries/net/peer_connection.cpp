@@ -82,7 +82,7 @@ namespace bts { namespace net
       try 
       {
         dlog("canceling _send_queued_messages task");
-        _send_queued_messages_done.cancel_and_wait(); 
+        _send_queued_messages_done.cancel_and_wait(__FUNCTION__); 
         dlog("cancel_and_wait completed normally");
       } 
       catch( const fc::exception& e )
@@ -97,7 +97,7 @@ namespace bts { namespace net
       try 
       { 
         dlog("canceling accept_or_connect_task");
-        accept_or_connect_task_done.cancel_and_wait(); 
+        accept_or_connect_task_done.cancel_and_wait(__FUNCTION__); 
         dlog("accept_or_connect_task completed normally");
       } 
       catch( const fc::exception& e )
