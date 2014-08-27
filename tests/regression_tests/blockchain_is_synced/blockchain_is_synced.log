@@ -1,0 +1,21 @@
+default (unlocked) >>> help blockchain_is_synced
+Usage:
+blockchain_is_synced                                                                                  Returns true if the local blockchain is synced with the network; false otherwise
+Returns true if the local blockchain is synced with the network; false otherwise
+
+Parameters:
+  (none)
+
+Returns:
+  bool
+
+aliases: synced
+default (unlocked) >>> blockchain_is_synced
+false
+default (unlocked) >>> wallet_delegate_set_block_production ALL true
+OK
+default (unlocked) >>> wallet_set_transaction_scanning true
+true
+default (unlocked) >>> blockchain_is_synced
+true
+default (unlocked) >>> quit
