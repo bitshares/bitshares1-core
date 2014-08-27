@@ -1,0 +1,17 @@
+default (unlocked) >>> help wallet_account_balance
+Usage:
+wallet_account_balance [account_name]                                                                 Lists the total asset balances for the specified account
+Lists the total asset balances for the specified account
+
+Parameters:
+  account_name (account_name, optional, defaults to ""): the account to get a balance for, or leave empty for all accounts
+
+Returns:
+  account_balance_summary_type
+
+aliases: balance, getbalance
+default (unlocked) >>> wallet_account_balance delegate0
+ACCOUNT                         BALANCE                     
+============================================================
+delegate0                       19,801,980.19801 XTS        
+default (unlocked) >>> quit

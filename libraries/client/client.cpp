@@ -2186,12 +2186,17 @@ config load_config( const fc::path& datadir )
       return "key not found";
     }
 
-    vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t count) const
+    map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
     {
-      return _chain_db->get_accounts(first, count);
+      return _chain_db->get_balances( first, limit );
     }
 
-    vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts() const
+    vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t limit )const
+    {
+      return _chain_db->get_accounts( first, limit );
+    }
+
+    vector<account_record> detail::client_impl::blockchain_list_recently_registered_accounts()const
     {
       vector<operation> account_registrations = _chain_db->get_recent_operations(register_account_op_type);
       vector<account_record> accounts;
@@ -2207,9 +2212,9 @@ config load_config( const fc::path& datadir )
       return accounts;
     }
 
-    vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t count) const
+    vector<asset_record> detail::client_impl::blockchain_list_assets( const string& first, int32_t limit )const
     {
-      return _chain_db->get_assets(first, count);
+      return _chain_db->get_assets( first, limit );
     }
 
     std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool not_firewalled )const
