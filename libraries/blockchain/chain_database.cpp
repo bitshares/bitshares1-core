@@ -765,6 +765,8 @@ namespace bts { namespace blockchain {
       }
       void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
       { try {
+        const auto pending_block_num = pending_state->get_head_block_num();
+
         elog( "execute markets ${e}", ("e", pending_state->get_dirty_markets()) );
         map<asset_id_type,share_type> collected_fees;
 
@@ -773,22 +775,22 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second )
-           if( pending_state->get_head_block_num() < BTSX_MARKET_FORK_1_BLOCK_NUM )
+           if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
            {
-              original_market_engine engine( pending_state, *this );
+              market_engine engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
            else
            {
-              market_engine engine( pending_state, *this );
+              original_market_engine engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
         }
         ilog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
 
-        if( self->get_head_block_num() < BTSX_MARKET_FORK_2_BLOCK_NUM )
+        if( pending_block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
             pending_state->set_dirty_markets( pending_state->_dirty_markets );
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
@@ -833,13 +835,12 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_id, pending_state, block_signee );
 
-            const auto head_block_num = self->get_head_block_num();
-            if( head_block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
+            if( block_data.block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             execute_markets( block_data.timestamp, pending_state );
 
-            if( head_block_num >= BTSX_MARKET_FORK_2_BLOCK_NUM )
+            if( block_data.block_num >= BTSX_MARKET_FORK_2_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             update_active_delegate_list( block_data, pending_state );
@@ -1665,7 +1666,7 @@ namespace bts { namespace blockchain {
       auto start_time = time_point::now();
 
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-      if( get_head_block_num() >= BTSX_MARKET_FORK_2_BLOCK_NUM )
+      if( pending_state->get_head_block_num() >= BTSX_MARKET_FORK_2_BLOCK_NUM )
          my->execute_markets( timestamp, pending_state );
       auto pending_trx = get_pending_transactions();
 
