@@ -102,7 +102,7 @@ namespace bts { namespace blockchain {
             void                                        recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
             void                                        execute_markets(const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state );
-            void                                        update_random_seed( secret_hash_type new_secret,
+            void                                        update_random_seed( const secret_hash_type& new_secret,
                                                                            const pending_chain_state_ptr& pending_state );
             void                                        update_active_delegate_list(const full_block& block_data,
                                                                                     const pending_chain_state_ptr& pending_state );
@@ -579,7 +579,9 @@ namespace bts { namespace blockchain {
             const auto pay = ( pay_percent * pending_pay ) / 100;
 
             const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
-//#warning [HARDFORK] This will hardfork BTSX
+#ifndef WIN32
+#warning [HARDFORK] This will hardfork BTSX
+#endif
             //pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
             pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
 
@@ -732,7 +734,7 @@ namespace bts { namespace blockchain {
           pending_state->set_property( confirmation_requirement, required_confirmations );
       }
 
-      void chain_database_impl::update_random_seed( secret_hash_type new_secret,
+      void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
                                                     const pending_chain_state_ptr& pending_state )
       {
          auto current_seed = pending_state->get_current_random_seed();
@@ -1868,11 +1870,11 @@ namespace bts { namespace blockchain {
       gen_fork.is_known = true;
       _fork_db.store( block_id_type(), gen_fork );
 
-      self->set_property( chain_property_enum::active_delegate_list_id, fc::variant(self->next_round_active_delegates()) );
+      self->set_property( chain_property_enum::active_delegate_list_id, fc::variant( self->next_round_active_delegates() ) );
       self->set_property( chain_property_enum::last_asset_id, asset_id );
       self->set_property( chain_property_enum::last_proposal_id, 0 );
-      self->set_property( chain_property_enum::last_account_id, uint64_t(config.names.size()) );
-      self->set_property( chain_property_enum::last_random_seed_id, fc::variant(secret_hash_type()) );
+      self->set_property( chain_property_enum::last_account_id, uint64_t( config.names.size() ) );
+      self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
       self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
       self->sanity_check();
