@@ -2893,11 +2893,6 @@ config load_config( const fc::path& datadir )
       return info;
     }
 
-    asset client_impl::blockchain_calculate_base_supply()const
-    {
-        return _chain_db->calculate_base_supply();
-    }
-
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
     { try {
        _wallet->scan_chain( start, start + count );

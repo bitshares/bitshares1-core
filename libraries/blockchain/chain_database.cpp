@@ -833,12 +833,13 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_id, pending_state, block_signee );
 
-            if( self->get_head_block_num() < BTSX_MARKET_FORK_2_BLOCK_NUM )
+            const auto head_block_num = self->get_head_block_num();
+            if( head_block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             execute_markets( block_data.timestamp, pending_state );
 
-            if( self->get_head_block_num() >= BTSX_MARKET_FORK_2_BLOCK_NUM )
+            if( head_block_num >= BTSX_MARKET_FORK_2_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             update_active_delegate_list( block_data, pending_state );
