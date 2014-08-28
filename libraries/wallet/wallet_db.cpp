@@ -184,6 +184,10 @@ namespace bts { namespace wallet {
                 // prevent hanging on large wallets
                 fc::usleep( fc::microseconds(1000) );
              }
+             catch (const fc::canceled_exception&)
+             {
+                throw;
+             }
              catch ( const fc::exception& e )
              {
                 wlog( "Error loading wallet record:\n${r}\nreason: ${e}", ("e",e.to_detail_string())("r",record) );

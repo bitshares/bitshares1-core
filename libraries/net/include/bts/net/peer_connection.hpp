@@ -21,13 +21,13 @@
 #include <queue>
 #include <boost/container/deque.hpp>
 
-namespace bts { namespace net 
+namespace bts { namespace net
   {
     class peer_connection;
     class peer_connection_delegate
     {
     public:
-      virtual void on_message(peer_connection* originating_peer, 
+      virtual void on_message(peer_connection* originating_peer,
                               const message& received_message) = 0;
       virtual void on_connection_closed(peer_connection* originating_peer) = 0;
     };
@@ -40,7 +40,7 @@ namespace bts { namespace net
     public:
       enum class our_connection_state
       {
-        disconnected, 
+        disconnected,
         just_connected, // if in this state, we have sent a hello_message
         connection_accepted, // remote side has sent us a connection_accepted, we're operating normally with them
         connection_rejected // remote side has sent us a connection_rejected, we may be exchanging address with them or may just be waiting for them to close
@@ -118,7 +118,7 @@ namespace bts { namespace net
       fc::optional<std::string> platform;
 
       // for inbound connections, these fields record what the peer sent us in
-      // its hello message.  For outbound, they record what we sent the peer 
+      // its hello message.  For outbound, they record what we sent the peer
       // in our hello message
       fc::ip::address inbound_address;
       uint16_t inbound_port;
@@ -136,7 +136,7 @@ namespace bts { namespace net
       fc::optional<boost::tuple<item_id, fc::time_point> > item_ids_requested_from_peer; /// we check this to detect a timed-out request and in busy()
       item_to_time_map_type sync_items_requested_from_peer; /// ids of blocks we've requested from this peer during sync.  fetch from another peer if this peer disconnects
       uint32_t last_block_number_delegate_has_seen; /// the number of the last block this peer has told us about that the delegate knows (ids_of_items_to_get[0] should be the id of block [this value + 1])
-      item_hash_t last_block_delegate_has_seen; /// the hash of the last block  this peer has told us about that the peer knows 
+      item_hash_t last_block_delegate_has_seen; /// the hash of the last block  this peer has told us about that the peer knows
       fc::time_point_sec last_block_time_delegate_has_seen;
       bool inhibit_fetching_sync_blocks;
       /// @}
@@ -155,9 +155,9 @@ namespace bts { namespace net
       };
       struct timestamp_index{};
       typedef boost::multi_index_container<timestamped_item_id,
-                                           boost::multi_index::indexed_by<boost::multi_index::hashed_unique<boost::multi_index::member<timestamped_item_id, item_id, &timestamped_item_id::item>, 
+                                           boost::multi_index::indexed_by<boost::multi_index::hashed_unique<boost::multi_index::member<timestamped_item_id, item_id, &timestamped_item_id::item>,
                                                                                                             std::hash<item_id> >,
-                                                                          boost::multi_index::ordered_non_unique<boost::multi_index::tag<timestamp_index>, 
+                                                                          boost::multi_index::ordered_non_unique<boost::multi_index::tag<timestamp_index>,
                                                                                                                  boost::multi_index::member<timestamped_item_id, fc::time_point_sec, &timestamped_item_id::timestamp> > > > timestamped_items_set_type;
       timestamped_items_set_type inventory_advertised_to_peer; /// TODO: make this a map to the time/block# we advertised it so we can expire items off of the list
 
@@ -168,12 +168,13 @@ namespace bts { namespace net
       // blockchain catch up
       fc::time_point transaction_fetching_inhibited_until;
 
-      // 
+      //
       fc::future<void> accept_or_connect_task_done;
 
 #ifndef NDEBUG
     private:
       fc::thread* _thread;
+      unsigned _send_message_queue_tasks_running; // temporary debugging
 #endif
     private:
       peer_connection(peer_connection_delegate* delegate);
