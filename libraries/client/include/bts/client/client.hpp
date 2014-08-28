@@ -63,8 +63,8 @@ namespace bts { namespace client {
 
     struct config
     {
-       config( ) : 
-          default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}), 
+       config( ) :
+          default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}),
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
@@ -101,7 +101,7 @@ namespace bts { namespace client {
      * @brief integrates the network, wallet, and blockchain
      *
      */
-    class client : public bts::rpc_stubs::common_api_client, 
+    class client : public bts::rpc_stubs::common_api_client,
                    public std::enable_shared_from_this<client>
     {
        public:
@@ -120,7 +120,7 @@ namespace bts { namespace client {
                    std::function<void(uint32_t)> reindex_status_callback = std::function<void(uint32_t)>());
 
          void init_cli();
-         void set_daemon_mode(bool daemon_mode); 
+         void set_daemon_mode(bool daemon_mode);
 
          void add_node( const string& ep );
 
@@ -179,7 +179,7 @@ extern const std::string BTS_MESSAGE_MAGIC;
 FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
-FC_REFLECT( bts::client::config, 
+FC_REFLECT( bts::client::config,
             (rpc)(default_peers)(chain_servers)(chain_server)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers) )

@@ -14,7 +14,7 @@
 
 namespace bts { namespace net
   {
-    peer_connection::peer_connection(peer_connection_delegate* delegate) : 
+    peer_connection::peer_connection(peer_connection_delegate* delegate) :
       _node(delegate),
       _message_connection(this),
       _total_queued_messages_size(0),
@@ -32,7 +32,8 @@ namespace bts { namespace net
       inhibit_fetching_sync_blocks(false),
       transaction_fetching_inhibited_until(fc::time_point::min())
 #ifndef NDEBUG
-      ,_thread(&fc::thread::current())
+      ,_thread(&fc::thread::current()),
+      _send_message_queue_tasks_running(0)
 #endif
     {
     }
@@ -44,7 +45,7 @@ namespace bts { namespace net
       // cleans up the peer connection's asynchronous tasks which are responsible for notifying the node
       // when it should be deleted.
       // To ease this vicious cycle, we slightly delay the execution of the destructor until the
-      // current task yields.  In the (not uncommon) case where it is the task executing 
+      // current task yields.  In the (not uncommon) case where it is the task executing
       // connect_to or read_loop, this allows the task to finish before the destructor is forced
       // to cancel it.
       return peer_connection_ptr(new peer_connection(delegate));
@@ -54,18 +55,36 @@ namespace bts { namespace net
     void peer_connection::destroy()
     {
       VERIFY_CORRECT_THREAD();
-      try 
+
+#ifndef NDEBUG
+      struct scope_logger {
+        fc::optional<fc::ip::endpoint> endpoint;
+        scope_logger(const fc::optional<fc::ip::endpoint>& endpoint) : endpoint(endpoint) { dlog("entering peer_connection::destroy() for peer ${endpoint}", ("endpoint", endpoint)); }
+        ~scope_logger() { dlog("leaving peer_connection::destroy() for peer ${endpoint}", ("endpoint", endpoint)); }
+      } send_message_scope_logger(get_remote_endpoint());
+#endif
+
+      try
       {
+        dlog("calling close_connection()");
         close_connection();
-      } 
-      catch ( ... ) 
+        dlog("close_connection completed normally");
+      }
+      catch ( const fc::canceled_exception& )
       {
+        assert(false && "the task that deletes peers should not be canceled because it will prevent us from cleaning up correctly");
+      }
+      catch ( ... )
+      {
+        dlog("close_connection threw");
       }
 
-      try 
-      { 
-        _send_queued_messages_done.cancel_and_wait(); 
-      } 
+      try
+      {
+        dlog("canceling _send_queued_messages task");
+        _send_queued_messages_done.cancel_and_wait(__FUNCTION__);
+        dlog("cancel_and_wait completed normally");
+      }
       catch( const fc::exception& e )
       {
         wlog("Unexpected exception from peer_connection's send_queued_messages_task : ${e}", ("e", e));
@@ -74,11 +93,13 @@ namespace bts { namespace net
       {
         wlog("Unexpected exception from peer_connection's send_queued_messages_task");
       }
-      
-      try 
-      { 
-        accept_or_connect_task_done.cancel_and_wait(); 
-      } 
+
+      try
+      {
+        dlog("canceling accept_or_connect_task");
+        accept_or_connect_task_done.cancel_and_wait(__FUNCTION__);
+        dlog("accept_or_connect_task completed normally");
+      }
       catch( const fc::exception& e )
       {
         wlog("Unexpected exception from peer_connection's accept_or_connect_task : ${e}", ("e", e));
@@ -104,6 +125,12 @@ namespace bts { namespace net
     void peer_connection::accept_connection()
     {
       VERIFY_CORRECT_THREAD();
+
+      struct scope_logger {
+        scope_logger() { dlog("entering peer_connection::accept_connection()"); }
+        ~scope_logger() { dlog("leaving peer_connection::accept_connection()"); }
+      } accept_connection_scope_logger;
+
       try
       {
         assert( our_state == our_connection_state::disconnected &&
@@ -114,7 +141,7 @@ namespace bts { namespace net
         negotiation_status = connection_negotiation_status::accepted;
         _remote_endpoint = _message_connection.get_socket().remote_endpoint();
 
-        // firewall-detecting info is pretty useless for inbound connections, but initialize 
+        // firewall-detecting info is pretty useless for inbound connections, but initialize
         // it the best we can
         fc::ip::endpoint local_endpoint = _message_connection.get_socket().local_endpoint();
         inbound_address = local_endpoint.get_address();
@@ -137,7 +164,7 @@ namespace bts { namespace net
       VERIFY_CORRECT_THREAD();
       try
       {
-        assert( our_state == our_connection_state::disconnected && 
+        assert( our_state == our_connection_state::disconnected &&
                 their_state == their_connection_state::disconnected );
         direction = peer_connection_direction::outbound;
 
@@ -145,12 +172,16 @@ namespace bts { namespace net
         if( local_endpoint )
         {
           // the caller wants us to bind the local side of this socket to a specific ip/port
-          // This depends on the ip/port being unused, and on being able to set the 
-          // SO_REUSEADDR/SO_REUSEPORT flags, and either of these might fail, so we need to 
+          // This depends on the ip/port being unused, and on being able to set the
+          // SO_REUSEADDR/SO_REUSEPORT flags, and either of these might fail, so we need to
           // detect if this fails.
           try
           {
             _message_connection.bind( *local_endpoint );
+          }
+          catch ( const fc::canceled_exception& )
+          {
+            throw;
           }
           catch ( const fc::exception& except )
           {
@@ -187,12 +218,29 @@ namespace bts { namespace net
     void peer_connection::send_queued_messages_task()
     {
       VERIFY_CORRECT_THREAD();
+#ifndef NDEBUG
+      struct counter {
+        unsigned& _send_message_queue_tasks_counter;
+        counter(unsigned& var) : _send_message_queue_tasks_counter(var) { dlog("entering peer_connection::send_queued_messages_task()"); assert(_send_message_queue_tasks_counter == 0); ++_send_message_queue_tasks_counter; }
+        ~counter() { assert(_send_message_queue_tasks_counter == 1); --_send_message_queue_tasks_counter; dlog("leaving peer_connection::send_queued_messages_task()"); }
+      } concurrent_invocation_counter(_send_message_queue_tasks_running);
+#endif
       while (!_queued_messages.empty())
       {
         _queued_messages.front().transmission_start_time = fc::time_point::now();
         try
         {
+          dlog("peer_connection::send_queued_messages_task() calling message_oriented_connection::send_message() "
+               "to send message of type ${type} for peer ${endpoint}",
+               ("type", _queued_messages.front().message_to_send.msg_type)("endpoint", get_remote_endpoint()));
           _message_connection.send_message(_queued_messages.front().message_to_send);
+          dlog("peer_connection::send_queued_messages_task()'s call to message_oriented_connection::send_message() completed normally for peer ${endpoint}",
+               ("endpoint", get_remote_endpoint()));
+        }
+        catch (const fc::canceled_exception&)
+        {
+          dlog("message_oriented_connection::send_message() was canceled, rethrowing canceled_exception");
+          throw;
         }
         catch (const fc::exception& send_error)
         {
@@ -207,15 +255,26 @@ namespace bts { namespace net
           }
           return;
         }
+        catch (const std::exception& e)
+        {
+          elog("message_oriented_exception::send_message() threw a std::exception(): ${what}", ("what", e.what()));
+        }
+        catch (...)
+        {
+          elog("message_oriented_exception::send_message() threw an unhandled exception");
+        }
         _queued_messages.front().transmission_finish_time = fc::time_point::now();
         _total_queued_messages_size -= _queued_messages.front().message_to_send.size;
         _queued_messages.pop();
       }
+      dlog("leaving peer_connection::send_queued_messages_task() due to queue exhaustion");
     }
 
     void peer_connection::send_message( const message& message_to_send )
     {
       VERIFY_CORRECT_THREAD();
+      dlog("peer_connection::send_message() enqueueing message of type ${type} for peer ${endpoint}",
+           ("type", message_to_send.msg_type)("endpoint", get_remote_endpoint()));
       _queued_messages.emplace(queued_message(message_to_send));
       _total_queued_messages_size += message_to_send.size;
       if (_total_queued_messages_size > BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES)
@@ -233,11 +292,17 @@ namespace bts { namespace net
         return;
       }
 
-      if( _send_queued_messages_done.valid() && _send_queued_messages_done.canceled() ) 
+      if( _send_queued_messages_done.valid() && _send_queued_messages_done.canceled() )
         FC_THROW_EXCEPTION(fc::exception, "Attempting to send a message on a connection that is being shut down");
 
       if (!_send_queued_messages_done.valid() || _send_queued_messages_done.ready())
-           _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); }, "send_queued_messages_task");
+      {
+        dlog("peer_connection::send_message() is firing up send_queued_message_task");
+        _send_queued_messages_done = fc::async([this](){ send_queued_messages_task(); }, "send_queued_messages_task");
+      }
+      else
+        dlog("peer_connection::send_message() doesn't need to fire up send_queued_message_task, it's already running");
+
     }
 
     void peer_connection::close_connection()
@@ -297,8 +362,8 @@ namespace bts { namespace net
       _remote_endpoint = new_remote_endpoint;
     }
 
-    bool peer_connection::busy() 
-    { 
+    bool peer_connection::busy()
+    {
       VERIFY_CORRECT_THREAD();
       return !items_requested_from_peer.empty() || !sync_items_requested_from_peer.empty() || item_ids_requested_from_peer;
     }
