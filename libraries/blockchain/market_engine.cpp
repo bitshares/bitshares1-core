@@ -726,8 +726,7 @@ class market_engine
                 _current_ask = ask;
             }
             ++_ask_itr;
-            //idump( (_current_ask) );
-            return true;
+            return _current_ask.valid();
          }
          return _current_ask.valid();
       } FC_CAPTURE_AND_RETHROW() }

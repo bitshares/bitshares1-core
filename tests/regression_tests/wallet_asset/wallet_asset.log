@@ -13,7 +13,7 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 {
-  "expiration": "20140620T154750",
+  "expiration": "20140620T154800",
   "delegate_slate_id": null,
   "operations": [{
       "type": "withdraw_op_type",
@@ -36,8 +36,8 @@ default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATI
     }
   ],
   "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960572b6063ae6a5d89e17602c0454e509731efe9c33832be9ccd08195c368caf21",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22c5a7be4eb20d05d9592b20818e97b7dcfb345ef11db7a650b9c025737a571a13"
+    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960f60ff6fc674b45d20a15fec744af786bb61071267e1c9c7a1876c14e4e5126c9",
+    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2284b4ee4de479efccc3c2afc9945626ac45265699b396229cc8fd5ecc65349212"
   ]
 }
 default (unlocked) >>> wallet_account_balance test

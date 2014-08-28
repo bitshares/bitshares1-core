@@ -3,7 +3,11 @@
 #include <stdint.h>
 
 /* Define client version here */
-#define BTS_CLIENT_VERSION                                  "0.4.9"
+#define BTS_CLIENT_VERSION                                  "0.4.9b"
+
+/* Comment out this line for a non-test network */
+//#define BTS_TEST_NETWORK
+#define BTS_TEST_NETWORK_VERSION                            21
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
