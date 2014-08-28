@@ -43,7 +43,11 @@
 #endif
 
 namespace bts { namespace cli {
-  
+
+  FC_DECLARE_EXCEPTION( cli_exception, 11000, "CLI Error" ) 
+  FC_DECLARE_DERIVED_EXCEPTION( abort_cli_command, bts::cli::cli_exception, 11001, "command aborted by user" );
+  FC_DECLARE_DERIVED_EXCEPTION( exit_cli_command, bts::cli::cli_exception, 11002, "exit CLI client requested by user" );
+
   namespace detail
   {
       class cli_impl
@@ -145,9 +149,9 @@ namespace bts { namespace cli {
                  if( command.size() )
                    *_out << "Error: invalid command \"" << command << "\"\n";
               }
-              catch( const fc::canceled_exception&)
+              catch( const bts::cli::abort_cli_command&)
               {
-                 throw;
+                throw;
               }
               catch( const fc::exception& e)
               {
@@ -167,7 +171,11 @@ namespace bts { namespace cli {
                   fc::variant result = _self->execute_interactive_command(command, arguments);
                   _self->format_and_print_result(command, arguments, result);
                 }
-                catch( const fc::canceled_exception&)
+                catch( const bts::cli::abort_cli_command&)
+                {
+                  throw;
+                }
+                catch( const bts::cli::exit_cli_command&)
                 {
                   throw;
                 }
@@ -214,10 +222,12 @@ namespace bts { namespace cli {
                 {
                   parse_and_execute_interactive_command(command,argument_stream);
                 }
-                catch( const fc::canceled_exception& )
+                catch (const bts::cli::exit_cli_command&)
                 {
-                  if( command == "quit" ) 
-                    return false;
+                  return false;
+                }
+                catch( const bts::cli::abort_cli_command& )
+                {
                   *_out << "Command aborted\n";
                 }
               } //end if command line not empty
@@ -229,7 +239,7 @@ namespace bts { namespace cli {
             {
                   if( _quit ) return std::string();
                   if( _input_stream == nullptr )
-                     FC_CAPTURE_AND_THROW( fc::canceled_exception ); //_input_stream != nullptr );
+                     FC_CAPTURE_AND_THROW( bts::cli::exit_cli_command ); //_input_stream != nullptr );
 
                   //FC_ASSERT( _self->is_interactive() );
                   string line;
@@ -441,7 +451,7 @@ namespace bts { namespace cli {
               if( command == "quit" || command == "stop" || command == "exit" )
               {
                 _quit = true;
-                FC_THROW_EXCEPTION( fc::canceled_exception, "quit command issued" );
+                FC_THROW_EXCEPTION( bts::cli::exit_cli_command, "quit command issued" );
               }
               
               return execute_command( command, arguments );
@@ -476,7 +486,8 @@ namespace bts { namespace cli {
                 while( true )
                 {
                     input = get_line( prompt + ": ", no_echo );
-                    if( input.empty() ) FC_THROW_EXCEPTION(fc::canceled_exception, "input aborted");
+                    if( input.empty() ) 
+                      FC_THROW_EXCEPTION(bts::cli::abort_cli_command, "input aborted");
 
                     if( verify )
                     {
@@ -510,7 +521,7 @@ namespace bts { namespace cli {
                 {
                   parse_and_execute_interactive_command( "wallet_create", argument_stream );
                 }
-                catch( const fc::canceled_exception& )
+                catch( const bts::cli::abort_cli_command& )
                 {
                 }
               }
@@ -521,13 +532,13 @@ namespace bts { namespace cli {
                 {
                   parse_and_execute_interactive_command( "wallet_open", argument_stream );
                 }
-                catch( const fc::canceled_exception& )
+                catch( const bts::cli::abort_cli_command& )
                 {
                 }
               }
               else if (choice == "q")
               {
-                FC_THROW_EXCEPTION(fc::canceled_exception, "");
+                FC_THROW_EXCEPTION(bts::cli::abort_cli_command, "");
               }
               else
               {
