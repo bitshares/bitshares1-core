@@ -546,6 +546,25 @@ namespace bts { namespace wallet {
       return itr->second;
    }
 
+   vector<wallet_balance_record> wallet_db::get_all_balances( const string& account_name, uint32_t limit )
+   {
+       auto ret = vector<wallet_balance_record>();
+       auto count = 0;
+       for( auto item : balances )
+       {
+           if (limit == -1 || count == limit )
+               break;
+           auto oacct = lookup_account( item.second.owner() );
+           if ( oacct.valid() && oacct->name == account_name )
+           {
+               ret.push_back(item.second);
+               count++;
+           }
+       }
+       return ret;
+   }
+
+
    owallet_key_record wallet_db::lookup_key( const address& address )const
    {
       auto btc_to_bts_itr = btc_to_bts_address.find( address );

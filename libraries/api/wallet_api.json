@@ -1287,6 +1287,19 @@
          "aliases" : ["votes"]
       },
       {
+         "method_name" : "wallet_check_vote_proportion",
+         "description" : "Check how much this account is utilizing its voting power"
+         "return_type" : "float",
+         "parameters"  : [
+             {
+                "name" : "account",
+                "type" : "account_name",
+                "description" : ""
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_set_setting",
          "description" : "Set a property in the GUI settings DB",
          "return_type" : "void",

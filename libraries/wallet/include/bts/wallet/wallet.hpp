@@ -508,6 +508,7 @@ namespace bts { namespace wallet {
          void sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const;
          void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record );
 
+         float get_vote_proportion( const string& account_name );
          slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );
 
          private_key_type get_private_key( const address& addr )const;

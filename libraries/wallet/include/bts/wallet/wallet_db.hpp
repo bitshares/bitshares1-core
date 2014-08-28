@@ -57,6 +57,7 @@ namespace bts { namespace wallet {
          owallet_account_record lookup_account( const string& account_name )const;
          owallet_account_record lookup_account( account_id_type aid )const;
 
+         vector<wallet_balance_record>  get_all_balances( const string& account_name, uint32_t limit );
          owallet_balance_record lookup_balance( const balance_id_type& balance_id )const;
          owallet_key_record     lookup_key( const address& address )const;
 

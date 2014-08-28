@@ -3541,6 +3541,12 @@ config load_config( const fc::path& datadir )
     return _chain_db->find_delegate_vote_discrepancies();
   }
 
+
+  float   client_impl::wallet_check_vote_proportion( const string& account_name )
+  {
+      return _wallet->get_vote_proportion( account_name );
+  }
+
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
    {
       return _chain_db->export_fork_graph( start_block, end_block, filename );

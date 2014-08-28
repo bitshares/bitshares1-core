@@ -2485,6 +2485,31 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+
+   float wallet::get_vote_proportion( const string& account_name )
+   {
+       uint64_t total_possible = 0;
+       uint64_t total = 0;
+       for( auto balance : my->_wallet_db.get_all_balances( account_name, -1 ) )
+       {
+           auto oslate = my->_blockchain->get_delegate_slate( balance.delegate_slate_id() );
+           if( oslate.valid() )
+           {
+               total += balance.get_balance().amount * oslate->supported_delegates.size();
+               ulog("total: ${t}", ("t", total));
+           }
+           total_possible += balance.get_balance().amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
+           ulog("total_possible: ${t}", ("t", total_possible));
+       }
+       ulog("total_possible: ${t}", ("t", total_possible));
+       ulog("total: ${t}", ("t", total));
+       if( total_possible == 0 )
+           return 0;
+       float ratio = float(total) / float(total_possible);
+       return ratio;
+   }
+
+
    slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id, vote_selection_method selection_method )
    {
       auto slate_id = slate_id_type( 0 );
