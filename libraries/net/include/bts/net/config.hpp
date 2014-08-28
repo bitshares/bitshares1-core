@@ -30,7 +30,7 @@
 #define BTS_NET_DEFAULT_P2P_PORT                        1776
 #define BTS_NET_DEFAULT_DESIRED_CONNECTIONS             8
 #define BTS_NET_DELEGATE_DESIRED_CONNECTIONS            20
-#define BTS_NET_DEFAULT_MAX_CONNECTIONS                 100
+#define BTS_NET_DEFAULT_MAX_CONNECTIONS                 200
 
 #define BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES        (1024 * 1024)
 

@@ -22,9 +22,15 @@ namespace bts { namespace net {
               _client_socket = std::unique_ptr<fc::tcp_socket>(new fc::tcp_socket);
               while(!_client_socket->is_open() && next_server != _chain_servers.end()) {
                   _client_socket = std::unique_ptr<fc::tcp_socket>(new fc::tcp_socket);
-                  try {
+                  try
+                  {
                       _client_socket->connect_to(*(next_server++));
-                  } catch (const fc::exception& e) {
+                  }
+                  catch ( const fc::canceled_exception& )
+                  {
+                      throw;
+                  }
+                  catch (const fc::exception& e) {
                       wlog("Failed to connect to chain_server: ${e}", ("e", e.to_detail_string()));
                       _client_socket->close();
                       continue;

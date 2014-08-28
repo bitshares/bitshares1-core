@@ -25,7 +25,7 @@ public:
   fc::promise<void>::ptr _probe_complete_promise;
 
 public:
-  peer_probe() : 
+  peer_probe() :
     _peer_closed_connection(false),
     _we_closed_connection(false),
     _connection(bts::net::peer_connection::make_shared(this)),
@@ -34,7 +34,7 @@ public:
     _probe_complete_promise(fc::promise<void>::ptr(new fc::promise<void>("probe_complete")))
   {}
 
-  void start(const fc::ip::endpoint& endpoint_to_probe, 
+  void start(const fc::ip::endpoint& endpoint_to_probe,
              const fc::ecc::private_key& my_node_id,
              const bts::blockchain::digest_type& chain_id)
   {
@@ -46,7 +46,7 @@ public:
     catch (const fc::timeout_exception&)
     {
       ilog("timeout connecting to node ${endpoint}", ("endpoint", endpoint_to_probe));
-      connect_task.cancel();
+      connect_task.cancel(__FUNCTION__);
       throw;
     }
 
@@ -55,22 +55,22 @@ public:
     shared_secret_encoder.write(shared_secret.data(), sizeof(shared_secret));
     fc::ecc::compact_signature signature = my_node_id.sign_compact(shared_secret_encoder.result());
 
-    bts::net::hello_message hello("map_bts_network", 
+    bts::net::hello_message hello("map_bts_network",
                                   BTS_NET_PROTOCOL_VERSION,
                                   fc::ip::address(), 0, 0,
-                                  my_node_id.get_public_key(), 
+                                  my_node_id.get_public_key(),
                                   signature,
                                   chain_id,
                                   fc::variant_object());
-    
+
     _connection->send_message(hello);
   }
 
-  void on_message(bts::net::peer_connection* originating_peer, 
+  void on_message(bts::net::peer_connection* originating_peer,
                   const bts::net::message& received_message) override
   {
     bts::net::message_hash_type message_hash = received_message.id();
-    dlog( "handling message ${type} ${hash} size ${size} from peer ${endpoint}", 
+    dlog( "handling message ${type} ${hash} size ${size} from peer ${endpoint}",
           ( "type", bts::net::core_message_type_enum(received_message.msg_type ) )("hash", message_hash )("size", received_message.size )("endpoint", originating_peer->get_remote_endpoint() ) );
     switch ( received_message.msg_type )
     {
@@ -101,35 +101,35 @@ public:
     }
   }
 
-  void on_hello_message(bts::net::peer_connection* originating_peer, 
+  void on_hello_message(bts::net::peer_connection* originating_peer,
                         const bts::net::hello_message& hello_message_received)
   {
     _node_id = hello_message_received.node_id;
     originating_peer->send_message(bts::net::connection_rejected_message());
   }
 
-  void on_connection_accepted_message(bts::net::peer_connection* originating_peer, 
+  void on_connection_accepted_message(bts::net::peer_connection* originating_peer,
                                       const bts::net::connection_accepted_message& connection_accepted_message_received)
   {
     _connection_was_rejected = false;
     originating_peer->send_message(bts::net::address_request_message());
   }
 
-  void on_connection_rejected_message( bts::net::peer_connection* originating_peer, 
+  void on_connection_rejected_message( bts::net::peer_connection* originating_peer,
                                        const bts::net::connection_rejected_message& connection_rejected_message_received )
   {
     _connection_was_rejected = true;
     originating_peer->send_message(bts::net::address_request_message());
   }
 
-  void on_address_request_message(bts::net::peer_connection* originating_peer, 
+  void on_address_request_message(bts::net::peer_connection* originating_peer,
                                   const bts::net::address_request_message& address_request_message_received)
   {
     originating_peer->send_message(bts::net::address_message());
   }
 
 
-  void on_address_message(bts::net::peer_connection* originating_peer, 
+  void on_address_message(bts::net::peer_connection* originating_peer,
                           const bts::net::address_message& address_message_received)
   {
     _peers = address_message_received.addresses;
@@ -137,7 +137,7 @@ public:
     _we_closed_connection = true;
   }
 
-  void on_closing_connection_message(bts::net::peer_connection* originating_peer, 
+  void on_closing_connection_message(bts::net::peer_connection* originating_peer,
                                      const bts::net::closing_connection_message& closing_connection_message_received)
   {
     if (_we_closed_connection)
@@ -146,12 +146,12 @@ public:
       _peer_closed_connection = true;
   }
 
-  void on_current_time_request_message(bts::net::peer_connection* originating_peer, 
+  void on_current_time_request_message(bts::net::peer_connection* originating_peer,
                                        const bts::net::current_time_request_message& current_time_request_message_received)
   {
   }
 
-  void on_current_time_reply_message(bts::net::peer_connection* originating_peer, 
+  void on_current_time_reply_message(bts::net::peer_connection* originating_peer,
                                      const bts::net::current_time_reply_message& current_time_reply_message_received)
   {
   }
@@ -204,7 +204,7 @@ int main(int argc, char** argv)
     peer_probe probe;
     try
     {
-      probe.start(this_node_info.remote_endpoint, 
+      probe.start(this_node_info.remote_endpoint,
                   my_node_id,
                   chain_db->chain_id());
       probe.wait();
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
 
       for (const bts::net::address_info& info : probe._peers)
       {
-        if (nodes_already_visited.find(info.remote_endpoint) == nodes_already_visited.end() && 
+        if (nodes_already_visited.find(info.remote_endpoint) == nodes_already_visited.end() &&
             info.firewalled == bts::net::firewalled_state::not_firewalled &&
             nodes_to_visit_set.find(info.remote_endpoint) == nodes_to_visit_set.end())
         {
@@ -263,7 +263,7 @@ int main(int argc, char** argv)
   dot_stream << "  // Seed node is missing connections to " << seed_node_missing_connections.size() << " non-firewalled nodes:\n";
   for (const bts::net::node_id_t& id : seed_node_missing_connections)
     dot_stream << "  //           " << (std::string)address_info_by_node_id[id].remote_endpoint << "\n";
-  
+
   dot_stream << "  layout=\"circo\";\n";
   //for (const auto& node_and_connections : connections_by_node_id)
   //  all_known_nodes[node_and_connections.first] = address_info_by_node_id[node_and_connections.first].remote_endpoint;

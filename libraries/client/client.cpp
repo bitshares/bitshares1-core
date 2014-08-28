@@ -38,6 +38,7 @@
 
 #include <fc/thread/thread.hpp>
 #include <fc/thread/scoped_lock.hpp>
+#include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
 #include <fc/log/logger_config.hpp>
@@ -789,7 +790,7 @@ config load_config( const fc::path& datadir )
           try
           {
             ilog( "Canceling delegate loop..." );
-            _delegate_loop_complete.cancel_and_wait();
+            _delegate_loop_complete.cancel_and_wait(__FUNCTION__);
             ilog( "Delegate loop canceled" );
           }
           catch( const fc::exception& e )
@@ -850,6 +851,10 @@ config load_config( const fc::path& datadir )
 
                       _p2p_node->broadcast( block_message( next_block ) );
                       ilog( "Produced block #${n}!", ("n",next_block.block_num) );
+                   }
+                   catch ( const fc::canceled_exception& )
+                   {
+                      throw;
                    }
                    catch( const fc::exception& e )
                    {
@@ -1004,7 +1009,7 @@ config load_config( const fc::path& datadir )
        {
           try
           {
-            _rebroadcast_pending_loop_done.cancel_and_wait();
+            _rebroadcast_pending_loop_done.cancel_and_wait(__FUNCTION__);
           }
           catch (const fc::exception& e)
           {
@@ -1037,6 +1042,10 @@ config load_config( const fc::path& datadir )
               {
                 network_broadcast_transaction( trx );
               }
+            }
+            catch ( const fc::canceled_exception& )
+            {
+              throw;
             }
             catch ( const fc::exception& e )
             {
@@ -1507,6 +1516,10 @@ config load_config( const fc::path& datadir )
          {
            return _chain_db->get_block_header(block_id).timestamp;
          }
+         catch ( const fc::canceled_exception& )
+         {
+           throw;
+         }
          catch (const fc::exception&)
          {
            return fc::time_point_sec::min();
@@ -1547,7 +1560,7 @@ config load_config( const fc::path& datadir )
       {
         try
         {
-          _blocks_too_old_monitor_done.cancel_and_wait();
+          _blocks_too_old_monitor_done.cancel_and_wait(__FUNCTION__);
         }
         catch( const fc::exception& e )
         {
@@ -1634,14 +1647,11 @@ config load_config( const fc::path& datadir )
             my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
           }
         }
-        catch( const fc::exception& e )
+        catch ( const wrong_chain_id& )
         {
-          if( dynamic_cast<const wrong_chain_id*>( &e ) != nullptr )
-          {
-            elog("Wrong chain ID. Deleting database and attempting to recover.");
-            fc::remove_all( data_dir / "chain" );
-            my->_chain_db->open( data_dir / "chain", genesis_file_path );
-          }
+          elog("Wrong chain ID. Deleting database and attempting to recover.");
+          fc::remove_all( data_dir / "chain" );
+          my->_chain_db->open( data_dir / "chain", genesis_file_path );
         }
 
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
@@ -1962,6 +1972,7 @@ config load_config( const fc::path& datadir )
     {
       try
       {
+          ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
           if( std::all_of( account.begin(), account.end(), ::isdigit) )
               return _chain_db->get_account_record( std::stoi( account ) );
           else if( account.substr( 0, string( BTS_ADDRESS_PREFIX ).size() ) == BTS_ADDRESS_PREFIX )
@@ -1986,6 +1997,7 @@ config load_config( const fc::path& datadir )
     {
       try
       {
+          ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
           if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
               return _chain_db->get_asset_record( asset );
           else
@@ -2065,6 +2077,7 @@ config load_config( const fc::path& datadir )
     {
       try
       {
+          ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
           if( block.size() == 40 )
               return _chain_db->get_block_digest( block_id_type( block ) );
           else
@@ -2087,6 +2100,10 @@ config load_config( const fc::path& datadir )
           const auto count = _wallet->import_bitcoin_wallet(filename, "", account_name);
           _wallet->auto_backup( "bitcoin_import" );
           return count;
+      }
+      catch ( const fc::canceled_exception& )
+      {
+          throw;
       }
       catch( const fc::exception& e )
       {
@@ -2160,6 +2177,7 @@ config load_config( const fc::path& datadir )
     {
       try
       {
+          ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
           //If input is an account name...
           return utilities::key_to_wif( _wallet->get_active_private_key( input ) );
       }
@@ -2167,6 +2185,7 @@ config load_config( const fc::path& datadir )
       {
           try
           {
+             ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
              //If input is an address...
              return utilities::key_to_wif( _wallet->get_private_key( address( input ) ) );
           }
@@ -2174,6 +2193,7 @@ config load_config( const fc::path& datadir )
           {
               try
               {
+                 ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
                  //If input is a public key...
                  return utilities::key_to_wif( _wallet->get_private_key( address( public_key_type( input ) ) ) );
               }
@@ -2322,7 +2342,8 @@ config load_config( const fc::path& datadir )
       if( !my->_config.chain_servers.empty() )
       {
         bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
-        for( const auto& server : my->_config.chain_servers ) chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
+        for( const auto& server : my->_config.chain_servers )
+          chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
         auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
           my->_chain_db->push_block(new_block);
         }, my->_chain_db->get_head_block_num() + 1);
@@ -2588,6 +2609,7 @@ config load_config( const fc::path& datadir )
     {
         fc::ip::endpoint ep;
         try {
+            ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
             ep = fc::ip::endpoint::from_string(remote_endpoint.c_str());
         } catch (...) {
             auto pos = remote_endpoint.find(':');

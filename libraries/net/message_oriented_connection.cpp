@@ -36,7 +36,7 @@ namespace bts { namespace net {
       fc::time_point _connected_time;
       fc::time_point _last_message_received_time;
       fc::time_point _last_message_sent_time;
-      
+
       bool _send_message_in_progress;
 
 #ifndef NDEBUG
@@ -51,7 +51,7 @@ namespace bts { namespace net {
       void connect_to(const fc::ip::endpoint& remote_endpoint);
       void bind(const fc::ip::endpoint& local_endpoint);
 
-      message_oriented_connection_impl(message_oriented_connection* self, 
+      message_oriented_connection_impl(message_oriented_connection* self,
                                        message_oriented_connection_delegate* delegate = nullptr);
       ~message_oriented_connection_impl();
 
@@ -67,8 +67,8 @@ namespace bts { namespace net {
       fc::sha512 get_shared_secret() const;
     };
 
-    message_oriented_connection_impl::message_oriented_connection_impl(message_oriented_connection* self, 
-                                                                       message_oriented_connection_delegate* delegate) 
+    message_oriented_connection_impl::message_oriented_connection_impl(message_oriented_connection* self,
+                                                                       message_oriented_connection_delegate* delegate)
     : _self(self),
       _delegate(delegate),
       _bytes_received(0),
@@ -82,17 +82,20 @@ namespace bts { namespace net {
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
       VERIFY_CORRECT_THREAD();
-      ilog( "in ~message_oriented_connection_impl()" );
+      fc::optional<fc::ip::endpoint> remote_endpoint;
+      if (_sock.get_socket().is_open())
+        remote_endpoint = _sock.get_socket().remote_endpoint();
+      ilog( "in ~message_oriented_connection_impl() for ${endpoint}", ("endpoint", remote_endpoint) );
 
       if (_send_message_in_progress)
         elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
              "The task calling send_message() should have been canceled already");
       assert(!_send_message_in_progress);
 
-      try 
-      { 
-        _read_loop_done.cancel_and_wait();
-      } 
+      try
+      {
+        _read_loop_done.cancel_and_wait(__FUNCTION__);
+      }
       catch ( const fc::exception& e )
       {
         wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring: ${e}", ("e",e) );
@@ -140,7 +143,7 @@ namespace bts { namespace net {
       static_assert(BUFFER_SIZE >= sizeof(message_header), "insufficient buffer");
 
       _connected_time = fc::time_point::now();
-      try 
+      try
       {
         message m;
         while( true )
@@ -164,26 +167,27 @@ namespace bts { namespace net {
 
           _last_message_received_time = fc::time_point::now();
 
-          try 
+          try
           {
             // message handling errors are warnings...
             _delegate->on_message(_self, m);
-          } 
+          }
           /// Dedicated catches needed to distinguish from general fc::exception
-          catch ( fc::canceled_exception& e ) { throw e; }
-          catch ( fc::eof_exception& e ) { throw e; }
-          catch ( fc::exception& e) 
-          { 
+          catch ( const fc::canceled_exception& e ) { throw e; }
+          catch ( const fc::eof_exception& e ) { throw e; }
+          catch ( const fc::exception& e)
+          {
             /// Here loop should be continued so exception should be just caught locally.
             wlog( "message transmission failed ${er}", ("er", e.to_detail_string() ) );
             throw;
           }
         }
-      } 
+      }
       catch ( const fc::canceled_exception& e )
       {
-        wlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
-        _delegate->on_connection_closed(_self);
+        wlog( "caught a canceled_exception in read_loop.  this should mean we're in the process of deleting this object already, so there's no need to notify the delegate: ${e}", ("e", e.to_detail_string() ) );
+        //_delegate->on_connection_closed(_self);
+        throw;
       }
       catch ( const fc::eof_exception& e )
       {
@@ -197,9 +201,16 @@ namespace bts { namespace net {
 
         FC_RETHROW_EXCEPTION( e, warn, "disconnected ${e}", ("e", e.to_detail_string() ) );
       }
+      catch ( const std::exception& e )
+      {
+        elog( "disconnected ${er}", ("er", e.what() ) );
+        _delegate->on_connection_closed(_self);
+
+        FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected ${e}", ("e", e.what() ) );
+      }
       catch ( ... )
       {
-         elog( "something else happened" );
+         elog( "unexpected exception" );
         _delegate->on_connection_closed(_self);
         FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected: {e}", ("e", fc::except_str() ) );
       }
@@ -208,19 +219,29 @@ namespace bts { namespace net {
     void message_oriented_connection_impl::send_message(const message& message_to_send)
     {
       VERIFY_CORRECT_THREAD();
+#ifndef NDEBUG
+      fc::optional<fc::ip::endpoint> remote_endpoint;
+      if (_sock.get_socket().is_open())
+        remote_endpoint = _sock.get_socket().remote_endpoint();
+      struct scope_logger {
+        const fc::optional<fc::ip::endpoint>& endpoint;
+        scope_logger(const fc::optional<fc::ip::endpoint>& endpoint) : endpoint(endpoint) { dlog("entering message_oriented_connection::send_message() for peer ${endpoint}", ("endpoint", endpoint)); }
+        ~scope_logger() { dlog("leaving message_oriented_connection::send_message() for peer ${endpoint}", ("endpoint", endpoint)); }
+      } send_message_scope_logger(remote_endpoint);
+#endif
       struct verify_no_send_in_progress {
         bool& var;
-        verify_no_send_in_progress(bool& var) : var(var) 
+        verify_no_send_in_progress(bool& var) : var(var)
         {
           if (var)
             elog("Error: two tasks are calling message_oriented_connection::send_message() at the same time");
           assert(!var);
-          var = true; 
+          var = true;
         }
         ~verify_no_send_in_progress() { var = false; }
       } _verify_no_send_in_progress(_send_message_in_progress);
 
-      try 
+      try
       {
         size_t size_of_message_and_header = sizeof(message_header) + message_to_send.size;
         //pad the message we send to a multiple of 16 bytes
@@ -232,7 +253,7 @@ namespace bts { namespace net {
         _sock.flush();
         _bytes_sent += size_with_padding;
         _last_message_sent_time = fc::time_point::now();
-      } FC_RETHROW_EXCEPTIONS( warn, "unable to send message" );    
+      } FC_RETHROW_EXCEPTIONS( warn, "unable to send message" );
     }
 
     void message_oriented_connection_impl::close_connection()
@@ -274,7 +295,7 @@ namespace bts { namespace net {
   } // end namespace bts::net::detail
 
 
-  message_oriented_connection::message_oriented_connection(message_oriented_connection_delegate* delegate) : 
+  message_oriented_connection::message_oriented_connection(message_oriented_connection_delegate* delegate) :
     my(new detail::message_oriented_connection_impl(this, delegate))
   {
   }
@@ -302,7 +323,7 @@ namespace bts { namespace net {
   {
     my->bind(local_endpoint);
   }
-  
+
   void message_oriented_connection::send_message(const message& message_to_send)
   {
     my->send_message(message_to_send);
@@ -336,7 +357,7 @@ namespace bts { namespace net {
   {
     return my->get_connection_time();
   }
-  fc::sha512 message_oriented_connection::get_shared_secret() const 
+  fc::sha512 message_oriented_connection::get_shared_secret() const
   {
     return my->get_shared_secret();
   }
