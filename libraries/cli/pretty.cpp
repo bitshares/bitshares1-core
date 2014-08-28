@@ -296,7 +296,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         else
             out << std::setw( 32 ) << pretty_shorten( delegate_name, 29 ) + " *";
 
-        out << std::setw( 15 ) << pretty_percent( delegate_record.net_votes(), share_supply, 10 );
+        out << std::setw( 15 ) << pretty_percent( delegate_record.net_votes(), share_supply, 8 );
 
         const auto num_produced = delegate_record.delegate_info->blocks_produced;
         const auto num_missed = delegate_record.delegate_info->blocks_missed;

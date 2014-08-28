@@ -1028,7 +1028,7 @@ namespace bts { namespace blockchain {
              my->initialize_genesis( genesis_file );
 
              if( !reindex_status_callback )
-                std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
+                std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database... [/]" << std::flush;
              else
                  reindex_status_callback(0);
 
