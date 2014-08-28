@@ -185,8 +185,8 @@ namespace bts { namespace net {
       } 
       catch ( const fc::canceled_exception& e )
       {
-        wlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
-        _delegate->on_connection_closed(_self);
+        wlog( "caught a canceled_exception in read_loop.  this should mean we're in the process of deleting this object already, so there's no need to notify the delegate: ${e}", ("e", e.to_detail_string() ) );
+        //_delegate->on_connection_closed(_self);
         throw;
       }
       catch ( const fc::eof_exception& e )

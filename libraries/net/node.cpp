@@ -456,7 +456,10 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _dump_node_status_task_done;
 
+#define USE_PEERS_TO_DELETE_MUTEX 1
+#ifdef USE_PEERS_TO_DELETE_MUTEX
       fc::mutex _peers_to_delete_mutex;
+#endif
       std::list<peer_connection_ptr> _peers_to_delete;
       fc::future<void> _delayed_peer_deletion_task_done;
 
@@ -1310,28 +1313,61 @@ namespace bts { namespace net { namespace detail {
     void node_impl::delayed_peer_deletion_task()
     {
       VERIFY_CORRECT_THREAD();
+#ifdef USE_PEERS_TO_DELETE_MUTEX
       fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
       dlog("in delayed_peer_deletion_task with ${count} in queue", ("count", _peers_to_delete.size()));
       _peers_to_delete.clear();
       dlog("_peers_to_delete cleared");
+#else
+      while (!_peers_to_delete.empty())
+      {
+        std::list<peer_connection_ptr> peers_to_delete_copy;
+        dlog("beginning an iteration of delayed_peer_deletion_task with ${count} in queue", ("count", _peers_to_delete.size()));
+        peers_to_delete_copy.swap(_peers_to_delete);
+      }
+      dlog("leaving delayed_peer_deletion_task");
+#endif
     }
 
     void node_impl::schedule_peer_for_deletion(const peer_connection_ptr& peer_to_delete)
     {
       VERIFY_CORRECT_THREAD();
-      dlog("scheduling peer for deletion: ${peer}", ("peer", peer_to_delete->get_remote_endpoint()));
 
       assert(_handshaking_connections.find(peer_to_delete) == _handshaking_connections.end());
       assert(_active_connections.find(peer_to_delete) == _active_connections.end());
       assert(_closing_connections.find(peer_to_delete) == _closing_connections.end());
       assert(_terminating_connections.find(peer_to_delete) == _terminating_connections.end());
 
+#ifdef USE_PEERS_TO_DELETE_MUTEX
+      dlog("scheduling peer for deletion: ${peer} (may block on a mutex here)", ("peer", peer_to_delete->get_remote_endpoint()));
+
+      unsigned number_of_peers_to_delete;
       {
         fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
         _peers_to_delete.emplace_back(peer_to_delete);
+        number_of_peers_to_delete = _peers_to_delete.size();
       }
+      dlog("peer scheduled for deletion: ${peer}", ("peer", peer_to_delete->get_remote_endpoint()));
+
       if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
+      {
+        dlog("asyncing delayed_peer_deletion_task to delete ${size} peers", ("size", number_of_peers_to_delete));
         _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
+    }
+      else
+        dlog("delayed_peer_deletion_task is already scheduled (current size of _peers_to_delete is ${size})", ("size", number_of_peers_to_delete));
+#else
+      dlog("scheduling peer for deletion: ${peer} (this will not block)");
+      _peers_to_delete.push_back(peer_to_delete);
+      if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
+      {
+        dlog("asyncing delayed_peer_deletion_task to delete ${size} peers", ("size", _peers_to_delete.size()));
+        _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
+      }
+      else
+        dlog("delayed_peer_deletion_task is already scheduled (current size of _peers_to_delete is ${size})", ("size", _peers_to_delete.size()));
+      
+#endif
     }
 
     bool node_impl::is_accepting_new_connections()
@@ -2933,7 +2969,9 @@ namespace bts { namespace net { namespace detail {
       all_peers.clear();
 
       {
+#ifdef USE_PEERS_TO_DELETE_MUTEX
         fc::scoped_lock<fc::mutex> lock(_peers_to_delete_mutex);
+#endif
         try 
         {
           _delayed_peer_deletion_task_done.cancel_and_wait("node_impl::close()");
@@ -3096,6 +3134,13 @@ namespace bts { namespace net { namespace detail {
         updated_peer_record.number_of_successful_connection_attempts++;
         updated_peer_record.last_seen_time = fc::time_point::now();
         _potential_peer_db.update_entry( updated_peer_record );
+      }
+      catch (const fc::canceled_exception&)
+      {
+        // I don't think this should happen, because the peer destructor is the thing that cancels the
+        // accept_or_connect_loop, and we're still assuming the peer_connection object is alive here
+        assert(false);
+        throw;
       }
       catch ( const fc::exception& except )
       {
