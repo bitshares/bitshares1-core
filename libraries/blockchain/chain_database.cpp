@@ -131,6 +131,10 @@ namespace bts { namespace blockchain {
                         _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
                         _pending_transaction_db.store( trx_id, trx );
                      }
+                     catch ( const fc::canceled_exception& )
+                     {
+                        throw;
+                     }
                      catch ( const fc::exception& e )
                      {
                         trx_to_discard.push_back(trx_id);
@@ -956,7 +960,8 @@ namespace bts { namespace blockchain {
 
    chain_database::~chain_database()
    {
-      try {
+      try
+      {
          close();
       }
       catch ( const fc::exception& e )
@@ -1043,7 +1048,7 @@ namespace bts { namespace blockchain {
              my->initialize_genesis( genesis_file );
 
              if( !reindex_status_callback )
-                std::cout << "Please be patient, this could take a few minutes.\r\nRe-indexing database... [/]" << std::flush;
+                std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database... [/]" << std::flush;
              else
                  reindex_status_callback(0);
 
@@ -1231,7 +1236,11 @@ namespace bts { namespace blockchain {
           if( fees < min_fee )
              FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(min_fee) );
        }
-       catch( fc::exception& e )
+       catch (const fc::canceled_exception&)
+       {
+         throw;
+       }
+       catch( const fc::exception& e )
        {
            return e;
        }
@@ -1356,6 +1365,10 @@ namespace bts { namespace blockchain {
             my->switch_to_fork( longest_fork.first );
             new_fork_data = get_block_fork_data(block_id);
             FC_ASSERT(new_fork_data, "can't get fork data for a block we just successfully pushed");
+         }
+         catch ( const fc::canceled_exception& )
+         {
+            throw;
          }
          catch ( const fc::exception& e )
          {
@@ -1693,6 +1706,10 @@ namespace bts { namespace blockchain {
             /* Apply temporary state to block state */
             pending_trx_state->apply_changes();
             next_block.user_transactions.push_back( item->trx );
+         }
+         catch ( const fc::canceled_exception& )
+         {
+            throw;
          }
          catch( const fc::exception& e )
          {
@@ -2723,6 +2740,7 @@ namespace bts { namespace blockchain {
 
       for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
       {
+        if( ask_itr.key().order_price.base_asset_id != 0 ) continue;
         const order_record ask = ask_itr.value();
         total.amount += ask.balance;
       }

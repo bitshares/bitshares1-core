@@ -144,7 +144,14 @@ namespace bts { namespace blockchain {
 
       if( market_stat->avg_price_1h.quote_asset_id != 0 )
       {
-         FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
+         if( eval_state._current_state->get_head_block_num() > BTS_BLOCKCHAIN_NEW_SHORTS_LIMIT_TO_1HR_AVG )
+         {
+            FC_ASSERT( short_index.order_price < market_stat->avg_price_1h, "", ("order",*this)("market_stat",market_stat) );
+         }
+         else
+         {
+            FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
+         }
       }
       else if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_1_BLOCK_NUM )
       {

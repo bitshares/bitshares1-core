@@ -61,19 +61,29 @@ class market_engine
              {
                 if( quote_asset->is_market_issued() )
                 {
-                   if( market_stat->avg_price_1h.ratio == fc::uint128_t() )
+                   if( _pending_state->get_head_block_num() > BTS_BLOCKCHAIN_USE_MEDIAN_IF_AVAILABLE )
                    {
-                      if( !median_price )
-                      {
-                         FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
-                      }
-                      else
+                      if( median_price )
                       {
                          market_stat->avg_price_1h = *median_price;
                       }
+                      else if( market_stat->avg_price_1h.ratio == fc::uint128_t() )
+                      {
+                         FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
+                      }
+                      max_short_bid = market_stat->avg_price_1h; //market_stat->maximum_bid();
+                      min_cover_ask = market_stat->minimum_ask();
                    }
-                   max_short_bid = market_stat->maximum_bid();
-                   min_cover_ask = market_stat->minimum_ask();
+                   else
+                   {
+                      if( market_stat->avg_price_1h.ratio == fc::uint128_t() )
+                      {
+                         if( !median_price ) FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
+                         market_stat->avg_price_1h = *median_price;
+                      }
+                      max_short_bid = market_stat->maximum_bid();
+                      min_cover_ask = market_stat->minimum_ask();
+                   }
                 }
                 else // we only liquidate fees collected for user issued assets
                 {
@@ -367,14 +377,14 @@ class market_engine
                 // limit the maximum movement rate of the price.
                 if( _current_bid->get_price() < min_cover_ask )
                    market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                else if( _current_bid->get_price() > max_short_bid )
+                else if( _current_bid->get_price() > market_stat->maximum_bid() ) //max_short_bid )
                    market_stat->avg_price_1h.ratio += max_short_bid.ratio;
                 else
                    market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
 
                 if( _current_ask->get_price() < min_cover_ask )
                    market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                else if( _current_ask->get_price() > max_short_bid )
+                else if( _current_ask->get_price() > market_stat->maximum_bid() ) //max_short_bid )
                    market_stat->avg_price_1h.ratio += max_short_bid.ratio;
                 else
                    market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
@@ -726,8 +736,7 @@ class market_engine
                 _current_ask = ask;
             }
             ++_ask_itr;
-            //idump( (_current_ask) );
-            return true;
+            return _current_ask.valid();
          }
          return _current_ask.valid();
       } FC_CAPTURE_AND_RETHROW() }

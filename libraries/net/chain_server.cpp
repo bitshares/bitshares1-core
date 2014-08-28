@@ -41,7 +41,7 @@ namespace bts { namespace net {
                     kill_worker(*_busy_threads.begin());
 
                 _server_socket.close();
-                _accept_loop_handle.cancel_and_wait();
+                _accept_loop_handle.cancel_and_wait(__FUNCTION__);
             }
 
             void accept_loop() {

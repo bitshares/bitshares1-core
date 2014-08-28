@@ -49,7 +49,7 @@ namespace bts { namespace rpc {
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
-        
+
          /** the map of alias and method name */
          std::map<std::string, std::string>     _alias_map;
 
@@ -86,7 +86,7 @@ namespace bts { namespace rpc {
                help_string += std::string("{") + parameter.name + std::string("} ");
              else if (parameter.classification == bts::api::required_positional_hidden)
                continue;
-             else 
+             else
                help_string += std::string("[") + parameter.name + std::string("] ");
            }
            short_description << help_string;
@@ -101,7 +101,7 @@ namespace bts { namespace rpc {
            help_string = short_description.str();
            return help_string;
          }
-        
+
         void add_content_type_header(const fc::string& path, const fc::http::server::response& s ) {
             static map<string, string> mime_types
             {   {"png", "image/png"},
@@ -115,12 +115,12 @@ namespace bts { namespace rpc {
                 {"woff", "application/font-woff"},
                 {"ttf", "pplication/x-font-ttf"}
             };
-            
+
             if( path == "/rpc") {
                 s.add_header("Content-Type",  "application/json");
                 return;
             }
-            
+
             auto pos = path.rfind('.');
             if(pos != std::string::npos) {
                 auto extension = path.substr(pos + 1, std::string::npos);
@@ -234,6 +234,10 @@ namespace bts { namespace rpc {
                     status = fc::http::reply::NotFound;
                 }
              }
+             catch ( const fc::canceled_exception& )
+             {
+                    throw;
+             }
              catch ( const fc::exception& e )
              {
                     std::string message = "Internal Server Error\n";
@@ -289,6 +293,10 @@ namespace bts { namespace rpc {
                          status = fc::http::reply::OK;
                          s.set_status( status );
                       }
+                      catch ( const fc::canceled_exception& )
+                      {
+                          throw;
+                      }
                       catch ( const fc::exception& e )
                       {
                           status = fc::http::reply::InternalServerError;
@@ -318,6 +326,10 @@ namespace bts { namespace rpc {
                        s.write( reply.c_str(), reply.size() );
                        return status;
                    }
+                }
+                catch ( const fc::canceled_exception& )
+                {
+                    throw;
                 }
                 catch ( const fc::exception& e )
                 {
@@ -362,6 +374,10 @@ namespace bts { namespace rpc {
               try
               {
                 _tcp_serv->accept( *sock );
+              }
+              catch (const fc::canceled_exception&)
+              {
+                throw;
               }
               catch ( const fc::exception& e )
               {
@@ -508,7 +524,7 @@ namespace bts { namespace rpc {
     }
     void rpc_server_impl::verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const
     {
-      if (json_connection && 
+      if (json_connection &&
           _authenticated_connection_set.find(json_connection.get()) == _authenticated_connection_set.end())
         FC_THROW("The RPC connection must be logged in before executing this command");
     }
@@ -621,7 +637,7 @@ namespace bts { namespace rpc {
 
   rpc_server::~rpc_server()
   {
-    try 
+    try
     {
       close();
       wait_till_rpc_server_shutdown();
@@ -661,7 +677,7 @@ namespace bts { namespace rpc {
           catch (fc::exception& e)
           {
             wlog("unable to listen on endpoint ${endpoint}", ("endpoint", any_port_endpoint));
-            FC_RETHROW_EXCEPTION(e, error, "unable to listen for RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}", 
+            FC_RETHROW_EXCEPTION(e, error, "unable to listen for RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}",
                                  ("firstchoice", cfg.rpc_endpoint)("secondchoice", any_port_endpoint));
           }
         }
@@ -761,7 +777,7 @@ namespace bts { namespace rpc {
     if (my->_tcp_serv)
       my->_tcp_serv->close();
     if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
-      my->_accept_loop_complete.cancel();
+      my->_accept_loop_complete.cancel(__FUNCTION__);
   }
 
   void rpc_server::wait_till_rpc_server_shutdown()

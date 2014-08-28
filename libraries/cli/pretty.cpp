@@ -56,19 +56,14 @@ string pretty_age( const time_point_sec& timestamp, bool from_now, const string&
 
 string pretty_percent( double part, double whole, int precision )
 {
-    try
-    {
-        FC_ASSERT( part >= 0 );
-        FC_ASSERT( whole >= 0 );
-        FC_ASSERT( precision >= 0 );
-        FC_ASSERT( part <= whole );
-    }
-    catch( ... )
-    {
-        return "? %";
-    }
-    if( whole <= 0 ) return "N/A";
-    const auto percent = 100 * part / whole;
+    if ( part < 0      ||
+         whole < 0     ||
+         precision < 0 ||
+         part > whole )
+      return "? %";
+    if( whole <= 0 )
+      return "N/A";
+    double percent = 100 * part / whole;
     std::stringstream ss;
     ss << std::setprecision( precision ) << std::fixed << percent << " %";
     return ss.str();
@@ -296,7 +291,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         else
             out << std::setw( 32 ) << pretty_shorten( delegate_name, 29 ) + " *";
 
-        out << std::setw( 15 ) << pretty_percent( delegate_record.net_votes(), share_supply, 10 );
+        out << std::setw( 15 ) << pretty_percent( delegate_record.net_votes(), share_supply, 8 );
 
         const auto num_produced = delegate_record.delegate_info->blocks_produced;
         const auto num_missed = delegate_record.delegate_info->blocks_missed;
