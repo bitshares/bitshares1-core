@@ -2707,6 +2707,7 @@ namespace bts { namespace blockchain {
 
       for( auto ask_itr = my->_ask_db.begin(); ask_itr.valid(); ++ask_itr )
       {
+        if( ask_itr.key().order_price.base_asset_id != 0 ) continue;
         const order_record ask = ask_itr.value();
         total.amount += ask.balance;
       }
