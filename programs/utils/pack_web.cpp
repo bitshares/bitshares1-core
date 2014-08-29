@@ -71,14 +71,17 @@ int main(int argc, char** argv) {
     vector<char> packed_stream = fc::raw::pack(packed_files);
     vector<char> compressed_stream = fc::lzma_compress(packed_stream);
 
-    fc::ecc::compact_signature stream_signature = signing_key.sign_compact(fc::sha256::hash(compressed_stream.data(), compressed_stream.size()));
-
     fc::ofstream outfile("web.dat");
     outfile.write(compressed_stream.data(), compressed_stream.size());
     outfile.close();
 
+    fc::time_point_sec timestamp = fc::time_point::now();
+    for (char c : timestamp.to_iso_string())
+        compressed_stream.push_back(c);
+    fc::ecc::compact_signature stream_signature = signing_key.sign_compact(fc::sha256::hash(compressed_stream.data(), compressed_stream.size()));
+
     outfile.open("web.sig");
-    outfile << fc::variant(stream_signature).as_string();
+    fc::raw::pack(outfile, std::make_pair(stream_signature, timestamp));
     outfile.close();
 
     cout << "Finished packing " << packed_file_count << " files (" << compressed_stream.size() << " bytes)."
