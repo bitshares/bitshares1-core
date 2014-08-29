@@ -1,0 +1,87 @@
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": null,
+  "last_scanned_block_timestamp": null,
+  "transaction_fee": "0.50000 XTS",
+  "transaction_expiration_secs": 4040,
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": "[redacted]"
+}
+default (unlocked) >>> help wallet_set_transaction_fee
+Usage:
+wallet_set_transaction_fee <fee>                                                                      Set the fee to add to new transactions
+Set the fee to add to new transactions
+
+Parameters:
+  fee (real_amount, required): the wallet transaction fee to set
+
+Returns:
+  asset
+
+aliases: wallet_set_priority_fee, set_priority_fee, settrxfee, setfee, set_fee
+default (unlocked) >>> wallet_set_transaction_fee 0.00001
+0.00001 XTS
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": null,
+  "last_scanned_block_timestamp": null,
+  "transaction_fee": "0.00001 XTS",
+  "transaction_expiration_secs": 4040,
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": "[redacted]"
+}
+default (unlocked) >>> wallet_set_transaction_fee 123.456
+123.45600 XTS
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": null,
+  "last_scanned_block_timestamp": null,
+  "transaction_fee": "123.45600 XTS",
+  "transaction_expiration_secs": 4040,
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": "[redacted]"
+}
+default (unlocked) >>> wallet_set_transaction_fee 0.000001
+0.00000 XTS
+default (unlocked) >>> wallet_get_info
+{
+  "data_dir": "[redacted]",
+  "open": true,
+  "name": "default",
+  "automatic_backups": false,
+  "transaction_scanning": true,
+  "last_scanned_block_num": null,
+  "last_scanned_block_timestamp": null,
+  "transaction_fee": "0.00000 XTS",
+  "transaction_expiration_secs": 4040,
+  "unlocked": true,
+  "unlocked_until": "[redacted]",
+  "unlocked_until_timestamp": "[redacted]",
+  "scan_progress": "100.00 %",
+  "version": "[redacted]"
+}
+default (unlocked) >>> quit
