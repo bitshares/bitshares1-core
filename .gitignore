@@ -46,3 +46,9 @@ tests/dev_tests
 tests/nathan_tests
 tests/server_node
 tests/wallet_tests
+/tests/debug_tests.log
+/tests/failed_tests.log
+/tests/regression_tests/blockchain_export_fork_graph/exported_fork.gv
+/tests/regression_tests/blockchain_export_fork_graph/exported_fork2.gv
+/tests/regression_tests/wallet_backup/wallet_backup.json
+/tests/regression_tests/_newtest
