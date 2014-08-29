@@ -2995,10 +2995,7 @@ namespace bts { namespace wallet {
 
        /* Only support standard transfers for now */
        FC_ASSERT( transaction_record.ledger_entries.size() == 1 );
-
-       /* Only proceed if there is no recipient info */
        auto ledger_entry = transaction_record.ledger_entries.front();
-       FC_ASSERT( !ledger_entry.to_account.valid() || get_key_label( *ledger_entry.to_account ) == "UNKNOWN" );
 
        /* In case the transaction was not saved in the record */
        if( transaction_record.trx.operations.empty() )
@@ -3106,6 +3103,28 @@ namespace bts { namespace wallet {
 
        return transaction_record;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   wallet_transaction_record wallet::edit_transaction( const string& transaction_id_prefix, const string& recipient_account,
+                                                       const string& memo_message )
+   {
+       FC_ASSERT( !recipient_account.empty() || !memo_message.empty() );
+       auto transaction_record = get_transaction( transaction_id_prefix );
+
+       /* Only support standard transfers for now */
+       FC_ASSERT( transaction_record.ledger_entries.size() == 1 );
+       auto ledger_entry = transaction_record.ledger_entries.front();
+
+       if( !recipient_account.empty() )
+           ledger_entry.to_account = get_account_public_key( recipient_account );
+
+       if( !memo_message.empty() )
+           ledger_entry.memo = memo_message;
+
+       transaction_record.ledger_entries[ 0 ] = ledger_entry;
+       my->_wallet_db.store_transaction( transaction_record );
+
+       return transaction_record;
+   }
 
    /**
     *  This method assumes that fees can be paid in the same asset type as the

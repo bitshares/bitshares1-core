@@ -463,6 +463,8 @@ namespace bts { namespace wallet {
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
 
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
+         wallet_transaction_record          edit_transaction( const string& transaction_id_prefix, const string& recipient_account,
+                                                              const string& memo_message );
 
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*

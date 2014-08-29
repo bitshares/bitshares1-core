@@ -1421,12 +1421,38 @@
             {
                 "name" : "recipient_account",
                 "type" : "string",
-                "description" : "the name of the recipient (if known)",
+                "description" : "the account name of the recipient (if known)",
                 "default_value" : ""
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : ["recover_transaction"]
+      },
+      {
+         "method_name" : "wallet_edit_transaction",
+         "description" : "Manually edit the specified transaction entry's recipient account and memo",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "transaction_id_prefix",
+                "type" : "string",
+                "description" : "the id (or id prefix) of the transaction record"
+            },
+            {
+                "name" : "recipient_account",
+                "type" : "string",
+                "description" : "the recipient account name to save, or leave empty to keep the existing recipient",
+                "default_value" : ""
+            },
+            {
+                "name" : "memo_message",
+                "type" : "string",
+                "description" : "the memo message to save, or leave empty to keep the existing memo message",
+                "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : ["edit_transaction"]
       },
       {
          "method_name" : "wallet_publish_price_feed",

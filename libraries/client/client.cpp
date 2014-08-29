@@ -1821,6 +1821,12 @@ config load_config( const fc::path& datadir )
         return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
     }
 
+    wallet_transaction_record detail::client_impl::wallet_edit_transaction(
+            const string& transaction_id_prefix, const string& recipient_account, const string& memo_message )
+    {
+        return _wallet->edit_transaction( transaction_id_prefix, recipient_account, memo_message );
+    }
+
     wallet_transaction_record detail::client_impl::wallet_transfer(
             double amount_to_transfer,
             const string& asset_symbol,
