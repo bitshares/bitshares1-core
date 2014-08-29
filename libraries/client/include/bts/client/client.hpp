@@ -93,6 +93,10 @@ namespace bts { namespace client {
           fc::logging_config  logging;
           fc::ip::endpoint    delegate_server;
           vector<string>      default_delegate_peers;
+
+          fc::optional<std::string> growl_notify_endpoint;
+          fc::optional<std::string> growl_password;
+          fc::optional<std::string> growl_bitshares_client_identifier;
     };
 
 
@@ -182,5 +186,8 @@ FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
             (rpc)(default_peers)(chain_servers)(chain_server)(ignore_console)(logging)
             (delegate_server)
-            (default_delegate_peers) )
+            (default_delegate_peers)
+            (growl_notify_endpoint)
+            (growl_password)
+            (growl_bitshares_client_identifier) )
 
