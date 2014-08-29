@@ -7,13 +7,13 @@
 
 /* Comment out this line for a non-test network */
 #define BTS_TEST_NETWORK
-#define BTS_TEST_NETWORK_VERSION                            20
+#define BTS_TEST_NETWORK_VERSION                            21
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     131
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     132
 
 /**
  *  The address prepended to string representation of
@@ -145,3 +145,8 @@
     block production.
  */
 #define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE               (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
+
+#define BTS_BLOCKCHAIN_NEW_SHORTS_LIMIT_TO_1HR_AVG  500000000 // NOTE... this will hard fork in the future.
+#define BTS_BLOCKCHAIN_USE_MEDIAN_IF_AVAILABLE      500000000 // NOTE... this will hard fork in the future.
+
+

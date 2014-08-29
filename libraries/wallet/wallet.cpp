@@ -1750,7 +1750,7 @@ namespace bts { namespace wallet {
       try
       {
         ilog( "Canceling wallet scan_chain_task..." );
-        my->_scan_in_progress.cancel_and_wait();
+        my->_scan_in_progress.cancel_and_wait("wallet::close()");
         ilog( "Wallet scan_chain_task canceled..." );
       }
       catch( const fc::exception& e )
@@ -1767,7 +1767,7 @@ namespace bts { namespace wallet {
       try
       {
         ilog( "Canceling wallet relocker task..." );
-        my->_relocker_done.cancel_and_wait();
+        my->_relocker_done.cancel_and_wait("wallet::close()");
         ilog( "Wallet relocker task canceled" );
       }
       catch( const fc::exception& e )
@@ -1929,7 +1929,7 @@ namespace bts { namespace wallet {
    {
       try
       {
-        my->_login_map_cleaner_done.cancel_and_wait();
+        my->_login_map_cleaner_done.cancel_and_wait("wallet::lock()");
       }
       catch( const fc::exception& e )
       {
@@ -2342,7 +2342,7 @@ namespace bts { namespace wallet {
       // cancel the current scan...
       try
       {
-        my->_scan_in_progress.cancel_and_wait();
+        my->_scan_in_progress.cancel_and_wait("wallet::scan_chain()");
       }
       catch (const fc::exception& e)
       {
