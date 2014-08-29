@@ -2426,13 +2426,10 @@ namespace bts { namespace wallet {
         sign_transaction( transaction, required_signatures );
         my->_blockchain->store_pending_transaction( transaction, true );
 
-        const auto now = blockchain::now();
         record.record_id = transaction.id();
-        record.is_virtual = false;
-        record.is_confirmed = false;
         record.trx = transaction;
-        record.created_time = now;
-        record.received_time = now;
+        record.created_time = blockchain::now();
+        record.received_time = record.created_time;
         my->_wallet_db.store_transaction( record );
 
         for( const auto& op : transaction.operations )
@@ -2596,20 +2593,17 @@ namespace bts { namespace wallet {
        pretties.reserve( history.size() );
        for( const auto& item : history ) pretties.push_back( to_pretty_trx( item ) );
 
-       std::sort( pretties.begin(), pretties.end(),
-                  []( const pretty_transaction& a, const pretty_transaction& b ) -> bool
-                  {
-                     if( a.is_confirmed == b.is_confirmed )
-                     {
-                         if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                         if( a.received_time != b.received_time) return a.received_time < b.received_time;
-                         return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
-                     }
-                     else
-                     {
-                        return a.is_confirmed;
-                     }
-                  } );
+       const auto sorter = []( const pretty_transaction& a, const pretty_transaction& b ) -> bool
+       {
+           if( a.is_confirmed == b.is_confirmed && a.block_num != b.block_num )
+               return a.block_num < b.block_num;
+
+           if( a.received_time != b.received_time)
+               return a.received_time < b.received_time;
+
+           return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
+       };
+       std::sort( pretties.begin(), pretties.end(), sorter );
 
        // TODO: Handle pagination
 
