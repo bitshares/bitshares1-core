@@ -27,7 +27,7 @@ default (unlocked) >>> get_info
   "client_data_dir": "[redacted]",
   "client_version": "[redacted]",
   "network_num_connections": 8,
-  "network_num_connections_max": 100,
+  "network_num_connections_max": 200,
   "ntp_time": "[redacted]",
   "ntp_time_error": "[redacted]",
   "wallet_open": true,

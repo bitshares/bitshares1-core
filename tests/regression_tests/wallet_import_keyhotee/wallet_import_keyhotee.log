@@ -13,38 +13,26 @@ Parameters:
 Returns:
   void
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
-Successfully imported Keyhotee private key.
-
 OK
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
-Successfully imported Keyhotee private key.
-
 OK
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk
-Successfully imported Keyhotee private key.
-
 OK
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk1
-Successfully imported Keyhotee private key.
-
 OK
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 tk                                 XTS5BxdForQtZ33z1nuvXeNVsappJ9J7MHibzd1XyvbmxezsdZpxz           NO                    NO             0         
 tk1                                XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG6caCPW55           NO                    NO             0         
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk1*
-Successfully imported Keyhotee private key.
-
 OK
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" t*
-Successfully imported Keyhotee private key.
-
 OK
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
