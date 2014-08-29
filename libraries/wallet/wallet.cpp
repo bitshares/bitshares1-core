@@ -151,9 +151,8 @@ namespace bts { namespace wallet {
       fc::ecc::private_key wallet_impl::create_one_time_key()
       {
         if( !_use_deterministic_one_time_keys )
-        {
             return fc::ecc::private_key::generate();
-        }
+
         return _wallet_db.new_private_key( _wallet_password );
       }
 
@@ -1602,11 +1601,6 @@ namespace bts { namespace wallet {
       close();
    }
 
-   void wallet::use_deterministic_one_time_keys( bool state )
-   {
-      my->_use_deterministic_one_time_keys = state;
-   }
-
    void wallet::set_data_directory( const path& data_dir )
    {
       my->_data_directory = data_dir;
@@ -1781,7 +1775,6 @@ namespace bts { namespace wallet {
 
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
-      my->_use_deterministic_one_time_keys = false;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    bool wallet::is_open()const
@@ -2992,6 +2985,127 @@ namespace bts { namespace wallet {
        scan_chain();
      return recoveries;
    }
+
+   wallet_transaction_record wallet::recover_transaction( const string& transaction_id_prefix, const string& recipient_account )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+
+       auto transaction_record = get_transaction( transaction_id_prefix );
+
+       /* Only support standard transfers for now */
+       FC_ASSERT( transaction_record.ledger_entries.size() == 1 );
+
+       /* Only proceed if there is no recipient info */
+       auto ledger_entry = transaction_record.ledger_entries.front();
+       FC_ASSERT( !ledger_entry.to_account.valid() || get_key_label( *ledger_entry.to_account ) == "UNKNOWN" );
+
+       /* In case the transaction was not saved in the record */
+       if( transaction_record.trx.operations.empty() )
+       {
+           const auto blockchain_transaction_record = my->_blockchain->get_transaction( transaction_record.record_id, true );
+           FC_ASSERT( blockchain_transaction_record.valid() );
+           transaction_record.trx = blockchain_transaction_record->trx;
+       }
+
+       /* Only support a single deposit */
+       deposit_operation deposit_op;
+       bool has_deposit = false;
+       for( const auto& op : transaction_record.trx.operations )
+       {
+           switch( operation_type_enum( op.type ) )
+           {
+               case deposit_op_type:
+                   FC_ASSERT( !has_deposit );
+                   deposit_op = op.as<deposit_operation>();
+                   has_deposit = true;
+                   break;
+               default:
+                   break;
+           }
+       }
+       FC_ASSERT( has_deposit );
+
+       /* Only support standard withdraw by signature condition with memo */
+       FC_ASSERT( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type );
+       const auto withdraw_condition = deposit_op.condition.as<withdraw_with_signature>();
+       FC_ASSERT( withdraw_condition.memo.valid() );
+
+       /* We had to have stored the one-time key */
+       fc::ecc::private_key private_key;
+       try
+       {
+           bool found_key = false;
+           const auto& key_items = my->_wallet_db.get_keys();
+           for( const auto& key_item : key_items )
+           {
+               private_key = key_item.second.decrypt_private_key( my->_wallet_password );
+               if( public_key_type( private_key.get_public_key() ) == withdraw_condition.memo->one_time_key )
+               {
+                   found_key = true;
+                   break;
+               }
+           }
+           FC_ASSERT( found_key );
+
+           /* Get shared secret and check memo decryption */
+           bool found_recipient = false;
+           public_key_type recipient_public_key;
+           memo_data memo;
+           if( !recipient_account.empty() )
+           {
+               recipient_public_key = get_account_public_key( recipient_account );
+               const auto shared_secret = private_key.get_shared_secret( recipient_public_key );
+               memo = withdraw_condition.decrypt_memo_data( shared_secret );
+               found_recipient = true;
+           }
+           else
+           {
+               const auto check_account = [&]( const account_record& record ) -> void
+               {
+                   try
+                   {
+                       recipient_public_key = record.owner_key;
+                       // TODO: Need to check active keys as well as owner key
+                       const auto shared_secret = private_key.get_shared_secret( recipient_public_key );
+                       memo = withdraw_condition.decrypt_memo_data( shared_secret );
+                   }
+                   catch( ... )
+                   {
+                       return;
+                   }
+                   found_recipient = true;
+                   FC_ASSERT( false ); /* Kill scanning since we found it */
+               };
+
+               try
+               {
+                   my->_blockchain->scan_accounts( check_account );
+               }
+               catch( ... )
+               {
+               }
+           }
+           FC_ASSERT( found_recipient );
+
+           /* Update ledger entry with recipient and memo info */
+           ledger_entry.to_account = recipient_public_key;
+           ledger_entry.memo = memo.get_message();
+           transaction_record.ledger_entries[ 0 ] = ledger_entry;
+           my->_wallet_db.store_transaction( transaction_record );
+
+           /* Wipe memory */
+           private_key = fc::ecc::private_key();
+       }
+       catch( ... )
+       {
+           /* Wipe memory */
+           private_key = fc::ecc::private_key();
+           throw;
+       }
+
+       return transaction_record;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    /**
     *  This method assumes that fees can be paid in the same asset type as the

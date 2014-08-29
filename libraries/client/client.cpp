@@ -1815,6 +1815,12 @@ config load_config( const fc::path& datadir )
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
     }
 
+    wallet_transaction_record detail::client_impl::wallet_recover_transaction(
+            const string& transaction_id_prefix, const string& recipient_account )
+    {
+        return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
+    }
+
     wallet_transaction_record detail::client_impl::wallet_transfer(
             double amount_to_transfer,
             const string& asset_symbol,
