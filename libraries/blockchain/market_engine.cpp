@@ -761,7 +761,7 @@ class market_engine
             }
             ++_ask_itr;
 
-            if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+            if( _pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
                return _current_ask.valid();
 
             return true;
