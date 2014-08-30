@@ -1476,6 +1476,24 @@
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_regenerate_keys",
+         "description" : "regenerates private keys as part of wallet recovery",
+         "return_type" : "int32_t",
+         "parameters"  : [
+             {
+                "name" : "account_name",
+                "type" : "account_name",
+                "description" : "the account the generated keys should be a part of"
+             },
+             {
+                "name" : "max_key_number",
+                "type" : "uint32_t",
+                "description" : "the last key number to regenrate"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }

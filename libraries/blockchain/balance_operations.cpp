@@ -1,6 +1,7 @@
 #include <bts/blockchain/balance_operations.hpp>
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -74,7 +75,7 @@ namespace bts { namespace blockchain {
 
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
 
-      if( eval_state._current_state->get_head_block_num() >= BTS_BLOCKCHAIN_USE_MEDIAN_IF_AVAILABLE )
+      if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
       {
          if( !current_balance_record )
             FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
@@ -85,7 +86,8 @@ namespace bts { namespace blockchain {
                                   (amount)
                                   (current_balance_record->balance - amount) );
       }
-      else if( current_balance_record )
+
+      if( current_balance_record )
       {
          switch( (withdraw_condition_types)current_balance_record->condition.type )
          {
