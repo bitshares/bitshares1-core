@@ -268,8 +268,8 @@ namespace bts { namespace wallet {
    {
       FC_ASSERT( wallet_master_key.valid() );
 
-      auto master_ext_priv_key  = wallet_master_key->decrypt_key( password );
-      auto new_priv_key = master_ext_priv_key.child( new_key_child_index() );
+      const auto master_ext_priv_key = wallet_master_key->decrypt_key( password );
+      const auto new_priv_key = master_ext_priv_key.child( new_key_child_index() );
 
       if( !store_key )
         return new_priv_key;
@@ -278,9 +278,9 @@ namespace bts { namespace wallet {
       new_key.account_address = parent_account_address;
       new_key.encrypt_private_key( password, new_priv_key );
       // if there is no parent account address, then the account_address of this key is itself
-      if (parent_account_address == address())
+      if( parent_account_address == address() )
       {
-         new_key.account_address = address(new_key.public_key);
+         new_key.account_address = address( new_key.public_key );
       }
 
       this->store_key( new_key );

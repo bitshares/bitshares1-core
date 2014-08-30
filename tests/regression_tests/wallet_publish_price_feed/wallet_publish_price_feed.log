@@ -401,7 +401,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
-    "price": 2.0000000000000002e-05,
+    "price": 2.0000000000000002e-005,
     "last_update": "20140620T144050",
     "asset_symbol": "XMO",
     "median_price": null
