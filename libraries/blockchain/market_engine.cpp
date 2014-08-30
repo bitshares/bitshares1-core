@@ -15,6 +15,8 @@ class market_engine
       void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try {
+             const auto pending_block_num = _pending_state->get_head_block_num();
+
              _quote_id = quote_id;
              _base_id = base_id;
              auto quote_asset = _pending_state->get_asset_record( _quote_id );
@@ -170,6 +172,7 @@ class market_engine
                    if( mtrx.bid_price > max_short_bid )
                    {
                       wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
                    }
@@ -262,6 +265,7 @@ class market_engine
                    if( mtrx.bid_price > max_short_bid )
                    {
                       wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
                    }
@@ -318,7 +322,6 @@ class market_engine
                    mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
                 }
 
-
                 push_market_transaction(mtrx);
                 if( mtrx.ask_received.asset_id == 0 )
                   trading_volume += mtrx.ask_received;
@@ -334,6 +337,8 @@ class market_engine
              _pending_state->store_asset_record( *base_asset );
 
              market_stat->last_error.reset();
+
+             order_did_execute |= (pending_block_num % 6) == 0;
 
              if( _current_bid && _current_ask && order_did_execute )
              {
