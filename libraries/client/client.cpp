@@ -3630,6 +3630,10 @@ config load_config( const fc::path& datadir )
       network_broadcast_transaction( trx );
       return trx;
    }
+   int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )
+   {
+      return _wallet->regenerate_keys( account, number_to_regenerate );
+   }
 
    } // namespace detail
 ///////////////////////////////////////////////////////////////////////////////////////////////

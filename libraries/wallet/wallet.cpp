@@ -2954,6 +2954,29 @@ namespace bts { namespace wallet {
       return trx;
      } FC_CAPTURE_AND_RETHROW( (account_to_publish_under) ) }
 
+   uint32_t wallet::regenerate_keys( const string& account_name, uint32_t count )
+   {
+      uint32_t regenerated_keys = 0;
+      for( uint32_t i = 0; i < count; ++i )
+      {
+         try {
+            auto key = my->_wallet_db.get_private_key( my->_wallet_password, i );
+            auto addr = address( key.get_public_key() );
+            if( !my->_wallet_db.has_private_key( addr ) )
+            {
+               import_private_key( key, account_name );
+               ++regenerated_keys;
+            }
+         } catch ( const fc::exception& e )
+         {
+            ulog( "${e}", ("e", e.to_detail_string()) );
+         }
+      }
+     if( regenerated_keys )
+       scan_chain();
+      return regenerated_keys;
+   }
+
    int32_t wallet::recover_accounts( int32_t number_of_accounts, int32_t max_number_of_attempts )
    {
      FC_ASSERT( is_open() );
