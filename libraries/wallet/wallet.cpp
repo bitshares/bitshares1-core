@@ -1507,6 +1507,7 @@ namespace bts { namespace wallet {
 
               if( current_version < 104 )
               {
+#if 0
                   /* Transaction scanning was broken by commit 00ece3a78b2775c4b8817e394f59b6225dded80b */
                   const auto broken_time = time_point_sec( 1408463100 ); // 2014-08-19T15:45:00
                   auto broken_trxs = vector<transaction_id_type>();
@@ -1537,17 +1538,20 @@ namespace bts { namespace wallet {
                       };
                       _unlocked_upgrade_tasks.push_back( rescan );
                   }
+#endif
               }
 
               if( current_version < 106 )
               {
                   self->set_transaction_expiration( BTS_WALLET_DEFAULT_TRANSACTION_EXPIRATION_SEC );
 
+#if 0
                   /* Transaction scanning was broken by commit d93521c7a2916eb0995dfadacd5ee74760f29d4b */
                   const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
                   const auto block_num = std::min( broken_block_num, self->get_last_scanned_block_number() );
                   self->set_last_scanned_block_number( block_num );
                   _wallet_db.remove_transaction( transaction_id_type() );
+#endif
               }
 
               if( _unlocked_upgrade_tasks.empty() )

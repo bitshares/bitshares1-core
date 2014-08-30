@@ -7,4 +7,4 @@ cd $WORKSPACE/build
 export BITSHARES_ROOT=$WORKSPACE
 . ../bitsharesx/setenv.sh
 cmake -DINCLUDE_QT_WALLET=TRUE -DCMAKE_TOOLCHAIN_FILE=$WORKSPACE/toolchain.invictus/toolchain.invictus.cmake ../bitsharesx
-make -j8
+make -j8 VERBOSE=1

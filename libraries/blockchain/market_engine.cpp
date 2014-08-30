@@ -75,7 +75,7 @@ class market_engine
                    max_short_bid = market_stat->maximum_bid();
                    min_cover_ask = market_stat->minimum_ask();
 
-                   if( _pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
                    {
                       if( median_price )
                          max_short_bid = *median_price;
@@ -173,7 +173,7 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
-                   if( _pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   if( pending_block_num < BTSX_MARKET_FORK_4_BLOCK_NUM )
                    {
                       // in the event that there is a margin call, we must accept the
                       // bid price assuming the bid price is reasonable
@@ -249,7 +249,7 @@ class market_engine
 
                    mtrx.ask_price = mtrx.bid_price;
 
-                   if( _pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   if( pending_block_num < BTSX_MARKET_FORK_4_BLOCK_NUM )
                    {
                       // in the event that there is a margin call, we must accept the
                       // bid price assuming the bid price is reasonable
@@ -353,7 +353,6 @@ class market_engine
                    mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
                 }
 
-
                 push_market_transaction(mtrx);
                 if( mtrx.ask_received.asset_id == 0 )
                   trading_volume += mtrx.ask_received;
@@ -378,9 +377,9 @@ class market_engine
                 // after the market is running solid we can use this metric...
                 market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
-                 if( _pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+                 if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
                  {
-                    auto max_bid = market_stat->maximum_bid();
+                    const auto max_bid = market_stat->maximum_bid();
 
                     // limit the maximum movement rate of the price.
                     if( _current_bid->get_price() < min_cover_ask )
@@ -762,7 +761,7 @@ class market_engine
             }
             ++_ask_itr;
 
-            if( _pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+            if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
                return _current_ask.valid();
 
             return true;
