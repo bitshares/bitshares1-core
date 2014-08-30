@@ -311,7 +311,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-102   testaccount1                    0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+102   testaccount1                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_get_account testaccount2
 Name: testaccount2
@@ -323,7 +323,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-103   testaccount2                    0.0000000000 % 0        0        N/A           90 %     0.00000 XTS         NONE      
+103   testaccount2                    0.00000000 %   0        0        N/A           90 %     0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_get_account testaccount3
 Name: testaccount3
@@ -335,7 +335,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-104   testaccount3                    0.0000000000 % 0        0        N/A           10 %     0.00000 XTS         NONE      
+104   testaccount3                    0.00000000 %   0        0        N/A           10 %     0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_get_account testaccount4
 Name: testaccount4
@@ -347,7 +347,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-105   testaccount4                    0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+105   testaccount4                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_list_recently_registered_accounts
 [{

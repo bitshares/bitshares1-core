@@ -120,12 +120,10 @@ namespace bts { namespace wallet {
 
    struct key_data
    {
-       key_data():valid_from_signature(false){}
-
        address                  account_address;
        public_key_type          public_key;
        std::vector<char>        encrypted_private_key;
-       bool                     valid_from_signature;
+       bool                     valid_from_signature = false;
        optional<string>         memo;
 
        address                  get_address()const { return address( public_key ); }
@@ -146,9 +144,6 @@ namespace bts { namespace wallet {
 
    struct transaction_data
    {
-       transaction_data()
-       :block_num(0),is_virtual(false),is_confirmed(false),is_market(false){}
-
        /*
         * record_id
         * - non-virtual transactions: trx.id()
@@ -156,10 +151,10 @@ namespace bts { namespace wallet {
         * - virtual market transactions: fc::ripemd160::hash( block_num + get_key_label( owner ) + N )
         */
        transaction_id_type       record_id;
-       uint32_t                  block_num;
-       bool                      is_virtual;
-       bool                      is_confirmed;
-       bool                      is_market;
+       uint32_t                  block_num = 0;
+       bool                      is_virtual = false;
+       bool                      is_confirmed = false;
+       bool                      is_market = false;
        signed_transaction        trx;
        vector<ledger_entry>      ledger_entries;
        asset                     fee;

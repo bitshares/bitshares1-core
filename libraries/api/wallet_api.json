@@ -1409,6 +1409,52 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_recover_transaction",
+         "description" : "Attempts to recover any missing recipient and memo information for the specified transaction",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "transaction_id_prefix",
+                "type" : "string",
+                "description" : "the id (or id prefix) of the transaction record"
+            },
+            {
+                "name" : "recipient_account",
+                "type" : "string",
+                "description" : "the account name of the recipient (if known)",
+                "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : ["recover_transaction"]
+      },
+      {
+         "method_name" : "wallet_edit_transaction",
+         "description" : "Manually edit the specified transaction entry's recipient account and memo",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "transaction_id_prefix",
+                "type" : "string",
+                "description" : "the id (or id prefix) of the transaction record"
+            },
+            {
+                "name" : "recipient_account",
+                "type" : "string",
+                "description" : "the recipient account name to save, or leave empty to keep the existing recipient",
+                "default_value" : ""
+            },
+            {
+                "name" : "memo_message",
+                "type" : "string",
+                "description" : "the memo message to save, or leave empty to keep the existing memo message",
+                "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : ["edit_transaction"]
+      },
+      {
          "method_name" : "wallet_publish_price_feed",
          "description" : "publishes a price feed for BitAssets, only active delegates may do this",
          "return_type" : "signed_transaction",

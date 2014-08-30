@@ -154,6 +154,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
        ("log-commands", "Log all command input and output")
        ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
        ("growl-password", program_options::value<std::string>(), "Password for authenticating to a Growl server")
+       ("growl-identifier", program_options::value<std::string>(), "A name displayed in growl messages to identify this bitshares_client instance")
        ;
 
   program_options::variables_map option_variables;
@@ -1814,6 +1815,18 @@ config load_config( const fc::path& datadir )
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
     }
 
+    wallet_transaction_record detail::client_impl::wallet_recover_transaction(
+            const string& transaction_id_prefix, const string& recipient_account )
+    {
+        return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
+    }
+
+    wallet_transaction_record detail::client_impl::wallet_edit_transaction(
+            const string& transaction_id_prefix, const string& recipient_account, const string& memo_message )
+    {
+        return _wallet->edit_transaction( transaction_id_prefix, recipient_account, memo_message );
+    }
+
     wallet_transaction_record detail::client_impl::wallet_transfer(
             double amount_to_transfer,
             const string& asset_symbol,
@@ -2490,9 +2503,14 @@ config load_config( const fc::path& datadir )
         get_node()->clear_peer_database();
       }
 
-      if (option_variables.count("growl"))
+      if (option_variables.count("growl") || my->_config.growl_notify_endpoint)
       {
-        std::string host_to_notify = option_variables["growl"].as<std::string>();
+        std::string host_to_notify;
+        if (option_variables.count("growl"))
+          host_to_notify = option_variables["growl"].as<std::string>();
+        else
+          host_to_notify = *my->_config.growl_notify_endpoint;
+
         uint16_t port_to_notify = 23053;
         std::string::size_type colon_pos = host_to_notify.find(':');
         if (colon_pos != std::string::npos)
@@ -2500,10 +2518,19 @@ config load_config( const fc::path& datadir )
           port_to_notify = boost::lexical_cast<uint16_t>(host_to_notify.substr(colon_pos + 1));
           host_to_notify = host_to_notify.substr(0, colon_pos);
         }
+
         fc::optional<std::string> growl_password;
         if (option_variables.count("growl-password"))
           growl_password = option_variables["growl-password"].as<std::string>();
-        my->_notifier = std::make_shared<bts_gntp_notifier>(host_to_notify, port_to_notify, growl_password);
+        else 
+          growl_password = my->_config.growl_password;
+
+        std::string bts_instance_identifier = "BitShares";
+        if (option_variables.count("growl-identifier"))
+          bts_instance_identifier = option_variables["growl-identifier"].as<std::string>();
+        else if (my->_config.growl_bitshares_client_identifier)
+          bts_instance_identifier = *my->_config.growl_bitshares_client_identifier;
+        my->_notifier = std::make_shared<bts_gntp_notifier>(host_to_notify, port_to_notify, bts_instance_identifier, growl_password);
         my->_blocks_too_old_monitor_done = fc::schedule([=]() { my->blocks_too_old_monitor_task(); },
                                                         fc::time_point::now() + fc::seconds(BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC),
                                                         "block_monitor_task");
