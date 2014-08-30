@@ -65,6 +65,7 @@ namespace bts { namespace client {
     {
        config( ) :
           default_peers(vector<string>{
+                  "5.101.106.138:1776",
                   "5.101.106.138:1777",
                   "5.101.106.138:1778",
                   "61.129.33.213:1776",
