@@ -460,6 +460,7 @@ namespace bts { namespace wallet {
                                                            double amount_per_xts,
                                                            const string& amount_asset_symbol, bool sign = true );
 
+         uint32_t                           regenerate_keys( const string& account_name, uint32_t max_number_of_attempts );
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
 
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
