@@ -4,7 +4,7 @@
 # from macdeployqt. Without the plists, 'codesign' fails on 10.9 with
 # "bundle format unrecognized, invalid, or unsuitable".
 #
-# Example usage: 
+# Example usage:
 # ruby macdeployqt_fix_frameworks.rb /Users/me/Qt5.2.0/5.2.0/clang_64/ MyProgram.app
 #
 # Links:
