@@ -85,7 +85,8 @@ namespace bts { namespace blockchain {
                                   (amount)
                                   (current_balance_record->balance - amount) );
       }
-      else if( current_balance_record )
+
+      if( current_balance_record )
       {
          switch( (withdraw_condition_types)current_balance_record->condition.type )
          {
