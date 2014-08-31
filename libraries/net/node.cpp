@@ -456,7 +456,15 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _dump_node_status_task_done;
 
-#define USE_PEERS_TO_DELETE_MUTEX 1
+      /* We have two alternate paths through the schedule_peer_for_deletion code -- one that 
+       * uses a mutex to prevent one fiber from adding items to the queue while another is deleting
+       * items from it, and one that doesn't.  The one that doesn't is simpler and more efficient
+       * code, but we're keeping around the version that uses the mutex because it crashes, and 
+       * this crash probably indicates a bug in our underlying threading code that needs 
+       * fixing.  To produce the bug, define USE_PEERS_TO_DELETE_MUTEX and then connect up
+       * to the network and set your desired/max connection counts high 
+       */
+//#define USE_PEERS_TO_DELETE_MUTEX 1
 #ifdef USE_PEERS_TO_DELETE_MUTEX
       fc::mutex _peers_to_delete_mutex;
 #endif
