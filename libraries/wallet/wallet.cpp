@@ -2972,6 +2972,20 @@ namespace bts { namespace wallet {
             ulog( "${e}", ("e", e.to_detail_string()) );
          }
       }
+
+      auto next_child_idx = my->_wallet_db.get_property( next_child_key_index );
+      int32_t next_child_index = 0;
+      if( next_child_idx.is_null() )
+      {
+         next_child_index = 1;
+      }
+      else
+      {
+         next_child_index = next_child_idx.as<int32_t>();
+      }
+      if( next_child_index < count )
+         my->_wallet_db.set_property( property_enum::next_child_key_index, count );
+
      if( regenerated_keys )
        scan_chain();
       return regenerated_keys;
