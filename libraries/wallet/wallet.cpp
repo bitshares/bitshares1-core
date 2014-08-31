@@ -1179,78 +1179,76 @@ namespace bts { namespace wallet {
                 // if( _wallet_db.has_private_key( deposit.owner ) )
                 if( deposit.memo ) /* titan transfer */
                 {
-                   _scanner_thread->async( [&]()
+                   for( const auto& key : keys )
                    {
-                       for( const auto& key : keys )
-                       {
-                          omemo_status status = deposit.decrypt_memo_data( key );
-                          if( status.valid() ) /* If I've successfully decrypted then it's for me */
-                          {
-                             _wallet_db.cache_memo( *status, key, _wallet_password );
+                      omemo_status status;
+                      _scanner_thread->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
+                      if( status.valid() ) /* If I've successfully decrypted then it's for me */
+                      {
+                         _wallet_db.cache_memo( *status, key, _wallet_password );
 
-                             auto new_entry = true;
-                             if( status->memo_flags == from_memo )
-                             {
-                                for( auto& entry : trx_rec.ledger_entries )
+                         auto new_entry = true;
+                         if( status->memo_flags == from_memo )
+                         {
+                            for( auto& entry : trx_rec.ledger_entries )
+                            {
+                                if( !entry.from_account.valid() ) continue;
+                                if( !entry.memo_from_account.valid() )
                                 {
-                                    if( !entry.from_account.valid() ) continue;
-                                    if( !entry.memo_from_account.valid() )
-                                    {
-                                        const auto a1 = self->get_key_label( *entry.from_account );
-                                        const auto a2 = self->get_key_label( status->from );
-                                        if( a1 != a2 ) continue;
-                                    }
-
-                                    new_entry = false;
-                                    if( !entry.memo_from_account.valid() )
-                                        entry.from_account = status->from;
-                                    entry.to_account = key.get_public_key();
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    break;
-                                }
-                                if( new_entry )
-                                {
-                                    auto entry = ledger_entry();
-                                    entry.from_account = status->from;
-                                    entry.to_account = key.get_public_key();
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    trx_rec.ledger_entries.push_back( entry );
-                                }
-                             }
-                             else // to_memo
-                             {
-                                for( auto& entry : trx_rec.ledger_entries )
-                                {
-                                    if( !entry.from_account.valid() ) continue;
                                     const auto a1 = self->get_key_label( *entry.from_account );
-                                    const auto a2 = self->get_key_label( key.get_public_key() );
+                                    const auto a2 = self->get_key_label( status->from );
                                     if( a1 != a2 ) continue;
-
-                                    new_entry = false;
-                                    entry.from_account = key.get_public_key();
-                                    entry.to_account = status->from;
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    break;
                                 }
-                                if( new_entry )
-                                {
-                                    auto entry = ledger_entry();
-                                    entry.from_account = key.get_public_key();
-                                    entry.to_account = status->from;
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    trx_rec.ledger_entries.push_back( entry );
-                                }
-                             }
 
-                             cache_deposit = true;
-                             break;
-                          }
-                       }
-                   }, "scan_deposit" ).wait();
+                                new_entry = false;
+                                if( !entry.memo_from_account.valid() )
+                                    entry.from_account = status->from;
+                                entry.to_account = key.get_public_key();
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                break;
+                            }
+                            if( new_entry )
+                            {
+                                auto entry = ledger_entry();
+                                entry.from_account = status->from;
+                                entry.to_account = key.get_public_key();
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                trx_rec.ledger_entries.push_back( entry );
+                            }
+                         }
+                         else // to_memo
+                         {
+                            for( auto& entry : trx_rec.ledger_entries )
+                            {
+                                if( !entry.from_account.valid() ) continue;
+                                const auto a1 = self->get_key_label( *entry.from_account );
+                                const auto a2 = self->get_key_label( key.get_public_key() );
+                                if( a1 != a2 ) continue;
+
+                                new_entry = false;
+                                entry.from_account = key.get_public_key();
+                                entry.to_account = status->from;
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                break;
+                            }
+                            if( new_entry )
+                            {
+                                auto entry = ledger_entry();
+                                entry.from_account = key.get_public_key();
+                                entry.to_account = status->from;
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                trx_rec.ledger_entries.push_back( entry );
+                            }
+                         }
+
+                         cache_deposit = true;
+                         break;
+                      }
+                   }
                    break;
                 }
                 else /* market cancel or cover proceeds */
@@ -2277,6 +2275,8 @@ namespace bts { namespace wallet {
 
       FC_ASSERT( current_account.valid(),
                 "You must create an account before importing a key" );
+
+      FC_ASSERT( is_receive_account( account_name ) );
 
       auto pub_key = key.get_public_key();
       address key_address(pub_key);
