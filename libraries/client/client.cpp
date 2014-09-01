@@ -432,7 +432,7 @@ config load_config( const fc::path& datadir )
       config cfg;
       if( fc::exists( config_file ) )
       {
-         std::cout << "Loading config from: " << config_file.generic_string() << "\n";
+         std::cout << "Loading config from file: " << config_file.generic_string() << "\n";
          const auto default_peers = cfg.default_peers;
          cfg = fc::json::from_file( config_file ).as<config>();
 
@@ -452,8 +452,8 @@ config load_config( const fc::path& datadir )
       {
          std::cerr << "Creating default config file at: " << config_file.generic_string() << "\n";
          cfg.logging = create_default_logging_config( datadir );
-         fc::json::save_to_file( cfg, config_file );
       }
+      fc::json::save_to_file( cfg, config_file );
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
