@@ -28,6 +28,8 @@ namespace bts { namespace wallet {
 
          int32_t              new_wallet_record_index();
          int32_t              new_key_child_index();
+         fc::ecc::private_key get_private_key( const fc::sha512& password, int index );
+
          fc::ecc::private_key new_private_key( const fc::sha512& password,
                                                const address& parent_account_address = address(),
                                                bool store_key = true );

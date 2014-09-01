@@ -15,6 +15,8 @@ class market_engine
       void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try {
+             const auto pending_block_num = _pending_state->get_head_block_num();
+
              _quote_id = quote_id;
              _base_id = base_id;
              auto quote_asset = _pending_state->get_asset_record( _quote_id );
@@ -59,29 +61,23 @@ class market_engine
              {
                 if( quote_asset->is_market_issued() )
                 {
-                   if( _pending_state->get_head_block_num() > BTS_BLOCKCHAIN_USE_MEDIAN_IF_AVAILABLE )
+                   if( market_stat->avg_price_1h.ratio == fc::uint128_t() )
                    {
-                      if( median_price )
-                      {
-                         market_stat->avg_price_1h = *median_price;
-                      }
-                      else if( market_stat->avg_price_1h.ratio == fc::uint128_t() )
+                      if( !median_price )
                       {
                          FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
                       }
-                      max_short_bid = market_stat->avg_price_1h; //market_stat->maximum_bid();
-                      min_cover_ask = market_stat->minimum_ask();
-                   }
-                   else
-                   {
-                      if( market_stat->avg_price_1h.ratio == fc::uint128_t() )
+                      else
                       {
-                         if( !median_price ) FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
                          market_stat->avg_price_1h = *median_price;
                       }
-                      max_short_bid = market_stat->maximum_bid();
-                      min_cover_ask = market_stat->minimum_ask();
                    }
+                   min_cover_ask = market_stat->minimum_ask();
+
+                   if( median_price )
+                      max_short_bid = *median_price;
+                   else
+                      max_short_bid = market_stat->avg_price_1h;
                 }
                 else // we only liquidate fees collected for user issued assets
                 {
@@ -173,18 +169,10 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
-                   // in the event that there is a margin call, we must accept the
-                   // bid price assuming the bid price is reasonable
-                   if( mtrx.bid_price < min_cover_ask )
-                   {
-                      wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
-                      _current_ask.reset();
-                      continue;
-                   }
-
                    if( mtrx.bid_price > max_short_bid )
                    {
                       wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
                    }
@@ -245,17 +233,6 @@ class market_engine
 
                    mtrx.ask_price = mtrx.bid_price;
 
-                   /**
-                    *  Don't cover at prices below the minimum cover price this is designed to prevent manipulation
-                    *  where the cover must accept very low USD valuations
-                    */
-                   if( mtrx.bid_price < min_cover_ask )
-                   {
-                      wlog( "skipping ${x} < min_cover_ask ${b}", ("x",_current_bid->get_price())("b", min_cover_ask)  );
-                      _current_ask.reset();
-                      continue;
-                   }
-
                    auto max_usd_purchase = asset(*_current_ask->collateral,0) * mtrx.bid_price;
                    auto usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
 
@@ -288,6 +265,7 @@ class market_engine
                    if( mtrx.bid_price > max_short_bid )
                    {
                       wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
                    }
@@ -344,7 +322,6 @@ class market_engine
                    mtrx.fees_collected = mtrx.bid_paid - mtrx.ask_received;
                 }
 
-
                 push_market_transaction(mtrx);
                 if( mtrx.ask_received.asset_id == 0 )
                   trading_volume += mtrx.ask_received;
@@ -361,35 +338,37 @@ class market_engine
 
              market_stat->last_error.reset();
 
+             order_did_execute |= (pending_block_num % 6) == 0;
+
              if( _current_bid && _current_ask && order_did_execute )
              {
                 // after the market is running solid we can use this metric...
                 market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
+                const auto max_bid = market_stat->maximum_bid();
+
                 // limit the maximum movement rate of the price.
                 if( _current_bid->get_price() < min_cover_ask )
                    market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                else if( _current_bid->get_price() > market_stat->maximum_bid() ) //max_short_bid )
-                   market_stat->avg_price_1h.ratio += max_short_bid.ratio;
+                else if( _current_bid->get_price() > max_bid )
+                   market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
                 else
                    market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
 
                 if( _current_ask->get_price() < min_cover_ask )
                    market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                else if( _current_ask->get_price() > market_stat->maximum_bid() ) //max_short_bid )
-                   market_stat->avg_price_1h.ratio += max_short_bid.ratio;
+                else if( _current_ask->get_price() > max_bid )
+                   market_stat->avg_price_1h.ratio += max_bid.ratio;
                 else
                    market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
-
 
                 market_stat->avg_price_1h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
              }
 
              if( quote_asset->is_market_issued() )
              {
-                if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT ||
-                    market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
-                  )
+                if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
+                    || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT )
                 {
                    _market_transactions.clear(); // nothing should have executed
                   std::string reason = "After executing orders there was insufficient depth remaining";

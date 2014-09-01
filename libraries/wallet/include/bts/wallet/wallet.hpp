@@ -52,13 +52,6 @@ namespace bts { namespace wallet {
          fc::signal<void( ledger_entry )> update_margin_position;
 
          /**
-          *  To generate predictable test results we need an option
-          *  to use deterministic keys rather than purely random
-          *  one-time keys.
-          */
-         void use_deterministic_one_time_keys( bool state );
-
-         /**
           *  Wallet File Management
           */
          ///@{
@@ -467,7 +460,12 @@ namespace bts { namespace wallet {
                                                            double amount_per_xts,
                                                            const string& amount_asset_symbol, bool sign = true );
 
+         uint32_t                           regenerate_keys( const string& account_name, uint32_t max_number_of_attempts );
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
+
+         wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
+         wallet_transaction_record          edit_transaction( const string& transaction_id_prefix, const string& recipient_account,
+                                                              const string& memo_message );
 
          optional<wallet_account_record>    get_account_record( const address& addr)const;
          /*

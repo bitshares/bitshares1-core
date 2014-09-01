@@ -185,12 +185,12 @@ namespace bts { namespace blockchain {
 
       current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._current_state->now();
-      eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
 
       if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id ) 
          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
 
       eval_state._current_state->store_balance_record( *current_balance_record );
+      eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain

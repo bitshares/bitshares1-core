@@ -933,8 +933,31 @@ namespace bts { namespace cli {
                                                && !quote_asset_record->is_market_issued()
                                                && quote_asset_record->collected_fees > 0;
 
+                  oprice  median_price =  _client->get_chain()->get_median_delegate_price( quote_id );
+                  auto status = _client->get_chain()->get_market_status( quote_id, base_id );
+                  auto max_short_price = median_price ? *median_price : ( status ? status->avg_price_1h : price(0, quote_id, base_id) );
+                  
+
                   while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
                   {
+                     if( median_price )
+                     {
+                        while( bid_itr != bids_asks.first.end() )
+                        {
+                           if( bid_itr->type == bts::blockchain::short_order )
+                           {
+                              if( bid_itr->get_price() > *median_price )
+                                  ++bid_itr;
+                              else 
+                                 break;
+                           }
+                           else 
+                              break;
+                        }
+                     }
+                     if( bid_itr == bids_asks.first.end() )
+                        break;
+
                     if( show_fee_order_record )
                     {
                        *_out << std::left << std::setw(26) << _client->get_chain()->to_pretty_asset( asset(quote_asset_record->collected_fees, quote_id) )
@@ -1012,33 +1035,30 @@ namespace bts { namespace cli {
                         }
                      }
 
-                    auto status = _client->get_chain()->get_market_status( quote_id, base_id );
-                    FC_ASSERT(status);
-                    auto recent_average_price = status->avg_price_1h;
+                    auto recent_average_price = _client->get_chain()->get_market_status(quote_id, base_id)->avg_price_1h;
                     *_out << "Average Price in Recent Trades: "
                           << _client->get_chain()->to_pretty_price(recent_average_price)
                           << "     ";
 
-                    auto maximum_short_price = status->maximum_bid();
-                    auto minimum_cover_price = status->minimum_ask();
-                    *_out << "Maximum Short Price: "
-                          << _client->get_chain()->to_pretty_price( maximum_short_price )
-                          <<"     ";
-                    *_out << "Minimum Cover Price: "
-                          << _client->get_chain()->to_pretty_price( minimum_cover_price )
-                          <<"\n";
-
-                    *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
-                    *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"     ";
-                    *_out << "Min Depth: " << _client->get_chain()->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) ) <<"\n";
-                    if(  status->last_error )
+                    auto status = _client->get_chain()->get_market_status( quote_id, base_id );
+                    if( status )
                     {
-                       *_out << "Last Error:  ";
-                       *_out << status->last_error->to_string() << "\n";
-                       if( true || status->last_error->code() != 37005 /* insufficient funds */ )
+                       *_out << "Maximum Short Price: "
+                             << _client->get_chain()->to_pretty_price( max_short_price )
+                             <<"     ";
+
+                       *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
+                       *_out << "Ask Depth: " << _client->get_chain()->to_pretty_asset( asset(status->ask_depth, base_id) ) <<"     ";
+                       *_out << "Min Depth: " << _client->get_chain()->to_pretty_asset( asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) ) <<"\n";
+                       if(  status->last_error )
                        {
-                          *_out << "Details:\n";
-                          *_out << status->last_error->to_detail_string() << "\n";
+                          *_out << "Last Error:  ";
+                          *_out << status->last_error->to_string() << "\n";
+                          if( true || status->last_error->code() != 37005 /* insufficient funds */ )
+                          {
+                             *_out << "Details:\n";
+                             *_out << status->last_error->to_detail_string() << "\n";
+                          }
                        }
                     }
 
