@@ -934,6 +934,8 @@ namespace bts { namespace cli {
                                                && quote_asset_record->collected_fees > 0;
 
                   oprice  median_price =  _client->get_chain()->get_median_delegate_price( quote_id );
+                  auto status = _client->get_chain()->get_market_status( quote_id, base_id );
+                  auto max_short_price = median_price ? *median_price : ( status ? status->avg_price_1h : price(0, quote_id, base_id) );
                   
 
                   while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
@@ -949,6 +951,8 @@ namespace bts { namespace cli {
                               else 
                                  break;
                            }
+                           else 
+                              break;
                         }
                      }
                      if( bid_itr == bids_asks.first.end() )
@@ -1040,7 +1044,7 @@ namespace bts { namespace cli {
                     if( status )
                     {
                        *_out << "Maximum Short Price: "
-                             << _client->get_chain()->to_pretty_price( median_price ? *median_price : status->avg_price_1h )
+                             << _client->get_chain()->to_pretty_price( max_short_price )
                              <<"     ";
 
                        *_out << "Bid Depth: " << _client->get_chain()->to_pretty_asset( asset(status->bid_depth, base_id) ) <<"     ";
