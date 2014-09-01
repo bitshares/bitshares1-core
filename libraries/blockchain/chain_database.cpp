@@ -2692,7 +2692,8 @@ namespace bts { namespace blockchain {
    vector<order_history_record> chain_database::market_order_history(asset_id_type quote,
                                                                      asset_id_type base,
                                                                      uint32_t skip_count,
-                                                                     uint32_t limit)
+                                                                     uint32_t limit,
+                                                                     const address& owner)
    {
       FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
 
@@ -2716,10 +2717,12 @@ namespace bts { namespace blockchain {
       auto orders = get_transactions_from_prior_block();
 
       std::function<bool(const market_transaction&)> order_is_uninteresting =
-          [&quote,&base,this](const market_transaction& order) -> bool
+          [&quote,&base,&owner,this](const market_transaction& order) -> bool
       {
           if( order.ask_price.base_asset_id == base
               && order.ask_price.quote_asset_id == quote )
+            return false;
+          if( owner != address() && order.ask_owner != owner && order.bid_owner != owner )
             return false;
           return true;
       };

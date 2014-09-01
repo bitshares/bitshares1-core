@@ -3289,12 +3289,14 @@ config load_config( const fc::path& datadir )
    std::vector<order_history_record> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
                                                                                   const std::string &base_symbol,
                                                                                   uint32_t skip_count,
-                                                                                  uint32_t limit) const
+                                                                                  uint32_t limit,
+                                                                                  const string& owner) const
    {
        auto quote_id = _chain_db->get_asset_id(quote_symbol);
        auto base_id = _chain_db->get_asset_id(base_symbol);
+       address owner_address = owner.empty()? address() : address(owner);
 
-       return _chain_db->market_order_history(quote_id, base_id, skip_count, limit);
+       return _chain_db->market_order_history(quote_id, base_id, skip_count, limit, owner_address);
    }
 
    market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
