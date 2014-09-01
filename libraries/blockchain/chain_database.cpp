@@ -1046,7 +1046,7 @@ namespace bts { namespace blockchain {
              {
                  if( !reindex_status_callback )
                      std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed++ % 4] << "]" << std::flush;
-                 else if(blocks_indexed % 1000 == 0)
+                 else if(blocks_indexed % 10000 == 0)
                      reindex_status_callback(blocks_indexed);
 
                  auto block = block_itr.value();
