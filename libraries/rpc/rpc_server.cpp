@@ -655,35 +655,30 @@ namespace bts { namespace rpc {
   {
     if (!cfg.is_valid())
       return false;
+
     try
     {
       my->_config = cfg;
       my->_tcp_serv = std::make_shared<fc::tcp_server>();
-      try
-      {
-        my->_tcp_serv->listen( cfg.rpc_endpoint );
-      }
-      catch (fc::exception& e)
-      {
-        if (cfg.rpc_endpoint.port() != 0)
+      int attempts = 0;
+      bool success = false;
+
+      while (!success) {
+        try
         {
-          wlog("unable to listen on endpoint ${endpoint}", ("endpoint", cfg.rpc_endpoint));
-          fc::ip::endpoint any_port_endpoint = cfg.rpc_endpoint;
-          any_port_endpoint.set_port(0);
-          try
-          {
-            my->_tcp_serv->listen(any_port_endpoint);
-          }
-          catch (fc::exception& e)
-          {
-            wlog("unable to listen on endpoint ${endpoint}", ("endpoint", any_port_endpoint));
-            FC_RETHROW_EXCEPTION(e, error, "unable to listen for RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}",
-                                 ("firstchoice", cfg.rpc_endpoint)("secondchoice", any_port_endpoint));
-          }
+          my->_tcp_serv->listen( cfg.rpc_endpoint );
+          success = true;
         }
-        else
-          FC_RETHROW_EXCEPTION(e, error, "unable to listen for RPC connections on endpoint ${endpoint}", ("endpoint", cfg.rpc_endpoint));
+        catch (fc::exception& e)
+        {
+          FC_ASSERT(++attempts < 30, "Unable to bind RPC port; refusing to continue.");
+          ulog("Failed to bind RPC port ${endpoint}; waiting 10 seconds and retrying (attempt ${attempt}/30)",
+               ("endpoint", cfg.rpc_endpoint)("attempt", attempts));
+          elog("Failed to bind RPC port ${endpoint} with error ${e}", ("endpoint", cfg.rpc_endpoint)("e", e.to_detail_string()));
+          fc::usleep(fc::seconds(10));
+        }
       }
+
       ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
 
       my->_accept_loop_complete = fc::async( [=]{ my->accept_loop(); }, "rpc_server accept_loop" );
@@ -699,36 +694,28 @@ namespace bts { namespace rpc {
     try
     {
       my->_config = cfg;
-
       auto m = my.get();
       my->_httpd = std::make_shared<fc::http::server>();
-      try
-      {
-        my->_httpd->listen(cfg.httpd_endpoint);
-      }
-      catch(fc::exception& e)
-      {
-        if(cfg.httpd_endpoint.port() != 0)
-        {
-          wlog("unable to listen on endpoint ${endpoint}", ("endpoint", cfg.httpd_endpoint));
-          fc::ip::endpoint any_port_endpoint = cfg.httpd_endpoint;
-          any_port_endpoint.set_port(0);
-          try
-          {
-            my->_httpd->listen(any_port_endpoint);
-          }
-          catch(fc::exception& e)
-          {
-            wlog("unable to listen on endpoint ${endpoint}", ("endpoint", any_port_endpoint));
-            FC_RETHROW_EXCEPTION(e, error, "unable to listen for HTTP JSON RPC connections on endpoint ${firstchoice} or our fallback ${secondchoice}",
-              ("firstchoice", cfg.httpd_endpoint)("secondchoice", any_port_endpoint));
-          }
-        }
-        else
-          FC_RETHROW_EXCEPTION(e, error, "unable to listen for HTTP JSON RPC connections on endpoint ${endpoint}", ("endpoint", cfg.httpd_endpoint));
-      }
-      my->_httpd->on_request([m](const fc::http::request& r, const fc::http::server::response& s){ m->handle_request(r, s); });
+      int attempts = 0;
+      bool success = false;
 
+      while (!success) {
+        try
+        {
+          my->_httpd->listen( cfg.httpd_endpoint );
+          success = true;
+        }
+        catch (fc::exception& e)
+        {
+          FC_ASSERT(++attempts < 30, "Unable to bind HTTPD port; refusing to continue.");
+          ulog("Failed to bind HTTPD port ${endpoint}; waiting 10 seconds and retrying (attempt ${attempt}/30)",
+               ("endpoint", cfg.httpd_endpoint)("attempt", attempts));
+          elog("Failed to bind HTTPD port ${endpoint} with error ${e}", ("endpoint", cfg.rpc_endpoint)("e", e.to_detail_string()));
+          fc::usleep(fc::seconds(10));
+        }
+      }
+
+      my->_httpd->on_request([m](const fc::http::request& r, const fc::http::server::response& s){ m->handle_request(r, s); });
       return true;
     } FC_RETHROW_EXCEPTIONS(warn, "attempting to configure rpc server ${port}", ("port", cfg.rpc_endpoint)("config", cfg));
   }

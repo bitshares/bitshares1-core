@@ -21,6 +21,8 @@ For the Qt Wallet, some extra steps are required:
 	make buildweb
 	make BitSharesX
 
+By default, the web wallet will not be rebuilt even after pulling new changes. To force the web wallet to rebuild, use `make forcebuildweb`.
+
 The binary will be located at programs/qt_wallet/BitSharesX
 The wallet can be installed as a local application capable of handling xts: URLs like so:
 
