@@ -1006,11 +1006,14 @@ namespace bts { namespace wallet {
           if( amount.asset_id == total_fee.asset_id )
               total_fee -= amount;
 
-          const auto okey_rec = _wallet_db.lookup_key( op.bid_index.owner );
+          auto okey_rec = _wallet_db.lookup_key( op.bid_index.owner );
           if( okey_rec && okey_rec->has_private_key() )
           {
+             /* Restore key label */
+             okey_rec->memo = "BID-" + variant( address( op.bid_index.owner ) ).as_string().substr( 3, 8 );
+             _wallet_db.store_key( *okey_rec );
+
              auto order = _blockchain->get_market_bid( op.bid_index );
-             //FC_ASSERT( order.valid() );
              _wallet_db.update_market_order( op.bid_index.owner, order, trx_rec.trx.id() );
 
              for( auto& entry : trx_rec.ledger_entries )
@@ -1036,12 +1039,13 @@ namespace bts { namespace wallet {
                      {
                          entry.from_account = okey_rec->public_key;
                          entry.amount = amount;
-                         //entry.memo =
+                         entry.memo = "cancel " + *okey_rec->memo;
                          break;
                      }
                      else if( *entry.from_account == okey_rec->public_key )
                      {
                          entry.amount = amount;
+                         entry.memo = "cancel " + *okey_rec->memo;
                          break;
                      }
                  }
@@ -1059,9 +1063,13 @@ namespace bts { namespace wallet {
           if( amount.asset_id == total_fee.asset_id )
               total_fee -= amount;
 
-          const auto okey_rec = _wallet_db.lookup_key( op.ask_index.owner );
+          auto okey_rec = _wallet_db.lookup_key( op.ask_index.owner );
           if( okey_rec && okey_rec->has_private_key() )
           {
+             /* Restore key label */
+             okey_rec->memo = "ASK-" + variant( address( op.ask_index.owner ) ).as_string().substr( 3, 8 );
+             _wallet_db.store_key( *okey_rec );
+
              auto order = _blockchain->get_market_ask( op.ask_index );
              _wallet_db.update_market_order( op.ask_index.owner, order, trx_rec.trx.id() );
 
@@ -1088,12 +1096,13 @@ namespace bts { namespace wallet {
                      {
                          entry.from_account = okey_rec->public_key;
                          entry.amount = amount;
-                         //entry.memo =
+                         entry.memo = "cancel " + *okey_rec->memo;
                          break;
                      }
                      else if( *entry.from_account == okey_rec->public_key )
                      {
                          entry.amount = amount;
+                         entry.memo = "cancel " + *okey_rec->memo;
                          break;
                      }
                  }
@@ -1111,9 +1120,13 @@ namespace bts { namespace wallet {
           if( amount.asset_id == total_fee.asset_id )
               total_fee -= amount;
 
-          const auto okey_rec = _wallet_db.lookup_key( op.short_index.owner );
+          auto okey_rec = _wallet_db.lookup_key( op.short_index.owner );
           if( okey_rec && okey_rec->has_private_key() )
           {
+             /* Restore key label */
+             okey_rec->memo = "SHORT-" + variant( address( op.short_index.owner ) ).as_string().substr( 3, 8 );
+             _wallet_db.store_key( *okey_rec );
+
              auto order = _blockchain->get_market_short( op.short_index );
              _wallet_db.update_market_order( op.short_index.owner, order, trx_rec.trx.id() );
 
@@ -1140,12 +1153,13 @@ namespace bts { namespace wallet {
                      {
                          entry.from_account = okey_rec->public_key;
                          entry.amount = amount;
-                         //entry.memo =
+                         entry.memo = "cancel " + *okey_rec->memo;
                          break;
                      }
                      else if( *entry.from_account == okey_rec->public_key )
                      {
                          entry.amount = amount;
+                         entry.memo = "cancel " + *okey_rec->memo;
                          break;
                      }
                  }
@@ -2049,7 +2063,7 @@ namespace bts { namespace wallet {
     *  will not be valid for sending TITAN transactions to, but will
     *  be able to receive payments directly.
     */
-   public_key_type  wallet::get_new_public_key( const string& account_name )
+   public_key_type wallet::get_new_public_key( const string& account_name )
    { try {
       if( NOT is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -3075,22 +3089,13 @@ namespace bts { namespace wallet {
        const auto withdraw_condition = deposit_op.condition.as<withdraw_with_signature>();
        FC_ASSERT( withdraw_condition.memo.valid() );
 
-       /* We had to have stored the one-time key */
        fc::ecc::private_key private_key;
        try
        {
-           bool found_key = false;
-           const auto& key_items = my->_wallet_db.get_keys();
-           for( const auto& key_item : key_items )
-           {
-               private_key = key_item.second.decrypt_private_key( my->_wallet_password );
-               if( public_key_type( private_key.get_public_key() ) == withdraw_condition.memo->one_time_key )
-               {
-                   found_key = true;
-                   break;
-               }
-           }
-           FC_ASSERT( found_key );
+           /* We had to have stored the one-time key */
+           const auto key_record = my->_wallet_db.lookup_key( withdraw_condition.memo->one_time_key );
+           FC_ASSERT( key_record.valid() && key_record->has_private_key() );
+           private_key = key_record->decrypt_private_key( my->_wallet_password );
 
            /* Get shared secret and check memo decryption */
            bool found_recipient = false;
@@ -4261,7 +4266,8 @@ namespace bts { namespace wallet {
         entry.from_account = owner_key_record->public_key;
         entry.to_account = to_account_key;
         entry.amount = deposit_amount;
-        entry.memo = "cancel " + variant( owner_key_record->memo ).as_string();
+        if( owner_key_record->memo.valid() )
+            entry.memo = "cancel " + *owner_key_record->memo;
 
         auto record = wallet_transaction_record();
         record.is_market = true;
@@ -4376,8 +4382,8 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "BID-" + variant( address(order_key) ).as_string().substr(3,8);
-           my->_wallet_db.store_key(*key_rec);
+           key_rec->memo = "BID-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+           my->_wallet_db.store_key( *key_rec );
        }
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
@@ -4488,8 +4494,8 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ASK-" + variant( address(order_key) ).as_string().substr(3,8);
-           my->_wallet_db.store_key(*key_rec);
+           key_rec->memo = "ASK-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+           my->_wallet_db.store_key( *key_rec );
        }
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
@@ -4583,8 +4589,8 @@ namespace bts { namespace wallet {
 
            auto key_rec = my->_wallet_db.lookup_key( order_key );
            FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "SHORT-" + variant( address(order_key) ).as_string().substr(3,8);
-           my->_wallet_db.store_key(*key_rec);
+           key_rec->memo = "SHORT-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+           my->_wallet_db.store_key( *key_rec );
        }
 
        return trx;
@@ -4810,37 +4816,27 @@ namespace bts { namespace wallet {
    string wallet::get_key_label( const public_key_type& key )const
    { try {
        if( key == public_key_type() )
-         return "ANONYMOUS";
+           return "ANONYMOUS";
 
-       auto acct_record = my->_wallet_db.lookup_account( key );
-       if (acct_record)
+       auto account_record = my->_wallet_db.lookup_account( key );
+       if( account_record.valid() )
+           return account_record->name;
+
+       const auto blockchain_account_record = my->_blockchain->get_account_record( key );
+       if( blockchain_account_record.valid() )
+          return blockchain_account_record->name;
+
+       const auto key_record = my->_wallet_db.lookup_key( key );
+       if( key_record.valid() )
        {
-          // pretty_trx.from_me = my->_wallet_db.has_private_key( address( key ) );
-           return acct_record->name;
+           if( key_record->memo.valid() )
+               return *key_record->memo;
+
+           account_record = my->_wallet_db.lookup_account( key_record->account_address );
+           if( account_record.valid() )
+               return account_record->name;
        }
-       else
-       {
-           auto registered_account = my->_blockchain->get_account_record( key );
-           if( registered_account.valid() )
-              return registered_account->name;
-           else
-           {
-              auto key_rec  = my->_wallet_db.lookup_key( key );
-              if(  key_rec )
-              {
-                 if( key_rec->memo )
-                 {
-                    return *key_rec->memo;
-                 }
-                 else
-                 {
-                    acct_record = my->_wallet_db.lookup_account( key_rec->account_address );
-                    if( acct_record )
-                       return  acct_record->name;
-                 }
-              }
-           }
-       }
+
        return string( key );
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 

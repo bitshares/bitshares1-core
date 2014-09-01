@@ -432,7 +432,7 @@ config load_config( const fc::path& datadir )
       config cfg;
       if( fc::exists( config_file ) )
       {
-         std::cout << "Loading config from: " << config_file.generic_string() << "\n";
+         std::cout << "Loading config from file: " << config_file.generic_string() << "\n";
          const auto default_peers = cfg.default_peers;
          cfg = fc::json::from_file( config_file ).as<config>();
 
@@ -452,8 +452,8 @@ config load_config( const fc::path& datadir )
       {
          std::cerr << "Creating default config file at: " << config_file.generic_string() << "\n";
          cfg.logging = create_default_logging_config( datadir );
-         fc::json::save_to_file( cfg, config_file );
       }
+      fc::json::save_to_file( cfg, config_file );
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
@@ -3289,64 +3289,12 @@ config load_config( const fc::path& datadir )
    std::vector<order_history_record> client_impl::blockchain_market_order_history(const std::string &quote_symbol,
                                                                                   const std::string &base_symbol,
                                                                                   uint32_t skip_count,
-                                                                                  uint32_t limit,
-                                                                                  uint32_t block_limit) const
+                                                                                  uint32_t limit) const
    {
-      FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
+       auto quote_id = _chain_db->get_asset_id(quote_symbol);
+       auto base_id = _chain_db->get_asset_id(base_symbol);
 
-      auto current_block_num = _chain_db->get_head_block_num();
-      auto head_block_num = current_block_num;
-      auto orders = _chain_db->get_market_transactions(current_block_num);
-
-      std::function<bool(const market_transaction&)> order_is_uninteresting =
-          [&quote_symbol,&base_symbol,this](const market_transaction& order) -> bool
-      {
-          if( order.ask_price.base_asset_id == _chain_db->get_asset_id(base_symbol)
-              && order.ask_price.quote_asset_id == _chain_db->get_asset_id(quote_symbol) )
-            return false;
-          return true;
-      };
-      //Filter out orders not in our current market of interest
-      orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
-
-      //While the next entire block of orders should be skipped...
-      while( skip_count > 0 && current_block_num > 0 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count ) {
-        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", current_block_num));
-        skip_count -= orders.size();
-        orders = _chain_db->get_market_transactions(--current_block_num);
-        orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
-      }
-
-      if( current_block_num == 0 && orders.size() <= skip_count )
-        // Skip count is greater or equal to the total number of relevant orders on the blockchain.
-        return vector<order_history_record>();
-
-      //If there are still some orders from the last block inspected to skip, remove them
-      if( skip_count > 0 )
-        orders.erase(orders.begin(), orders.begin() + skip_count);
-      ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
-
-      std::vector<order_history_record> results;
-      results.reserve(limit);
-      fc::time_point_sec stamp = _chain_db->get_block_header(current_block_num).timestamp;
-      for( const auto& rec : orders )
-        results.push_back(order_history_record(rec, stamp));
-
-      //While we still need more orders to reach our limit...
-      while( current_block_num > 1 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count )
-      {
-        auto more_orders = _chain_db->get_market_transactions(--current_block_num);
-        more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
-        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", current_block_num));
-        stamp = _chain_db->get_block_header(current_block_num).timestamp;
-        for( const auto& rec : more_orders )
-          if( results.size() < limit )
-            results.push_back(order_history_record(rec, stamp));
-          else
-            return results;
-      }
-
-      return results;
+       return _chain_db->market_order_history(quote_id, base_id, skip_count, limit);
    }
 
    market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
