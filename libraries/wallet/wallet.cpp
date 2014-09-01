@@ -151,9 +151,8 @@ namespace bts { namespace wallet {
       fc::ecc::private_key wallet_impl::create_one_time_key()
       {
         if( !_use_deterministic_one_time_keys )
-        {
             return fc::ecc::private_key::generate();
-        }
+
         return _wallet_db.new_private_key( _wallet_password );
       }
 
@@ -651,7 +650,7 @@ namespace bts { namespace wallet {
           }
           store_record |= has_deposit;
 
-          if( new_transaction && is_deposit )
+          if( new_transaction && is_deposit && transaction_record && transaction_record->ledger_entries.size() )
               self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
 
           /* Reconstruct fee */
@@ -1180,78 +1179,76 @@ namespace bts { namespace wallet {
                 // if( _wallet_db.has_private_key( deposit.owner ) )
                 if( deposit.memo ) /* titan transfer */
                 {
-                   _scanner_thread->async( [&]()
+                   for( const auto& key : keys )
                    {
-                       for( const auto& key : keys )
-                       {
-                          omemo_status status = deposit.decrypt_memo_data( key );
-                          if( status.valid() ) /* If I've successfully decrypted then it's for me */
-                          {
-                             _wallet_db.cache_memo( *status, key, _wallet_password );
+                      omemo_status status;
+                      _scanner_thread->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
+                      if( status.valid() ) /* If I've successfully decrypted then it's for me */
+                      {
+                         _wallet_db.cache_memo( *status, key, _wallet_password );
 
-                             auto new_entry = true;
-                             if( status->memo_flags == from_memo )
-                             {
-                                for( auto& entry : trx_rec.ledger_entries )
+                         auto new_entry = true;
+                         if( status->memo_flags == from_memo )
+                         {
+                            for( auto& entry : trx_rec.ledger_entries )
+                            {
+                                if( !entry.from_account.valid() ) continue;
+                                if( !entry.memo_from_account.valid() )
                                 {
-                                    if( !entry.from_account.valid() ) continue;
-                                    if( !entry.memo_from_account.valid() )
-                                    {
-                                        const auto a1 = self->get_key_label( *entry.from_account );
-                                        const auto a2 = self->get_key_label( status->from );
-                                        if( a1 != a2 ) continue;
-                                    }
-
-                                    new_entry = false;
-                                    if( !entry.memo_from_account.valid() )
-                                        entry.from_account = status->from;
-                                    entry.to_account = key.get_public_key();
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    break;
-                                }
-                                if( new_entry )
-                                {
-                                    auto entry = ledger_entry();
-                                    entry.from_account = status->from;
-                                    entry.to_account = key.get_public_key();
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    trx_rec.ledger_entries.push_back( entry );
-                                }
-                             }
-                             else // to_memo
-                             {
-                                for( auto& entry : trx_rec.ledger_entries )
-                                {
-                                    if( !entry.from_account.valid() ) continue;
                                     const auto a1 = self->get_key_label( *entry.from_account );
-                                    const auto a2 = self->get_key_label( key.get_public_key() );
+                                    const auto a2 = self->get_key_label( status->from );
                                     if( a1 != a2 ) continue;
-
-                                    new_entry = false;
-                                    entry.from_account = key.get_public_key();
-                                    entry.to_account = status->from;
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    break;
                                 }
-                                if( new_entry )
-                                {
-                                    auto entry = ledger_entry();
-                                    entry.from_account = key.get_public_key();
-                                    entry.to_account = status->from;
-                                    entry.amount = amount;
-                                    entry.memo = status->get_message();
-                                    trx_rec.ledger_entries.push_back( entry );
-                                }
-                             }
 
-                             cache_deposit = true;
-                             break;
-                          }
-                       }
-                   }, "scan_deposit" ).wait();
+                                new_entry = false;
+                                if( !entry.memo_from_account.valid() )
+                                    entry.from_account = status->from;
+                                entry.to_account = key.get_public_key();
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                break;
+                            }
+                            if( new_entry )
+                            {
+                                auto entry = ledger_entry();
+                                entry.from_account = status->from;
+                                entry.to_account = key.get_public_key();
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                trx_rec.ledger_entries.push_back( entry );
+                            }
+                         }
+                         else // to_memo
+                         {
+                            for( auto& entry : trx_rec.ledger_entries )
+                            {
+                                if( !entry.from_account.valid() ) continue;
+                                const auto a1 = self->get_key_label( *entry.from_account );
+                                const auto a2 = self->get_key_label( key.get_public_key() );
+                                if( a1 != a2 ) continue;
+
+                                new_entry = false;
+                                entry.from_account = key.get_public_key();
+                                entry.to_account = status->from;
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                break;
+                            }
+                            if( new_entry )
+                            {
+                                auto entry = ledger_entry();
+                                entry.from_account = key.get_public_key();
+                                entry.to_account = status->from;
+                                entry.amount = amount;
+                                entry.memo = status->get_message();
+                                trx_rec.ledger_entries.push_back( entry );
+                            }
+                         }
+
+                         cache_deposit = true;
+                         break;
+                      }
+                   }
                    break;
                 }
                 else /* market cancel or cover proceeds */
@@ -1508,6 +1505,7 @@ namespace bts { namespace wallet {
 
               if( current_version < 104 )
               {
+#if 0
                   /* Transaction scanning was broken by commit 00ece3a78b2775c4b8817e394f59b6225dded80b */
                   const auto broken_time = time_point_sec( 1408463100 ); // 2014-08-19T15:45:00
                   auto broken_trxs = vector<transaction_id_type>();
@@ -1538,17 +1536,20 @@ namespace bts { namespace wallet {
                       };
                       _unlocked_upgrade_tasks.push_back( rescan );
                   }
+#endif
               }
 
               if( current_version < 106 )
               {
                   self->set_transaction_expiration( BTS_WALLET_DEFAULT_TRANSACTION_EXPIRATION_SEC );
 
+#if 0
                   /* Transaction scanning was broken by commit d93521c7a2916eb0995dfadacd5ee74760f29d4b */
                   const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
                   const auto block_num = std::min( broken_block_num, self->get_last_scanned_block_number() );
                   self->set_last_scanned_block_number( block_num );
                   _wallet_db.remove_transaction( transaction_id_type() );
+#endif
               }
 
               if( _unlocked_upgrade_tasks.empty() )
@@ -1600,11 +1601,6 @@ namespace bts { namespace wallet {
    wallet::~wallet()
    {
       close();
-   }
-
-   void wallet::use_deterministic_one_time_keys( bool state )
-   {
-      my->_use_deterministic_one_time_keys = state;
    }
 
    void wallet::set_data_directory( const path& data_dir )
@@ -1781,7 +1777,6 @@ namespace bts { namespace wallet {
 
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
-      my->_use_deterministic_one_time_keys = false;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    bool wallet::is_open()const
@@ -2281,6 +2276,8 @@ namespace bts { namespace wallet {
       FC_ASSERT( current_account.valid(),
                 "You must create an account before importing a key" );
 
+      FC_ASSERT( is_receive_account( account_name ) );
+
       auto pub_key = key.get_public_key();
       address key_address(pub_key);
       current_key_record = my->_wallet_db.lookup_key( key_address );
@@ -2433,13 +2430,10 @@ namespace bts { namespace wallet {
         sign_transaction( transaction, required_signatures );
         my->_blockchain->store_pending_transaction( transaction, true );
 
-        const auto now = blockchain::now();
         record.record_id = transaction.id();
-        record.is_virtual = false;
-        record.is_confirmed = false;
         record.trx = transaction;
-        record.created_time = now;
-        record.received_time = now;
+        record.created_time = blockchain::now();
+        record.received_time = record.created_time;
         my->_wallet_db.store_transaction( record );
 
         for( const auto& op : transaction.operations )
@@ -2603,20 +2597,17 @@ namespace bts { namespace wallet {
        pretties.reserve( history.size() );
        for( const auto& item : history ) pretties.push_back( to_pretty_trx( item ) );
 
-       std::sort( pretties.begin(), pretties.end(),
-                  []( const pretty_transaction& a, const pretty_transaction& b ) -> bool
-                  {
-                     if( a.is_confirmed == b.is_confirmed )
-                     {
-                         if( a.block_num != b.block_num ) return a.block_num < b.block_num;
-                         if( a.received_time != b.received_time) return a.received_time < b.received_time;
-                         return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
-                     }
-                     else
-                     {
-                        return a.is_confirmed;
-                     }
-                  } );
+       const auto sorter = []( const pretty_transaction& a, const pretty_transaction& b ) -> bool
+       {
+           if( a.is_confirmed == b.is_confirmed && a.block_num != b.block_num )
+               return a.block_num < b.block_num;
+
+           if( a.received_time != b.received_time)
+               return a.received_time < b.received_time;
+
+           return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
+       };
+       std::sort( pretties.begin(), pretties.end(), sorter );
 
        // TODO: Handle pagination
 
@@ -2967,6 +2958,43 @@ namespace bts { namespace wallet {
       return trx;
      } FC_CAPTURE_AND_RETHROW( (account_to_publish_under) ) }
 
+   uint32_t wallet::regenerate_keys( const string& account_name, uint32_t count )
+   {
+      uint32_t regenerated_keys = 0;
+      for( uint32_t i = 0; i < count; ++i )
+      {
+         try {
+            auto key = my->_wallet_db.get_private_key( my->_wallet_password, i );
+            auto addr = address( key.get_public_key() );
+            if( !my->_wallet_db.has_private_key( addr ) )
+            {
+               import_private_key( key, account_name );
+               ++regenerated_keys;
+            }
+         } catch ( const fc::exception& e )
+         {
+            ulog( "${e}", ("e", e.to_detail_string()) );
+         }
+      }
+
+      auto next_child_idx = my->_wallet_db.get_property( next_child_key_index );
+      int32_t next_child_index = 0;
+      if( next_child_idx.is_null() )
+      {
+         next_child_index = 1;
+      }
+      else
+      {
+         next_child_index = next_child_idx.as<int32_t>();
+      }
+      if( next_child_index < count )
+         my->_wallet_db.set_property( property_enum::next_child_key_index, count );
+
+     if( regenerated_keys )
+       scan_chain();
+      return regenerated_keys;
+   }
+
    int32_t wallet::recover_accounts( int32_t number_of_accounts, int32_t max_number_of_attempts )
    {
      FC_ASSERT( is_open() );
@@ -2991,6 +3019,146 @@ namespace bts { namespace wallet {
      if( recoveries )
        scan_chain();
      return recoveries;
+   }
+
+   wallet_transaction_record wallet::recover_transaction( const string& transaction_id_prefix, const string& recipient_account )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+
+       auto transaction_record = get_transaction( transaction_id_prefix );
+
+       /* Only support standard transfers for now */
+       FC_ASSERT( transaction_record.ledger_entries.size() == 1 );
+       auto ledger_entry = transaction_record.ledger_entries.front();
+
+       /* In case the transaction was not saved in the record */
+       if( transaction_record.trx.operations.empty() )
+       {
+           const auto blockchain_transaction_record = my->_blockchain->get_transaction( transaction_record.record_id, true );
+           FC_ASSERT( blockchain_transaction_record.valid() );
+           transaction_record.trx = blockchain_transaction_record->trx;
+       }
+
+       /* Only support a single deposit */
+       deposit_operation deposit_op;
+       bool has_deposit = false;
+       for( const auto& op : transaction_record.trx.operations )
+       {
+           switch( operation_type_enum( op.type ) )
+           {
+               case deposit_op_type:
+                   FC_ASSERT( !has_deposit );
+                   deposit_op = op.as<deposit_operation>();
+                   has_deposit = true;
+                   break;
+               default:
+                   break;
+           }
+       }
+       FC_ASSERT( has_deposit );
+
+       /* Only support standard withdraw by signature condition with memo */
+       FC_ASSERT( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type );
+       const auto withdraw_condition = deposit_op.condition.as<withdraw_with_signature>();
+       FC_ASSERT( withdraw_condition.memo.valid() );
+
+       /* We had to have stored the one-time key */
+       fc::ecc::private_key private_key;
+       try
+       {
+           bool found_key = false;
+           const auto& key_items = my->_wallet_db.get_keys();
+           for( const auto& key_item : key_items )
+           {
+               private_key = key_item.second.decrypt_private_key( my->_wallet_password );
+               if( public_key_type( private_key.get_public_key() ) == withdraw_condition.memo->one_time_key )
+               {
+                   found_key = true;
+                   break;
+               }
+           }
+           FC_ASSERT( found_key );
+
+           /* Get shared secret and check memo decryption */
+           bool found_recipient = false;
+           public_key_type recipient_public_key;
+           memo_data memo;
+           if( !recipient_account.empty() )
+           {
+               recipient_public_key = get_account_public_key( recipient_account );
+               const auto shared_secret = private_key.get_shared_secret( recipient_public_key );
+               memo = withdraw_condition.decrypt_memo_data( shared_secret );
+               found_recipient = true;
+           }
+           else
+           {
+               const auto check_account = [&]( const account_record& record ) -> void
+               {
+                   try
+                   {
+                       recipient_public_key = record.owner_key;
+                       // TODO: Need to check active keys as well as owner key
+                       const auto shared_secret = private_key.get_shared_secret( recipient_public_key );
+                       memo = withdraw_condition.decrypt_memo_data( shared_secret );
+                   }
+                   catch( ... )
+                   {
+                       return;
+                   }
+                   found_recipient = true;
+                   FC_ASSERT( false ); /* Kill scanning since we found it */
+               };
+
+               try
+               {
+                   my->_blockchain->scan_accounts( check_account );
+               }
+               catch( ... )
+               {
+               }
+           }
+           FC_ASSERT( found_recipient );
+
+           /* Update ledger entry with recipient and memo info */
+           ledger_entry.to_account = recipient_public_key;
+           ledger_entry.memo = memo.get_message();
+           transaction_record.ledger_entries[ 0 ] = ledger_entry;
+           my->_wallet_db.store_transaction( transaction_record );
+
+           /* Wipe memory */
+           private_key = fc::ecc::private_key();
+       }
+       catch( ... )
+       {
+           /* Wipe memory */
+           private_key = fc::ecc::private_key();
+           throw;
+       }
+
+       return transaction_record;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   wallet_transaction_record wallet::edit_transaction( const string& transaction_id_prefix, const string& recipient_account,
+                                                       const string& memo_message )
+   {
+       FC_ASSERT( !recipient_account.empty() || !memo_message.empty() );
+       auto transaction_record = get_transaction( transaction_id_prefix );
+
+       /* Only support standard transfers for now */
+       FC_ASSERT( transaction_record.ledger_entries.size() == 1 );
+       auto ledger_entry = transaction_record.ledger_entries.front();
+
+       if( !recipient_account.empty() )
+           ledger_entry.to_account = get_account_public_key( recipient_account );
+
+       if( !memo_message.empty() )
+           ledger_entry.memo = memo_message;
+
+       transaction_record.ledger_entries[ 0 ] = ledger_entry;
+       my->_wallet_db.store_transaction( transaction_record );
+
+       return transaction_record;
    }
 
    /**
