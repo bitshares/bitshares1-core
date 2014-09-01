@@ -2719,11 +2719,16 @@ namespace bts { namespace blockchain {
       std::function<bool(const market_transaction&)> order_is_uninteresting =
           [&quote,&base,&owner,this](const market_transaction& order) -> bool
       {
+          //If it's in the market pair we're interested in, it might be interesting or uninteresting
           if( order.ask_price.base_asset_id == base
-              && order.ask_price.quote_asset_id == quote )
-            return false;
-          if( owner != address() && order.ask_owner != owner && order.bid_owner != owner )
-            return false;
+              && order.ask_price.quote_asset_id == quote ) {
+            //If we're not filtering for a specific owner, it's interesting (not uninteresting)
+            if (owner == address())
+              return false;
+            //If neither the bidder nor the asker is the owner I'm looking for, it's uninteresting
+            return owner != order.bid_owner && owner != order.ask_owner;
+          }
+          //If it's not the market pair we're interested in, it's definitely uninteresting
           return true;
       };
       //Filter out orders not in our current market of interest
