@@ -2689,6 +2689,83 @@ namespace bts { namespace blockchain {
       return vector<market_transaction>();
    }
 
+   vector<order_history_record> chain_database::market_order_history(asset_id_type quote,
+                                                                     asset_id_type base,
+                                                                     uint32_t skip_count,
+                                                                     uint32_t limit)
+   {
+      FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
+
+      auto current_block_num = get_head_block_num();
+      auto get_transactions_from_prior_block = [&]() -> vector<market_transaction> {
+          auto itr = my->_market_transactions_db.lower_bound(current_block_num);
+          if (current_block_num == get_head_block_num())
+              itr = my->_market_transactions_db.last();
+
+          if (itr.valid()) --itr;
+          if (itr.valid())
+          {
+              current_block_num = itr.key();
+              return itr.value();
+          }
+          current_block_num = 1;
+          return vector<market_transaction>();
+      };
+
+      FC_ASSERT(current_block_num > 0, "No blocks have been created yet!");
+      auto orders = get_transactions_from_prior_block();
+
+      std::function<bool(const market_transaction&)> order_is_uninteresting =
+          [&quote,&base,this](const market_transaction& order) -> bool
+      {
+          if( order.ask_price.base_asset_id == base
+              && order.ask_price.quote_asset_id == quote )
+            return false;
+          return true;
+      };
+      //Filter out orders not in our current market of interest
+      orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
+
+      //While the next entire block of orders should be skipped...
+      while( skip_count > 0 && --current_block_num > 0 && orders.size() <= skip_count ) {
+        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", current_block_num));
+        skip_count -= orders.size();
+        orders = get_transactions_from_prior_block();
+        orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
+      }
+
+      if( current_block_num == 0 && orders.size() <= skip_count )
+        // Skip count is greater or equal to the total number of relevant orders on the blockchain.
+        return vector<order_history_record>();
+
+      //If there are still some orders from the last block inspected to skip, remove them
+      if( skip_count > 0 )
+        orders.erase(orders.begin(), orders.begin() + skip_count);
+      ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
+
+      std::vector<order_history_record> results;
+      results.reserve(limit);
+      fc::time_point_sec stamp = get_block_header(current_block_num).timestamp;
+      for( const auto& rec : orders )
+        results.push_back(order_history_record(rec, stamp));
+
+      //While we still need more orders to reach our limit...
+      while( --current_block_num >= 1 && orders.size() < limit )
+      {
+        auto more_orders = get_transactions_from_prior_block();
+        more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
+        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", current_block_num));
+        stamp = get_block_header(current_block_num).timestamp;
+        for( const auto& rec : more_orders )
+          if( results.size() < limit )
+            results.push_back(order_history_record(rec, stamp));
+          else
+            return results;
+      }
+
+      return results;
+   }
+
    void chain_database::set_feed( const feed_record& r )
    {
       if( r.is_null() )

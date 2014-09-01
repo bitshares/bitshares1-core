@@ -408,12 +408,6 @@
               "type" : "uint32_t",
               "description" : "The maximum number of transactions to list",
               "default_value" : "20"
-           },
-           {
-              "name" : "block_limit",
-              "type" : "uint32_t",
-              "description" : "The maximum number of blocks in the past to search for orders",
-              "default_value" : "1000"
            }
         ],
         "is_const" : true,
