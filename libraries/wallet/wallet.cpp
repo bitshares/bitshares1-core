@@ -3077,22 +3077,13 @@ namespace bts { namespace wallet {
        const auto withdraw_condition = deposit_op.condition.as<withdraw_with_signature>();
        FC_ASSERT( withdraw_condition.memo.valid() );
 
-       /* We had to have stored the one-time key */
        fc::ecc::private_key private_key;
        try
        {
-           bool found_key = false;
-           const auto& key_items = my->_wallet_db.get_keys();
-           for( const auto& key_item : key_items )
-           {
-               private_key = key_item.second.decrypt_private_key( my->_wallet_password );
-               if( public_key_type( private_key.get_public_key() ) == withdraw_condition.memo->one_time_key )
-               {
-                   found_key = true;
-                   break;
-               }
-           }
-           FC_ASSERT( found_key );
+           /* We had to have stored the one-time key */
+           const auto key_record = my->_wallet_db.lookup_key( withdraw_condition.memo->one_time_key );
+           FC_ASSERT( key_record.valid() && key_record->has_private_key() );
+           private_key = key_record->decrypt_private_key( my->_wallet_password );
 
            /* Get shared secret and check memo decryption */
            bool found_recipient = false;
