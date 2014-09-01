@@ -3192,8 +3192,26 @@ config load_config( const fc::path& datadir )
       {
         auto shorts = blockchain_market_list_shorts(quote_symbol, limit);
         bids.reserve(bids.size() + shorts.size());
+
+        auto quote_id = _chain_db->get_asset_id(quote_symbol);
+
+        oprice median_delegate_price = _chain_db->get_median_delegate_price( quote_id );
+        auto ostat      = _chain_db->get_market_status( quote_id, 0 );
+
         for( auto order : shorts )
-          bids.push_back(order);
+        {
+           if( median_delegate_price )
+           {
+              if(  order.get_price() <= *median_delegate_price )
+                 bids.push_back(order);
+           }
+           else if( ostat )
+           {
+              if(  order.get_price() <= ostat->avg_price_1h )
+                 bids.push_back(order);
+           }
+        }
+
         std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
           return a.market_index < b.market_index;
         });
