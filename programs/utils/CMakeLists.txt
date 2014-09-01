@@ -27,3 +27,6 @@ target_link_libraries( map_bts_network fc bts_net bts_client)
 
 add_executable( pack_web pack_web.cpp )
 target_link_libraries( pack_web fc )
+
+add_executable( convert_btc_pubkey convert_btc_pubkey.cpp )
+target_link_libraries( convert_btc_pubkey fc bts_blockchain bts_utilities)
