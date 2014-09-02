@@ -1,0 +1,64 @@
+{
+    "category": "Public Mail Server Methods",
+    "methods" :
+    [
+        {
+            "method_name": "mail_store_message",
+            "description": "Store a message on the mail server.",
+            "return_type": "void",
+            "parameters" : [
+                {
+                    "name" : "owner",
+                    "type" : "address",
+                    "description" : "The address of the message's recipient."
+                },
+                {
+                    "name" : "message",
+                    "type" : "blob",
+                    "description" : "The message to store."
+                }
+            ],
+            "is_const" : false,
+            "prerequisites" : []
+        },
+        {
+            "method_name": "mail_fetch_inventory",
+            "description": "Get inventory of all messages belonging to a given address received after a given time.",
+            "return_type": "mail_inventory",
+            "parameters" : [
+                {
+                    "name" : "owner",
+                    "type" : "address",
+                    "description" : "The owner whose message inventory should be retrieved."
+                },
+                {
+                    "name" : "start_time",
+                    "type" : "timestamp",
+                    "description" : "No messages received before this time will be returned."
+                },
+                {
+                    "name" : "limit",
+                    "type" : "uint32_t",
+                    "description" : "Maximum number of messages to retrieve.",
+                    "default_value" : "1000"
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : []
+        },
+        {
+            "method_name": "mail_fetch_message",
+            "description": "Get a specific message.",
+            "return_type": "blob",
+            "parameters" : [
+                {
+                    "name" : "inventory_id",
+                    "type" : "message_id",
+                    "description" : "The ID of the message to retrieve."
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : []
+        }
+    ]
+}

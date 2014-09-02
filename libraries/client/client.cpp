@@ -22,6 +22,7 @@
 #include <bts/api/common_api.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/mail/server.hpp>
 
 //#include <bts/network/node.hpp>
 
@@ -672,6 +673,7 @@ config load_config( const fc::path& datadir )
             chain_database_ptr                                      _chain_db = nullptr;
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
+            std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
             bool                                                    _delegate_loop_first_run = true;
             fc::time_point                                          _last_sync_status_message_time;
@@ -1672,6 +1674,12 @@ config load_config( const fc::path& datadir )
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
+        if (my->_config.mail_server_enabled)
+        {
+          my->_mail_server = std::make_shared<bts::mail::server>();
+          my->_mail_server->open( data_dir / "mail" );
+        }
+
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
           my->_p2p_node = std::make_shared<bts::net::node>();
@@ -1688,6 +1696,8 @@ config load_config( const fc::path& datadir )
     }
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }
+
+    mail_server_ptr client::get_mail_server()const { return my->_mail_server; }
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
@@ -2366,6 +2376,28 @@ config load_config( const fc::path& datadir )
       }
       else
         std::cout << "Http server was not started, configuration error\n";
+    }
+
+    void detail::client_impl::mail_store_message(const address& owner, const vector<char>& message) {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      fc::datastream<const char*> ds(message.data(), message.size());
+      mail::message m;
+      fc::raw::unpack(ds, m);
+      _mail_server->store(owner, m);
+    }
+
+    mail::inventory_type detail::client_impl::mail_fetch_inventory(const address &owner,
+                                                                   const fc::time_point &start_time,
+                                                                   uint32_t limit) const
+    {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      return _mail_server->fetch_inventory(owner, start_time, limit);
+    }
+
+    vector<char> detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
+    {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      return fc::raw::pack(_mail_server->fetch_message(inventory_id));
     }
 
     //JSON-RPC Method Implementations END

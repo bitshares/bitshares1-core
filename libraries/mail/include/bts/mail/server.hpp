@@ -22,7 +22,7 @@ namespace bts { namespace mail {
     *  mail_fetch_inventory( owner, start_time, limit ) => vector<message_id_type>
     *  mail_fetch_message( message_id_type )
     */
-    class server
+    class server : public std::enable_shared_from_this<server>
     {
        public:
           server();
@@ -42,5 +42,7 @@ namespace bts { namespace mail {
        private:
           std::unique_ptr<detail::server_impl> my;
     };
+
+    typedef std::shared_ptr<server> mail_server_ptr;
 
 } } // bts::mail

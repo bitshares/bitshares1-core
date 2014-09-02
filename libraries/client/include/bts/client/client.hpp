@@ -23,6 +23,7 @@ namespace bts { namespace client {
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
+    using namespace bts::mail;
 
     boost::program_options::variables_map parse_option_variables(int argc, char** argv);
     fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
@@ -65,6 +66,7 @@ namespace bts { namespace client {
     {
        config( ) :
           default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}),
+          mail_server_enabled(false),
           wallet_enabled(true),
           ignore_console(false),
           use_upnp(true),
@@ -87,6 +89,7 @@ namespace bts { namespace client {
           vector<string>      default_peers;
           vector<string>      chain_servers;
           chain_server_config chain_server;
+          bool                mail_server_enabled;
           bool                wallet_enabled;
           bool                ignore_console;
           bool                use_upnp;
@@ -132,6 +135,7 @@ namespace bts { namespace client {
 
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
+         mail_server_ptr            get_mail_server()const;
          bts::rpc::rpc_server_ptr   get_rpc_server()const;
          bts::net::node_ptr         get_node()const;
          fc::path                   get_data_dir()const;
@@ -186,7 +190,8 @@ FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
-            (rpc)(default_peers)(chain_servers)(chain_server)(wallet_enabled)(ignore_console)(logging)
+            (rpc)(default_peers)(chain_servers)(chain_server)(mail_server_enabled)
+            (wallet_enabled)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers)
             (growl_notify_endpoint)
