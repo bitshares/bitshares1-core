@@ -99,6 +99,55 @@ public:
     }
 };
 
+BOOST_FIXTURE_TEST_CASE( mail_server, chain_fixture )
+{ try {
+    config aconfig = clienta->configure(clienta_dir.path());
+    aconfig.mail_server_enabled = true;
+    fc::json::save_to_file(aconfig, clienta_dir.path() / "config.json");
+    clienta->open(clienta_dir.path(), clienta_dir.path() / "genesis.json");
+
+    bts::mail::signed_email_message sem;
+    string subject = "A subject line";
+    string body = "A body\n\nSincerely, Nathan";
+    attachment attach;
+    attach.data = fc::raw::pack(map<string,string>({{string("hello"),string("world")}}));
+    sem.subject = subject;
+    sem.body = body;
+    sem.attachments.push_back(attach);
+
+    fc::ecc::private_key my_key = fc::ecc::private_key::generate();
+    fc::ecc::private_key one_time_key = fc::ecc::private_key::generate();
+    fc::ecc::private_key his_key = fc::ecc::private_key::generate();
+
+    sem.sign(my_key);
+    BOOST_CHECK_EQUAL(sem.from().to_base58(), my_key.get_public_key().to_base58());
+
+    fc::time_point before = fc::time_point::now();
+    message m(message(sem).encrypt(one_time_key, his_key.get_public_key()));
+    clienta->mail_store_message(his_key.get_public_key(), fc::raw::pack(m));
+    fc::time_point after = fc::time_point::now();
+    BOOST_CHECK(after > before);
+
+    BOOST_CHECK(clienta->mail_fetch_inventory(his_key.get_public_key(), after).size() == 0);
+    auto inventory = clienta->mail_fetch_inventory(his_key.get_public_key(), before);
+    BOOST_CHECK(inventory.size() == 1);
+
+    message received_message;
+    auto blob = clienta->mail_fetch_message(inventory[0].second);
+    fc::datastream<const char*> ds(blob.data(), blob.size());
+    fc::raw::unpack(ds, received_message);
+    BOOST_CHECK(received_message.type == encrypted);
+    signed_email_message rm = received_message.as<encrypted_message>().decrypt(his_key).as<signed_email_message>();
+
+    BOOST_CHECK_EQUAL(rm.from().to_base58(), my_key.get_public_key().to_base58());
+    BOOST_CHECK_EQUAL(rm.subject, subject);
+    BOOST_CHECK_EQUAL(rm.body, body);
+    BOOST_CHECK_EQUAL(rm.attachments.size(), 1);
+    BOOST_CHECK_EQUAL(rm.attachments[0].name, attach.name);
+    BOOST_CHECK(rm.attachments[0].data == attach.data);
+} FC_LOG_AND_RETHROW() }
+
+/*
 BOOST_FIXTURE_TEST_CASE( simultaneous_cancel_buy, nathan_fixture )
 { try {
     //Get sufficient depth to execute trades
@@ -135,7 +184,6 @@ BOOST_FIXTURE_TEST_CASE( simultaneous_cancel_buy, nathan_fixture )
     prompt();
 } FC_LOG_AND_RETHROW() }
 
-/*
 BOOST_FIXTURE_TEST_CASE( rapid_price_change, nathan_fixture )
 { try {
     //Get sufficient depth to execute trades

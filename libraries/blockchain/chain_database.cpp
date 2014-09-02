@@ -778,7 +778,7 @@ namespace bts { namespace blockchain {
         vector<market_transaction> market_transactions; // = pending_state.market_transactions;
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
-           FC_ASSERT( market_pair.first > market_pair.second )
+           FC_ASSERT( market_pair.first > market_pair.second );
            market_engine engine( pending_state, *this );
            engine.execute( market_pair.first, market_pair.second, timestamp );
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );

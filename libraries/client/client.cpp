@@ -22,6 +22,7 @@
 #include <bts/api/common_api.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/mail/server.hpp>
 
 //#include <bts/network/node.hpp>
 
@@ -672,6 +673,7 @@ config load_config( const fc::path& datadir )
             chain_database_ptr                                      _chain_db = nullptr;
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
+            std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
             bool                                                    _delegate_loop_first_run = true;
             fc::time_point                                          _last_sync_status_message_time;
@@ -1672,6 +1674,12 @@ config load_config( const fc::path& datadir )
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
+        if (my->_config.mail_server_enabled)
+        {
+          my->_mail_server = std::make_shared<bts::mail::server>();
+          my->_mail_server->open( data_dir / "mail" );
+        }
+
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
           my->_p2p_node = std::make_shared<bts::net::node>();
@@ -1688,6 +1696,8 @@ config load_config( const fc::path& datadir )
     }
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }
+
+    mail_server_ptr client::get_mail_server()const { return my->_mail_server; }
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
@@ -2368,6 +2378,28 @@ config load_config( const fc::path& datadir )
         std::cout << "Http server was not started, configuration error\n";
     }
 
+    void detail::client_impl::mail_store_message(const address& owner, const vector<char>& message) {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      fc::datastream<const char*> ds(message.data(), message.size());
+      mail::message m;
+      fc::raw::unpack(ds, m);
+      _mail_server->store(owner, m);
+    }
+
+    mail::inventory_type detail::client_impl::mail_fetch_inventory(const address &owner,
+                                                                   const fc::time_point &start_time,
+                                                                   uint32_t limit) const
+    {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      return _mail_server->fetch_inventory(owner, start_time, limit);
+    }
+
+    vector<char> detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
+    {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      return fc::raw::pack(_mail_server->fetch_message(inventory_id));
+    }
+
     //JSON-RPC Method Implementations END
 
     void client::start_networking(std::function<void()> network_started_callback)
@@ -2591,7 +2623,7 @@ config load_config( const fc::path& datadir )
         else if (!option_variables.count("disable-default-peers"))
         {
           for (string default_peer : my->_config.default_peers)
-            this->connect_to_peer(default_peer);
+            this->add_node(default_peer);
         }
       });
 
@@ -2654,42 +2686,79 @@ config load_config( const fc::path& datadir )
        return my->_data_dir;
     }
 
+    /* static */ fc::ip::endpoint client::string_to_endpoint(const std::string& remote_endpoint)
+    {
+      try 
+      {
+        ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
+        // first, try and parse the endpoint as a numeric_ipv4_address:port that doesn't need DNS lookup
+        return fc::ip::endpoint::from_string(remote_endpoint.c_str());
+      } 
+      catch (...) 
+      {
+        string::size_type colon_pos = remote_endpoint.find(':');
+        try 
+        {
+          uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() ) );
+
+          string hostname = remote_endpoint.substr( 0, colon_pos );
+          std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
+          if ( endpoints.empty() )
+            FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+          return endpoints.back();            
+        }
+        catch (const boost::bad_lexical_cast&)
+        {
+          FC_THROW("Bad port: ${port}", ("port", remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() )));
+        }
+      }      
+    }
+
+    void client::add_node( const string& remote_endpoint )
+    {
+      fc::ip::endpoint endpoint;
+      try
+      {
+        endpoint = string_to_endpoint(remote_endpoint);
+      }
+      catch (const fc::exception& e)
+      {
+        ulog("Unable to add peer ${remote_endpoint}: ${error}", 
+             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+        return;
+      }
+
+      try
+      {
+        ulog("Adding peer ${peer} to peer database", ("peer", endpoint));
+        my->_p2p_node->add_node(endpoint);
+      }
+      catch (const bts::net::already_connected_to_requested_peer&)
+      {
+      }
+    }
     void client::connect_to_peer(const string& remote_endpoint)
     {
-        fc::ip::endpoint ep;
-        try {
-            ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-            ep = fc::ip::endpoint::from_string(remote_endpoint.c_str());
-        } catch (...) {
-            auto pos = remote_endpoint.find(':');
-            try {
-              uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
+      fc::ip::endpoint endpoint;
+      try
+      {
+        endpoint = string_to_endpoint(remote_endpoint);
+      }
+      catch (const fc::exception& e)
+      {
+        ulog("Unable to initiate connection to peer ${remote_endpoint}: ${error}", 
+             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+        return;
+      }
 
-              string hostname = remote_endpoint.substr( 0, pos );
-              auto eps = fc::resolve(hostname, port);
-              if ( eps.size() > 0 )
-              {
-                  ep = eps.back();
-              }
-              else
-              {
-                  FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
-              }
-            }
-            catch (const boost::bad_lexical_cast&)
-            {
-              ulog("Bad port: ${port}", ("port", remote_endpoint.substr( pos+1, remote_endpoint.size() )));
-              return;
-            }
-        }
-        try
-        {
-          ulog("Attempting to connect to peer ${peer}", ("peer", ep));
-          my->_p2p_node->connect_to(ep);
-        }
-        catch (const bts::net::already_connected_to_requested_peer&)
-        {
-        }
+      try
+      {
+        ulog("Attempting to connect to peer ${peer}", ("peer", endpoint));
+        my->_p2p_node->connect_to(endpoint);
+      }
+      catch (const bts::net::already_connected_to_requested_peer&)
+      {
+      }
     }
 
     void client::listen_to_p2p_network()

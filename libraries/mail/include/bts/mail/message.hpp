@@ -61,6 +61,8 @@ namespace bts { namespace mail {
 
    struct encrypted_message
    {
+      static const message_type type;
+
       message decrypt( const fc::ecc::private_key& e )const;
 
       fc::ecc::public_key  onetimekey;
