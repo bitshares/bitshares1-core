@@ -2514,7 +2514,6 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-
    optional<market_order> chain_database::get_market_ask( const market_index_key& key )const
    { try {
        auto market_itr  = my->_ask_db.find(key);
@@ -2556,6 +2555,32 @@ namespace bts { namespace blockchain {
        ilog( "end of db" );
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
+
+   optional<market_order> chain_database::get_market_order( const order_id_type& order_id )const
+   { try {
+       for( auto itr = my->_ask_db.begin(); itr.valid(); ++itr )
+       {
+           const auto order = market_order( ask_order, itr.key(), itr.value() );
+           if( order_id == order.get_id() )
+               return order;
+       }
+
+       for( auto itr = my->_bid_db.begin(); itr.valid(); ++itr )
+       {
+           const auto order = market_order( bid_order, itr.key(), itr.value() );
+           if( order_id == order.get_id() )
+               return order;
+       }
+
+       for( auto itr = my->_short_db.begin(); itr.valid(); ++itr )
+       {
+           const auto order = market_order( short_order, itr.key(), itr.value() );
+           if( order_id == order.get_id() )
+               return order;
+       }
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (order_id) ) }
 
    pending_chain_state_ptr chain_database::get_pending_state()const
    {

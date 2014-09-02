@@ -166,7 +166,7 @@ namespace bts { namespace wallet {
    struct market_order_status
    {
       order_type_enum get_type()const;
-      string          get_id()const;
+      order_id_type   get_id()const;
 
       asset           get_balance()const; // funds available for this order
       price           get_price()const;

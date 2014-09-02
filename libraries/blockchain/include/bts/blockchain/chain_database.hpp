@@ -219,11 +219,11 @@ namespace bts { namespace blockchain {
          /**
           *  Evaluate the transaction and return the results.
           */
-         virtual transaction_evaluation_state_ptr evaluate_transaction( const signed_transaction& trx, const share_type& required_fees = 0 );
-         optional<fc::exception> get_transaction_error( const signed_transaction& transaction, const share_type& min_fee );
+         virtual transaction_evaluation_state_ptr   evaluate_transaction( const signed_transaction& trx, const share_type& required_fees = 0 );
+         optional<fc::exception>                    get_transaction_error( const signed_transaction& transaction, const share_type& min_fee );
 
          /** return the timestamp from the head block */
-         virtual time_point_sec         now()const override;
+         virtual time_point_sec             now()const override;
 
          /** top delegates by current vote, projected to be active in the next round */
          vector<account_id_type>            next_round_active_delegates()const;
@@ -254,6 +254,9 @@ namespace bts { namespace blockchain {
          vector<market_order>               get_market_asks( const string& quote_symbol,
                                                              const string& base_symbol,
                                                              uint32_t limit = uint32_t(-1) );
+
+         // TODO: Specify order type and/or market
+         optional<market_order>             get_market_order( const order_id_type& order_id )const;
 
          void                               scan_assets( function<void( const asset_record& )> callback );
          void                               scan_balances( function<void( const balance_record& )> callback );
