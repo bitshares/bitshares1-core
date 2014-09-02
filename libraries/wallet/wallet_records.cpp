@@ -56,7 +56,7 @@ namespace bts { namespace wallet {
        return order.type;
    }
 
-   string market_order_status::get_id()const
+   order_id_type market_order_status::get_id()const
    {
        return order.get_id();
    }

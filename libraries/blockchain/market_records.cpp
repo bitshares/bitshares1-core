@@ -1,17 +1,22 @@
 #include <bts/blockchain/market_records.hpp>
 #include <fc/exception/exception.hpp>
+#include <sstream>
 
 namespace bts { namespace blockchain {
 
-string market_order::get_id()const
+order_id_type market_order::get_id()const
 {
-  return "ORDER-" + fc::variant( market_index.owner ).as_string().substr(3,8);
+    std::stringstream id_ss;
+    id_ss << string( type )
+          << string( market_index.order_price )
+          << string( market_index.owner );
+    return fc::ripemd160::hash( id_ss.str() );
 }
 
 asset market_order::get_balance()const
 {
   asset_id_type asset_id;
-  switch( type )
+  switch( order_type_enum( type ) )
   {
      case bid_order:
         asset_id = market_index.order_price.quote_asset_id;
@@ -43,7 +48,7 @@ price market_order::get_highest_cover_price()const
 
 asset market_order::get_quantity()const
 {
-  switch( type )
+  switch( order_type_enum( type ) )
   {
      case bid_order:
      { // balance is in USD  divide by price
@@ -64,12 +69,12 @@ asset market_order::get_quantity()const
      default:
         FC_ASSERT( false, "Not Implemented" );
   }
-  // NEVER GET HERE..... 
+  // NEVER GET HERE.....
   //return get_balance() * get_price();
 }
 asset market_order::get_quote_quantity()const
 {
-  switch( type )
+  switch( order_type_enum( type ) )
   {
      case bid_order:
      { // balance is in USD  divide by price
@@ -90,7 +95,7 @@ asset market_order::get_quote_quantity()const
      default:
         FC_ASSERT( false, "Not Implemented" );
   }
-  // NEVER GET HERE..... 
+  // NEVER GET HERE.....
  // return get_balance() * get_price();
 }
 

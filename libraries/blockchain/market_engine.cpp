@@ -254,7 +254,6 @@ class market_engine
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
-#warning [HARDFORK] This will hardfork BTSX  (use to be bid_price > max_short_bid, now ask_price <= max_short_bid)
                    /**
                     *  If the ask is less than the "max short bid" then that means the
                     *  ask (those with XTS wanting to buy USD) are willing to accept 
@@ -354,15 +353,15 @@ class market_engine
 
              if( _current_bid && _current_ask && order_did_execute )
              {
-                // after the market is running solid we can use this metric...
-                market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
-
-
-#warning [HARD FORK] this will hardfork BTSX by setting the avg price to the median price if it exists.
                 if( median_price )
+                {
                    market_stat->avg_price_1h = *median_price;
+                }
                 else
                 {
+                   // after the market is running solid we can use this metric...
+                   market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
+
                    const auto max_bid = market_stat->maximum_bid();
                    // limit the maximum movement rate of the price.
                    if( _current_bid->get_price() < min_cover_ask )
@@ -565,7 +564,7 @@ class market_engine
 
       void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
       { try {
-          FC_ASSERT( _current_ask->type == ask_order ) // update ask + payout
+          FC_ASSERT( _current_ask->type == ask_order ); // update ask + payout
 
           _current_ask->state.balance -= mtrx.ask_paid.amount;
           FC_ASSERT( _current_ask->state.balance >= 0 );

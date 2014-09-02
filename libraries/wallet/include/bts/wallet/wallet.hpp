@@ -375,6 +375,24 @@ namespace bts { namespace wallet {
 
          signed_transaction  cancel_market_order( const address& owner_address );
 
+         /* New market order APIs */
+         signed_transaction  cover_short2( const string& from_account_name,
+                                           double real_quantity_usd,
+                                           const string& quote_symbol,
+                                           const order_id_type& short_id,
+                                           bool sign = true );
+
+         signed_transaction  add_collateral2( const string& from_account_name,
+                                              const order_id_type& short_id,
+                                              share_type collateral_to_add,
+                                              bool sign = true );
+
+         signed_transaction  cancel_market_order2( const order_id_type& order_id );
+
+         map<order_id_type, market_order>   get_market_orders2( const string& quote, const string& base,
+                                                                int32_t limit, const string& account_name )const;
+         /*************************/
+
          wallet_account_record get_account( const string& account_name )const;
 
          /**
@@ -427,18 +445,6 @@ namespace bts { namespace wallet {
 
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;
-
-         /**
-          *  Bitcoin compatibility
-          */
-         ///@{
-         //address                                    get_new_address( const string& account_name );
-         //public_key_type                            get_new_public_key( const string& account_name );
-
-         /*
-         unordered_map<address,string>    get_receive_addresses()const;
-         unordered_map<address,string>    get_send_addresses()const;
-         */
 
          account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
 

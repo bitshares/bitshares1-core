@@ -308,6 +308,14 @@
          "contained_type" : "market_order"
       },
       {
+         "type_name" : "order_id",
+         "cpp_return_type" : "bts::blockchain::order_id_type"
+      },
+      {
+         "type_name" : "market_order_map",
+         "cpp_return_type" : "std::map<bts::blockchain::order_id_type, bts::blockchain::market_order>"
+      },
+      {
          "type_name" : "pair<market_order_array,market_order_array>",
          "cpp_return_type" : "std::pair<std::vector<bts::blockchain::market_order>,std::vector<bts::blockchain::market_order>>"
       },

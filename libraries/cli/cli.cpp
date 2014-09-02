@@ -650,10 +650,15 @@ namespace bts { namespace cli {
                   *_out << pretty_transaction_list( transactions, _client );
               }
               else if( method_name == "wallet_market_order_list" )
-              { try {
+              {
                   const auto& market_orders = result.as<vector<market_order>>();
                   *_out << pretty_market_orders( market_orders, _client );
-              } FC_CAPTURE_AND_RETHROW() }
+              }
+              else if( method_name == "wallet_market_order_list2" )
+              {
+                  const auto& market_orders = result.as<map<order_id_type, market_order>>();
+                  *_out << pretty_market_orders2( market_orders, _client );
+              }
               else if( method_name == "blockchain_market_list_asks"
                        || method_name == "blockchain_market_list_bids"
                        || method_name == "blockchain_market_list_shorts" )

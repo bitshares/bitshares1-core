@@ -4295,6 +4295,98 @@ namespace bts { namespace wallet {
         return trx;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
 
+   signed_transaction wallet::cancel_market_order2( const order_id_type& order_id )
+   { try {
+        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+
+        const auto order = my->_blockchain->get_market_order( order_id );
+        if( !order.valid() )
+            FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+
+        const auto owner_address = order->get_owner();
+        const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
+        // TODO: Throw proper exception
+        FC_ASSERT( owner_key_record.valid() && owner_key_record->has_private_key() );
+
+        const auto account_key_record = my->_wallet_db.lookup_key( owner_key_record->account_address );
+        FC_ASSERT( account_key_record.valid() && account_key_record->has_private_key() );
+
+        auto from_address = owner_key_record->account_address;
+        auto from_account_key = account_key_record->public_key;
+        auto& to_account_key = from_account_key;
+
+        asset balance = order->get_balance();
+
+        edump( (order) );
+
+        auto required_fees = get_transaction_fee();
+
+        if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
+
+        signed_transaction trx;
+        unordered_set<address>     required_signatures;
+        required_signatures.insert( owner_address );
+
+        switch( order_type_enum( order->type ) )
+        {
+           case ask_order:
+              trx.ask( -balance, order->market_index.order_price, owner_address );
+              break;
+           case bid_order:
+              trx.bid( -balance, order->market_index.order_price, owner_address );
+              break;
+           case short_order:
+              trx.short_sell( -balance, order->market_index.order_price, owner_address );
+              break;
+           case cover_order:
+              // TODO: Throw proper exception
+              FC_ASSERT( !"You cannot cancel a cover order" );
+              break;
+            case null_order:
+              FC_ASSERT( !"Null Order Detected" );
+              break;
+        }
+
+        asset deposit_amount = balance;
+        if( balance.asset_id == 0 )
+        {
+           if( required_fees.amount < balance.amount )
+           {
+              deposit_amount -= required_fees;
+              trx.deposit( owner_address, deposit_amount, 0 );
+           }
+           else
+           {
+              FC_CAPTURE_AND_THROW( fee_greater_than_amount, (balance)(required_fees) );
+           }
+        }
+        else
+        {
+           trx.deposit( owner_address, balance, 0 );
+
+           my->withdraw_to_transaction( required_fees,
+                                        from_address,  // get address of account
+                                        trx,
+                                        required_signatures );
+        }
+
+        auto entry = ledger_entry();
+        entry.from_account = owner_key_record->public_key;
+        entry.to_account = to_account_key;
+        entry.amount = deposit_amount;
+        if( owner_key_record->memo.valid() )
+            entry.memo = "cancel " + *owner_key_record->memo;
+
+        auto record = wallet_transaction_record();
+        record.is_market = true;
+        record.ledger_entries.push_back( entry );
+        record.fee = required_fees;
+
+        sign_and_cache_transaction( trx, required_signatures, record );
+        return trx;
+   } FC_CAPTURE_AND_RETHROW( (order_id) ) }
+
    signed_transaction wallet::submit_bid(
            const string& from_account_name,
            double real_quantity,
@@ -4662,6 +4754,60 @@ namespace bts { namespace wallet {
        return trx;
    } FC_CAPTURE_AND_RETHROW((from_account_name)(short_id)(collateral_to_add)(sign)) }
 
+   signed_transaction wallet::add_collateral2(
+       const string& from_account_name,
+       const order_id_type& short_id,
+       share_type collateral_to_add,
+       bool sign)
+   { try {
+       if (!is_open()) FC_CAPTURE_AND_THROW (wallet_closed);
+       if (!is_unlocked()) FC_CAPTURE_AND_THROW (login_required);
+       if (!is_receive_account(from_account_name)) FC_CAPTURE_AND_THROW (unknown_receive_account);
+       if (collateral_to_add <= 0) FC_CAPTURE_AND_THROW (bad_collateral_amount);
+
+       const auto order = my->_blockchain->get_market_order( short_id );
+       if( !order.valid() )
+           FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+
+       const auto owner_address = order->get_owner();
+       const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
+       // TODO: Throw proper exception
+       FC_ASSERT( owner_key_record.valid() && owner_key_record->has_private_key() );
+
+       auto     from_account_key = get_account_public_key( from_account_name );
+       address  from_address( from_account_key );
+
+       signed_transaction trx;
+       unordered_set<address> required_signatures;
+       required_signatures.insert( owner_address );
+
+       trx.add_collateral(collateral_to_add, order->market_index);
+
+       auto required_fees = get_transaction_fee();
+       my->withdraw_to_transaction (asset(collateral_to_add) + required_fees,
+                                    from_address,
+                                    trx,
+                                    required_signatures);
+
+       if (sign)
+       {
+         auto record = wallet_transaction_record();
+         record.is_market = true;
+         record.fee = required_fees;
+
+         auto entry = ledger_entry();
+         entry.from_account = from_account_key;
+         entry.to_account = get_private_key( owner_address ).get_public_key();
+         entry.amount = asset(collateral_to_add);
+         entry.memo = "add collateral to short";
+         record.ledger_entries.push_back(entry);
+
+         sign_and_cache_transaction(trx, required_signatures, record);
+       }
+
+       return trx;
+   } FC_CAPTURE_AND_RETHROW((from_account_name)(short_id)(collateral_to_add)(sign)) }
+
    signed_transaction wallet::cover_short(
            const string& from_account_name,
            double real_quantity_usd,
@@ -4778,6 +4924,123 @@ namespace bts { namespace wallet {
        }
        return trx;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(owner_address)(sign) ) }
+
+   signed_transaction wallet::cover_short2(
+           const string& from_account_name,
+           double real_quantity_usd,
+           const string& quote_symbol,
+           const order_id_type& short_id,
+           bool sign  )
+   { try {
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+       if( NOT is_receive_account(from_account_name) )
+          FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
+       if( real_quantity_usd < 0 ) FC_CAPTURE_AND_THROW( negative_bid, (real_quantity_usd) );
+
+       const auto order = my->_blockchain->get_market_order( short_id );
+       if( !order.valid() )
+           FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+
+       const auto owner_address = order->get_owner();
+       const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
+       // TODO: Throw proper exception
+       FC_ASSERT( owner_key_record.valid() && owner_key_record->has_private_key() );
+
+       auto     from_account_key = get_account_public_key( from_account_name );
+       address  from_address( from_account_key );
+
+       const auto pending = my->_blockchain->get_pending_transactions();
+       for( const auto& eval : pending )
+       {
+           for( const auto& op : eval->trx.operations )
+           {
+               if( operation_type_enum( op.type ) != cover_op_type ) continue;
+               const auto cover_op = op.as<cover_operation>();
+               if( cover_op.cover_index.owner == owner_address )
+                   FC_THROW_EXCEPTION( double_cover, "You cannot cover a short twice in the same block!" );
+           }
+       }
+
+       signed_transaction trx;
+       unordered_set<address>     required_signatures;
+       required_signatures.insert( owner_address );
+
+       auto quote_asset_record = my->_blockchain->get_asset_record( order->market_index.order_price.quote_asset_id );
+       FC_ASSERT( quote_asset_record.valid() );
+       asset amount_to_cover( real_quantity_usd * quote_asset_record->precision, quote_asset_record->id );
+       if( real_quantity_usd == 0 || real_quantity_usd > order->state.balance )
+       {
+          amount_to_cover.amount = order->state.balance;
+       }
+
+       trx.cover( amount_to_cover, order->market_index );
+
+       my->withdraw_to_transaction( amount_to_cover,
+                                    from_address,
+                                    trx,
+                                    required_signatures );
+
+       auto required_fees = get_transaction_fee();
+
+       bool fees_paid = false;
+       auto collateral_recovered = asset();
+       if( amount_to_cover.amount >= order->state.balance )
+       {
+          if( *order->collateral >= required_fees.amount )
+          {
+             slate_id_type slate_id = 0;
+
+             auto new_slate = select_delegate_vote();
+             slate_id = new_slate.id();
+
+             if( slate_id && !my->_blockchain->get_delegate_slate( slate_id ) )
+             {
+                trx.define_delegate_slate( new_slate );
+             }
+
+             collateral_recovered = asset( *order->collateral - required_fees.amount);
+             trx.deposit( owner_address, collateral_recovered, slate_id );
+             fees_paid = true;
+          }
+          else
+          {
+             required_fees.amount -= *order->collateral;
+          }
+       }
+       if( !fees_paid )
+       {
+           my->withdraw_to_transaction( required_fees, from_address, trx, required_signatures );
+       }
+
+       if( sign )
+       {
+           auto record = wallet_transaction_record();
+           record.is_market = true;
+           record.fee = required_fees;
+
+           {
+               auto entry = ledger_entry();
+               entry.from_account = from_account_key;
+               entry.to_account = get_private_key( owner_address ).get_public_key();
+               entry.amount = amount_to_cover;
+               entry.memo = "payoff debt";
+               record.ledger_entries.push_back( entry );
+           }
+           if( collateral_recovered.amount > 0 )
+           {
+               auto entry = ledger_entry();
+               entry.from_account = get_private_key( owner_address ).get_public_key();
+               entry.to_account = from_account_key;
+               entry.amount = collateral_recovered;
+               entry.memo = "cover proceeds";
+               record.ledger_entries.push_back( entry );
+           }
+
+           sign_and_cache_transaction( trx, required_signatures, record );
+       }
+       return trx;
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(short_id)(sign) ) }
 
    void wallet::set_transaction_fee( const asset& fee )
    { try {
@@ -5913,5 +6176,90 @@ namespace bts { namespace wallet {
         FC_ASSERT(ciphertext.type == mail::encrypted);
         return ciphertext.as<mail::encrypted_message>().decrypt(recipient_key);
     }
+
+   map<order_id_type, market_order> wallet::get_market_orders2( const string& quote_symbol, const string& base_symbol,
+                                                               int32_t limit, const string& account_name)const
+   { try {
+      auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
+      auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );
+      auto shorts = my->_blockchain->get_market_shorts( quote_symbol );
+      auto covers = my->_blockchain->get_market_covers( quote_symbol );
+
+      map<order_id_type, market_order> result;
+
+      uint32_t count = 0;
+
+      for( const auto& order : bids )
+      {
+         if( count >= limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result[ order.get_id() ] = order;
+             count++;
+         }
+      }
+
+      count = 0;
+      for( const auto& order : asks )
+      {
+         if( count >= limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result[ order.get_id() ] = order;
+             count++;
+         }
+      }
+
+      count = 0;
+      for( const auto& order : shorts )
+      {
+         if( count > limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result[ order.get_id() ] = order;
+             count++;
+         }
+      }
+
+      count = 0;
+      for( const auto& order : covers )
+      {
+         if( count > limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result[ order.get_id() ] = order;
+             count++;
+         }
+      }
+      return result;
+   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
 
 } } // bts::wallet

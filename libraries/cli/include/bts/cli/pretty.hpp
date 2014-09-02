@@ -45,5 +45,6 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
 string pretty_vote_summary( const account_vote_summary_type& votes, cptr client );
 
 string pretty_market_orders( const vector<market_order>& market_orders, cptr client );
+string pretty_market_orders2( const map<order_id_type, market_order>& order_items, cptr client );
 
 } } // bts::cli
