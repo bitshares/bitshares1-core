@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /* Define client version here */
-#define BTS_CLIENT_VERSION                                  "0.4.10"
+#define BTS_CLIENT_VERSION                                  "0.4.11"
 
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
@@ -145,11 +145,3 @@
     block production.
  */
 #define BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE               (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14)
-
-#define BTS_BLOCKCHAIN_NEW_SHORTS_LIMIT_TO_1HR_AVG  500000000 // NOTE... this will hard fork in the future.
-
-/**
- *  This fork fixes a bug that will prevent users from canceling shorts that have gone above the median/avg
- */
-#define BTS_BLOCKCHAIN_NO_FORK_LIMIT_BLOCK_NUM      500000000 // NOTE... this will hard fork in the future.
-
