@@ -504,6 +504,8 @@ namespace bts { namespace cli {
 
             void interactive_open_wallet()
             {
+              FC_ASSERT(_client->get_wallet()->is_enabled(), "Wallet is not enabled in this client!");
+
               if( _client->get_wallet()->is_open() )
                 return;
 
