@@ -2020,6 +2020,13 @@ config load_config( const fc::path& datadir )
         return *balance_record;
     }
 
+    balance_record detail::client_impl::blockchain_get_balance_by_owner(const address &owner_address, const std::string &asset_symbol) const
+    {
+        withdraw_with_signature withdrawal(owner_address);
+        auto asset_id = _chain_db->get_asset_id(asset_symbol);
+        return blockchain_get_balance(withdraw_condition(withdrawal, asset_id).get_address());
+    }
+
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
     {
       try
