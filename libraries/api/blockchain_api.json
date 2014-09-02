@@ -184,14 +184,33 @@
         "return_type": "balance_record",
         "parameters" : [
             {
-              "name" : "balance_id",
+              "name" : "owner_address",
               "type" : "address",
-              "description" : "address of the balance"
+              "description" : "address of the balance owner"
             }
         ],
         "is_const" : true,
         "prerequisites" : ["json_authenticated"],
         "aliases" : ["get_balance"]
+      },
+      {
+        "method_name": "blockchain_get_balance_by_owner",
+        "description": "Retrieves the balance record for the given address and asset (only works on non-voting balances)",
+        "return_type": "balance_record",
+        "parameters" : [
+            {
+              "name" : "balance_id",
+              "type" : "address",
+              "description" : "address of the balance"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "string",
+              "description" : "Symbol of the asset the balance is in"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["json_authenticated"]
       },
       {
         "method_name": "blockchain_list_balances",
@@ -401,10 +420,10 @@
               "default_value" : "20"
            },
            {
-              "name" : "block_limit",
-              "type" : "uint32_t",
-              "description" : "The maximum number of blocks in the past to search for orders",
-              "default_value" : "1000"
+              "name" : "owner",
+              "type" : "string",
+              "description" : "If present, only transactions belonging to this owner key will be returned",
+              "default_value" : ""
            }
         ],
         "is_const" : true,

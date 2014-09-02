@@ -558,8 +558,8 @@ namespace bts { namespace rpc {
     fc::variant rpc_server_impl::login(fc::rpc::json_connection* json_connection, const fc::variants& params)
     {
       FC_ASSERT( params.size() == 2 );
-      FC_ASSERT( params[0].as_string() == _config.rpc_user )
-      FC_ASSERT( params[1].as_string() == _config.rpc_password )
+      FC_ASSERT( params[0].as_string() == _config.rpc_user );
+      FC_ASSERT( params[1].as_string() == _config.rpc_password );
       _authenticated_connection_set.insert( json_connection );
       return fc::variant( true );
     }

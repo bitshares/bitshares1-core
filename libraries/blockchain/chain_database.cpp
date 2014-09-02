@@ -586,6 +586,7 @@ namespace bts { namespace blockchain {
 
             const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
             pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
+            //pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
 
             delegate_record->delegate_info->pay_balance += pay;
             delegate_record->delegate_info->votes_for += pay;
@@ -777,7 +778,7 @@ namespace bts { namespace blockchain {
         vector<market_transaction> market_transactions; // = pending_state.market_transactions;
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
-           FC_ASSERT( market_pair.first > market_pair.second )
+           FC_ASSERT( market_pair.first > market_pair.second );
            if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
@@ -2529,7 +2530,6 @@ namespace bts { namespace blockchain {
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
 
-
    optional<market_order> chain_database::get_market_ask( const market_index_key& key )const
    { try {
        auto market_itr  = my->_ask_db.find(key);
@@ -2571,6 +2571,32 @@ namespace bts { namespace blockchain {
        ilog( "end of db" );
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
+
+   optional<market_order> chain_database::get_market_order( const order_id_type& order_id )const
+   { try {
+       for( auto itr = my->_ask_db.begin(); itr.valid(); ++itr )
+       {
+           const auto order = market_order( ask_order, itr.key(), itr.value() );
+           if( order_id == order.get_id() )
+               return order;
+       }
+
+       for( auto itr = my->_bid_db.begin(); itr.valid(); ++itr )
+       {
+           const auto order = market_order( bid_order, itr.key(), itr.value() );
+           if( order_id == order.get_id() )
+               return order;
+       }
+
+       for( auto itr = my->_short_db.begin(); itr.valid(); ++itr )
+       {
+           const auto order = market_order( short_order, itr.key(), itr.value() );
+           if( order_id == order.get_id() )
+               return order;
+       }
+
+       return optional<market_order>();
+   } FC_CAPTURE_AND_RETHROW( (order_id) ) }
 
    pending_chain_state_ptr chain_database::get_pending_state()const
    {
@@ -2702,6 +2728,91 @@ namespace bts { namespace blockchain {
       auto tmp = my->_market_transactions_db.fetch_optional(block_num);
       if( tmp ) return *tmp;
       return vector<market_transaction>();
+   }
+
+   vector<order_history_record> chain_database::market_order_history(asset_id_type quote,
+                                                                     asset_id_type base,
+                                                                     uint32_t skip_count,
+                                                                     uint32_t limit,
+                                                                     const address& owner)
+   {
+      FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
+
+      auto current_block_num = get_head_block_num();
+      auto get_transactions_from_prior_block = [&]() -> vector<market_transaction> {
+          auto itr = my->_market_transactions_db.lower_bound(current_block_num);
+          if (current_block_num == get_head_block_num())
+              itr = my->_market_transactions_db.last();
+
+          if (itr.valid()) --itr;
+          if (itr.valid())
+          {
+              current_block_num = itr.key();
+              return itr.value();
+          }
+          current_block_num = 1;
+          return vector<market_transaction>();
+      };
+
+      FC_ASSERT(current_block_num > 0, "No blocks have been created yet!");
+      auto orders = get_transactions_from_prior_block();
+
+      std::function<bool(const market_transaction&)> order_is_uninteresting =
+          [&quote,&base,&owner,this](const market_transaction& order) -> bool
+      {
+          //If it's in the market pair we're interested in, it might be interesting or uninteresting
+          if( order.ask_price.base_asset_id == base
+              && order.ask_price.quote_asset_id == quote ) {
+            //If we're not filtering for a specific owner, it's interesting (not uninteresting)
+            if (owner == address())
+              return false;
+            //If neither the bidder nor the asker is the owner I'm looking for, it's uninteresting
+            return owner != order.bid_owner && owner != order.ask_owner;
+          }
+          //If it's not the market pair we're interested in, it's definitely uninteresting
+          return true;
+      };
+      //Filter out orders not in our current market of interest
+      orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
+
+      //While the next entire block of orders should be skipped...
+      while( skip_count > 0 && --current_block_num > 0 && orders.size() <= skip_count ) {
+        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", current_block_num));
+        skip_count -= orders.size();
+        orders = get_transactions_from_prior_block();
+        orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
+      }
+
+      if( current_block_num == 0 && orders.size() <= skip_count )
+        // Skip count is greater or equal to the total number of relevant orders on the blockchain.
+        return vector<order_history_record>();
+
+      //If there are still some orders from the last block inspected to skip, remove them
+      if( skip_count > 0 )
+        orders.erase(orders.begin(), orders.begin() + skip_count);
+      ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
+
+      std::vector<order_history_record> results;
+      results.reserve(limit);
+      fc::time_point_sec stamp = get_block_header(current_block_num).timestamp;
+      for( const auto& rec : orders )
+        results.push_back(order_history_record(rec, stamp));
+
+      //While we still need more orders to reach our limit...
+      while( --current_block_num >= 1 && orders.size() < limit )
+      {
+        auto more_orders = get_transactions_from_prior_block();
+        more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
+        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", current_block_num));
+        stamp = get_block_header(current_block_num).timestamp;
+        for( const auto& rec : more_orders )
+          if( results.size() < limit )
+            results.push_back(order_history_record(rec, stamp));
+          else
+            return results;
+      }
+
+      return results;
    }
 
    void chain_database::set_feed( const feed_record& r )
