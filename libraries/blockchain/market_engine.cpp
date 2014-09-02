@@ -565,7 +565,7 @@ class market_engine
 
       void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
       { try {
-          FC_ASSERT( _current_ask->type == ask_order ) // update ask + payout
+          FC_ASSERT( _current_ask->type == ask_order ); // update ask + payout
 
           _current_ask->state.balance -= mtrx.ask_paid.amount;
           FC_ASSERT( _current_ask->state.balance >= 0 );
