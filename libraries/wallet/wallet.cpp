@@ -3008,6 +3008,18 @@ namespace bts { namespace wallet {
          }
       }
 
+      const auto& accs = my->_wallet_db.get_accounts();
+
+      // generate count keys for each of our accounts.
+      for( const auto& item : accs )
+      {
+         if ( item.second.is_my_account )
+         {
+            for( uint32_t i = item.second.last_used_gen_sequence; i < count; ++i )
+               my->_wallet_db.new_private_key( my->_wallet_password, item.second.account_address, true );
+         }
+      }
+
       auto next_child_idx = my->_wallet_db.get_property( next_child_key_index );
       int32_t next_child_index = 0;
       if( next_child_idx.is_null() )
