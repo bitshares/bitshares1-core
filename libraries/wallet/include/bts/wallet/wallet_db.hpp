@@ -27,7 +27,7 @@ namespace bts { namespace wallet {
          bool is_open()const;
 
          int32_t              new_wallet_record_index();
-         int32_t              new_key_child_index();
+         int32_t              new_key_child_index( const address& parent_account_address );
          fc::ecc::private_key get_private_key( const fc::sha512& password, int index );
 
          fc::ecc::private_key new_private_key( const fc::sha512& password,

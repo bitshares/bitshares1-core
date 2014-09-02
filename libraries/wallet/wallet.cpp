@@ -42,6 +42,7 @@ namespace bts { namespace wallet {
       {
          public:
              wallet*                                    self = nullptr;
+             bool                                       _is_enabled = true;
              wallet_db                                  _wallet_db;
              chain_database_ptr                         _blockchain;
              path                                       _data_directory;
@@ -1604,10 +1605,11 @@ namespace bts { namespace wallet {
 
    } // detail
 
-   wallet::wallet( chain_database_ptr blockchain )
+   wallet::wallet( chain_database_ptr blockchain, bool enabled )
    : my( new detail::wallet_impl() )
    {
       my->self = this;
+      my->_is_enabled = enabled;
       my->_blockchain = blockchain;
       my->_blockchain->add_observer( my.get() );
    }
@@ -1631,6 +1633,8 @@ namespace bts { namespace wallet {
                         const string& password,
                         const string& brainkey )
    { try {
+      FC_ASSERT(is_enabled(), "Wallet is disabled in this client!");
+
       if( !is_valid_account_name( wallet_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
@@ -1658,6 +1662,8 @@ namespace bts { namespace wallet {
                              const string& password,
                              const string& brainkey )
    { try {
+      FC_ASSERT(is_enabled(), "Wallet is disabled in this client!");
+
       if( fc::exists( wallet_file_path ) )
           FC_THROW_EXCEPTION( wallet_already_exists, "Wallet file already exists!", ("wallet_file_path",wallet_file_path) );
 
@@ -1714,6 +1720,8 @@ namespace bts { namespace wallet {
 
    void wallet::open( const string& wallet_name )
    { try {
+      FC_ASSERT(is_enabled(), "Wallet is disabled in this client!");
+
       if( !is_valid_account_name( wallet_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
@@ -1734,6 +1742,8 @@ namespace bts { namespace wallet {
 
    void wallet::open_file( const path& wallet_file_path )
    { try {
+      FC_ASSERT(is_enabled(), "Wallet is disabled in this client!");
+
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_file_path", wallet_file_path) );
 
@@ -1793,6 +1803,11 @@ namespace bts { namespace wallet {
       my->_current_wallet_path = fc::path();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   bool wallet::is_enabled() const
+   {
+      return my->_is_enabled;
+   }
+
    bool wallet::is_open()const
    {
       return my->_wallet_db.is_open();
@@ -1819,6 +1834,8 @@ namespace bts { namespace wallet {
 
    void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
    { try {
+      FC_ASSERT(is_enabled(), "Wallet is disabled in this client!");
+
       if( !fc::exists( filename ) )
           FC_THROW_EXCEPTION( file_not_found, "Filename to import from could not be found!", ("filename",filename) );
 
@@ -2991,6 +3008,18 @@ namespace bts { namespace wallet {
          }
       }
 
+      const auto& accs = my->_wallet_db.get_accounts();
+
+      // generate count keys for each of our accounts.
+      for( const auto& item : accs )
+      {
+         if ( item.second.is_my_account )
+         {
+            for( uint32_t i = item.second.last_used_gen_sequence; i < count; ++i )
+               my->_wallet_db.new_private_key( my->_wallet_password, item.second.account_address, true );
+         }
+      }
+
       auto next_child_idx = my->_wallet_db.get_property( next_child_key_index );
       int32_t next_child_index = 0;
       if( next_child_idx.is_null() )
@@ -3297,7 +3326,7 @@ namespace bts { namespace wallet {
                 /** randomly shuffle change to prevent analysis */
                 if( rand() % 2 )
                 {
-                   FC_ASSERT( trx.operations.size() >= 3 )
+                   FC_ASSERT( trx.operations.size() >= 3 );
                    std::swap( trx.operations[1], trx.operations[2] );
                 }
              }
@@ -5412,6 +5441,8 @@ namespace bts { namespace wallet {
 
    vector<string> wallet::list() const
    {
+       FC_ASSERT(is_enabled(), "Wallet is not enabled in this client!");
+
        vector<string> wallets;
        if (!fc::is_directory(get_data_directory()))
            return wallets;

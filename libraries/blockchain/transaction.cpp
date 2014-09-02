@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
 
    void transaction::define_delegate_slate( delegate_slate s )
    {
-      FC_ASSERT( s.supported_delegates.size() > 0 )
+      FC_ASSERT( s.supported_delegates.size() > 0 );
       operations.emplace_back( define_delegate_slate_operation( std::move(s) ) );
    }
 

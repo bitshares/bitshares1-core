@@ -318,10 +318,11 @@ namespace bts { namespace blockchain {
          virtual void                       set_market_transactions( vector<market_transaction> trxs )override;
          vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;
 
-         vector<order_history_record>       market_order_history( asset_id_type quote,
+         vector<order_history_record>       market_order_history(asset_id_type quote,
                                                                   asset_id_type base,
                                                                   uint32_t skip_count,
-                                                                  uint32_t limit );
+                                                                  uint32_t limit,
+                                                                  const address& owner );
 
          virtual void                       set_feed( const feed_record& )override;
          virtual ofeed_record               get_feed( const feed_index& )const override;

@@ -41,7 +41,7 @@ namespace bts { namespace wallet {
    class wallet
    {
       public:
-         wallet( chain_database_ptr chain );
+         wallet(chain_database_ptr chain, bool enabled = true);
          virtual ~wallet();
 
          //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
@@ -71,6 +71,7 @@ namespace bts { namespace wallet {
 
          void    close();
 
+         bool    is_enabled()const;
          bool    is_open()const;
          string  get_wallet_name()const;
          path    get_wallet_filename()const;

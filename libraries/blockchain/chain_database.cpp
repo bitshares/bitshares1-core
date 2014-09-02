@@ -584,7 +584,7 @@ namespace bts { namespace blockchain {
 
             const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
 #ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX
+#warning [HARDFORK] This will hardfork BTSX by changing how accumulated fees are calculated
 #endif
             //pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
             pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
@@ -778,7 +778,7 @@ namespace bts { namespace blockchain {
         vector<market_transaction> market_transactions; // = pending_state.market_transactions;
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
-           FC_ASSERT( market_pair.first > market_pair.second )
+           FC_ASSERT( market_pair.first > market_pair.second );
            market_engine engine( pending_state, *this );
            engine.execute( market_pair.first, market_pair.second, timestamp );
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
@@ -2717,7 +2717,8 @@ namespace bts { namespace blockchain {
    vector<order_history_record> chain_database::market_order_history(asset_id_type quote,
                                                                      asset_id_type base,
                                                                      uint32_t skip_count,
-                                                                     uint32_t limit)
+                                                                     uint32_t limit,
+                                                                     const address& owner)
    {
       FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
 
@@ -2741,11 +2742,18 @@ namespace bts { namespace blockchain {
       auto orders = get_transactions_from_prior_block();
 
       std::function<bool(const market_transaction&)> order_is_uninteresting =
-          [&quote,&base,this](const market_transaction& order) -> bool
+          [&quote,&base,&owner,this](const market_transaction& order) -> bool
       {
+          //If it's in the market pair we're interested in, it might be interesting or uninteresting
           if( order.ask_price.base_asset_id == base
-              && order.ask_price.quote_asset_id == quote )
-            return false;
+              && order.ask_price.quote_asset_id == quote ) {
+            //If we're not filtering for a specific owner, it's interesting (not uninteresting)
+            if (owner == address())
+              return false;
+            //If neither the bidder nor the asker is the owner I'm looking for, it's uninteresting
+            return owner != order.bid_owner && owner != order.ask_owner;
+          }
+          //If it's not the market pair we're interested in, it's definitely uninteresting
           return true;
       };
       //Filter out orders not in our current market of interest
