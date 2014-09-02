@@ -76,7 +76,7 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
-            #include "market_engine_v2.cpp"
+            #include "market_engine.cpp"
 
             digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
 
