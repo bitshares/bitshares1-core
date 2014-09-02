@@ -1445,7 +1445,6 @@ config load_config( const fc::path& datadir )
            }
        }
 
-
        void client_impl::execute_script(const fc::path& script_filename) const
        {
          if (_cli)
@@ -1670,7 +1669,7 @@ config load_config( const fc::path& datadir )
           my->_chain_db->open( data_dir / "chain", genesis_file_path );
         }
 
-        my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
+        my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
         my->_wallet->set_data_directory( data_dir / "wallets" );
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
@@ -2019,6 +2018,13 @@ config load_config( const fc::path& datadir )
         const auto balance_record = _chain_db->get_balance_record( balance_id );
         FC_ASSERT( balance_record.valid() );
         return *balance_record;
+    }
+
+    balance_record detail::client_impl::blockchain_get_balance_by_owner(const address &owner_address, const std::string &asset_symbol) const
+    {
+        withdraw_with_signature withdrawal(owner_address);
+        auto asset_id = _chain_db->get_asset_id(asset_symbol);
+        return blockchain_get_balance(withdraw_condition(withdrawal, asset_id).get_address());
     }
 
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
@@ -2424,6 +2430,7 @@ config load_config( const fc::path& datadir )
         genesis_file_path = option_variables["genesis-config"].as<string>();
 
       this->open( datadir, genesis_file_path );
+
       if (option_variables.count("min-delegate-connection-count"))
         my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
 

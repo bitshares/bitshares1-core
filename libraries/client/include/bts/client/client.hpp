@@ -65,6 +65,7 @@ namespace bts { namespace client {
     {
        config( ) :
           default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}),
+          wallet_enabled(true),
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
@@ -86,6 +87,7 @@ namespace bts { namespace client {
           vector<string>      default_peers;
           vector<string>      chain_servers;
           chain_server_config chain_server;
+          bool                wallet_enabled;
           bool                ignore_console;
           bool                use_upnp;
           optional<fc::path>  genesis_config;
@@ -184,7 +186,7 @@ FC_REFLECT(bts::client::client_notification, (timestamp)(message)(signature) )
 FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc_endpoint)(httpd_endpoint)(htdocs) )
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
-            (rpc)(default_peers)(chain_servers)(chain_server)(ignore_console)(logging)
+            (rpc)(default_peers)(chain_servers)(chain_server)(wallet_enabled)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers)
             (growl_notify_endpoint)

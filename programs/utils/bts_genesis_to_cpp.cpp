@@ -25,7 +25,8 @@ void compile_genesis_block_to_source(const fc::path& source_file_name, const fc:
   source_file << "#include <bts/blockchain/genesis_json.hpp>\n";
   source_file << "#include <string>\n\n";
   source_file << "namespace bts { namespace blockchain {\n\n";
-  source_file << "static const char* const genesis_json_chars =\n";
+  source_file << "static const char* const genesis_json_lines[] =\n";
+  source_file << "{\n";
   std::string line;
   bool first = true;
   while (std::getline(genesis_block_file, line))
@@ -33,14 +34,17 @@ void compile_genesis_block_to_source(const fc::path& source_file_name, const fc:
     if (first)
       first = false;
     else
-      source_file << "\n";
+      source_file << ",\n";
     source_file << "  " << bts::utilities::escape_string_for_c_source_code(line);
   }
-  source_file << ";\n\n";
+  source_file << "};\n\n";
 
   source_file << "std::string get_builtin_genesis_json_as_string()\n";
   source_file << "{\n";
-  source_file << "  return std::string(genesis_json_chars);\n";
+  source_file << "  std::ostringstream result;\n";
+  source_file << "  for (unsigned i = 0; i < sizeof(genesis_json_lines)/sizeof(genesis_json_lines[0]); ++i)\n";
+  source_file << "    result << genesis_json_lines[i] << \"\\n\";\n";
+  source_file << "  return result.str();\n";
   source_file << "}\n\n";
   source_file << "} } // end namespace bts::blockchain\n";
 }
