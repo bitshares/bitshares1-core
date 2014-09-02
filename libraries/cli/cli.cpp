@@ -955,7 +955,7 @@ namespace bts { namespace cli {
                            if( bid_itr->type == bts::blockchain::short_order )
                            {
                                if( bid_itr->get_price() > *median_price )
-                                   filtered_shorts.push_back(bid_itr++);
+                                   filtered_shorts.push_back(*bid_itr++);
                               else 
                                  break;
                            }

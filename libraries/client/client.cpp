@@ -3342,18 +3342,7 @@ config load_config( const fc::path& datadir )
         auto ostat      = _chain_db->get_market_status( quote_id, 0 );
 
         for( auto order : shorts )
-        {
-           if( median_delegate_price )
-           {
-              if(  order.get_price() <= *median_delegate_price )
-                 bids.push_back(order);
-           }
-           else if( ostat )
-           {
-              if(  order.get_price() <= ostat->avg_price_1h )
-                 bids.push_back(order);
-           }
-        }
+            bids.push_back(order);
 
         std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
           return a.market_index < b.market_index;
