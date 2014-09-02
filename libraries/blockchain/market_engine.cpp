@@ -185,11 +185,11 @@ class market_engine
                       }
                    }
 
-                   if( pending_block_num < BTSX_MARKET_FORK_5_BLOCK_NUM )
+                   if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
                    {
-                       if( mtrx.bid_price > max_short_bid )
+                       if( mtrx.bid_price > market_stat->maximum_bid() )
                        {
-                          wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                          wlog( "skipping short ${x} < max_bid ${b}", ("x",mtrx.bid_price)("b", market_stat->maximum_bid())  );
                           // TODO: cancel the short order...
                           _current_bid.reset();
                           continue;
@@ -197,9 +197,9 @@ class market_engine
                    }
                    else
                    {
-                       if( mtrx.bid_price > market_stat->maximum_bid() )
+                       if( mtrx.bid_price > max_short_bid )
                        {
-                          wlog( "skipping short ${x} < max_bid ${b}", ("x",mtrx.bid_price)("b", market_stat->maximum_bid())  );
+                          wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
                           // TODO: cancel the short order...
                           _current_bid.reset();
                           continue;
