@@ -408,6 +408,12 @@
               "type" : "uint32_t",
               "description" : "The maximum number of transactions to list",
               "default_value" : "20"
+           },
+           {
+              "name" : "owner",
+              "type" : "string",
+              "description" : "If present, only transactions belonging to this owner key will be returned",
+              "default_value" : ""
            }
         ],
         "is_const" : true,
