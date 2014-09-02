@@ -1095,13 +1095,13 @@ namespace bts { namespace cli {
                         << std::setw(25) << "PAID"
                         << std::setw(25) << "RECEIVED"
                         << std::setw(20) << "FEES"
-                        << std::setw(23) << "TIMESTAMP"
-                        << std::setw(37) << "OWNER"
+                        << std::setw(30) << "TIMESTAMP"
+                        << "   OWNER"
                         << "\n" << std::string(167,'-') << "\n";
 
                   for( order_history_record order : orders )
                   {
-                    *_out << std::setw(7) << "Buy"
+                    *_out << std::setw(7) << "Buy  "
                           << std::setw(30) << _client->get_chain()->to_pretty_price(order.bid_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_received)
@@ -1109,13 +1109,13 @@ namespace bts { namespace cli {
                           << std::setw(23) << pretty_timestamp(order.timestamp)
                           << std::setw(37) << string(order.bid_owner)
                           << "\n"
-                          << std::setw(7) << "Sell"
+                          << std::setw(7) << "Sell  "
                           << std::setw(30) << _client->get_chain()->to_pretty_price(order.ask_price)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_paid)
                           << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_received)
                           << std::setw(20) << _client->get_chain()->to_pretty_asset(order.ask_paid - order.bid_received)
-                          << std::setw(23) << pretty_timestamp(order.timestamp)
-                          << std::setw(37) << string(order.ask_owner)
+                          << std::setw(30) << pretty_timestamp(order.timestamp)
+                          << "   " << string(order.ask_owner)
                           << "\n";
                   }
               }
