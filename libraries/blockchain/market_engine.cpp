@@ -179,7 +179,7 @@ class market_engine
                       // bid price assuming the bid price is reasonable
                       if( mtrx.bid_price < min_cover_ask )
                       {
-                         wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
+                         //wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
                          _current_ask.reset();
                          continue;
                       }
@@ -187,9 +187,13 @@ class market_engine
 
                    if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
                    {
+                       /**
+                        *  Don't allow shorts to be executed if they are too far over priced or they will be
+                        *  immediately under collateralized.
+                        */
                        if( mtrx.bid_price > market_stat->maximum_bid() )
                        {
-                          wlog( "skipping short ${x} < max_bid ${b}", ("x",mtrx.bid_price)("b", market_stat->maximum_bid())  );
+                          //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
                           // TODO: cancel the short order...
                           _current_bid.reset();
                           continue;
@@ -199,7 +203,7 @@ class market_engine
                    {
                        if( mtrx.bid_price > max_short_bid )
                        {
-                          wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                          //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
                           // TODO: cancel the short order...
                           _current_bid.reset();
                           continue;
@@ -287,7 +291,7 @@ class market_engine
                    mtrx.bid_paid     = usd_exchanged;
                    mtrx.ask_received = usd_exchanged;
 
-                   // handl rounding errors
+                   // handle rounding errors
                    if( usd_exchanged == max_usd_purchase )
                       mtrx.ask_paid     = asset(*_current_ask->collateral,0);
                    else
@@ -337,10 +341,6 @@ class market_engine
                    }
                    else
                    {
-                       /**
-                        *  Don't allow shorts to be executed if they are too far over priced or they will be
-                        *  immediately under collateralized. 
-                        */
                        if( mtrx.bid_price > max_short_bid )
                        {
                           // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
