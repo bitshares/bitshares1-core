@@ -3326,7 +3326,7 @@ namespace bts { namespace wallet {
                 /** randomly shuffle change to prevent analysis */
                 if( rand() % 2 )
                 {
-                   FC_ASSERT( trx.operations.size() >= 3 )
+                   FC_ASSERT( trx.operations.size() >= 3 );
                    std::swap( trx.operations[1], trx.operations[2] );
                 }
              }

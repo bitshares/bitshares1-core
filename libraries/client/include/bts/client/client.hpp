@@ -131,7 +131,6 @@ namespace bts { namespace client {
          void init_cli();
          void set_daemon_mode(bool daemon_mode);
 
-         void add_node( const string& ep );
 
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
@@ -150,6 +149,8 @@ namespace bts { namespace client {
          void listen_on_port( uint16_t port_to_listen, bool wait_if_not_available);
          void accept_incoming_p2p_connections(bool accept);
          void listen_to_p2p_network();
+         static fc::ip::endpoint string_to_endpoint(const std::string& remote_endpoint);
+         void add_node( const string& remote_endpoint );
          void connect_to_peer( const string& remote_endpoint );
          void connect_to_p2p_network();
 

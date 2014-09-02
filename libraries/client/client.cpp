@@ -2623,7 +2623,7 @@ config load_config( const fc::path& datadir )
         else if (!option_variables.count("disable-default-peers"))
         {
           for (string default_peer : my->_config.default_peers)
-            this->connect_to_peer(default_peer);
+            this->add_node(default_peer);
         }
       });
 
@@ -2686,42 +2686,79 @@ config load_config( const fc::path& datadir )
        return my->_data_dir;
     }
 
+    /* static */ fc::ip::endpoint client::string_to_endpoint(const std::string& remote_endpoint)
+    {
+      try 
+      {
+        ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
+        // first, try and parse the endpoint as a numeric_ipv4_address:port that doesn't need DNS lookup
+        return fc::ip::endpoint::from_string(remote_endpoint.c_str());
+      } 
+      catch (...) 
+      {
+        string::size_type colon_pos = remote_endpoint.find(':');
+        try 
+        {
+          uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() ) );
+
+          string hostname = remote_endpoint.substr( 0, colon_pos );
+          std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
+          if ( endpoints.empty() )
+            FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+          return endpoints.back();            
+        }
+        catch (const boost::bad_lexical_cast&)
+        {
+          FC_THROW("Bad port: ${port}", ("port", remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() )));
+        }
+      }      
+    }
+
+    void client::add_node( const string& remote_endpoint )
+    {
+      fc::ip::endpoint endpoint;
+      try
+      {
+        endpoint = string_to_endpoint(remote_endpoint);
+      }
+      catch (const fc::exception& e)
+      {
+        ulog("Unable to add peer ${remote_endpoint}: ${error}", 
+             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+        return;
+      }
+
+      try
+      {
+        ulog("Adding peer ${peer} to peer database", ("peer", endpoint));
+        my->_p2p_node->add_node(endpoint);
+      }
+      catch (const bts::net::already_connected_to_requested_peer&)
+      {
+      }
+    }
     void client::connect_to_peer(const string& remote_endpoint)
     {
-        fc::ip::endpoint ep;
-        try {
-            ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-            ep = fc::ip::endpoint::from_string(remote_endpoint.c_str());
-        } catch (...) {
-            auto pos = remote_endpoint.find(':');
-            try {
-              uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
+      fc::ip::endpoint endpoint;
+      try
+      {
+        endpoint = string_to_endpoint(remote_endpoint);
+      }
+      catch (const fc::exception& e)
+      {
+        ulog("Unable to initiate connection to peer ${remote_endpoint}: ${error}", 
+             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+        return;
+      }
 
-              string hostname = remote_endpoint.substr( 0, pos );
-              auto eps = fc::resolve(hostname, port);
-              if ( eps.size() > 0 )
-              {
-                  ep = eps.back();
-              }
-              else
-              {
-                  FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
-              }
-            }
-            catch (const boost::bad_lexical_cast&)
-            {
-              ulog("Bad port: ${port}", ("port", remote_endpoint.substr( pos+1, remote_endpoint.size() )));
-              return;
-            }
-        }
-        try
-        {
-          ulog("Attempting to connect to peer ${peer}", ("peer", ep));
-          my->_p2p_node->connect_to(ep);
-        }
-        catch (const bts::net::already_connected_to_requested_peer&)
-        {
-        }
+      try
+      {
+        ulog("Attempting to connect to peer ${peer}", ("peer", endpoint));
+        my->_p2p_node->connect_to(endpoint);
+      }
+      catch (const bts::net::already_connected_to_requested_peer&)
+      {
+      }
     }
 
     void client::listen_to_p2p_network()

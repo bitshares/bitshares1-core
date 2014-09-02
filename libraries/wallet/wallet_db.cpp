@@ -117,7 +117,7 @@ namespace bts { namespace wallet {
            void load_transaction_record( const wallet_transaction_record& rec, bool overwrite )
            { try {
               auto itr = self->transactions.find( rec.record_id );
-              if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet!" )
+              if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet!" );
               self->transactions[ rec.record_id ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
 
