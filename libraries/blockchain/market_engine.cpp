@@ -2,6 +2,31 @@
  * ease of maintenance and upgrade.
  */
 
+// This is used to save & restore the _current_ask with its previous value, required to 
+// reproduce some quirky behavior in pre-BTSX_MARKET_FORK_4_BLOCK_NUM blocks.
+struct save_and_restore_ask
+{
+  fc::optional<market_order>& _current_ask_to_swap;
+  bool _swapped;
+  fc::optional<market_order> _original_current_ask;
+  save_and_restore_ask(fc::optional<market_order>& current_ask, const fc::optional<market_order>& backup_ask) :
+    _current_ask_to_swap(current_ask),
+    _swapped(false)
+  {
+    if (!_current_ask_to_swap)
+      {
+      _swapped = true;
+      _original_current_ask = _current_ask_to_swap;
+      _current_ask_to_swap = backup_ask ? backup_ask : market_order();
+      }
+  }
+  ~save_and_restore_ask()
+  {
+    if (_swapped)
+      _current_ask_to_swap = _original_current_ask;
+  }
+};
+
 class market_engine
 {
    public:
@@ -19,12 +44,12 @@ class market_engine
 
              _quote_id = quote_id;
              _base_id = base_id;
-             auto quote_asset = _pending_state->get_asset_record( _quote_id );
-             auto base_asset = _pending_state->get_asset_record( _base_id );
+             oasset_record quote_asset = _pending_state->get_asset_record( _quote_id );
+             oasset_record base_asset = _pending_state->get_asset_record( _base_id );
 
              // the order book is sorted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
              // next market class and then back up one
-             auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
+             price next_pair = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
              _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
              _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
              _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
@@ -90,6 +115,11 @@ class market_engine
                   get_next_bid(); // this is necessary for get_next_ask to work with collateral
                   while( get_next_ask() )
                   {
+                     assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
+                     if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
+                       FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
+                     save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
+                     
                      if( (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount < (10000 * BTS_BLOCKCHAIN_PRECISION) )
                         break;
                 //     idump( (_current_ask) );
@@ -142,6 +172,11 @@ class market_engine
              bool order_did_execute = false;
              while( get_next_bid() && get_next_ask() )
              {
+                assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
+                if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
+                  FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
+                save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
+
                 // make sure that at least one order was matched
                 // every time we enter the loop.
                 if( _orders_filled == last_orders_filled )
@@ -180,7 +215,7 @@ class market_engine
                       if( mtrx.bid_price < min_cover_ask )
                       {
                          wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
-                         _current_ask.reset();
+                         reset_current_ask();
                          continue;
                       }
                    }
@@ -269,7 +304,7 @@ class market_engine
                       if( mtrx.bid_price < min_cover_ask )
                       {
                          wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
-                         _current_ask.reset();
+                         reset_current_ask();
                          continue;
                       }
                    }
@@ -755,7 +790,7 @@ class market_engine
             //idump( (_current_ask) );
             return _current_ask.valid();
          }
-         _current_ask.reset();
+         reset_current_ask();
          ++_orders_filled;
 
          /**
@@ -794,7 +829,7 @@ class market_engine
                 {
                  //  if( _current_ask->get_price() > cover_ask.get_price() )
                    {
-                      _current_ask = cover_ask;
+                      set_current_ask(cover_ask);
                       _current_payoff_balance = _collateral_itr.value().payoff_balance;
                       //wlog( "--collateral_iter" );
                       --_collateral_itr;
@@ -813,7 +848,7 @@ class market_engine
             if( ask.get_price().quote_asset_id == _quote_id &&
                 ask.get_price().base_asset_id == _base_id )
             {
-                _current_ask = ask;
+                set_current_ask(ask);
             }
             ++_ask_itr;
 
@@ -834,6 +869,11 @@ class market_engine
       {
              if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
              {
+               assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
+               if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
+                 FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
+               save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
+
                market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
                market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
 
@@ -895,6 +935,13 @@ class market_engine
                  _pending_state->market_history[old_key] = new_record;
              }
       }
+      void set_current_ask(const market_order& new_ask) 
+      { 
+        _current_ask = new_ask;
+        if (_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM) 
+          _current_ask_backup = new_ask; 
+      }
+      void reset_current_ask() { _current_ask.reset(); /* does not reset _current_ask_backup */ }
 
       pending_chain_state_ptr     _pending_state;
       pending_chain_state_ptr     _prior_state;
@@ -902,6 +949,7 @@ class market_engine
 
       optional<market_order>      _current_bid;
       optional<market_order>      _current_ask;
+      optional<market_order>      _current_ask_backup; // used to allow us to validate blocks before BTSX_MARKET_FORK_4_BLOCK_NUM
       share_type                  _current_payoff_balance;
       asset_id_type               _quote_id;
       asset_id_type               _base_id;
