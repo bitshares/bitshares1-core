@@ -429,47 +429,47 @@ class market_engine
                 }
                 else
                 {
-                    // after the market is running solid we can use this metric...
-                    market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
+                   // after the market is running solid we can use this metric...
+                   market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
-                     if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
-                     {
-                        const auto max_bid = market_stat->maximum_bid();
+                   if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   {
+                      const auto max_bid = market_stat->maximum_bid();
 
-                        // limit the maximum movement rate of the price.
-                        if( _current_bid->get_price() < min_cover_ask )
-                           market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                        else if( _current_bid->get_price() > max_bid )
-                           market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
-                        else
-                           market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
+                      // limit the maximum movement rate of the price.
+                      if( _current_bid->get_price() < min_cover_ask )
+                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                      else if( _current_bid->get_price() > max_bid )
+                         market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
+                      else
+                         market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
 
-                        if( _current_ask->get_price() < min_cover_ask )
-                           market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                        else if( _current_ask->get_price() > max_bid )
-                           market_stat->avg_price_1h.ratio += max_bid.ratio;
-                        else
-                           market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
-                     }
-                     else
-                     {
-                        // limit the maximum movement rate of the price.
-                        if( _current_bid->get_price() < min_cover_ask )
-                           market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                        else if( _current_bid->get_price() > max_short_bid )
-                           market_stat->avg_price_1h.ratio += max_short_bid.ratio;
-                        else
-                           market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
+                      if( _current_ask->get_price() < min_cover_ask )
+                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                      else if( _current_ask->get_price() > max_bid )
+                         market_stat->avg_price_1h.ratio += max_bid.ratio;
+                      else
+                         market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
+                   }
+                   else
+                   {
+                      // limit the maximum movement rate of the price.
+                      if( _current_bid->get_price() < min_cover_ask )
+                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                      else if( _current_bid->get_price() > max_short_bid )
+                         market_stat->avg_price_1h.ratio += max_short_bid.ratio;
+                      else
+                         market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
 
-                        if( _current_ask->get_price() < min_cover_ask )
-                           market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                        else if( _current_ask->get_price() > max_short_bid )
-                           market_stat->avg_price_1h.ratio += max_short_bid.ratio;
-                        else
-                           market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
-                     }
+                      if( _current_ask->get_price() < min_cover_ask )
+                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                      else if( _current_ask->get_price() > max_short_bid )
+                         market_stat->avg_price_1h.ratio += max_short_bid.ratio;
+                      else
+                         market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
+                   }
 
-                     market_stat->avg_price_1h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
+                   market_stat->avg_price_1h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
                 }
              }
 
