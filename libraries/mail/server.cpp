@@ -25,8 +25,6 @@ bool operator == ( const mail_index& a, const mail_index& b )
 
 }  } // bts::mail
 
-FC_REFLECT( bts::mail::mail_index, (owner)(received) );
-
 namespace bts { namespace mail {
    using std::vector;
    using std::pair;
@@ -87,6 +85,7 @@ namespace bts { namespace mail {
                      result.push_back( pair<fc::time_point,message_id_type>(key.received,itr.value()) );
                   else
                      return result;
+                  ++itr;
                }
                return result;
             } FC_CAPTURE_AND_RETHROW( (owner)(start)(limit) ) }
@@ -133,3 +132,5 @@ namespace bts { namespace mail {
    }
 
 } } // bts::mail
+
+FC_REFLECT( bts::mail::mail_index, (owner)(received) );

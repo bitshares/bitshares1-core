@@ -4,6 +4,7 @@
 namespace bts { namespace mail {
    const message_type signed_email_message::type       = email;
    const message_type transaction_notice_message::type = transaction_notice;
+   const message_type encrypted_message::type          = encrypted;
 
    digest_type email_message::digest()const
    {

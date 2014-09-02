@@ -14,7 +14,7 @@ namespace bts { namespace blockchain {
 
    struct market_index_key
    {
-      market_index_key( const price& price_arg = price(), 
+      market_index_key( const price& price_arg = price(),
                         const address& owner_arg = address() )
       :order_price(price_arg),owner(owner_arg){}
 
@@ -105,7 +105,7 @@ namespace bts { namespace blockchain {
    };
    typedef vector<market_history_point> market_history_points;
 
-   struct order_record 
+   struct order_record
    {
       order_record():balance(0){}
       order_record( share_type b )
@@ -126,28 +126,28 @@ namespace bts { namespace blockchain {
       cover_order
    };
 
-   struct market_order 
+   struct market_order
    {
       market_order( order_type_enum t, market_index_key k, order_record s )
       :type(t),market_index(k),state(s){}
 
       market_order( order_type_enum t, market_index_key k, order_record s, share_type c )
       :type(t),market_index(k),state(s),collateral(c){}
-       
+
       market_order():type(null_order){}
 
-      string            get_id()const;
-      asset             get_balance()const; // funds available for this order
-      price             get_price()const;
-      price             get_highest_cover_price()const; // the price that consumes all collateral
-      asset             get_quantity()const;
-      asset             get_quote_quantity()const;
-      address           get_owner()const { return market_index.owner; }
+      order_id_type get_id()const;
+      asset         get_balance()const; // funds available for this order
+      price         get_price()const;
+      price         get_highest_cover_price()const; // the price that consumes all collateral
+      asset         get_quantity()const;
+      asset         get_quote_quantity()const;
+      address       get_owner()const { return market_index.owner; }
 
-      order_type_enum       type;
-      market_index_key      market_index;
-      order_record          state;
-      optional<share_type>  collateral; 
+      fc::enum_type<uint8_t, order_type_enum>   type = null_order;
+      market_index_key                          market_index;
+      order_record                              state;
+      optional<share_type>                      collateral;
    };
 
    struct market_transaction
@@ -216,7 +216,7 @@ namespace bts { namespace blockchain {
        share_type               ask_depth;
        /**
         *  Calculated as the average of the highest bid and lowest ask
-        *  every time the market executes.  The new is weighted against 
+        *  every time the market executes.  The new is weighted against
         *  the old value with a factor of 1:BLOCKS_PER_DAY.  In a very
         *  active market this will be a 24 hour moving average, in
         *  less active markets this will be a longer window.
@@ -252,7 +252,7 @@ FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_bala
 FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral) )
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::market_transaction> )
 FC_REFLECT_TYPENAME( bts::blockchain::market_history_key::time_granularity_enum ) // http://en.wikipedia.org/wiki/Voodoo_programminqg
-FC_REFLECT( bts::blockchain::market_transaction, 
+FC_REFLECT( bts::blockchain::market_transaction,
             (bid_owner)
             (ask_owner)
             (bid_price)
@@ -263,6 +263,6 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (ask_received)
             (bid_type)
             (ask_type)
-            (fees_collected) 
+            (fees_collected)
           )
 FC_REFLECT_DERIVED( bts::blockchain::order_history_record, (bts::blockchain::market_transaction), (timestamp) )

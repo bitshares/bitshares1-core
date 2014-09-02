@@ -97,6 +97,7 @@ namespace bts { namespace wallet {
        int8_t   approved = 0;
        bool     is_favorite = false;
        bool     block_production_enabled = false;
+       uint32_t last_used_gen_sequence   = 10000;
    };
 
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
@@ -125,6 +126,10 @@ namespace bts { namespace wallet {
        std::vector<char>        encrypted_private_key;
        bool                     valid_from_signature = false;
        optional<string>         memo;
+       /** defines the generation number that was used to generate the key
+        * relative to the account address.
+        */
+       uint32_t                 gen_seq_number = 0;
 
        address                  get_address()const { return address( public_key ); }
        bool                     has_private_key()const;
@@ -166,7 +171,7 @@ namespace bts { namespace wallet {
    struct market_order_status
    {
       order_type_enum get_type()const;
-      string          get_id()const;
+      order_id_type   get_id()const;
 
       asset           get_balance()const; // funds available for this order
       price           get_price()const;
@@ -237,7 +242,7 @@ FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
 FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
 FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
 FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
-FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo) )
+FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo)(gen_seq_number) )
 
 FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(memo)(memo_from_account) );
 FC_REFLECT( bts::wallet::transaction_data, 
@@ -261,7 +266,8 @@ FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record),
                     (approved)
                     (is_favorite)
                     (block_production_enabled)
-                    )
+                    (last_used_gen_sequence)
+                  )
 
 FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
 FC_REFLECT( bts::wallet::setting, (name)(value) )

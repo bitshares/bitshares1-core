@@ -22,6 +22,7 @@
 #include <bts/api/common_api.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
+#include <bts/mail/server.hpp>
 
 //#include <bts/network/node.hpp>
 
@@ -432,7 +433,7 @@ config load_config( const fc::path& datadir )
       config cfg;
       if( fc::exists( config_file ) )
       {
-         std::cout << "Loading config from: " << config_file.generic_string() << "\n";
+         std::cout << "Loading config from file: " << config_file.generic_string() << "\n";
          const auto default_peers = cfg.default_peers;
          cfg = fc::json::from_file( config_file ).as<config>();
 
@@ -452,8 +453,8 @@ config load_config( const fc::path& datadir )
       {
          std::cerr << "Creating default config file at: " << config_file.generic_string() << "\n";
          cfg.logging = create_default_logging_config( datadir );
-         fc::json::save_to_file( cfg, config_file );
       }
+      fc::json::save_to_file( cfg, config_file );
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
@@ -672,6 +673,7 @@ config load_config( const fc::path& datadir )
             chain_database_ptr                                      _chain_db = nullptr;
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
+            std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
             bool                                                    _delegate_loop_first_run = true;
             fc::time_point                                          _last_sync_status_message_time;
@@ -1445,7 +1447,6 @@ config load_config( const fc::path& datadir )
            }
        }
 
-
        void client_impl::execute_script(const fc::path& script_filename) const
        {
          if (_cli)
@@ -1670,8 +1671,14 @@ config load_config( const fc::path& datadir )
           my->_chain_db->open( data_dir / "chain", genesis_file_path );
         }
 
-        my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db );
+        my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
         my->_wallet->set_data_directory( data_dir / "wallets" );
+
+        if (my->_config.mail_server_enabled)
+        {
+          my->_mail_server = std::make_shared<bts::mail::server>();
+          my->_mail_server->open( data_dir / "mail" );
+        }
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
@@ -1689,6 +1696,8 @@ config load_config( const fc::path& datadir )
     }
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }
+
+    mail_server_ptr client::get_mail_server()const { return my->_mail_server; }
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
     bts::net::node_ptr client::get_node()const { return my->_p2p_node; }
@@ -2019,6 +2028,13 @@ config load_config( const fc::path& datadir )
         const auto balance_record = _chain_db->get_balance_record( balance_id );
         FC_ASSERT( balance_record.valid() );
         return *balance_record;
+    }
+
+    balance_record detail::client_impl::blockchain_get_balance_by_owner(const address &owner_address, const std::string &asset_symbol) const
+    {
+        withdraw_with_signature withdrawal(owner_address);
+        auto asset_id = _chain_db->get_asset_id(asset_symbol);
+        return blockchain_get_balance(withdraw_condition(withdrawal, asset_id).get_address());
     }
 
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
@@ -2362,6 +2378,28 @@ config load_config( const fc::path& datadir )
         std::cout << "Http server was not started, configuration error\n";
     }
 
+    void detail::client_impl::mail_store_message(const address& owner, const vector<char>& message) {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      fc::datastream<const char*> ds(message.data(), message.size());
+      mail::message m;
+      fc::raw::unpack(ds, m);
+      _mail_server->store(owner, m);
+    }
+
+    mail::inventory_type detail::client_impl::mail_fetch_inventory(const address &owner,
+                                                                   const fc::time_point &start_time,
+                                                                   uint32_t limit) const
+    {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      return _mail_server->fetch_inventory(owner, start_time, limit);
+    }
+
+    vector<char> detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
+    {
+      FC_ASSERT(_mail_server, "Mail server not enabled!");
+      return fc::raw::pack(_mail_server->fetch_message(inventory_id));
+    }
+
     //JSON-RPC Method Implementations END
 
     void client::start_networking(std::function<void()> network_started_callback)
@@ -2424,6 +2462,7 @@ config load_config( const fc::path& datadir )
         genesis_file_path = option_variables["genesis-config"].as<string>();
 
       this->open( datadir, genesis_file_path );
+
       if (option_variables.count("min-delegate-connection-count"))
         my->_min_delegate_connection_count = option_variables["min-delegate-connection-count"].as<uint32_t>();
 
@@ -2584,7 +2623,7 @@ config load_config( const fc::path& datadir )
         else if (!option_variables.count("disable-default-peers"))
         {
           for (string default_peer : my->_config.default_peers)
-            this->connect_to_peer(default_peer);
+            this->add_node(default_peer);
         }
       });
 
@@ -2647,42 +2686,79 @@ config load_config( const fc::path& datadir )
        return my->_data_dir;
     }
 
+    /* static */ fc::ip::endpoint client::string_to_endpoint(const std::string& remote_endpoint)
+    {
+      try 
+      {
+        ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
+        // first, try and parse the endpoint as a numeric_ipv4_address:port that doesn't need DNS lookup
+        return fc::ip::endpoint::from_string(remote_endpoint.c_str());
+      } 
+      catch (...) 
+      {
+        string::size_type colon_pos = remote_endpoint.find(':');
+        try 
+        {
+          uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() ) );
+
+          string hostname = remote_endpoint.substr( 0, colon_pos );
+          std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
+          if ( endpoints.empty() )
+            FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+          return endpoints.back();            
+        }
+        catch (const boost::bad_lexical_cast&)
+        {
+          FC_THROW("Bad port: ${port}", ("port", remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() )));
+        }
+      }      
+    }
+
+    void client::add_node( const string& remote_endpoint )
+    {
+      fc::ip::endpoint endpoint;
+      try
+      {
+        endpoint = string_to_endpoint(remote_endpoint);
+      }
+      catch (const fc::exception& e)
+      {
+        ulog("Unable to add peer ${remote_endpoint}: ${error}", 
+             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+        return;
+      }
+
+      try
+      {
+        ulog("Adding peer ${peer} to peer database", ("peer", endpoint));
+        my->_p2p_node->add_node(endpoint);
+      }
+      catch (const bts::net::already_connected_to_requested_peer&)
+      {
+      }
+    }
     void client::connect_to_peer(const string& remote_endpoint)
     {
-        fc::ip::endpoint ep;
-        try {
-            ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-            ep = fc::ip::endpoint::from_string(remote_endpoint.c_str());
-        } catch (...) {
-            auto pos = remote_endpoint.find(':');
-            try {
-              uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( pos+1, remote_endpoint.size() ) );
+      fc::ip::endpoint endpoint;
+      try
+      {
+        endpoint = string_to_endpoint(remote_endpoint);
+      }
+      catch (const fc::exception& e)
+      {
+        ulog("Unable to initiate connection to peer ${remote_endpoint}: ${error}", 
+             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+        return;
+      }
 
-              string hostname = remote_endpoint.substr( 0, pos );
-              auto eps = fc::resolve(hostname, port);
-              if ( eps.size() > 0 )
-              {
-                  ep = eps.back();
-              }
-              else
-              {
-                  FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
-              }
-            }
-            catch (const boost::bad_lexical_cast&)
-            {
-              ulog("Bad port: ${port}", ("port", remote_endpoint.substr( pos+1, remote_endpoint.size() )));
-              return;
-            }
-        }
-        try
-        {
-          ulog("Attempting to connect to peer ${peer}", ("peer", ep));
-          my->_p2p_node->connect_to(ep);
-        }
-        catch (const bts::net::already_connected_to_requested_peer&)
-        {
-        }
+      try
+      {
+        ulog("Attempting to connect to peer ${peer}", ("peer", endpoint));
+        my->_p2p_node->connect_to(endpoint);
+      }
+      catch (const bts::net::already_connected_to_requested_peer&)
+      {
+      }
     }
 
     void client::listen_to_p2p_network()
@@ -3159,12 +3235,23 @@ config load_config( const fc::path& datadir )
       network_broadcast_transaction( trx );
       return trx;
    }
+
    signed_transaction client_impl::wallet_market_cover( const string& from_account,
                                                         double quantity,
                                                         const string& quantity_symbol,
                                                         const address& order_id )
    {
       auto trx = _wallet->cover_short( from_account, quantity, quantity_symbol, order_id, true );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
+
+   signed_transaction client_impl::wallet_market_cover2( const string& from_account,
+                                                        double quantity,
+                                                        const string& quantity_symbol,
+                                                        const order_id_type& short_id )
+   {
+      const auto trx = _wallet->cover_short2( from_account, quantity, quantity_symbol, short_id, true );
       network_broadcast_transaction( trx );
       return trx;
    }
@@ -3285,63 +3372,13 @@ config load_config( const fc::path& datadir )
                                                                                   const std::string &base_symbol,
                                                                                   uint32_t skip_count,
                                                                                   uint32_t limit,
-                                                                                  uint32_t block_limit) const
+                                                                                  const string& owner) const
    {
-      FC_ASSERT(limit <= 10000, "Limit must be at most 10000!");
+       auto quote_id = _chain_db->get_asset_id(quote_symbol);
+       auto base_id = _chain_db->get_asset_id(base_symbol);
+       address owner_address = owner.empty()? address() : address(owner);
 
-      auto current_block_num = _chain_db->get_head_block_num();
-      auto head_block_num = current_block_num;
-      auto orders = _chain_db->get_market_transactions(current_block_num);
-
-      std::function<bool(const market_transaction&)> order_is_uninteresting =
-          [&quote_symbol,&base_symbol,this](const market_transaction& order) -> bool
-      {
-          if( order.ask_price.base_asset_id == _chain_db->get_asset_id(base_symbol)
-              && order.ask_price.quote_asset_id == _chain_db->get_asset_id(quote_symbol) )
-            return false;
-          return true;
-      };
-      //Filter out orders not in our current market of interest
-      orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
-
-      //While the next entire block of orders should be skipped...
-      while( skip_count > 0 && current_block_num > 0 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count ) {
-        ilog("Skipping ${num} block ${block} orders", ("num", orders.size())("block", current_block_num));
-        skip_count -= orders.size();
-        orders = _chain_db->get_market_transactions(--current_block_num);
-        orders.erase(std::remove_if(orders.begin(), orders.end(), order_is_uninteresting), orders.end());
-      }
-
-      if( current_block_num == 0 && orders.size() <= skip_count )
-        // Skip count is greater or equal to the total number of relevant orders on the blockchain.
-        return vector<order_history_record>();
-
-      //If there are still some orders from the last block inspected to skip, remove them
-      if( skip_count > 0 )
-        orders.erase(orders.begin(), orders.begin() + skip_count);
-      ilog("Building up order history, got ${num} so far...", ("num", orders.size()));
-
-      std::vector<order_history_record> results;
-      results.reserve(limit);
-      fc::time_point_sec stamp = _chain_db->get_block_header(current_block_num).timestamp;
-      for( const auto& rec : orders )
-        results.push_back(order_history_record(rec, stamp));
-
-      //While we still need more orders to reach our limit...
-      while( current_block_num > 1 && head_block_num-current_block_num < block_limit && orders.size() <= skip_count )
-      {
-        auto more_orders = _chain_db->get_market_transactions(--current_block_num);
-        more_orders.erase(std::remove_if(more_orders.begin(), more_orders.end(), order_is_uninteresting), more_orders.end());
-        ilog("Found ${num} more orders in block ${block}...", ("num", more_orders.size())("block", current_block_num));
-        stamp = _chain_db->get_block_header(current_block_num).timestamp;
-        for( const auto& rec : more_orders )
-          if( results.size() < limit )
-            results.push_back(order_history_record(rec, stamp));
-          else
-            return results;
-      }
-
-      return results;
+       return _chain_db->market_order_history(quote_id, base_id, skip_count, limit, owner_address);
    }
 
    market_history_points client_impl::blockchain_market_price_history( const std::string& quote_symbol,
@@ -3364,6 +3401,15 @@ config load_config( const fc::path& datadir )
       return trx;
    }
 
+   signed_transaction client_impl::wallet_market_add_collateral2(const std::string &from_account_name,
+                                                                 const order_id_type &short_id,
+                                                                 const share_type &collateral_to_add)
+   {
+      const auto trx = _wallet->add_collateral2( from_account_name, short_id, collateral_to_add );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
+
    vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                const string& base_symbol,
                                                                int64_t limit,
@@ -3372,9 +3418,24 @@ config load_config( const fc::path& datadir )
       return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }
 
+   map<order_id_type, market_order> client_impl::wallet_market_order_list2( const string& quote_symbol,
+                                                                            const string& base_symbol,
+                                                                            int64_t limit,
+                                                                            const string& account_name  )
+   {
+      return _wallet->get_market_orders2( quote_symbol, base_symbol, limit, account_name );
+   }
+
    signed_transaction client_impl::wallet_market_cancel_order( const address& order_address )
    {
       auto trx = _wallet->cancel_market_order( order_address );
+      network_broadcast_transaction( trx );
+      return trx;
+   }
+
+   signed_transaction client_impl::wallet_market_cancel_order2( const order_id_type& order_id )
+   {
+      const auto trx = _wallet->cancel_market_order2( order_id );
       network_broadcast_transaction( trx );
       return trx;
    }

@@ -542,7 +542,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       //run client with cmdline options
       if (with_network)
       {
-        FC_ASSERT(false, "Not implemented yet!")
+        FC_ASSERT(false, "Not implemented yet!");
       }
       else
       {

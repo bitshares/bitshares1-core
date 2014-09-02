@@ -109,7 +109,7 @@
                             FC_ASSERT( xts_paid_by_ask >= xts_received_by_bid );
 
                             // sanity check to keep supply from growing without bound
-                            FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset)  )
+                            FC_ASSERT( usd_paid_by_bid < asset(quote_asset->maximum_share_supply,quote_id), "", ("usd_paid_by_bid",usd_paid_by_bid)("asset",quote_asset) );
 
                             usd_fees_collected += usd_paid_by_bid - usd_received_by_ask;
                             idump( (usd_fees_collected)(xts_paid_by_ask)(xts_received_by_bid)(quantity) );

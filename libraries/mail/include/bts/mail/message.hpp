@@ -61,6 +61,8 @@ namespace bts { namespace mail {
 
    struct encrypted_message
    {
+      static const message_type type;
+
       message decrypt( const fc::ecc::private_key& e )const;
 
       fc::ecc::public_key  onetimekey;
@@ -85,7 +87,7 @@ namespace bts { namespace mail {
       template<typename MessageType>
       MessageType as()const
       {
-         FC_ASSERT( type == MessageType::type, "", ("type",type)("MessageType",MessageType::type) ) 
+         FC_ASSERT( type == MessageType::type, "", ("type",type)("MessageType",MessageType::type) );
          return fc::raw::unpack<MessageType>(data);
       }
 
