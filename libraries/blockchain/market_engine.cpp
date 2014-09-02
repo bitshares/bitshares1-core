@@ -169,6 +169,18 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
+                   /**
+                    *  Don't allow shorts to be executed if they are too far over priced or they will be
+                    *  immediately under collateralized.
+                    */
+                   if( mtrx.bid_price > market_stat->maximum_bid() )
+                   {
+                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_bid.reset();
+                      continue;
+                   }
+
                    mtrx.ask_price = mtrx.bid_price;
 
                    // we want to sell enough XTS to cover our balance.
@@ -235,7 +247,7 @@ class market_engine
                    mtrx.bid_paid     = usd_exchanged;
                    mtrx.ask_received = usd_exchanged;
 
-                   // handl rounding errors
+                   // handle rounding errors
                    if( usd_exchanged == max_usd_purchase )
                       mtrx.ask_paid     = asset(*_current_ask->collateral,0);
                    else
@@ -256,9 +268,9 @@ class market_engine
 
                    /**
                     *  If the ask is less than the "max short bid" then that means the
-                    *  ask (those with XTS wanting to buy USD) are willing to accept 
+                    *  ask (those with XTS wanting to buy USD) are willing to accept
                     *  a price lower than the median.... this will generally mean that
-                    *  everyone else with USD looking to sell below parity has been 
+                    *  everyone else with USD looking to sell below parity has been
                     *  bought out and the buyers of USD are willing to pay above parity.
                     */
                    if( mtrx.ask_price <= max_short_bid )
@@ -271,7 +283,7 @@ class market_engine
 
                    /**
                     *  Don't allow shorts to be executed if they are too far over priced or they will be
-                    *  immediately under collateralized. 
+                    *  immediately under collateralized.
                     */
                    if( mtrx.bid_price > market_stat->maximum_bid() )
                    {
@@ -363,6 +375,7 @@ class market_engine
                    market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
                    const auto max_bid = market_stat->maximum_bid();
+
                    // limit the maximum movement rate of the price.
                    if( _current_bid->get_price() < min_cover_ask )
                       market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
