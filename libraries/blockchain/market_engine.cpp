@@ -169,14 +169,6 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
-                   if( mtrx.bid_price > max_short_bid )
-                   {
-                      wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                      // TODO: cancel the short order...
-                      _current_bid.reset();
-                      continue;
-                   }
-
                    mtrx.ask_price = mtrx.bid_price;
 
                    // we want to sell enough XTS to cover our balance.
@@ -262,9 +254,29 @@ class market_engine
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
-                   if( mtrx.bid_price > max_short_bid )
+#warning [HARDFORK] This will hardfork BTSX  (use to be bid_price > max_short_bid, now ask_price <= max_short_bid)
+                   /**
+                    *  If the ask is less than the "max short bid" then that means the
+                    *  ask (those with XTS wanting to buy USD) are willing to accept 
+                    *  a price lower than the median.... this will generally mean that
+                    *  everyone else with USD looking to sell below parity has been 
+                    *  bought out and the buyers of USD are willing to pay above parity.
+                    */
+                   if( mtrx.ask_price <= max_short_bid )
                    {
-                      wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_bid.reset();
+                      continue;
+                   }
+
+                   /**
+                    *  Don't allow shorts to be executed if they are too far over priced or they will be
+                    *  immediately under collateralized. 
+                    */
+                   if( mtrx.bid_price > market_stat->maximum_bid() )
+                   {
+                      // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
                       // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
@@ -345,24 +357,30 @@ class market_engine
                 // after the market is running solid we can use this metric...
                 market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
-                const auto max_bid = market_stat->maximum_bid();
 
-                // limit the maximum movement rate of the price.
-                if( _current_bid->get_price() < min_cover_ask )
-                   market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                else if( _current_bid->get_price() > max_bid )
-                   market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
+#warning [HARD FORK] this will hardfork BTSX by setting the avg price to the median price if it exists.
+                if( median_price )
+                   market_stat->avg_price_1h = *median_price;
                 else
-                   market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
+                {
+                   const auto max_bid = market_stat->maximum_bid();
+                   // limit the maximum movement rate of the price.
+                   if( _current_bid->get_price() < min_cover_ask )
+                      market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                   else if( _current_bid->get_price() > max_bid )
+                      market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
+                   else
+                      market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
 
-                if( _current_ask->get_price() < min_cover_ask )
-                   market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                else if( _current_ask->get_price() > max_bid )
-                   market_stat->avg_price_1h.ratio += max_bid.ratio;
-                else
-                   market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
+                   if( _current_ask->get_price() < min_cover_ask )
+                      market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                   else if( _current_ask->get_price() > max_bid )
+                      market_stat->avg_price_1h.ratio += max_bid.ratio;
+                   else
+                      market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
 
-                market_stat->avg_price_1h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
+                   market_stat->avg_price_1h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
+                }
              }
 
              if( quote_asset->is_market_issued() )
@@ -547,7 +565,7 @@ class market_engine
 
       void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
       { try {
-          FC_ASSERT( _current_ask->type == ask_order ); // update ask + payout
+          FC_ASSERT( _current_ask->type == ask_order ) // update ask + payout
 
           _current_ask->state.balance -= mtrx.ask_paid.amount;
           FC_ASSERT( _current_ask->state.balance >= 0 );
