@@ -16,13 +16,13 @@ set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_rpc_server.cpp
                               "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_overrides.ipp")
 
 add_custom_command(OUTPUT ${generated_genesis_file} 
-                   COMMAND bts_genesis_to_cpp "--json=${genesis_json}" 
+                   COMMAND bts_json_to_cpp    "--json=${genesis_json}"
                                               "--prologue=${genesis_prologue}"
                                               "--epilogue=${genesis_epilogue}"
                                               "--out=${generated_genesis_file}.new"
                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${generated_genesis_file}.new" "${generated_genesis_file}"
                    COMMAND ${CMAKE_COMMAND} -E remove "${generated_genesis_file}.new"
-                   DEPENDS bts_genesis_to_cpp ${genesis_json} ${genesis_prologue} ${genesis_epilogue} )
+                   DEPENDS bts_json_to_cpp ${genesis_json} ${genesis_prologue} ${genesis_epilogue} )
 
                    
 ##################################################################################################
