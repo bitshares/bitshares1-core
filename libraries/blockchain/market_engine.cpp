@@ -254,7 +254,11 @@ class market_engine
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
-#warning [HARDFORK] This will hardfork BTSX  (use to be bid_price > max_short_bid, now ask_price <= max_short_bid)
+#ifdef _MSC_VER
+# pragma message("[HARDFORK] This will hardfork BTSX  (use to be bid_price > max_short_bid, now ask_price <= max_short_bid)")
+#else
+# warning "[HARDFORK] This will hardfork BTSX  (use to be bid_price > max_short_bid, now ask_price <= max_short_bid)"
+#endif
                    /**
                     *  If the ask is less than the "max short bid" then that means the
                     *  ask (those with XTS wanting to buy USD) are willing to accept 
