@@ -362,7 +362,11 @@ class market_engine
                 market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
 
-#warning [HARD FORK] this will hardfork BTSX by setting the avg price to the median price if it exists.
+#ifdef _MSC_VER
+# pragma message("[HARD FORK] this will hardfork BTSX by setting the avg price to the median price if it exists.")
+#else
+# warning "[HARD FORK] this will hardfork BTSX by setting the avg price to the median price if it exists."
+#endif
                 if( median_price )
                    market_stat->avg_price_1h = *median_price;
                 else
