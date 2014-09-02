@@ -902,6 +902,7 @@ namespace bts { namespace cli {
               else if (method_name == "blockchain_market_order_book")
               {
                   auto bids_asks = result.as<std::pair<vector<market_order>,vector<market_order>>>();
+                  vector<market_order> filtered_shorts;
                   if( bids_asks.first.size() == 0 && bids_asks.second.size() == 0 )
                   {
                      *_out << "No Orders\n";
@@ -953,8 +954,8 @@ namespace bts { namespace cli {
                         {
                            if( bid_itr->type == bts::blockchain::short_order )
                            {
-                              if( bid_itr->get_price() > *median_price )
-                                  ++bid_itr;
+                               if( bid_itr->get_price() > *median_price )
+                                   filtered_shorts.push_back(bid_itr++);
                               else 
                                  break;
                            }
@@ -1014,31 +1015,54 @@ namespace bts { namespace cli {
                   if( quote_asset_record->is_market_issued() && base_id == 0 )
                   {
                      *_out << std::string(175, '-') << "\n";
-                     *_out << std::string(38, ' ') << " "
+                     *_out << std::setw(39) << "FILTERED SHORTS"
                            << std::string(38, ' ') << "| "
                            << std::string(34, ' ') << "MARGIN"
                            << std::string(34, ' ') << "\n"
-                           << std::left << std::setw(26) << " "
-                           << std::setw(20) << " "
-                           << std::right << std::setw(30) << " "
+                           << std::left << std::setw(26) << "TOTAL"
+                           << std::setw(20) << "QUANTITY"
+                           << std::right << std::setw(30) << "PRICE"
                            << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" <<"   COLLATERAL" << "\n"
                            << std::string(175, '-') << "\n";
 
                      {
                         auto ask_itr = bids_asks.second.rbegin();
-                        while(  ask_itr != bids_asks.second.rend() )
+                        auto bid_itr = filtered_shorts.begin();
+                        while( bid_itr != filtered_shorts.end() || ask_itr != bids_asks.second.rend() )
                         {
-                            if( ask_itr->collateral )
+                            if( bid_itr != filtered_shorts.end() )
                             {
+                                *_out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order?
+                                           _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
+                                         : _client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
+                                      << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order?
+                                           _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
+                                         : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
+                                      << std::right << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(bid_itr->get_price()) )+ " " + quote_asset_record->symbol)
+                                      << "*";
+                            }
+                            else
                                 *_out << std::string(77, ' ');
-                                *_out << "| ";
+
+                            *_out << "| ";
+
+                            while( ask_itr != bids_asks.second.rend() && !ask_itr->collateral )
+                                ++ask_itr;
+                            if( ask_itr != bids_asks.second.rend() )
+                            {
                                 *_out << std::left << std::setw(30) << std::setprecision(8) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
                                      << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
                                      << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
                                    *_out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
                                    *_out << "\n";
                             }
-                           ++ask_itr;
+                            else
+                                *_out << "\n";
+
+                            if (ask_itr != bids_asks.second.rend())
+                                ++ask_itr;
+                            if (bid_itr != filtered_shorts.end())
+                                ++bid_itr;
                         }
                      }
 
