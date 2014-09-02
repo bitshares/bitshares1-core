@@ -6143,7 +6143,39 @@ namespace bts { namespace wallet {
          }
       }
       return result;
-   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
+       } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
+
+    bts::mail::message wallet::mail_create(const string& sender,
+                                           const bts::blockchain::public_key_type& recipient,
+                                           const string& subject,
+                                           const string& body)
+    {
+        FC_ASSERT(is_open());
+        FC_ASSERT(is_unlocked());
+        if(!is_receive_account(sender))
+            FC_THROW_EXCEPTION(unknown_account, "Unknown sending account name!", ("sender",sender));
+
+        auto sender_key = get_active_private_key(sender);
+        mail::signed_email_message plaintext;
+        plaintext.subject = subject;
+        plaintext.body = body;
+        plaintext.sign(sender_key);
+
+        auto one_time_key = my->create_one_time_key();
+        return mail::message(plaintext).encrypt(one_time_key, recipient);
+    }
+
+    mail::message wallet::mail_open(const address& recipient, const mail::message& ciphertext)
+    {
+        FC_ASSERT(is_open());
+        FC_ASSERT(is_unlocked());
+        if(!is_receive_address(recipient))
+            FC_THROW_EXCEPTION(unknown_address, "Unknown receiving account address!", ("recipient",recipient));
+
+        auto recipient_key = get_private_key(recipient);
+        FC_ASSERT(ciphertext.type == mail::encrypted);
+        return ciphertext.as<mail::encrypted_message>().decrypt(recipient_key);
+    }
 
    map<order_id_type, market_order> wallet::get_market_orders2( const string& quote_symbol, const string& base_symbol,
                                                                int32_t limit, const string& account_name)const

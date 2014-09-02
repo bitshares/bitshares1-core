@@ -2250,6 +2250,23 @@ config load_config( const fc::path& datadir )
       return "key not found";
     }
 
+    mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
+                                                          const std::string& recipient,
+                                                          const std::string& subject,
+                                                          const std::string& body)
+    {
+        auto recipient_account = _chain_db->get_account_record(recipient);
+        if (!recipient_account.valid())
+            FC_THROW_EXCEPTION(unknown_account_name, "Could not find recipient account: ${name}", ("name", recipient));
+
+        return _wallet->mail_create(sender, recipient_account->active_key(), subject, body);
+    }
+
+    mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message &ciphertext)
+    {
+        return _wallet->mail_open(recipient, ciphertext);
+    }
+
     map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
     {
       return _chain_db->get_balances( first, limit );
@@ -2378,12 +2395,9 @@ config load_config( const fc::path& datadir )
         std::cout << "Http server was not started, configuration error\n";
     }
 
-    void detail::client_impl::mail_store_message(const address& owner, const vector<char>& message) {
+    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message) {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
-      fc::datastream<const char*> ds(message.data(), message.size());
-      mail::message m;
-      fc::raw::unpack(ds, m);
-      _mail_server->store(owner, m);
+      _mail_server->store(owner, message);
     }
 
     mail::inventory_type detail::client_impl::mail_fetch_inventory(const address &owner,
@@ -2394,10 +2408,10 @@ config load_config( const fc::path& datadir )
       return _mail_server->fetch_inventory(owner, start_time, limit);
     }
 
-    vector<char> detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
+    mail::message detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
-      return fc::raw::pack(_mail_server->fetch_message(inventory_id));
+      return _mail_server->fetch_message(inventory_id);
     }
 
     //JSON-RPC Method Implementations END

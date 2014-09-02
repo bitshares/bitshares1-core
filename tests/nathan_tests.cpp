@@ -124,7 +124,7 @@ BOOST_FIXTURE_TEST_CASE( mail_server, chain_fixture )
 
     fc::time_point before = fc::time_point::now();
     message m(message(sem).encrypt(one_time_key, his_key.get_public_key()));
-    clienta->mail_store_message(his_key.get_public_key(), fc::raw::pack(m));
+    clienta->mail_store_message(his_key.get_public_key(), m);
     fc::time_point after = fc::time_point::now();
     BOOST_CHECK(after > before);
 
@@ -132,10 +132,7 @@ BOOST_FIXTURE_TEST_CASE( mail_server, chain_fixture )
     auto inventory = clienta->mail_fetch_inventory(his_key.get_public_key(), before);
     BOOST_CHECK(inventory.size() == 1);
 
-    message received_message;
-    auto blob = clienta->mail_fetch_message(inventory[0].second);
-    fc::datastream<const char*> ds(blob.data(), blob.size());
-    fc::raw::unpack(ds, received_message);
+    message received_message = clienta->mail_fetch_message(inventory[0].second);
     BOOST_CHECK(received_message.type == encrypted);
     signed_email_message rm = received_message.as<encrypted_message>().decrypt(his_key).as<signed_email_message>();
 
