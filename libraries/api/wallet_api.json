@@ -1494,6 +1494,52 @@
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_mail_create",
+         "description" : "Creates a new mail message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "sender",
+                "type" : "string",
+                "description" : "The name of the message's sender."
+             },
+             {
+                "name" : "recipient",
+                "type" : "string",
+                "description" : "The name of the message's recipient."
+             },
+             {
+                "name" : "subject",
+                "type" : "string",
+                "description" : "The subject of the message."
+             },
+             {
+                "name" : "body",
+                "type" : "string",
+                "description" : "The body of the message."
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_mail_open",
+         "description" : "Opens an encrypted mail message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "recipient",
+                "type" : "address",
+                "description" : "The address of the message's recipient."
+             },
+             {
+                "name" : "ciphertext",
+                "type" : "message",
+                "description" : "The encrypted message."
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }

@@ -608,12 +608,13 @@
         "cpp_include_file" : "bts/blockchain/feed_operations.hpp"
       },
       {
-        "type_name" : "blob",
-        "cpp_return_type" : "std::vector<char>"
-      },
-      {
         "type_name" : "mail_inventory",
         "cpp_return_type" : "bts::mail::inventory_type",
+        "cpp_include_file" : "bts/mail/server.hpp"
+      },
+      {
+        "type_name" : "message",
+        "cpp_return_type" : "bts::mail::message",
         "cpp_include_file" : "bts/mail/server.hpp"
       },
       {
