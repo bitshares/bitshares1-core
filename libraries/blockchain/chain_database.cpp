@@ -584,7 +584,7 @@ namespace bts { namespace blockchain {
 
             const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
 #ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX
+#warning [HARDFORK] This will hardfork BTSX by changing how accumulated fees are calculated
 #endif
             //pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
             pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
