@@ -137,6 +137,8 @@ namespace bts { namespace blockchain {
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
+
+
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
 
@@ -166,6 +168,24 @@ namespace bts { namespace blockchain {
       auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
       if( !market_stat )
          market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
+
+      /**
+       *  If there is an average, then keep it within 10% of the average.
+       */
+      if( market_stat->avg_price_1h.quote_asset_id != 0 )
+      {
+         FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
+      }
+      else // if there is no average, there must be a median feed and the short must not be more than 10% above the feed
+      {
+         auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
+         FC_ASSERT( median_delegate_price.valid() );
+         auto feed_max_short_bid = *median_delegate_price;
+         feed_max_short_bid.ratio *= 10;
+         feed_max_short_bid.ratio /= 9;
+         FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
+      }
+
       market_stat->bid_depth += delta_amount.amount;
 
       eval_state._current_state->store_market_status( *market_stat );
