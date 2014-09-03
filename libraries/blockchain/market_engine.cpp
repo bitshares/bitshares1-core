@@ -17,7 +17,7 @@ struct save_and_restore_ask
       {
       _swapped = true;
       _original_current_ask = _current_ask_to_swap;
-      _current_ask_to_swap = backup_ask ? backup_ask : market_order();
+      _current_ask_to_swap = backup_ask ? *backup_ask : market_order();
       }
   }
   ~save_and_restore_ask()
