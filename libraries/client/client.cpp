@@ -3303,7 +3303,7 @@ config load_config( const fc::path& datadir )
 
    asset client_impl::wallet_get_transaction_fee( const string& fee_symbol )
    {
-      return _wallet->get_transaction_fee( get_chain()->get_asset_id(fee_symbol) );
+      return _wallet->get_transaction_fee( _chain_db->get_asset_id( fee_symbol ) );
    }
 
    bool client_impl::blockchain_is_synced() const
