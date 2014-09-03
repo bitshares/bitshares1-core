@@ -1021,12 +1021,18 @@ namespace bts { namespace blockchain {
           uint32_t       last_block_num = -1;
           block_id_type  last_block_id;
           my->_block_num_to_id_db.last( last_block_num, last_block_id );
-          if( !must_rebuild_index && last_block_num != uint32_t(-1) )
-          {
-             my->_head_block_header = get_block_digest( last_block_id );
-             my->_head_block_id = last_block_id;
+
+          try {
+            if( !must_rebuild_index && last_block_num != uint32_t(-1) )
+            {
+               my->_head_block_header = get_block_digest( last_block_id );
+               my->_head_block_id = last_block_id;
+            }
+          } catch (...) {
+            must_rebuild_index = true;
           }
-          else
+
+          if( must_rebuild_index || last_block_num == uint32_t(-1) )
           {
              close();
              fc::remove_all( data_dir / "index" );
@@ -1040,10 +1046,8 @@ namespace bts { namespace blockchain {
 
              if( !reindex_status_callback )
                 std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
-             else {
-                 std::cout << "Progress: 0" << std::endl;
+             else
                  reindex_status_callback(0);
-             }
 
              uint32_t blocks_indexed = 0;
              const float total_blocks = num_to_id.size();
@@ -1062,10 +1066,8 @@ namespace bts { namespace blockchain {
                      if( !reindex_status_callback )
                          std::cout << "\rRe-indexing database... "
                                       "Approximately " << std::setprecision(2) << progress << "% complete." << std::flush;
-                     else {
-                         std::cout << "progress: " << progress << std::endl;
+                     else
                          reindex_status_callback(progress);
-                     }
                  }
 
                  push_block(block);
@@ -2701,6 +2703,8 @@ namespace bts { namespace blockchain {
                              record_itr.key().timestamp,
                              fc::variant(string(record_itr.value().highest_bid.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+                             fc::variant(string(record_itr.value().opening_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
+                             fc::variant(string(record_itr.value().closing_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              record_itr.value().volume,
                              record_itr.value().recent_average_price? to_pretty_price_double(*record_itr.value().recent_average_price) : fc::optional<double>()
                            } );

@@ -1162,15 +1162,19 @@ namespace bts { namespace cli {
                   *_out << std::setw(20) << "TIME"
                           << std::setw(20) << "HIGHEST BID"
                           << std::setw(20) << "LOWEST ASK"
+                          << std::setw(20) << "OPENING PRICE"
+                          << std::setw(20) << "CLOSING PRICE"
                           << std::setw(20) << "TRADING VOLUME"
                           << std::setw(20) << "AVERAGE PRICE"
-                          << "\n" << std::string(100,'-') << "\n";
+                          << "\n" << std::string(140,'-') << "\n";
 
                   for( auto point : points )
                   {
                     *_out << std::setw(20) << pretty_timestamp(point.timestamp)
                           << std::setw(20) << point.highest_bid
                           << std::setw(20) << point.lowest_ask
+                          << std::setw(20) << point.opening_price
+                          << std::setw(20) << point.closing_price
                           << std::setw(20) << _client->get_chain()->to_pretty_asset(asset(point.volume));
                     if(point.recent_average_price)
                       *_out << std::setw(20) << *point.recent_average_price;

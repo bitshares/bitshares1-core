@@ -52,6 +52,8 @@ class market_engine
 
              price max_short_bid;
              price min_cover_ask;
+             price opening_price;
+             price closing_price;
 
              // while bootstraping we use this metric
              auto median_price = _db_impl.self->get_median_delegate_price( quote_id );
@@ -114,6 +116,9 @@ class market_engine
                        trading_volume += mtrx.ask_received;
                      else if( mtrx.bid_received.asset_id == 0 )
                        trading_volume += mtrx.bid_received;
+                     if( opening_price == price() )
+                       opening_price = mtrx.bid_price;
+                     closing_price = mtrx.bid_price;
 
                      if( mtrx.ask_type == ask_order )
                         pay_current_ask( mtrx, *base_asset );
@@ -350,6 +355,9 @@ class market_engine
                   trading_volume += mtrx.ask_received;
                 else if( mtrx.bid_received.asset_id == 0 )
                   trading_volume += mtrx.bid_received;
+                if( opening_price == price() )
+                  opening_price = mtrx.bid_price;
+                closing_price = mtrx.bid_price;
 
                 accumulate_fees( mtrx, *quote_asset );
              } // while( next bid && next ask )
@@ -407,7 +415,7 @@ class market_engine
              }
              _pending_state->store_market_status( *market_stat );
 
-             update_market_history( trading_volume, market_stat, timestamp );
+             update_market_history( trading_volume, opening_price, closing_price, market_stat, timestamp );
 
              wlog( "done matching orders" );
              _pending_state->apply_changes();
@@ -732,15 +740,23 @@ class market_engine
 
 
       /**
-       *  This method should not effect market execution or validation and
+       *  This method should not affect market execution or validation and
        *  is for historical purposes only.
        */
-      void update_market_history( const asset& trading_volume, const omarket_status& market_stat, const fc::time_point_sec& timestamp )
+      void update_market_history( const asset& trading_volume,
+                                  const price& opening_price,
+                                  const price& closing_price,
+                                  const omarket_status& market_stat,
+                                  const fc::time_point_sec& timestamp )
       {
              if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
              {
                market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-               market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
+               market_history_record new_record(_current_bid->get_price(),
+                                                _current_ask->get_price(),
+                                                opening_price,
+                                                closing_price,
+                                                trading_volume.amount);
 
                FC_ASSERT( market_stat );
                new_record.recent_average_price = market_stat->avg_price_1h;
