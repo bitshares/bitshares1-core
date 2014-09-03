@@ -14,7 +14,7 @@
                 },
                 {
                     "name" : "message",
-                    "type" : "blob",
+                    "type" : "message",
                     "description" : "The message to store."
                 }
             ],
@@ -49,7 +49,7 @@
         {
             "method_name": "mail_fetch_message",
             "description": "Get a specific message.",
-            "return_type": "blob",
+            "return_type": "message",
             "parameters" : [
                 {
                     "name" : "inventory_id",

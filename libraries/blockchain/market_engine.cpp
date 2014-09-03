@@ -473,7 +473,7 @@ class market_engine
                 }
              }
 
-             if( quote_asset->is_market_issued() )
+             if( quote_asset->is_market_issued() && base_id == 0 )
              {
                  if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
                  {

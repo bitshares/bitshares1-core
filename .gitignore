@@ -32,6 +32,7 @@ programs/utils/bts_create_genesis
 programs/utils/bts_create_key
 programs/utils/bts_genesis_to_bin
 programs/utils/bts_genesis_to_cpp
+programs/utils/bts_json_to_cpp
 programs/utils/convert_btc_pubkey
 programs/utils/key_to_wif
 programs/utils/map_bts_network
