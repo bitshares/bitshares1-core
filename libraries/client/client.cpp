@@ -394,6 +394,9 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
 void load_and_configure_chain_database( const fc::path& datadir,
                                         const program_options::variables_map& option_variables)
 { try {
+  //FIXME: Remove this move in a future version; this is just to bump new users up to the new version
+  if (fc::exists(datadir / "chain/index/block_num_to_id_db") && fc::exists(datadir / "chain"))
+      fc::rename(datadir / "chain/index/block_num_to_id_db", datadir / "chain/raw_chain/block_num_to_id_db");
 
   if (option_variables.count("resync-blockchain"))
   {
@@ -1604,7 +1607,7 @@ config load_config( const fc::path& datadir )
        my->_simulate_disconnect = state;
     }
 
-    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(uint32_t)> reindex_status_callback )
+    void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(float)> reindex_status_callback )
     { try {
         my->_config   = load_config(data_dir);
 
@@ -1768,8 +1771,10 @@ config load_config( const fc::path& datadir )
 
     void detail::client_impl::wallet_close()
     {
-      _wallet->close();
-      reschedule_delegate_loop();
+        if (_wallet) {
+            _wallet->close();
+            reschedule_delegate_loop();
+        }
     }
 
     void detail::client_impl::wallet_backup_create( const fc::path& json_filename )const
@@ -3290,6 +3295,11 @@ config load_config( const fc::path& datadir )
       _wallet->set_transaction_fee( asset( fee * asset_record->precision ) );
       return _wallet->get_transaction_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
+
+   asset client_impl::wallet_get_transaction_fee( const string& fee_symbol )
+   {
+      return _wallet->get_transaction_fee( get_chain()->get_asset_id(fee_symbol) );
+   }
 
    bool client_impl::blockchain_is_synced() const
    {

@@ -176,21 +176,24 @@ namespace bts { namespace blockchain {
       if( !market_stat )
          market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
 
-      /**
-       *  If there is an average, then keep it within 10% of the average.
-       */
-      if( market_stat->avg_price_1h.quote_asset_id != 0 )
+      if( amount > 0 )
       {
-         FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
-      }
-      else // if there is no average, there must be a median feed and the short must not be more than 10% above the feed
-      {
-         auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
-         FC_ASSERT( median_delegate_price.valid() );
-         auto feed_max_short_bid = *median_delegate_price;
-         feed_max_short_bid.ratio *= 10;
-         feed_max_short_bid.ratio /= 9;
-         FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
+         /**
+          *  If there is an average, then keep it within 10% of the average.
+          */
+         if( market_stat->avg_price_1h.quote_asset_id != 0 )
+         {
+            FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
+         }
+         else // if there is no average, there must be a median feed and the short must not be more than 10% above the feed
+         {
+            auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
+            FC_ASSERT( median_delegate_price.valid() );
+            auto feed_max_short_bid = *median_delegate_price;
+            feed_max_short_bid.ratio *= 10;
+            feed_max_short_bid.ratio /= 9;
+            FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
+         }
       }
 
       market_stat->bid_depth += delta_amount.amount;
