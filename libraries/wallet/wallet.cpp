@@ -160,7 +160,6 @@ namespace bts { namespace wallet {
       void wallet_impl::state_changed( const pending_chain_state_ptr& state )
       {
           if( !self->is_open() || !self->is_unlocked() ) return;
-          if( !self->get_transaction_scanning() ) return;
 
           const auto last_unlocked_scanned_number = self->get_last_scanned_block_number();
           if ( _blockchain->get_head_block_num() < last_unlocked_scanned_number )
@@ -173,11 +172,9 @@ namespace bts { namespace wallet {
       {
           if( !self->is_open() || !self->is_unlocked() ) return;
           if( !self->get_transaction_scanning() ) return;
+          if( summary.block_data.block_num <= self->get_last_scanned_block_number() ) return;
 
-          const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
-          const auto now = blockchain::now();
-          scan_block( summary.block_data.block_num, account_priv_keys, now );
-          self->set_last_scanned_block_number( summary.block_data.block_num );
+          self->scan_chain( self->get_last_scanned_block_number(), summary.block_data.block_num );
       }
 
       void wallet_impl::scan_market_transaction(

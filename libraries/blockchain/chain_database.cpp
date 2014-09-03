@@ -878,8 +878,9 @@ namespace bts { namespace blockchain {
 
          //Schedule the observer notifications for later; the chain is in a
          //non-premptable state right now, and observers may yield.
-         for( chain_observer* o : _observers )
-            fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
+         if( (now() - block_data.timestamp).to_seconds() < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
+           for( chain_observer* o : _observers )
+              fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
       /**
