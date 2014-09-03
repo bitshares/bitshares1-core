@@ -16,7 +16,7 @@ namespace bts { namespace wallet {
       return checksum == fc::sha512::hash(password);
    }
 
-   void master_key::encrypt_key( const fc::sha512& password, 
+   void master_key::encrypt_key( const fc::sha512& password,
                                  const extended_private_key& k )
    { try {
       FC_ASSERT( password != fc::sha512() );
@@ -28,13 +28,13 @@ namespace bts { namespace wallet {
       decrypt_key( password );
    } FC_CAPTURE_AND_RETHROW() }
 
-   bool key_data::has_private_key()const 
-   { 
-      return encrypted_private_key.size() > 0; 
+   bool key_data::has_private_key()const
+   {
+      return encrypted_private_key.size() > 0;
    }
 
-   void key_data::encrypt_private_key( const fc::sha512& password, 
-                                        const fc::ecc::private_key& key_to_encrypt )
+   void key_data::encrypt_private_key( const fc::sha512& password,
+                                       const private_key_type& key_to_encrypt )
    { try {
       FC_ASSERT( password != fc::sha512() );
       public_key            = key_to_encrypt.get_public_key();
@@ -44,11 +44,11 @@ namespace bts { namespace wallet {
       FC_ASSERT( key_to_encrypt == decrypt_private_key( password ) );
    } FC_CAPTURE_AND_RETHROW() }
 
-   fc::ecc::private_key key_data::decrypt_private_key( const fc::sha512& password )const
+   private_key_type key_data::decrypt_private_key( const fc::sha512& password )const
    { try {
       FC_ASSERT( password != fc::sha512() );
       const auto plain_text = fc::aes_decrypt( password, encrypted_private_key );
-      return fc::raw::unpack<fc::ecc::private_key>( plain_text );
+      return fc::raw::unpack<private_key_type>( plain_text );
    } FC_CAPTURE_AND_RETHROW() }
 
    order_type_enum market_order_status::get_type()const

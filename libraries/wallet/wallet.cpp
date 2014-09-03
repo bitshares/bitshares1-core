@@ -58,7 +58,7 @@ namespace bts { namespace wallet {
 
              struct login_record
              {
-                 fc::ecc::private_key key;
+                 private_key_type key;
                  fc::time_point_sec insertion_time;
              };
              std::map<public_key_type, login_record>    _login_map;
@@ -76,7 +76,7 @@ namespace bts { namespace wallet {
              void relocker();
          public:
 
-             fc::ecc::private_key create_one_time_key();
+             private_key_type create_one_time_key();
 
             /**
              * This method is called anytime the blockchain state changes including
@@ -107,7 +107,7 @@ namespace bts { namespace wallet {
             bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
-            bool scan_deposit( const deposit_operation& op, const private_keys& keys, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_deposit( const deposit_operation& op, const vector<private_key_type>& keys, wallet_transaction_record& trx_rec, asset& total_fee );
 
             bool scan_register_account( const register_account_operation& op, wallet_transaction_record& trx_rec );
             bool scan_update_account( const update_account_operation& op, wallet_transaction_record& trx_rec );
@@ -149,10 +149,10 @@ namespace bts { namespace wallet {
           try { if( _scanner_thread ) _scanner_thread->quit(); } catch( ... ) {}
       }
 
-      fc::ecc::private_key wallet_impl::create_one_time_key()
+      private_key_type wallet_impl::create_one_time_key()
       {
         if( !_use_deterministic_one_time_keys )
-            return fc::ecc::private_key::generate();
+            return private_key_type::generate();
 
         return _wallet_db.new_private_key( _wallet_password );
       }
@@ -528,7 +528,7 @@ namespace bts { namespace wallet {
          return fc::ripemd160::hash( enc.result() );
       }
 
-      void wallet_impl::scan_block( uint32_t block_num, const private_keys& keys, const time_point_sec& received_time )
+      void wallet_impl::scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec& received_time )
       {
          const auto block = _blockchain->get_block( block_num );
          for( const auto& transaction : block.user_transactions )
@@ -1169,7 +1169,7 @@ namespace bts { namespace wallet {
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
       // TODO: optimize
-      bool wallet_impl::scan_deposit( const deposit_operation& op, const private_keys& keys,
+      bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<private_key_type>& keys,
                                       wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           auto amount = asset( op.amount, op.condition.asset_id );
@@ -2505,7 +2505,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( key.valid() );
       FC_ASSERT( key->has_private_key() );
 
-      fc::ecc::private_key one_time_key = fc::ecc::private_key::generate();
+      private_key_type one_time_key = private_key_type::generate();
       public_key_type one_time_public_key = one_time_key.get_public_key();
       my->_login_map[one_time_public_key] = {one_time_key, fc::time_point::now()};
 
@@ -2530,7 +2530,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_login_map.find(server_key) != my->_login_map.end(), "Login session has expired. Generate a new login URL and try again." );
 
-      fc::ecc::private_key private_key = my->_login_map[server_key].key;
+      private_key_type private_key = my->_login_map[server_key].key;
       my->_login_map.erase(server_key);
       auto secret = private_key.get_shared_secret( fc::ecc::public_key_data(client_key) );
       auto user_account_key = fc::ecc::public_key(client_signature, fc::sha256::hash(secret.data(), sizeof(secret)));
@@ -2804,15 +2804,6 @@ namespace bts { namespace wallet {
       return delegate_records;
    }
 
-   vector<private_key_type> wallet::get_my_delegate_private_keys(int delegates_to_retrieve )const
-   {
-       vector<private_key_type> private_keys;
-       const auto& delegate_records = get_my_delegates( delegates_to_retrieve );
-       for( const auto& delegate_record : delegate_records )
-          private_keys.push_back( get_private_key( address( delegate_record.active_key() ) ) );
-       return private_keys;
-   }
-
    optional<time_point_sec> wallet::get_next_producible_block_timestamp( const vector<wallet_account_record>& delegate_records )const
    { try {
       if( !is_open() || is_locked() ) return optional<time_point_sec>();
@@ -3045,7 +3036,7 @@ namespace bts { namespace wallet {
 
      while( recoveries < number_of_accounts && attempts++ < max_number_of_attempts )
      {
-        fc::ecc::private_key new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password, address(), false );
+        private_key_type new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password, address(), false );
         fc::ecc::public_key new_pub_key = new_priv_key.get_public_key();
         auto recovered_account = my->_blockchain->get_account_record(new_pub_key);
 
@@ -3103,7 +3094,7 @@ namespace bts { namespace wallet {
        const auto withdraw_condition = deposit_op.condition.as<withdraw_with_signature>();
        FC_ASSERT( withdraw_condition.memo.valid() );
 
-       fc::ecc::private_key private_key;
+       private_key_type private_key;
        try
        {
            /* We had to have stored the one-time key */
@@ -3158,12 +3149,12 @@ namespace bts { namespace wallet {
            my->_wallet_db.store_transaction( transaction_record );
 
            /* Wipe memory */
-           private_key = fc::ecc::private_key();
+           private_key = private_key_type();
        }
        catch( ... )
        {
            /* Wipe memory */
-           private_key = fc::ecc::private_key();
+           private_key = private_key_type();
            throw;
        }
 
