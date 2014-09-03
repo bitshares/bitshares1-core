@@ -173,10 +173,9 @@ namespace bts { namespace wallet {
       {
           if( !self->is_open() || !self->is_unlocked() ) return;
           if( !self->get_transaction_scanning() ) return;
+          if( self->get_last_scanned_block_number() <= summary.block_data.block_num ) return;
 
-          const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
-          const auto now = blockchain::now();
-          scan_block( summary.block_data.block_num, account_priv_keys, now );
+          self->scan_chain(self->get_last_scanned_block_number(), summary.block_data.block_num);
           self->set_last_scanned_block_number( summary.block_data.block_num );
       }
 
