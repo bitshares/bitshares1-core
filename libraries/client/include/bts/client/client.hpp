@@ -126,7 +126,7 @@ namespace bts { namespace client {
          fc::future<void> start();
          void open(const path& data_dir,
                    optional<fc::path> genesis_file_path = optional<fc::path>(),
-                   std::function<void(uint32_t)> reindex_status_callback = std::function<void(uint32_t)>());
+                   std::function<void(float)> reindex_status_callback = std::function<void(float)>());
 
          void init_cli();
          void set_daemon_mode(bool daemon_mode);
