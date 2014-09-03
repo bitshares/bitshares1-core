@@ -1012,6 +1012,21 @@
          "aliases" : ["wallet_set_priority_fee", "set_priority_fee", "settrxfee", "setfee", "set_fee"]
       },
       {
+         "method_name"  : "wallet_get_transaction_fee",
+         "description"  : "Returns ",
+         "return_type"  : "asset",
+         "parameters"   : [
+         {
+            "name" : "symbol",
+            "type" : "asset_symbol",
+            "description" : "the wallet transaction if paid in the given asset type",
+            "default_value" : "XTS"
+         }
+         ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["wallet_get_priority_fee", "get_priority_fee", "gettrxfee", "getfee", "get_fee"]
+      },
+      {
          "method_name" : "wallet_market_submit_bid",
          "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
          "return_type" : "signed_transaction",

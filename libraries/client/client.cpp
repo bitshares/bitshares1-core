@@ -3296,6 +3296,11 @@ config load_config( const fc::path& datadir )
       return _wallet->get_transaction_fee();
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
+   asset client_impl::wallet_get_transaction_fee( const string& fee_symbol )
+   {
+      return _wallet->get_transaction_fee( get_chain()->get_asset_id(fee_symbol) );
+   }
+
    bool client_impl::blockchain_is_synced() const
    {
      return (blockchain::now() - _chain_db->get_head_block().timestamp) < fc::seconds(BTS_BLOCKCHAIN_NUM_DELEGATES * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
