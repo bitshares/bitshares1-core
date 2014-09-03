@@ -395,7 +395,7 @@ class market_engine
                 }
              }
 
-             if( quote_asset->is_market_issued() )
+             if( quote_asset->is_market_issued() && base_id == 0 )
              {
                 if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
                     || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT )
