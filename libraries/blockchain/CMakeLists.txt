@@ -1,7 +1,9 @@
 ##################################################################################################
 # Magic to get the genesis.json converted to a .cpp file and compiled into the bts_client library
 set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis_btsx.json")
-source_group("Genesis JSON Files" FILES ${genesis_json})
+set(genesis_prologue "${CMAKE_CURRENT_SOURCE_DIR}/genesis.prologue")
+set(genesis_epilogue "${CMAKE_CURRENT_SOURCE_DIR}/genesis.epilogue")
+source_group("Genesis JSON Files" FILES ${genesis_json} ${genesis_prologue} ${genesis_epilogue})
 
 set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
 set(rpc_stubs_output_dir "${CMAKE_BINARY_DIR}/libraries/rpc_stubs")
@@ -14,11 +16,13 @@ set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_rpc_server.cpp
                               "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_overrides.ipp")
 
 add_custom_command(OUTPUT ${generated_genesis_file} 
-                   COMMAND bts_genesis_to_cpp "--genesis-json=${genesis_json}" 
-                                              "--output-file=${generated_genesis_file}.new"
+                   COMMAND bts_json_to_cpp    "--json=${genesis_json}"
+                                              "--prologue=${genesis_prologue}"
+                                              "--epilogue=${genesis_epilogue}"
+                                              "--out=${generated_genesis_file}.new"
                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${generated_genesis_file}.new" "${generated_genesis_file}"
                    COMMAND ${CMAKE_COMMAND} -E remove "${generated_genesis_file}.new"
-                   DEPENDS bts_genesis_to_cpp ${genesis_json} )
+                   DEPENDS bts_json_to_cpp ${genesis_json} ${genesis_prologue} ${genesis_epilogue} )
 
                    
 ##################################################################################################

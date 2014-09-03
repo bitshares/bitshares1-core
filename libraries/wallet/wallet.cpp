@@ -3479,7 +3479,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      const auto required_fees = get_transaction_fee();
+      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
@@ -5052,11 +5052,26 @@ namespace bts { namespace wallet {
       my->_wallet_db.set_property( default_transaction_priority_fee, variant( fee ) );
    } FC_CAPTURE_AND_RETHROW( (fee) ) }
 
-   asset wallet::get_transaction_fee()const
+   asset wallet::get_transaction_fee( asset_id_type desired_fee_asset_id )const
    { try {
       FC_ASSERT( is_open() );
       // TODO: support price conversion using price from blockchain
-      return my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
+      //
+
+      auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
+
+      if( desired_fee_asset_id != 0 )
+      {
+         omarket_order lowest_ask = my->_blockchain->get_lowest_ask_record( desired_fee_asset_id, 0 );
+         if( lowest_ask )
+         {
+            xts_fee += xts_fee + xts_fee;
+            // fees paid in something other than XTS are discounted 50% 
+            auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;  
+            return alt_fees_paid;
+         }
+      }
+      return xts_fee;
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::set_last_scanned_block_number( uint32_t block_num )
@@ -6143,7 +6158,39 @@ namespace bts { namespace wallet {
          }
       }
       return result;
-   } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
+       } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
+
+    bts::mail::message wallet::mail_create(const string& sender,
+                                           const bts::blockchain::public_key_type& recipient,
+                                           const string& subject,
+                                           const string& body)
+    {
+        FC_ASSERT(is_open());
+        FC_ASSERT(is_unlocked());
+        if(!is_receive_account(sender))
+            FC_THROW_EXCEPTION(unknown_account, "Unknown sending account name!", ("sender",sender));
+
+        auto sender_key = get_active_private_key(sender);
+        mail::signed_email_message plaintext;
+        plaintext.subject = subject;
+        plaintext.body = body;
+        plaintext.sign(sender_key);
+
+        auto one_time_key = my->create_one_time_key();
+        return mail::message(plaintext).encrypt(one_time_key, recipient);
+    }
+
+    mail::message wallet::mail_open(const address& recipient, const mail::message& ciphertext)
+    {
+        FC_ASSERT(is_open());
+        FC_ASSERT(is_unlocked());
+        if(!is_receive_address(recipient))
+            FC_THROW_EXCEPTION(unknown_address, "Unknown receiving account address!", ("recipient",recipient));
+
+        auto recipient_key = get_private_key(recipient);
+        FC_ASSERT(ciphertext.type == mail::encrypted);
+        return ciphertext.as<mail::encrypted_message>().decrypt(recipient_key);
+    }
 
    map<order_id_type, market_order> wallet::get_market_orders2( const string& quote_symbol, const string& base_symbol,
                                                                int32_t limit, const string& account_name)const

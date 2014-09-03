@@ -473,27 +473,43 @@ class market_engine
                 }
              }
 
-             if( quote_asset->is_market_issued() )
+             if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
              {
-                 if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
+                 if( quote_asset->is_market_issued() && base_id == 0 )
                  {
-                    if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
-                        || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT )
-                    {
-                       _market_transactions.clear(); // nothing should have executed
-                      std::string reason = "After executing orders there was insufficient depth remaining";
-                      FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
-                    }
+                     if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
+                         || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT )
+                     {
+                        _market_transactions.clear(); // nothing should have executed
+                       std::string reason = "After executing orders there was insufficient depth remaining";
+                       FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
+                     }
                  }
-                 else
+             }
+             else
+             {
+                 if( quote_asset->is_market_issued() )
                  {
-                    if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*2
-                        || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*2 )
-                    {
-                       _market_transactions.clear(); // nothing should have executed
-                      std::string reason = "After executing orders there was insufficient depth remaining";
-                      FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
-                    }
+                     if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
+                     {
+                        if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*2
+                            || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*2 )
+                        {
+                           _market_transactions.clear(); // nothing should have executed
+                          std::string reason = "After executing orders there was insufficient depth remaining";
+                          FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
+                        }
+                     }
+                     else
+                     {
+                        if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*4
+                            || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*4 )
+                        {
+                           _market_transactions.clear(); // nothing should have executed
+                          std::string reason = "After executing orders there was insufficient depth remaining";
+                          FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
+                        }
+                     }
                  }
              }
              _pending_state->store_market_status( *market_stat );
