@@ -98,7 +98,7 @@ namespace bts { namespace wallet {
          uint32_t               get_last_scanned_block_number()const;
 
          void                   set_transaction_fee( const asset& fee );
-         asset                  get_transaction_fee()const;
+         asset                  get_transaction_fee( asset_id_type desired_fee_asset_id = 0 )const;
 
          void                   set_transaction_expiration( uint32_t secs );
          uint32_t               get_transaction_expiration()const;
