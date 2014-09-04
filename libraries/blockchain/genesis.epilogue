@@ -1,0 +1,11 @@
+};
+
+std::string get_builtin_genesis_json_as_string()
+{
+  std::ostringstream result;
+  for (unsigned i = 0; i < sizeof(genesis_json_lines)/sizeof(genesis_json_lines[0]); ++i)
+    result << genesis_json_lines[i] << "\n";
+  return result.str();
+}
+
+} } // end namespace bts::blockchain

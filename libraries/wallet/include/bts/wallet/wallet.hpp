@@ -2,6 +2,7 @@
 
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/config.hpp>
+#include <bts/mail/message.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet_db.hpp>
 #include <fc/signals.hpp>
@@ -97,7 +98,7 @@ namespace bts { namespace wallet {
          uint32_t               get_last_scanned_block_number()const;
 
          void                   set_transaction_fee( const asset& fee );
-         asset                  get_transaction_fee()const;
+         asset                  get_transaction_fee( asset_id_type desired_fee_asset_id = 0 )const;
 
          void                   set_transaction_expiration( uint32_t secs );
          uint32_t               get_transaction_expiration()const;
@@ -501,6 +502,12 @@ namespace bts { namespace wallet {
          fc::variant login_finish(const public_key_type& server_key,
                                   const public_key_type& client_key,
                                   const fc::ecc::compact_signature& client_signature);
+
+         mail::message mail_create(const string& sender,
+                                   const public_key_type& recipient,
+                                   const string& subject,
+                                   const string& body);
+         mail::message mail_open(const address& recipient, const mail::message& ciphertext);
      private:
          unique_ptr<detail::wallet_impl> my;
    };

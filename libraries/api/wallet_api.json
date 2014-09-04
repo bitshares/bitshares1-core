@@ -1012,6 +1012,21 @@
          "aliases" : ["wallet_set_priority_fee", "set_priority_fee", "settrxfee", "setfee", "set_fee"]
       },
       {
+         "method_name"  : "wallet_get_transaction_fee",
+         "description"  : "Returns ",
+         "return_type"  : "asset",
+         "parameters"   : [
+         {
+            "name" : "symbol",
+            "type" : "asset_symbol",
+            "description" : "the wallet transaction if paid in the given asset type",
+            "default_value" : "XTS"
+         }
+         ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["wallet_get_priority_fee", "get_priority_fee", "gettrxfee", "getfee", "get_fee"]
+      },
+      {
          "method_name" : "wallet_market_submit_bid",
          "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
          "return_type" : "signed_transaction",
@@ -1589,6 +1604,52 @@
                 "name" : "max_key_number",
                 "type" : "uint32_t",
                 "description" : "the last key number to regenrate"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_mail_create",
+         "description" : "Creates a new mail message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "sender",
+                "type" : "string",
+                "description" : "The name of the message's sender."
+             },
+             {
+                "name" : "recipient",
+                "type" : "string",
+                "description" : "The name of the message's recipient."
+             },
+             {
+                "name" : "subject",
+                "type" : "string",
+                "description" : "The subject of the message."
+             },
+             {
+                "name" : "body",
+                "type" : "string",
+                "description" : "The body of the message."
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_mail_open",
+         "description" : "Opens an encrypted mail message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "recipient",
+                "type" : "address",
+                "description" : "The address of the message's recipient."
+             },
+             {
+                "name" : "ciphertext",
+                "type" : "message",
+                "description" : "The encrypted message."
              }
          ],
          "prerequisites" : ["wallet_unlocked"]

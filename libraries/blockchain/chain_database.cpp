@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <deque>
 
 using namespace bts::blockchain;
@@ -270,8 +271,8 @@ namespace bts { namespace blockchain {
 
           _undo_state_db.open( data_dir / "index/undo_state_db" );
 
-          _block_num_to_id_db.open( data_dir / "index/block_num_to_id_db" );
           _block_id_to_block_record_db.open( data_dir / "index/block_id_to_block_record_db" );
+          _block_num_to_id_db.open( data_dir / "raw_chain/block_num_to_id_db" );
           _block_id_to_block_data_db.open( data_dir / "raw_chain/block_id_to_block_data_db" );
           _id_to_transaction_record_db.open( data_dir / "index/id_to_transaction_record_db" );
 
@@ -877,8 +878,9 @@ namespace bts { namespace blockchain {
 
          //Schedule the observer notifications for later; the chain is in a
          //non-premptable state right now, and observers may yield.
-         for( chain_observer* o : _observers )
-            fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
+         if( (now() - block_data.timestamp).to_seconds() < BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC )
+           for( chain_observer* o : _observers )
+              fc::async([o,summary]{o->block_applied( summary );}, "call_block_applied_observer");
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block",block_data) ) }
 
       /**
@@ -1015,9 +1017,10 @@ namespace bts { namespace blockchain {
       return sorted_delegates;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file, std::function<void(uint32_t)> reindex_status_callback )
+   void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file, std::function<void(float)> reindex_status_callback )
    { try {
       bool is_new_data_dir = !fc::exists( data_dir );
+      bool must_rebuild_index = !fc::exists( data_dir / "index" );
       try
       {
           //This function will yield the first time it is called. Do that now, before calling push_block
@@ -1033,13 +1036,12 @@ namespace bts { namespace blockchain {
           uint32_t       last_block_num = -1;
           block_id_type  last_block_id;
           my->_block_num_to_id_db.last( last_block_num, last_block_id );
-          if( last_block_num != uint32_t(-1) )
+          if( !must_rebuild_index && last_block_num != uint32_t(-1) )
           {
              my->_head_block_header = get_block_digest( last_block_id );
              my->_head_block_id = last_block_id;
           }
-
-          if( last_block_num == uint32_t(-1) )
+          else
           {
              close();
              fc::remove_all( data_dir / "index" );
@@ -1047,29 +1049,61 @@ namespace bts { namespace blockchain {
              my->open_database( data_dir );
              my->initialize_genesis( genesis_file );
 
+             map<uint32_t, block_id_type> num_to_id;
+             for (auto itr = my->_block_num_to_id_db.begin(); itr.valid(); ++itr)
+                 num_to_id[itr.key()] = itr.value();
+
              if( !reindex_status_callback )
-                std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database... [/]" << std::flush;
-             else
+                std::cout << "Please be patient, this will take a few minutes...\r\nRe-indexing database..." << std::flush << std::fixed;
+             else {
+                 std::cout << "Progress: 0" << std::endl;
                  reindex_status_callback(0);
+             }
 
-             const char spinner[] = "-\\|/";
              uint32_t blocks_indexed = 0;
-
+             const float total_blocks = num_to_id.size();
+             auto genesis_time = get_genesis_timestamp();
              auto start_time = blockchain::now();
-             auto block_itr = my->_block_id_to_block_data_db.begin();
-             while( block_itr.valid() )
-             {
-                 if( !reindex_status_callback )
-                     std::cout << "\rRe-indexing database... [" << spinner[blocks_indexed++ % 4] << "]" << std::flush;
-                 else if(blocks_indexed % 10000 == 0)
-                     reindex_status_callback(blocks_indexed);
 
-                 auto block = block_itr.value();
-                 ++block_itr;
+             auto insert_block = [&](const full_block& block) {
+                 if( blocks_indexed % 200 == 0 ) {
+                     float progress;
+                     if (total_blocks)
+                         progress = blocks_indexed / total_blocks;
+                     else
+                         progress = float(blocks_indexed*BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC) / (start_time - genesis_time).to_seconds();
+                     progress *= 100;
+
+                     if( !reindex_status_callback )
+                         std::cout << "\rRe-indexing database... "
+                                      "Approximately " << std::setprecision(2) << progress << "% complete." << std::flush;
+                     else {
+                         std::cout << "progress: " << progress << std::endl;
+                         reindex_status_callback(progress);
+                     }
+                 }
 
                  push_block(block);
+                 ++blocks_indexed;
+             };
+
+             if (num_to_id.empty()) {
+                 auto block_itr = my->_block_id_to_block_data_db.begin();
+                 while( block_itr.valid() ) {
+                     insert_block(block_itr.value());
+                     ++block_itr;
+                 }
              }
-             std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in " << (blockchain::now() - start_time).to_seconds() << " seconds.\n" << std::flush;
+             else
+             {
+                 for (const auto& num_id : num_to_id) {
+                     auto oblock = my->_block_id_to_block_data_db.fetch_optional(num_id.second);
+                     if (oblock)
+                         insert_block(*oblock);
+                 }
+             }
+             std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in "
+                       << (blockchain::now() - start_time).to_seconds() << " seconds.                     \n" << std::flush;
           }
           const auto db_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
           const auto genesis_chain_id = my->initialize_genesis( genesis_file, true );
