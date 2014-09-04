@@ -41,6 +41,8 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( stupid_order,            bts::wallet::wallet_exception, 20034, "stupid order" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_expiration_time, bts::wallet::wallet_exception, 20035, "invalid expiration time" );
   FC_DECLARE_DERIVED_EXCEPTION( bad_collateral_amount,   bts::wallet::wallet_exception, 20036, "bad collateral amount" );
+  FC_DECLARE_DERIVED_EXCEPTION( unknown_slate,           bts::wallet::wallet_exception, 20037, "unknown slate" );
+  FC_DECLARE_DERIVED_EXCEPTION( duplicate_key,           bts::wallet::wallet_exception, 20038, "duplicate key" );
   // registered in wallet.cpp
 
 } } // bts::wallet

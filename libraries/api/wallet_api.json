@@ -1591,6 +1591,24 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_publish_feeds",
+         "description" : "publishes a set of feeds for BitAssets, only active delegates may do this",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+             {
+                "name" : "delegate_account",
+                "type" : "account_name",
+                "description" : "the delegate to publish the price under"
+             },
+             {
+                "name" : "symbol_to_price_map",
+                "type" : "price_map",
+                "description" : "maps the BitAsset symbol to the price per BTSX"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_regenerate_keys",
          "description" : "regenerates private keys as part of wallet recovery",
          "return_type" : "int32_t",

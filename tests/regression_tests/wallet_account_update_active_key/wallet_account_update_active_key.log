@@ -18,32 +18,9 @@ test                            100.00000 XTS
 default (unlocked) >>> blockchain_get_account test
 No account found.
 default (unlocked) >>> wallet_account_register test test
-{
-  "expiration": "20140620T154800",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "register_account_op_type",
-      "data": {
-        "name": "test",
-        "public_data": null,
-        "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "delegate_pay_rate": 255,
-        "meta_data": null
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d9cd6fb90e130b7280b629aed562a87a67c044e72ff24ca8b938b20fee7335be38"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   test                test                0.00000 XTS             register test                               0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -57,31 +34,9 @@ Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
 Not a delegate.
 default (unlocked) >>> wallet_account_update_registration test test null 100
-{
-  "expiration": "20140620T154810",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "update_account_op_type",
-      "data": {
-        "account_id": 102,
-        "public_data": null,
-        "active_key": null,
-        "delegate_pay_rate": 100
-      }
-    }
-  ],
-  "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22f7ce1c76399a0dc09908b3833e390df6899a3de9ccbb2f1d917765713f81d337",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bd31d522201217761d6c3e1e7b6d04d885a78928bd189da0c5ec3451dcf192f30"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   test                test                0.00000 XTS             update test                                 0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -96,7 +51,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
@@ -131,34 +86,12 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> wallet_account_update_active_key test test
-{
-  "expiration": "20140620T154820",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "update_account_op_type",
-      "data": {
-        "account_id": 102,
-        "public_data": null,
-        "active_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
-        "delegate_pay_rate": 100
-      }
-    }
-  ],
-  "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9dd21b6aa0c9fe899db025c104ea15b0d9676bd64a2c6daccf730e019ab28177a",
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f003f5a0f83b75542fec304c5b0b575e8bc53ea5e0c489abb398e06f91447dec619"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   test                test                0.00000 XTS             update test active key                      0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -170,11 +103,11 @@ Last Updated: [redacted]
 Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
-- XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b, last used [redacted]
+- XTS59dmubEqvecCWhwabdqy165CqtVcmmpceYvy1D3ymqzVvDnbTx, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> 
 default (unlocked) >>> quit

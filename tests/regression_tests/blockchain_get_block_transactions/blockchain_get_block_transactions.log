@@ -23,7 +23,7 @@ Returns:
   blockchain_transaction_record_map
 default (unlocked) >>> blockchain_get_block_transactions 2
 [[
-    "90f39296ec5d9abfb70792efb03c8167e81250fd",{
+    "43ff0bc2cd15bd67a758b119008afe3ea276f905",{
       "trx": {
         "expiration": "20140620T154750",
         "delegate_slate_id": null,
@@ -43,10 +43,10 @@ default (unlocked) >>> blockchain_get_block_transactions 2
                 "delegate_slate_id": 0,
                 "type": "withdraw_signature_type",
                 "data": {
-                  "owner": "XTSMSe2Qb4iw8mxJBrQHVt7Rk2fxw6EkckZ6",
+                  "owner": "XTS8fQhxCWoBDRWHFFByepus1jn9QpUTVTeS",
                   "memo": {
-                    "one_time_key": "XTS68Km5oZbn7VzcfrUQb2xncQYq76RXiymmdA51i7MdBMJdY1vKU",
-                    "encrypted_memo_data": "1531ea6c9318088925beedfd0a6a0d9ef0a0c7bf7c7bfc3634689615d38f5b2794f0f748d761b8d4873c55a5723ad26aa674c10c254adda1fe0ed58e6b8889b5"
+                    "one_time_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
+                    "encrypted_memo_data": "b834c8a8fff0941147c98862ac5e4a971d5e03fa1dfbcedd8528991b3255c5d5a1224b53542c3254b3604246ba632cfd3463fb72eef8349ca047ba7c699262c5"
                   }
                 }
               }
@@ -54,7 +54,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           }
         ],
         "signatures": [
-          "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6cd2ef3350e01fc49df23de498e74cd9fc33cc676fb49815f45ed7b6236e2d1884"
+          "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8ed859ef127255c73b4c0daa3861333494ddb013731ed8d28c1e0af2166a92f8df"
         ]
       },
       "signed_keys": [
@@ -67,7 +67,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
       "validation_error": null,
       "required_deposits": [],
       "provided_deposits": [[
-          "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",{
+          "XTS7ty1V8iFNFuBzLmrgW6eKEZeHH4H6xgaW",{
             "amount": 10000000,
             "asset_id": 0
           }

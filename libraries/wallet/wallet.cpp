@@ -149,9 +149,9 @@ namespace bts { namespace wallet {
       }
 
       private_key_type wallet_impl::create_one_time_key()
-      {
+      { try {
           return _wallet_db.new_private_key( _wallet_password );
-      }
+      } FC_CAPTURE_AND_RETHROW() }
 
       void wallet_impl::state_changed( const pending_chain_state_ptr& state )
       {
@@ -2099,18 +2099,16 @@ namespace bts { namespace wallet {
     *  @param key - the public key that will be used for sending TITAN transactions
     *               to the account.
     */
-   void  wallet::add_contact_account( const string& account_name,
-                                      const public_key_type& key,
-                                      const variant& private_data )
+   void wallet::add_contact_account( const string& account_name,
+                                     const public_key_type& key,
+                                     const variant& private_data )
    { try {
+      FC_ASSERT( is_open() );
+
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
-      FC_ASSERT( is_open() );
-      idump( (account_name) );
-
-      auto current_registered_account = my->_blockchain->get_account_record( account_name );
-
+      const auto current_registered_account = my->_blockchain->get_account_record( account_name );
       if( current_registered_account.valid() && current_registered_account->owner_key != key )
          FC_THROW_EXCEPTION( invalid_name, "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
                              ("p",key)("r",current_registered_account->active_key()) );
@@ -2118,20 +2116,20 @@ namespace bts { namespace wallet {
       auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
       {
-         wlog( "current account is valid... ${name}", ("name", *current_account) );
+         wlog( "current account is valid... ${name}", ("name",*current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
          if( !private_data.is_null() )
             current_account->private_data = private_data;
-         idump( (*current_account) );
          my->_wallet_db.cache_account( *current_account );
          return;
       }
       else
       {
-         auto account_key = my->_wallet_db.lookup_key( address(key) );
-         // TODO: Throw exception here
-         FC_ASSERT( !account_key.valid(), "Provided key belongs to another account." );
+         auto account_key = my->_wallet_db.lookup_key( address( key ) );
+         if( account_key.valid() )
+             FC_THROW_EXCEPTION( duplicate_key, "Provided key already belongs to another wallet account!" );
+
          if( current_registered_account.valid() )
          {
             my->_wallet_db.add_account( *current_registered_account, private_data );
@@ -2143,7 +2141,6 @@ namespace bts { namespace wallet {
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
       }
-
    } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) }
 
    // TODO: This function is sometimes used purely for error checking of the account_name; refactor
@@ -2829,6 +2826,86 @@ namespace bts { namespace wallet {
       header.sign( delegate_key );
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
+
+   wallet_transaction_record wallet::publish_feeds(
+           const string& account_to_publish_under,
+           map<string,double> amount_per_xts, // map symbol to amount per xts
+           bool sign )
+   {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( !is_receive_account( account_to_publish_under ) )
+          FC_THROW_EXCEPTION( unknown_receive_account, "You cannot publish from this account!",
+                              ("delegate_account",account_to_publish_under) );
+
+      for( auto item : amount_per_xts )
+      {
+         if( item.second < 0 )
+             FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",item) );
+      }
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
+      FC_ASSERT( current_account );
+      auto payer_public_key = get_account_public_key( account_to_publish_under );
+      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
+
+      for( auto item : amount_per_xts )
+      {
+         auto quote_asset_record = my->_blockchain->get_asset_record( item.first );
+         auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
+
+
+         asset price_shares( item.second *  quote_asset_record->get_precision(), quote_asset_record->id );
+         asset base_one_quantity( base_asset_record->get_precision(), 0 );
+
+        // auto quote_price_shares = price_shares / base_one_quantity;
+         price quote_price_shares( (item.second * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+
+         if( item.second > 0 )
+         {
+            trx.publish_feed( my->_blockchain->get_asset_id( item.first ),
+                              current_account->id, fc::variant( quote_price_shares )  );
+         }
+         else
+         {
+            trx.publish_feed( my->_blockchain->get_asset_id( item.first ),
+                              current_account->id, fc::variant()  );
+         }
+      }
+
+      auto required_fees = get_transaction_fee();
+
+      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      {
+        // withdraw delegate pay...
+        trx.withdraw_pay( current_account->id, required_fees.amount );
+      }
+      else
+      {
+         my->withdraw_to_transaction( required_fees,
+                                      payer_public_key,
+                                      trx, required_signatures );
+      }
+      required_signatures.insert( current_account->active_key() );
+
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = payer_public_key;
+      entry.memo = "publish price feeds";
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
+   }
 
    wallet_transaction_record wallet::publish_price(
            const string& account_to_publish_under,
@@ -3629,7 +3706,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      const auto required_fees = get_transaction_fee();
+      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
@@ -4433,9 +4510,9 @@ namespace bts { namespace wallet {
        private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
-       auto required_fees = get_transaction_fee();
+       auto required_fees = get_transaction_fee( cost_shares.asset_id );
 
-       if( cost_shares.asset_id == 0 )
+       if( cost_shares.asset_id == required_fees.asset_id )
        {
           my->withdraw_to_transaction( cost_shares + required_fees,
                                        from_address,
@@ -5934,7 +6011,7 @@ namespace bts { namespace wallet {
           if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
 
           const auto oaccount_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
-          FC_ASSERT( oaccount_rec.valid() );
+          if( !oaccount_rec.valid() ) FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
           if( !account_name.empty() && oaccount_rec->name != account_name ) continue;
 
           const auto obalance = pending_state->get_balance_record( item.first );
@@ -5947,7 +6024,7 @@ namespace bts { namespace wallet {
           if( slate_id == 0 ) continue;
 
           const auto slate = pending_state->get_delegate_slate( slate_id );
-          FC_ASSERT( slate.valid() );
+          if( !slate.valid() ) FC_THROW_EXCEPTION( unknown_slate, "Unknown slate!" );
 
           for( const auto& delegate_id : slate->supported_delegates )
           {

@@ -27,32 +27,9 @@ No account found.
 default (unlocked) >>> blockchain_get_account testaccount4
 No account found.
 default (unlocked) >>> wallet_account_register testaccount1 delegate0 null 100
-{
-  "expiration": "20140620T154750",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "register_account_op_type",
-      "data": {
-        "name": "testaccount1",
-        "public_data": null,
-        "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "delegate_pay_rate": 100,
-        "meta_data": null
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e878469335f4b1936644b1ab9e20c388a7e9c650575216b29bb8f68f6f6c442fd"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           testaccount1        0.00000 XTS             register testaccount1 as a delegate         0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -93,32 +70,9 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount2 delegate0 null 90
-{
-  "expiration": "20140620T154800",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "register_account_op_type",
-      "data": {
-        "name": "testaccount2",
-        "public_data": null,
-        "owner_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
-        "active_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
-        "delegate_pay_rate": 90,
-        "meta_data": null
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f689fb6ec1d30ee9277ad1d006eb8d894e426a83f8b11a8908df3c4c2f26f6daf2"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           testaccount2        0.00000 XTS             register testaccount2 as a delegate         0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -171,32 +125,9 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount3 delegate0 null 10
-{
-  "expiration": "20140620T154810",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "register_account_op_type",
-      "data": {
-        "name": "testaccount3",
-        "public_data": null,
-        "owner_key": "XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM",
-        "active_key": "XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM",
-        "delegate_pay_rate": 10,
-        "meta_data": null
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f06749603fa7bf9d13f13de405d55734cc5cef19a127f4d3d6b24ebd451b7361e9eca232"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           testaccount3        0.00000 XTS             register testaccount3 as a delegate         0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -271,32 +202,9 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount4 delegate0 null 100
-{
-  "expiration": "20140620T154820",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "register_account_op_type",
-      "data": {
-        "name": "testaccount4",
-        "public_data": null,
-        "owner_key": "XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg",
-        "active_key": "XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg",
-        "delegate_pay_rate": 100,
-        "meta_data": null
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50007,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b9d1f4affe04a8755d5685b27c8b4000dd6ad205394438bff9a90dce7b141a02d"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           testaccount4        0.00000 XTS             register testaccount4 as a delegate         0.50007 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
