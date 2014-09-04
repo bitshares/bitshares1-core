@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /* Define client version here */
-#define BTS_CLIENT_VERSION                                  "0.4.11"
+#define BTS_CLIENT_VERSION                                  "0.4.12"
 
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
@@ -13,7 +13,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     133
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     134
 
 /**
  *  The address prepended to string representation of
@@ -29,6 +29,7 @@
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
+#define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
 
 /**
  * The number of delegates that the blockchain is designed to support

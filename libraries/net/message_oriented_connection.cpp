@@ -57,6 +57,7 @@ namespace bts { namespace net {
 
       void send_message(const message& message_to_send);
       void close_connection();
+      void destroy_connection();
 
       uint64_t get_total_bytes_sent() const;
       uint64_t get_total_bytes_received() const;
@@ -82,28 +83,7 @@ namespace bts { namespace net {
     message_oriented_connection_impl::~message_oriented_connection_impl()
     {
       VERIFY_CORRECT_THREAD();
-      fc::optional<fc::ip::endpoint> remote_endpoint;
-      if (_sock.get_socket().is_open())
-        remote_endpoint = _sock.get_socket().remote_endpoint();
-      ilog( "in ~message_oriented_connection_impl() for ${endpoint}", ("endpoint", remote_endpoint) );
-
-      if (_send_message_in_progress)
-        elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
-             "The task calling send_message() should have been canceled already");
-      assert(!_send_message_in_progress);
-
-      try
-      {
-        _read_loop_done.cancel_and_wait(__FUNCTION__);
-      }
-      catch ( const fc::exception& e )
-      {
-        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring: ${e}", ("e",e) );
-      }
-      catch (...)
-      {
-        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring" );
-      }
+      destroy_connection();
     }
 
     fc::tcp_socket& message_oriented_connection_impl::get_socket()
@@ -261,6 +241,34 @@ namespace bts { namespace net {
       _sock.close();
     }
 
+    void message_oriented_connection_impl::destroy_connection()
+    {
+      VERIFY_CORRECT_THREAD();
+
+      fc::optional<fc::ip::endpoint> remote_endpoint;
+      if (_sock.get_socket().is_open())
+        remote_endpoint = _sock.get_socket().remote_endpoint();
+      ilog( "in destroy_connection() for ${endpoint}", ("endpoint", remote_endpoint) );
+
+      if (_send_message_in_progress)
+        elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
+             "The task calling send_message() should have been canceled already");
+      assert(!_send_message_in_progress);
+
+      try
+      {
+        _read_loop_done.cancel_and_wait(__FUNCTION__);
+      }
+      catch ( const fc::exception& e )
+      {
+        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring: ${e}", ("e",e) );
+      }
+      catch (...)
+      {
+        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring" );
+      }
+    }
+
     uint64_t message_oriented_connection_impl::get_total_bytes_sent() const
     {
       VERIFY_CORRECT_THREAD();
@@ -331,6 +339,11 @@ namespace bts { namespace net {
   void message_oriented_connection::close_connection()
   {
     my->close_connection();
+  }
+
+  void message_oriented_connection::destroy_connection()
+  {
+    my->destroy_connection();
   }
 
   uint64_t message_oriented_connection::get_total_bytes_sent() const

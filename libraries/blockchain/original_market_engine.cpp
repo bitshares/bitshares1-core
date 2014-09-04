@@ -244,7 +244,7 @@
                          if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
                          {
                            market_history_key key(quote_id, base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
-                           market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), trading_volume.amount);
+                           market_history_record new_record(_current_bid->get_price(), _current_ask->get_price(), price(), price(), trading_volume.amount);
                            //LevelDB iterators are dumb and don't support proper past-the-end semantics.
                            auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
                            if( !last_key_itr.valid() )

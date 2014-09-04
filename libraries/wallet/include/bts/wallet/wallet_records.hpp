@@ -134,8 +134,8 @@ namespace bts { namespace wallet {
        address                  get_address()const { return address( public_key ); }
        bool                     has_private_key()const;
        void                     encrypt_private_key( const fc::sha512& password, 
-                                                     const fc::ecc::private_key& );
-       fc::ecc::private_key     decrypt_private_key( const fc::sha512& password )const;
+                                                     const private_key_type& );
+       private_key_type         decrypt_private_key( const fc::sha512& password )const;
    };
 
    struct ledger_entry
