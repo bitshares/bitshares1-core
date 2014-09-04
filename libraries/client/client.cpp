@@ -23,6 +23,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/mail/server.hpp>
+#include <bts/mail/client.hpp>
 
 //#include <bts/network/node.hpp>
 
@@ -677,6 +678,7 @@ config load_config( const fc::path& datadir )
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
             std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
+            std::shared_ptr<bts::mail::client>                      _mail_client = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
             bool                                                    _delegate_loop_first_run = true;
             fc::time_point                                          _last_sync_status_message_time;
@@ -1682,6 +1684,7 @@ config load_config( const fc::path& datadir )
           my->_mail_server = std::make_shared<bts::mail::server>();
           my->_mail_server->open( data_dir / "mail" );
         }
+        my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
@@ -2397,6 +2400,14 @@ config load_config( const fc::path& datadir )
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
       return _mail_server->fetch_message(inventory_id);
+    }
+
+    mail::message_id_type detail::client_impl::mail_send(const std::string &from,
+                                                         const std::string &to,
+                                                         const std::string &subject,
+                                                         const std::string &body)
+    {
+      return _mail_client->send_email(from, to, subject, body);
     }
 
     //JSON-RPC Method Implementations END

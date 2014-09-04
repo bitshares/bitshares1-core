@@ -59,6 +59,34 @@
             ],
             "is_const" : true,
             "prerequisites" : []
+        },
+        {
+            "method_name": "mail_send",
+            "description": "Create a new email, encrypt it, and send it to the recipient's mail server.",
+            "return_type": "message_id",
+            "parameters" : [
+                {
+                    "name" : "from",
+                    "type" : "string",
+                    "description" : "The sender's name."
+                },
+                {
+                    "name" : "to",
+                    "type" : "string",
+                    "description" : "The recipient's name."
+                },
+                {
+                    "name" : "subject",
+                    "type" : "string",
+                    "description" : "The subject of the email."
+                },
+                {
+                    "name" : "body",
+                    "type" : "string",
+                    "description" : "The body of the email."
+                }
+            ],
+            "prerequisites" : ["json_authenticated","wallet_unlocked"]
         }
     ]
 }
