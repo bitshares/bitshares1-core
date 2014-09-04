@@ -5719,7 +5719,7 @@ namespace bts { namespace wallet {
       for( const auto& item : account_items )
       {
           const auto account_record = item.second;
-          if( !account_record.is_delegate() ) continue;
+          if( !account_record.is_delegate() && selection_method != vote_recommended ) continue;
           if( account_record.approved <= 0 ) continue;
           for_candidates.push_back( account_record.id );
       }
@@ -5767,15 +5767,22 @@ namespace bts { namespace wallet {
               ++recommended_candidate_ranks[recommended_candidate];
           }
 
-          //Disqualify delegates I actively disapprove of
+          //Disqualify non-delegates and delegates I actively disapprove of
           for( const auto& acct_rec : account_items )
-             if( acct_rec.second.approved < 0 )
+             if( !acct_rec.second.is_delegate() || acct_rec.second.approved < 0 )
                 recommended_candidate_ranks.erase(acct_rec.second.id);
 
           //Remove from rankings candidates I already approve of
           for( const auto& approved_id : for_candidates )
             if( recommended_candidate_ranks.find(approved_id) != recommended_candidate_ranks.end() )
               recommended_candidate_ranks.erase(approved_id);
+
+          //Remove non-delegates from for_candidates
+          vector<account_id_type> delegates;
+          for( auto id : for_candidates )
+            if( my->_blockchain->get_account_record(id)->is_delegate() )
+              delegates.push_back(id);
+          for_candidates = delegates;
 
           //While I can vote for more candidates, and there are more recommendations to vote for...
           while( for_candidates.size() < BTS_BLOCKCHAIN_MAX_SLATE_SIZE && recommended_candidate_ranks.size() > 0 )
