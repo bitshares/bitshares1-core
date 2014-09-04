@@ -5927,7 +5927,7 @@ namespace bts { namespace wallet {
           if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
 
           const auto oaccount_rec = my->_wallet_db.lookup_account( okey_rec->account_address );
-          FC_ASSERT( oaccount_rec.valid() );
+          if( !oaccount_rec.valid() ) FC_THROW_EXCEPTION( unknown_account, "Unknown account name!" );
           if( !account_name.empty() && oaccount_rec->name != account_name ) continue;
 
           const auto obalance = pending_state->get_balance_record( item.first );
@@ -5940,7 +5940,7 @@ namespace bts { namespace wallet {
           if( slate_id == 0 ) continue;
 
           const auto slate = pending_state->get_delegate_slate( slate_id );
-          FC_ASSERT( slate.valid() );
+          if( !slate.valid() ) FC_THROW_EXCEPTION( unknown_slate, "Unknown slate!" );
 
           for( const auto& delegate_id : slate->supported_delegates )
           {
