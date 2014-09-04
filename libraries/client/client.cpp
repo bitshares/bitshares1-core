@@ -1978,12 +1978,12 @@ config load_config( const fc::path& datadir )
       }
     } FC_RETHROW_EXCEPTIONS( warn, "") }
 
-    void detail::client_impl::wallet_transaction_remove( const string& transaction_id )
+    void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
     { try {
        _wallet->remove_transaction_record( transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
-    void detail::client_impl::wallet_transaction_rebroadcast( const string& transaction_id )
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
     { try {
        const auto records = _wallet->get_transactions( transaction_id );
        for( const auto& record : records )

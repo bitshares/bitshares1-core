@@ -5820,7 +5820,7 @@ namespace bts { namespace wallet {
 
           //Remove non-delegates from for_candidates
           vector<account_id_type> delegates;
-          for( auto id : for_candidates )
+          for( const auto& id : for_candidates )
             if( my->_blockchain->get_account_record(id)->is_delegate() )
               delegates.push_back(id);
           for_candidates = delegates;
