@@ -72,9 +72,51 @@ public:
     void open(const fc::path& data_dir) {
         _archive.open(data_dir / "archive");
         _processing_db.open(data_dir / "processing");
+
+        //Place all in-processing messages back in their place on the pipeline
+        for (auto itr = _processing_db.begin(); itr.valid(); ++itr) {
+            mail_record email = itr.value();
+
+            switch (email.status) {
+            case client::submitted:
+                process_outgoing_mail(email);
+                break;
+            case client::proof_of_work:
+                schedule_proof_of_work(email.id);
+                break;
+            case client::transmitted:
+                transmit_message(email.id);
+                break;
+            case client::accepted:
+                finalize_message(email.id);
+                break;
+            case client::failed:
+                //Do nothing
+                break;
+            }
+        }
     }
     bool is_open() {
         return _archive.is_open();
+    }
+
+    void process_outgoing_mail(mail_record& mail) {
+        //Messages go through a pipeline of processing. This function starts them on that journey.
+        set_mail_servers_on_record(mail);
+        _processing_db.store(mail.id, mail);
+
+        //The steps required to send a message:
+        //Get proof of work target from mail servers
+        //Calculate proof of work
+        //Send message to all applicable mail servers
+        //Store message in the archive
+
+        get_proof_of_work_target(mail.id);
+    }
+
+    void set_mail_servers_on_record(mail_record& record) {
+        //TODO: Check recipient's account on blockchain for his mail server
+        record.mail_servers.insert(ip::endpoint(ip::address("127.0.0.1"), 1111));
     }
 
     void get_proof_of_work_target(const message_id_type& message_id) {
@@ -130,23 +172,16 @@ public:
         }, "Mail client proof-of-work");
     }
 
-    void set_mail_servers_on_record(mail_record& record) {
-        //TODO: Check recipient's account on blockchain for his mail server
-        record.mail_servers.insert(ip::endpoint(ip::address("127.0.0.1"), 1111));
+    void transmit_message(message_id_type message_id) {
+        UNUSED(message_id);
+        //TODO: Something intelligent
     }
 
-    void process_outgoing_mail(mail_record& mail) {
-        //Messages go through a pipeline of processing. This function starts them on that journey.
-        set_mail_servers_on_record(mail);
-        _processing_db.store(mail.id, mail);
-
-        //The steps required to send a message:
-        //Get proof of work target from mail servers
-        //Calculate proof of work
-        //Send message to all applicable mail servers
-        //Store message in the archive
-
-        get_proof_of_work_target(mail.id);
+    void finalize_message(message_id_type message_id) {
+        mail_record email = _processing_db.fetch(message_id);
+        email.status = client::accepted;
+        _archive.store(message_id, email);
+        _processing_db.remove(message_id);
     }
 };
 
