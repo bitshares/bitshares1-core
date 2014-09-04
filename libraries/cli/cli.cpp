@@ -681,8 +681,26 @@ namespace bts { namespace cli {
                   const auto& balances = result.as<account_balance_summary_type>();
                   *_out << pretty_balances( balances, _client );
               }
-              else if( method_name == "wallet_transfer"
-                       || method_name == "wallet_get_transaction" )
+              else if(
+                      method_name == "wallet_transfer"
+                      || method_name == "wallet_transfer_from"
+                      || method_name == "wallet_get_transaction"
+                      || method_name == "wallet_account_register"
+                      || method_name == "wallet_account_update_registration"
+                      || method_name == "wallet_account_update_active_key"
+                      || method_name == "wallet_asset_create"
+                      || method_name == "wallet_asset_issue"
+                      || method_name == "wallet_delegate_withdraw_pay"
+                      || method_name == "wallet_market_submit_bid"
+                      || method_name == "wallet_market_submit_ask"
+                      || method_name == "wallet_market_submit_short"
+                      || method_name == "wallet_market_cover"
+                      || method_name == "wallet_market_add_collateral"
+                      || method_name == "wallet_market_cancel_order"
+                      || method_name == "wallet_publish_slate"
+                      || method_name == "wallet_recover_transaction"
+                      || method_name == "wallet_publish_price_feed"
+                     )
               {
                   const auto& record = result.as<wallet_transaction_record>();
                   const auto& pretty = _client->get_wallet()->to_pretty_trx( record );
@@ -944,7 +962,7 @@ namespace bts { namespace cli {
                   oprice  median_price =  _client->get_chain()->get_median_delegate_price( quote_id );
                   auto status = _client->get_chain()->get_market_status( quote_id, base_id );
                   auto max_short_price = median_price ? *median_price : ( status ? status->avg_price_1h : price(0, quote_id, base_id) );
-                  
+
 
                   while( bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end() )
                   {
@@ -956,10 +974,10 @@ namespace bts { namespace cli {
                            {
                                if( bid_itr->get_price() > *median_price )
                                    filtered_shorts.push_back(*bid_itr++);
-                              else 
+                              else
                                  break;
                            }
-                           else 
+                           else
                               break;
                         }
                      }
@@ -1162,15 +1180,19 @@ namespace bts { namespace cli {
                   *_out << std::setw(20) << "TIME"
                           << std::setw(20) << "HIGHEST BID"
                           << std::setw(20) << "LOWEST ASK"
+                          << std::setw(20) << "OPENING PRICE"
+                          << std::setw(20) << "CLOSING PRICE"
                           << std::setw(20) << "TRADING VOLUME"
                           << std::setw(20) << "AVERAGE PRICE"
-                          << "\n" << std::string(100,'-') << "\n";
+                          << "\n" << std::string(140,'-') << "\n";
 
                   for( auto point : points )
                   {
                     *_out << std::setw(20) << pretty_timestamp(point.timestamp)
                           << std::setw(20) << point.highest_bid
                           << std::setw(20) << point.lowest_ask
+                          << std::setw(20) << point.opening_price
+                          << std::setw(20) << point.closing_price
                           << std::setw(20) << _client->get_chain()->to_pretty_asset(asset(point.volume));
                     if(point.recent_average_price)
                       *_out << std::setw(20) << *point.recent_average_price;

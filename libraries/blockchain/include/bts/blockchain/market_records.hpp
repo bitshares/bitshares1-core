@@ -71,16 +71,22 @@ namespace bts { namespace blockchain {
    {
        market_history_record(price highest_bid = price(),
                              price lowest_ask = price(),
+                             price opening_price = price(),
+                             price closing_price = price(),
                              share_type volume = 0,
                              fc::optional<price> recent_average_price = fc::optional<price>())
          : highest_bid(highest_bid),
            lowest_ask(lowest_ask),
+           opening_price(opening_price),
+           closing_price(closing_price),
            volume(volume),
            recent_average_price(recent_average_price)
        {}
 
        price highest_bid;
        price lowest_ask;
+       price opening_price;
+       price closing_price;
        share_type volume;
 
        fc::optional<price> recent_average_price;
@@ -99,6 +105,8 @@ namespace bts { namespace blockchain {
        fc::time_point_sec timestamp;
        double highest_bid;
        double lowest_ask;
+       double opening_price;
+       double closing_price;
        share_type volume;
 
        fc::optional<double> recent_average_price;
@@ -244,9 +252,9 @@ FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (ea
 FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(bid_depth)(ask_depth)(avg_price_1h)(last_error) )
 FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (avg_price_1h) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
-FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(volume)(recent_average_price) )
+FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(opening_price)(closing_price)(volume)(recent_average_price) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
-FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(volume)(recent_average_price) )
+FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(opening_price)(closing_price)(volume)(recent_average_price) )
 FC_REFLECT( bts::blockchain::order_record, (balance) )
 FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance) )
 FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral) )

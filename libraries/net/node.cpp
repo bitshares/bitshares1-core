@@ -479,6 +479,8 @@ namespace bts { namespace net { namespace detail {
       std::set<node_id_t> _allowed_peers;
 #endif // ENABLE_P2P_DEBUGGING_API
 
+      bool _node_is_shutting_down; // set to true when we begin our destructor, used to prevent us from starting new tasks while we're shutting down
+
       node_impl();
       virtual ~node_impl();
 
@@ -697,7 +699,8 @@ namespace bts { namespace net { namespace detail {
       _average_network_usage_minutes(60),
       _average_network_usage_hours(72),
       _average_network_usage_second_counter(0),
-      _average_network_usage_minute_counter(0)
+      _average_network_usage_minute_counter(0),
+      _node_is_shutting_down(false)
     {
       _rate_limiter.set_actual_rate_time_constant(fc::seconds(2));
     }
@@ -706,6 +709,8 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       ilog( "cleaning up node" );
+      _node_is_shutting_down = true;
+
       for( const peer_connection_ptr& active_peer : _active_connections )
       {
         potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
@@ -1245,7 +1250,7 @@ namespace bts { namespace net { namespace detail {
         schedule_peer_for_deletion(peer);
         }
 
-      if( !_terminate_inactive_connections_loop_done.canceled() )
+      if (!_node_is_shutting_down && !_terminate_inactive_connections_loop_done.canceled())
          _terminate_inactive_connections_loop_done = fc::schedule( [this](){ terminate_inactive_connections_loop(); },
                                                                    fc::time_point::now() + fc::seconds(BTS_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT / 2),
                                                                    "terminate_inactive_connections_loop" );
@@ -1273,7 +1278,7 @@ namespace bts { namespace net { namespace detail {
         }
       }
 
-      if( !_fetch_updated_peer_lists_loop_done.canceled() )
+      if (!_node_is_shutting_down && !_fetch_updated_peer_lists_loop_done.canceled() )
          _fetch_updated_peer_lists_loop_done = fc::schedule( [this](){ fetch_updated_peer_lists_loop(); },
                                                              fc::time_point::now() + fc::minutes(15),
                                                              "fetch_updated_peer_lists_loop" );
@@ -1313,7 +1318,7 @@ namespace bts { namespace net { namespace detail {
       update_bandwidth_data(usage_this_second);
       _bandwidth_monitor_last_update_time = current_time;
 
-      if (!_bandwidth_monitor_loop_done.canceled())
+      if (!_node_is_shutting_down && !_bandwidth_monitor_loop_done.canceled())
         _bandwidth_monitor_loop_done = fc::schedule( [=](){ bandwidth_monitor_loop(); },
                                                      fc::time_point::now() + fc::seconds(1),
                                                      "bandwidth_monitor_loop" );
@@ -1323,7 +1328,7 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       dump_node_status();
-      if (!_dump_node_status_task_done.canceled())
+      if (!_node_is_shutting_down && !_dump_node_status_task_done.canceled())
         _dump_node_status_task_done = fc::schedule([=](){ dump_node_status_task(); },
                                                    fc::time_point::now() + fc::minutes(1),
                                                    "dump_node_status_task");
@@ -1368,7 +1373,8 @@ namespace bts { namespace net { namespace detail {
       }
       dlog("peer scheduled for deletion: ${peer}", ("peer", peer_to_delete->get_remote_endpoint()));
 
-      if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
+      if (!_node_is_shutting_down && 
+          (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready()))
       {
         dlog("asyncing delayed_peer_deletion_task to delete ${size} peers", ("size", number_of_peers_to_delete));
         _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
@@ -1378,7 +1384,8 @@ namespace bts { namespace net { namespace detail {
 #else
       dlog("scheduling peer for deletion: ${peer} (this will not block)");
       _peers_to_delete.push_back(peer_to_delete);
-      if (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready())
+      if (!_node_is_shutting_down && 
+          (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready()))
       {
         dlog("asyncing delayed_peer_deletion_task to delete ${size} peers", ("size", _peers_to_delete.size()));
         _delayed_peer_deletion_task_done = fc::async([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
@@ -2619,7 +2626,10 @@ namespace bts { namespace net { namespace detail {
       if (_suspend_fetching_sync_blocks)
       {
         dlog("we stopped processing the backlog because it was taking too long, rescheduling");
-        _process_backlog_of_sync_blocks_done = fc::schedule([=](){ process_backlog_of_sync_blocks(); }, fc::time_point::now() + fc::milliseconds(400), "process_backlog_of_sync_blocks");
+        if (!_node_is_shutting_down)
+          _process_backlog_of_sync_blocks_done = fc::schedule([=](){ process_backlog_of_sync_blocks(); }, 
+                                                              fc::time_point::now() + fc::milliseconds(400), 
+                                                              "process_backlog_of_sync_blocks");
       }
       else
         trigger_fetch_sync_items_loop();
@@ -2627,7 +2637,8 @@ namespace bts { namespace net { namespace detail {
 
     void node_impl::trigger_process_backlog_of_sync_blocks()
     {
-      if (!_process_backlog_of_sync_blocks_done.valid() || _process_backlog_of_sync_blocks_done.ready())
+      if (!_node_is_shutting_down && 
+          (!_process_backlog_of_sync_blocks_done.valid() || _process_backlog_of_sync_blocks_done.ready()))
         _process_backlog_of_sync_blocks_done = fc::async([=](){ process_backlog_of_sync_blocks(); }, "process_backlog_of_sync_blocks");
     }
 
@@ -3149,6 +3160,8 @@ namespace bts { namespace net { namespace detail {
         {
           _tcp_server.accept( new_peer->get_socket() );
           ilog( "accepted inbound connection from ${remote_endpoint}", ("remote_endpoint", new_peer->get_socket().remote_endpoint() ) );
+          if (_node_is_shutting_down)
+            return;
           new_peer->connection_initiation_time = fc::time_point::now();
           _handshaking_connections.insert( new_peer );
           _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
@@ -3482,6 +3495,10 @@ namespace bts { namespace net { namespace detail {
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert( new_peer );
       _rate_limiter.add_tcp_socket( &new_peer->get_socket() );
+
+      if (_node_is_shutting_down)
+        return;
+
       std::weak_ptr<peer_connection> new_weak_peer(new_peer);
       new_peer->accept_or_connect_task_done = fc::async( [this, new_weak_peer, remote_endpoint](){
         peer_connection_ptr new_peer(new_weak_peer.lock());
