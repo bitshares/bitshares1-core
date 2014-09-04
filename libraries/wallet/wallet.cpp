@@ -50,7 +50,6 @@ namespace bts { namespace wallet {
              fc::sha512                                 _wallet_password;
              fc::optional<fc::time_point>               _scheduled_lock_time;
              fc::future<void>                           _relocker_done;
-             bool                                       _use_deterministic_one_time_keys = true;
              fc::future<void>                           _scan_in_progress;
 
              std::unique_ptr<fc::thread>                _scanner_thread;
@@ -151,10 +150,7 @@ namespace bts { namespace wallet {
 
       private_key_type wallet_impl::create_one_time_key()
       {
-        if( !_use_deterministic_one_time_keys )
-            return private_key_type::generate();
-
-        return _wallet_db.new_private_key( _wallet_password );
+          return _wallet_db.new_private_key( _wallet_password );
       }
 
       void wallet_impl::state_changed( const pending_chain_state_ptr& state )
@@ -2442,47 +2438,43 @@ namespace bts { namespace wallet {
       return transactions;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::sign_transaction( signed_transaction& trx, const std::unordered_set<address>& req_sigs )
+   void wallet::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
    { try {
-      trx.expiration = blockchain::now() + get_transaction_expiration();
+      transaction.expiration = blockchain::now() + get_transaction_expiration();
       const auto chain_id = my->_blockchain->chain_id();
-      for( const auto& addr : req_sigs ) trx.sign( get_private_key( addr ), chain_id );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx",trx)("req_sigs",req_sigs) ) }
+      for( const auto& addr : required_signatures )
+          transaction.sign( get_private_key( addr ), chain_id );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::sign_and_cache_transaction(
-        signed_transaction& transaction,
-        const std::unordered_set<address>& required_signatures,
-        wallet_transaction_record& record
-        )
+   void wallet::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record )
    { try {
-        sign_transaction( transaction, required_signatures );
-        my->_blockchain->store_pending_transaction( transaction, true );
+      my->_blockchain->store_pending_transaction( transaction, true );
 
-        record.record_id = transaction.id();
-        record.trx = transaction;
-        record.created_time = blockchain::now();
-        record.received_time = record.created_time;
-        my->_wallet_db.store_transaction( record );
+      record.record_id = transaction.id();
+      record.trx = transaction;
+      record.created_time = blockchain::now();
+      record.received_time = record.created_time;
+      my->_wallet_db.store_transaction( record );
 
-        for( const auto& op : transaction.operations )
-        {
-            if( operation_type_enum( op.type ) == withdraw_op_type )
-                my->sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
-        }
+      for( const auto& op : transaction.operations )
+      {
+          if( operation_type_enum( op.type ) == withdraw_op_type )
+              my->sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
+      }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id, vote_selection_method selection_method )
    {
-       auto slate_id = slate_id_type( 0 );
-       if( deposit_asset_id != asset_id_type( 0 ) ) return slate_id;
+      auto slate_id = slate_id_type( 0 );
+      if( deposit_asset_id != asset_id_type( 0 ) ) return slate_id;
 
-       const auto slate = select_delegate_vote( selection_method );
-       slate_id = slate.id();
+      const auto slate = select_delegate_vote( selection_method );
+      slate_id = slate.id();
 
-       if( slate_id != slate_id_type( 0 ) && !my->_blockchain->get_delegate_slate( slate_id ).valid() )
-           transaction.define_delegate_slate( slate );
+      if( slate_id != slate_id_type( 0 ) && !my->_blockchain->get_delegate_slate( slate_id ).valid() )
+          transaction.define_delegate_slate( slate );
 
-       return slate_id;
+      return slate_id;
    }
 
    private_key_type wallet::get_private_key( const address& addr )const
@@ -2836,9 +2828,11 @@ namespace bts { namespace wallet {
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
-   signed_transaction   wallet::publish_price( const string& account_to_publish_under,
-                                               double amount_per_xts,
-                                               const string& amount_asset_symbol, bool sign )
+   wallet_transaction_record wallet::publish_price(
+           const string& account_to_publish_under,
+           double amount_per_xts,
+           const string& amount_asset_symbol,
+           bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -2892,25 +2886,26 @@ namespace bts { namespace wallet {
                                       trx, required_signatures );
       }
       required_signatures.insert( current_account->active_key() );
-      if (sign)
-      {
-          auto entry = ledger_entry();
-          entry.from_account = payer_public_key;
-          entry.to_account = payer_public_key;
-          entry.memo = "publish price " + my->_blockchain->to_pretty_price( quote_price_shares );
 
-          auto record = wallet_transaction_record();
-          record.ledger_entries.push_back( entry );
-          record.fee = required_fees;
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = payer_public_key;
+      entry.memo = "publish price " + my->_blockchain->to_pretty_price( quote_price_shares );
 
-          sign_and_cache_transaction( trx, required_signatures, record );
-          my->_blockchain->store_pending_transaction( trx );
-      }
-      return trx;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
 
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
 
-   signed_transaction wallet::publish_slate( const string& account_to_publish_under, string account_to_pay_with, bool sign )
+   wallet_transaction_record wallet::publish_slate(
+           const string& account_to_publish_under,
+           string account_to_pay_with,
+           bool sign )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
@@ -2960,21 +2955,20 @@ namespace bts { namespace wallet {
                                       trx,
                                       required_signatures );
       }
-      if (sign)
-      {
-          auto entry = ledger_entry();
-          entry.from_account = payer_public_key;
-          entry.to_account = payer_public_key;
-          entry.memo = "publish slate " + fc::variant(slate_id).as_string();
 
-          auto record = wallet_transaction_record();
-          record.ledger_entries.push_back( entry );
-          record.fee = required_fees;
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = payer_public_key;
+      entry.memo = "publish slate " + fc::variant(slate_id).as_string();
 
-          sign_and_cache_transaction( trx, required_signatures, record );
-          my->_blockchain->store_pending_transaction( trx );
-      }
-      return trx;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
      } FC_CAPTURE_AND_RETHROW( (account_to_publish_under) ) }
 
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t count )
@@ -3376,11 +3370,12 @@ namespace bts { namespace wallet {
          ("to_account_name",to_account_name)
          ("memo_message",memo_message) ) }
 
-   signed_transaction wallet::withdraw_delegate_pay( const string& delegate_name,
-                                                     double real_amount_to_withdraw,
-                                                     const string& withdraw_to_account_name,
-                                                     const string& memo_message,
-                                                     bool sign )
+   wallet_transaction_record wallet::withdraw_delegate_pay(
+           const string& delegate_name,
+           double real_amount_to_withdraw,
+           const string& withdraw_to_account_name,
+           const string& memo_message,
+           bool sign )
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
@@ -3421,31 +3416,31 @@ namespace bts { namespace wallet {
                                from_memo
                                );
 
-       if( sign )
-       {
-          auto entry = ledger_entry();
-          entry.from_account = delegate_private_key.get_public_key();
-          entry.to_account = receiver_public_key;
-          entry.amount = asset( amount_to_withdraw );
-          entry.memo = memo_message;
+       auto entry = ledger_entry();
+       entry.from_account = delegate_private_key.get_public_key();
+       entry.to_account = receiver_public_key;
+       entry.amount = asset( amount_to_withdraw );
+       entry.memo = memo_message;
 
-          auto record = wallet_transaction_record();
-          record.ledger_entries.push_back( entry );
-          record.fee = required_fees;
+       auto record = wallet_transaction_record();
+       record.ledger_entries.push_back( entry );
+       record.fee = required_fees;
 
-          sign_and_cache_transaction( trx, required_signatures, record );
-       }
-       return trx;
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
+
+       return record;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
                                       ("amount_to_withdraw",real_amount_to_withdraw ) ) }
 
-   signed_transaction  wallet::transfer_asset_to_address( double real_amount_to_transfer,
-                                                          const string& amount_to_transfer_symbol,
-                                                          const string& from_account_name,
-                                                          const address& to_address,
-                                                          const string& memo_message,
-                                                          vote_selection_method selection_method,
-                                                          bool sign )
+   wallet_transaction_record wallet::transfer_asset_to_address(
+           double real_amount_to_transfer,
+           const string& amount_to_transfer_symbol,
+           const string& from_account_name,
+           const address& to_address,
+           const string& memo_message,
+           vote_selection_method selection_method,
+           bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -3492,19 +3487,20 @@ namespace bts { namespace wallet {
 
       trx.deposit( to_address, asset_to_transfer, slate_id);
 
-      if( sign )
-      {
-         auto entry = ledger_entry();
-         entry.from_account = sender_public_key;
-         entry.amount = asset_to_transfer;
-         entry.memo = memo_message;
+      auto entry = ledger_entry();
+      entry.from_account = sender_public_key;
+      entry.amount = asset_to_transfer;
+      entry.memo = memo_message;
 
-         auto record = wallet_transaction_record();
-         record.ledger_entries.push_back( entry );
-         record.fee = required_fees;
-         record.extra_addresses.push_back( to_address );
-      }
-      return trx;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+      record.extra_addresses.push_back( to_address );
+
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
    } FC_RETHROW_EXCEPTIONS( warn, "",
                             ("real_amount_to_transfer",real_amount_to_transfer)
                             ("amount_to_transfer_symbol",amount_to_transfer_symbol)
@@ -3512,11 +3508,12 @@ namespace bts { namespace wallet {
                             ("to_address",to_address)
                             ("memo_message",memo_message) ) }
 
-   signed_transaction  wallet::transfer_asset_to_many_address( const string& amount_to_transfer_symbol,
-                                                       const string& from_account_name,
-                                                       const std::unordered_map< address, double >& to_address_amounts,
-                                                       const string& memo_message,
-                                                       bool sign )
+   wallet_transaction_record wallet::transfer_asset_to_many_address(
+           const string& amount_to_transfer_symbol,
+           const string& from_account_name,
+           const std::unordered_map<address, double>& to_address_amounts,
+           const string& memo_message,
+           bool sign )
    {
       try {
          FC_ASSERT( is_open() );
@@ -3563,21 +3560,20 @@ namespace bts { namespace wallet {
                                       trx,
                                       required_signatures );
 
-         if( sign )
-         {
-            auto entry = ledger_entry();
-            entry.from_account = sender_public_key;
-            entry.amount = total_asset_to_transfer;
-            entry.memo = memo_message;
+         auto entry = ledger_entry();
+         entry.from_account = sender_public_key;
+         entry.amount = total_asset_to_transfer;
+         entry.memo = memo_message;
 
-            auto record = wallet_transaction_record();
-            record.ledger_entries.push_back( entry );
-            record.fee = required_fees;
-            record.extra_addresses = to_addresses;
+         auto record = wallet_transaction_record();
+         record.ledger_entries.push_back( entry );
+         record.fee = required_fees;
+         record.extra_addresses = to_addresses;
 
-            sign_and_cache_transaction( trx, required_signatures, record );
-         }
-         return trx;
+         if( sign ) sign_transaction( trx, required_signatures );
+         cache_transaction( trx, record );
+
+         return record;
       } FC_RETHROW_EXCEPTIONS( warn, "",
                               ("amount_to_transfer_symbol",amount_to_transfer_symbol)
                               ("from_account_name",from_account_name)
@@ -3592,8 +3588,7 @@ namespace bts { namespace wallet {
            const string& to_account_name,
            const string& memo_message,
            vote_selection_method selection_method,
-           bool sign
-           )
+           bool sign )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -3673,24 +3668,21 @@ namespace bts { namespace wallet {
                               from_memo
                               );
 
-      /* TODO: Fix this when we don't sign and broadcast transactions without user confirmation */
-      //if( sign )
-      //{
-         auto entry = ledger_entry();
-         entry.from_account = payer_public_key;
-         entry.to_account = receiver_public_key;
-         entry.amount = asset_to_transfer;
-         entry.memo = memo_message;
-         if( payer_public_key != sender_public_key )
-             entry.memo_from_account = sender_public_key;
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = receiver_public_key;
+      entry.amount = asset_to_transfer;
+      entry.memo = memo_message;
+      if( payer_public_key != sender_public_key )
+          entry.memo_from_account = sender_public_key;
 
-         auto record = wallet_transaction_record();
-         record.ledger_entries.push_back( entry );
-         record.fee = required_fees;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
 
-         sign_and_cache_transaction( trx, required_signatures, record );
-      //}
-      //return trx;
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
       return record;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)
                              (amount_to_transfer_symbol)
@@ -3699,11 +3691,12 @@ namespace bts { namespace wallet {
                              (to_account_name)
                              (memo_message ) ) }
 
-   signed_transaction wallet::register_account( const string& account_to_register,
-                                                const variant& public_data,
-                                                uint8_t delegate_pay_rate,
-                                                const string& pay_with_account_name,
-                                                bool sign )
+   wallet_transaction_record wallet::register_account(
+           const string& account_to_register,
+           const variant& public_data,
+           uint8_t delegate_pay_rate,
+           const string& pay_with_account_name,
+           bool sign )
    { try {
       if( !is_valid_account_name( account_to_register ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_register",account_to_register) );
@@ -3755,36 +3748,35 @@ namespace bts { namespace wallet {
                                    trx,
                                    required_signatures );
 
-      if( sign )
-      {
-         auto entry = ledger_entry();
-         entry.from_account = payer_public_key;
-         entry.to_account = account_public_key;
-         entry.memo = "register " + account_to_register + (as_delegate ? " as a delegate" : "");
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = account_public_key;
+      entry.memo = "register " + account_to_register + (as_delegate ? " as a delegate" : "");
 
-         auto record = wallet_transaction_record();
-         record.ledger_entries.push_back( entry );
-         record.fee = required_fees;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
 
-         sign_and_cache_transaction( trx, required_signatures, record );
-      }
-      return trx;
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
                                       ("public_data", public_data)
                                       ("pay_with_account_name", pay_with_account_name)
                                       ("delegate_pay_rate",int(delegate_pay_rate)) ) }
 
-   signed_transaction  wallet::create_asset( const string& symbol,
-                                             const string& asset_name,
-                                             const string& description,
-                                             const variant& data,
-                                             const string& issuer_account_name,
-                                             double max_share_supply,
-                                             int64_t precision,
-                                             bool is_market_issued,
-                                             bool sign  )
+   wallet_transaction_record wallet::create_asset(
+           const string& symbol,
+           const string& asset_name,
+           const string& description,
+           const variant& data,
+           const string& issuer_account_name,
+           double max_share_supply,
+           int64_t precision,
+           bool is_market_issued,
+           bool sign )
    { try {
-
       FC_ASSERT( create_asset_operation::is_power_of_ten( precision ) );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -3826,31 +3818,31 @@ namespace bts { namespace wallet {
                            asset_record::market_issued_asset, max_share_supply_in_internal_units, precision );
       }
 
-      if( sign )
-      {
-         auto entry = ledger_entry();
-         entry.from_account = from_account_address;
-         entry.to_account = from_account_address;
-         entry.memo = "create " + symbol + " (" + asset_name + ")";
+      auto entry = ledger_entry();
+      entry.from_account = from_account_address;
+      entry.to_account = from_account_address;
+      entry.memo = "create " + symbol + " (" + asset_name + ")";
 
-         auto record = wallet_transaction_record();
-         record.ledger_entries.push_back( entry );
-         record.fee = required_fees;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
 
-         sign_and_cache_transaction( trx, required_signatures, record );
-      }
-      return trx;
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)
                                       ("name", asset_name )
                                       ("description", description)
                                       ( "issuer_account", issuer_account_name) ) }
 
-   signed_transaction wallet::issue_asset( double amount_to_issue,
-                                           const string& symbol,
-                                           const string& to_account_name,
-                                           const string& memo_message,
-                                           bool sign )
-   {
+   wallet_transaction_record wallet::issue_asset(
+           double amount_to_issue,
+           const string& symbol,
+           const string& to_account_name,
+           const string& memo_message,
+           bool sign )
+   { try {
       if( !is_valid_account_name( to_account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("to_account_name",to_account_name) );
 
@@ -3894,22 +3886,21 @@ namespace bts { namespace wallet {
                               from_memo
                               );
 
-      if( sign )
-      {
-          auto entry = ledger_entry();
-          entry.from_account = issuer->active_key();
-          entry.to_account = receiver_public_key;
-          entry.amount = shares_to_issue;
-          entry.memo = "issue " + my->_blockchain->to_pretty_asset( shares_to_issue );
+      auto entry = ledger_entry();
+      entry.from_account = issuer->active_key();
+      entry.to_account = receiver_public_key;
+      entry.amount = shares_to_issue;
+      entry.memo = "issue " + my->_blockchain->to_pretty_asset( shares_to_issue );
 
-          auto record = wallet_transaction_record();
-          record.ledger_entries.push_back( entry );
-          record.fee = required_fees;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
 
-          sign_and_cache_transaction( trx, required_signatures, record );
-      }
-      return trx;
-   }
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::update_account_private_data( const string& account_to_update,
                                              const variant& private_data )
@@ -3921,11 +3912,12 @@ namespace bts { namespace wallet {
       my->_wallet_db.cache_account( *oacct );
    }
 
-   signed_transaction wallet::update_registered_account( const string& account_to_update,
-                                                                const string& pay_from_account,
-                                                                optional<variant> public_data,
-                                                                uint8_t delegate_pay_rate,
-                                                                bool sign )
+   wallet_transaction_record wallet::update_registered_account(
+           const string& account_to_update,
+           const string& pay_from_account,
+           optional<variant> public_data,
+           uint8_t delegate_pay_rate,
+           bool sign )
    { try {
       if( !is_valid_account_name( account_to_update ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_update",account_to_update) );
@@ -3969,29 +3961,29 @@ namespace bts { namespace wallet {
 
       trx.update_account( account->id, delegate_pay_rate, public_data, optional<public_key_type>() );
 
-      if (sign)
-      {
-          auto entry = ledger_entry();
-          entry.from_account = payer_public_key;
-          entry.to_account = account_public_key;
-          entry.memo = "update " + account_to_update; // TODO: Note if upgrading to delegate
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = account_public_key;
+      entry.memo = "update " + account_to_update; // TODO: Note if upgrading to delegate
 
-          auto record = wallet_transaction_record();
-          record.ledger_entries.push_back( entry );
-          record.fee = required_fees;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
 
-          sign_and_cache_transaction( trx, required_signatures, record );
-      }
-      return trx;
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
                                       ("pay_from_account",pay_from_account)
                                       ("public_data",public_data)
                                       ("sign",sign) ) }
 
-   signed_transaction wallet::update_active_key( const std::string& account_to_update,
-                                                 const std::string& pay_from_account,
-                                                 const std::string& new_active_key,
-                                                 bool sign )
+   wallet_transaction_record wallet::update_active_key(
+           const std::string& account_to_update,
+           const std::string& pay_from_account,
+           const std::string& new_active_key,
+           bool sign )
    { try {
       if( !is_valid_account_name( account_to_update ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_update",account_to_update) );
@@ -4041,20 +4033,19 @@ namespace bts { namespace wallet {
 
       trx.update_account( account->id, account->delegate_pay_rate(), optional<variant>(), account_public_key );
 
-      if (sign)
-      {
-          auto entry = ledger_entry();
-          entry.from_account = payer_public_key;
-          entry.to_account = account_public_key;
-          entry.memo = "update " + account_to_update + " active key";
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = account_public_key;
+      entry.memo = "update " + account_to_update + " active key";
 
-          auto record = wallet_transaction_record();
-          record.ledger_entries.push_back( entry );
-          record.fee = required_fees;
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
 
-          sign_and_cache_transaction( trx, required_signatures, record );
-      }
-      return trx;
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
                                       ("pay_from_account",pay_from_account)
                                       ("sign",sign) ) }
@@ -4193,7 +4184,9 @@ namespace bts { namespace wallet {
     *         price_per_unit   = 1 / price_per_unit
     *  @endcode
     */
-   signed_transaction wallet::cancel_market_order( const address& owner_address )
+   wallet_transaction_record wallet::cancel_market_order(
+           const address& owner_address,
+           bool sign )
    { try {
         if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
         if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -4279,11 +4272,15 @@ namespace bts { namespace wallet {
         record.ledger_entries.push_back( entry );
         record.fee = required_fees;
 
-        sign_and_cache_transaction( trx, required_signatures, record );
-        return trx;
+        if( sign ) sign_transaction( trx, required_signatures );
+        cache_transaction( trx, record );
+
+        return record;
    } FC_CAPTURE_AND_RETHROW( (owner_address) ) }
 
-   signed_transaction wallet::cancel_market_order2( const order_id_type& order_id )
+   wallet_transaction_record wallet::cancel_market_order2(
+           const order_id_type& order_id,
+           bool sign )
    { try {
         if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
         if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -4371,11 +4368,13 @@ namespace bts { namespace wallet {
         record.ledger_entries.push_back( entry );
         record.fee = required_fees;
 
-        sign_and_cache_transaction( trx, required_signatures, record );
-        return trx;
+        if( sign ) sign_transaction( trx, required_signatures );
+        cache_transaction( trx, record );
+
+        return record;
    } FC_CAPTURE_AND_RETHROW( (order_id) ) }
 
-   signed_transaction wallet::submit_bid(
+   wallet_transaction_record wallet::submit_bid(
            const string& from_account_name,
            double real_quantity,
            const string& quantity_symbol,
@@ -4459,35 +4458,34 @@ namespace bts { namespace wallet {
 
        trx.bid( cost_shares, quote_price_shares, order_address );
 
-       if( sign )
-       {
-           std::stringstream memo;
-           memo << "buy " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
+       std::stringstream memo;
+       memo << "buy " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
-           auto entry = ledger_entry();
-           entry.from_account = from_account_key;
-           entry.to_account = order_key;
-           entry.amount = cost_shares;
-           entry.memo = memo.str();
+       auto entry = ledger_entry();
+       entry.from_account = from_account_key;
+       entry.to_account = order_key;
+       entry.amount = cost_shares;
+       entry.memo = memo.str();
 
-           auto record = wallet_transaction_record();
-           record.is_market = true;
-           record.ledger_entries.push_back( entry );
-           record.fee = required_fees;
+       auto record = wallet_transaction_record();
+       record.is_market = true;
+       record.ledger_entries.push_back( entry );
+       record.fee = required_fees;
 
-           sign_and_cache_transaction( trx, required_signatures, record );
+       auto key_rec = my->_wallet_db.lookup_key( order_key );
+       FC_ASSERT( key_rec.valid() );
+       key_rec->memo = "BID-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+       my->_wallet_db.store_key( *key_rec );
 
-           auto key_rec = my->_wallet_db.lookup_key( order_key );
-           FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "BID-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
-           my->_wallet_db.store_key( *key_rec );
-       }
-       return trx;
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
+
+       return record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
 
-   signed_transaction wallet::submit_ask(
+   wallet_transaction_record wallet::submit_ask(
            const string& from_account_name,
            double real_quantity,
            const string& quantity_symbol,
@@ -4571,30 +4569,29 @@ namespace bts { namespace wallet {
 
        trx.ask( cost_shares, quote_price_shares, order_address );
 
-       if( sign )
-       {
-           std::stringstream memo;
-           memo << "sell " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
+       std::stringstream memo;
+       memo << "sell " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
-           auto entry = ledger_entry();
-           entry.from_account = from_account_key;
-           entry.to_account = order_key;
-           entry.amount = cost_shares;
-           entry.memo = memo.str();
+       auto entry = ledger_entry();
+       entry.from_account = from_account_key;
+       entry.to_account = order_key;
+       entry.amount = cost_shares;
+       entry.memo = memo.str();
 
-           auto record = wallet_transaction_record();
-           record.is_market = true;
-           record.ledger_entries.push_back( entry );
-           record.fee = required_fees;
+       auto record = wallet_transaction_record();
+       record.is_market = true;
+       record.ledger_entries.push_back( entry );
+       record.fee = required_fees;
 
-           sign_and_cache_transaction( trx, required_signatures, record );
+       auto key_rec = my->_wallet_db.lookup_key( order_key );
+       FC_ASSERT( key_rec.valid() );
+       key_rec->memo = "ASK-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+       my->_wallet_db.store_key( *key_rec );
 
-           auto key_rec = my->_wallet_db.lookup_key( order_key );
-           FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "ASK-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
-           my->_wallet_db.store_key( *key_rec );
-       }
-       return trx;
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
+
+       return record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
@@ -4607,7 +4604,7 @@ namespace bts { namespace wallet {
     *  @param from_account  - the account that will be providing  real_quantity / quote_price XTS to
     *                         fund the transaction.
     */
-   signed_transaction wallet::submit_short(
+   wallet_transaction_record wallet::submit_short(
            const string& from_account_name,
            double real_quantity,
            double quote_price,
@@ -4666,39 +4663,37 @@ namespace bts { namespace wallet {
        // withdraw to transaction cost_share_quantity + fee
        trx.short_sell( cost_shares, quote_price_shares, order_address );
 
-       if( sign )
-       {
-           std::stringstream memo;
-           memo << "short " << quote_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
+       std::stringstream memo;
+       memo << "short " << quote_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
-           auto entry = ledger_entry();
-           entry.from_account = from_account_key;
-           entry.to_account = order_key;
-           entry.amount = cost_shares;
-           entry.memo = memo.str();
+       auto entry = ledger_entry();
+       entry.from_account = from_account_key;
+       entry.to_account = order_key;
+       entry.amount = cost_shares;
+       entry.memo = memo.str();
 
-           auto record = wallet_transaction_record();
-           record.is_market = true;
-           record.ledger_entries.push_back( entry );
-           record.fee = required_fees;
+       auto record = wallet_transaction_record();
+       record.is_market = true;
+       record.ledger_entries.push_back( entry );
+       record.fee = required_fees;
 
-           sign_and_cache_transaction( trx, required_signatures, record );
+       auto key_rec = my->_wallet_db.lookup_key( order_key );
+       FC_ASSERT( key_rec.valid() );
+       key_rec->memo = "SHORT-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+       my->_wallet_db.store_key( *key_rec );
 
-           auto key_rec = my->_wallet_db.lookup_key( order_key );
-           FC_ASSERT( key_rec.valid() );
-           key_rec->memo = "SHORT-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
-           my->_wallet_db.store_key( *key_rec );
-       }
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
 
-       return trx;
+       return record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity) (quote_price)(quote_symbol)(sign) ) }
 
-   signed_transaction wallet::add_collateral(
-       const string& from_account_name,
-       const address& short_id,
-       share_type collateral_to_add,
-       bool sign)
+   wallet_transaction_record wallet::add_collateral(
+           const string& from_account_name,
+           const address& short_id,
+           share_type collateral_to_add,
+           bool sign )
    { try {
        if (!is_open()) FC_CAPTURE_AND_THROW (wallet_closed);
        if (!is_unlocked()) FC_CAPTURE_AND_THROW (login_required);
@@ -4723,30 +4718,28 @@ namespace bts { namespace wallet {
                                     trx,
                                     required_signatures);
 
-       if (sign)
-       {
-         auto record = wallet_transaction_record();
-         record.is_market = true;
-         record.fee = required_fees;
+       auto record = wallet_transaction_record();
+       record.is_market = true;
+       record.fee = required_fees;
 
-         auto entry = ledger_entry();
-         entry.from_account = from_account_key;
-         entry.to_account = get_private_key(order_itr->second.order.get_owner()).get_public_key();
-         entry.amount = asset(collateral_to_add);
-         entry.memo = "add collateral to short";
-         record.ledger_entries.push_back(entry);
+       auto entry = ledger_entry();
+       entry.from_account = from_account_key;
+       entry.to_account = get_private_key(order_itr->second.order.get_owner()).get_public_key();
+       entry.amount = asset(collateral_to_add);
+       entry.memo = "add collateral to short";
+       record.ledger_entries.push_back(entry);
 
-         sign_and_cache_transaction(trx, required_signatures, record);
-       }
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
 
-       return trx;
+       return record;
    } FC_CAPTURE_AND_RETHROW((from_account_name)(short_id)(collateral_to_add)(sign)) }
 
-   signed_transaction wallet::add_collateral2(
-       const string& from_account_name,
-       const order_id_type& short_id,
-       share_type collateral_to_add,
-       bool sign)
+   wallet_transaction_record wallet::add_collateral2(
+           const string& from_account_name,
+           const order_id_type& short_id,
+           share_type collateral_to_add,
+           bool sign )
    { try {
        if (!is_open()) FC_CAPTURE_AND_THROW (wallet_closed);
        if (!is_unlocked()) FC_CAPTURE_AND_THROW (login_required);
@@ -4777,31 +4770,29 @@ namespace bts { namespace wallet {
                                     trx,
                                     required_signatures);
 
-       if (sign)
-       {
-         auto record = wallet_transaction_record();
-         record.is_market = true;
-         record.fee = required_fees;
+       auto record = wallet_transaction_record();
+       record.is_market = true;
+       record.fee = required_fees;
 
-         auto entry = ledger_entry();
-         entry.from_account = from_account_key;
-         entry.to_account = get_private_key( owner_address ).get_public_key();
-         entry.amount = asset(collateral_to_add);
-         entry.memo = "add collateral to short";
-         record.ledger_entries.push_back(entry);
+       auto entry = ledger_entry();
+       entry.from_account = from_account_key;
+       entry.to_account = get_private_key( owner_address ).get_public_key();
+       entry.amount = asset(collateral_to_add);
+       entry.memo = "add collateral to short";
+       record.ledger_entries.push_back(entry);
 
-         sign_and_cache_transaction(trx, required_signatures, record);
-       }
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
 
-       return trx;
+       return record;
    } FC_CAPTURE_AND_RETHROW((from_account_name)(short_id)(collateral_to_add)(sign)) }
 
-   signed_transaction wallet::cover_short(
+   wallet_transaction_record wallet::cover_short(
            const string& from_account_name,
            double real_quantity_usd,
            const string& quote_symbol,
            const address& owner_address,
-           bool sign  )
+           bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -4884,41 +4875,40 @@ namespace bts { namespace wallet {
            my->withdraw_to_transaction( required_fees, from_address, trx, required_signatures );
        }
 
-       if( sign )
+       auto record = wallet_transaction_record();
+       record.is_market = true;
+       record.fee = required_fees;
+
        {
-           auto record = wallet_transaction_record();
-           record.is_market = true;
-           record.fee = required_fees;
-
-           {
-               auto entry = ledger_entry();
-               entry.from_account = from_account_key;
-               entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
-               entry.amount = amount_to_cover;
-               entry.memo = "payoff debt";
-               record.ledger_entries.push_back( entry );
-           }
-           if( collateral_recovered.amount > 0 )
-           {
-               auto entry = ledger_entry();
-               entry.from_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
-               entry.to_account = from_account_key;
-               entry.amount = collateral_recovered;
-               entry.memo = "cover proceeds";
-               record.ledger_entries.push_back( entry );
-           }
-
-           sign_and_cache_transaction( trx, required_signatures, record );
+           auto entry = ledger_entry();
+           entry.from_account = from_account_key;
+           entry.to_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
+           entry.amount = amount_to_cover;
+           entry.memo = "payoff debt";
+           record.ledger_entries.push_back( entry );
        }
-       return trx;
+       if( collateral_recovered.amount > 0 )
+       {
+           auto entry = ledger_entry();
+           entry.from_account = get_private_key( order_to_cover->get_owner() ).get_public_key();
+           entry.to_account = from_account_key;
+           entry.amount = collateral_recovered;
+           entry.memo = "cover proceeds";
+           record.ledger_entries.push_back( entry );
+       }
+
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
+
+       return record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(owner_address)(sign) ) }
 
-   signed_transaction wallet::cover_short2(
+   wallet_transaction_record wallet::cover_short2(
            const string& from_account_name,
            double real_quantity_usd,
            const string& quote_symbol,
            const order_id_type& short_id,
-           bool sign  )
+           bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
@@ -5001,33 +4991,32 @@ namespace bts { namespace wallet {
            my->withdraw_to_transaction( required_fees, from_address, trx, required_signatures );
        }
 
-       if( sign )
+       auto record = wallet_transaction_record();
+       record.is_market = true;
+       record.fee = required_fees;
+
        {
-           auto record = wallet_transaction_record();
-           record.is_market = true;
-           record.fee = required_fees;
-
-           {
-               auto entry = ledger_entry();
-               entry.from_account = from_account_key;
-               entry.to_account = get_private_key( owner_address ).get_public_key();
-               entry.amount = amount_to_cover;
-               entry.memo = "payoff debt";
-               record.ledger_entries.push_back( entry );
-           }
-           if( collateral_recovered.amount > 0 )
-           {
-               auto entry = ledger_entry();
-               entry.from_account = get_private_key( owner_address ).get_public_key();
-               entry.to_account = from_account_key;
-               entry.amount = collateral_recovered;
-               entry.memo = "cover proceeds";
-               record.ledger_entries.push_back( entry );
-           }
-
-           sign_and_cache_transaction( trx, required_signatures, record );
+           auto entry = ledger_entry();
+           entry.from_account = from_account_key;
+           entry.to_account = get_private_key( owner_address ).get_public_key();
+           entry.amount = amount_to_cover;
+           entry.memo = "payoff debt";
+           record.ledger_entries.push_back( entry );
        }
-       return trx;
+       if( collateral_recovered.amount > 0 )
+       {
+           auto entry = ledger_entry();
+           entry.from_account = get_private_key( owner_address ).get_public_key();
+           entry.to_account = from_account_key;
+           entry.amount = collateral_recovered;
+           entry.memo = "cover proceeds";
+           record.ledger_entries.push_back( entry );
+       }
+
+       if( sign ) sign_transaction( trx, required_signatures );
+       cache_transaction( trx, record );
+
+       return record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(short_id)(sign) ) }
 
    void wallet::set_transaction_fee( const asset& fee )
@@ -5054,8 +5043,8 @@ namespace bts { namespace wallet {
          if( lowest_ask )
          {
             xts_fee += xts_fee + xts_fee;
-            // fees paid in something other than XTS are discounted 50% 
-            auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;  
+            // fees paid in something other than XTS are discounted 50%
+            auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;
             return alt_fees_paid;
          }
       }

@@ -672,7 +672,7 @@
       {
          "method_name" : "wallet_account_register",
          "description" : "Updates the data published about a given account",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "account_name",
@@ -692,7 +692,7 @@
                },
                {
                   "name" : "delegate_pay_rate",
-                  "type" : "uint32_t",
+                  "type" : "uint8_t",
                   "description" : "A value between 0 and 100 for delegates, 255 for non delegates",
                   "default_value" : 255
                }
@@ -723,7 +723,7 @@
       {
          "method_name" : "wallet_account_update_registration",
          "description" : "Updates the data published about a given account",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "account_name",
@@ -754,7 +754,7 @@
       {
          "method_name" : "wallet_account_update_active_key",
          "description" : "Updates the specified account's active key and broadcasts the transaction.",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                 "name" : "account_to_update",
@@ -857,7 +857,7 @@
       {
          "method_name" : "wallet_asset_create",
          "description" : "Creates a new user issued asset",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "symbol",
@@ -910,7 +910,7 @@
       {
          "method_name" : "wallet_asset_issue",
          "description" : "Issues new shares of a given asset type",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "amount",
@@ -970,7 +970,7 @@
       {
          "method_name"  : "wallet_delegate_withdraw_pay",
          "description"  : "Used to transfer some of the delegate's pay from their balance",
-         "return_type"  : "signed_transaction",
+         "return_type"  : "transaction_record",
          "parameters"   : [
             {
               "name" : "delegate_name",
@@ -1029,7 +1029,7 @@
       {
          "method_name" : "wallet_market_submit_bid",
          "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1069,7 +1069,7 @@
       {
          "method_name" : "wallet_market_submit_ask",
          "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1109,7 +1109,7 @@
       {
          "method_name" : "wallet_market_submit_short",
          "description" : "Used to place a request to short sell a quantity of assets at a price specified",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1144,7 +1144,7 @@
       {
          "method_name" : "wallet_market_cover",
          "description" : "Used to place a request to cover an existing short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1173,7 +1173,7 @@
       {
          "method_name" : "wallet_market_cover2",
          "description" : "Used to place a request to cover an existing short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1202,7 +1202,7 @@
       {
          "method_name" : "wallet_market_add_collateral",
          "description" : "Add collateral to a short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1226,7 +1226,7 @@
       {
          "method_name" : "wallet_market_add_collateral2",
          "description" : "Add collateral to a short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1312,7 +1312,7 @@
       {
          "method_name" : "wallet_market_cancel_order",
          "description" : "Cancel an order",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "order_id",
@@ -1326,7 +1326,7 @@
       {
          "method_name" : "wallet_market_cancel_order2",
          "description" : "Cancel an order",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "order_id",
@@ -1486,7 +1486,7 @@
       {
          "method_name" : "wallet_publish_slate",
          "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                 "name" : "publishing_account_name",
@@ -1570,7 +1570,7 @@
       {
          "method_name" : "wallet_publish_price_feed",
          "description" : "publishes a price feed for BitAssets, only active delegates may do this",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
              {
                 "name" : "delegate_account",
