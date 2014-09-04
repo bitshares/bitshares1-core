@@ -341,7 +341,7 @@
         "aliases" : ["history", "listtransactions"]
       },
       {
-        "method_name": "wallet_transaction_remove",
+        "method_name": "wallet_remove_transaction",
         "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
         "return_type": "void",
         "parameters" :
@@ -353,7 +353,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["remove_transaction"]
+        "aliases" : ["remove_transaction", "wallet_transaction_remove"]
       },
       {
         "method_name": "wallet_get_pending_transaction_errors",
@@ -635,27 +635,28 @@
         "aliases" : ["get_transaction"]
       },
       {
-        "method_name": "wallet_transaction_scan",
+        "method_name": "wallet_scan_transaction",
         "description": "Scans the specified transaction",
         "return_type": "void",
         "parameters" :
           [
             {
-              "name" : "block_num",
-              "type" : "uint32_t",
-              "description" : "the block containing the transaction"
-            },
-            {
               "name" : "transaction_id",
               "type" : "string",
               "description" : "the id (or id prefix) of the transaction"
+            },
+            {
+              "name" : "overwrite_existing",
+              "type" : "bool",
+              "description" : "true to overwrite existing wallet transaction record and false otherwise",
+              "default_value": false
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["scan_transaction", "wallet_scan_transaction"]
+        "aliases" : ["scan_transaction", "wallet_transaction_scan"]
       },
       {
-        "method_name": "wallet_transaction_rebroadcast",
+        "method_name": "wallet_rebroadcast_transaction",
         "description": "Rebroadcasts the specified transaction",
         "return_type": "void",
         "parameters" :
@@ -667,7 +668,7 @@
             }
           ],
         "prerequisites" : ["wallet_open"],
-        "aliases" : ["rebroadcast", "wallet_rebroadcast_transaction"]
+        "aliases" : ["rebroadcast", "wallet_transaction_rebroadcast"]
       },
       {
          "method_name" : "wallet_account_register",
