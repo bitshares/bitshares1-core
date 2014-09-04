@@ -138,7 +138,6 @@ namespace bts { namespace blockchain {
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
 
-
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
 
@@ -156,6 +155,7 @@ namespace bts { namespace blockchain {
       }
       else // this->amount > 0 - deposit
       {
+          FC_ASSERT( this->amount >=  (BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE) ); // 100 XTS min short order
           if( NOT current_short )  // then initialize to 0
             current_short = order_record();
           // sub the delta amount from the eval state that we deposited to the short

@@ -185,6 +185,17 @@ class market_engine
                       _current_bid.reset();
                       continue;
                    }
+                   /**
+                    *  Don't allow shorts to be executed if they are too far over priced or they will be
+                    *  immediately under collateralized.
+                    */
+                   if( mtrx.bid_price < market_stat->minimum_ask() )
+                   {
+                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_ask.reset();
+                      continue;
+                   }
 
                    mtrx.ask_price = mtrx.bid_price;
 
@@ -239,6 +250,19 @@ class market_engine
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.ask_price < mtrx.bid_price )
                       break; // the call price has not been reached
+
+                   /**
+                    *  Don't allow margin calls to be executed too far below
+                    *  the minimum ask, this could lead to an attack where someone
+                    *  walks the whole book to steal the collateral.  
+                    */
+                   if( mtrx.bid_price < market_stat->minimum_ask() )
+                   {
+                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_ask.reset();
+                      continue;
+                   }
 
                    mtrx.ask_price = mtrx.bid_price;
 
