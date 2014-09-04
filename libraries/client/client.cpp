@@ -3709,6 +3709,13 @@ config load_config( const fc::path& datadir )
       network_broadcast_transaction( record.trx );
       return record;
    }
+   wallet_transaction_record client_impl::wallet_publish_feeds( const std::string& delegate_account,
+                                                                const map<string,double>& real_amount_per_xts )
+   {
+      const auto record = _wallet->publish_feeds( delegate_account, real_amount_per_xts );
+      network_broadcast_transaction( record.trx );
+      return record;
+   }
 
    int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )
    {

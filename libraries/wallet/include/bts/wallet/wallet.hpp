@@ -350,6 +350,11 @@ namespace bts { namespace wallet {
                  string account_to_pay_with,
                  bool sign = true
                  );
+         wallet_transaction_record publish_feeds(
+                 const string& account,
+                 map<string,double> amount_per_xts,
+                 bool sign = true
+                 );
          wallet_transaction_record publish_price(
                  const string& account,
                  double amount_per_xts,

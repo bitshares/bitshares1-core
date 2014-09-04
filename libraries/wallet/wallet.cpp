@@ -2828,6 +2828,86 @@ namespace bts { namespace wallet {
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
 
+   wallet_transaction_record wallet::publish_feeds(
+           const string& account_to_publish_under,
+           map<string,double> amount_per_xts, // map symbol to amount per xts
+           bool sign )
+   {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( !is_receive_account( account_to_publish_under ) )
+          FC_THROW_EXCEPTION( unknown_receive_account, "You cannot publish from this account!",
+                              ("delegate_account",account_to_publish_under) );
+
+      for( auto item : amount_per_xts )
+      {
+         if( item.second < 0 )
+             FC_THROW_EXCEPTION( invalid_price, "Invalid price!", ("amount_per_xts",item) );
+      }
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
+      FC_ASSERT( current_account );
+      auto payer_public_key = get_account_public_key( account_to_publish_under );
+      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
+
+      for( auto item : amount_per_xts )
+      {
+         auto quote_asset_record = my->_blockchain->get_asset_record( item.first );
+         auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
+
+
+         asset price_shares( item.second *  quote_asset_record->get_precision(), quote_asset_record->id );
+         asset base_one_quantity( base_asset_record->get_precision(), 0 );
+
+        // auto quote_price_shares = price_shares / base_one_quantity;
+         price quote_price_shares( (item.second * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+
+         if( item.second > 0 )
+         {
+            trx.publish_feed( my->_blockchain->get_asset_id( item.first ),
+                              current_account->id, fc::variant( quote_price_shares )  );
+         }
+         else
+         {
+            trx.publish_feed( my->_blockchain->get_asset_id( item.first ),
+                              current_account->id, fc::variant()  );
+         }
+      }
+
+      auto required_fees = get_transaction_fee();
+
+      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      {
+        // withdraw delegate pay...
+        trx.withdraw_pay( current_account->id, required_fees.amount );
+      }
+      else
+      {
+         my->withdraw_to_transaction( required_fees,
+                                      payer_public_key,
+                                      trx, required_signatures );
+      }
+      required_signatures.insert( current_account->active_key() );
+
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = payer_public_key;
+      entry.memo = "publish price feeds";
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
+   }
+
    wallet_transaction_record wallet::publish_price(
            const string& account_to_publish_under,
            double amount_per_xts,
