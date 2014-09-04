@@ -149,9 +149,9 @@ namespace bts { namespace wallet {
       }
 
       private_key_type wallet_impl::create_one_time_key()
-      {
+      { try {
           return _wallet_db.new_private_key( _wallet_password );
-      }
+      } FC_CAPTURE_AND_RETHROW() }
 
       void wallet_impl::state_changed( const pending_chain_state_ptr& state )
       {

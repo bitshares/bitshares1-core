@@ -386,7 +386,7 @@ namespace bts { namespace wallet {
    }
 
    void wallet_db::store_key( const key_data& key_to_store )
-   {
+   { try {
       auto key_itr = keys.find( key_to_store.get_address() );
       if( key_itr != keys.end() )
       {
@@ -396,14 +396,17 @@ namespace bts { namespace wallet {
          if( key_to_store.has_private_key())
          {
             auto oacct = lookup_account( key_to_store.account_address );
-            FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
-            oacct->is_my_account = true;
-            store_record( *oacct );
-            cache_account( *oacct );
-            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
-                  ("key",key_to_store.public_key)
-                  ("account",key_to_store.account_address)
-                 ("account_name",get_account_name(key_to_store.account_address)) );
+            if( oacct )
+            {
+              // FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
+               oacct->is_my_account = true;
+               store_record( *oacct );
+               cache_account( *oacct );
+               ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
+                     ("key",key_to_store.public_key)
+                     ("account",key_to_store.account_address)
+                    ("account_name",get_account_name(key_to_store.account_address)) );
+            }
          }
          else
          {
@@ -433,7 +436,7 @@ namespace bts { namespace wallet {
          ilog( "indexing key ${k}", ("k",address(pts_address(key,false,56) )  ) );
          ilog( "indexing key ${k}", ("k",address(pts_address(key,true,56) )  ) );
       }
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    vector<wallet_transaction_record> wallet_db::get_pending_transactions()const
    {
