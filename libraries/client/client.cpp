@@ -1685,6 +1685,7 @@ config load_config( const fc::path& datadir )
           my->_mail_server->open( data_dir / "mail" );
         }
         my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
+        my->_mail_client->open( data_dir / "mail_client" );
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)

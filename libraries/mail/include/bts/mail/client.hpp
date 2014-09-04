@@ -24,6 +24,8 @@ public:
     client(wallet::wallet_ptr wallet, blockchain::chain_database_ptr chain);
     virtual ~client() {}
 
+    void open(const fc::path& data_dir);
+
     message_id_type send_email(const string& from, const string& to, const string& subject, const string& body);
 
 private:
