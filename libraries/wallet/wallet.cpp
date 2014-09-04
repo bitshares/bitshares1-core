@@ -173,6 +173,7 @@ namespace bts { namespace wallet {
           if( !self->is_open() || !self->is_unlocked() ) return;
           if( !self->get_transaction_scanning() ) return;
           if( summary.block_data.block_num <= self->get_last_scanned_block_number() ) return;
+          if( _scan_in_progress.valid() && !_scan_in_progress.ready() ) return;
 
           self->scan_chain( self->get_last_scanned_block_number(), summary.block_data.block_num );
       }
@@ -1934,11 +1935,12 @@ namespace bts { namespace wallet {
 
           /* Scan blocks we have missed while locked */
           const uint32_t first = get_last_scanned_block_number();
-          scan_chain( first,
-                      my->_blockchain->get_head_block_num(),
-                      [first](uint32_t current, uint32_t end){
-              std::cout << " Scanning for new transactions in block: " << current-first << '/' << end-first << "\r" << std::flush;
-          });
+          if( first < my->_blockchain->get_head_block_num() )
+            scan_chain( first,
+                        my->_blockchain->get_head_block_num(),
+                        [first](uint32_t current, uint32_t end){
+                std::cout << " Scanning for new transactions in block: " << current-first << '/' << end-first << "\r" << std::flush;
+            });
           std::cout << "Finished scanning for new transactions.                                " << std::endl;
       }
       catch( ... )
