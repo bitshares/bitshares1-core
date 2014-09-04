@@ -2099,18 +2099,16 @@ namespace bts { namespace wallet {
     *  @param key - the public key that will be used for sending TITAN transactions
     *               to the account.
     */
-   void  wallet::add_contact_account( const string& account_name,
-                                      const public_key_type& key,
-                                      const variant& private_data )
+   void wallet::add_contact_account( const string& account_name,
+                                     const public_key_type& key,
+                                     const variant& private_data )
    { try {
+      FC_ASSERT( is_open() );
+
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
-      FC_ASSERT( is_open() );
-      idump( (account_name) );
-
-      auto current_registered_account = my->_blockchain->get_account_record( account_name );
-
+      const auto current_registered_account = my->_blockchain->get_account_record( account_name );
       if( current_registered_account.valid() && current_registered_account->owner_key != key )
          FC_THROW_EXCEPTION( invalid_name, "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
                              ("p",key)("r",current_registered_account->active_key()) );
@@ -2118,20 +2116,20 @@ namespace bts { namespace wallet {
       auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
       {
-         wlog( "current account is valid... ${name}", ("name", *current_account) );
+         wlog( "current account is valid... ${name}", ("name",*current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
          if( !private_data.is_null() )
             current_account->private_data = private_data;
-         idump( (*current_account) );
          my->_wallet_db.cache_account( *current_account );
          return;
       }
       else
       {
-         auto account_key = my->_wallet_db.lookup_key( address(key) );
-         // TODO: Throw exception here
-         FC_ASSERT( !account_key.valid(), "Provided key belongs to another account." );
+         auto account_key = my->_wallet_db.lookup_key( address( key ) );
+         if( account_key.valid() )
+             FC_THROW_EXCEPTION( duplicate_key, "Provided key already belongs to another wallet account!" );
+
          if( current_registered_account.valid() )
          {
             my->_wallet_db.add_account( *current_registered_account, private_data );
@@ -2143,7 +2141,6 @@ namespace bts { namespace wallet {
          account_key = my->_wallet_db.lookup_key( address(key) );
          FC_ASSERT( account_key.valid() );
       }
-
    } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) }
 
    // TODO: This function is sometimes used purely for error checking of the account_name; refactor
