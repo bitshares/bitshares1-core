@@ -2397,10 +2397,22 @@ config load_config( const fc::path& datadir )
       return _mail_server->fetch_inventory(owner, start_time, limit);
     }
 
-    mail::message detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
+    mail::message detail::client_impl::mail_fetch_message(const mail::message_id_type& inventory_id) const
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
       return _mail_server->fetch_message(inventory_id);
+    }
+
+    std::multimap<mail::client::mail_status, mail::message_id_type> detail::client_impl::mail_get_processing_messages() const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_processing_messages();
+    }
+
+    mail::message detail::client_impl::mail_get_sent_message(const mail::message_id_type& message_id) const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_message(message_id);
     }
 
     mail::message_id_type detail::client_impl::mail_send(const std::string &from,
