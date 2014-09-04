@@ -3706,7 +3706,7 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      const auto required_fees = get_transaction_fee();
+      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
@@ -4510,9 +4510,9 @@ namespace bts { namespace wallet {
        private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
-       auto required_fees = get_transaction_fee();
+       auto required_fees = get_transaction_fee( cost_shares.asset_id );
 
-       if( cost_shares.asset_id == 0 )
+       if( cost_shares.asset_id == required_fees.asset_id )
        {
           my->withdraw_to_transaction( cost_shares + required_fees,
                                        from_address,
