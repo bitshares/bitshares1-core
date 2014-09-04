@@ -12,45 +12,11 @@ Parameters:
   paying_account_name (account_name, optional, defaults to ""): The account to pay transaction fees; leave empty to pay with publishing account.
 
 Returns:
-  signed_transaction
+  transaction_record
 default (unlocked) >>> wallet_publish_slate delegate0
-{
-  "expiration": "20140620T154750",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "define_delegate_slate_op_type",
-      "data": {
-        "slate": {
-          "supported_delegates": [
-            1,
-            2
-          ]
-        }
-      }
-    },{
-      "type": "update_account_op_type",
-      "data": {
-        "account_id": 1,
-        "public_data": {
-          "slate_id": 13761713000375254272
-        },
-        "active_key": null,
-        "delegate_pay_rate": 100
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e24c30a66d13f814249dba8e3f02495f6d94a294931be5812060dd4f55b891504",
-    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c9c5ae72420ff9baa4c170d64e2cec2516868d51695cd4f0eb2925b19932eb8e3"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             publish slate 13761713000375254272          0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
