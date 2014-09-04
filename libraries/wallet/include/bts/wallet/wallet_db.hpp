@@ -11,8 +11,6 @@
 
 namespace bts { namespace wallet {
 
-   typedef vector<fc::ecc::private_key> private_keys;
-
    namespace detail { class wallet_db_impl; }
 
    class wallet_db
@@ -28,11 +26,11 @@ namespace bts { namespace wallet {
 
          int32_t              new_wallet_record_index();
          int32_t              new_key_child_index( const address& parent_account_address );
-         fc::ecc::private_key get_private_key( const fc::sha512& password, int index );
+         private_key_type get_private_key( const fc::sha512& password, int index );
 
-         fc::ecc::private_key new_private_key( const fc::sha512& password,
-                                               const address& parent_account_address = address(),
-                                               bool store_key = true );
+         private_key_type new_private_key( const fc::sha512& password,
+                                           const address& parent_account_address = address(),
+                                           bool store_key = true );
 
          void        set_property( property_enum property_id, const fc::variant& v );
          fc::variant get_property( property_enum property_id )const;
@@ -42,7 +40,7 @@ namespace bts { namespace wallet {
          void cache_balance( const bts::blockchain::balance_record& b );
          void cache_account( const wallet_account_record& );
          void cache_memo( const memo_status& memo, 
-                          const fc::ecc::private_key& account_key,
+                          const private_key_type& account_key,
                           const fc::sha512& password );
          void cache_order( const bts::blockchain::market_order& );
 
@@ -57,8 +55,8 @@ namespace bts { namespace wallet {
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
-         private_keys get_account_private_keys( const fc::sha512& password )const;
-         string       get_account_name( const address& account_address )const;
+         vector<private_key_type>   get_account_private_keys( const fc::sha512& password )const;
+         string                     get_account_name( const address& account_address )const;
 
          owallet_account_record lookup_account( const address& address_of_public_key )const;
          owallet_account_record lookup_account( const string& account_name )const;

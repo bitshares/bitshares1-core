@@ -29,6 +29,7 @@
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
+#define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
 
 /**
  * The number of delegates that the blockchain is designed to support
