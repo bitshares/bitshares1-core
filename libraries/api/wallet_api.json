@@ -1497,7 +1497,26 @@
             {
                 "name" : "paying_account_name",
                 "type" : "account_name",
-                "description" : "The account to pay transaction fees; leave empty to pay with publishing account.",
+                "description" : "The account to pay transaction fees or leave empty to pay with publishing account",
+                "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_publish_version",
+         "description" : "Publish your current client version to the specified account's public data record",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "publishing_account_name",
+                "type" : "account_name",
+                "description" : "The account to publish the client version under"
+            },
+            {
+                "name" : "paying_account_name",
+                "type" : "account_name",
+                "description" : "The account to pay transaction fees with or leave empty to pay with publishing account",
                 "default_value" : ""
             }
          ],

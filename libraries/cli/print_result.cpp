@@ -131,10 +131,12 @@ namespace bts { namespace cli {
     _command_to_function["wallet_market_cover"]                 = &f_wallet_transfer;
     _command_to_function["wallet_market_add_collateral"]        = &f_wallet_transfer;
     _command_to_function["wallet_market_cancel_order"]          = &f_wallet_transfer;
+    _command_to_function["wallet_publish_version"]              = &f_wallet_transfer;
     _command_to_function["wallet_publish_slate"]                = &f_wallet_transfer;
-    _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
     _command_to_function["wallet_publish_price_feed"]           = &f_wallet_transfer;
+    _command_to_function["wallet_publish_feeds"]                = &f_wallet_transfer;
     _command_to_function["wallet_scan_transaction"]             = &f_wallet_transfer;
+    _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
 
     _command_to_function["wallet_list"] = &f_wallet_list;
 

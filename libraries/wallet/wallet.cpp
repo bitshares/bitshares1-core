@@ -2969,47 +2969,50 @@ namespace bts { namespace wallet {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
 
+   // TODO: Refactor publish_{slate|version} are exactly the same
    wallet_transaction_record wallet::publish_slate(
            const string& account_to_publish_under,
-           string account_to_pay_with,
+           const string& account_to_pay_with,
            bool sign )
    { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
 
-       if( account_to_pay_with.empty() )
-         account_to_pay_with = account_to_publish_under;
+      string paying_account = account_to_pay_with;
+      if( paying_account.empty() )
+        paying_account = account_to_publish_under;
 
-       if( !is_receive_account( account_to_pay_with ) )
-           FC_THROW_EXCEPTION( unknown_account, "Unknown paying account name!",
-                               ("paying_account_name", account_to_pay_with) );
+      if( !is_receive_account( paying_account ) )
+          FC_THROW_EXCEPTION( unknown_receive_account, "Unknown paying account!", ("paying_account", paying_account) );
+
+      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
+      if( !current_account.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown publishing account!", ("account_to_publish_under", account_to_publish_under) );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
-      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account );
-      auto payer_public_key = get_account_public_key( account_to_pay_with );
+      const auto payer_public_key = get_account_public_key( paying_account );
 
-
-      auto slate_id = select_slate( trx, 0, vote_all );
-      FC_ASSERT(slate_id != 0, "Cannot publish the null slate!");
+      const auto slate_id = select_slate( trx, 0, vote_all );
+      if( slate_id == 0 )
+          FC_THROW_EXCEPTION( invalid_slate, "Cannot publish the null slate!" );
 
       fc::mutable_variant_object public_data;
-      if( current_account->public_data.is_object()  )
+      if( current_account->public_data.is_object() )
           public_data = current_account->public_data.get_object();
 
-      public_data["slate_id"] = slate_id;
+      public_data[ "slate_id" ] = slate_id;
 
       trx.update_account( current_account->id,
                           current_account->delegate_pay_rate(),
-                          fc::variant_object(public_data),
+                          fc::variant_object( public_data ),
                           optional<public_key_type>() );
       my->authorize_update( required_signatures, current_account );
 
-      auto required_fees = get_transaction_fee();
+      const auto required_fees = get_transaction_fee();
 
-      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      if( current_account->is_delegate() && required_fees.amount < current_account->delegate_pay_balance() )
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
@@ -3036,7 +3039,76 @@ namespace bts { namespace wallet {
       cache_transaction( trx, record );
 
       return record;
-     } FC_CAPTURE_AND_RETHROW( (account_to_publish_under) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
+
+   // TODO: Refactor publish_{slate|version} are exactly the same
+   wallet_transaction_record wallet::publish_version(
+           const string& account_to_publish_under,
+           const string& account_to_pay_with,
+           bool sign )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      string paying_account = account_to_pay_with;
+      if( paying_account.empty() )
+        paying_account = account_to_publish_under;
+
+      if( !is_receive_account( paying_account ) )
+          FC_THROW_EXCEPTION( unknown_receive_account, "Unknown paying account!", ("paying_account", paying_account) );
+
+      auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
+      if( !current_account.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown publishing account!", ("account_to_publish_under", account_to_publish_under) );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      const auto payer_public_key = get_account_public_key( paying_account );
+
+      fc::mutable_variant_object public_data;
+      if( current_account->public_data.is_object() )
+          public_data = current_account->public_data.get_object();
+
+      const auto version = string( BTS_CLIENT_VERSION );
+      public_data[ "version" ] = version;
+
+      trx.update_account( current_account->id,
+                          current_account->delegate_pay_rate(),
+                          fc::variant_object( public_data ),
+                          optional<public_key_type>() );
+      my->authorize_update( required_signatures, current_account );
+
+      const auto required_fees = get_transaction_fee();
+
+      if( current_account->is_delegate() && required_fees.amount < current_account->delegate_pay_balance() )
+      {
+        // withdraw delegate pay...
+        trx.withdraw_pay( current_account->id, required_fees.amount );
+        required_signatures.insert( current_account->active_key() );
+      }
+      else
+      {
+         my->withdraw_to_transaction( required_fees,
+                                      payer_public_key,
+                                      trx,
+                                      required_signatures );
+      }
+
+      auto entry = ledger_entry();
+      entry.from_account = payer_public_key;
+      entry.to_account = payer_public_key;
+      entry.memo = "publish version " + version;
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t count )
    {

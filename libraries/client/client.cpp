@@ -1843,6 +1843,14 @@ config load_config( const fc::path& datadir )
        return record;
     }
 
+    wallet_transaction_record detail::client_impl::wallet_publish_version( const string& publishing_account_name,
+                                                                           const string& paying_account_name )
+    {
+       const auto record = _wallet->publish_version( publishing_account_name, paying_account_name );
+       network_broadcast_transaction( record.trx );
+       return record;
+    }
+
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
