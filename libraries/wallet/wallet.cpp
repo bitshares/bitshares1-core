@@ -3766,15 +3766,17 @@ namespace bts { namespace wallet {
       const auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
       {
+        string parent_name;
         try
         {
-          const auto parent_name = account_to_register.substr( pos+1, string::npos );
+          parent_name = account_to_register.substr( pos+1, string::npos );
           const auto parent_acct = get_account( parent_name );
           required_signatures.insert( parent_acct.active_address() );
         }
         catch( const unknown_account& )
         {
-          FC_THROW_EXCEPTION( unauthorized_child_account, "Need parent account to authorize registration!" );
+          FC_THROW_EXCEPTION( unauthorized_child_account, "Need parent account to authorize registration!",
+                              ("child_account",account_to_register)("parent_account",parent_name) );
         }
       }
 
