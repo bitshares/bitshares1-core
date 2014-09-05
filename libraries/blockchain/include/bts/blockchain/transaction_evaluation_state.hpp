@@ -86,6 +86,7 @@ namespace bts { namespace blockchain {
          // track deposits and withdraws by asset type
          unordered_map<asset_id_type, asset>         deposits;
          unordered_map<asset_id_type, asset>         withdraws;
+         unordered_map<asset_id_type, share_type>    rewards;
 
          asset                                       required_fees;
          /**
@@ -133,4 +134,4 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (validation_error)
            (required_deposits)
            (provided_deposits)
-           (deposits)(withdraws)(balance)(net_delegate_votes)(balance) )
+           (deposits)(withdraws)(rewards)(balance)(net_delegate_votes)(balance) )
