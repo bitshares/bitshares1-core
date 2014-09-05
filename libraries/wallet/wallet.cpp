@@ -3745,14 +3745,14 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      auto registered_account = my->_blockchain->get_account_record( account_to_register );
-      FC_ASSERT( !registered_account.valid(), "the account has already been registered",
-                 ("account_to_register",account_to_register) );
+      const auto registered_account = my->_blockchain->get_account_record( account_to_register );
+      if( registered_account.valid() )
+          FC_THROW_EXCEPTION( duplicate_account_name, "This account name has already been registered!" );
 
-      auto payer_public_key = get_account_public_key( pay_with_account_name );
+      const auto payer_public_key = get_account_public_key( pay_with_account_name );
       address from_account_address( payer_public_key );
 
-      auto account_public_key = get_account_public_key( account_to_register );
+      const auto account_public_key = get_account_public_key( account_to_register );
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
@@ -3763,15 +3763,18 @@ namespace bts { namespace wallet {
                             account_public_key, // active
                             delegate_pay_rate <= 100 ? delegate_pay_rate : 255 );
 
-      auto pos = account_to_register.find( '.' );
+      const auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
       {
-        try {
-          auto parent_name = account_to_register.substr( pos+1, string::npos );
-          auto parent_acct = get_account( parent_name );
+        try
+        {
+          const auto parent_name = account_to_register.substr( pos+1, string::npos );
+          const auto parent_acct = get_account( parent_name );
           required_signatures.insert( parent_acct.active_address() );
-        } catch (unknown_account) {
-          FC_THROW_EXCEPTION (unknown_account, "Parent account was not found to authorize registration.");
+        }
+        catch( const unknown_account& )
+        {
+          FC_THROW_EXCEPTION( unauthorized_child_account, "Need parent account to authorize registration!" );
         }
       }
 
