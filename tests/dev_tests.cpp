@@ -292,7 +292,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_market_list_bids USD XTS" );
    exec( clientb, "wallet_market_order_list USD XTS" );
    auto result = clientb->wallet_market_order_list( "USD", "XTS" );
-   exec( clientb, "wallet_market_cancel_order " + string( result[0].market_index.owner ) );
+   exec( clientb, "wallet_market_cancel_order " + string( result.begin()->first ) );
    exec( clienta, "blockchain_market_order_book USD XTS" );
    produce_block( clientb );
    exec( clientb, "wallet_market_order_list USD XTS" );
@@ -300,7 +300,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "balance" );
 
    result = clientb->wallet_market_order_list( "USD", "XTS" );
-   exec( clientb, "wallet_market_cancel_order " + string( result[0].market_index.owner ) );
+   exec( clientb, "wallet_market_cancel_order " + string( result.begin()->first ) );
    produce_block( clientb );
    exec( clientb, "blockchain_market_list_bids USD XTS" );
    exec( clientb, "wallet_account_transaction_history" );

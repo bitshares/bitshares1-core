@@ -3274,20 +3274,9 @@ config load_config( const fc::path& datadir )
            const string& from_account,
            double quantity,
            const string& quantity_symbol,
-           const address& order_id )
-   {
-      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, order_id );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   wallet_transaction_record client_impl::wallet_market_cover2(
-           const string& from_account,
-           double quantity,
-           const string& quantity_symbol,
            const order_id_type& short_id )
    {
-      const auto record = _wallet->cover_short2( from_account, quantity, quantity_symbol, short_id );
+      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, short_id );
       network_broadcast_transaction( record.trx );
       return record;
    }
@@ -3415,7 +3404,7 @@ config load_config( const fc::path& datadir )
    }
 
    wallet_transaction_record client_impl::wallet_market_add_collateral( const std::string &from_account_name,
-                                                                        const address &short_id,
+                                                                        const order_id_type &short_id,
                                                                         const share_type &collateral_to_add )
    {
       const auto record = _wallet->add_collateral( from_account_name, short_id, collateral_to_add );
@@ -3423,41 +3412,17 @@ config load_config( const fc::path& datadir )
       return record;
    }
 
-   wallet_transaction_record client_impl::wallet_market_add_collateral2( const std::string &from_account_name,
-                                                                         const order_id_type &short_id,
-                                                                         const share_type &collateral_to_add )
-   {
-      const auto record = _wallet->add_collateral2( from_account_name, short_id, collateral_to_add );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
-                                                               const string& base_symbol,
-                                                               int64_t limit,
-                                                               const string& account_name )
-   {
-      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
-   }
-
-   map<order_id_type, market_order> client_impl::wallet_market_order_list2( const string& quote_symbol,
+   map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                             const string& base_symbol,
                                                                             int64_t limit,
                                                                             const string& account_name )
    {
-      return _wallet->get_market_orders2( quote_symbol, base_symbol, limit, account_name );
+      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }
 
-   wallet_transaction_record client_impl::wallet_market_cancel_order( const address& order_address )
+   wallet_transaction_record client_impl::wallet_market_cancel_order( const order_id_type& order_id )
    {
-      const auto record = _wallet->cancel_market_order( order_address );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   wallet_transaction_record client_impl::wallet_market_cancel_order2( const order_id_type& order_id )
-   {
-      const auto record = _wallet->cancel_market_order2( order_id );
+      const auto record = _wallet->cancel_market_order( order_id );
       network_broadcast_transaction( record.trx );
       return record;
    }

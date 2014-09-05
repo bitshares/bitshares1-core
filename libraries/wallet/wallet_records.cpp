@@ -51,46 +51,4 @@ namespace bts { namespace wallet {
       return fc::raw::unpack<private_key_type>( plain_text );
    } FC_CAPTURE_AND_RETHROW() }
 
-   order_type_enum market_order_status::get_type()const
-   {
-       return order.type;
-   }
-
-   order_id_type market_order_status::get_id()const
-   {
-       return order.get_id();
-   }
-
-   asset market_order_status::get_balance()const
-   {
-       return order.get_balance();
-   }
-
-   price market_order_status::get_price()const
-   {
-       return order.get_price();
-   }
-
-   asset market_order_status::get_quantity()const
-   {
-       return order.get_quantity();
-   }
-
-   asset market_order_status::get_proceeds()const
-   {
-      asset_id_type asset_id;
-      switch( get_type() )
-      {
-         case bid_order:
-            asset_id = order.market_index.order_price.base_asset_id;
-            break;
-         case ask_order:
-            asset_id = order.market_index.order_price.quote_asset_id;
-            break;
-         default:
-            FC_ASSERT( !"Not Implemented" );
-      }
-      return asset( proceeds, asset_id );
-   }
-
 } } // bts::wallet

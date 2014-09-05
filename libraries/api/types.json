@@ -472,15 +472,6 @@
           "default_example" : "Alice"
       },
       {
-         "type_name" : "market_order_status",
-         "cpp_return_type" : "bts::wallet::market_order_status"
-      },
-      {
-         "type_name" : "market_order_status_array",
-         "container_type" : "array",
-         "contained_type" : "market_order_status"
-      },
-      {
          "type_name" : "map< account_name, share_type >",
          "cpp_return_type" : "std::unordered_map< std::string, bts::blockchain::share_type >"
       },

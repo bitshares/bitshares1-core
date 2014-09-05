@@ -94,13 +94,11 @@ namespace bts { namespace cli {
       const auto& transactions = result.as<vector<pretty_transaction>>();
       out << pretty_transaction_list(transactions, _client); };
 
-    _command_to_function["wallet_market_order_list"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
-      const auto& market_orders = result.as<vector<market_order>>();
-      out << pretty_market_orders(market_orders, _client); };
-
-    _command_to_function["wallet_market_order_list2"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["wallet_market_order_list"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result )
+    {
       const auto& market_orders = result.as<map<order_id_type, market_order>>();
-      out << pretty_market_orders2(market_orders, _client); };
+      out << pretty_order_list( market_orders, _client );
+    };
 
     _command_to_function["blockchain_market_list_asks"] = &f_blockchain_market_list;
     _command_to_function["blockchain_market_list_bids"] = &f_blockchain_market_list;
@@ -214,7 +212,10 @@ namespace bts { namespace cli {
   void print_result::f_blockchain_market_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
   {
     const auto& market_orders = result.as<vector<market_order>>();
-    out << pretty_market_orders(market_orders, _client);
+    map<order_id_type, market_order> order_map;
+    for( const auto& order : market_orders )
+        order_map[ order.get_id() ] = order;
+    out << pretty_order_list( order_map, _client );
   }
 
   void print_result::f_wallet_list_my_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result)

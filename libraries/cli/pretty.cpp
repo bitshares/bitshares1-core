@@ -720,46 +720,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
     return out.str();
 }
 
-string pretty_market_orders( const vector<market_order>& market_orders, cptr client )
-{
-    if( market_orders.empty() ) return "No market orders found.\n";
-    FC_ASSERT( client != nullptr );
-
-    std::stringstream out;
-    out << std::left;
-
-    out << std::setw( 12 ) << "TYPE";
-    out << std::setw( 20 ) << "QUANTITY";
-    out << std::setw( 30 ) << "PRICE";
-    out << std::setw( 20 ) << "BALANCE";
-    out << std::setw( 20 ) << "COST";
-    out << std::setw( 20 ) << "COLLATERAL";
-    out << std::setw( 36 ) << "ID";
-    out << "\n";
-
-    out << pretty_line( 128 );
-    out << "\n";
-
-    for( const auto& order : market_orders )
-    {
-        out << std::setw( 12 ) << variant( order.type ).as_string();
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() );
-        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
-        if( order.type != cover_order )
-           out << std::setw( 20 ) << "N/A";
-        else
-           out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( *order.collateral ) );
-        out << std::setw( 36 ) << fc::variant( order.market_index.owner ).as_string();
-
-        out << "\n";
-    }
-
-    return out.str();
-}
-
-string pretty_market_orders2( const map<order_id_type, market_order>& order_items, cptr client )
+string pretty_order_list( const map<order_id_type, market_order>& order_items, cptr client )
 {
     if( order_items.empty() ) return "No market orders found.\n";
     FC_ASSERT( client != nullptr );
