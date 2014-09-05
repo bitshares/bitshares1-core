@@ -5803,11 +5803,6 @@ namespace bts { namespace wallet {
       return result;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
 
-
-
-
-
-
    account_balance_summary_type wallet::get_account_rewards( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
@@ -5868,18 +5863,6 @@ namespace bts { namespace wallet {
 
       return result;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
-
-
-
-
-
-
-
-
-
-
-
-
 
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    { try {
