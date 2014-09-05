@@ -264,10 +264,11 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
     out << std::setw( 14 ) << "RELIABILITY";
     out << std::setw(  9 ) << "PAY RATE";
     out << std::setw( 20 ) << "PAY BALANCE";
-    out << std::setw( 10 ) << "LAST BLOCK";
+    out << std::setw( 12 ) << "LAST BLOCK";
+    out << std::setw( 12 ) << "VERSION";
     out << "\n";
 
-    out << pretty_line( 124 );
+    out << pretty_line( 138 );
     out << "\n";
 
     const auto current_slot_timestamp = blockchain::get_slot_start_time( blockchain::now() );
@@ -304,7 +305,16 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( pay_balance );
 
         const auto last_block = delegate_record.delegate_info->last_block_num_produced;
-        out << std::setw( 10 ) << ( last_block > 0 ? std::to_string( last_block ) : "NONE" );
+        out << std::setw( 12 ) << ( last_block > 0 ? std::to_string( last_block ) : "NONE" );
+
+        string version;
+        if( delegate_record.public_data.is_object()
+            && delegate_record.public_data.get_object().contains( "version" )
+            && delegate_record.public_data.get_object()[ "version" ].is_string() )
+        {
+            version = delegate_record.public_data.get_object()[ "version" ].as_string();
+        }
+        out << std::setw( 12) << version;
 
         out << "\n";
     }
