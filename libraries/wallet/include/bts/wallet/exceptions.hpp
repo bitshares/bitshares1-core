@@ -45,6 +45,7 @@ namespace bts { namespace wallet {
   FC_DECLARE_DERIVED_EXCEPTION( duplicate_key,              bts::wallet::wallet_exception, 20038, "duplicate key" );
   FC_DECLARE_DERIVED_EXCEPTION( unauthorized_child_account, bts::wallet::wallet_exception, 20039, "unauthorized child account" );
   FC_DECLARE_DERIVED_EXCEPTION( invalid_slate,              bts::wallet::wallet_exception, 20040, "invalid slate" );
+  FC_DECLARE_DERIVED_EXCEPTION( private_key_not_found,      bts::wallet::wallet_exception, 20041, "private key not found" );
   // registered in wallet.cpp
 
 } } // bts::wallet

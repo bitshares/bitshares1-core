@@ -501,7 +501,7 @@ namespace bts { namespace wallet {
         auto dot = account->name.find('.');
         while( dot != string::npos )
         {
-          account = _blockchain->get_account_record( account->name.substr(dot+1) );
+          account = _blockchain->get_account_record( account->name.substr( dot+1 ) );
           FC_ASSERT( account.valid(), "Parent account is not valid; this should never happen." );
           oauthority_key = _wallet_db.lookup_key(account->active_address());
           if( accept_key() ) return;
@@ -1014,14 +1014,20 @@ namespace bts { namespace wallet {
               total_fee -= amount;
 
           auto okey_rec = _wallet_db.lookup_key( op.bid_index.owner );
-          if( okey_rec && okey_rec->has_private_key() )
+          if( okey_rec.valid() && okey_rec->has_private_key() )
           {
              /* Restore key label */
-             okey_rec->memo = "BID-" + variant( address( op.bid_index.owner ) ).as_string().substr( 3, 8 );
-             _wallet_db.store_key( *okey_rec );
-
-             auto order = _blockchain->get_market_bid( op.bid_index );
-             _wallet_db.update_market_order( op.bid_index.owner, order, trx_rec.trx.id() );
+             const auto order = _blockchain->get_market_bid( op.bid_index );
+             if( order.valid() )
+             {
+                 okey_rec->memo = "BID-" + string( order->get_id() ).substr( 0, 8 );
+                 _wallet_db.store_key( *okey_rec );
+                 _wallet_db.update_market_order( op.bid_index.owner, order, trx_rec.trx.id() );
+             }
+             else
+             {
+                 elog( "Unknown index in bid operation: ${op}", ("op",op) );
+             }
 
              for( auto& entry : trx_rec.ledger_entries )
              {
@@ -1071,14 +1077,20 @@ namespace bts { namespace wallet {
               total_fee -= amount;
 
           auto okey_rec = _wallet_db.lookup_key( op.ask_index.owner );
-          if( okey_rec && okey_rec->has_private_key() )
+          if( okey_rec.valid() && okey_rec->has_private_key() )
           {
              /* Restore key label */
-             okey_rec->memo = "ASK-" + variant( address( op.ask_index.owner ) ).as_string().substr( 3, 8 );
-             _wallet_db.store_key( *okey_rec );
-
-             auto order = _blockchain->get_market_ask( op.ask_index );
-             _wallet_db.update_market_order( op.ask_index.owner, order, trx_rec.trx.id() );
+             const auto order = _blockchain->get_market_ask( op.ask_index );
+             if( order.valid() )
+             {
+                 okey_rec->memo = "ASK-" + string( order->get_id() ).substr( 0, 8 );
+                 _wallet_db.store_key( *okey_rec );
+                 _wallet_db.update_market_order( op.ask_index.owner, order, trx_rec.trx.id() );
+             }
+             else
+             {
+                 elog( "Unknown index in ask operation: ${op}", ("op",op) );
+             }
 
              for( auto& entry : trx_rec.ledger_entries )
              {
@@ -1128,14 +1140,20 @@ namespace bts { namespace wallet {
               total_fee -= amount;
 
           auto okey_rec = _wallet_db.lookup_key( op.short_index.owner );
-          if( okey_rec && okey_rec->has_private_key() )
+          if( okey_rec.valid() && okey_rec->has_private_key() )
           {
              /* Restore key label */
-             okey_rec->memo = "SHORT-" + variant( address( op.short_index.owner ) ).as_string().substr( 3, 8 );
-             _wallet_db.store_key( *okey_rec );
-
-             auto order = _blockchain->get_market_short( op.short_index );
-             _wallet_db.update_market_order( op.short_index.owner, order, trx_rec.trx.id() );
+             const auto order = _blockchain->get_market_short( op.short_index );
+             if( order.valid() )
+             {
+                 okey_rec->memo = "SHORT-" + string( order->get_id() ).substr( 0, 8 );
+                 _wallet_db.store_key( *okey_rec );
+                 _wallet_db.update_market_order( op.short_index.owner, order, trx_rec.trx.id() );
+             }
+             else
+             {
+                 elog( "Unknown index in short operation: ${op}", ("op",op) );
+             }
 
              for( auto& entry : trx_rec.ledger_entries )
              {
@@ -4422,8 +4440,8 @@ namespace bts { namespace wallet {
 
         const auto owner_address = order->get_owner();
         const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
-        // TODO: Throw proper exception
-        FC_ASSERT( owner_key_record.valid() && owner_key_record->has_private_key() );
+        if( !owner_key_record.valid() || !owner_key_record->has_private_key() )
+            FC_THROW_EXCEPTION( private_key_not_found, "Cannot find the private key for that market order!" );
 
         const auto account_key_record = my->_wallet_db.lookup_key( owner_key_record->account_address );
         FC_ASSERT( account_key_record.valid() && account_key_record->has_private_key() );
@@ -4556,8 +4574,8 @@ namespace bts { namespace wallet {
        auto order_address = order_key;
 
        signed_transaction trx;
-       unordered_set<address>     required_signatures;
-       required_signatures.insert(order_address);
+       unordered_set<address> required_signatures;
+       required_signatures.insert( order_address );
 
        private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
@@ -4605,7 +4623,7 @@ namespace bts { namespace wallet {
 
        auto key_rec = my->_wallet_db.lookup_key( order_key );
        FC_ASSERT( key_rec.valid() );
-       key_rec->memo = "BID-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+       key_rec->memo = "BID";
        my->_wallet_db.store_key( *key_rec );
 
        if( sign ) sign_transaction( trx, required_signatures );
@@ -4716,7 +4734,7 @@ namespace bts { namespace wallet {
 
        auto key_rec = my->_wallet_db.lookup_key( order_key );
        FC_ASSERT( key_rec.valid() );
-       key_rec->memo = "ASK-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+       key_rec->memo = "ASK";
        my->_wallet_db.store_key( *key_rec );
 
        if( sign ) sign_transaction( trx, required_signatures );
@@ -4810,7 +4828,7 @@ namespace bts { namespace wallet {
 
        auto key_rec = my->_wallet_db.lookup_key( order_key );
        FC_ASSERT( key_rec.valid() );
-       key_rec->memo = "SHORT-" + variant( address( order_key ) ).as_string().substr( 3, 8 );
+       key_rec->memo = "SHORT";
        my->_wallet_db.store_key( *key_rec );
 
        if( sign ) sign_transaction( trx, required_signatures );
