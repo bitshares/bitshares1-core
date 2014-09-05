@@ -1,6 +1,6 @@
 file(GLOB HEADERS "include/bts/mail/*.hpp")
 
-set(SOURCES message.cpp server.cpp )
+set(SOURCES message.cpp server.cpp client.cpp)
 
 add_library( bts_mail ${SOURCES} ${HEADERS} )
 

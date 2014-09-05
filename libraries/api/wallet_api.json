@@ -341,7 +341,7 @@
         "aliases" : ["history", "listtransactions"]
       },
       {
-        "method_name": "wallet_transaction_remove",
+        "method_name": "wallet_remove_transaction",
         "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
         "return_type": "void",
         "parameters" :
@@ -353,7 +353,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["remove_transaction"]
+        "aliases" : ["remove_transaction", "wallet_transaction_remove"]
       },
       {
         "method_name": "wallet_get_pending_transaction_errors",
@@ -635,27 +635,28 @@
         "aliases" : ["get_transaction"]
       },
       {
-        "method_name": "wallet_transaction_scan",
+        "method_name": "wallet_scan_transaction",
         "description": "Scans the specified transaction",
         "return_type": "void",
         "parameters" :
           [
             {
-              "name" : "block_num",
-              "type" : "uint32_t",
-              "description" : "the block containing the transaction"
-            },
-            {
               "name" : "transaction_id",
               "type" : "string",
               "description" : "the id (or id prefix) of the transaction"
+            },
+            {
+              "name" : "overwrite_existing",
+              "type" : "bool",
+              "description" : "true to overwrite existing wallet transaction record and false otherwise",
+              "default_value": false
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["scan_transaction", "wallet_scan_transaction"]
+        "aliases" : ["scan_transaction", "wallet_transaction_scan"]
       },
       {
-        "method_name": "wallet_transaction_rebroadcast",
+        "method_name": "wallet_rebroadcast_transaction",
         "description": "Rebroadcasts the specified transaction",
         "return_type": "void",
         "parameters" :
@@ -667,12 +668,12 @@
             }
           ],
         "prerequisites" : ["wallet_open"],
-        "aliases" : ["rebroadcast", "wallet_rebroadcast_transaction"]
+        "aliases" : ["rebroadcast", "wallet_transaction_rebroadcast"]
       },
       {
          "method_name" : "wallet_account_register",
          "description" : "Updates the data published about a given account",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "account_name",
@@ -692,7 +693,7 @@
                },
                {
                   "name" : "delegate_pay_rate",
-                  "type" : "uint32_t",
+                  "type" : "uint8_t",
                   "description" : "A value between 0 and 100 for delegates, 255 for non delegates",
                   "default_value" : 255
                }
@@ -723,7 +724,7 @@
       {
          "method_name" : "wallet_account_update_registration",
          "description" : "Updates the data published about a given account",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "account_name",
@@ -754,7 +755,7 @@
       {
          "method_name" : "wallet_account_update_active_key",
          "description" : "Updates the specified account's active key and broadcasts the transaction.",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                 "name" : "account_to_update",
@@ -857,7 +858,7 @@
       {
          "method_name" : "wallet_asset_create",
          "description" : "Creates a new user issued asset",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "symbol",
@@ -910,7 +911,7 @@
       {
          "method_name" : "wallet_asset_issue",
          "description" : "Issues new shares of a given asset type",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
                {
                   "name" : "amount",
@@ -970,7 +971,7 @@
       {
          "method_name"  : "wallet_delegate_withdraw_pay",
          "description"  : "Used to transfer some of the delegate's pay from their balance",
-         "return_type"  : "signed_transaction",
+         "return_type"  : "transaction_record",
          "parameters"   : [
             {
               "name" : "delegate_name",
@@ -1012,9 +1013,24 @@
          "aliases" : ["wallet_set_priority_fee", "set_priority_fee", "settrxfee", "setfee", "set_fee"]
       },
       {
+         "method_name"  : "wallet_get_transaction_fee",
+         "description"  : "Returns ",
+         "return_type"  : "asset",
+         "parameters"   : [
+         {
+            "name" : "symbol",
+            "type" : "asset_symbol",
+            "description" : "the wallet transaction if paid in the given asset type",
+            "default_value" : "XTS"
+         }
+         ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["wallet_get_priority_fee", "get_priority_fee", "gettrxfee", "getfee", "get_fee"]
+      },
+      {
          "method_name" : "wallet_market_submit_bid",
          "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1054,7 +1070,7 @@
       {
          "method_name" : "wallet_market_submit_ask",
          "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1094,7 +1110,7 @@
       {
          "method_name" : "wallet_market_submit_short",
          "description" : "Used to place a request to short sell a quantity of assets at a price specified",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1129,7 +1145,7 @@
       {
          "method_name" : "wallet_market_cover",
          "description" : "Used to place a request to cover an existing short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1158,7 +1174,7 @@
       {
          "method_name" : "wallet_market_cover2",
          "description" : "Used to place a request to cover an existing short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1187,7 +1203,7 @@
       {
          "method_name" : "wallet_market_add_collateral",
          "description" : "Add collateral to a short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1211,7 +1227,7 @@
       {
          "method_name" : "wallet_market_add_collateral2",
          "description" : "Add collateral to a short position",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "from_account_name",
@@ -1297,7 +1313,7 @@
       {
          "method_name" : "wallet_market_cancel_order",
          "description" : "Cancel an order",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "order_id",
@@ -1311,7 +1327,7 @@
       {
          "method_name" : "wallet_market_cancel_order2",
          "description" : "Cancel an order",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "order_id",
@@ -1471,7 +1487,7 @@
       {
          "method_name" : "wallet_publish_slate",
          "description" : "Publishes the current wallet delegate slate to the public data associated with the account",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
             {
                 "name" : "publishing_account_name",
@@ -1555,7 +1571,7 @@
       {
          "method_name" : "wallet_publish_price_feed",
          "description" : "publishes a price feed for BitAssets, only active delegates may do this",
-         "return_type" : "signed_transaction",
+         "return_type" : "transaction_record",
          "parameters"  : [
              {
                 "name" : "delegate_account",
@@ -1571,6 +1587,24 @@
                 "name" : "asset_symbol",
                 "type" : "asset_symbol",
                 "description" : "the type of asset being priced"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_publish_feeds",
+         "description" : "publishes a set of feeds for BitAssets, only active delegates may do this",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+             {
+                "name" : "delegate_account",
+                "type" : "account_name",
+                "description" : "the delegate to publish the price under"
+             },
+             {
+                "name" : "symbol_to_price_map",
+                "type" : "price_map",
+                "description" : "maps the BitAsset symbol to the price per BTSX"
              }
          ],
          "prerequisites" : ["wallet_unlocked"]

@@ -116,8 +116,24 @@ namespace bts { namespace cli {
       const auto& balances = result.as<account_balance_summary_type>();
       out << pretty_balances(balances, _client); };
 
-    _command_to_function["wallet_transfer"] = &f_wallet_transfer;
-    _command_to_function["wallet_get_transaction"] = &f_wallet_transfer;
+    _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
+    _command_to_function["wallet_transfer_from"]                = &f_wallet_transfer;
+    _command_to_function["wallet_get_transaction"]              = &f_wallet_transfer;
+    _command_to_function["wallet_account_register"]             = &f_wallet_transfer;
+    _command_to_function["wallet_account_update_registration"]  = &f_wallet_transfer;
+    _command_to_function["wallet_account_update_active_key"]    = &f_wallet_transfer;
+    _command_to_function["wallet_asset_create"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_asset_issue"]                  = &f_wallet_transfer;
+    _command_to_function["wallet_delegate_withdraw_pay"]        = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_bid"]            = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_ask"]            = &f_wallet_transfer;
+    _command_to_function["wallet_market_submit_short"]          = &f_wallet_transfer;
+    _command_to_function["wallet_market_cover"]                 = &f_wallet_transfer;
+    _command_to_function["wallet_market_add_collateral"]        = &f_wallet_transfer;
+    _command_to_function["wallet_market_cancel_order"]          = &f_wallet_transfer;
+    _command_to_function["wallet_publish_slate"]                = &f_wallet_transfer;
+    _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
+    _command_to_function["wallet_publish_price_feed"]           = &f_wallet_transfer;
 
     _command_to_function["wallet_list"] = &f_wallet_list;
 
@@ -851,15 +867,19 @@ namespace bts { namespace cli {
     out << std::setw(20) << "TIME"
       << std::setw(20) << "HIGHEST BID"
       << std::setw(20) << "LOWEST ASK"
+      << std::setw(20) << "OPENING PRICE"
+      << std::setw(20) << "CLOSING PRICE"
       << std::setw(20) << "TRADING VOLUME"
       << std::setw(20) << "AVERAGE PRICE"
-      << "\n" << std::string(100, '-') << "\n";
+      << "\n" << std::string(140, '-') << "\n";
     
     for(auto point : points)
     {
       out << std::setw(20) << pretty_timestamp(point.timestamp)
         << std::setw(20) << point.highest_bid
         << std::setw(20) << point.lowest_ask
+        << std::setw(20) << point.opening_price
+        << std::setw(20) << point.closing_price
         << std::setw(20) << _client->get_chain()->to_pretty_asset(asset(point.volume));
       if(point.recent_average_price)
         out << std::setw(20) << *point.recent_average_price;

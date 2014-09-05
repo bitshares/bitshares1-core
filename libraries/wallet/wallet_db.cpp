@@ -270,8 +270,8 @@ namespace bts { namespace wallet {
       return next_child_index;
    }
 
-   fc::ecc::private_key wallet_db::get_private_key( const fc::sha512& password,
-                                                    int index )
+   private_key_type wallet_db::get_private_key( const fc::sha512& password,
+                                                int index )
    {
       FC_ASSERT( wallet_master_key.valid() );
 
@@ -281,9 +281,9 @@ namespace bts { namespace wallet {
       return new_priv_key;
    }
 
-   fc::ecc::private_key wallet_db::new_private_key( const fc::sha512& password,
-                                                    const address& parent_account_address,
-                                                    bool store_key )
+   private_key_type wallet_db::new_private_key( const fc::sha512& password,
+                                                const address& parent_account_address,
+                                                bool store_key )
    {
       FC_ASSERT( wallet_master_key.valid() );
 
@@ -386,7 +386,7 @@ namespace bts { namespace wallet {
    }
 
    void wallet_db::store_key( const key_data& key_to_store )
-   {
+   { try {
       auto key_itr = keys.find( key_to_store.get_address() );
       if( key_itr != keys.end() )
       {
@@ -396,14 +396,17 @@ namespace bts { namespace wallet {
          if( key_to_store.has_private_key())
          {
             auto oacct = lookup_account( key_to_store.account_address );
-            FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
-            oacct->is_my_account = true;
-            store_record( *oacct );
-            cache_account( *oacct );
-            ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
-                  ("key",key_to_store.public_key)
-                  ("account",key_to_store.account_address)
-                 ("account_name",get_account_name(key_to_store.account_address)) );
+            if( oacct )
+            {
+              // FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
+               oacct->is_my_account = true;
+               store_record( *oacct );
+               cache_account( *oacct );
+               ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
+                     ("key",key_to_store.public_key)
+                     ("account",key_to_store.account_address)
+                    ("account_name",get_account_name(key_to_store.account_address)) );
+            }
          }
          else
          {
@@ -433,7 +436,7 @@ namespace bts { namespace wallet {
          ilog( "indexing key ${k}", ("k",address(pts_address(key,false,56) )  ) );
          ilog( "indexing key ${k}", ("k",address(pts_address(key,true,56) )  ) );
       }
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    vector<wallet_transaction_record> wallet_db::get_pending_transactions()const
    {
@@ -492,7 +495,7 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("address",a) ) }
 
    void wallet_db::cache_memo( const memo_status& memo,
-                               const fc::ecc::private_key& account_key,
+                               const private_key_type& account_key,
                                const fc::sha512& password )
    {
       key_data data;
@@ -504,33 +507,45 @@ namespace bts { namespace wallet {
       store_key( data );
    }
 
-   private_keys wallet_db::get_account_private_keys( const fc::sha512& password )const
+   vector<private_key_type> wallet_db::get_account_private_keys( const fc::sha512& password )const
    { try {
-       private_keys keys;
-       keys.reserve( accounts.size() * 2 );
+       vector<public_key_type> public_keys;
+       vector<private_key_type> private_keys;
 
-       auto insert_key = [&keys,&password]( const owallet_key_record& key_rec )
+       public_keys.reserve( accounts.size() );
+       private_keys.reserve( accounts.size() );
+
+       const auto insert_key = [&]( const owallet_key_record& key_record )
        {
-          if( key_rec.valid() && key_rec->has_private_key() )
-          {
-             try {
-                keys.push_back( key_rec->decrypt_private_key( password ) );
-             } catch ( const fc::exception& e )
-             {
-                elog( "error decrypting private key: ${e}", ("e", e.to_detail_string() ) );
-             }
-          }
+           if( !key_record.valid() || !key_record->has_private_key() )
+               return;
+
+           if( std::find( public_keys.begin(), public_keys.end(), key_record->public_key ) != public_keys.end() )
+               return;
+
+           private_key_type key;
+           try
+           {
+               key = key_record->decrypt_private_key( password );
+           }
+           catch( const fc::exception& e )
+           {
+               elog( "error decrypting private key: ${e}", ("e",e.to_detail_string()) );
+               return;
+           }
+
+           private_keys.push_back( key );
+           public_keys.push_back( key_record->public_key );
        };
 
-       for( const auto& item : accounts )
+       for( const auto& account_item : accounts )
        {
-          insert_key(lookup_key(item.second.account_address));
-          for( const auto& active_key : item.second.active_key_history )
-            insert_key(lookup_key(active_key.second));
+          insert_key( lookup_key( account_item.second.account_address ) );
+          for( const auto& key_item : account_item.second.active_key_history )
+            insert_key( lookup_key( key_item.second ) );
        }
 
-       keys.shrink_to_fit();
-       return keys;
+       return private_keys;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )const

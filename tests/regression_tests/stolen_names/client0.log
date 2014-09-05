@@ -4,32 +4,9 @@ default (unlocked) >>> wallet_create_account thief
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:thief:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_register thief delegate0
-{
-  "expiration": "20140620T154750",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "register_account_op_type",
-      "data": {
-        "name": "thief",
-        "public_data": null,
-        "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "delegate_pay_rate": 255,
-        "meta_data": null
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f610f07e3044bb13f9fcfc5b0a363c717c907621fc81cd39f66f3039aff711be0d"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           thief               0.00000 XTS             register thief                              0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2

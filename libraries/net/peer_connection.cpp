@@ -108,6 +108,8 @@ namespace bts { namespace net
       {
         wlog("Unexpected exception from peer_connection's accept_or_connect_task");
       }
+
+      _message_connection.destroy_connection(); // shut down the read loop
     }
 
     peer_connection::~peer_connection()

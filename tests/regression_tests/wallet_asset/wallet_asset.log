@@ -12,34 +12,9 @@ OK
 default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
-{
-  "expiration": "20140620T154800",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "create_asset_op_type",
-      "data": {
-        "symbol": "XMO",
-        "name": "DIGITAL_DEVICE1",
-        "description": "CREATING AN ASSET",
-        "public_data": null,
-        "issuer_account_id": 1,
-        "maximum_share_supply": 50000,
-        "precision": 100
-      }
-    }
-  ],
-  "signatures": [
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960f60ff6fc674b45d20a15fec744af786bb61071267e1c9c7a1876c14e4e5126c9",
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d2284b4ee4de479efccc3c2afc9945626ac45265699b396229cc8fd5ecc65349212"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -57,48 +32,9 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 1     XMO    DIGITAL_DEVICE1         CREATING AN ASSET                               delegate0                       0.00 %    0.00 XMO                    
 0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
 default (unlocked) >>> wallet_asset_issue 1 XMO test "Sending some assets"
-{
-  "expiration": "20140620T154800",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "issue_asset_op_type",
-      "data": {
-        "amount": {
-          "amount": 100,
-          "asset_id": 1
-        }
-      }
-    },{
-      "type": "deposit_op_type",
-      "data": {
-        "amount": 100,
-        "condition": {
-          "asset_id": 1,
-          "delegate_slate_id": 0,
-          "type": "withdraw_signature_type",
-          "data": {
-            "owner": "XTSEQsyyiZNVUvyMGxk3JZFiJHntmuom87Yy",
-            "memo": {
-              "one_time_key": "XTS6BshpM7TMyZLKt4nP2H9PLegT2J4hQbWwSdCAkBT4qsfr5u9we",
-              "encrypted_memo_data": "435d19f622257718d24c607eae8aab0f24ed6c6e8d87f4aa1a7234cbee31cb8ce42f1d992a9906343ee61d791ca9b2f4f368941d2a58277170a2b23f360ada2b"
-            }
-          }
-        }
-      }
-    }
-  ],
-  "signatures": [
-    "1f4d113578c1008f397175971fddbcd23df8895fc1032838efee4b465927e420b9f54b0da47506c99758cd95719f312de6c340e7450746a1ab579c544b96c64d59",
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f00274c079c0e3ec9ce071b41bf9620ed7863790053fec4e976b0198e59dc566361"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           test                1.00 XMO                issue 1.00 XMO                              0.50000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> debug_wait 2

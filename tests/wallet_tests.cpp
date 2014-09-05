@@ -105,12 +105,12 @@ BOOST_AUTO_TEST_CASE( master_test )
 
    auto sim_network = std::make_shared<bts::net::simulated_network>();
 
-   auto clienta = std::make_shared<client>(sim_network);
+   auto clienta = std::make_shared<bts::client::client>(sim_network);
    clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
    clienta->configure_from_command_line( 0, nullptr );
    clienta->start().wait();
 
-   auto clientb = std::make_shared<client>(sim_network);
+   auto clientb = std::make_shared<bts::client::client>(sim_network);
    clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
    clientb->configure_from_command_line( 0, nullptr );
    clientb->start().wait();

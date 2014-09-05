@@ -19,7 +19,7 @@ namespace bts { namespace blockchain {
     *  A transaction is a set of operations that are
     *  performed atomicly and must be internally consistant.
     *
-    *  Every transaction votes for 
+    *  Every transaction votes for
     */
    struct transaction
    {
@@ -30,25 +30,25 @@ namespace bts { namespace blockchain {
       fc::time_point_sec          expiration;
       /**
        *  Some transactions such as bids/asks/options require a payout
-       *  as a condition of claiming the funds.  Ie: to claim a bid, you 
+       *  as a condition of claiming the funds.  Ie: to claim a bid, you
        *  must pay the bidder the proper amount.  When making this payout
-       *  the system needs to know which delegate_id to use. 
+       *  the system needs to know which delegate_id to use.
        */
       optional<slate_id_type>     delegate_slate_id; // delegate being voted for in required payouts
-      vector<operation>           operations; 
+      vector<operation>           operations;
 
       void issue( const asset& amount_to_issue );
 
       void define_delegate_slate( delegate_slate s );
 
-      void withdraw( const balance_id_type& account, 
+      void withdraw( const balance_id_type& account,
                      share_type amount );
 
-      void withdraw_pay( const account_id_type& account, 
+      void withdraw_pay( const account_id_type& account,
                          share_type amount );
 
-      void deposit( const address& addr, 
-                    const asset& amount, 
+      void deposit( const address& addr,
+                    const asset& amount,
                     slate_id_type delegate_id );
 
       void deposit_to_account( fc::ecc::public_key receiver_key,
@@ -62,14 +62,14 @@ namespace bts { namespace blockchain {
 
 
       void register_account( const string& name,
-                             const variant& public_data, 
-                             const public_key_type& master, 
+                             const variant& public_data,
+                             const public_key_type& master,
                              const public_key_type& active,
                              uint8_t pay_rate = 255 );
 
       void update_account( account_id_type account_id,
                         uint8_t delegate_pay_rate,
-                        const optional<variant>& public_data, 
+                        const optional<variant>& public_data,
                         const optional<public_key_type>& active );
 
       void submit_proposal( account_id_type delegate_id,
@@ -78,30 +78,30 @@ namespace bts { namespace blockchain {
                             const string& proposal_type,
                             const variant& public_data);
 
-      void vote_proposal(proposal_id_type proposal_id, 
-                         account_id_type voter_id, 
+      void vote_proposal(proposal_id_type proposal_id,
+                         account_id_type voter_id,
                          proposal_vote::vote_type vote,
                          const string& message );
 
 
-      void create_asset( const string& symbol, 
-                         const string& name, 
+      void create_asset( const string& symbol,
+                         const string& name,
                          const string& description,
                          const variant& data,
                          account_id_type issuer_id,
                          share_type   max_share_supply,
                          int64_t      precision );
 
-      void bid( const asset& quantity, 
-                const price& price_per_unit, 
+      void bid( const asset& quantity,
+                const price& price_per_unit,
                 const address& owner );
 
-      void ask( const asset& quantity, 
-                const price& price_per_unit, 
+      void ask( const asset& quantity,
+                const price& price_per_unit,
                 const address& owner );
 
-      void short_sell( const asset& quantity, 
-                const price& price_per_unit, 
+      void short_sell( const asset& quantity,
+                const price& price_per_unit,
                 const address& owner );
 
       void cover( const asset& quantity,
@@ -110,7 +110,7 @@ namespace bts { namespace blockchain {
       void add_collateral( share_type collateral_amount,
                            const market_index_key& order_idx );
 
-      void publish_feed( feed_id_type feed_id, 
+      void publish_feed( feed_id_type feed_id,
                          account_id_type delegate_id,
                          fc::variant value );
 
@@ -120,13 +120,13 @@ namespace bts { namespace blockchain {
    struct transaction_summary_details
    {
       /**
-       *  Bitcoin compatibility 
+       *  Bitcoin compatibility
        */
-      ///@{ 
+      ///@{
         string        account;
         string        category;
-        string        address; 
-        share_type         amount; 
+        string        address;
+        share_type         amount;
       ///@}
         asset_id_type      asset_id;
    };
@@ -136,9 +136,9 @@ namespace bts { namespace blockchain {
       transaction_summary():amount(0),confirmations(0),blockindex(0){}
 
       /**
-       *  Bitcoin compatibility 
+       *  Bitcoin compatibility
        */
-      ///@{ 
+      ///@{
       share_type                                 amount;
       uint32_t                                   confirmations;
       block_id_type                              blockhash;
@@ -177,7 +177,7 @@ namespace bts { namespace blockchain {
    };
    typedef optional<transaction_location> otransaction_location;
 
-} } // bts::blockchain 
+} } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::transaction, (expiration)(delegate_slate_id)(operations) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (signatures) )
