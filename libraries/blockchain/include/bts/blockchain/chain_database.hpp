@@ -256,6 +256,7 @@ namespace bts { namespace blockchain {
                                                              uint32_t limit = uint32_t(-1) );
 
          // TODO: Specify order type and/or market
+         vector<market_order>               get_market_orders( std::function<bool(market_order)> filter, int32_t limit ) const;
          optional<market_order>             get_market_order( const order_id_type& order_id )const;
 
          void                               scan_assets( function<void( const asset_record& )> callback );

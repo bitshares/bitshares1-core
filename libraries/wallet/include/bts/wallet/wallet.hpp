@@ -471,7 +471,9 @@ namespace bts { namespace wallet {
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         map<order_id_type, market_order>   get_market_orders( const string& quote, const string& base,
+
+         vector<market_order>               get_market_orders( const string& account_name, int32_t limit );
+         vector<market_order>               get_market_orders( const string& quote, const string& base,
                                                                int32_t limit, const string& account_name )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),

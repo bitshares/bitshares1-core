@@ -2490,6 +2490,8 @@ namespace bts { namespace wallet {
    {
        uint64_t total_possible = 0;
        uint64_t total = 0;
+       auto balances = my->_wallet_db.get_all_balances( account_name, -1 );
+       ulog("number of balances: ${len}", ("len", balances.size()));
        for( auto balance : my->_wallet_db.get_all_balances( account_name, -1 ) )
        {
            auto oslate = my->_blockchain->get_delegate_slate( balance.delegate_slate_id() );
@@ -6056,8 +6058,143 @@ namespace bts { namespace wallet {
       return account_keys;
    }
 
-   map<order_id_type, market_order> wallet::get_market_orders( const string& quote_symbol, const string& base_symbol,
-                                                               int32_t limit, const string& account_name)const
+   vector<market_order>  wallet::get_market_orders( const string& account_name, int32_t limit )
+   {
+      auto wallet_db = &(my->_wallet_db);
+      my->_blockchain->get_market_orders( [wallet_db](market_order order) -> bool {
+        auto owner = order.get_owner();
+        auto okey = wallet_db->lookup_key( owner );
+        if( ! okey.valid() )
+            return false;
+        auto oacct = wallet_db->lookup_account( okey->account_address );
+        if( !oacct.valid() )
+            return false;
+        if( oacct->is_my_account )
+            return true;
+        return false;
+
+      }, limit);
+   }
+
+   vector<market_order>  wallet::get_market_orders( const string& quote_symbol, const string& base_symbol,
+                                                    int32_t limit, const string& account_name)const
+   { try {
+      auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
+      auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );
+      auto shorts = my->_blockchain->get_market_shorts( quote_symbol );
+      auto covers = my->_blockchain->get_market_covers( quote_symbol );
+
+      vector<market_order> result;
+
+      uint32_t count = 0;
+
+      for( const auto& order : bids )
+      {
+         if( count >= limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
+      }
+
+      count = 0;
+      for( const auto& order : asks )
+      {
+         if( count >= limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
+      }
+
+      count = 0;
+      for( const auto& order : shorts )
+      {
+         if( count > limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
+      }
+
+      count = 0;
+      for( const auto& order : covers )
+      {
+         if( count > limit )
+             break;
+         auto okey_rec = my->_wallet_db.lookup_key( order.get_owner() );
+         if( !okey_rec.valid() )
+             continue;
+         auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
+         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         if( oacct->name == account_name || account_name == "ALL" )
+         {
+             if( my->_wallet_db.has_private_key( order.get_owner() ) )
+                result.push_back( order );
+             count++;
+         }
+      }
+      return result;
+       } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
+
+    bts::mail::message wallet::mail_create(const string& sender,
+                                           const bts::blockchain::public_key_type& recipient,
+                                           const string& subject,
+                                           const string& body)
+    {
+        FC_ASSERT(is_open());
+        FC_ASSERT(is_unlocked());
+        if(!is_receive_account(sender))
+            FC_THROW_EXCEPTION(unknown_account, "Unknown sending account name!", ("sender",sender));
+
+        auto sender_key = get_active_private_key(sender);
+        mail::signed_email_message plaintext;
+        plaintext.subject = subject;
+        plaintext.body = body;
+        plaintext.sign(sender_key);
+
+        auto one_time_key = my->create_one_time_key();
+        return mail::message(plaintext).encrypt(one_time_key, recipient);
+    }
+
+    mail::message wallet::mail_open(const address& recipient, const mail::message& ciphertext)
+    {
+        FC_ASSERT(is_open());
+        FC_ASSERT(is_unlocked());
+        if(!is_receive_address(recipient))
+            FC_THROW_EXCEPTION(unknown_address, "Unknown receiving account address!", ("recipient",recipient));
+
+        auto recipient_key = get_private_key(recipient);
+        FC_ASSERT(ciphertext.type == mail::encrypted);
+        return ciphertext.as<mail::encrypted_message>().decrypt(recipient_key);
+    }
+
+   map<order_id_type, market_order> wallet::get_market_orders2( const string& quote_symbol, const string& base_symbol,
+                                                                int32_t limit, const string& account_name)const
    { try {
       auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
       auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );

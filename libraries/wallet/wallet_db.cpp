@@ -550,11 +550,14 @@ namespace bts { namespace wallet {
    {
        auto ret = vector<wallet_balance_record>();
        auto count = 0;
+       ulog("Balances.size(): ${size}", ("size", balances.size()));
        for( auto item : balances )
        {
-           if (limit == -1 || count == limit )
+           if (count == limit && limit != -1)
                break;
-           auto oacct = lookup_account( item.second.owner() );
+           auto okey = lookup_key(item.second.owner());
+           FC_ASSERT(okey.valid(), "expect a key record to exist at this point");
+           auto oacct = lookup_account( okey->account_address );
            if ( oacct.valid() && oacct->name == account_name )
            {
                ret.push_back(item.second);
