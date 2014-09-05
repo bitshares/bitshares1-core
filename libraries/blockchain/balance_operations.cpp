@@ -4,6 +4,43 @@
 
 namespace bts { namespace blockchain {
 
+   asset   balance_record::calculate_rewards( fc::time_point_sec now, share_type amount, share_type rewards_pool, share_type share_supply )const
+   {
+      auto elapsed_time = (now - deposit_date);
+      //if(  elapsed_time > fc::seconds( BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC ) )
+      {
+         if( rewards_pool > 0 && share_supply > 0 )
+         {
+            fc::uint128 amount_withdrawn( amount );
+            amount_withdrawn *= BTS_BLOCKCHAIN_MAX_SHARES;
+
+            fc::uint128 current_supply( share_supply );
+            current_supply *= BTS_BLOCKCHAIN_MAX_SHARES;
+
+            fc::uint128 fee_fund( rewards_pool );
+            fee_fund *= BTS_BLOCKCHAIN_MAX_SHARES;
+
+            auto rewards = (amount_withdrawn * fee_fund) / current_supply;
+
+            if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
+            {
+               // rewards == amount withdrawn / total usd  *  fee fund * fraction_of_year
+               rewards *= elapsed_time.to_seconds();
+               rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+            }
+
+            rewards /= BTS_BLOCKCHAIN_MAX_SHARES;
+            auto rewards_amount = rewards.to_uint64();
+
+            if( rewards_amount > 0 && rewards_amount < rewards_pool )
+            {
+               return asset( rewards_amount, condition.asset_id );
+            }
+         }
+      }
+      return asset( 0, condition.asset_id );
+   }
+
    balance_id_type  deposit_operation::balance_id()const
    {
       return condition.get_address();
@@ -54,6 +91,20 @@ namespace bts { namespace blockchain {
           cur_record = balance_record( this->condition );
        }
        cur_record->last_update   = eval_state._current_state->now();
+       if( cur_record->balance == 0 )
+       {
+          cur_record->deposit_date  = eval_state._current_state->now();
+       }
+       else
+       {
+          fc::uint128 old_sec_since_epoch( cur_record->deposit_date.sec_since_epoch());
+          fc::uint128 new_sec_since_epoch( eval_state._current_state->now().sec_since_epoch());
+
+          fc::uint128 avg = old_sec_since_epoch * cur_record->balance + new_sec_since_epoch*this->amount;
+          avg /= (cur_record->balance + this->amount);
+
+          cur_record->deposit_date  =  time_point_sec( avg.to_integer() );
+       }
        cur_record->balance       += this->amount;
 
        eval_state.sub_balance( deposit_balance_id, asset(this->amount, cur_record->condition.asset_id) );
@@ -188,6 +239,25 @@ namespace bts { namespace blockchain {
 
       if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id ) 
          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
+
+
+
+      auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
+      FC_ASSERT( asset_rec.valid() );
+      if( asset_rec->is_market_issued() )
+      {
+         auto rewards = current_balance_record->calculate_rewards( eval_state._current_state->now(), 
+                                                                   this->amount,
+                                                                   asset_rec->collected_fees,
+                                                                   asset_rec->current_share_supply );
+         if( rewards.amount > 0 )
+         {
+            asset_rec->collected_fees -= rewards.amount;
+            eval_state.rewards[current_balance_record->condition.asset_id] += rewards.amount;
+            eval_state.add_balance( rewards ); 
+            eval_state._current_state->store_asset_record( *asset_rec );
+         }
+      }
 
       eval_state._current_state->store_balance_record( *current_balance_record );
       eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );

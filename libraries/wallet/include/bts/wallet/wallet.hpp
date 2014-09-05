@@ -466,7 +466,9 @@ namespace bts { namespace wallet {
          bool      is_sending_address( const address& addr )const;
          bool      is_receive_address( const address& addr )const;
 
+
          account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
+         account_balance_summary_type       get_account_rewards( const string& account_name = "" )const;
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
