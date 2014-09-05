@@ -148,8 +148,10 @@ Or you can run Cmake in command line:
 #### Build BitShares ####
 * Set up environment for building (Skip if you already did this when building library dependencies):
 
-	```cd D:\BitShares\bitshares_toolkit
-setenv.bat (or setenv_x64.bat for 64bit development)```
+  ```
+cd D:\BitShares\bitshares_toolkit
+setenv.bat (or setenv_x64.bat for 64bit development)
+```
 
 * Launch *Visual Studio* and load `D:\BitShares\bin\BitShares.sln` bin64 directory for 64 bit builds.
 * Set Active Configuration to RelWithDebInfo, ensure Active Solution platform is x86 for 32 bit platforms and x64 for 64 bit builds
