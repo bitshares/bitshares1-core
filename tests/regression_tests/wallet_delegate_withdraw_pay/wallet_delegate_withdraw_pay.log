@@ -157,7 +157,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-42    delegate41                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_get_account delegate41 
 Name: delegate41
@@ -169,7 +169,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-42    delegate41                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> blockchain_get_account delegate43 
 Name: delegate43
@@ -181,7 +181,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-44    delegate43                      0.0000000000 % 1        0        100.00 %      100 %    0.00000 XTS         2         
+44    delegate43                      0.00000000 %   1        0        100.00 %      100 %    0.00000 XTS         2         
 
 default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
@@ -198,7 +198,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-45    delegate44                      0.0000000413 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3         
 
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
 {
@@ -248,11 +248,11 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-45    delegate44                      0.0000000413 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3         
 
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     

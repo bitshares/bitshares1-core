@@ -9,7 +9,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait 5
 OK
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
@@ -58,6 +58,6 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
 ============================================================================================================================
-102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
 
 default (unlocked) >>> quit
