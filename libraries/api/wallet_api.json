@@ -637,7 +637,7 @@
       {
         "method_name": "wallet_scan_transaction",
         "description": "Scans the specified transaction",
-        "return_type": "void",
+        "return_type": "transaction_record",
         "parameters" :
           [
             {

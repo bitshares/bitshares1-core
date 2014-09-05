@@ -100,8 +100,14 @@ namespace bts { namespace wallet {
 
             void scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec& received_time );
 
-            void scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
-                                   const vector<private_key_type>& keys, const time_point_sec& received_time, bool overwrite_existing = false );
+            wallet_transaction_record scan_transaction(
+                    const signed_transaction& transaction,
+                    uint32_t block_num,
+                    const time_point_sec& block_timestamp,
+                    const vector<private_key_type>& keys,
+                    const time_point_sec& received_time,
+                    bool overwrite_existing = false
+                    );
 
             bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
@@ -536,13 +542,18 @@ namespace bts { namespace wallet {
             scan_market_transaction( market_trx, block_num, block.timestamp, received_time );
       }
 
-      void wallet_impl::scan_transaction( const signed_transaction& transaction, uint32_t block_num, const time_point_sec& block_timestamp,
-                                          const vector<private_key_type>& keys, const time_point_sec& received_time, bool overwrite_existing )
+      wallet_transaction_record wallet_impl::scan_transaction(
+              const signed_transaction& transaction,
+              uint32_t block_num,
+              const time_point_sec& block_timestamp,
+              const vector<private_key_type>& keys,
+              const time_point_sec& received_time,
+              bool overwrite_existing )
       { try {
           const auto record_id = transaction.id();
           auto transaction_record = _wallet_db.lookup_transaction( record_id );
-          const auto is_known = transaction_record.valid();
-          if( !is_known )
+          const auto already_exists = transaction_record.valid();
+          if( !already_exists )
           {
               transaction_record = wallet_transaction_record();
               transaction_record->record_id = record_id;
@@ -556,7 +567,7 @@ namespace bts { namespace wallet {
           transaction_record->block_num = block_num;
           transaction_record->is_confirmed = true;
 
-          if( is_known ) /* Otherwise will get stored below if this is for me */
+          if( already_exists ) /* Otherwise will get stored below if this is for me */
               _wallet_db.store_transaction( *transaction_record );
 
           auto store_record = false;
@@ -752,8 +763,10 @@ namespace bts { namespace wallet {
           }
 
           /* Only overwrite existing record if you did not create it or overwriting was explicitly specified */
-          if( store_record && ( !is_known || overwrite_existing ) )
+          if( store_record && ( !already_exists || overwrite_existing ) )
               _wallet_db.store_transaction( *transaction_record );
+
+          return *transaction_record;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
@@ -2374,7 +2387,7 @@ namespace bts { namespace wallet {
       my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
    } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
 
-   void wallet::scan_transaction( const string& transaction_id_prefix, bool overwrite_existing )
+   wallet_transaction_record wallet::scan_transaction( const string& transaction_id_prefix, bool overwrite_existing )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -2391,7 +2404,7 @@ namespace bts { namespace wallet {
       const auto block = my->_blockchain->get_block_header( block_num );
       const auto keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
       const auto now = blockchain::now();
-      my->scan_transaction( transaction_record->trx, block_num, block.timestamp, keys, now, overwrite_existing );
+      return my->scan_transaction( transaction_record->trx, block_num, block.timestamp, keys, now, overwrite_existing );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    vector<wallet_transaction_record> wallet::get_transactions( const string& transaction_id_prefix )

@@ -10,7 +10,7 @@
 namespace bts { namespace cli {
 
   bts::client::client* print_result::_client = nullptr;
-  
+
   print_result::print_result(bts::client::client* client)
   {
     _client = client;
@@ -63,7 +63,7 @@ namespace bts { namespace cli {
       out << "unexpected exception \n";
     }
   }
-  
+
   void print_result::initialize()
   {
     _command_to_function["help"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
@@ -134,6 +134,7 @@ namespace bts { namespace cli {
     _command_to_function["wallet_publish_slate"]                = &f_wallet_transfer;
     _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
     _command_to_function["wallet_publish_price_feed"]           = &f_wallet_transfer;
+    _command_to_function["wallet_scan_transaction"]             = &f_wallet_transfer;
 
     _command_to_function["wallet_list"] = &f_wallet_list;
 
@@ -185,7 +186,7 @@ namespace bts { namespace cli {
   {
     auto account_key = result.as_string();
     auto account = _client->get_wallet()->get_account_for_address(public_key_type(account_key));
-    
+
     if(account)
       out << "\n\nAccount created successfully. You may give the following link to others"
       " to allow them to add you as a contact and send you funds:\n" CUSTOM_URL_SCHEME ":"
@@ -261,7 +262,7 @@ namespace bts { namespace cli {
       out << "\n";
     }
   }
-  
+
   void print_result::f_wallet_list_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
   {
     auto accts = result.as<vector<wallet_account_record>>();
@@ -470,7 +471,7 @@ namespace bts { namespace cli {
   {
     std::map<uint32_t, std::vector<fork_record>> forks = result.as<std::map<uint32_t, std::vector<fork_record>>>();
     std::map<block_id_type, std::string> invalid_reasons; //Your reasons are invalid.
-    
+
     if(forks.empty())
       out << "No forks.\n";
     else
@@ -485,15 +486,15 @@ namespace bts { namespace cli {
         << std::setw(8) << "VALID"
         << std::setw(20) << "IN CURRENT CHAIN"
         << "\n" << std::string(158, '-') << "\n";
-    
+
       for(const auto& fork : forks)
       {
         out << std::setw(15) << fork.first << "\n";
-    
+
         for(const auto& tine : fork.second)
         {
           out << std::setw(45) << fc::variant(tine.block_id).as_string();
-    
+
           auto delegate_record = _client->get_chain()->get_account_record(tine.signing_delegate);
           if(delegate_record.valid() && delegate_record->name.size() < 29)
             out << std::setw(30) << delegate_record->name;
@@ -501,13 +502,13 @@ namespace bts { namespace cli {
             out << std::setw(30) << std::string("Delegate ID ") + fc::variant(tine.signing_delegate).as_string();
           else
             out << std::setw(30) << "Unknown Delegate";
-    
+
           out << std::setw(15) << tine.transaction_count
             << std::setw(10) << tine.size
             << std::setw(20) << pretty_timestamp(tine.timestamp)
             << std::setw(10) << tine.latency.to_seconds()
             << std::setw(8);
-    
+
           if(tine.is_valid.valid()) {
             if(*tine.is_valid) {
               out << "YES";
@@ -522,20 +523,20 @@ namespace bts { namespace cli {
           }
           else
             out << "N/A";
-    
+
           out << std::setw(20);
           if(tine.is_current_fork)
             out << "YES";
           else
             out << "NO";
-    
+
           out << "\n";
         }
       }
-    
+
       if(invalid_reasons.size() > 0) {
         out << "REASONS FOR INVALID BLOCKS\n";
-    
+
         for(const auto& excuse : invalid_reasons)
           out << fc::variant(excuse.first).as_string() << ": " << excuse.second << "\n";
       }
@@ -545,7 +546,7 @@ namespace bts { namespace cli {
   void print_result::f_blockchain_list_pending_transactions(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
   {
     auto transactions = result.as<vector<signed_transaction>>();
-    
+
     if(transactions.empty())
     {
       out << "No pending transactions.\n";
@@ -557,14 +558,14 @@ namespace bts { namespace cli {
         << std::setw(25) << "OPERATION COUNT"
         << std::setw(25) << "SIGNATURE COUNT"
         << "\n" << std::string(70, '-') << "\n";
-    
+
       for(const auto& transaction : transactions)
       {
         if(FILTER_OUTPUT_FOR_TESTS)
           out << std::setw(10) << "[redacted]";
         else
           out << std::setw(10) << transaction.id().str().substr(0, 8);
-    
+
         out << std::setw(10) << transaction.data_size()
           << std::setw(25) << transaction.operations.size()
           << std::setw(25) << transaction.signatures.size()
@@ -621,13 +622,13 @@ namespace bts { namespace cli {
       << std::right << std::setw(30) << "PRICE"
       << " | " << std::left << std::setw(30) << "PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" << "   COLLATERAL" << "\n"
       << std::string(175, '-') << "\n";
-    
+
     vector<market_order>::iterator bid_itr = bids_asks.first.begin();
     auto ask_itr = bids_asks.second.begin();
-    
+
     asset_id_type quote_id;
     asset_id_type base_id;
-    
+
     if(bid_itr != bids_asks.first.end())
     {
       quote_id = bid_itr->get_price().quote_asset_id;
@@ -638,18 +639,18 @@ namespace bts { namespace cli {
       quote_id = ask_itr->get_price().quote_asset_id;
       base_id = ask_itr->get_price().base_asset_id;
     }
-    
+
     auto quote_asset_record = _client->get_chain()->get_asset_record(quote_id);
     // fee order is the market order to convert fees from other asset classes to XTS
     bool show_fee_order_record = base_id == 0
       && !quote_asset_record->is_market_issued()
       && quote_asset_record->collected_fees > 0;
-    
+
     oprice  median_price = _client->get_chain()->get_median_delegate_price(quote_id);
     auto status = _client->get_chain()->get_market_status(quote_id, base_id);
     auto max_short_price = median_price ? *median_price : (status ? status->avg_price_1h : price(0, quote_id, base_id));
-    
-    
+
+
     while(bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end())
     {
       if(median_price)
@@ -669,13 +670,13 @@ namespace bts { namespace cli {
       }
       if(bid_itr == bids_asks.first.end())
         break;
-    
+
       if(show_fee_order_record)
       {
         out << std::left << std::setw(26) << _client->get_chain()->to_pretty_asset(asset(quote_asset_record->collected_fees, quote_id))
           << std::setw(20) << " "
           << std::right << std::setw(30) << "MARKET PRICE";
-    
+
         out << ' ';
         show_fee_order_record = false;
       }
@@ -688,19 +689,19 @@ namespace bts { namespace cli {
           _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
           : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
           << std::right << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(bid_itr->get_price())) + " " + quote_asset_record->symbol);
-    
+
         if(bid_itr->type == bts::blockchain::short_order)
           out << '*';
         else
           out << ' ';
-    
+
         ++bid_itr;
       }
       else
         out << std::string(77, ' ');
-    
+
       out << "| ";
-    
+
       while(ask_itr != bids_asks.second.end())
       {
         if(!ask_itr->collateral)
@@ -715,7 +716,7 @@ namespace bts { namespace cli {
       }
       out << "\n";
     }
-    
+
     if(quote_asset_record->is_market_issued() && base_id == 0)
     {
       out << std::string(175, '-') << "\n";
@@ -728,7 +729,7 @@ namespace bts { namespace cli {
         << std::right << std::setw(30) << "PRICE"
         << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" << "   COLLATERAL" << "\n"
         << std::string(175, '-') << "\n";
-    
+
       {
         auto ask_itr = bids_asks.second.rbegin();
         auto bid_itr = filtered_shorts.begin();
@@ -749,7 +750,7 @@ namespace bts { namespace cli {
             out << std::string(77, ' ');
 
           out << "| ";
-    
+
           while(ask_itr != bids_asks.second.rend() && !ask_itr->collateral)
             ++ask_itr;
           if(ask_itr != bids_asks.second.rend())
@@ -762,26 +763,26 @@ namespace bts { namespace cli {
           }
           else
             out << "\n";
-    
+
           if(ask_itr != bids_asks.second.rend())
             ++ask_itr;
           if(bid_itr != filtered_shorts.end())
             ++bid_itr;
         }
       }
-    
+
       auto recent_average_price = _client->get_chain()->get_market_status(quote_id, base_id)->avg_price_1h;
       out << "Average Price in Recent Trades: "
         << _client->get_chain()->to_pretty_price(recent_average_price)
         << "     ";
-    
+
       auto status = _client->get_chain()->get_market_status(quote_id, base_id);
       if(status)
       {
         out << "Maximum Short Price: "
           << _client->get_chain()->to_pretty_price(max_short_price)
           << "     ";
-    
+
         out << "Bid Depth: " << _client->get_chain()->to_pretty_asset(asset(status->bid_depth, base_id)) << "     ";
         out << "Ask Depth: " << _client->get_chain()->to_pretty_asset(asset(status->ask_depth, base_id)) << "     ";
         out << "Min Depth: " << _client->get_chain()->to_pretty_asset(asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT)) << "\n";
@@ -796,9 +797,9 @@ namespace bts { namespace cli {
           }
         }
       }
-    
+
       // TODO: print insurance fund for market issued assets
-    
+
     } // end call section that only applies to market issued assets vs XTS
     else
     {
@@ -824,7 +825,7 @@ namespace bts { namespace cli {
       out << "No Orders.\n";
       return;
     }
-    
+
     out << std::setw(7) << "TYPE"
       << std::setw(30) << "PRICE"
       << std::setw(25) << "PAID"
@@ -833,7 +834,7 @@ namespace bts { namespace cli {
       << std::setw(30) << "TIMESTAMP"
       << "   OWNER"
       << "\n" << std::string(167, '-') << "\n";
-    
+
     for(order_history_record order : orders)
     {
       out << std::setw(7) << "Buy  "
@@ -863,7 +864,7 @@ namespace bts { namespace cli {
       out << "No price history.\n";
       return;
     }
-    
+
     out << std::setw(20) << "TIME"
       << std::setw(20) << "HIGHEST BID"
       << std::setw(20) << "LOWEST ASK"
@@ -872,7 +873,7 @@ namespace bts { namespace cli {
       << std::setw(20) << "TRADING VOLUME"
       << std::setw(20) << "AVERAGE PRICE"
       << "\n" << std::string(140, '-') << "\n";
-    
+
     for(auto point : points)
     {
       out << std::setw(20) << pretty_timestamp(point.timestamp)
@@ -899,7 +900,7 @@ namespace bts { namespace cli {
     out << std::setw(30) << "FAILED CONNECT ATTEMPTS";
     out << std::setw(35) << "LAST CONNECTION DISPOSITION";
     out << std::setw(30) << "LAST ERROR";
-    
+
     out << "\n";
     for(const auto& peer : peers)
     {
@@ -910,7 +911,7 @@ namespace bts { namespace cli {
       out << std::setw(30) << peer.number_of_failed_connection_attempts;
       out << std::setw(35) << string(peer.last_connection_disposition);
       out << std::setw(30) << (peer.last_error ? peer.last_error->to_detail_string() : "none");
-    
+
       out << "\n";
     }
   }
