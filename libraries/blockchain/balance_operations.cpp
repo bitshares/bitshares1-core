@@ -46,13 +46,13 @@ namespace bts { namespace blockchain {
       return condition.get_address();
    }
 
-   deposit_operation::deposit_operation( const address& owner, 
-                                         const asset& amnt, 
+   deposit_operation::deposit_operation( const address& owner,
+                                         const asset& amnt,
                                          slate_id_type slate_id )
    {
       FC_ASSERT( amnt.amount > 0 );
       amount = amnt.amount;
-      condition = withdraw_condition( withdraw_with_signature( owner ), 
+      condition = withdraw_condition( withdraw_with_signature( owner ),
                                       amnt.asset_id, slate_id );
    }
 
@@ -64,7 +64,7 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
       auto current_slate = eval_state._current_state->get_delegate_slate( slate_id );
-      if( NOT current_slate ) 
+      if( NOT current_slate )
       {
          for( auto delegate_id : this->slate.supported_delegates )
          {
@@ -80,7 +80,7 @@ namespace bts { namespace blockchain {
     */
    void deposit_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-       if( this->amount <= 0 ) 
+       if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
        auto deposit_balance_id = this->balance_id();
@@ -97,6 +97,9 @@ namespace bts { namespace blockchain {
        }
        else
        {
+#ifndef WIN32
+#warning [HARDFORK] Interest needs testing before merging into BTSX
+#endif
           fc::uint128 old_sec_since_epoch( cur_record->deposit_date.sec_since_epoch());
           fc::uint128 new_sec_since_epoch( eval_state._current_state->now().sec_since_epoch());
 
@@ -108,8 +111,8 @@ namespace bts { namespace blockchain {
        cur_record->balance       += this->amount;
 
        eval_state.sub_balance( deposit_balance_id, asset(this->amount, cur_record->condition.asset_id) );
-       
-       if( cur_record->condition.asset_id == 0 && cur_record->condition.delegate_slate_id ) 
+
+       if( cur_record->condition.asset_id == 0 && cur_record->condition.delegate_slate_id )
           eval_state.adjust_vote( cur_record->condition.delegate_slate_id, this->amount );
 
        eval_state._current_state->store_balance_record( *cur_record );
@@ -120,23 +123,23 @@ namespace bts { namespace blockchain {
     */
    void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-       if( this->amount <= 0 ) 
+       if( this->amount <= 0 )
           FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
-       
+
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
 
-      if( !current_balance_record ) 
+      if( !current_balance_record )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
-      if( this->amount > current_balance_record->balance ) 
-         FC_CAPTURE_AND_THROW( insufficient_funds, 
+      if( this->amount > current_balance_record->balance )
+         FC_CAPTURE_AND_THROW( insufficient_funds,
                                (current_balance_record)
                                (amount)
                                (current_balance_record->balance - amount) );
 
       switch( (withdraw_condition_types)current_balance_record->condition.type )
       {
-         case withdraw_signature_type:  
+         case withdraw_signature_type:
          {
             auto owner = current_balance_record->condition.as<withdraw_with_signature>().owner;
             if( claim_input_data.size() )
@@ -190,20 +193,20 @@ namespace bts { namespace blockchain {
                   if( !eval_state.check_signature( password_condition.payor ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payor) );
                }
-               else 
+               else
                {
                   if( !eval_state.check_signature( password_condition.payee ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payee) );
                   if( claim_input_data.size() < sizeof( fc::ripemd160 ) )
                      FC_CAPTURE_AND_THROW( invalid_claim_password, (claim_input_data) );
 
-                  auto input_password_hash = fc::ripemd160::hash( claim_input_data.data(), 
+                  auto input_password_hash = fc::ripemd160::hash( claim_input_data.data(),
                                                                   claim_input_data.size() );
 
                   if( password_condition.password_hash != input_password_hash )
                      FC_CAPTURE_AND_THROW( invalid_claim_password, (input_password_hash) );
                }
-            } FC_CAPTURE_AND_RETHROW( (password_condition ) ) 
+            } FC_CAPTURE_AND_RETHROW( (password_condition ) )
             break;
          }
 
@@ -222,7 +225,7 @@ namespace bts { namespace blockchain {
                      FC_CAPTURE_AND_THROW( missing_signature, (option.optionee) );
 
                   auto pay_amount = asset( this->amount, current_balance_record->condition.asset_id ) * option.strike_price;
-                  eval_state.add_required_deposit( option.optionee, pay_amount ); 
+                  eval_state.add_required_deposit( option.optionee, pay_amount );
                }
             } FC_CAPTURE_AND_RETHROW( (option) )
             break;
@@ -237,16 +240,17 @@ namespace bts { namespace blockchain {
       current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._current_state->now();
 
-      if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id ) 
+      if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id )
          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
 
-
-
+#ifndef WIN32
+#warning [HARDFORK] Interest needs testing before merging into BTSX
+#endif
       auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
       FC_ASSERT( asset_rec.valid() );
       if( asset_rec->is_market_issued() )
       {
-         auto rewards = current_balance_record->calculate_rewards( eval_state._current_state->now(), 
+         auto rewards = current_balance_record->calculate_rewards( eval_state._current_state->now(),
                                                                    this->amount,
                                                                    asset_rec->collected_fees,
                                                                    asset_rec->current_share_supply );
@@ -254,7 +258,7 @@ namespace bts { namespace blockchain {
          {
             asset_rec->collected_fees -= rewards.amount;
             eval_state.rewards[current_balance_record->condition.asset_id] += rewards.amount;
-            eval_state.add_balance( rewards ); 
+            eval_state.add_balance( rewards );
             eval_state._current_state->store_asset_record( *asset_rec );
          }
       }

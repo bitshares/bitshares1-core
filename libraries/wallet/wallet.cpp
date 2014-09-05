@@ -4919,7 +4919,7 @@ namespace bts { namespace wallet {
       auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
 
 #ifndef WIN32
-#warning [UNTESTED] This is not ready to be merged into BTSX
+#warning [UNTESTED] Non-base asset fees need testing before merging into BTSX
 #endif
       if( desired_fee_asset_id != 0 )
       {
