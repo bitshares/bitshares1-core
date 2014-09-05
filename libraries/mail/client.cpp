@@ -72,9 +72,51 @@ public:
     void open(const fc::path& data_dir) {
         _archive.open(data_dir / "archive");
         _processing_db.open(data_dir / "processing");
+
+        //Place all in-processing messages back in their place on the pipeline
+        for (auto itr = _processing_db.begin(); itr.valid(); ++itr) {
+            mail_record email = itr.value();
+
+            switch (email.status) {
+            case client::submitted:
+                process_outgoing_mail(email);
+                break;
+            case client::proof_of_work:
+                schedule_proof_of_work(email.id);
+                break;
+            case client::transmitted:
+                transmit_message(email.id);
+                break;
+            case client::accepted:
+                finalize_message(email.id);
+                break;
+            case client::failed:
+                //Do nothing
+                break;
+            }
+        }
     }
     bool is_open() {
         return _archive.is_open();
+    }
+
+    void process_outgoing_mail(mail_record& mail) {
+        //Messages go through a pipeline of processing. This function starts them on that journey.
+        set_mail_servers_on_record(mail);
+        _processing_db.store(mail.id, mail);
+
+        //The steps required to send a message:
+        //Get proof of work target from mail servers
+        //Calculate proof of work
+        //Send message to all applicable mail servers
+        //Store message in the archive
+
+        get_proof_of_work_target(mail.id);
+    }
+
+    void set_mail_servers_on_record(mail_record& record) {
+        //TODO: Check recipient's account on blockchain for his mail server
+        record.mail_servers.insert(ip::endpoint(ip::address("127.0.0.1"), 1111));
     }
 
     void get_proof_of_work_target(const message_id_type& message_id) {
@@ -91,6 +133,7 @@ public:
         email.proof_of_work_target = ripemd160("000000fffdeadbeeffffffffffffffffffffffff");
         _processing_db.store(message_id, email);
 
+        ulog("Email ${id}: Got PoW target; scheduling for PoW", ("id", message_id));
         schedule_proof_of_work(message_id);
     }
 
@@ -103,7 +146,9 @@ public:
 
         _proof_of_work_worker = fc::async([this]{
             while (!_proof_of_work_jobs.empty()) {
-                mail_record email = _processing_db.fetch(_proof_of_work_jobs.back());
+                mail_record email = _processing_db.fetch(_proof_of_work_jobs.front());
+                _proof_of_work_jobs.pop();
+                ulog("Email ${id}: Starting PoW", ("id", email.id));
 
                 if (email.proof_of_work_target != ripemd160()) {
                     email.status = client::proof_of_work;
@@ -115,7 +160,6 @@ public:
                     _processing_db.store(email.id, email);
                     continue;
                 }
-                _proof_of_work_jobs.pop();
 
                 uint8_t yielder = 0;
                 while (email.content.id() > email.proof_of_work_target) {
@@ -125,28 +169,41 @@ public:
                 }
 
                 _processing_db.store(email.id, email);
+                ulog("Email ${id}: Finished PoW; scheduling for transmission", ("id", email.id));
+                transmit_message(email.id);
                 fc::yield();
             }
         }, "Mail client proof-of-work");
     }
 
-    void set_mail_servers_on_record(mail_record& record) {
-        //TODO: Check recipient's account on blockchain for his mail server
-        record.mail_servers.insert(ip::endpoint(ip::address("127.0.0.1"), 1111));
+    void transmit_message(message_id_type message_id) {
+        UNUSED(message_id);
+        //TODO: Something intelligent
     }
 
-    void process_outgoing_mail(mail_record& mail) {
-        //Messages go through a pipeline of processing. This function starts them on that journey.
-        set_mail_servers_on_record(mail);
-        _processing_db.store(mail.id, mail);
+    void finalize_message(message_id_type message_id) {
+        mail_record email = _processing_db.fetch(message_id);
+        email.status = client::accepted;
+        //TODO: Change archive to use a different struct with more appropriate contents
+        _archive.store(message_id, email);
+        _processing_db.remove(message_id);
+    }
 
-        //The steps required to send a message:
-        //Get proof of work target from mail servers
-        //Calculate proof of work
-        //Send message to all applicable mail servers
-        //Store message in the archive
+    std::multimap<client::mail_status, message_id_type> get_processing_messages() {
+        std::multimap<client::mail_status, message_id_type> messages;
+        for(auto itr = _processing_db.begin(); itr.valid(); ++itr) {
+            mail_record email = itr.value();
+            messages.insert(std::make_pair(email.status, email.id));
+        }
+        return messages;
+    }
 
-        get_proof_of_work_target(mail.id);
+    message get_message(message_id_type message_id) {
+        if (_processing_db.fetch_optional(message_id))
+            return _processing_db.fetch_optional(message_id)->content;
+        if (_archive.fetch_optional(message_id))
+            return _archive.fetch_optional(message_id)->content;
+        FC_ASSERT(false, "Message ${id} not found.", ("id", message_id));
     }
 };
 
@@ -157,9 +214,18 @@ client::client(wallet_ptr wallet, chain_database_ptr chain)
 {
 }
 
-void client::open(const path& data_dir)
-{
+void client::open(const path& data_dir) {
     my->open(data_dir);
+}
+
+std::multimap<client::mail_status, message_id_type> client::get_processing_messages() {
+    FC_ASSERT(my->is_open());
+    return my->get_processing_messages();
+}
+
+message client::get_message(message_id_type message_id) {
+    FC_ASSERT(my->is_open());
+    return my->get_message(message_id);
 }
 
 message_id_type client::send_email(const string &from, const string &to, const string &subject, const string &body) {

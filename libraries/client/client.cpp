@@ -1843,6 +1843,14 @@ config load_config( const fc::path& datadir )
        return record;
     }
 
+    wallet_transaction_record detail::client_impl::wallet_publish_version( const string& publishing_account_name,
+                                                                           const string& paying_account_name )
+    {
+       const auto record = _wallet->publish_version( publishing_account_name, paying_account_name );
+       network_broadcast_transaction( record.trx );
+       return record;
+    }
+
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
@@ -1978,12 +1986,12 @@ config load_config( const fc::path& datadir )
       }
     } FC_RETHROW_EXCEPTIONS( warn, "") }
 
-    void detail::client_impl::wallet_transaction_remove( const string& transaction_id )
+    void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
     { try {
        _wallet->remove_transaction_record( transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
-    void detail::client_impl::wallet_transaction_rebroadcast( const string& transaction_id )
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
     { try {
        const auto records = _wallet->get_transactions( transaction_id );
        for( const auto& record : records )
@@ -2397,10 +2405,22 @@ config load_config( const fc::path& datadir )
       return _mail_server->fetch_inventory(owner, start_time, limit);
     }
 
-    mail::message detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
+    mail::message detail::client_impl::mail_fetch_message(const mail::message_id_type& inventory_id) const
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
       return _mail_server->fetch_message(inventory_id);
+    }
+
+    std::multimap<mail::client::mail_status, mail::message_id_type> detail::client_impl::mail_get_processing_messages() const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_processing_messages();
+    }
+
+    mail::message detail::client_impl::mail_get_sent_message(const mail::message_id_type& message_id) const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_message(message_id);
     }
 
     mail::message_id_type detail::client_impl::mail_send(const std::string &from,
@@ -3054,10 +3074,10 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    void client_impl::wallet_transaction_scan( uint32_t block_num, const string& transaction_id )
+    wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
     { try {
-       _wallet->scan_transactions( block_num, transaction_id );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
+       return _wallet->scan_transaction( transaction_id, overwrite_existing );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
 
     wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
     { try {

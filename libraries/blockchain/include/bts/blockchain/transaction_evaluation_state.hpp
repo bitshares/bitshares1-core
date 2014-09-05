@@ -1,8 +1,8 @@
-#pragma once 
+#pragma once
 #include <bts/blockchain/types.hpp>
 #include <bts/blockchain/transaction.hpp>
 
-namespace bts { namespace blockchain { 
+namespace bts { namespace blockchain {
 
    class chain_interface;
    typedef shared_ptr<chain_interface> chain_interface_ptr;
@@ -29,11 +29,11 @@ namespace bts { namespace blockchain {
          virtual share_type get_fees( asset_id_type id = 0)const;
 
          virtual void reset();
-         
+
          virtual void evaluate( const signed_transaction& trx, bool skip_signature_check = false );
          virtual void evaluate_operation( const operation& op );
 
-         /** perform any final operations based upon the current state of 
+         /** perform any final operations based upon the current state of
           * the operation such as updating fees paid etc.
           */
          virtual void post_evaluate();
@@ -42,39 +42,39 @@ namespace bts { namespace blockchain {
           */
          virtual void validate_required_fee();
          /**
-          * apply collected vote changes 
+          * apply collected vote changes
           */
          virtual void update_delegate_votes();
          virtual void verify_delegate_id( account_id_type id )const;
         // virtual void verify_slate_id( slate_id_type id )const;
-         
+
          bool check_signature( const address& a )const;
-        
+
          /**
           *  subtracts amount from a withdraw_with_signature account with the
           *  owner_key and amount.asset_id and the delegate_id of the transaction.
           */
          void add_required_deposit( const address& owner_key, const asset& amount );
-         
+
          /** contains address funds were deposited into for use in
           * incrementing required_deposits balance
           */
          void sub_balance( const balance_id_type& addr, const asset& amount );
          void add_balance( const asset& amount );
-         
+
          /** any time a balance is deposited increment the vote for the delegate,
           * if delegate_id is negative then it is a vote against abs(delegate_id)
           */
          void adjust_vote( slate_id_type slate, share_type amount );
 
          void validate_asset( const asset& a )const;
-         
+
          signed_transaction                          trx;
          unordered_set<address>                      signed_keys;
-         
+
          // increases with funds are withdrawn, decreases when funds are deposited or fees paid
          optional<fc::exception>                     validation_error;
-         
+
          /** every time a deposit is made this balance is increased
           *  every time a deposit is required this balance is decreased
           *
@@ -91,17 +91,17 @@ namespace bts { namespace blockchain {
          asset                                       required_fees;
          /**
           *  The total fees paid by in alternative asset types (like BitUSD) calculated
-          *  by using the lowest ask.  
+          *  by using the lowest ask.
           */
          asset                                       alt_fees_paid;
-         
+
          /**
           *  As operation withdraw funds, input balance grows...
           *  As operations consume funds (deposit) input balance decreases
           *
           *  Any left-over input balance can be seen as fees
           *
-          *  @note - this value should always equal the sum of deposits-withdraws 
+          *  @note - this value should always equal the sum of deposits-withdraws
           *  and is maintained for the purpose of seralization.
           */
          unordered_map<asset_id_type, share_type>    balance;
@@ -109,11 +109,11 @@ namespace bts { namespace blockchain {
          struct vote_state
          {
             vote_state():votes_for(0){}
-         
+
             int64_t votes_for;
          };
          /**
-          *  Tracks the votes for or against each delegate based upon 
+          *  Tracks the votes for or against each delegate based upon
           *  the deposits and withdraws to addresses.
           */
          unordered_map<account_id_type, vote_state>     net_delegate_votes;
@@ -129,7 +129,7 @@ namespace bts { namespace blockchain {
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for) )
-FC_REFLECT( bts::blockchain::transaction_evaluation_state, 
+FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (trx)(signed_keys)
            (validation_error)
            (required_deposits)

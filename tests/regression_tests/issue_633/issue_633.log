@@ -9,7 +9,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait 5
 OK
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     

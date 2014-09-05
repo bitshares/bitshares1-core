@@ -7,6 +7,7 @@ file(GLOB HEADERS "include/bts/cli/*.hpp")
 add_library( bts_cli 
              cli.cpp
              pretty.cpp
+             print_result.cpp
              ${HEADERS})
 
 if (READLINE_FOUND)

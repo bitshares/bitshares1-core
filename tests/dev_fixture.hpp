@@ -169,14 +169,14 @@ struct chain_fixture
       fc::json::save_to_file( config, clienta_dir.path() / "genesis.json" );
       fc::json::save_to_file( config, clientb_dir.path() / "genesis.json" );
 
-      clienta = std::make_shared<client>(sim_network);
+      clienta = std::make_shared<bts::client::client>(sim_network);
       clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
       clienta->configure_from_command_line( 0, nullptr );
       clienta->set_daemon_mode(true);
       clienta->start();
       ilog( "... " );
 
-      clientb = std::make_shared<client>(sim_network);
+      clientb = std::make_shared<bts::client::client>(sim_network);
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
       clientb->set_daemon_mode(true);
@@ -253,7 +253,7 @@ struct chain_fixture
    {
    }
 
-   void exec( std::shared_ptr<client> c, const string& command_to_run )
+   void exec( std::shared_ptr<bts::client::client> c, const string& command_to_run )
    {
       if( c == clienta )
          console->print( "A: " + command_to_run + "\n", fc::console_appender::color::blue );
@@ -266,8 +266,8 @@ struct chain_fixture
 
    std::shared_ptr<bts::net::simulated_network> sim_network;
    std::shared_ptr<bts::net::simulated_network> sim_network_fork;
-   std::shared_ptr<client>        clienta;
-   std::shared_ptr<client>        clientb;
+   std::shared_ptr<bts::client::client>        clienta;
+   std::shared_ptr<bts::client::client>        clientb;
    fc::temp_directory             clienta_dir;
    fc::temp_directory             clientb_dir;
    vector<fc::ecc::private_key>   delegate_private_keys;

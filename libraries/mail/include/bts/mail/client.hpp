@@ -26,8 +26,10 @@ public:
 
     void open(const fc::path& data_dir);
 
-    message_id_type send_email(const string& from, const string& to, const string& subject, const string& body);
+    std::multimap<mail_status, message_id_type> get_processing_messages();
+    message get_message(message_id_type message_id);
 
+    message_id_type send_email(const string& from, const string& to, const string& subject, const string& body);
 private:
     std::shared_ptr<detail::client_impl> my;
 };

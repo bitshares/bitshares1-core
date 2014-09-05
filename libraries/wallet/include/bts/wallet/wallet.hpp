@@ -98,7 +98,7 @@ namespace bts { namespace wallet {
          uint32_t               get_last_scanned_block_number()const;
 
          void                   set_transaction_fee( const asset& fee );
-         asset                  get_transaction_fee( asset_id_type desired_fee_asset_id = 0 )const;
+         asset                  get_transaction_fee( const asset_id_type& desired_fee_asset_id = 0 )const;
 
          void                   set_transaction_expiration( uint32_t secs );
          uint32_t               get_transaction_expiration()const;
@@ -155,8 +155,7 @@ namespace bts { namespace wallet {
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
                                const scan_progress_callback& progress_callback = scan_progress_callback() );
 
-         void      scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id );
-         void      scan_transactions( uint32_t block_num, const string& transaction_id_prefix );
+         wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
@@ -345,11 +344,6 @@ namespace bts { namespace wallet {
                  const string& memo_message,
                  bool sign = true
                  );
-         wallet_transaction_record publish_slate(
-                 const string& account,
-                 string account_to_pay_with,
-                 bool sign = true
-                 );
          wallet_transaction_record publish_feeds(
                  const string& account,
                  map<string,double> amount_per_xts,
@@ -359,6 +353,16 @@ namespace bts { namespace wallet {
                  const string& account,
                  double amount_per_xts,
                  const string& amount_asset_symbol,
+                 bool sign = true
+                 );
+         wallet_transaction_record publish_slate(
+                 const string& account_to_publish_under,
+                 const string& account_to_pay_with,
+                 bool sign = true
+                 );
+         wallet_transaction_record publish_version(
+                 const string& account_to_publish_under,
+                 const string& account_to_pay_with,
                  bool sign = true
                  );
          wallet_transaction_record create_asset(
