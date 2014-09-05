@@ -80,7 +80,7 @@ D:\BitShares
 +- OpenSSL
 ```
 
-#### Build the library dependencies ####
+#### Build the library dependencies - Skip if you downloaded the prebuilt binary package(s) ####
 
 * Set up environment for building:
   ```
@@ -135,7 +135,7 @@ run_cmake.bat (or run_cmake_x64.bat for 64bit development)
  * Where to build the binaries: `D:\BitShares\bin` (or bin64 for 64bit development).
  
  Then hit **Configure**.  It may ask you to specify a generator for this 
- project; if it does, choose **Visual Studio 12** and select **Use default 
+ project; if it does, choose **Visual Studio 12 2013** or **Visual Studio 12 2013 Win64** for 64 bit builds and select **Use default 
  native compilers**.  Look through the output and fix any errors.  Then 
  hit **Generate**.
 
@@ -146,8 +146,14 @@ Or you can run Cmake in command line:
 > cmake -G "Visual Studio 12" -T "v120_xp" -DINCLUDE_QT_WALLET ..\bitshares_toolkit
 
 #### Build BitShares ####
-* Launch *Visual Studio* and load `D:\BitShares\bin\BitShares.sln`
-* Set Configuration to Win32 - RelWithDebInfo
+* Set up environment for building (Skip if you already did this when building library dependencies):
+
+	```cd D:\BitShares\bitshares_toolkit
+setenv.bat (or setenv_x64.bat for 64bit development)```
+
+* Launch *Visual Studio* and load `D:\BitShares\bin\BitShares.sln` bin64 directory for 64 bit builds.
+* Set Active Configuration to RelWithDebInfo, ensure Active Solution platform is x86 for 32 bit platforms and x64 for 64 bit builds
+
 * *Build Solution*
 
  This will build the client executable and various unit tests.
