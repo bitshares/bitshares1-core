@@ -109,7 +109,7 @@ namespace bts { namespace wallet {
                     bool overwrite_existing = false
                     );
 
-            bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee, public_key_type& from_pub_key );
             bool scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
             bool scan_deposit( const deposit_operation& op, const vector<private_key_type>& keys, wallet_transaction_record& trx_rec, asset& total_fee );
@@ -575,6 +575,8 @@ namespace bts { namespace wallet {
           // Assume fees = withdrawals - deposits
           auto total_fee = asset( 0, 0 ); // Assume all fees paid in base asset
 
+          public_key_type withdraw_pub_key;
+
           // Force scanning all withdrawals first because ledger reconstruction assumes such an ordering
           auto has_withdrawal = false;
           for( const auto& op : transaction.operations )
@@ -582,7 +584,7 @@ namespace bts { namespace wallet {
               switch( operation_type_enum( op.type ) )
               {
                   case withdraw_op_type:
-                      has_withdrawal |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record, total_fee );
+                      has_withdrawal |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record, total_fee, withdraw_pub_key );
                       break;
                   case withdraw_pay_op_type:
                       has_withdrawal |= scan_withdraw_pay( op.as<withdraw_pay_operation>(), *transaction_record, total_fee );
@@ -613,6 +615,7 @@ namespace bts { namespace wallet {
               }
           }
           store_record |= has_withdrawal;
+
 
           // Force scanning all deposits next because ledger reconstruction assumes such an ordering
           auto has_deposit = false;
@@ -758,6 +761,24 @@ namespace bts { namespace wallet {
               }
           }
 
+          if( has_withdrawal )
+          {
+             auto blockchain_trx_state = _blockchain->get_transaction( record_id );
+             if( blockchain_trx_state )
+             {
+                for( auto reward_item : blockchain_trx_state->rewards )
+                {
+                   auto entry = ledger_entry();
+                   entry.amount = asset( reward_item.second, reward_item.first );
+                   entry.to_account = withdraw_pub_key;
+                   entry.from_account = withdraw_pub_key;
+                   entry.memo = "interest";
+                   transaction_record->ledger_entries.push_back( entry );
+                   self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
+                }
+             }
+          }
+
           /* Only overwrite existing record if you did not create it or overwriting was explicitly specified */
           if( store_record && ( !already_exists || overwrite_existing ) )
               _wallet_db.store_transaction( *transaction_record );
@@ -766,7 +787,9 @@ namespace bts { namespace wallet {
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
-      bool wallet_impl::scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      bool wallet_impl::scan_withdraw( const withdraw_operation& op, 
+                                       wallet_transaction_record& trx_rec, asset& total_fee, 
+                                       public_key_type& withdraw_pub_key )
       { try {
          const auto bal_rec = _blockchain->get_balance_record( op.balance_id );
          FC_ASSERT( bal_rec.valid() );
@@ -809,6 +832,7 @@ namespace bts { namespace wallet {
                  entry.from_account = key_rec->public_key;
                  entry.amount = amount;
                  trx_rec.ledger_entries.push_back( entry );
+                 withdraw_pub_key = key_rec->public_key;
              }
 
              sync_balance_with_blockchain( op.balance_id );
@@ -5021,8 +5045,11 @@ namespace bts { namespace wallet {
              pretty_entry.from_account = "GENESIS";
           else if( trx_rec.is_market )
              pretty_entry.from_account = "MARKET";
+          else if( entry.memo == "interest" )
+             pretty_entry.from_account = "NETWORK";
           else
              pretty_entry.from_account = "UNKNOWN";
+
 
           if( entry.to_account.valid() )
              pretty_entry.to_account = get_key_label( *entry.to_account );
