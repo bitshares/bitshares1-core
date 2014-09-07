@@ -251,14 +251,15 @@ namespace bts { namespace blockchain {
       if( asset_rec->is_market_issued() )
       {
          auto rewards = current_balance_record->calculate_rewards( eval_state._current_state->now(),
-                                                                   this->amount,
+                                                                   current_balance_record->balance,
                                                                    asset_rec->collected_fees,
                                                                    asset_rec->current_share_supply );
          if( rewards.amount > 0 )
          {
-            asset_rec->collected_fees -= rewards.amount;
+            asset_rec->collected_fees       -= rewards.amount;
+            current_balance_record->balance += rewards.amount;
+            current_balance_record->deposit_date = eval_state._current_state->now();
             eval_state.rewards[current_balance_record->condition.asset_id] += rewards.amount;
-            eval_state.add_balance( rewards );
             eval_state._current_state->store_asset_record( *asset_rec );
          }
       }
