@@ -1241,6 +1241,7 @@ namespace bts { namespace wallet {
                       _scanner_thread->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
                       if( status.valid() ) /* If I've successfully decrypted then it's for me */
                       {
+                         cache_deposit = true;
                          _wallet_db.cache_memo( *status, key, _wallet_password );
 
                          auto new_entry = true;
@@ -1300,8 +1301,6 @@ namespace bts { namespace wallet {
                                 trx_rec.ledger_entries.push_back( entry );
                             }
                          }
-
-                         cache_deposit = true;
                          break;
                       }
                    }
@@ -1312,6 +1311,7 @@ namespace bts { namespace wallet {
                    const auto okey_rec = _wallet_db.lookup_key( deposit.owner );
                    if( okey_rec && okey_rec->has_private_key() )
                    {
+                       cache_deposit = true;
                        for( auto& entry : trx_rec.ledger_entries )
                        {
                            if( !entry.from_account.valid() ) continue;
@@ -1333,7 +1333,6 @@ namespace bts { namespace wallet {
                            }
                            break;
                        }
-                       cache_deposit = true;
                    }
                 }
                 break;
@@ -1360,7 +1359,9 @@ namespace bts { namespace wallet {
              }
         }
 
-        if( cache_deposit ) sync_balance_with_blockchain( op.balance_id() );
+        if( cache_deposit )
+            sync_balance_with_blockchain( op.balance_id() );
+
         return cache_deposit;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit
 

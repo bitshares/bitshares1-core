@@ -711,7 +711,8 @@ namespace bts { namespace wallet {
       }
       else
       {
-         *current_bal = balance_to_cache;
+         blockchain::balance_record& chain_rec = *current_bal;
+         chain_rec = balance_to_cache;
          balance_record = *current_bal;
       }
 
