@@ -53,14 +53,11 @@ namespace bts { namespace wallet {
                    case property_record_type:
                        load_property_record( record.as<wallet_property_record>(), overwrite );
                        break;
-                   case market_order_record_type:
-                       load_market_record( record.as<wallet_market_order_status_record>(), overwrite );
-                       break;
                    case setting_record_type:
                        load_setting_record( record.as<wallet_setting_record>(), overwrite );
                        break;
                    default:
-                       FC_ASSERT( !"unknown wallet_db record type!", "", ("type",record.type) );
+                       elog( "Unknown wallet record type: ${type}", ("type",record.type) );
                        break;
                 }
            } FC_CAPTURE_AND_RETHROW( (record) ) }
@@ -146,11 +143,6 @@ namespace bts { namespace wallet {
               self->properties[property_rec.key] = property_rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("property_record",property_rec )) }
 
-           void load_market_record( const wallet_market_order_status_record& rec, bool overwrite )
-           {
-              self->market_orders[rec.order.market_index.owner] = rec;
-           }
-
            void load_setting_record( const wallet_setting_record& rec, bool overwrite )
            { try {
               self->settings[rec.name] = rec;
@@ -213,7 +205,6 @@ namespace bts { namespace wallet {
       assets.clear();
       balances.clear();
       properties.clear();
-      market_orders.clear();
       settings.clear();
 
       btc_to_bts_address.clear();
@@ -821,17 +812,6 @@ namespace bts { namespace wallet {
          }
       }
    } FC_CAPTURE_AND_RETHROW() }
-
-   void wallet_db::update_market_order( const address& owner,
-                                        const optional<bts::blockchain::market_order>& order,
-                                        const transaction_id_type& trx_id )
-   {
-      if( order.valid() ) market_orders[ owner ].order = *order;
-      else market_orders[ owner ].order.state.balance = 0;
-      if( trx_id != transaction_id_type() )
-         market_orders[ owner ].transactions.insert( trx_id );
-      store_record( market_orders[ owner ] );
-   }
 
    void wallet_db::remove_balance( const balance_id_type& balance_id )
    {

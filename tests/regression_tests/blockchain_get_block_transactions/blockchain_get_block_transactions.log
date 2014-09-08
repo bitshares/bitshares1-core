@@ -58,11 +58,11 @@ default (unlocked) >>> blockchain_get_block_transactions 2
         ]
       },
       "signed_keys": [
-        "XTSA5wQqHYd93W65JzCZ1wtmBq9DbtTRyqD",
         "XTSDG4CLPoePEPHaRaDszT4ix8gA1ghTb6FF",
-        "XTSPcpRoTjhdb9KBYXmsFB3nfe2BYiZV88Be",
         "XTSEbFjCRUUsoN3FUJTeBbWX7SZx1bMrFzUH",
-        "XTSF4Bjx9KdtUChuTn8wL9T6aBFrLBq6wyDJ"
+        "XTSF4Bjx9KdtUChuTn8wL9T6aBFrLBq6wyDJ",
+        "XTSA5wQqHYd93W65JzCZ1wtmBq9DbtTRyqD",
+        "XTSPcpRoTjhdb9KBYXmsFB3nfe2BYiZV88Be"
       ],
       "validation_error": null,
       "required_deposits": [],
@@ -87,6 +87,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           }
         ]
       ],
+      "rewards": [],
       "balance": [[
           0,
           50000

@@ -18,9 +18,9 @@ Owner Key: XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z
 Active Key History:
 - XTS7YuLaRgMynXGj5kC4xQnmjLCsfa5dd7oAjHEVrvJJCeNyqmf5Z, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 (wallet closed) >>> blockchain_get_account delegate1
 Name: delegate1
@@ -30,9 +30,9 @@ Owner Key: XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54
 Active Key History:
 - XTS7gEAmuw9tvjLnZcEpGtPfseYZ53QDHnaRuqPkSCYfprakYVg54, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 (wallet closed) >>> blockchain_get_account deleg
 No account found.

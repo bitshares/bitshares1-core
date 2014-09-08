@@ -295,6 +295,9 @@ class market_engine
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
+#ifndef WIN32
+#warning [HARDFORK] fix price overlap condition, needs testing.
+#endif
                    /**
                     *  If the ask is less than the "max short bid" then that means the
                     *  ask (those with XTS wanting to buy USD) are willing to accept
@@ -302,7 +305,7 @@ class market_engine
                     *  everyone else with USD looking to sell below parity has been
                     *  bought out and the buyers of USD are willing to pay above parity.
                     */
-                   if( mtrx.ask_price <= max_short_bid )
+                   if( mtrx.bid_price > max_short_bid && mtrx.ask_price > max_short_bid )
                    {
                       // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
                       // TODO: cancel the short order...

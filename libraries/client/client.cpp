@@ -1843,6 +1843,14 @@ config load_config( const fc::path& datadir )
        return record;
     }
 
+    wallet_transaction_record detail::client_impl::wallet_publish_version( const string& publishing_account_name,
+                                                                           const string& paying_account_name )
+    {
+       const auto record = _wallet->publish_version( publishing_account_name, paying_account_name );
+       network_broadcast_transaction( record.trx );
+       return record;
+    }
+
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
@@ -1978,12 +1986,12 @@ config load_config( const fc::path& datadir )
       }
     } FC_RETHROW_EXCEPTIONS( warn, "") }
 
-    void detail::client_impl::wallet_transaction_remove( const string& transaction_id )
+    void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
     { try {
        _wallet->remove_transaction_record( transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
-    void detail::client_impl::wallet_transaction_rebroadcast( const string& transaction_id )
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
     { try {
        const auto records = _wallet->get_transactions( transaction_id );
        for( const auto& record : records )
@@ -3066,10 +3074,10 @@ config load_config( const fc::path& datadir )
        _wallet->scan_chain( start, start + count );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    void client_impl::wallet_transaction_scan( uint32_t block_num, const string& transaction_id )
+    wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
     { try {
-       _wallet->scan_transactions( block_num, transaction_id );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
+       return _wallet->scan_transaction( transaction_id, overwrite_existing );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
 
     wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
     { try {
@@ -3199,6 +3207,10 @@ config load_config( const fc::path& datadir )
    {
       return _wallet->get_account_balances( account_name );
    }
+   account_balance_summary_type client_impl::wallet_account_rewards( const string& account_name )const
+   {
+      return _wallet->get_account_rewards( account_name );
+   }
 
    wallet_transaction_record client_impl::wallet_market_submit_bid(
            const string& from_account,
@@ -3266,20 +3278,9 @@ config load_config( const fc::path& datadir )
            const string& from_account,
            double quantity,
            const string& quantity_symbol,
-           const address& order_id )
-   {
-      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, order_id );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   wallet_transaction_record client_impl::wallet_market_cover2(
-           const string& from_account,
-           double quantity,
-           const string& quantity_symbol,
            const order_id_type& short_id )
    {
-      const auto record = _wallet->cover_short2( from_account, quantity, quantity_symbol, short_id );
+      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, short_id );
       network_broadcast_transaction( record.trx );
       return record;
    }
@@ -3407,7 +3408,7 @@ config load_config( const fc::path& datadir )
    }
 
    wallet_transaction_record client_impl::wallet_market_add_collateral( const std::string &from_account_name,
-                                                                        const address &short_id,
+                                                                        const order_id_type &short_id,
                                                                         const share_type &collateral_to_add )
    {
       const auto record = _wallet->add_collateral( from_account_name, short_id, collateral_to_add );
@@ -3415,41 +3416,17 @@ config load_config( const fc::path& datadir )
       return record;
    }
 
-   wallet_transaction_record client_impl::wallet_market_add_collateral2( const std::string &from_account_name,
-                                                                         const order_id_type &short_id,
-                                                                         const share_type &collateral_to_add )
-   {
-      const auto record = _wallet->add_collateral2( from_account_name, short_id, collateral_to_add );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
-                                                               const string& base_symbol,
-                                                               int64_t limit,
-                                                               const string& account_name )
-   {
-      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
-   }
-
-   map<order_id_type, market_order> client_impl::wallet_market_order_list2( const string& quote_symbol,
+   map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                             const string& base_symbol,
                                                                             int64_t limit,
                                                                             const string& account_name )
    {
-      return _wallet->get_market_orders2( quote_symbol, base_symbol, limit, account_name );
+      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }
 
-   wallet_transaction_record client_impl::wallet_market_cancel_order( const address& order_address )
+   wallet_transaction_record client_impl::wallet_market_cancel_order( const order_id_type& order_id )
    {
-      const auto record = _wallet->cancel_market_order( order_address );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   wallet_transaction_record client_impl::wallet_market_cancel_order2( const order_id_type& order_id )
-   {
-      const auto record = _wallet->cancel_market_order2( order_id );
+      const auto record = _wallet->cancel_market_order( order_id );
       network_broadcast_transaction( record.trx );
       return record;
    }

@@ -55,9 +55,9 @@ Owner Key: XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw
 Active Key History:
 - XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_get_account delegate41 
 Name: delegate41
@@ -67,9 +67,9 @@ Owner Key: XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw
 Active Key History:
 - XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_get_account delegate43 
 Name: delegate43
@@ -79,9 +79,9 @@ Owner Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
 Active Key History:
 - XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-44    delegate43                      0.00000000 %   1        0        100.00 %      100 %    0.00000 XTS         2         
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+44    delegate43                      0.00000000 %   1        0        100.00 %      100 %    0.00000 XTS         2                       
 
 default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
@@ -96,9 +96,9 @@ Owner Key: XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1
 Active Key History:
 - XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3         
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3                       
 
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -117,13 +117,13 @@ Owner Key: XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1
 Active Key History:
 - XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3         
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3                       
 
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     

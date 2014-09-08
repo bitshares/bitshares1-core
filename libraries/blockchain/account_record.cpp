@@ -10,9 +10,9 @@ namespace bts { namespace blockchain {
     }
 
     account_record account_record::make_null()const
-    { 
+    {
         account_record cpy(*this);
-        cpy.owner_key = public_key_type(); 
+        cpy.owner_key = public_key_type();
         return cpy;
     }
 
@@ -24,10 +24,10 @@ namespace bts { namespace blockchain {
 
     bool account_record::is_delegate()const
     {
-        return !!delegate_info; 
+        return !!delegate_info;
     }
 
-    int64_t account_record::net_votes()const 
+    int64_t account_record::net_votes()const
     {
         FC_ASSERT( is_delegate() );
         return delegate_info->votes_for;
@@ -40,12 +40,12 @@ namespace bts { namespace blockchain {
     }
 
     bool account_record::is_retracted()const
-    { 
+    {
         return active_key() == public_key_type();
     }
 
     address account_record::active_address()const
-    { 
+    {
         return address(active_key());
     }
 
