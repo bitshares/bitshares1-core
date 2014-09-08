@@ -15,7 +15,7 @@ public:
     enum mail_status {
         submitted,              //The message has been submitted to the client for processing
         proof_of_work,          //The message is undergoing proof-of-work before transmission to server
-        transmitted,            //The message has been transmitted to the server, but not yet accepted
+        transmitting,           //The message is being transmitted to the servers, but has not yet been accepted by all of them
         accepted,               //The message has been acknowledged and stored by the server
 
         failed                  //The message could not be processed
@@ -25,6 +25,9 @@ public:
     virtual ~client() {}
 
     void open(const fc::path& data_dir);
+
+    void retry_message(message_id_type message_id);
+    void remove_message(message_id_type message_id);
 
     std::multimap<mail_status, message_id_type> get_processing_messages();
     message get_message(message_id_type message_id);
@@ -38,4 +41,4 @@ private:
 }
 
 FC_REFLECT_TYPENAME(bts::mail::client::mail_status)
-FC_REFLECT_ENUM(bts::mail::client::mail_status, (submitted)(proof_of_work)(transmitted)(accepted)(failed))
+FC_REFLECT_ENUM(bts::mail::client::mail_status, (submitted)(proof_of_work)(transmitting)(accepted)(failed))

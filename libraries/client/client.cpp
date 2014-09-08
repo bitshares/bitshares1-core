@@ -2410,6 +2410,18 @@ config load_config( const fc::path& datadir )
       return _mail_client->get_processing_messages();
     }
 
+    void detail::client_impl::mail_retry_send(const message_id_type& message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->retry_message(message_id);
+    }
+
+    void detail::client_impl::mail_remove_message(const message_id_type &message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->remove_message(message_id);
+    }
+
     mail::message detail::client_impl::mail_get_sent_message(const mail::message_id_type& message_id) const
     {
       FC_ASSERT(_mail_client);
