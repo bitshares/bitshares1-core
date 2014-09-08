@@ -217,9 +217,9 @@ Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-102   testaccount1                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+102   testaccount1                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_get_account testaccount2
 Name: testaccount2
@@ -229,9 +229,9 @@ Owner Key: XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b
 Active Key History:
 - XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-103   testaccount2                    0.00000000 %   0        0        N/A           90 %     0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+103   testaccount2                    0.00000000 %   0        0        N/A           90 %     0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_get_account testaccount3
 Name: testaccount3
@@ -241,9 +241,9 @@ Owner Key: XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM
 Active Key History:
 - XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-104   testaccount3                    0.00000000 %   0        0        N/A           10 %     0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+104   testaccount3                    0.00000000 %   0        0        N/A           10 %     0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_get_account testaccount4
 Name: testaccount4
@@ -253,9 +253,9 @@ Owner Key: XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg
 Active Key History:
 - XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-105   testaccount4                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+105   testaccount4                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_list_recently_registered_accounts
 [{

@@ -49,9 +49,9 @@ Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
@@ -84,9 +84,9 @@ Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> wallet_account_update_active_key test test
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -105,9 +105,9 @@ Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
 - XTS59dmubEqvecCWhwabdqy165CqtVcmmpceYvy1D3ymqzVvDnbTx, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> 
 default (unlocked) >>> quit

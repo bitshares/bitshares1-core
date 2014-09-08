@@ -9,7 +9,7 @@ Publishes the current wallet delegate slate to the public data associated with t
 
 Parameters:
   publishing_account_name (account_name, required): The account to publish the slate ID under
-  paying_account_name (account_name, optional, defaults to ""): The account to pay transaction fees; leave empty to pay with publishing account.
+  paying_account_name (account_name, optional, defaults to ""): The account to pay transaction fees or leave empty to pay with publishing account
 
 Returns:
   transaction_record
