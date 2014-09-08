@@ -570,7 +570,7 @@ namespace bts { namespace wallet {
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
           {
-              if( entry.memo != "interest" )
+              if( entry.memo.find( "interest" ) == string::npos )
                   entry.amount.amount = 0;
           }
 
@@ -5009,7 +5009,6 @@ namespace bts { namespace wallet {
              }
          }
       }
-
       return xts_fee;
    } FC_CAPTURE_AND_RETHROW() }
 
