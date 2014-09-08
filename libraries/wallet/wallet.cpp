@@ -2490,8 +2490,6 @@ namespace bts { namespace wallet {
    {
        uint64_t total_possible = 0;
        uint64_t total = 0;
-       auto balances = my->_wallet_db.get_all_balances( account_name, -1 );
-       ulog("number of balances: ${len}", ("len", balances.size()));
        for( auto balance : my->_wallet_db.get_all_balances( account_name, -1 ) )
        {
            auto oslate = my->_blockchain->get_delegate_slate( balance.delegate_slate_id() );
