@@ -40,6 +40,7 @@ price market_order::get_price()const
 {
   return market_index.order_price;
 }
+
 price market_order::get_highest_cover_price()const
 { try {
   FC_ASSERT( type == cover_order );

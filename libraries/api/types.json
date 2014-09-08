@@ -37,6 +37,10 @@
          "cpp_return_type" : "std::map<bts::blockchain::balance_id_type, bts::blockchain::balance_record>"
       },
       {
+         "type_name" : "price_map",
+         "cpp_return_type" : "std::map<std::string,double>"
+      },
+      {
          "type_name" : "wallet_balance_record",
          "cpp_return_type" : "bts::wallet::wallet_balance_record"
       },
@@ -468,15 +472,6 @@
           "default_example" : "Alice"
       },
       {
-         "type_name" : "market_order_status",
-         "cpp_return_type" : "bts::wallet::market_order_status"
-      },
-      {
-         "type_name" : "market_order_status_array",
-         "container_type" : "array",
-         "contained_type" : "market_order_status"
-      },
-      {
          "type_name" : "map< account_name, share_type >",
          "cpp_return_type" : "std::unordered_map< std::string, bts::blockchain::share_type >"
       },
@@ -629,6 +624,11 @@
         "type_name" : "message_id",
         "cpp_return_type" : "bts::mail::message_id_type",
         "cpp_include_file" : "bts/mail/server.hpp"
+      },
+      {
+        "type_name" : "message_status_list",
+        "cpp_return_type" : "std::multimap<bts::mail::client::mail_status,bts::mail::message_id_type>",
+        "cpp_include_file" : "bts/mail/client.hpp"
       }
     ]
 }

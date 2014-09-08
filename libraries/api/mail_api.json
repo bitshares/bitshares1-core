@@ -48,7 +48,7 @@
         },
         {
             "method_name": "mail_fetch_message",
-            "description": "Get a specific message.",
+            "description": "Get a specific message from the server.",
             "return_type": "message",
             "parameters" : [
                 {
@@ -59,6 +59,56 @@
             ],
             "is_const" : true,
             "prerequisites" : []
+        },
+        {
+            "method_name": "mail_get_processing_messages",
+            "description": "Get all messages in the mail client which are still in processing.",
+            "return_type": "message_status_list",
+            "parameters" : [],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "mail_get_sent_message",
+            "description": "Get a specific message from the client.",
+            "return_type": "message",
+            "parameters" : [
+                {
+                    "name" : "message_id",
+                    "type" : "message_id",
+                    "description" : "The ID of the message to retrieve."
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "mail_send",
+            "description": "Create a new email, encrypt it, and send it to the recipient's mail server.",
+            "return_type": "message_id",
+            "parameters" : [
+                {
+                    "name" : "from",
+                    "type" : "string",
+                    "description" : "The sender's name."
+                },
+                {
+                    "name" : "to",
+                    "type" : "string",
+                    "description" : "The recipient's name."
+                },
+                {
+                    "name" : "subject",
+                    "type" : "string",
+                    "description" : "The subject of the email."
+                },
+                {
+                    "name" : "body",
+                    "type" : "string",
+                    "description" : "The body of the email."
+                }
+            ],
+            "prerequisites" : ["json_authenticated","wallet_unlocked"]
         }
     ]
 }

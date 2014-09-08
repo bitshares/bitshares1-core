@@ -34,6 +34,7 @@ default (unlocked) >>> wallet_get_account testaccount
   "is_my_account": true,
   "approved": 0,
   "is_favorite": false,
-  "block_production_enabled": false
+  "block_production_enabled": false,
+  "last_used_gen_sequence": 10000
 }
 default (unlocked) >>> quit

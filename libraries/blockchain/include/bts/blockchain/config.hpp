@@ -13,7 +13,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     134
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     135
 
 /**
  *  The address prepended to string representation of
@@ -27,6 +27,7 @@
 #define BTS_BLOCKCHAIN_DESCRIPTION                          "Decentralized Autonomous Exchange"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
+#define BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC              (60*60*24) // 24 hours
 
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)

@@ -98,7 +98,7 @@ namespace bts { namespace wallet {
          uint32_t               get_last_scanned_block_number()const;
 
          void                   set_transaction_fee( const asset& fee );
-         asset                  get_transaction_fee( asset_id_type desired_fee_asset_id = 0 )const;
+         asset                  get_transaction_fee( const asset_id_type& desired_fee_asset_id = 0 )const;
 
          void                   set_transaction_expiration( uint32_t secs );
          uint32_t               get_transaction_expiration()const;
@@ -155,8 +155,7 @@ namespace bts { namespace wallet {
          void      scan_chain( uint32_t start = 0, uint32_t end = -1,
                                const scan_progress_callback& progress_callback = scan_progress_callback() );
 
-         void      scan_transaction( uint32_t block_num, const transaction_id_type& transaction_id );
-         void      scan_transactions( uint32_t block_num, const string& transaction_id_prefix );
+         wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
@@ -345,15 +344,25 @@ namespace bts { namespace wallet {
                  const string& memo_message,
                  bool sign = true
                  );
-         wallet_transaction_record publish_slate(
+         wallet_transaction_record publish_feeds(
                  const string& account,
-                 string account_to_pay_with,
+                 map<string,double> amount_per_xts,
                  bool sign = true
                  );
          wallet_transaction_record publish_price(
                  const string& account,
                  double amount_per_xts,
                  const string& amount_asset_symbol,
+                 bool sign = true
+                 );
+         wallet_transaction_record publish_slate(
+                 const string& account_to_publish_under,
+                 const string& account_to_pay_with,
+                 bool sign = true
+                 );
+         wallet_transaction_record publish_version(
+                 const string& account_to_publish_under,
+                 const string& account_to_pay_with,
                  bool sign = true
                  );
          wallet_transaction_record create_asset(
@@ -416,42 +425,19 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  double real_quantity_usd,
                  const string& quote_symbol,
-                 const address& owner_address,
+                 const order_id_type& short_id,
                  bool sign = true
                  );
          wallet_transaction_record add_collateral(
                  const string& from_account_name,
-                 const address& short_id,
+                 const order_id_type& short_id,
                  share_type collateral_to_add,
                  bool sign = true
                  );
          wallet_transaction_record cancel_market_order(
-                 const address& owner_address,
-                 bool sign = true
-                 );
-         /*************************/
-         /* New market order APIs */
-         wallet_transaction_record cover_short2(
-                 const string& from_account_name,
-                 double real_quantity_usd,
-                 const string& quote_symbol,
-                 const order_id_type& short_id,
-                 bool sign = true
-                 );
-         wallet_transaction_record add_collateral2(
-                 const string& from_account_name,
-                 const order_id_type& short_id,
-                 share_type collateral_to_add,
-                 bool sign = true
-                 );
-         wallet_transaction_record cancel_market_order2(
                  const order_id_type& order_id,
                  bool sign = true
                  );
-
-         map<order_id_type, market_order>   get_market_orders2( const string& quote, const string& base,
-                                                                int32_t limit, const string& account_name )const;
-         /*************************/
 #if 0
          wallet_transaction_record create_proposal(
                  const string& delegate_account_name,
@@ -481,10 +467,11 @@ namespace bts { namespace wallet {
          bool      is_receive_address( const address& addr )const;
 
          account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
+         account_balance_summary_type       get_account_rewards( const string& account_name = "" )const;
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         vector<market_order>               get_market_orders( const string& quote, const string& base,
+         map<order_id_type, market_order>   get_market_orders( const string& quote, const string& base,
                                                                int32_t limit, const string& account_name )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
@@ -526,15 +513,16 @@ namespace bts { namespace wallet {
          private_key_type get_private_key( const address& addr )const;
 
          std::string login_start( const std::string& account_name );
-         fc::variant login_finish(const public_key_type& server_key,
-                                  const public_key_type& client_key,
-                                  const fc::ecc::compact_signature& client_signature);
+         fc::variant login_finish( const public_key_type& server_key,
+                                   const public_key_type& client_key,
+                                   const fc::ecc::compact_signature& client_signature );
 
-         mail::message mail_create(const string& sender,
-                                   const public_key_type& recipient,
-                                   const string& subject,
-                                   const string& body);
-         mail::message mail_open(const address& recipient, const mail::message& ciphertext);
+         mail::message mail_create( const string& sender,
+                                    const public_key_type& recipient,
+                                    const string& subject,
+                                    const string& body );
+         mail::message mail_open( const address& recipient, const mail::message& ciphertext );
+
      private:
          unique_ptr<detail::wallet_impl> my;
    };

@@ -23,7 +23,7 @@ namespace bts { namespace blockchain {
    {
       transaction_record(){}
 
-      transaction_record( const transaction_location& loc, 
+      transaction_record( const transaction_location& loc,
                           const transaction_evaluation_state& s )
       :transaction_evaluation_state(s),chain_location(loc){}
 
@@ -48,16 +48,16 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT_DERIVED( bts::blockchain::block_record, 
-                    (bts::blockchain::digest_block), 
+FC_REFLECT_DERIVED( bts::blockchain::block_record,
+                    (bts::blockchain::digest_block),
                     (random_seed)
                     (block_size)
                     (total_fees)
                     (latency)
                     (processing_time) )
 
-FC_REFLECT_DERIVED( bts::blockchain::transaction_record, 
-                    (bts::blockchain::transaction_evaluation_state), 
+FC_REFLECT_DERIVED( bts::blockchain::transaction_record,
+                    (bts::blockchain::transaction_evaluation_state),
                     (chain_location) );
 
 FC_REFLECT( bts::blockchain::slot_record, (start_time)(block_producer_id)(block_produced)(block_id) )
