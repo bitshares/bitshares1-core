@@ -46,6 +46,7 @@ namespace bts { namespace rpc {
          fc::shared_ptr<fc::promise<void>>                 _on_quit_promise;
          fc::thread*                                       _thread;
          http_callback_type                                _http_file_callback;
+         std::unordered_set<fc::rpc::json_connection_ptr>  _open_json_connections;
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -64,7 +65,7 @@ namespace bts { namespace rpc {
          void shutdown_rpc_server();
 
          virtual bts::api::common_api* get_client() const override;
-         virtual void verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const override;
+         virtual void verify_json_connection_is_authenticated(fc::rpc::json_connection* json_connection) const override;
          virtual void verify_wallet_is_open() const override;
          virtual void verify_wallet_is_unlocked() const override;
          virtual void verify_connected_to_network() const override;
@@ -391,15 +392,19 @@ namespace bts { namespace rpc {
               auto json_con = std::make_shared<fc::rpc::json_connection>( std::move(buf_istream),
                                                                           std::move(buf_ostream) );
               register_methods( json_con );
+              auto receipt = _open_json_connections.insert(json_con);
 
-         //   TODO  0.5 BTC: handle connection errors and and connection closed without
-         //   creating an entirely new context... this is waistful
-         //     json_con->exec();
-              fc::async( [json_con]{ json_con->exec().wait(); }, "rpc_server json_con->exec" );
+              json_con->exec().on_complete([this,receipt,sock](fc::exception_ptr e){
+                  ilog("json_con exited");
+                  sock->close();
+                  _open_json_connections.erase(receipt.first);
+                  if( e )
+                    elog("Connection exited with error: ${error}", ("error", e->what()));
+              });
            }
          }
 
-         void register_methods( const fc::rpc::json_connection_ptr& con )
+         void register_methods( fc::rpc::json_connection_ptr con )
          {
             ilog( "login!" );
             fc::rpc::json_connection* capture_con = con.get();
@@ -522,10 +527,10 @@ namespace bts { namespace rpc {
     {
       return _client;
     }
-    void rpc_server_impl::verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const
+    void rpc_server_impl::verify_json_connection_is_authenticated(fc::rpc::json_connection* json_connection) const
     {
       if (json_connection &&
-          _authenticated_connection_set.find(json_connection.get()) == _authenticated_connection_set.end())
+          _authenticated_connection_set.find(json_connection) == _authenticated_connection_set.end())
         FC_THROW("The RPC connection must be logged in before executing this command");
     }
     void rpc_server_impl::verify_wallet_is_open() const

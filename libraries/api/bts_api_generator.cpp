@@ -681,7 +681,7 @@ void api_generator::generate_server_call_to_client_to_stream(const method_descri
 
 void api_generator::generate_positional_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream)
 {
-  stream << "fc::variant " << server_classname << "::" << method.name << "_positional(const fc::rpc::json_connection_ptr& json_connection, const fc::variants& parameters)\n";
+  stream << "fc::variant " << server_classname << "::" << method.name << "_positional(fc::rpc::json_connection* json_connection, const fc::variants& parameters)\n";
   stream << "{\n";
 
   generate_prerequisite_checks_to_stream(method, stream);
@@ -716,7 +716,7 @@ void api_generator::generate_positional_server_implementation_to_stream(const me
 
 void api_generator::generate_named_server_implementation_to_stream(const method_description& method, const std::string& server_classname, std::ostream& stream)
 {
-  stream << "fc::variant " << server_classname << "::" << method.name << "_named(const fc::rpc::json_connection_ptr& json_connection, const fc::variant_object& parameters)\n";
+  stream << "fc::variant " << server_classname << "::" << method.name << "_named(fc::rpc::json_connection* json_connection, const fc::variant_object& parameters)\n";
   stream << "{\n";
 
   generate_prerequisite_checks_to_stream(method, stream);
@@ -797,7 +797,7 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   header_file << "  {\n";
   header_file << "  public:\n";
   header_file << "    virtual bts::api::common_api* get_client() const = 0;\n";
-  header_file << "    virtual void verify_json_connection_is_authenticated(const fc::rpc::json_connection_ptr& json_connection) const = 0;\n";
+  header_file << "    virtual void verify_json_connection_is_authenticated(fc::rpc::json_connection* json_connection) const = 0;\n";
   header_file << "    virtual void verify_wallet_is_open() const = 0;\n";
   header_file << "    virtual void verify_wallet_is_unlocked() const = 0;\n";
   header_file << "    virtual void verify_connected_to_network() const = 0;\n\n";
@@ -807,8 +807,8 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   header_file << "    void register_" << _api_classname << "_method_metadata();\n\n";
   for (const method_description& method : _methods)
   {
-    header_file << "    fc::variant " << method.name << "_positional(const fc::rpc::json_connection_ptr& json_connection, const fc::variants& parameters);\n";
-    header_file << "    fc::variant " << method.name << "_named(const fc::rpc::json_connection_ptr& json_connection, const fc::variant_object& parameters);\n";
+    header_file << "    fc::variant " << method.name << "_positional(fc::rpc::json_connection* json_connection, const fc::variants& parameters);\n";
+    header_file << "    fc::variant " << method.name << "_named(fc::rpc::json_connection* json_connection, const fc::variant_object& parameters);\n";
   }
 
   header_file << "  };\n\n";
@@ -836,16 +836,17 @@ void api_generator::generate_rpc_server_files(const fc::path& rpc_server_output_
   server_cpp_file << "{\n";
   server_cpp_file << "  fc::rpc::json_connection::method bound_positional_method;\n";
   server_cpp_file << "  fc::rpc::json_connection::named_param_method bound_named_method;\n";
+    server_cpp_file << "  auto capture_con = json_connection.get();\n ";
   for (const method_description& method : _methods)
   {
     server_cpp_file << "  // register method " << method.name << "\n";
     server_cpp_file << "  bound_positional_method = boost::bind(&" << server_classname << "::" << method.name << "_positional, \n";
-    server_cpp_file << "                                        this, json_connection, _1);\n";
+    server_cpp_file << "                                        this, capture_con, _1);\n";
     server_cpp_file << "  json_connection->add_method(\"" << method.name << "\", bound_positional_method);\n";
     for (const std::string& alias : method.aliases)
       server_cpp_file << "  json_connection->add_method(\"" << alias << "\", bound_positional_method);\n";
     server_cpp_file << "  bound_named_method = boost::bind(&" << server_classname << "::" << method.name << "_named, \n";
-    server_cpp_file << "                                        this, json_connection, _1);\n";
+    server_cpp_file << "                                        this, capture_con, _1);\n";
     server_cpp_file << "  json_connection->add_named_param_method(\"" << method.name << "\", bound_named_method);\n";
     for (const std::string& alias : method.aliases)
       server_cpp_file << "  json_connection->add_named_param_method(\"" << alias << "\", bound_named_method);\n";
