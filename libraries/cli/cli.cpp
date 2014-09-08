@@ -473,9 +473,11 @@ namespace bts { namespace cli {
                 else
                 {
                   try {
-                    while (!isspace(argument_stream.peek()))
+                    while (!isspace(argument_stream.peek()) && isprint(argument_stream.peek()))
                       result += argument_stream.get();
                   } catch (fc::eof_exception) {}
+                  if (result.empty())
+                    FC_THROW_EXCEPTION(fc::eof_exception, "EOF when parsing argument");
                 }
 
                 return result;
