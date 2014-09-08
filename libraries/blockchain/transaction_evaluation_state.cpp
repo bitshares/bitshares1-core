@@ -97,7 +97,7 @@ namespace bts { namespace blockchain {
            continue;
 
          auto asset_record = _current_state->get_asset_record( fee.first );
-         if( !asset_record ) FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
+         if( !asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
 
          if( !asset_record->is_market_issued() )
            continue;

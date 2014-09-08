@@ -766,11 +766,12 @@ namespace bts { namespace wallet {
           if( has_withdrawal )
           {
              auto blockchain_trx_state = _blockchain->get_transaction( record_id );
-             if( blockchain_trx_state )
+             if( blockchain_trx_state.valid() )
              {
-                if( transaction_record->ledger_entries.size() && transaction_record->ledger_entries.back().memo != "interest" )
+                if( !transaction_record->ledger_entries.empty()
+                    && transaction_record->ledger_entries.back().memo.find( "interest" ) == string::npos )
                 {
-                    for( auto reward_item : blockchain_trx_state->rewards )
+                    for( const auto& reward_item : blockchain_trx_state->rewards )
                     {
                        auto entry = ledger_entry();
                        entry.amount = asset( reward_item.second, reward_item.first );
@@ -4994,7 +4995,7 @@ namespace bts { namespace wallet {
 
       if( desired_fee_asset_id != 0 )
       {
-         auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
+         const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
