@@ -1944,6 +1944,10 @@ namespace bts { namespace wallet {
    bool wallet::get_transaction_scanning()const
    {
        FC_ASSERT( is_open() );
+
+       if( list_my_accounts().empty() )
+           return false;
+
        return my->_wallet_db.get_property( transaction_scanning ).as<bool>();
    }
 
