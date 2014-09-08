@@ -4953,15 +4953,21 @@ namespace bts { namespace wallet {
 
       if( desired_fee_asset_id != 0 )
       {
-         omarket_order lowest_ask = my->_blockchain->get_lowest_ask_record( desired_fee_asset_id, 0 );
-         if( lowest_ask )
+         auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
+         FC_ASSERT( asset_rec.valid() );
+         if( asset_rec->is_market_issued() )
          {
-            xts_fee += xts_fee + xts_fee;
-            // fees paid in something other than XTS are discounted 50%
-            auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;
-            return alt_fees_paid;
+             omarket_order lowest_ask = my->_blockchain->get_lowest_ask_record( desired_fee_asset_id, 0 );
+             if( lowest_ask )
+             {
+                xts_fee += xts_fee + xts_fee;
+                // fees paid in something other than XTS are discounted 50%
+                auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;
+                return alt_fees_paid;
+             }
          }
       }
+
       return xts_fee;
    } FC_CAPTURE_AND_RETHROW() }
 
