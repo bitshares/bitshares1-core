@@ -7,7 +7,7 @@ namespace bts { namespace blockchain {
    asset   balance_record::calculate_rewards( fc::time_point_sec now, share_type amount, share_type rewards_pool, share_type share_supply )const
    {
       auto elapsed_time = (now - deposit_date);
-      //if(  elapsed_time > fc::seconds( BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC ) )
+      if(  elapsed_time > fc::seconds( BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC ) )
       {
          if( rewards_pool > 0 && share_supply > 0 )
          {
