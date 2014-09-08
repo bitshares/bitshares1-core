@@ -432,6 +432,54 @@ namespace bts { namespace cli {
                 }
                 return fc::variant( bts::blockchain::address(address_string) );
               }
+              else if (this_parameter.type == "string" ||
+                       this_parameter.type == "wallet_name" ||
+                       this_parameter.type == "optional_wallet_name" ||
+                       this_parameter.type == "wif_private_key" ||
+                       this_parameter.type == "receive_account_name" ||
+                       this_parameter.type == "sending_account_name" ||
+                       this_parameter.type == "asset_symbol" ||
+                       this_parameter.type == "name" ||
+                       this_parameter.type == "brainkey" ||
+                       this_parameter.type == "keyhoteeid" ||
+                       this_parameter.type == "account_name" ||
+                       this_parameter.type == "new_account_name" ||
+                       this_parameter.type == "method_name" ||
+                       this_parameter.type == "new_passphrase" ||
+                       this_parameter.type == "passphrase")
+              {
+                string result;
+
+                while( isspace(argument_stream.peek()) )
+                  argument_stream.get();
+
+                if (argument_stream.peek() == '\'' || argument_stream.peek() == '"')
+                {
+                  try {
+                    char delimiter = argument_stream.get();
+                    char next = argument_stream.get();
+                    while (next != delimiter)
+                    {
+                      result += next;
+                      next = argument_stream.get();
+                    }
+                  }
+                  catch( fc::exception& e )
+                  {
+                    FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
+                                         ("argument_number", parameter_index + 1)("command", method_data.name)("detail", e.get_log()));
+                  }
+                }
+                else
+                {
+                  try {
+                    while (!isspace(argument_stream.peek()))
+                      result += argument_stream.get();
+                  } catch (fc::eof_exception) {}
+                }
+
+                return result;
+              }
               else
               {
                 // assume it's raw JSON
