@@ -3409,6 +3409,12 @@ config load_config( const fc::path& datadir )
       return record;
    }
 
+   map<order_id_type, market_order> client_impl::wallet_account_order_list( const string& account_name,
+                                                                            int64_t limit )
+   {
+      return _wallet->get_market_orders( account_name, limit );
+   }
+
    map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                             const string& base_symbol,
                                                                             int64_t limit,
@@ -3542,7 +3548,7 @@ config load_config( const fc::path& datadir )
   }
 
 
-  float   client_impl::wallet_check_vote_proportion( const string& account_name )
+  vote_summary   client_impl::wallet_check_vote_proportion( const string& account_name )
   {
       return _wallet->get_vote_proportion( account_name );
   }

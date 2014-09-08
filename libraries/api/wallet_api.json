@@ -1264,6 +1264,27 @@
          "aliases" : []
       },
       {
+         "method_name" : "wallet_account_order_list",
+         "description" : "List an order list of a specific account",
+         "return_type" : "market_order_map",
+         "parameters"  : [
+            {
+               "name" : "account_name",
+               "type" : "account_name",
+               "description" : "the account for which to get the orders, or 'ALL' to get them all",
+               "default_value" : "ALL"
+            },
+            {
+               "name" : "limit",
+               "type" : "int64_t",
+               "description" : "the maximum number of items to return",
+               "default_value" : -1
+            }
+         ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : []
+      },
+      {
          "method_name" : "wallet_market_cancel_order",
          "description" : "Cancel an order",
          "return_type" : "transaction_record",
@@ -1647,7 +1668,7 @@
       {
          "method_name" : "wallet_check_vote_proportion",
          "description" : "Check how much this account is utilizing its voting power"
-         "return_type" : "float",
+         "return_type" : "vote_summary",
          "parameters"  : [
              {
                 "name" : "account",

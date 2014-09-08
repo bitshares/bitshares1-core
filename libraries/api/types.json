@@ -611,6 +611,10 @@
         "cpp_return_type" : "bts::wallet::vote_selection_method"
       },
       {
+        "type_name" : "vote_summary",
+        "cpp_return_type" : "bts::wallet::vote_summary"
+      },
+      {
         "type_name" : "feed_entry_list",
         "cpp_return_type" : "std::vector<bts::blockchain::feed_entry>",
         "cpp_include_file" : "bts/blockchain/feed_operations.hpp"
