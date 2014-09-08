@@ -27,6 +27,7 @@
 #define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares X Test Network"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
+#define BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC              (60*60*24) // 24 hours
 
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
