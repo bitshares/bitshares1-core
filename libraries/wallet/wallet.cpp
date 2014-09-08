@@ -569,7 +569,10 @@ namespace bts { namespace wallet {
 
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
-              entry.amount.amount = 0;
+          {
+              if( entry.memo.find( "interest" ) == string::npos )
+                  entry.amount.amount = 0;
+          }
 
           // Assume fees = withdrawals - deposits
           auto total_fee = asset( 0, 0 ); // Assume all fees paid in base asset
@@ -763,17 +766,24 @@ namespace bts { namespace wallet {
           if( has_withdrawal )
           {
              auto blockchain_trx_state = _blockchain->get_transaction( record_id );
-             if( blockchain_trx_state )
+             if( blockchain_trx_state.valid() )
              {
-                for( auto reward_item : blockchain_trx_state->rewards )
+                if( !transaction_record->ledger_entries.empty()
+                    && transaction_record->ledger_entries.back().memo.find( "interest" ) == string::npos )
                 {
-                   auto entry = ledger_entry();
-                   entry.amount = asset( reward_item.second, reward_item.first );
-                   entry.to_account = withdraw_pub_key;
-                   entry.from_account = withdraw_pub_key;
-                   entry.memo = "interest";
-                   transaction_record->ledger_entries.push_back( entry );
-                   self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
+                    for( const auto& reward_item : blockchain_trx_state->rewards )
+                    {
+                       auto entry = ledger_entry();
+                       entry.amount = asset( reward_item.second, reward_item.first );
+                       entry.to_account = withdraw_pub_key;
+                       entry.from_account = withdraw_pub_key;
+                       entry.memo = "interest";
+                       transaction_record->ledger_entries.push_back( entry );
+                       self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
+                    }
+
+                    if( !blockchain_trx_state->rewards.empty() )
+                       _wallet_db.store_transaction( *transaction_record );
                 }
              }
           }
@@ -4988,13 +4998,18 @@ namespace bts { namespace wallet {
 #endif
       if( desired_fee_asset_id != 0 )
       {
-         omarket_order lowest_ask = my->_blockchain->get_lowest_ask_record( desired_fee_asset_id, 0 );
-         if( lowest_ask )
+         const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
+         FC_ASSERT( asset_rec.valid() );
+         if( asset_rec->is_market_issued() )
          {
-            xts_fee += xts_fee + xts_fee;
-            // fees paid in something other than XTS are discounted 50%
-            auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;
-            return alt_fees_paid;
+             omarket_order lowest_ask = my->_blockchain->get_lowest_ask_record( desired_fee_asset_id, 0 );
+             if( lowest_ask )
+             {
+                xts_fee += xts_fee + xts_fee;
+                // fees paid in something other than XTS are discounted 50%
+                auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;
+                return alt_fees_paid;
+             }
          }
       }
       return xts_fee;
