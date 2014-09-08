@@ -18,18 +18,33 @@ namespace bts { namespace blockchain {
             current_supply *= BTS_BLOCKCHAIN_MAX_SHARES;
 
             fc::uint128 fee_fund( rewards_pool );
-            fee_fund *= BTS_BLOCKCHAIN_MAX_SHARES;
 
             auto rewards = (amount_withdrawn * fee_fund) / current_supply;
 
+            /**
+             *  If less than 1 year, the 80% of rewards are scalled linerly with time and 20% scaled by time^2,
+             *  this should produce a yield curve that is "80% simple interest" and 20% simulating compound
+             *  interest.   
+             */
             if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
             {
+               auto original_rewards = rewards;
+               // discount the rewards by 80%
+               rewards *= 8;
+               rewards /= 10;
+
+               auto delta_rewards = original_rewards - rewards;
+
                // rewards == amount withdrawn / total usd  *  fee fund * fraction_of_year
                rewards *= elapsed_time.to_seconds();
                rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+
+               delta_rewards *= elapsed_time.to_seconds();
+               delta_rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+
+               rewards += delta_rewards;
             }
 
-            rewards /= BTS_BLOCKCHAIN_MAX_SHARES;
             auto rewards_amount = rewards.to_uint64();
 
             if( rewards_amount > 0 && rewards_amount < rewards_pool )

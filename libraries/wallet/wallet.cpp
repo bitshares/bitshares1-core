@@ -5883,6 +5883,8 @@ namespace bts { namespace wallet {
           {
               auto asset_rec = pending_state->get_asset_record( obalance->condition.asset_id );
               FC_ASSERT( asset_rec.valid() );
+              if( assest_rec->is_market_issued() )
+                 continue;
               balance = obalance->calculate_rewards( now, obalance->balance, asset_rec->collected_fees, asset_rec->current_share_supply );
           }
 
