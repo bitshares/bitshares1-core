@@ -2067,6 +2067,8 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
+      const auto num_accounts_before = list_my_accounts().size();
+
       const auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
           FC_THROW_EXCEPTION( invalid_name, "This name is already in your wallet!" );
@@ -2079,6 +2081,9 @@ namespace bts { namespace wallet {
       const auto new_pub_key  = new_priv_key.get_public_key();
 
       my->_wallet_db.add_account( account_name, new_pub_key, private_data );
+
+      if( num_accounts_before == 0 )
+          set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
 
       return new_pub_key;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
