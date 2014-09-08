@@ -42,6 +42,9 @@ namespace bts { namespace blockchain {
                delta_rewards *= elapsed_time.to_seconds();
                delta_rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
+               delta_rewards *= elapsed_time.to_seconds();
+               delta_rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+
                rewards += delta_rewards;
             }
 
