@@ -78,7 +78,8 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
-            #include "original_market_engine.cpp"
+            #include "market_engine_v1.cpp"
+            #include "market_engine_v2.cpp"
             #include "market_engine.cpp"
 
             digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
@@ -780,15 +781,21 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
+           if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
+           else if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
+           {
+              market_engine_v2 engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
            else
            {
-              original_market_engine engine( pending_state, *this );
+              market_engine_v1 engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }

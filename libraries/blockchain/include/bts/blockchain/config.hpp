@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /* Define client version here */
-#define BTS_CLIENT_VERSION                                  "0.4.12"
+#define BTS_CLIENT_VERSION                                  "0.4.13"
 
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
