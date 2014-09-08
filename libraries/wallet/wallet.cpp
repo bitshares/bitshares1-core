@@ -570,7 +570,10 @@ namespace bts { namespace wallet {
 
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
-              entry.amount.amount = 0;
+          {
+              if( entry.memo != "interest" )
+                  entry.amount.amount = 0;
+          }
 
           // Assume fees = withdrawals - deposits
           auto total_fee = asset( 0, 0 ); // Assume all fees paid in base asset
@@ -766,15 +769,21 @@ namespace bts { namespace wallet {
              auto blockchain_trx_state = _blockchain->get_transaction( record_id );
              if( blockchain_trx_state )
              {
-                for( auto reward_item : blockchain_trx_state->rewards )
+                if( transaction_record->ledger_entries.size() && transaction_record->ledger_entries.back().memo != "interest" )
                 {
-                   auto entry = ledger_entry();
-                   entry.amount = asset( reward_item.second, reward_item.first );
-                   entry.to_account = withdraw_pub_key;
-                   entry.from_account = withdraw_pub_key;
-                   entry.memo = "interest";
-                   transaction_record->ledger_entries.push_back( entry );
-                   self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
+                    for( auto reward_item : blockchain_trx_state->rewards )
+                    {
+                       auto entry = ledger_entry();
+                       entry.amount = asset( reward_item.second, reward_item.first );
+                       entry.to_account = withdraw_pub_key;
+                       entry.from_account = withdraw_pub_key;
+                       entry.memo = "interest";
+                       transaction_record->ledger_entries.push_back( entry );
+                       self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
+                    }
+
+                    if( !blockchain_trx_state->rewards.empty() )
+                       _wallet_db.store_transaction( *transaction_record );
                 }
              }
           }
