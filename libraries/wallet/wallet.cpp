@@ -2485,6 +2485,34 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+
+   vote_summary wallet::get_vote_proportion( const string& account_name )
+   {
+       uint64_t total_possible = 0;
+       uint64_t total = 0;
+       auto summary = vote_summary();
+       for( auto balance : my->_wallet_db.get_all_balances( account_name, -1 ) )
+       {
+           auto oslate = my->_blockchain->get_delegate_slate( balance.delegate_slate_id() );
+           if( oslate.valid() )
+           {
+               total += balance.get_balance().amount * oslate->supported_delegates.size();
+               ilog("total: ${t}", ("t", total));
+           }
+           total_possible += balance.get_balance().amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
+           ilog("total_possible: ${t}", ("t", total_possible));
+       }
+       ilog("total_possible: ${t}", ("t", total_possible));
+       ilog("total: ${t}", ("t", total));
+       if( total_possible == 0 )
+           summary.utilization = 0;
+       else
+           summary.utilization = float(total) / float(total_possible);
+       summary.negative_utilization = 0;
+       return summary;
+   }
+
+
    slate_id_type wallet::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id, vote_selection_method selection_method )
    {
       auto slate_id = slate_id_type( 0 );
@@ -5855,6 +5883,8 @@ namespace bts { namespace wallet {
           {
               auto asset_rec = pending_state->get_asset_record( obalance->condition.asset_id );
               FC_ASSERT( asset_rec.valid() );
+              if( !assest_rec->is_market_issued() )
+                 continue;
               balance = obalance->calculate_rewards( now, obalance->balance, asset_rec->collected_fees, asset_rec->current_share_supply );
           }
 
@@ -6029,6 +6059,26 @@ namespace bts { namespace wallet {
             account_keys.push_back( key.second.public_key );
       }
       return account_keys;
+   }
+
+   map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, int32_t limit )const
+   {
+      auto db = &(my->_wallet_db);
+      auto orders = my->_blockchain->get_market_orders( [db, account_name]( market_order order) {
+          auto okey = db->lookup_key( order.get_owner() );
+          if( !okey.valid() )
+              return false;
+          auto oacct = db->lookup_account( okey->account_address );
+          if( !oacct.valid() )
+              return false;
+          return (oacct->name == account_name || account_name == "ALL");
+      }, limit);
+      auto order_map = map<order_id_type, market_order>();
+      for( auto item : orders )
+      {
+          order_map[ item.get_id() ] = item;
+      }
+      return order_map;
    }
 
    map<order_id_type, market_order> wallet::get_market_orders( const string& quote_symbol, const string& base_symbol,

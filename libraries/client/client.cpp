@@ -2027,13 +2027,6 @@ config load_config( const fc::path& datadir )
         return *balance_record;
     }
 
-    balance_record detail::client_impl::blockchain_get_balance_by_owner(const address &owner_address, const std::string &asset_symbol) const
-    {
-        withdraw_with_signature withdrawal(owner_address);
-        auto asset_id = _chain_db->get_asset_id(asset_symbol);
-        return blockchain_get_balance(withdraw_condition(withdrawal, asset_id).get_address());
-    }
-
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
     {
       try
@@ -3416,6 +3409,12 @@ config load_config( const fc::path& datadir )
       return record;
    }
 
+   map<order_id_type, market_order> client_impl::wallet_account_order_list( const string& account_name,
+                                                                            int64_t limit )
+   {
+      return _wallet->get_market_orders( account_name, limit );
+   }
+
    map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                             const string& base_symbol,
                                                                             int64_t limit,
@@ -3546,6 +3545,12 @@ config load_config( const fc::path& datadir )
   fc::variant_object client_impl::debug_verify_delegate_votes() const
   {
     return _chain_db->find_delegate_vote_discrepancies();
+  }
+
+
+  vote_summary   client_impl::wallet_check_vote_proportion( const string& account_name )
+  {
+      return _wallet->get_vote_proportion( account_name );
   }
 
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const

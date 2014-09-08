@@ -2436,6 +2436,37 @@ namespace bts { namespace blockchain {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+
+   vector<market_order>   chain_database::get_market_orders( std::function<bool(market_order)> filter, int32_t limit ) const
+   {
+       auto ret = vector<market_order>();
+       auto bid_itr = my->_bid_db.begin();
+       while( bid_itr.valid() )
+       {
+           auto order = market_order { bid_order, bid_itr.key(), bid_itr.value() };
+           if( filter(order) )
+               ret.push_back(order);
+       }
+
+       auto ask_itr = my->_ask_db.begin();
+       while( ask_itr.valid() )
+       {
+           auto order = market_order { ask_order, ask_itr.key(), ask_itr.value() };
+           if( filter(order) )
+               ret.push_back(order);
+       }
+
+       auto short_itr = my->_short_db.begin();
+       while( short_itr.valid() )
+       {
+           auto order = market_order { short_order, short_itr.key(), short_itr.value() };
+           if( filter(order) )
+               ret.push_back(order);
+       }
+
+       return ret;
+   }
+
    optional<market_order> chain_database::get_market_bid( const market_index_key& key )const
    { try {
        auto market_itr  = my->_bid_db.find(key);
