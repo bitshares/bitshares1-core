@@ -615,6 +615,12 @@
               "description" : "the number of blocks to scan",
               "default_value" : -1
             }
+            {
+              "name" : "fast_scan",
+              "type" : "bool",
+              "description" : "true to scan as fast as possible but freeze the rest of your computer, and false otherwise",
+              "default_value" : false
+            }
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["scan", "rescan"]

@@ -3074,9 +3074,9 @@ config load_config( const fc::path& datadir )
         return _chain_db->calculate_base_supply();
     }
 
-    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
+    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
     { try {
-       _wallet->scan_chain( start, start + count );
+       _wallet->scan_chain( start, start + count, fast_scan );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
     wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
