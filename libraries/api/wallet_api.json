@@ -615,6 +615,12 @@
               "description" : "the number of blocks to scan",
               "default_value" : -1
             }
+            {
+              "name" : "fast_scan",
+              "type" : "bool",
+              "description" : "true to scan as fast as possible but freeze the rest of your computer, and false otherwise",
+              "default_value" : false
+            }
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["scan", "rescan"]
@@ -1243,6 +1249,27 @@
          "aliases" : []
       },
       {
+         "method_name" : "wallet_account_order_list",
+         "description" : "List an order list of a specific account",
+         "return_type" : "market_order_map",
+         "parameters"  : [
+            {
+               "name" : "account_name",
+               "type" : "account_name",
+               "description" : "the account for which to get the orders, or 'ALL' to get them all",
+               "default_value" : "ALL"
+            },
+            {
+               "name" : "limit",
+               "type" : "int64_t",
+               "description" : "the maximum number of items to return",
+               "default_value" : -1
+            }
+         ],
+         "prerequisites" : ["wallet_open"],
+         "aliases" : []
+      },
+      {
          "method_name" : "wallet_market_cancel_order",
          "description" : "Cancel an order",
          "return_type" : "transaction_record",
@@ -1285,6 +1312,19 @@
          "is_const" : true,
          "prerequisites" : ["wallet_open"],
          "aliases" : ["votes"]
+      },
+      {
+         "method_name" : "wallet_check_vote_proportion",
+         "description" : "Check how much this account is utilizing its voting power"
+         "return_type" : "vote_summary",
+         "parameters"  : [
+             {
+                "name" : "account",
+                "type" : "account_name",
+                "description" : ""
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       },
       {
          "method_name" : "wallet_set_setting",

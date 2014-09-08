@@ -12,6 +12,11 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
+        "type_name": "float",
+        "cpp_return_type" : "float",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
         "type_name" : "account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -604,6 +609,10 @@
       {
         "type_name" : "vote_selection_method",
         "cpp_return_type" : "bts::wallet::vote_selection_method"
+      },
+      {
+        "type_name" : "vote_summary",
+        "cpp_return_type" : "bts::wallet::vote_summary"
       },
       {
         "type_name" : "feed_entry_list",

@@ -2410,6 +2410,18 @@ config load_config( const fc::path& datadir )
       return _mail_client->get_processing_messages();
     }
 
+    void detail::client_impl::mail_retry_send(const message_id_type& message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->retry_message(message_id);
+    }
+
+    void detail::client_impl::mail_remove_message(const message_id_type &message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->remove_message(message_id);
+    }
+
     mail::message detail::client_impl::mail_get_sent_message(const mail::message_id_type& message_id) const
     {
       FC_ASSERT(_mail_client);
@@ -3057,9 +3069,9 @@ config load_config( const fc::path& datadir )
       return info;
     }
 
-    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
+    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
     { try {
-       _wallet->scan_chain( start, start + count );
+       _wallet->scan_chain( start, start + count, fast_scan );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
     wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
@@ -3404,6 +3416,12 @@ config load_config( const fc::path& datadir )
       return record;
    }
 
+   map<order_id_type, market_order> client_impl::wallet_account_order_list( const string& account_name,
+                                                                            int64_t limit )
+   {
+      return _wallet->get_market_orders( account_name, limit );
+   }
+
    map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                             const string& base_symbol,
                                                                             int64_t limit,
@@ -3534,6 +3552,12 @@ config load_config( const fc::path& datadir )
   fc::variant_object client_impl::debug_verify_delegate_votes() const
   {
     return _chain_db->find_delegate_vote_discrepancies();
+  }
+
+
+  vote_summary   client_impl::wallet_check_vote_proportion( const string& account_name )
+  {
+      return _wallet->get_vote_proportion( account_name );
   }
 
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
