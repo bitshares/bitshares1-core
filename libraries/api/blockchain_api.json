@@ -203,25 +203,6 @@
         "aliases" : ["get_balance"]
       },
       {
-        "method_name": "blockchain_get_balance_by_owner",
-        "description": "Retrieves the balance record for the given address and asset (only works on non-voting balances)",
-        "return_type": "balance_record",
-        "parameters" : [
-            {
-              "name" : "balance_id",
-              "type" : "address",
-              "description" : "address of the balance"
-            },
-            {
-              "name" : "asset_symbol",
-              "type" : "string",
-              "description" : "Symbol of the asset the balance is in"
-            }
-        ],
-        "is_const" : true,
-        "prerequisites" : ["no_prerequisites"]
-      },
-      {
         "method_name": "blockchain_list_balances",
         "description": "Lists balance records starting at the given balance ID",
         "return_type": "balance_record_map",
