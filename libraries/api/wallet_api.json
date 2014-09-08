@@ -1212,27 +1212,6 @@
          "aliases" : []
       },
       {
-         "method_name" : "wallet_account_order_list",
-         "description" : "List all orders for a particular account",
-         "return_type" : "market_order_array",
-         "parameters"  : [
-            {
-               "name" : "account_name",
-               "type" : "account_name",
-               "description" : "the account for which to get the orders",
-               "default_value" : ""
-            },
-            {
-               "name" : "limit",
-               "type" : "int64_t",
-               "description" : "the maximum number of orders of each type to return",
-               "default_value" : -1
-            }
-         ],
-         "prerequisites" : ["wallet_open"],
-         "aliases" : [ "list_account_orders" ]
-      },
-      {
          "method_name" : "wallet_market_order_list",
          "description" : "List an order list of a specific market",
          "return_type" : "market_order_map",

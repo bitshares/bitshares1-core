@@ -6069,7 +6069,7 @@ namespace bts { namespace wallet {
           auto oacct = db->lookup_account( okey->account_address );
           if( !oacct.valid() )
               return false;
-          return (oacct->name == account_name);
+          return (oacct->name == account_name || account_name == "ALL");
       }, limit);
       auto order_map = map<order_id_type, market_order>();
       for( auto item : orders )
