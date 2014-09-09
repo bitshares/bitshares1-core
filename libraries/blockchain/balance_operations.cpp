@@ -5,7 +5,7 @@
 
 namespace bts { namespace blockchain {
 
-   asset   balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
+   asset balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
    {
       if( amount <= 0 )       return asset(0,condition.asset_id);
       if( share_supply <= 0 ) return asset(0,condition.asset_id);
@@ -27,7 +27,7 @@ namespace bts { namespace blockchain {
             /**
              *  If less than 1 year, the 80% of yield are scaled linearly with time and 20% scaled by time^2,
              *  this should produce a yield curve that is "80% simple interest" and 20% simulating compound
-             *  interest.   
+             *  interest.
              */
             if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
             {
@@ -102,7 +102,7 @@ namespace bts { namespace blockchain {
     */
    void deposit_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-       if( eval_state._current_state->get_head_block_num() < BTSX_INTEREST_FORK_1_BLOCK_NUM )
+       if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_6_BLOCK_NUM )
        {
           evaluate_v1( eval_state );
           return;
@@ -171,7 +171,7 @@ namespace bts { namespace blockchain {
     */
    void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_INTEREST_FORK_1_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_6_BLOCK_NUM )
       {
          evaluate_v1( eval_state );
          return;
