@@ -570,7 +570,7 @@ namespace bts { namespace wallet {
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
           {
-              if( entry.memo.find( "interest" ) == string::npos )
+              if( entry.memo.find( "yield" ) == string::npos )
                   entry.amount.amount = 0;
           }
 
@@ -770,25 +770,25 @@ namespace bts { namespace wallet {
              {
                 if( !transaction_record->ledger_entries.empty() )
                 {
-                    /* Remove all interest entries and re-add them */
+                    /* Remove all yield entries and re-add them */
                     while( !transaction_record->ledger_entries.empty()
-                           && transaction_record->ledger_entries.back().memo.find( "interest" ) == 0 )
+                           && transaction_record->ledger_entries.back().memo.find( "yield" ) == 0 )
                     {
                         transaction_record->ledger_entries.pop_back();
                     }
 
-                    for( const auto& reward_item : blockchain_trx_state->rewards )
+                    for( const auto& yield_item : blockchain_trx_state->yield )
                     {
                        auto entry = ledger_entry();
-                       entry.amount = asset( reward_item.second, reward_item.first );
+                       entry.amount = asset( yield_item.second, yield_item.first );
                        entry.to_account = withdraw_pub_key;
                        entry.from_account = withdraw_pub_key;
-                       entry.memo = "interest";
+                       entry.memo = "yield";
                        transaction_record->ledger_entries.push_back( entry );
                        self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
                     }
 
-                    if( !blockchain_trx_state->rewards.empty() )
+                    if( !blockchain_trx_state->yield.empty() )
                        _wallet_db.store_transaction( *transaction_record );
                 }
              }
@@ -5125,8 +5125,8 @@ namespace bts { namespace wallet {
                  pretty_entry.from_account = "NETWORK";
           }
 
-          /* Fix labels for interest payments */
-          if( entry.memo.find( "interest" ) == 0 )
+          /* Fix labels for yield payments */
+          if( entry.memo.find( "yield" ) == 0 )
           {
              pretty_entry.from_account = "NETWORK";
 
@@ -5919,9 +5919,9 @@ namespace bts { namespace wallet {
       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   account_balance_summary_type wallet::get_account_rewards( const string& account_name )const
+   account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {
-      map<string, map<asset_id_type, share_type>> rewards;
+      map<string, map<asset_id_type, share_type>> yield_summary;
       const auto pending_state = my->_blockchain->get_pending_state();
 
       map<string, vector<balance_record>> items = get_account_balance_records( account_name );
@@ -5937,13 +5937,13 @@ namespace bts { namespace wallet {
               const auto asset_rec = pending_state->get_asset_record( balance.asset_id );
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
 
-              const auto reward = record.calculate_rewards( pending_state->now(), balance.amount,
-                                  asset_rec->collected_fees, asset_rec->current_share_supply );
-              rewards[ name ][ reward.asset_id ] += reward.amount;
+              const auto yield = record.calculate_yield( pending_state->now(), balance.amount,
+                                 asset_rec->collected_fees, asset_rec->current_share_supply );
+              yield_summary[ name ][ yield.asset_id ] += yield.amount;
           }
       }
 
-      return rewards;
+      return yield_summary;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const

@@ -4,58 +4,58 @@
 
 namespace bts { namespace blockchain {
 
-   asset   balance_record::calculate_rewards( fc::time_point_sec now, share_type amount, share_type rewards_pool, share_type share_supply )const
+   asset   balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
    {
       if( amount <= 0 )       return asset(0,condition.asset_id);
       if( share_supply <= 0 ) return asset(0,condition.asset_id);
-      if( rewards_pool <= 0 ) return asset(0,condition.asset_id);
+      if( yield_pool <= 0 ) return asset(0,condition.asset_id);
 
       auto elapsed_time = (now - deposit_date);
-      if(  elapsed_time > fc::seconds( BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC ) )
+      if(  elapsed_time > fc::seconds( BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC ) )
       {
-         if( rewards_pool > 0 && share_supply > 0 )
+         if( yield_pool > 0 && share_supply > 0 )
          {
             fc::uint128 amount_withdrawn( amount );
             amount_withdrawn *= 1000000;
 
             fc::uint128 current_supply( share_supply );
-            fc::uint128 fee_fund( rewards_pool );
+            fc::uint128 fee_fund( yield_pool );
 
-            auto rewards = (amount_withdrawn * fee_fund) / current_supply;
+            auto yield = (amount_withdrawn * fee_fund) / current_supply;
 
             /**
-             *  If less than 1 year, the 80% of rewards are scalled linerly with time and 20% scaled by time^2,
+             *  If less than 1 year, the 80% of yield are scaled linearly with time and 20% scaled by time^2,
              *  this should produce a yield curve that is "80% simple interest" and 20% simulating compound
              *  interest.   
              */
             if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
             {
-               auto original_rewards = rewards;
-               // discount the rewards by 80%
-               rewards *= 8;
-               rewards /= 10;
+               auto original_yield = yield;
+               // discount the yield by 80%
+               yield *= 8;
+               yield /= 10;
 
-               auto delta_rewards = original_rewards - rewards;
+               auto delta_yield = original_yield - yield;
 
-               // rewards == amount withdrawn / total usd  *  fee fund * fraction_of_year
-               rewards *= elapsed_time.to_seconds();
-               rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+               // yield == amount withdrawn / total usd  *  fee fund * fraction_of_year
+               yield *= elapsed_time.to_seconds();
+               yield /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
-               delta_rewards *= elapsed_time.to_seconds();
-               delta_rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+               delta_yield *= elapsed_time.to_seconds();
+               delta_yield /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
-               delta_rewards *= elapsed_time.to_seconds();
-               delta_rewards /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
+               delta_yield *= elapsed_time.to_seconds();
+               delta_yield /= (BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
 
-               rewards += delta_rewards;
+               yield += delta_yield;
             }
 
-            rewards /= 1000000;
-            auto rewards_amount = rewards.to_uint64();
+            yield /= 1000000;
+            auto yield_amount = yield.to_uint64();
 
-            if( rewards_amount > 0 && rewards_amount < rewards_pool )
+            if( yield_amount > 0 && yield_amount < yield_pool )
             {
-               return asset( rewards_amount, condition.asset_id );
+               return asset( yield_amount, condition.asset_id );
             }
          }
       }
@@ -119,7 +119,7 @@ namespace bts { namespace blockchain {
        else
        {
 #ifndef WIN32
-#warning [HARDFORK] Interest needs testing before merging into BTSX
+#warning [HARDFORK] Yield needs testing before merging into BTSX
 #endif
           fc::uint128 old_sec_since_epoch( cur_record->deposit_date.sec_since_epoch());
           fc::uint128 new_sec_since_epoch( eval_state._current_state->now().sec_since_epoch());
@@ -265,22 +265,22 @@ namespace bts { namespace blockchain {
          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
 
 #ifndef WIN32
-#warning [HARDFORK] Interest needs testing before merging into BTSX
+#warning [HARDFORK] Yield needs testing before merging into BTSX
 #endif
       auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
       FC_ASSERT( asset_rec.valid() );
       if( asset_rec->is_market_issued() )
       {
-         auto rewards = current_balance_record->calculate_rewards( eval_state._current_state->now(),
-                                                                   current_balance_record->balance,
-                                                                   asset_rec->collected_fees,
-                                                                   asset_rec->current_share_supply );
-         if( rewards.amount > 0 )
+         auto yield = current_balance_record->calculate_yield( eval_state._current_state->now(),
+                                                               current_balance_record->balance,
+                                                               asset_rec->collected_fees,
+                                                               asset_rec->current_share_supply );
+         if( yield.amount > 0 )
          {
-            asset_rec->collected_fees       -= rewards.amount;
-            current_balance_record->balance += rewards.amount;
+            asset_rec->collected_fees       -= yield.amount;
+            current_balance_record->balance += yield.amount;
             current_balance_record->deposit_date = eval_state._current_state->now();
-            eval_state.rewards[current_balance_record->condition.asset_id] += rewards.amount;
+            eval_state.yield[current_balance_record->condition.asset_id] += yield.amount;
             eval_state._current_state->store_asset_record( *asset_rec );
          }
       }

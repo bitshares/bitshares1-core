@@ -977,20 +977,20 @@
          "aliases" : []
       },
       {
-         "method_name"    : "wallet_account_rewards",
-         "description"    : "Lists the total accumulated rewards for asset balances",
+         "method_name"    : "wallet_account_yield",
+         "description"    : "Lists the total accumulated yield for asset balances",
          "return_type"    : "account_balance_summary_type",
          "parameters"     : [
          {
             "name" : "account_name",
             "type" : "account_name",
-            "description" : "the account to get rewards for, or leave empty for all accounts",
+            "description" : "the account to get yield for, or leave empty for all accounts",
             "default_value" : ""
          }
          ],
          "is_const" : true,
          "prerequisites" : ["wallet_open"],
-         "aliases" : ["rewards", "getrewards"]
+         "aliases" : ["yield", "getyield"]
       },
       {
          "method_name" : "wallet_account_list_public_keys",
