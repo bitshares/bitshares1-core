@@ -13,6 +13,7 @@ namespace bts { namespace wallet {
    namespace detail { class wallet_impl; }
 
    typedef map<string, vector<balance_record>> account_balance_record_summary_type;
+   typedef map<string, vector<balance_id_type>> account_balance_id_summary_type;
    typedef map<string, map<asset_id_type, share_type>> account_balance_summary_type;
    typedef map<string, int64_t> account_vote_summary_type;
 
@@ -463,8 +464,9 @@ namespace bts { namespace wallet {
          bool                               is_receive_address( const address& addr )const;
 
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "" )const;
+         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "" )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
-         account_balance_summary_type       get_account_rewards( const string& account_name = "" )const;
+         account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
          map<order_id_type, market_order>   get_market_orders( const string& account_name, int32_t limit)const;

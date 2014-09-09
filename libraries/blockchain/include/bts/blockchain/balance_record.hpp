@@ -33,7 +33,7 @@ namespace bts { namespace blockchain {
       balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
       asset_id_type              asset_id()const { return condition.asset_id; }
       slate_id_type              delegate_slate_id()const { return condition.delegate_slate_id; }
-      asset                      calculate_rewards( fc::time_point_sec now, share_type amount, share_type rewards_pool, share_type share_supply )const;
+      asset                      calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const;
 
       /** if condition is signature or by name, return the owner */
       address                    owner()const;
