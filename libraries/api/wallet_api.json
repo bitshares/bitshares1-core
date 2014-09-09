@@ -963,7 +963,7 @@
       {
          "method_name"    : "wallet_account_rewards",
          "description"    : "Lists the total accumulated rewards for asset balances",
-         "return_type"    : "account_balance_summary_type",
+         "return_type"    : "account_reward_summary_type",
          "parameters"     : [
          {
             "name" : "account_name",

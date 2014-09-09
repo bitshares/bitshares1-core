@@ -12,11 +12,9 @@ namespace bts { namespace wallet {
 
    namespace detail { class wallet_impl; }
 
-   /** args: current_block, last_block */
-   typedef function<void(uint32_t,uint32_t)> scan_progress_callback;
-
+   typedef map<string, map<asset_id_type, share_type>> account_balance_summary_type;
+   typedef map<string, std::pair<map<string, share_type>, share_type>> account_reward_summary_type;
    typedef map<string, int64_t> account_vote_summary_type;
-   typedef map<string, std::pair<map<string, share_type>, share_type>> account_balance_summary_type;
 
    enum delegate_status_flags
    {
@@ -466,7 +464,7 @@ namespace bts { namespace wallet {
          bool      is_receive_address( const address& addr )const;
 
          account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
-         account_balance_summary_type       get_account_rewards( const string& account_name = "" )const;
+         account_reward_summary_type        get_account_rewards( const string& account_name = "" )const;
 
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 

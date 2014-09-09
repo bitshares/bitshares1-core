@@ -5830,70 +5830,35 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
 
-      const auto pending_state = my->_blockchain->get_pending_state();
-      auto raw_results = map<address, std::pair<map<asset_id_type, share_type>, share_type>>();
-      auto result = account_balance_summary_type();
+      map<string, map<asset_id_type, share_type>> balances;
 
-      const auto items = my->_wallet_db.get_balances();
-      for( const auto& item : items )
+      const auto scan_balance = [&]( const balance_record& record ) -> void
       {
-          const auto okey_rec = my->_wallet_db.lookup_key( item.second.owner() );
-          if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
-          const auto account_address = okey_rec->account_address;
+          const auto key_record = my->_wallet_db.lookup_key( record.owner() );
+          if( !key_record.valid() || !key_record->has_private_key() ) return;
 
-          const auto obalance = pending_state->get_balance_record( item.first );
-          auto balance = asset( 0 );
-          if( obalance.valid() )
-              balance = obalance->get_balance();
+          const auto account_address = key_record->account_address;
+          const auto account_record = my->_wallet_db.lookup_account( account_address );
+          const auto name = account_record.valid() ? account_record->name : string( account_address );
+          if( !account_name.empty() && name != account_name ) return;
 
-          /* Simpler to just check every time */
-          const auto oaccount = pending_state->get_account_record( account_address );
-          auto pay_balance = share_type( 0 );
-          if( oaccount.valid() && oaccount->is_delegate() )
-              pay_balance = oaccount->delegate_info->pay_balance;
+          const auto balance = record.get_balance();
+          balances[ name ][ balance.asset_id ] += balance.amount;
+      };
 
-          if( balance.amount <= 0 && pay_balance <= 0 ) continue;
+      my->_blockchain->scan_balances( scan_balance );
 
-          if( raw_results.count( account_address ) <= 0 )
-              raw_results[ account_address ] = std::make_pair( map<asset_id_type, share_type>(), share_type( 0 ) );
-
-          if( raw_results[ account_address ].first.count( balance.asset_id ) <= 0 )
-              raw_results[ account_address ].first[ balance.asset_id ] = balance.amount;
-          else
-              raw_results[ account_address ].first[ balance.asset_id ] += balance.amount;
-
-          raw_results[ account_address ].second = pay_balance;
-      }
-
-      for( const auto& account : raw_results )
-      {
-         const auto oaccount = my->_wallet_db.lookup_account( account.first );
-         const auto name = oaccount.valid() ? oaccount->name : string( account.first );
-         if( !account_name.empty() && name != account_name ) continue;
-
-         if( result.count( name ) <= 0 )
-             result[ name ] = std::make_pair( map<string, share_type>(), share_type( 0 ) );
-
-         for( const auto& item : account.second.first )
-         {
-            const auto symbol = my->_blockchain->get_asset_symbol( item.first );
-            result[ name ].first[ symbol ] = item.second;
-         }
-
-         result[ name ].second = account.second.second;
-      }
-
-      return result;
+      return balances;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
 
-   account_balance_summary_type wallet::get_account_rewards( const string& account_name )const
+   account_reward_summary_type wallet::get_account_rewards( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
 
       const auto pending_state = my->_blockchain->get_pending_state();
       auto raw_results = map<address, std::pair<map<asset_id_type, share_type>, share_type>>();
-      auto result = account_balance_summary_type();
+      auto result = account_reward_summary_type();
       auto now = my->_blockchain->now();
 
       const auto items = my->_wallet_db.get_balances();
