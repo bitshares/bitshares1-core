@@ -295,9 +295,6 @@ class market_engine
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
-#ifndef WIN32
-#warning [HARDFORK] fix price overlap condition, needs testing.
-#endif
                    /**
                     *  If the ask is less than the "max short bid" then that means the
                     *  ask (those with XTS wanting to buy USD) are willing to accept
