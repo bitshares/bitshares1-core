@@ -790,6 +790,7 @@ namespace bts { namespace wallet {
 
                     if( !blockchain_trx_state->rewards.empty() )
                        _wallet_db.store_transaction( *transaction_record );
+                }
              }
           }
 
