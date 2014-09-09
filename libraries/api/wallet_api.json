@@ -1009,13 +1009,7 @@
                "name" : "amount_to_withdraw",
                "type" : "real_amount",
                "description" : "the amount to withdraw"
-            },
-            {
-               "name" : "memo",
-               "type" : "string",
-               "description" : "memo to add to transaction",
-               "default_value" : "payday"
-      }
+            }
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : ["pay_delegate"]

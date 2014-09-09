@@ -3586,7 +3586,6 @@ namespace bts { namespace wallet {
            const string& delegate_name,
            double real_amount_to_withdraw,
            const string& withdraw_to_account_name,
-           const string& memo_message,
            bool sign )
    { try {
        FC_ASSERT( is_open() );
@@ -3610,12 +3609,14 @@ namespace bts { namespace wallet {
 
        owallet_key_record delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
        FC_ASSERT( delegate_key && delegate_key->has_private_key() );
-       auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
+       const auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
        required_signatures.insert( delegate_private_key.get_public_key() );
 
+       const auto delegate_public_key = delegate_private_key.get_public_key();
        public_key_type receiver_public_key = get_account_public_key( withdraw_to_account_name );
 
        const auto slate_id = select_slate( trx );
+       const string memo_message = "withdraw pay";
 
        trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
        trx.deposit_to_account( receiver_public_key,
@@ -3623,13 +3624,13 @@ namespace bts { namespace wallet {
                                delegate_private_key,
                                memo_message,
                                slate_id,
-                               delegate_private_key.get_public_key(),
+                               delegate_public_key,
                                my->create_one_time_key(),
                                from_memo
                                );
 
        auto entry = ledger_entry();
-       entry.from_account = delegate_private_key.get_public_key();
+       entry.from_account = delegate_public_key;
        entry.to_account = receiver_public_key;
        entry.amount = asset( amount_to_withdraw );
        entry.memo = memo_message;
@@ -5101,11 +5102,10 @@ namespace bts { namespace wallet {
              pretty_entry.from_account = "GENESIS";
           else if( trx_rec.is_market )
              pretty_entry.from_account = "MARKET";
-          else if( entry.memo == "interest" )
+          else if( entry.memo.find( "interest" ) == 0 )
              pretty_entry.from_account = "NETWORK";
           else
              pretty_entry.from_account = "UNKNOWN";
-
 
           if( entry.to_account.valid() )
              pretty_entry.to_account = get_key_label( *entry.to_account );
@@ -5113,6 +5113,13 @@ namespace bts { namespace wallet {
              pretty_entry.to_account = "MARKET";
           else
              pretty_entry.to_account = "UNKNOWN";
+
+          /* To fix running balance calculation when withdrawing delegate pay */
+          if( pretty_entry.from_account == pretty_entry.to_account )
+          {
+             if( entry.memo.find( "withdraw pay" ) == 0 )
+                 pretty_entry.from_account = "NETWORK";
+          }
 
           /* I'm sorry - Vikram */
           /* You better be. - Dan */

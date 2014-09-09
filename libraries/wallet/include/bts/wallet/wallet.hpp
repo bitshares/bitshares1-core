@@ -338,7 +338,6 @@ namespace bts { namespace wallet {
                  const string& delegate_name,
                  double amount_to_withdraw,
                  const string& withdraw_to_account_name,
-                 const string& memo_message,
                  bool sign = true
                  );
          wallet_transaction_record publish_feeds(
