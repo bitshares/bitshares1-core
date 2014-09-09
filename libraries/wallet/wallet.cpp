@@ -5832,12 +5832,14 @@ namespace bts { namespace wallet {
        return get_account_record( okey->account_address );
    }
 
-   account_balance_summary_type wallet::get_account_balances( const string& account_name )const
+   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
 
-      map<string, map<asset_id_type, share_type>> balances;
+      map<string, vector<balance_record>> balance_records;
+
+      const auto pending_state = my->_blockchain->get_pending_state();
 
       const auto scan_balance = [&]( const balance_record& record ) -> void
       {
@@ -5849,14 +5851,36 @@ namespace bts { namespace wallet {
           const auto name = account_record.valid() ? account_record->name : string( account_address );
           if( !account_name.empty() && name != account_name ) return;
 
-          const auto balance = record.get_balance();
-          balances[ name ][ balance.asset_id ] += balance.amount;
+          const auto pending_record = pending_state->get_balance_record( record.id() );
+          if( !pending_record.valid() ) return;
+
+          balance_records[ name ].push_back( *pending_record );
       };
 
       my->_blockchain->scan_balances( scan_balance );
 
+      return balance_records;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   account_balance_summary_type wallet::get_account_balances( const string& account_name )const
+   { try {
+      map<string, map<asset_id_type, share_type>> balances;
+
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      for( const auto& item : items )
+      {
+          const auto& name = item.first;
+          const auto& records = item.second;
+
+          for( const auto& record : records )
+          {
+              const auto balance = record.get_balance();
+              balances[ name ][ balance.asset_id ] += balance.amount;
+          }
+      }
+
       return balances;
-   } FC_RETHROW_EXCEPTIONS(warn,"") }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_reward_summary_type wallet::get_account_rewards( const string& account_name )const
    { try {
