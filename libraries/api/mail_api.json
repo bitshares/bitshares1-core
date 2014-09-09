@@ -93,7 +93,7 @@
                 }
             ],
             "prerequisites" : ["json_authenticated"]
-        },,
+        },
         {
             "method_name": "mail_get_sent_message",
             "description": "Get a specific message from the client.",
