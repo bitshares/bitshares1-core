@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
             /**
              *  If less than 1 year, the 80% of yield are scaled linearly with time and 20% scaled by time^2,
              *  this should produce a yield curve that is "80% simple interest" and 20% simulating compound
-             *  interest.   
+             *  interest.
              */
             if( elapsed_time < fc::seconds( BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC ) )
             {
@@ -118,9 +118,6 @@ namespace bts { namespace blockchain {
        }
        else
        {
-#ifndef WIN32
-#warning [HARDFORK] Yield needs testing before merging into BTSX
-#endif
           fc::uint128 old_sec_since_epoch( cur_record->deposit_date.sec_since_epoch());
           fc::uint128 new_sec_since_epoch( eval_state._current_state->now().sec_since_epoch());
 
@@ -251,10 +248,9 @@ namespace bts { namespace blockchain {
             } FC_CAPTURE_AND_RETHROW( (option) )
             break;
          }
-         case withdraw_null_type:
+
+         default:
             FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
-            break;
-      //   default:
       }
       // update delegate vote on withdrawn account..
 
@@ -264,9 +260,6 @@ namespace bts { namespace blockchain {
       if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id )
          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
 
-#ifndef WIN32
-#warning [HARDFORK] Yield needs testing before merging into BTSX
-#endif
       auto asset_rec = eval_state._current_state->get_asset_record( current_balance_record->condition.asset_id );
       FC_ASSERT( asset_rec.valid() );
       if( asset_rec->is_market_issued() )

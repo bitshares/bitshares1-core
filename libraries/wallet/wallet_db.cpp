@@ -44,9 +44,6 @@ namespace bts { namespace wallet {
                    case transaction_record_type:
                        load_transaction_record( record.as<wallet_transaction_record>(), overwrite );
                        break;
-                   case asset_record_type:
-                       load_asset_record( record.as<wallet_asset_record>(), overwrite );
-                       break;
                    case balance_record_type:
                        load_balance_record( record.as<wallet_balance_record>(), overwrite );
                        break;
@@ -117,11 +114,6 @@ namespace bts { namespace wallet {
               if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet!" );
               self->transactions[ rec.record_id ] = rec;
            } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
-
-           void load_asset_record( const wallet_asset_record& asset_rec, bool overwrite )
-           { try {
-              self->assets[ asset_rec.symbol ] = asset_rec;
-           } FC_RETHROW_EXCEPTIONS( warn, "", ("asset_record",asset_rec )) }
 
            void load_balance_record( const wallet_balance_record& rec, bool overwrite )
            { try {
@@ -202,7 +194,6 @@ namespace bts { namespace wallet {
       accounts.clear();
       keys.clear();
       transactions.clear();
-      assets.clear();
       balances.clear();
       properties.clear();
       settings.clear();

@@ -10,7 +10,7 @@ if (EMBED_GENESIS_STATE_AS_TEXT)
 
   set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
 
-  add_custom_command(OUTPUT ${generated_genesis_file} 
+  add_custom_command(OUTPUT ${generated_genesis_file}
                      COMMAND bts_json_to_cpp    "--json=${genesis_json}"
                                                 "--prologue=${genesis_prologue}"
                                                 "--epilogue=${genesis_epilogue}"
@@ -24,7 +24,7 @@ else(EMBED_GENESIS_STATE_AS_TEXT)
 
   set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
 
-  add_custom_command(OUTPUT ${generated_genesis_file} 
+  add_custom_command(OUTPUT ${generated_genesis_file}
                      COMMAND bts_genesis_to_bin "--json=${genesis_json}"
                                                 "--prologue=${genesis_prologue}"
                                                 "--epilogue=${genesis_epilogue}"
@@ -35,7 +35,7 @@ else(EMBED_GENESIS_STATE_AS_TEXT)
 endif(EMBED_GENESIS_STATE_AS_TEXT)
 
 source_group("Genesis JSON Files" FILES ${genesis_json} ${genesis_prologue} ${genesis_epilogue})
-                   
+
 ##################################################################################################
 # Regular stuff for the bts_client library
 
@@ -80,7 +80,7 @@ else()
 endif()
 
 target_link_libraries( bts_blockchain fc bts_db leveldb )
-target_include_directories( bts_blockchain 
+target_include_directories( bts_blockchain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if (EMBED_GENESIS_STATE_AS_TEXT)
