@@ -1235,7 +1235,7 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
 
       trx_eval_state->evaluate( trx );
-      auto fees = trx_eval_state->get_fees();
+      auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
          FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
 

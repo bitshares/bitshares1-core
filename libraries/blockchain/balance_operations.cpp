@@ -50,7 +50,7 @@ namespace bts { namespace blockchain {
                rewards += delta_rewards;
             }
 
-            rewards_amount /= 1000000;
+            rewards /= 1000000;
             auto rewards_amount = rewards.to_uint64();
 
             if( rewards_amount > 0 && rewards_amount < rewards_pool )
