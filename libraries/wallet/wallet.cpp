@@ -5832,12 +5832,13 @@ namespace bts { namespace wallet {
        return get_account_record( okey->account_address );
    }
 
-   account_balance_summary_type wallet::get_account_balances( const string& account_name )const
+   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
 
-      map<string, map<asset_id_type, share_type>> balances;
+      map<string, vector<balance_record>> balance_records;
+      const auto pending_state = my->_blockchain->get_pending_state();
 
       const auto scan_balance = [&]( const balance_record& record ) -> void
       {
@@ -5849,77 +5850,63 @@ namespace bts { namespace wallet {
           const auto name = account_record.valid() ? account_record->name : string( account_address );
           if( !account_name.empty() && name != account_name ) return;
 
-          const auto balance = record.get_balance();
-          balances[ name ][ balance.asset_id ] += balance.amount;
+          const auto pending_record = pending_state->get_balance_record( record.id() );
+          if( !pending_record.valid() ) return;
+
+          balance_records[ name ].push_back( *pending_record );
       };
 
       my->_blockchain->scan_balances( scan_balance );
 
-      return balances;
-   } FC_RETHROW_EXCEPTIONS(warn,"") }
+      return balance_records;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   account_reward_summary_type wallet::get_account_rewards( const string& account_name )const
+   account_balance_summary_type wallet::get_account_balances( const string& account_name )const
    { try {
-      FC_ASSERT( is_open() );
-      if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
+      map<string, map<asset_id_type, share_type>> balances;
 
-      const auto pending_state = my->_blockchain->get_pending_state();
-      auto raw_results = map<address, std::pair<map<asset_id_type, share_type>, share_type>>();
-      auto result = account_reward_summary_type();
-      auto now = my->_blockchain->now();
-
-      const auto items = my->_wallet_db.get_balances();
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
       for( const auto& item : items )
       {
+          const auto& name = item.first;
+          const auto& records = item.second;
 
-          const auto okey_rec = my->_wallet_db.lookup_key( item.second.owner() );
-          if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
-          const auto account_address = okey_rec->account_address;
-
-          const auto obalance = pending_state->get_balance_record( item.first );
-
-          auto balance = asset( 0 );
-          if( obalance.valid() )
+          for( const auto& record : records )
           {
-              auto asset_rec = pending_state->get_asset_record( obalance->condition.asset_id );
-              FC_ASSERT( asset_rec.valid() );
-              if( !asset_rec->is_market_issued() )
-                 continue;
-              balance = obalance->calculate_rewards( now, obalance->balance, asset_rec->collected_fees, asset_rec->current_share_supply );
+              const auto balance = record.get_balance();
+              balances[ name ][ balance.asset_id ] += balance.amount;
           }
-
-          /* Simpler to just check every time */
-          if( balance.amount <= 0  ) continue;
-
-          if( raw_results.count( account_address ) <= 0 )
-              raw_results[ account_address ] = std::make_pair( map<asset_id_type, share_type>(), share_type( 0 ) );
-
-          if( raw_results[ account_address ].first.count( balance.asset_id ) <= 0 )
-              raw_results[ account_address ].first[ balance.asset_id ] = balance.amount;
-          else
-              raw_results[ account_address ].first[ balance.asset_id ] += balance.amount;
       }
 
-      for( const auto& account : raw_results )
+      return balances;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   account_balance_summary_type wallet::get_account_rewards( const string& account_name )const
+   { try {
+      map<string, map<asset_id_type, share_type>> rewards;
+      const auto pending_state = my->_blockchain->get_pending_state();
+
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      for( const auto& item : items )
       {
-         const auto oaccount = my->_wallet_db.lookup_account( account.first );
-         const auto name = oaccount.valid() ? oaccount->name : string( account.first );
-         if( !account_name.empty() && name != account_name ) continue;
+          const auto& name = item.first;
+          const auto& records = item.second;
 
-         if( result.count( name ) <= 0 )
-             result[ name ] = std::make_pair( map<string, share_type>(), share_type( 0 ) );
+          for( const auto& record : records )
+          {
+              const auto balance = record.get_balance();
+              // TODO: Memoize these
+              const auto asset_rec = pending_state->get_asset_record( balance.asset_id );
+              if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
 
-         for( const auto& item : account.second.first )
-         {
-            const auto symbol = my->_blockchain->get_asset_symbol( item.first );
-            result[ name ].first[ symbol ] = item.second;
-         }
-
-         result[ name ].second = account.second.second;
+              const auto reward = record.calculate_rewards( pending_state->now(), balance.amount,
+                                  asset_rec->collected_fees, asset_rec->current_share_supply );
+              rewards[ name ][ reward.asset_id ] += reward.amount;
+          }
       }
 
-      return result;
-   } FC_RETHROW_EXCEPTIONS(warn,"") }
+      return rewards;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    { try {
