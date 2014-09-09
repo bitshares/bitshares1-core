@@ -3207,7 +3207,8 @@ config load_config( const fc::path& datadir )
    {
       return _wallet->get_account_balances( account_name );
    }
-   account_balance_summary_type client_impl::wallet_account_rewards( const string& account_name )const
+
+   account_reward_summary_type client_impl::wallet_account_rewards( const string& account_name )const
    {
       return _wallet->get_account_rewards( account_name );
    }
@@ -3287,10 +3288,9 @@ config load_config( const fc::path& datadir )
 
    wallet_transaction_record client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                         const string& to_account_name,
-                                                                        double amount_to_withdraw,
-                                                                        const string& memo_message )
+                                                                        double amount_to_withdraw )
    {
-      const auto record = _wallet->withdraw_delegate_pay( delegate_name, amount_to_withdraw, to_account_name, memo_message );
+      const auto record = _wallet->withdraw_delegate_pay( delegate_name, amount_to_withdraw, to_account_name );
       network_broadcast_transaction( record.trx );
       return record;
    }

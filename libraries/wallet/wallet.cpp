@@ -3586,7 +3586,6 @@ namespace bts { namespace wallet {
            const string& delegate_name,
            double real_amount_to_withdraw,
            const string& withdraw_to_account_name,
-           const string& memo_message,
            bool sign )
    { try {
        FC_ASSERT( is_open() );
@@ -3610,12 +3609,14 @@ namespace bts { namespace wallet {
 
        owallet_key_record delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
        FC_ASSERT( delegate_key && delegate_key->has_private_key() );
-       auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
+       const auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
        required_signatures.insert( delegate_private_key.get_public_key() );
 
+       const auto delegate_public_key = delegate_private_key.get_public_key();
        public_key_type receiver_public_key = get_account_public_key( withdraw_to_account_name );
 
        const auto slate_id = select_slate( trx );
+       const string memo_message = "withdraw pay";
 
        trx.withdraw_pay( delegate_account_record->id, amount_to_withdraw + required_fees.amount );
        trx.deposit_to_account( receiver_public_key,
@@ -3623,13 +3624,13 @@ namespace bts { namespace wallet {
                                delegate_private_key,
                                memo_message,
                                slate_id,
-                               delegate_private_key.get_public_key(),
+                               delegate_public_key,
                                my->create_one_time_key(),
                                from_memo
                                );
 
        auto entry = ledger_entry();
-       entry.from_account = delegate_private_key.get_public_key();
+       entry.from_account = delegate_public_key;
        entry.to_account = receiver_public_key;
        entry.amount = asset( amount_to_withdraw );
        entry.memo = memo_message;
@@ -5098,11 +5099,10 @@ namespace bts { namespace wallet {
              pretty_entry.from_account = "GENESIS";
           else if( trx_rec.is_market )
              pretty_entry.from_account = "MARKET";
-          else if( entry.memo == "interest" )
+          else if( entry.memo.find( "interest" ) == 0 )
              pretty_entry.from_account = "NETWORK";
           else
              pretty_entry.from_account = "UNKNOWN";
-
 
           if( entry.to_account.valid() )
              pretty_entry.to_account = get_key_label( *entry.to_account );
@@ -5110,6 +5110,13 @@ namespace bts { namespace wallet {
              pretty_entry.to_account = "MARKET";
           else
              pretty_entry.to_account = "UNKNOWN";
+
+          /* To fix running balance calculation when withdrawing delegate pay */
+          if( pretty_entry.from_account == pretty_entry.to_account )
+          {
+             if( entry.memo.find( "withdraw pay" ) == 0 )
+                 pretty_entry.from_account = "NETWORK";
+          }
 
           /* I'm sorry - Vikram */
           /* You better be. - Dan */
@@ -5827,70 +5834,35 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
 
-      const auto pending_state = my->_blockchain->get_pending_state();
-      auto raw_results = map<address, std::pair<map<asset_id_type, share_type>, share_type>>();
-      auto result = account_balance_summary_type();
+      map<string, map<asset_id_type, share_type>> balances;
 
-      const auto items = my->_wallet_db.get_balances();
-      for( const auto& item : items )
+      const auto scan_balance = [&]( const balance_record& record ) -> void
       {
-          const auto okey_rec = my->_wallet_db.lookup_key( item.second.owner() );
-          if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
-          const auto account_address = okey_rec->account_address;
+          const auto key_record = my->_wallet_db.lookup_key( record.owner() );
+          if( !key_record.valid() || !key_record->has_private_key() ) return;
 
-          const auto obalance = pending_state->get_balance_record( item.first );
-          auto balance = asset( 0 );
-          if( obalance.valid() )
-              balance = obalance->get_balance();
+          const auto account_address = key_record->account_address;
+          const auto account_record = my->_wallet_db.lookup_account( account_address );
+          const auto name = account_record.valid() ? account_record->name : string( account_address );
+          if( !account_name.empty() && name != account_name ) return;
 
-          /* Simpler to just check every time */
-          const auto oaccount = pending_state->get_account_record( account_address );
-          auto pay_balance = share_type( 0 );
-          if( oaccount.valid() && oaccount->is_delegate() )
-              pay_balance = oaccount->delegate_info->pay_balance;
+          const auto balance = record.get_balance();
+          balances[ name ][ balance.asset_id ] += balance.amount;
+      };
 
-          if( balance.amount <= 0 && pay_balance <= 0 ) continue;
+      my->_blockchain->scan_balances( scan_balance );
 
-          if( raw_results.count( account_address ) <= 0 )
-              raw_results[ account_address ] = std::make_pair( map<asset_id_type, share_type>(), share_type( 0 ) );
-
-          if( raw_results[ account_address ].first.count( balance.asset_id ) <= 0 )
-              raw_results[ account_address ].first[ balance.asset_id ] = balance.amount;
-          else
-              raw_results[ account_address ].first[ balance.asset_id ] += balance.amount;
-
-          raw_results[ account_address ].second = pay_balance;
-      }
-
-      for( const auto& account : raw_results )
-      {
-         const auto oaccount = my->_wallet_db.lookup_account( account.first );
-         const auto name = oaccount.valid() ? oaccount->name : string( account.first );
-         if( !account_name.empty() && name != account_name ) continue;
-
-         if( result.count( name ) <= 0 )
-             result[ name ] = std::make_pair( map<string, share_type>(), share_type( 0 ) );
-
-         for( const auto& item : account.second.first )
-         {
-            const auto symbol = my->_blockchain->get_asset_symbol( item.first );
-            result[ name ].first[ symbol ] = item.second;
-         }
-
-         result[ name ].second = account.second.second;
-      }
-
-      return result;
+      return balances;
    } FC_RETHROW_EXCEPTIONS(warn,"") }
 
-   account_balance_summary_type wallet::get_account_rewards( const string& account_name )const
+   account_reward_summary_type wallet::get_account_rewards( const string& account_name )const
    { try {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
 
       const auto pending_state = my->_blockchain->get_pending_state();
       auto raw_results = map<address, std::pair<map<asset_id_type, share_type>, share_type>>();
-      auto result = account_balance_summary_type();
+      auto result = account_reward_summary_type();
       auto now = my->_blockchain->now();
 
       const auto items = my->_wallet_db.get_balances();

@@ -110,9 +110,11 @@ namespace bts { namespace cli {
     _command_to_function["wallet_list_unregistered_accounts"] = &f_wallet_list_accounts;
     _command_to_function["wallet_list_favorite_accounts"] = &f_wallet_list_accounts;
 
-    _command_to_function["wallet_account_balance"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["wallet_account_balance"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result )
+    {
       const auto& balances = result.as<account_balance_summary_type>();
-      out << pretty_balances(balances, _client); };
+      out << pretty_balances( balances, _client );
+    };
 
     _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
     _command_to_function["wallet_transfer_from"]                = &f_wallet_transfer;
