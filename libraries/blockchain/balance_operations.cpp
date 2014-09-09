@@ -6,17 +6,19 @@ namespace bts { namespace blockchain {
 
    asset   balance_record::calculate_rewards( fc::time_point_sec now, share_type amount, share_type rewards_pool, share_type share_supply )const
    {
+      if( amount <= 0 )       return asset(0,condition.asset_id);
+      if( share_supply <= 0 ) return asset(0,condition.asset_id);
+      if( rewards_pool <= 0 ) return asset(0,condition.asset_id);
+
       auto elapsed_time = (now - deposit_date);
       if(  elapsed_time > fc::seconds( BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC ) )
       {
          if( rewards_pool > 0 && share_supply > 0 )
          {
             fc::uint128 amount_withdrawn( amount );
-            amount_withdrawn *= BTS_BLOCKCHAIN_MAX_SHARES;
+            amount_withdrawn *= 1000000;
 
             fc::uint128 current_supply( share_supply );
-            current_supply *= BTS_BLOCKCHAIN_MAX_SHARES;
-
             fc::uint128 fee_fund( rewards_pool );
 
             auto rewards = (amount_withdrawn * fee_fund) / current_supply;
@@ -48,6 +50,7 @@ namespace bts { namespace blockchain {
                rewards += delta_rewards;
             }
 
+            rewards_amount /= 1000000;
             auto rewards_amount = rewards.to_uint64();
 
             if( rewards_amount > 0 && rewards_amount < rewards_pool )
