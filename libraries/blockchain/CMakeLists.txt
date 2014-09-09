@@ -63,6 +63,7 @@ add_library( bts_blockchain
 
 if(MSVC)
   set_source_files_properties(${generated_genesis_file} PROPERTIES COMPILE_FLAGS "/bigobj /Od")
+  set_source_files_properties(chain_database.cpp PROPERTIES COMPILE_FLAGS "/bigobj")
 else()
   set_source_files_properties(${generated_genesis_file} PROPERTIES COMPILE_FLAGS "-O0")
 endif()

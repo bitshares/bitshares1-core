@@ -39,6 +39,13 @@ class stcp_socket : public virtual fc::iostream
     fc::tcp_socket       _sock;
     fc::aes_encoder      _send_aes;
     fc::aes_decoder      _recv_aes;
+    std::shared_ptr<char> _read_buffer;
+    std::shared_ptr<char> _read_buffer_for_padding;
+    std::shared_ptr<char> _write_buffer;
+#ifndef NDEBUG
+    bool _read_buffer_in_use;
+    bool _write_buffer_in_use;
+#endif
 };
 
 typedef std::shared_ptr<stcp_socket> stcp_socket_ptr;
