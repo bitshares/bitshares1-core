@@ -9,7 +9,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait 5
 OK
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
@@ -18,32 +18,9 @@ test                            100.00000 XTS
 default (unlocked) >>> blockchain_get_account test
 No account found.
 default (unlocked) >>> wallet_account_register test test null 100
-{
-  "expiration": "20140620T154800",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "register_account_op_type",
-      "data": {
-        "name": "test",
-        "public_data": null,
-        "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "active_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
-        "delegate_pay_rate": 100,
-        "meta_data": null
-      }
-    },{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    }
-  ],
-  "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d96f6b5ef695f4b2df1b3c1e61a10dc5b35ad6daffb13358ba15a7e51e53d6c887"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   test                test                0.00000 XTS             register test as a delegate                 0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -56,44 +33,22 @@ Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 Active Key History:
 - XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-102   test                            0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
 test                            99.50000 XTS                
 default (unlocked) >>> wallet_account_update_active_key test test
-{
-  "expiration": "20140620T154810",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTSMiTysKtNmHwurQpnyHjpSGiRBzDiYXKUF",
-        "amount": 50000,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "update_account_op_type",
-      "data": {
-        "account_id": 102,
-        "public_data": null,
-        "active_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
-        "delegate_pay_rate": 100
-      }
-    }
-  ],
-  "signatures": [
-    "1fec3855dbe1166043791cf143099f7024debaf18f71738d70aa254eccbdfc9d22b7069411bc2d294917cbf72469c559fdaaaf684541e8cfe5fd0a172c12f23fbf",
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98b70bf8995438c4182bf99ea0d5190e60ec160eaa4eb3041ba5c46faa0d8a231f5"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   test                test                0.00000 XTS             update test active key                      0.50000 XTS         [redacted]
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            99.00000 XTS                
+test                            99.50000 XTS                
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> wallet_rescan_blockchain 

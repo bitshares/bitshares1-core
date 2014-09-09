@@ -14,7 +14,7 @@ default (unlocked) >>> wallet_get_info
   "open": true,
   "name": "default",
   "automatic_backups": false,
-  "transaction_scanning": true,
+  "transaction_scanning": false,
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",
@@ -22,7 +22,7 @@ default (unlocked) >>> wallet_get_info
   "unlocked": true,
   "unlocked_until": "[redacted]",
   "unlocked_until_timestamp": "[redacted]",
-  "scan_progress": "100.00 %",
+  "scan_progress": "0.00 %",
   "version": "[redacted]"
 }
 default (unlocked) >>> quit

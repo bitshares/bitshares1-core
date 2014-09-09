@@ -96,6 +96,12 @@ namespace bts { namespace blockchain {
          if( fee.first == 0 || fee.second == 0 )
            continue;
 
+         auto asset_record = _current_state->get_asset_record( fee.first );
+         if( !asset_record.valid() ) FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
+
+         if( !asset_record->is_market_issued() )
+           continue;
+
          // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
          // is an amount of USD which can be converted to price*USD XTS provided we
          // send lowest_ask.index.owner the USD

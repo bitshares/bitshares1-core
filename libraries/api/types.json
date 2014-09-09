@@ -12,6 +12,11 @@
         "cpp_include_file" : "bts/blockchain/types.hpp"
       },
       {
+        "type_name": "float",
+        "cpp_return_type" : "float",
+        "cpp_include_file" : "bts/blockchain/types.hpp"
+      },
+      {
         "type_name" : "account_name",
         "cpp_return_type" : "std::string",
         "cpp_include_file" : "string",
@@ -35,6 +40,10 @@
       {
          "type_name" : "balance_record_map",
          "cpp_return_type" : "std::map<bts::blockchain::balance_id_type, bts::blockchain::balance_record>"
+      },
+      {
+         "type_name" : "price_map",
+         "cpp_return_type" : "std::map<std::string,double>"
       },
       {
          "type_name" : "wallet_balance_record",
@@ -299,6 +308,10 @@
          "cpp_return_type" : "bts::wallet::account_balance_summary_type"
       },
       {
+         "type_name" : "account_balance_id_summary_type",
+         "cpp_return_type" : "bts::wallet::account_balance_id_summary_type"
+      },
+      {
          "type_name" : "market_order",
          "cpp_return_type" : "bts::blockchain::market_order"
       },
@@ -468,15 +481,6 @@
           "default_example" : "Alice"
       },
       {
-         "type_name" : "market_order_status",
-         "cpp_return_type" : "bts::wallet::market_order_status"
-      },
-      {
-         "type_name" : "market_order_status_array",
-         "container_type" : "array",
-         "contained_type" : "market_order_status"
-      },
-      {
          "type_name" : "map< account_name, share_type >",
          "cpp_return_type" : "std::unordered_map< std::string, bts::blockchain::share_type >"
       },
@@ -611,6 +615,10 @@
         "cpp_return_type" : "bts::wallet::vote_selection_method"
       },
       {
+        "type_name" : "vote_summary",
+        "cpp_return_type" : "bts::wallet::vote_summary"
+      },
+      {
         "type_name" : "feed_entry_list",
         "cpp_return_type" : "std::vector<bts::blockchain::feed_entry>",
         "cpp_include_file" : "bts/blockchain/feed_operations.hpp"
@@ -629,6 +637,11 @@
         "type_name" : "message_id",
         "cpp_return_type" : "bts::mail::message_id_type",
         "cpp_include_file" : "bts/mail/server.hpp"
+      },
+      {
+        "type_name" : "message_status_list",
+        "cpp_return_type" : "std::multimap<bts::mail::client::mail_status,bts::mail::message_id_type>",
+        "cpp_include_file" : "bts/mail/client.hpp"
       }
     ]
 }

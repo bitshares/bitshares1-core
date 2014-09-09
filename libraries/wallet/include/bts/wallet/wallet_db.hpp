@@ -42,16 +42,11 @@ namespace bts { namespace wallet {
          void cache_memo( const memo_status& memo, 
                           const private_key_type& account_key,
                           const fc::sha512& password );
-         void cache_order( const bts::blockchain::market_order& );
 
          void remove_balance( const balance_id_type& balance_id );
          void remove_transaction( const transaction_id_type& record_id );
 
          vector<wallet_transaction_record> get_pending_transactions()const;
-
-         void update_market_order( const address& owner, 
-                                   const optional<bts::blockchain::market_order>& order,
-                                   const transaction_id_type& trx_id );
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
@@ -62,6 +57,7 @@ namespace bts { namespace wallet {
          owallet_account_record lookup_account( const string& account_name )const;
          owallet_account_record lookup_account( account_id_type aid )const;
 
+         vector<wallet_balance_record>  get_all_balances( const string& account_name, uint32_t limit );
          owallet_balance_record lookup_balance( const balance_id_type& balance_id )const;
          owallet_key_record     lookup_key( const address& address )const;
 
@@ -105,10 +101,6 @@ namespace bts { namespace wallet {
          {
             return accounts;
          }
-         const unordered_map<address,wallet_market_order_status_record>& get_market_orders()const
-         {
-            return market_orders;
-         }
          const unordered_map< address, wallet_key_record >& get_keys()const 
          {
             return keys;
@@ -123,7 +115,6 @@ namespace bts { namespace wallet {
          map<string,wallet_asset_record>                                  assets;
          unordered_map< balance_id_type,wallet_balance_record >           balances;
          map<property_enum, wallet_property_record>                       properties;
-         unordered_map<address,wallet_market_order_status_record>         market_orders;
          map< string, wallet_setting_record >                             settings;
 
          unordered_map< address, address >                                btc_to_bts_address;

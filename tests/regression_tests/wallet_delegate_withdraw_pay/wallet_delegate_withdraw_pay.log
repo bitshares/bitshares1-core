@@ -1,133 +1,33 @@
 default (unlocked) >>> wallet_set_priority_fee 100000
 100,000.00000 XTS
 default (unlocked) >>> wallet_asset_create XBC ASSET1 delegate0 "CREATING ASSET1" null 500 100
-{
-  "expiration": "20140620T154750",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 10000000000,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "create_asset_op_type",
-      "data": {
-        "symbol": "XBC",
-        "name": "ASSET1",
-        "description": "CREATING ASSET1",
-        "public_data": null,
-        "issuer_account_id": 1,
-        "maximum_share_supply": 50000,
-        "precision": 100
-      }
-    }
-  ],
-  "signatures": [
-    "1fa31bf8b475b41b5848cba70b97c7a5d9ab6323ae5849d8f6f14618b817e67f8e1723888492166bd4f1e1b841a8d313f32a362b63a0c05f3c2b60d9678d8515ea",
-    "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6ccf3550a0b933f7c5920501c2c17dd5d0d9fd9d674972282478e8b525c73a6954"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XBC (ASSET1)                         100,000.00000 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2 
 OK
 default (unlocked) >>> wallet_asset_create XCD ASSET2 delegate0 "CREATING ASSET2" null 500 100
-{
-  "expiration": "20140620T154800",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 19999884160,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "create_asset_op_type",
-      "data": {
-        "symbol": "XCD",
-        "name": "ASSET2",
-        "description": "CREATING ASSET2",
-        "public_data": null,
-        "issuer_account_id": 1,
-        "maximum_share_supply": 50000,
-        "precision": 100
-      }
-    }
-  ],
-  "signatures": [
-    "20dfdcb1892751ce8aa98d5e6a7451ffc3919df60b3f75fa648dbc10a4604e32d931959e6995c5a070f9d1d0a708b0a89dc7eb1493d00811eb85446bc989e5b3c6",
-    "20382ad2a5971b8edce40b362dff9b7abb41f041fced4e98032567d7e7f0674960a6131733f0f03c72a82ed7b4fe58a238dcdc88cd7f8e372fd18b4815532cec30"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XCD (ASSET2)                         199,998.84160 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2 
 OK
 default (unlocked) >>> wallet_asset_create XDE ASSET3  delegate0 "CREATING ASSET3" null 500 100
-{
-  "expiration": "20140620T154810",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 39999773440,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "create_asset_op_type",
-      "data": {
-        "symbol": "XDE",
-        "name": "ASSET3",
-        "description": "CREATING ASSET3",
-        "public_data": null,
-        "issuer_account_id": 1,
-        "maximum_share_supply": 50000,
-        "precision": 100
-      }
-    }
-  ],
-  "signatures": [
-    "20ed3b89cfd9161f3bb98d23ffae80a5b0184ec70371312d17e5aec38e6810b98bab377c9e156a865d7e0c8dbf081184b39cfed254c8db6836dcbed56895eb41f4",
-    "1fab2bf36b55531a00ea24d3800060f1901760c1b339cd38359d1f3af7c0b2e4c0660de35f2e72f16fcd08f27496d484b0d17350e1168bdc8c27dc481452ed534d"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XDE (ASSET3)                         399,997.73440 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2 
 OK
 default (unlocked) >>> wallet_asset_create XEF ASSET4 delegate0 "CREATING ASSET4" null 500 100
-{
-  "expiration": "20140620T154820",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_op_type",
-      "data": {
-        "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-        "amount": 79999310080,
-        "claim_input_data": ""
-      }
-    },{
-      "type": "create_asset_op_type",
-      "data": {
-        "symbol": "XEF",
-        "name": "ASSET4",
-        "description": "CREATING ASSET4",
-        "public_data": null,
-        "issuer_account_id": 1,
-        "maximum_share_supply": 50000,
-        "precision": 100
-      }
-    }
-  ],
-  "signatures": [
-    "208b9e609254fe9bb3e477541bd399ef415ab2aa3d293cb7011d71eb416d0e7f006471736ff70cab2cbe8b69ef0f66a6d7555ad522ee5b052f5d7d9f9f3e2c2179",
-    "20ae62ef753099e1d7cdd372e87ceca3e98a91b042f98a71f8e13c9bdf36977e667d95a59340f45736fb9d51c98c36b8a9605de6fbdf7930098370ff72508a35cf"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XEF (ASSET4)                         799,993.10080 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2 
@@ -155,9 +55,9 @@ Owner Key: XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw
 Active Key History:
 - XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-42    delegate41                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_get_account delegate41 
 Name: delegate41
@@ -167,9 +67,9 @@ Owner Key: XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw
 Active Key History:
 - XTS5tThYRe2TTSHYdLqcLJPSzEGF1sYeq1gGFVTSPgv1FDNQDk6Rw, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-42    delegate41                      0.0000000000 % 0        0        N/A           100 %    0.00000 XTS         NONE      
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
 default (unlocked) >>> blockchain_get_account delegate43 
 Name: delegate43
@@ -179,15 +79,14 @@ Owner Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
 Active Key History:
 - XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-44    delegate43                      0.0000000000 % 1        0        100.00 %      100 %    0.00000 XTS         2         
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+44    delegate43                      0.00000000 %   1        0        100.00 %      100 %    0.00000 XTS         2                       
 
 default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate44                      19,801,980.19801 XTS        
-                                0.82671 XTS (pay)           
 default (unlocked) >>> blockchain_get_account delegate44
 Name: delegate44
 Registered: Genesis (Keyhotee Founder)
@@ -196,48 +95,18 @@ Owner Key: XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1
 Active Key History:
 - XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-45    delegate44                      0.0000000413 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3                       
 
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
-{
-  "expiration": "20140620T154830",
-  "delegate_slate_id": null,
-  "operations": [{
-      "type": "withdraw_pay_op_type",
-      "data": {
-        "amount": 20000,
-        "account_id": 45
-      }
-    },{
-      "type": "deposit_op_type",
-      "data": {
-        "amount": 10000,
-        "condition": {
-          "asset_id": 0,
-          "delegate_slate_id": 0,
-          "type": "withdraw_signature_type",
-          "data": {
-            "owner": "XTS3C3sU1jTufVF52hdUWF2t6pBnJyssyoiF",
-            "memo": {
-              "one_time_key": "XTS6ZS5L2szhzQmGztoQAwTxeLRsNext9Pfp3fktDn3ZJN7Ct54Yj",
-              "encrypted_memo_data": "700b5f126b94592b6009e1065bbce56769757a2227e92dc62876f65647d7ab1f627703f885a8dce8c798284ae0d25b0c2d339d4dbd94409ba1fb10f1918924f9"
-            }
-          }
-        }
-      }
-    }
-  ],
-  "signatures": [
-    "1f9b0bb127f3cbcd85f3a518363be91ee050dc7d222614725b07c13cd97717e31a33e40431919ece6ba48ef23a39278e85db3fe6bbd4d434b18121830d0054569b"
-  ]
-}
+RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   delegate44          test                0.10000 XTS             withdraw pay                                0.10000 XTS         [redacted]
 default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate44                      19,801,980.19801 XTS        
-                                0.62671 XTS (pay)           
 default (unlocked) >>> blockchain_get_account delegate44
 Name: delegate44
 Registered: Genesis (Keyhotee Founder)
@@ -246,13 +115,13 @@ Owner Key: XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1
 Active Key History:
 - XTS6E8BPTQRx4EXk2h4xRaUfYez8oyQuapDRVrH3ySwD75xdvFMu1, last used [redacted]
 
-ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK
-============================================================================================================================
-45    delegate44                      0.0000000413 % 1        0        100.00 %      100 %    0.82671 XTS         3         
+ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
+==========================================================================================================================================
+45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3                       
 
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
-default (unlocked) >>> debug_wait 2
+default (unlocked) >>> debug_wait 4
 OK
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     

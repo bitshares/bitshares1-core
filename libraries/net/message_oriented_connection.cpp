@@ -174,11 +174,11 @@ namespace bts { namespace net {
         wlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
         _delegate->on_connection_closed(_self);
       }
-      catch ( const fc::exception& e )
+      catch ( fc::exception& e )
       {
         elog( "disconnected ${er}", ("er", e.to_detail_string() ) );
         _delegate->on_connection_closed(_self);
-        FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected, see log" );
+        FC_RETHROW_EXCEPTION(e, warn, "disconnected" );
       }
       catch ( const std::exception& e )
       {

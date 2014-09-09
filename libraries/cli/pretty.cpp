@@ -264,10 +264,11 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
     out << std::setw( 14 ) << "RELIABILITY";
     out << std::setw(  9 ) << "PAY RATE";
     out << std::setw( 20 ) << "PAY BALANCE";
-    out << std::setw( 10 ) << "LAST BLOCK";
+    out << std::setw( 12 ) << "LAST BLOCK";
+    out << std::setw( 12 ) << "VERSION";
     out << "\n";
 
-    out << pretty_line( 124 );
+    out << pretty_line( 138 );
     out << "\n";
 
     const auto current_slot_timestamp = blockchain::get_slot_start_time( blockchain::now() );
@@ -304,7 +305,16 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( pay_balance );
 
         const auto last_block = delegate_record.delegate_info->last_block_num_produced;
-        out << std::setw( 10 ) << ( last_block > 0 ? std::to_string( last_block ) : "NONE" );
+        out << std::setw( 12 ) << ( last_block > 0 ? std::to_string( last_block ) : "NONE" );
+
+        string version;
+        if( delegate_record.public_data.is_object()
+            && delegate_record.public_data.get_object().contains( "version" )
+            && delegate_record.public_data.get_object()[ "version" ].is_string() )
+        {
+            version = delegate_record.public_data.get_object()[ "version" ].as_string();
+        }
+        out << std::setw( 12) << version;
 
         out << "\n";
     }
@@ -626,7 +636,6 @@ string pretty_account( const oaccount_record& record, cptr client )
     return out.str();
 }
 
-// TODO: Print total at the end so that can be compared to (history)
 string pretty_balances( const account_balance_summary_type& balances, cptr client )
 {
     if( balances.empty() ) return "No balances found.\n";
@@ -647,7 +656,7 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
         const auto& account_name = item.first;
 
         bool first = true;
-        for( const auto& asset_balance : item.second.first )
+        for( const auto& asset_balance : item.second )
         {
             if( first )
             {
@@ -659,21 +668,10 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
                 out << std::setw( 32 ) << "";
             }
 
-            const auto balance = asset( asset_balance.second, client->get_chain()->get_asset_id( asset_balance.first ) );
+            const auto balance = asset( asset_balance.second, asset_balance.first );
             out << std::setw( 28 ) << client->get_chain()->to_pretty_asset( balance );
 
             out << "\n";
-        }
-
-        const auto& pay_balance = item.second.second;
-        if( pay_balance > 0 )
-        {
-            out << "\b";
-            out << std::setw( 32 ) << "";
-
-            std::stringstream ss;
-            ss << client->get_chain()->to_pretty_asset( asset( pay_balance ) ) << " (pay)";
-            out << std::setw( 28 ) << ss.str() << "\n";
         }
     }
 
@@ -710,46 +708,7 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
     return out.str();
 }
 
-string pretty_market_orders( const vector<market_order>& market_orders, cptr client )
-{
-    if( market_orders.empty() ) return "No market orders found.\n";
-    FC_ASSERT( client != nullptr );
-
-    std::stringstream out;
-    out << std::left;
-
-    out << std::setw( 12 ) << "TYPE";
-    out << std::setw( 20 ) << "QUANTITY";
-    out << std::setw( 30 ) << "PRICE";
-    out << std::setw( 20 ) << "BALANCE";
-    out << std::setw( 20 ) << "COST";
-    out << std::setw( 20 ) << "COLLATERAL";
-    out << std::setw( 36 ) << "ID";
-    out << "\n";
-
-    out << pretty_line( 128 );
-    out << "\n";
-
-    for( const auto& order : market_orders )
-    {
-        out << std::setw( 12 ) << variant( order.type ).as_string();
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() );
-        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
-        if( order.type != cover_order )
-           out << std::setw( 20 ) << "N/A";
-        else
-           out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( *order.collateral ) );
-        out << std::setw( 36 ) << fc::variant( order.market_index.owner ).as_string();
-
-        out << "\n";
-    }
-
-    return out.str();
-}
-
-string pretty_market_orders2( const map<order_id_type, market_order>& order_items, cptr client )
+string pretty_order_list( const map<order_id_type, market_order>& order_items, cptr client )
 {
     if( order_items.empty() ) return "No market orders found.\n";
     FC_ASSERT( client != nullptr );

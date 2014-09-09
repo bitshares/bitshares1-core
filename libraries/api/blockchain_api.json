@@ -132,7 +132,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_get_block",
@@ -146,7 +146,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["get_block", "getblock"]
       },
       {
@@ -161,7 +161,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_get_account",
@@ -175,7 +175,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["get_account"]
       },
       {
@@ -190,27 +190,8 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["get_balance"]
-      },
-      {
-        "method_name": "blockchain_get_balance_by_owner",
-        "description": "Retrieves the balance record for the given address and asset (only works on non-voting balances)",
-        "return_type": "balance_record",
-        "parameters" : [
-            {
-              "name" : "balance_id",
-              "type" : "address",
-              "description" : "address of the balance"
-            },
-            {
-              "name" : "asset_symbol",
-              "type" : "string",
-              "description" : "Symbol of the asset the balance is in"
-            }
-        ],
-        "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
       },
       {
         "method_name": "blockchain_list_balances",
@@ -231,7 +212,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["list_balances"]
       },
       {
@@ -246,7 +227,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["get_asset"]
       },
       {
@@ -261,7 +242,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_get_feeds_from_delegate",
@@ -275,7 +256,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name" : "blockchain_market_list_bids",
@@ -299,7 +280,7 @@
               "default_value" : "-1"
            }
         ],
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_bids"]
       },
       {
@@ -324,7 +305,7 @@
               "default_value" : "-1"
            }
         ],
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_asks"]
       },
       {
@@ -344,7 +325,7 @@
               "default_value" : "-1"
            }
         ],
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_shorts"]
       },
       {
@@ -364,7 +345,7 @@
               "default_value" : "-1"
            }
         ],
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_covers"]
       },
       {
@@ -389,7 +370,7 @@
               "default_value" : "-1"
            }
         ],
-        "prerequisites" : ["json_authenticated"],
+        "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_book"]
       },
       {
@@ -427,7 +408,7 @@
            }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_market_price_history",
@@ -462,7 +443,7 @@
            }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
          "method_name" : "blockchain_list_active_delegates",
@@ -484,7 +465,7 @@
          ],
          "is_const" : true,
          "aliases" : ["blockchain_get_active_delegates"],
-         "prerequisites" : ["json_authenticated"]
+         "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_list_delegates",
@@ -506,7 +487,7 @@
         ],
         "is_const" : true,
         "aliases" : ["blockchain_get_delegates"],
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
          "method_name" : "blockchain_list_blocks",
@@ -527,7 +508,7 @@
             }
          ],
          "aliases" : ["list_blocks"],
-         "prerequisites" : ["json_authenticated"]
+         "prerequisites" : ["no_prerequisites"]
       },
       {
          "method_name" : "blockchain_list_missing_block_delegates",
@@ -540,7 +521,7 @@
                "description" : "The block to examine"
             }
          ],
-         "prerequisites" : ["json_authenticated"]
+         "prerequisites" : ["no_prerequisites"]
       },
       {
          "method_name" : "blockchain_export_fork_graph",
@@ -568,7 +549,7 @@
          ],
          "is_const" : true,
          "aliases" : ["export_forks"],
-         "prerequisites" : ["json_authenticated"]
+         "prerequisites" : ["no_prerequisites"]
       },
       {
          "method_name" : "blockchain_list_forks",
@@ -577,7 +558,7 @@
          "parameters"  : [],
          "is_const" : true,
          "aliases" : ["list_forks"],
-         "prerequisites" : ["json_authenticated"]
+         "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_get_delegate_slot_records",
@@ -591,7 +572,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_get_block_signee",
@@ -605,7 +586,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_list_market_transactions",
@@ -619,7 +600,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_market_status",
@@ -638,7 +619,7 @@
             }
         ],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       },
       {
         "method_name": "blockchain_unclaimed_genesis",
@@ -646,7 +627,7 @@
         "return_type": "asset",
         "parameters" : [],
         "is_const" : true,
-        "prerequisites" : ["json_authenticated"]
+        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }

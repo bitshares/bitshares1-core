@@ -24,6 +24,12 @@ struct public_key_summary
     string    btc_compressed_address;
 };
 
+struct vote_summary
+{
+    float     utilization;
+    float     negative_utilization;
+};
+
 struct pretty_ledger_entry
 {
    string                                   from_account;
@@ -188,6 +194,8 @@ struct pretty_remove_collateral_op
 }} // bts::wallet
 
 FC_REFLECT( bts::wallet::public_key_summary, (hex)(native_pubkey)(native_address)(pts_normal_address)(pts_compressed_address)(btc_normal_address)(btc_compressed_address) );
+
+FC_REFLECT( bts::wallet::vote_summary, (utilization)(negative_utilization) );
 
 FC_REFLECT( bts::wallet::pretty_ledger_entry,
         (from_account)

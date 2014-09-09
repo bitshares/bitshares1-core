@@ -2,31 +2,6 @@
  * ease of maintenance and upgrade.
  */
 
-// This is used to save & restore the _current_ask with its previous value, required to 
-// reproduce some quirky behavior in pre-BTSX_MARKET_FORK_4_BLOCK_NUM blocks.
-struct save_and_restore_ask
-{
-  fc::optional<market_order>& _current_ask_to_swap;
-  bool _swapped;
-  fc::optional<market_order> _original_current_ask;
-  save_and_restore_ask(fc::optional<market_order>& current_ask, const fc::optional<market_order>& backup_ask) :
-    _current_ask_to_swap(current_ask),
-    _swapped(false)
-  {
-    if (!_current_ask_to_swap)
-      {
-      _swapped = true;
-      _original_current_ask = _current_ask_to_swap;
-      _current_ask_to_swap = backup_ask ? *backup_ask : market_order();
-      }
-  }
-  ~save_and_restore_ask()
-  {
-    if (_swapped)
-      _current_ask_to_swap = _original_current_ask;
-  }
-};
-
 class market_engine
 {
    public:
@@ -44,12 +19,12 @@ class market_engine
 
              _quote_id = quote_id;
              _base_id = base_id;
-             oasset_record quote_asset = _pending_state->get_asset_record( _quote_id );
-             oasset_record base_asset = _pending_state->get_asset_record( _base_id );
+             auto quote_asset = _pending_state->get_asset_record( _quote_id );
+             auto base_asset = _pending_state->get_asset_record( _base_id );
 
              // the order book is sorted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
              // next market class and then back up one
-             price next_pair = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
+             auto next_pair  = base_id+1 == quote_id ? price( 0, quote_id+1, 0) : price( 0, quote_id, base_id+1 );
              _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
              _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
              _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
@@ -99,16 +74,12 @@ class market_engine
                          market_stat->avg_price_1h = *median_price;
                       }
                    }
-                   max_short_bid = market_stat->maximum_bid();
                    min_cover_ask = market_stat->minimum_ask();
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
-                   {
-                      if( median_price )
-                         max_short_bid = *median_price;
-                      else
-                         max_short_bid = market_stat->avg_price_1h;
-                   }
+                   if( median_price )
+                      max_short_bid = *median_price;
+                   else
+                      max_short_bid = market_stat->avg_price_1h;
                 }
                 else // we only liquidate fees collected for user issued assets
                 {
@@ -117,11 +88,6 @@ class market_engine
                   get_next_bid(); // this is necessary for get_next_ask to work with collateral
                   while( get_next_ask() )
                   {
-                     assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
-                     if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
-                       FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
-                     save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
-                     
                      if( (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount < (10000 * BTS_BLOCKCHAIN_PRECISION) )
                         break;
                 //     idump( (_current_ask) );
@@ -177,11 +143,6 @@ class market_engine
              bool order_did_execute = false;
              while( get_next_bid() && get_next_ask() )
              {
-                assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
-                if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
-                  FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
-                save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
-
                 // make sure that at least one order was matched
                 // every time we enter the loop.
                 if( _orders_filled == last_orders_filled )
@@ -213,53 +174,29 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
-                   if( pending_block_num < BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   /**
+                    *  Don't allow shorts to be executed if they are too far over priced or they will be
+                    *  immediately under collateralized.
+                    */
+                   if( mtrx.bid_price > market_stat->maximum_bid() )
                    {
-                      // in the event that there is a margin call, we must accept the
-                      // bid price assuming the bid price is reasonable
-                      if( mtrx.bid_price < min_cover_ask )
-                      {
-                         //wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
-                         reset_current_ask();
-                         continue;
-                      }
+                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_bid.reset();
+                      continue;
+                   }
+                   /**
+                    *  Don't allow shorts to be executed if they are too far over priced or they will be
+                    *  immediately under collateralized.
+                    */
+                   if( mtrx.bid_price < market_stat->minimum_ask() )
+                   {
+                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_ask.reset();
+                      continue;
                    }
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
-                   {
-                       /**
-                        *  Don't allow shorts to be executed if they are too far over priced or they will be
-                        *  immediately under collateralized.
-                        */
-                       if( mtrx.bid_price > market_stat->maximum_bid() )
-                       {
-                          //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                          // TODO: cancel the short order...
-                          _current_bid.reset();
-                          continue;
-                       }
-                       /**
-                        *  Don't allow shorts to be executed if they are too far over priced or they will be
-                        *  immediately under collateralized.
-                        */
-                       if( mtrx.bid_price < market_stat->minimum_ask() )
-                       {
-                          //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                          // TODO: cancel the short order...
-                          _current_ask.reset();
-                          continue;
-                       }
-                   }
-                   else
-                   {
-                       if( mtrx.bid_price > max_short_bid )
-                       {
-                          //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                          // TODO: cancel the short order...
-                          _current_bid.reset();
-                          continue;
-                       }
-                   }
                    mtrx.ask_price = mtrx.bid_price;
 
                    // we want to sell enough XTS to cover our balance.
@@ -314,45 +251,27 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price )
                       break; // the call price has not been reached
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+                   /**
+                    *  Don't allow margin calls to be executed too far below
+                    *  the minimum ask, this could lead to an attack where someone
+                    *  walks the whole book to steal the collateral.
+                    */
+                   if( mtrx.bid_price < market_stat->minimum_ask() )
                    {
-                       /**
-                        *  Don't allow margin calls to be executed too far below
-                        *  the minimum ask, this could lead to an attack where someone
-                        *  walks the whole book to steal the collateral.  
-                        */
-                       if( mtrx.bid_price < market_stat->minimum_ask() )
-                       {
-                          //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                          // TODO: cancel the short order...
-                          _current_ask.reset();
-                          continue;
-                       }
+                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_ask.reset();
+                      continue;
                    }
 
                    mtrx.ask_price = mtrx.bid_price;
 
-                   if( pending_block_num < BTSX_MARKET_FORK_4_BLOCK_NUM )
-                   {
-                      // in the event that there is a margin call, we must accept the
-                      // bid price assuming the bid price is reasonable
-                      if( mtrx.bid_price < min_cover_ask )
-                      {
-                         wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
-                         reset_current_ask();
-                         continue;
-                      }
-                   }
-
                    auto max_usd_purchase = asset(*_current_ask->collateral,0) * mtrx.bid_price;
                    auto usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
-                   {
-                      const auto required_usd_purchase = _current_ask->get_balance();
-                      if( required_usd_purchase < usd_exchanged )
-                         usd_exchanged = required_usd_purchase;
-                   }
+                   const auto required_usd_purchase = _current_ask->get_balance();
+                   if( required_usd_purchase < usd_exchanged )
+                      usd_exchanged = required_usd_purchase;
 
                    mtrx.bid_paid     = usd_exchanged;
                    mtrx.ask_received = usd_exchanged;
@@ -376,44 +295,31 @@ class market_engine
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+                   /**
+                    *  If the ask is less than the "max short bid" then that means the
+                    *  ask (those with XTS wanting to buy USD) are willing to accept
+                    *  a price lower than the median.... this will generally mean that
+                    *  everyone else with USD looking to sell below parity has been
+                    *  bought out and the buyers of USD are willing to pay above parity.
+                    */
+                   if( mtrx.bid_price > max_short_bid && mtrx.ask_price > max_short_bid )
                    {
-                       /**
-                        *  If the ask is less than the "max short bid" then that means the
-                        *  ask (those with XTS wanting to buy USD) are willing to accept 
-                        *  a price lower than the median.... this will generally mean that
-                        *  everyone else with USD looking to sell below parity has been 
-                        *  bought out and the buyers of USD are willing to pay above parity.
-                        */
-                       if( mtrx.ask_price <= max_short_bid )
-                       {
-                          // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                          // TODO: cancel the short order...
-                          _current_bid.reset();
-                          continue;
-                       }
-
-                       /**
-                        *  Don't allow shorts to be executed if they are too far over priced or they will be
-                        *  immediately under collateralized. 
-                        */
-                       if( mtrx.bid_price > market_stat->maximum_bid() )
-                       {
-                          // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                          // TODO: cancel the short order...
-                          _current_bid.reset();
-                          continue;
-                       }
+                      // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_bid.reset();
+                      continue;
                    }
-                   else
+
+                   /**
+                    *  Don't allow shorts to be executed if they are too far over priced or they will be
+                    *  immediately under collateralized.
+                    */
+                   if( mtrx.bid_price > market_stat->maximum_bid() )
                    {
-                       if( mtrx.bid_price > max_short_bid )
-                       {
-                          // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                          // TODO: cancel the short order...
-                          _current_bid.reset();
-                          continue;
-                       }
+                      // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
+                      // TODO: cancel the short order...
+                      _current_bid.reset();
+                      continue;
                    }
 
                    auto quantity_xts   = std::min( bid_quantity_xts, ask_quantity_xts );
@@ -487,12 +393,11 @@ class market_engine
 
              market_stat->last_error.reset();
 
-             if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
-                 order_did_execute |= (pending_block_num % 6) == 0;
+             order_did_execute |= (pending_block_num % 6) == 0;
 
              if( _current_bid && _current_ask && order_did_execute )
              {
-                if( median_price && pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+                if( median_price )
                 {
                    market_stat->avg_price_1h = *median_price;
                 }
@@ -501,85 +406,36 @@ class market_engine
                    // after the market is running solid we can use this metric...
                    market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
-                   {
-                      const auto max_bid = market_stat->maximum_bid();
+                   const auto max_bid = market_stat->maximum_bid();
 
-                      // limit the maximum movement rate of the price.
-                      if( _current_bid->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                      else if( _current_bid->get_price() > max_bid )
-                         market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
-                      else
-                         market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
-
-                      if( _current_ask->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                      else if( _current_ask->get_price() > max_bid )
-                         market_stat->avg_price_1h.ratio += max_bid.ratio;
-                      else
-                         market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
-                   }
+                   // limit the maximum movement rate of the price.
+                   if( _current_bid->get_price() < min_cover_ask )
+                      market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                   else if( _current_bid->get_price() > max_bid )
+                      market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
                    else
-                   {
-                      // limit the maximum movement rate of the price.
-                      if( _current_bid->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                      else if( _current_bid->get_price() > max_short_bid )
-                         market_stat->avg_price_1h.ratio += max_short_bid.ratio;
-                      else
-                         market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
+                      market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
 
-                      if( _current_ask->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
-                      else if( _current_ask->get_price() > max_short_bid )
-                         market_stat->avg_price_1h.ratio += max_short_bid.ratio;
-                      else
-                         market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
-                   }
+                   if( _current_ask->get_price() < min_cover_ask )
+                      market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                   else if( _current_ask->get_price() > max_bid )
+                      market_stat->avg_price_1h.ratio += max_bid.ratio;
+                   else
+                      market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
 
                    market_stat->avg_price_1h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
                 }
              }
 
-             if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+             if( quote_asset->is_market_issued() && base_id == 0 )
              {
-                 if( quote_asset->is_market_issued() && base_id == 0 )
-                 {
-                     if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
-                         || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT )
-                     {
-                        _market_transactions.clear(); // nothing should have executed
-                       std::string reason = "After executing orders there was insufficient depth remaining";
-                       FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
-                     }
-                 }
-             }
-             else
-             {
-                 if( quote_asset->is_market_issued() )
-                 {
-                     if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
-                     {
-                        if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*2
-                            || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*2 )
-                        {
-                           _market_transactions.clear(); // nothing should have executed
-                          std::string reason = "After executing orders there was insufficient depth remaining";
-                          FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
-                        }
-                     }
-                     else
-                     {
-                        if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*4
-                            || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT*4 )
-                        {
-                           _market_transactions.clear(); // nothing should have executed
-                          std::string reason = "After executing orders there was insufficient depth remaining";
-                          FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
-                        }
-                     }
-                 }
+                if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
+                    || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT )
+                {
+                   _market_transactions.clear(); // nothing should have executed
+                  std::string reason = "After executing orders there was insufficient depth remaining";
+                  FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
+                }
              }
              _pending_state->store_market_status( *market_stat );
 
@@ -674,6 +530,7 @@ class market_engine
 
           bid_payout->balance += mtrx.bid_received.amount;
           bid_payout->last_update = _pending_state->now();
+          bid_payout->deposit_date = _pending_state->now();
           _pending_state->store_balance_record( *bid_payout );
 
 
@@ -734,6 +591,7 @@ class market_engine
 
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
+                ask_payout->deposit_date = _pending_state->now();
 
                 _pending_state->store_balance_record( *ask_payout );
                 _current_ask->collateral = 0;
@@ -764,6 +622,7 @@ class market_engine
              ask_payout = balance_record( mtrx.ask_owner, asset(0,_quote_id), 0 );
           ask_payout->balance += mtrx.ask_received.amount;
           ask_payout->last_update = _pending_state->now();
+          ask_payout->deposit_date = _pending_state->now();
 
           _pending_state->store_balance_record( *ask_payout );
 
@@ -840,7 +699,7 @@ class market_engine
             //idump( (_current_ask) );
             return _current_ask.valid();
          }
-         reset_current_ask();
+         _current_ask.reset();
          ++_orders_filled;
 
          /**
@@ -879,7 +738,7 @@ class market_engine
                 {
                  //  if( _current_ask->get_price() > cover_ask.get_price() )
                    {
-                      set_current_ask(cover_ask);
+                      _current_ask = cover_ask;
                       _current_payoff_balance = _collateral_itr.value().payoff_balance;
                       //wlog( "--collateral_iter" );
                       --_collateral_itr;
@@ -898,14 +757,10 @@ class market_engine
             if( ask.get_price().quote_asset_id == _quote_id &&
                 ask.get_price().base_asset_id == _base_id )
             {
-                set_current_ask(ask);
+                _current_ask = ask;
             }
             ++_ask_itr;
-
-            if( _pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
-               return _current_ask.valid();
-
-            return true;
+            return _current_ask.valid();
          }
          return _current_ask.valid();
       } FC_CAPTURE_AND_RETHROW() }
@@ -923,11 +778,6 @@ class market_engine
       {
              if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
              {
-               assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
-               if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
-                 FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
-               save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
-
                market_history_key key(_quote_id, _base_id, market_history_key::each_block, _db_impl._head_block_header.timestamp);
                market_history_record new_record(_current_bid->get_price(),
                                                 _current_ask->get_price(),
@@ -993,13 +843,6 @@ class market_engine
                  _pending_state->market_history[old_key] = new_record;
              }
       }
-      void set_current_ask(const market_order& new_ask) 
-      { 
-        _current_ask = new_ask;
-        if (_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM) 
-          _current_ask_backup = new_ask; 
-      }
-      void reset_current_ask() { _current_ask.reset(); /* does not reset _current_ask_backup */ }
 
       pending_chain_state_ptr     _pending_state;
       pending_chain_state_ptr     _prior_state;
@@ -1007,7 +850,6 @@ class market_engine
 
       optional<market_order>      _current_bid;
       optional<market_order>      _current_ask;
-      optional<market_order>      _current_ask_backup; // used to allow us to validate blocks before BTSX_MARKET_FORK_4_BLOCK_NUM
       share_type                  _current_payoff_balance;
       asset_id_type               _quote_id;
       asset_id_type               _base_id;

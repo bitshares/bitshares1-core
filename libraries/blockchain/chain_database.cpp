@@ -78,7 +78,8 @@ namespace bts { namespace blockchain {
          public:
             chain_database_impl():self(nullptr){}
 
-            #include "original_market_engine.cpp"
+            #include "market_engine_v1.cpp"
+            #include "market_engine_v2.cpp"
             #include "market_engine.cpp"
 
             digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
@@ -780,15 +781,21 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : pending_state->get_dirty_markets() )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
+           if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
+           else if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
+           {
+              market_engine_v2 engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
            else
            {
-              original_market_engine engine( pending_state, *this );
+              market_engine_v1 engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
@@ -1250,7 +1257,7 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
 
       trx_eval_state->evaluate( trx );
-      auto fees = trx_eval_state->get_fees();
+      auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
          FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
 
@@ -2451,6 +2458,37 @@ namespace bts { namespace blockchain {
          return 100*double( BTS_BLOCKCHAIN_NUM_DELEGATES ) / expected_production;
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+
+   vector<market_order>   chain_database::get_market_orders( std::function<bool(market_order)> filter, int32_t limit ) const
+   {
+       auto ret = vector<market_order>();
+       auto bid_itr = my->_bid_db.begin();
+       while( bid_itr.valid() )
+       {
+           auto order = market_order { bid_order, bid_itr.key(), bid_itr.value() };
+           if( filter(order) )
+               ret.push_back(order);
+       }
+
+       auto ask_itr = my->_ask_db.begin();
+       while( ask_itr.valid() )
+       {
+           auto order = market_order { ask_order, ask_itr.key(), ask_itr.value() };
+           if( filter(order) )
+               ret.push_back(order);
+       }
+
+       auto short_itr = my->_short_db.begin();
+       while( short_itr.valid() )
+       {
+           auto order = market_order { short_order, short_itr.key(), short_itr.value() };
+           if( filter(order) )
+               ret.push_back(order);
+       }
+
+       return ret;
+   }
 
    optional<market_order> chain_database::get_market_bid( const market_index_key& key )const
    { try {

@@ -23,6 +23,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/mail/server.hpp>
+#include <bts/mail/client.hpp>
 
 //#include <bts/network/node.hpp>
 
@@ -677,6 +678,7 @@ config load_config( const fc::path& datadir )
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
             std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
+            std::shared_ptr<bts::mail::client>                      _mail_client = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
             bool                                                    _delegate_loop_first_run = true;
             fc::time_point                                          _last_sync_status_message_time;
@@ -1682,6 +1684,8 @@ config load_config( const fc::path& datadir )
           my->_mail_server = std::make_shared<bts::mail::server>();
           my->_mail_server->open( data_dir / "mail" );
         }
+        my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
+        my->_mail_client->open( data_dir / "mail_client" );
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
@@ -1839,6 +1843,14 @@ config load_config( const fc::path& datadir )
        return record;
     }
 
+    wallet_transaction_record detail::client_impl::wallet_publish_version( const string& publishing_account_name,
+                                                                           const string& paying_account_name )
+    {
+       const auto record = _wallet->publish_version( publishing_account_name, paying_account_name );
+       network_broadcast_transaction( record.trx );
+       return record;
+    }
+
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
       return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
@@ -1974,12 +1986,12 @@ config load_config( const fc::path& datadir )
       }
     } FC_RETHROW_EXCEPTIONS( warn, "") }
 
-    void detail::client_impl::wallet_transaction_remove( const string& transaction_id )
+    void detail::client_impl::wallet_remove_transaction( const string& transaction_id )
     { try {
        _wallet->remove_transaction_record( transaction_id );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id) ) }
 
-    void detail::client_impl::wallet_transaction_rebroadcast( const string& transaction_id )
+    void detail::client_impl::wallet_rebroadcast_transaction( const string& transaction_id )
     { try {
        const auto records = _wallet->get_transactions( transaction_id );
        for( const auto& record : records )
@@ -2013,13 +2025,6 @@ config load_config( const fc::path& datadir )
         const auto balance_record = _chain_db->get_balance_record( balance_id );
         FC_ASSERT( balance_record.valid() );
         return *balance_record;
-    }
-
-    balance_record detail::client_impl::blockchain_get_balance_by_owner(const address &owner_address, const std::string &asset_symbol) const
-    {
-        withdraw_with_signature withdrawal(owner_address);
-        auto asset_id = _chain_db->get_asset_id(asset_symbol);
-        return blockchain_get_balance(withdraw_condition(withdrawal, asset_id).get_address());
     }
 
     oasset_record detail::client_impl::blockchain_get_asset( const string& asset )const
@@ -2393,10 +2398,42 @@ config load_config( const fc::path& datadir )
       return _mail_server->fetch_inventory(owner, start_time, limit);
     }
 
-    mail::message detail::client_impl::mail_fetch_message(const mail::message_id_type &inventory_id) const
+    mail::message detail::client_impl::mail_fetch_message(const mail::message_id_type& inventory_id) const
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
       return _mail_server->fetch_message(inventory_id);
+    }
+
+    std::multimap<mail::client::mail_status, mail::message_id_type> detail::client_impl::mail_get_processing_messages() const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_processing_messages();
+    }
+
+    void detail::client_impl::mail_retry_send(const message_id_type& message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->retry_message(message_id);
+    }
+
+    void detail::client_impl::mail_remove_message(const message_id_type &message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->remove_message(message_id);
+    }
+
+    mail::message detail::client_impl::mail_get_sent_message(const mail::message_id_type& message_id) const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_message(message_id);
+    }
+
+    mail::message_id_type detail::client_impl::mail_send(const std::string &from,
+                                                         const std::string &to,
+                                                         const std::string &subject,
+                                                         const std::string &body)
+    {
+      return _mail_client->send_email(from, to, subject, body);
     }
 
     //JSON-RPC Method Implementations END
@@ -3032,15 +3069,15 @@ config load_config( const fc::path& datadir )
       return info;
     }
 
-    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
+    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
     { try {
-       _wallet->scan_chain( start, start + count );
+       _wallet->scan_chain( start, start + count, fast_scan );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
-    void client_impl::wallet_transaction_scan( uint32_t block_num, const string& transaction_id )
+    wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
     { try {
-       _wallet->scan_transactions( block_num, transaction_id );
-    } FC_RETHROW_EXCEPTIONS( warn, "", ("block_num",block_num)("transaction_id",transaction_id) ) }
+       return _wallet->scan_transaction( transaction_id, overwrite_existing );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
 
     wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
     { try {
@@ -3171,6 +3208,16 @@ config load_config( const fc::path& datadir )
       return _wallet->get_account_balances( account_name );
    }
 
+   account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
+   {
+      return _wallet->get_account_balance_ids( account_name );
+   }
+
+   account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
+   {
+      return _wallet->get_account_yield( account_name );
+   }
+
    wallet_transaction_record client_impl::wallet_market_submit_bid(
            const string& from_account,
            double quantity,
@@ -3237,30 +3284,18 @@ config load_config( const fc::path& datadir )
            const string& from_account,
            double quantity,
            const string& quantity_symbol,
-           const address& order_id )
-   {
-      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, order_id );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   wallet_transaction_record client_impl::wallet_market_cover2(
-           const string& from_account,
-           double quantity,
-           const string& quantity_symbol,
            const order_id_type& short_id )
    {
-      const auto record = _wallet->cover_short2( from_account, quantity, quantity_symbol, short_id );
+      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, short_id );
       network_broadcast_transaction( record.trx );
       return record;
    }
 
    wallet_transaction_record client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                         const string& to_account_name,
-                                                                        double amount_to_withdraw,
-                                                                        const string& memo_message )
+                                                                        double amount_to_withdraw )
    {
-      const auto record = _wallet->withdraw_delegate_pay( delegate_name, amount_to_withdraw, to_account_name, memo_message );
+      const auto record = _wallet->withdraw_delegate_pay( delegate_name, amount_to_withdraw, to_account_name );
       network_broadcast_transaction( record.trx );
       return record;
    }
@@ -3378,7 +3413,7 @@ config load_config( const fc::path& datadir )
    }
 
    wallet_transaction_record client_impl::wallet_market_add_collateral( const std::string &from_account_name,
-                                                                        const address &short_id,
+                                                                        const order_id_type &short_id,
                                                                         const share_type &collateral_to_add )
    {
       const auto record = _wallet->add_collateral( from_account_name, short_id, collateral_to_add );
@@ -3386,41 +3421,23 @@ config load_config( const fc::path& datadir )
       return record;
    }
 
-   wallet_transaction_record client_impl::wallet_market_add_collateral2( const std::string &from_account_name,
-                                                                         const order_id_type &short_id,
-                                                                         const share_type &collateral_to_add )
+   map<order_id_type, market_order> client_impl::wallet_account_order_list( const string& account_name,
+                                                                            int64_t limit )
    {
-      const auto record = _wallet->add_collateral2( from_account_name, short_id, collateral_to_add );
-      network_broadcast_transaction( record.trx );
-      return record;
+      return _wallet->get_market_orders( account_name, limit );
    }
 
-   vector<market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
-                                                               const string& base_symbol,
-                                                               int64_t limit,
-                                                               const string& account_name )
-   {
-      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
-   }
-
-   map<order_id_type, market_order> client_impl::wallet_market_order_list2( const string& quote_symbol,
+   map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
                                                                             const string& base_symbol,
                                                                             int64_t limit,
                                                                             const string& account_name )
    {
-      return _wallet->get_market_orders2( quote_symbol, base_symbol, limit, account_name );
+      return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }
 
-   wallet_transaction_record client_impl::wallet_market_cancel_order( const address& order_address )
+   wallet_transaction_record client_impl::wallet_market_cancel_order( const order_id_type& order_id )
    {
-      const auto record = _wallet->cancel_market_order( order_address );
-      network_broadcast_transaction( record.trx );
-      return record;
-   }
-
-   wallet_transaction_record client_impl::wallet_market_cancel_order2( const order_id_type& order_id )
-   {
-      const auto record = _wallet->cancel_market_order2( order_id );
+      const auto record = _wallet->cancel_market_order( order_id );
       network_broadcast_transaction( record.trx );
       return record;
    }
@@ -3540,6 +3557,12 @@ config load_config( const fc::path& datadir )
   fc::variant_object client_impl::debug_verify_delegate_votes() const
   {
     return _chain_db->find_delegate_vote_discrepancies();
+  }
+
+
+  vote_summary   client_impl::wallet_check_vote_proportion( const string& account_name )
+  {
+      return _wallet->get_vote_proportion( account_name );
   }
 
    std::string client_impl::blockchain_export_fork_graph( uint32_t start_block, uint32_t end_block, const std::string& filename )const
@@ -3701,6 +3724,13 @@ config load_config( const fc::path& datadir )
                                                                      const std::string& real_amount_symbol )
    {
       const auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol );
+      network_broadcast_transaction( record.trx );
+      return record;
+   }
+   wallet_transaction_record client_impl::wallet_publish_feeds( const std::string& delegate_account,
+                                                                const map<string,double>& real_amount_per_xts )
+   {
+      const auto record = _wallet->publish_feeds( delegate_account, real_amount_per_xts );
       network_broadcast_transaction( record.trx );
       return record;
    }

@@ -29,7 +29,7 @@ namespace bts { namespace blockchain {
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
       {
-          if( NOT current_bid ) 
+          if( NOT current_bid )
              FC_CAPTURE_AND_THROW( unknown_market_order, (bid_index) );
 
           if( llabs(this->amount) > current_bid->balance )
@@ -85,7 +85,7 @@ namespace bts { namespace blockchain {
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
       {
-          if( NOT current_ask ) 
+          if( NOT current_ask )
              FC_CAPTURE_AND_THROW( unknown_market_order, (ask_index) );
 
           if( llabs(this->amount) > current_ask->balance )
@@ -101,7 +101,7 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the ask
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-      
+
       current_ask->balance     += this->amount;
       FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
@@ -151,7 +151,7 @@ namespace bts { namespace blockchain {
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
       {
-          if( NOT current_short ) 
+          if( NOT current_short )
              FC_CAPTURE_AND_THROW( unknown_market_order, (short_index) );
 
           if( llabs(this->amount) > current_short->balance )
@@ -168,7 +168,7 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the short
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-      
+
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
 
@@ -241,7 +241,7 @@ namespace bts { namespace blockchain {
          FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
       }
       /*
-      if( this->short_index.order_price > asset_to_short->maximum_xts_price || 
+      if( this->short_index.order_price > asset_to_short->maximum_xts_price ||
           this->short_index.order_price < asset_to_short->minimum_xts_price )
       {
          FC_CAPTURE_AND_THROW( price_out_of_range, (asset_to_short)(short_index.order_price) );
@@ -254,7 +254,7 @@ namespace bts { namespace blockchain {
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
       {
-          if( NOT current_short ) 
+          if( NOT current_short )
              FC_CAPTURE_AND_THROW( unknown_market_order, (short_index) );
 
           if( llabs(this->amount) > current_short->balance )
@@ -270,7 +270,7 @@ namespace bts { namespace blockchain {
           // sub the delta amount from the eval state that we deposited to the short
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-      
+
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
 
@@ -293,10 +293,10 @@ namespace bts { namespace blockchain {
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
-      if( this->amount == 0 && !this->new_cover_price ) 
+      if( this->amount == 0 && !this->new_cover_price )
          FC_CAPTURE_AND_THROW( zero_amount );
 
-      if( this->amount < 0 ) 
+      if( this->amount < 0 )
          FC_CAPTURE_AND_THROW( negative_deposit );
 
       asset delta_amount  = this->get_amount();
@@ -314,7 +314,7 @@ namespace bts { namespace blockchain {
       current_cover->payoff_balance -= delta_amount.amount;
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
-      eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() ); 
+      eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
       if( current_cover->payoff_balance > 0 )
       {
@@ -345,10 +345,10 @@ namespace bts { namespace blockchain {
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
-      if( this->amount == 0 ) 
+      if( this->amount == 0 )
          FC_CAPTURE_AND_THROW( zero_amount );
 
-      if( this->amount < 0 ) 
+      if( this->amount < 0 )
          FC_CAPTURE_AND_THROW( negative_deposit );
 
       asset delta_amount  = this->get_amount();
@@ -363,7 +363,7 @@ namespace bts { namespace blockchain {
 
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
-      eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() ); 
+      eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
       auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
                             asset((current_cover->collateral_balance*3)/4, 0);
