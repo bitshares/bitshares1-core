@@ -570,7 +570,7 @@ namespace bts { namespace wallet {
           /* Clear share amounts (but not asset ids) and we will reconstruct them below */
           for( auto& entry : transaction_record->ledger_entries )
           {
-              if( entry.memo.find( "interest" ) == string::npos )
+              if( entry.memo.find( "yield" ) == string::npos )
                   entry.amount.amount = 0;
           }
 
@@ -768,21 +768,27 @@ namespace bts { namespace wallet {
              auto blockchain_trx_state = _blockchain->get_transaction( record_id );
              if( blockchain_trx_state.valid() )
              {
-                if( !transaction_record->ledger_entries.empty()
-                    && transaction_record->ledger_entries.back().memo.find( "interest" ) == string::npos )
+                if( !transaction_record->ledger_entries.empty() )
                 {
-                    for( const auto& reward_item : blockchain_trx_state->rewards )
+                    /* Remove all yield entries and re-add them */
+                    while( !transaction_record->ledger_entries.empty()
+                           && transaction_record->ledger_entries.back().memo.find( "yield" ) == 0 )
+                    {
+                        transaction_record->ledger_entries.pop_back();
+                    }
+
+                    for( const auto& yield_item : blockchain_trx_state->yield )
                     {
                        auto entry = ledger_entry();
-                       entry.amount = asset( reward_item.second, reward_item.first );
+                       entry.amount = asset( yield_item.second, yield_item.first );
                        entry.to_account = withdraw_pub_key;
                        entry.from_account = withdraw_pub_key;
-                       entry.memo = "interest";
+                       entry.memo = "yield";
                        transaction_record->ledger_entries.push_back( entry );
                        self->wallet_claimed_transaction( transaction_record->ledger_entries.back() );
                     }
 
-                    if( !blockchain_trx_state->rewards.empty() )
+                    if( !blockchain_trx_state->yield.empty() )
                        _wallet_db.store_transaction( *transaction_record );
                 }
              }
@@ -841,8 +847,8 @@ namespace bts { namespace wallet {
                  entry.from_account = key_rec->public_key;
                  entry.amount = amount;
                  trx_rec.ledger_entries.push_back( entry );
-                 withdraw_pub_key = key_rec->public_key;
              }
+             withdraw_pub_key = key_rec->public_key;
 
              sync_balance_with_blockchain( op.balance_id );
              return true;
@@ -5102,8 +5108,6 @@ namespace bts { namespace wallet {
              pretty_entry.from_account = "GENESIS";
           else if( trx_rec.is_market )
              pretty_entry.from_account = "MARKET";
-          else if( entry.memo.find( "interest" ) == 0 )
-             pretty_entry.from_account = "NETWORK";
           else
              pretty_entry.from_account = "UNKNOWN";
 
@@ -5119,6 +5123,23 @@ namespace bts { namespace wallet {
           {
              if( entry.memo.find( "withdraw pay" ) == 0 )
                  pretty_entry.from_account = "NETWORK";
+          }
+
+          /* Fix labels for yield payments */
+          if( entry.memo.find( "yield" ) == 0 )
+          {
+             pretty_entry.from_account = "NETWORK";
+
+             if( entry.to_account )
+             {
+                const auto key_record = my->_wallet_db.lookup_key( *entry.to_account );
+                if( key_record.valid() )
+                {
+                    const auto account_record = my->_wallet_db.lookup_account( key_record->account_address );
+                    if( account_record.valid() )
+                      pretty_entry.to_account = account_record->name;
+                }
+             }
           }
 
           /* I'm sorry - Vikram */
@@ -5861,6 +5882,23 @@ namespace bts { namespace wallet {
       return balance_records;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name )const
+   { try {
+      map<string, vector<balance_id_type>> balance_ids;
+
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      for( const auto& item : items )
+      {
+          const auto& name = item.first;
+          const auto& records = item.second;
+
+          for( const auto& record : records )
+              balance_ids[ name ].push_back( record.id() );
+      }
+
+      return balance_ids;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
    account_balance_summary_type wallet::get_account_balances( const string& account_name )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
@@ -5881,9 +5919,9 @@ namespace bts { namespace wallet {
       return balances;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   account_balance_summary_type wallet::get_account_rewards( const string& account_name )const
+   account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {
-      map<string, map<asset_id_type, share_type>> rewards;
+      map<string, map<asset_id_type, share_type>> yield_summary;
       const auto pending_state = my->_blockchain->get_pending_state();
 
       map<string, vector<balance_record>> items = get_account_balance_records( account_name );
@@ -5899,13 +5937,13 @@ namespace bts { namespace wallet {
               const auto asset_rec = pending_state->get_asset_record( balance.asset_id );
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
 
-              const auto reward = record.calculate_rewards( pending_state->now(), balance.amount,
-                                  asset_rec->collected_fees, asset_rec->current_share_supply );
-              rewards[ name ][ reward.asset_id ] += reward.amount;
+              const auto yield = record.calculate_yield( pending_state->now(), balance.amount,
+                                 asset_rec->collected_fees, asset_rec->current_share_supply );
+              yield_summary[ name ][ yield.asset_id ] += yield.amount;
           }
       }
 
-      return rewards;
+      return yield_summary;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
