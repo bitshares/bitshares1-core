@@ -28,6 +28,8 @@ namespace bts { namespace blockchain {
          virtual ~transaction_evaluation_state();
          virtual share_type get_fees( asset_id_type id = 0)const;
 
+         share_type get_alt_fees()const;
+
          virtual void reset();
 
          virtual void evaluate( const signed_transaction& trx, bool skip_signature_check = false );
