@@ -3213,6 +3213,11 @@ config load_config( const fc::path& datadir )
       return _wallet->get_account_balances( account_name );
    }
 
+   account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
+   {
+      return _wallet->get_account_balance_ids( account_name );
+   }
+
    account_balance_summary_type client_impl::wallet_account_rewards( const string& account_name )const
    {
       return _wallet->get_account_rewards( account_name );

@@ -961,6 +961,22 @@
          "aliases" : ["balance", "getbalance"]
       },
       {
+         "method_name"    : "wallet_account_balance_ids",
+         "description"    : "Lists the balance record ids for the specified account",
+         "return_type"    : "account_balance_id_summary_type",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account to list balance ids for, or leave empty for all accounts",
+            "default_value" : ""
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : []
+      },
+      {
          "method_name"    : "wallet_account_rewards",
          "description"    : "Lists the total accumulated rewards for asset balances",
          "return_type"    : "account_balance_summary_type",

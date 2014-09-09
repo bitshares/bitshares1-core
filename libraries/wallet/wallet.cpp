@@ -5861,6 +5861,23 @@ namespace bts { namespace wallet {
       return balance_records;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name )const
+   { try {
+      map<string, vector<balance_id_type>> balance_ids;
+
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      for( const auto& item : items )
+      {
+          const auto& name = item.first;
+          const auto& records = item.second;
+
+          for( const auto& record : records )
+              balance_ids[ name ].push_back( record.id() );
+      }
+
+      return balance_ids;
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
    account_balance_summary_type wallet::get_account_balances( const string& account_name )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
