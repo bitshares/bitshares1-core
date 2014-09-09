@@ -768,9 +768,15 @@ namespace bts { namespace wallet {
              auto blockchain_trx_state = _blockchain->get_transaction( record_id );
              if( blockchain_trx_state.valid() )
              {
-                if( !transaction_record->ledger_entries.empty()
-                    && transaction_record->ledger_entries.back().memo.find( "interest" ) == string::npos )
+                if( !transaction_record->ledger_entries.empty() )
                 {
+                    /* Remove all interest entries and re-add them */
+                    while( !transaction_record->ledger_entries.empty()
+                           && transaction_record->ledger_entries.back().memo.find( "interest" ) == 0 )
+                    {
+                        transaction_record->ledger_entries.pop_back();
+                    }
+
                     for( const auto& reward_item : blockchain_trx_state->rewards )
                     {
                        auto entry = ledger_entry();
@@ -784,7 +790,6 @@ namespace bts { namespace wallet {
 
                     if( !blockchain_trx_state->rewards.empty() )
                        _wallet_db.store_transaction( *transaction_record );
-                }
              }
           }
 
@@ -841,8 +846,8 @@ namespace bts { namespace wallet {
                  entry.from_account = key_rec->public_key;
                  entry.amount = amount;
                  trx_rec.ledger_entries.push_back( entry );
-                 withdraw_pub_key = key_rec->public_key;
              }
+             withdraw_pub_key = key_rec->public_key;
 
              sync_balance_with_blockchain( op.balance_id );
              return true;
@@ -5102,8 +5107,6 @@ namespace bts { namespace wallet {
              pretty_entry.from_account = "GENESIS";
           else if( trx_rec.is_market )
              pretty_entry.from_account = "MARKET";
-          else if( entry.memo.find( "interest" ) == 0 )
-             pretty_entry.from_account = "NETWORK";
           else
              pretty_entry.from_account = "UNKNOWN";
 
@@ -5119,6 +5122,23 @@ namespace bts { namespace wallet {
           {
              if( entry.memo.find( "withdraw pay" ) == 0 )
                  pretty_entry.from_account = "NETWORK";
+          }
+
+          /* Fix labels for interest payments */
+          if( entry.memo.find( "interest" ) == 0 )
+          {
+             pretty_entry.from_account = "NETWORK";
+
+             if( entry.to_account )
+             {
+                const auto key_record = my->_wallet_db.lookup_key( *entry.to_account );
+                if( key_record.valid() )
+                {
+                    const auto account_record = my->_wallet_db.lookup_account( key_record->account_address );
+                    if( account_record.valid() )
+                      pretty_entry.to_account = account_record->name;
+                }
+             }
           }
 
           /* I'm sorry - Vikram */
