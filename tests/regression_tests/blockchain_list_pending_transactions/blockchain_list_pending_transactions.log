@@ -16,7 +16,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,801,879.69801 XTS        
+delegate0                       19,801,980.19801 XTS        
 default (unlocked) >>> wallet_account_balance test
 No balances found.
 default (unlocked) >>> help blockchain_list_pending_transactions
