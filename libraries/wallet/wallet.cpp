@@ -1055,7 +1055,7 @@ namespace bts { namespace wallet {
              const auto order = _blockchain->get_market_bid( op.bid_index );
              if( order.valid() )
              {
-                 okey_rec->memo = "BID-" + string( order->get_id() ).substr( 0, 8 );
+                 okey_rec->memo = order->get_small_id();
                  _wallet_db.store_key( *okey_rec );
              }
              else
@@ -1117,7 +1117,7 @@ namespace bts { namespace wallet {
              const auto order = _blockchain->get_market_ask( op.ask_index );
              if( order.valid() )
              {
-                 okey_rec->memo = "ASK-" + string( order->get_id() ).substr( 0, 8 );
+                 okey_rec->memo = order->get_small_id();
                  _wallet_db.store_key( *okey_rec );
              }
              else
@@ -1179,7 +1179,7 @@ namespace bts { namespace wallet {
              const auto order = _blockchain->get_market_short( op.short_index );
              if( order.valid() )
              {
-                 okey_rec->memo = "SHORT-" + string( order->get_id() ).substr( 0, 8 );
+                 okey_rec->memo = order->get_small_id();
                  _wallet_db.store_key( *okey_rec );
              }
              else
@@ -3572,7 +3572,7 @@ namespace bts { namespace wallet {
              entry.memo = fc::to_string(i)+":"+memo_message;
            //  if( payer_public_key != sender_public_key )
            //      entry.memo_from_account = sender_public_key;
-             
+
              auto record = wallet_transaction_record();
              record.ledger_entries.push_back( entry );
              record.fee = total_fee; //required_fees;
@@ -4589,6 +4589,8 @@ namespace bts { namespace wallet {
        std::stringstream memo;
        memo << "buy " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
+       const market_order order( bid_order, market_index_key( quote_price_shares, order_address ), order_record( cost_shares.amount ) );
+
        auto entry = ledger_entry();
        entry.from_account = from_account_key;
        entry.to_account = order_key;
@@ -4602,7 +4604,7 @@ namespace bts { namespace wallet {
 
        auto key_rec = my->_wallet_db.lookup_key( order_key );
        FC_ASSERT( key_rec.valid() );
-       key_rec->memo = "BID";
+       key_rec->memo = order.get_small_id();
        my->_wallet_db.store_key( *key_rec );
 
        if( sign ) sign_transaction( trx, required_signatures );
@@ -4700,6 +4702,8 @@ namespace bts { namespace wallet {
        std::stringstream memo;
        memo << "sell " << base_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
+       const market_order order( ask_order, market_index_key( quote_price_shares, order_address ), order_record( cost_shares.amount ) );
+
        auto entry = ledger_entry();
        entry.from_account = from_account_key;
        entry.to_account = order_key;
@@ -4713,7 +4717,7 @@ namespace bts { namespace wallet {
 
        auto key_rec = my->_wallet_db.lookup_key( order_key );
        FC_ASSERT( key_rec.valid() );
-       key_rec->memo = "ASK";
+       key_rec->memo = order.get_small_id();
        my->_wallet_db.store_key( *key_rec );
 
        if( sign ) sign_transaction( trx, required_signatures );
@@ -4794,6 +4798,8 @@ namespace bts { namespace wallet {
        std::stringstream memo;
        memo << "short " << quote_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );
 
+       const market_order order( short_order, market_index_key( quote_price_shares, order_address ), order_record( cost_shares.amount ) );
+
        auto entry = ledger_entry();
        entry.from_account = from_account_key;
        entry.to_account = order_key;
@@ -4807,7 +4813,7 @@ namespace bts { namespace wallet {
 
        auto key_rec = my->_wallet_db.lookup_key( order_key );
        FC_ASSERT( key_rec.valid() );
-       key_rec->memo = "SHORT";
+       key_rec->memo = order.get_small_id();
        my->_wallet_db.store_key( *key_rec );
 
        if( sign ) sign_transaction( trx, required_signatures );
