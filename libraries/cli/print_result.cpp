@@ -1,5 +1,4 @@
 #include <bts/blockchain/types.hpp>
-#include <bts/cli/pretty.hpp>
 #include <bts/cli/print_result.hpp>
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/wallet/url.hpp>
@@ -9,35 +8,32 @@
 
 namespace bts { namespace cli {
 
-  bts::client::client* print_result::_client = nullptr;
-
-  print_result::print_result(bts::client::client* client)
+  print_result::print_result()
   {
-    _client = client;
     initialize();
   }
 
-  void print_result::format_and_print(std::ostream& out, const string& method_name,
-    const fc::variants& arguments, const fc::variant& result) const
+  void print_result::format_and_print( const string& method_name, const fc::variants& arguments, const fc::variant& result,
+                                       cptr client, std::ostream& out )const
   {
     try
     {
-      t_command_to_function::const_iterator iter = _command_to_function.find(method_name);
+      t_command_to_function::const_iterator iter = _command_to_function.find( method_name);
 
-      if(iter != _command_to_function.end())
-        (iter->second)(out, arguments, result);
+      if( iter != _command_to_function.end())
+        (iter->second)(out, arguments, result, client);
       else
       {
         // there was no custom handler for this particular command, see if the return type
         // is one we know how to pretty-print
         string result_type;
 
-        const bts::api::method_data& method_data = _client->get_rpc_server()->get_method_data(method_name);
+        const bts::api::method_data& method_data = client->get_rpc_server()->get_method_data( method_name);
         result_type = method_data.return_type;
 
-        if(result_type == "asset")
+        if( result_type == "asset")
         {
-          out << (string)result.as<bts::blockchain::asset>() << "\n";
+          out << string( result.as<bts::blockchain::asset>() ) << "\n";
         }
         else if(result_type == "address")
         {
@@ -66,38 +62,50 @@ namespace bts { namespace cli {
 
   void print_result::initialize()
   {
-    _command_to_function["help"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["help"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
       string help_string = result.as<string>();
-      out << help_string << "\n"; };
+      out << help_string << "\n";
+    };
 
-    _command_to_function["wallet_account_vote_summary"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["wallet_account_vote_summary"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
       const auto& votes = result.as<account_vote_summary_type>();
-      out << pretty_vote_summary(votes, _client); };
+      out << pretty_vote_summary(votes, client);
+    };
 
     _command_to_function["wallet_account_create"] = &f_wallet_account_create;
 
     _command_to_function["debug_list_errors"] = &f_debug_list_errors;
 
-    _command_to_function["get_info"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["get_info"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
       const auto& info = result.as<variant_object>();
-      out << pretty_info(info, _client); };
+      out << pretty_info(info, client);
+    };
 
-    _command_to_function["blockchain_get_info"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["blockchain_get_info"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
       const auto& config = result.as<variant_object>();
-      out << pretty_blockchain_info(config, _client); };
+      out << pretty_blockchain_info(config, client);
+    };
 
-    _command_to_function["wallet_get_info"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["wallet_get_info"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
       const auto& info = result.as<variant_object>();
-      out << pretty_wallet_info(info, _client); };
+      out << pretty_wallet_info(info, client);
+    };
 
-    _command_to_function["wallet_account_transaction_history"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["wallet_account_transaction_history"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
       const auto& transactions = result.as<vector<pretty_transaction>>();
-      out << pretty_transaction_list(transactions, _client); };
+      out << pretty_transaction_list(transactions, client);
+    };
 
-    _command_to_function["wallet_market_order_list"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result )
+    _command_to_function["wallet_market_order_list"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
       const auto& market_orders = result.as<map<order_id_type, market_order>>();
-      out << pretty_order_list( market_orders, _client );
+      out << pretty_order_list( market_orders, client );
     };
 
     _command_to_function["blockchain_market_list_asks"] = &f_blockchain_market_list;
@@ -110,16 +118,16 @@ namespace bts { namespace cli {
     _command_to_function["wallet_list_unregistered_accounts"] = &f_wallet_list_accounts;
     _command_to_function["wallet_list_favorite_accounts"] = &f_wallet_list_accounts;
 
-    _command_to_function["wallet_account_balance"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result )
+    _command_to_function["wallet_account_balance"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
       const auto& balances = result.as<account_balance_summary_type>();
-      out << pretty_balances( balances, _client );
+      out << pretty_balances( balances, client );
     };
 
-    _command_to_function["wallet_account_yield"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result )
+    _command_to_function["wallet_account_yield"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
       const auto& yield = result.as<account_balance_summary_type>();
-      out << pretty_balances( yield, _client );
+      out << pretty_balances( yield, client );
     };
 
     _command_to_function["wallet_transfer"]                     = &f_wallet_transfer;
@@ -151,19 +159,25 @@ namespace bts { namespace cli {
     _command_to_function["blockchain_list_delegates"] = &f_blockchain_list_delegates;
     _command_to_function["blockchain_list_active_delegates"] = &f_blockchain_list_delegates;
 
-    _command_to_function["blockchain_list_blocks"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
+    _command_to_function["blockchain_list_blocks"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
       const auto& block_records = result.as<vector<block_record>>();
-      out << pretty_block_list(block_records, _client); };
+      out << pretty_block_list(block_records, client);
+    };
 
     _command_to_function["blockchain_list_accounts"] = &f_blockchain_list_accounts;
 
-    _command_to_function["blockchain_list_assets"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
-      out << pretty_asset_list(result.as<vector<asset_record>>(), _client); };
+    _command_to_function["blockchain_list_assets"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      out << pretty_asset_list(result.as<vector<asset_record>>(), client);
+    };
 
     _command_to_function["blockchain_get_proposal_votes"] = &f_blockchain_get_proposal_votes;
 
-    _command_to_function["blockchain_get_account"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
-      out << pretty_account(result.as<oaccount_record>(), _client); };
+    _command_to_function["blockchain_get_account"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      out << pretty_account(result.as<oaccount_record>(), client);
+    };
 
     _command_to_function["blockchain_list_forks"] = &f_blockchain_list_forks;
 
@@ -177,35 +191,40 @@ namespace bts { namespace cli {
 
     _command_to_function["blockchain_market_price_history"] = &f_blockchain_market_price_history;
 
-    _command_to_function["blockchain_unclaimed_genesis"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
-      out << _client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n"; };
+    _command_to_function["blockchain_unclaimed_genesis"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
+    };
 
     _command_to_function["network_list_potential_peers"] = &f_network_list_potential_peers;
 
-    _command_to_function["wallet_set_transaction_fee"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
-      out << _client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n"; };
-
-    _command_to_function["blockchain_calculate_base_supply"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
-      out << _client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n"; };
+    _command_to_function["wallet_set_transaction_fee"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
+    };
 
     _command_to_function["mail_get_message"] = &f_mail_get_message;
     _command_to_function["mail_inbox"] = &f_mail_inbox;
   }
 
-  void print_result::f_wallet_account_create(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_wallet_account_create( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
-    auto account_key = result.as_string();
-    auto account = _client->get_wallet()->get_account_for_address(public_key_type(account_key));
+    const auto account_key = result.as<public_key_type>();
+    const auto account_record = client->get_wallet()->get_account_for_address( address( account_key ) );
 
-    if(account)
-      out << "\n\nAccount created successfully. You may give the following link to others"
+    if( account_record.valid() )
+    {
+      out << "\nAccount created successfully. You may give the following link to others"
       " to allow them to add you as a contact and send you funds:\n" CUSTOM_URL_SCHEME ":"
-      << account->name << ':' << account_key << '\n';
+      << account_record->name << ':' << string( account_key ) << '\n';
+    }
     else
+    {
       out << "Sorry, something went wrong when adding your account.\n";
+    }
   }
 
-  void print_result::f_debug_list_errors(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_debug_list_errors(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto error_map = result.as<map<fc::time_point, fc::exception> >();
     if(error_map.empty())
@@ -219,16 +238,16 @@ namespace bts { namespace cli {
       }
   }
 
-  void print_result::f_blockchain_market_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_market_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     const auto& market_orders = result.as<vector<market_order>>();
     map<order_id_type, market_order> order_map;
     for( const auto& order : market_orders )
         order_map[ order.get_id() ] = order;
-    out << pretty_order_list( order_map, _client );
+    out << pretty_order_list( order_map, client );
   }
 
-  void print_result::f_wallet_list_my_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_wallet_list_my_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto accts = result.as<vector<wallet_account_record>>();
 
@@ -276,7 +295,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_wallet_list_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_wallet_list_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto accts = result.as<vector<wallet_account_record>>();
 
@@ -311,15 +330,15 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_wallet_transfer(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_wallet_transfer(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     const auto& record = result.as<wallet_transaction_record>();
-    const auto& pretty = _client->get_wallet()->to_pretty_trx(record);
+    const auto& pretty = client->get_wallet()->to_pretty_trx(record);
     const std::vector<pretty_transaction> transactions = { pretty };
-    out << pretty_transaction_list(transactions, _client);
+    out << pretty_transaction_list(transactions, client);
   }
 
-  void print_result::f_wallet_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_wallet_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto wallets = result.as<vector<string>>();
     if(wallets.empty())
@@ -329,7 +348,7 @@ namespace bts { namespace cli {
         out << wallet << "\n";
   }
 
-  void print_result::f_network_get_usage_stats(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_network_get_usage_stats(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto stats = result.get_object();
 
@@ -371,13 +390,13 @@ namespace bts { namespace cli {
     out << "\n";
   }
 
-  void print_result::f_blockchain_list_delegates(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_list_delegates(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     const auto& delegate_records = result.as<vector<account_record>>();
-    out << pretty_delegate_list(delegate_records, _client);
+    out << pretty_delegate_list(delegate_records, client);
   }
 
-  void print_result::f_blockchain_list_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_list_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     string start = "";
     int32_t count = 25; // In CLI this is a more sane default
@@ -385,10 +404,10 @@ namespace bts { namespace cli {
       start = arguments[0].as_string();
     if(arguments.size() > 1)
       count = arguments[1].as<int32_t>();
-    print_registered_account_list(out, result.as<vector<account_record>>(), count);
+    print_registered_account_list(out, result.as<vector<account_record>>(), count, client);
   }
 
-  void print_result::print_registered_account_list(std::ostream& out, const vector<account_record>& account_records, int32_t count)
+  void print_result::print_registered_account_list(std::ostream& out, const vector<account_record>& account_records, int32_t count, cptr client)
   {
     out << std::setw(35) << std::left << "NAME (* delegate)";
     out << std::setw(64) << "KEY";
@@ -422,7 +441,7 @@ namespace bts { namespace cli {
 
         try
         {
-          out << std::setw(15) << std::to_string(_client->get_wallet()->get_account_approval(acct.name));
+          out << std::setw(15) << std::to_string(client->get_wallet()->get_account_approval(acct.name));
         }
         catch(...)
         {
@@ -447,7 +466,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_blockchain_get_proposal_votes(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_get_proposal_votes(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto votes = result.as<vector<proposal_vote>>();
     out << std::left;
@@ -459,7 +478,7 @@ namespace bts { namespace cli {
     out << "-----------------------\n";
     for(const auto& vote : votes)
     {
-      auto rec = _client->get_chain()->get_account_record(vote.id.delegate_id);
+      auto rec = client->get_chain()->get_account_record(vote.id.delegate_id);
       out << std::setw(15) << pretty_shorten(rec->name, 14);
       out << std::setw(20) << pretty_timestamp(vote.timestamp);
       if(vote.vote == proposal_vote::no)
@@ -480,7 +499,7 @@ namespace bts { namespace cli {
     out << "\n";
   }
 
-  void print_result::f_blockchain_list_forks(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_list_forks(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     std::map<uint32_t, std::vector<fork_record>> forks = result.as<std::map<uint32_t, std::vector<fork_record>>>();
     std::map<block_id_type, std::string> invalid_reasons; //Your reasons are invalid.
@@ -508,7 +527,7 @@ namespace bts { namespace cli {
         {
           out << std::setw(45) << fc::variant(tine.block_id).as_string();
 
-          auto delegate_record = _client->get_chain()->get_account_record(tine.signing_delegate);
+          auto delegate_record = client->get_chain()->get_account_record(tine.signing_delegate);
           if(delegate_record.valid() && delegate_record->name.size() < 29)
             out << std::setw(30) << delegate_record->name;
           else if(tine.signing_delegate > 0)
@@ -556,7 +575,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_blockchain_list_pending_transactions(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_list_pending_transactions(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto transactions = result.as<vector<signed_transaction>>();
 
@@ -587,7 +606,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_blockchain_list_proposals(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_list_proposals(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto proposals = result.as<vector<proposal_record>>();
     out << std::left;
@@ -605,7 +624,7 @@ namespace bts { namespace cli {
     for(const auto& prop : proposals)
     {
       out << std::setw(10) << prop.id;
-      auto delegate_rec = _client->get_chain()->get_account_record(prop.submitting_delegate_id);
+      auto delegate_rec = client->get_chain()->get_account_record(prop.submitting_delegate_id);
       out << std::setw(20) << pretty_shorten(delegate_rec->name, 19);
       out << std::setw(20) << pretty_timestamp(prop.submission_date);
       out << std::setw(15) << pretty_shorten(prop.proposal_type, 14);
@@ -617,7 +636,7 @@ namespace bts { namespace cli {
     out << "\n";
   }
 
-  void print_result::f_blockchain_market_order_book(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_market_order_book(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
     vector<market_order> filtered_shorts;
@@ -653,14 +672,14 @@ namespace bts { namespace cli {
       base_id = ask_itr->get_price().base_asset_id;
     }
 
-    auto quote_asset_record = _client->get_chain()->get_asset_record(quote_id);
+    auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     // fee order is the market order to convert fees from other asset classes to XTS
     bool show_fee_order_record = base_id == 0
       && !quote_asset_record->is_market_issued()
       && quote_asset_record->collected_fees > 0;
 
-    oprice  median_price = _client->get_chain()->get_median_delegate_price(quote_id);
-    auto status = _client->get_chain()->get_market_status(quote_id, base_id);
+    oprice  median_price = client->get_chain()->get_median_delegate_price(quote_id);
+    auto status = client->get_chain()->get_market_status(quote_id, base_id);
     auto max_short_price = median_price ? *median_price : (status ? status->avg_price_1h : price(0, quote_id, base_id));
 
 
@@ -686,7 +705,7 @@ namespace bts { namespace cli {
 
       if(show_fee_order_record)
       {
-        out << std::left << std::setw(26) << _client->get_chain()->to_pretty_asset(asset(quote_asset_record->collected_fees, quote_id))
+        out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(asset(quote_asset_record->collected_fees, quote_id))
           << std::setw(20) << " "
           << std::right << std::setw(30) << "MARKET PRICE";
 
@@ -696,12 +715,12 @@ namespace bts { namespace cli {
       else if(bid_itr != bids_asks.first.end())
       {
         out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order ?
-          _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
-          : _client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
+          client->get_chain()->to_pretty_asset(bid_itr->get_balance())
+          : client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
           << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order ?
-          _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
-          : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
-          << std::right << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(bid_itr->get_price())) + " " + quote_asset_record->symbol);
+          client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
+          : client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
+          << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(bid_itr->get_price())) + " " + quote_asset_record->symbol);
 
         if(bid_itr->type == bts::blockchain::short_order)
           out << '*';
@@ -719,9 +738,9 @@ namespace bts { namespace cli {
       {
         if(!ask_itr->collateral)
         {
-          out << std::left << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
-            << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-            << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+          out << std::left << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
+            << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+            << std::right << std::setw(26) << client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
           ++ask_itr;
           break;
         }
@@ -751,12 +770,12 @@ namespace bts { namespace cli {
           if(bid_itr != filtered_shorts.end())
           {
             out << std::left << std::setw(26) << (bid_itr->type == bts::blockchain::bid_order ?
-              _client->get_chain()->to_pretty_asset(bid_itr->get_balance())
-              : _client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
+              client->get_chain()->to_pretty_asset(bid_itr->get_balance())
+              : client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity()))
               << std::setw(20) << (bid_itr->type == bts::blockchain::bid_order ?
-              _client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
-              : _client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
-              << std::right << std::setw(30) << (fc::to_string(_client->get_chain()->to_pretty_price_double(bid_itr->get_price())) + " " + quote_asset_record->symbol)
+              client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
+              : client->get_chain()->to_pretty_asset(bid_itr->get_balance()))
+              << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(bid_itr->get_price())) + " " + quote_asset_record->symbol)
               << "*";
           }
           else
@@ -768,10 +787,10 @@ namespace bts { namespace cli {
             ++ask_itr;
           if(ask_itr != bids_asks.second.rend())
           {
-            out << std::left << std::setw(30) << std::setprecision(8) << (fc::to_string(_client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
-              << std::right << std::setw(23) << _client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
-              << std::right << std::setw(26) << _client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
-            out << "   " << _client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
+            out << std::left << std::setw(30) << std::setprecision(8) << (fc::to_string(client->get_chain()->to_pretty_price_double(ask_itr->get_price())) + " " + quote_asset_record->symbol)
+              << std::right << std::setw(23) << client->get_chain()->to_pretty_asset(ask_itr->get_quantity())
+              << std::right << std::setw(26) << client->get_chain()->to_pretty_asset(ask_itr->get_quote_quantity());
+            out << "   " << client->get_chain()->to_pretty_asset(asset(*ask_itr->collateral));
             out << "\n";
           }
           else
@@ -784,21 +803,21 @@ namespace bts { namespace cli {
         }
       }
 
-      auto recent_average_price = _client->get_chain()->get_market_status(quote_id, base_id)->avg_price_1h;
+      auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->avg_price_1h;
       out << "Average Price in Recent Trades: "
-        << _client->get_chain()->to_pretty_price(recent_average_price)
+        << client->get_chain()->to_pretty_price(recent_average_price)
         << "     ";
 
-      auto status = _client->get_chain()->get_market_status(quote_id, base_id);
+      auto status = client->get_chain()->get_market_status(quote_id, base_id);
       if(status)
       {
         out << "Maximum Short Price: "
-          << _client->get_chain()->to_pretty_price(max_short_price)
+          << client->get_chain()->to_pretty_price(max_short_price)
           << "     ";
 
-        out << "Bid Depth: " << _client->get_chain()->to_pretty_asset(asset(status->bid_depth, base_id)) << "     ";
-        out << "Ask Depth: " << _client->get_chain()->to_pretty_asset(asset(status->ask_depth, base_id)) << "     ";
-        out << "Min Depth: " << _client->get_chain()->to_pretty_asset(asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT)) << "\n";
+        out << "Bid Depth: " << client->get_chain()->to_pretty_asset(asset(status->bid_depth, base_id)) << "     ";
+        out << "Ask Depth: " << client->get_chain()->to_pretty_asset(asset(status->ask_depth, base_id)) << "     ";
+        out << "Min Depth: " << client->get_chain()->to_pretty_asset(asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT)) << "\n";
         if(status->last_error)
         {
           out << "Last Error:  ";
@@ -816,7 +835,7 @@ namespace bts { namespace cli {
     } // end call section that only applies to market issued assets vs XTS
     else
     {
-      auto status = _client->get_chain()->get_market_status(quote_id, base_id);
+      auto status = client->get_chain()->get_market_status(quote_id, base_id);
       if(status->last_error)
       {
         out << "Last Error:  ";
@@ -830,7 +849,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_blockchain_market_order_history(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_market_order_history(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     vector<order_history_record> orders = result.as<vector<order_history_record>>();
     if(orders.empty())
@@ -851,25 +870,25 @@ namespace bts { namespace cli {
     for(order_history_record order : orders)
     {
       out << std::setw(7) << "Buy  "
-        << std::setw(30) << _client->get_chain()->to_pretty_price(order.bid_price)
-        << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_paid)
-        << std::setw(25) << _client->get_chain()->to_pretty_asset(order.bid_received)
-        << std::setw(20) << _client->get_chain()->to_pretty_asset(order.bid_paid - order.ask_received)
+        << std::setw(30) << client->get_chain()->to_pretty_price(order.bid_price)
+        << std::setw(25) << client->get_chain()->to_pretty_asset(order.bid_paid)
+        << std::setw(25) << client->get_chain()->to_pretty_asset(order.bid_received)
+        << std::setw(20) << client->get_chain()->to_pretty_asset(order.bid_paid - order.ask_received)
         << std::setw(23) << pretty_timestamp(order.timestamp)
         << std::setw(37) << string(order.bid_owner)
         << "\n"
         << std::setw(7) << "Sell  "
-        << std::setw(30) << _client->get_chain()->to_pretty_price(order.ask_price)
-        << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_paid)
-        << std::setw(25) << _client->get_chain()->to_pretty_asset(order.ask_received)
-        << std::setw(20) << _client->get_chain()->to_pretty_asset(order.ask_paid - order.bid_received)
+        << std::setw(30) << client->get_chain()->to_pretty_price(order.ask_price)
+        << std::setw(25) << client->get_chain()->to_pretty_asset(order.ask_paid)
+        << std::setw(25) << client->get_chain()->to_pretty_asset(order.ask_received)
+        << std::setw(20) << client->get_chain()->to_pretty_asset(order.ask_paid - order.bid_received)
         << std::setw(30) << pretty_timestamp(order.timestamp)
         << "   " << string(order.ask_owner)
         << "\n";
     }
   }
 
-  void print_result::f_blockchain_market_price_history(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_blockchain_market_price_history(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     market_history_points points = result.as<market_history_points>();
     if(points.empty())
@@ -894,7 +913,7 @@ namespace bts { namespace cli {
         << std::setw(20) << point.lowest_ask
         << std::setw(20) << point.opening_price
         << std::setw(20) << point.closing_price
-        << std::setw(20) << _client->get_chain()->to_pretty_asset(asset(point.volume));
+        << std::setw(20) << client->get_chain()->to_pretty_asset(asset(point.volume));
       if(point.recent_average_price)
         out << std::setw(20) << *point.recent_average_price;
       else
@@ -903,7 +922,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_network_list_potential_peers(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_network_list_potential_peers(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     auto peers = result.as<std::vector<net::potential_peer_record>>();
     out << std::setw(25) << "ENDPOINT";
@@ -929,7 +948,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_mail_get_message(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_mail_get_message( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     mail::email_record email = result.as<mail::email_record>();
     mail::email_message content;
@@ -951,7 +970,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_mail_inbox(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  void print_result::f_mail_inbox(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)
   {
     vector<mail::email_header> inbox = result.as<vector<mail::email_header>>();
     if (inbox.empty())
@@ -968,7 +987,7 @@ namespace bts { namespace cli {
         << std::setw(19) << "DATE"
         << "\n" << string(165, '-') << "\n";
 
-    for (email_header header : inbox)
+    for (mail::email_header header : inbox)
     {
       out << std::setw(45) << header.id.str()
           << std::setw(20) << pretty_shorten(header.sender, 19)
@@ -980,44 +999,3 @@ namespace bts { namespace cli {
   }
 
 } }
-
-//  else
-//  {
-//    // there was no custom handler for this particular command, see if the return type
-//    // is one we know how to pretty-print
-//    string result_type;
-//    try
-//    {
-//      const bts::api::method_data& method_data = _rpc_server->get_method_data(method_name);
-//      result_type = method_data.return_type;
-//
-//      if(result_type == "asset")
-//      {
-//        *_out << (string)result.as<bts::blockchain::asset>() << "\n";
-//      }
-//      else if(result_type == "address")
-//      {
-//        *_out << (string)result.as<bts::blockchain::address>() << "\n";
-//      }
-//      else if(result_type == "null" || result_type == "void")
-//      {
-//        *_out << "OK\n";
-//      }
-//      else
-//      {
-//        *_out << fc::json::to_pretty_string(result) << "\n";
-//      }
-//    }
-//    catch(const fc::key_not_found_exception&)
-//    {
-//      elog(" KEY NOT FOUND ");
-//      *_out << "key not found \n";
-//    }
-//    catch(...)
-//    {
-//      *_out << "unexpected exception \n";
-//    }
-//  }
-//
-//  *_out << std::right; /* Ensure default alignment is restored */
-//}

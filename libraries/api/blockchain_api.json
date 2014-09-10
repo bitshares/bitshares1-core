@@ -535,7 +535,7 @@
       {
          "method_name" : "blockchain_export_fork_graph",
          "description" : "dumps the fork data to graphviz format",
-         "return_type" : "std::string",
+         "return_type" : "string",
          "parameters"  : [
             {
                "name" : "start_block",

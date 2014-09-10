@@ -28,7 +28,7 @@ namespace bts { namespace blockchain {
 
     public_key_type::operator fc::ecc::public_key_data() const
     {
-       return key_data;    
+       return key_data;
     };
 
     public_key_type::operator fc::ecc::public_key() const

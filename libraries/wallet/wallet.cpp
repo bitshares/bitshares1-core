@@ -2080,8 +2080,8 @@ namespace bts { namespace wallet {
        return my->_wallet_db.lookup_setting(name);
    }
 
-   public_key_type  wallet::create_account( const string& account_name,
-                                            const variant& private_data )
+   public_key_type wallet::create_account( const string& account_name,
+                                           const variant& private_data )
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -3441,9 +3441,9 @@ namespace bts { namespace wallet {
        /**
         *  TODO: until we support paying fees in other assets, this will not function
         *  properly.
-        */
        FC_ASSERT( asset_id == 0, "multipart transfers only support base shares",
                   ("asset_to_transfer",asset_to_transfer)("symbol",amount_to_transfer_symbol));
+        */
 
        vector<signed_transaction >       trxs;
        vector<share_type>                amount_sent;
@@ -3454,7 +3454,7 @@ namespace bts { namespace wallet {
        public_key_type  sender_public_key   = sender_private_key.get_public_key();
        address          sender_account_address( sender_private_key.get_public_key() );
 
-       asset total_fee = get_transaction_fee();
+       asset total_fee = get_transaction_fee( asset_id );
 
        asset amount_collected( 0, asset_id );
        const auto items = my->_wallet_db.get_balances();
@@ -3553,7 +3553,7 @@ namespace bts { namespace wallet {
        // If we went through all our balances and still don't have enough
        if (amount_collected < asset( amount_to_transfer, asset_id ))
        {
-          FC_ASSERT( !"Insufficient funds.");
+          FC_CAPTURE_AND_THROW( insufficient_funds, (amount_to_transfer)(amount_collected) );
        }
 
        if( sign ) // don't store invalid trxs..
@@ -3565,17 +3565,19 @@ namespace bts { namespace wallet {
           //}
           for( uint32_t i = 0 ; i < trxs.size(); ++i )
           {
-              // TODO: FIXME
-              /*
-             my->_wallet_db.cache_transaction( trxs[i], asset( -amount_sent[i], asset_id),
-                                               total_fee.amount,
-                                               memo_message,
-                                               receiver_public_key,
-                                               now,
-                                               now,
-                                               sender_public_key
-                                             );
-                                             */
+             auto entry = ledger_entry();
+             entry.from_account = sender_public_key;
+             entry.to_account = receiver_public_key;
+             entry.amount = asset(amount_sent[i],asset_id); //asset_to_transfer;
+             entry.memo = fc::to_string(i)+":"+memo_message;
+           //  if( payer_public_key != sender_public_key )
+           //      entry.memo_from_account = sender_public_key;
+             
+             auto record = wallet_transaction_record();
+             record.ledger_entries.push_back( entry );
+             record.fee = total_fee; //required_fees;
+
+             cache_transaction( trxs[i], record );
           }
        }
 
@@ -5841,17 +5843,18 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    owallet_account_record wallet::get_account_record( const address& addr)const
-   {
+   { try {
+      FC_ASSERT( is_open() );
       return my->_wallet_db.lookup_account( addr );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    owallet_account_record wallet::get_account_for_address( address addr_in_account )const
-   {
-       auto okey = my->_wallet_db.lookup_key( addr_in_account );
-       if (! okey.valid() )
-           return owallet_account_record();
-       return get_account_record( okey->account_address );
-   }
+   { try {
+      FC_ASSERT( is_open() );
+      const auto okey = my->_wallet_db.lookup_key( addr_in_account );
+      if ( !okey.valid() ) return owallet_account_record();
+      return get_account_record( okey->account_address );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name )const
    { try {
