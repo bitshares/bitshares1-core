@@ -1717,6 +1717,10 @@ config load_config( const fc::path& datadir )
       info["fc_revision"]                    = fc::git_revision_sha;
       info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
       info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
+      info["blockchain_description"]         = BTS_BLOCKCHAIN_DESCRIPTION;
+#ifdef BTS_TEST_NETWORK
+      info["test_network_version"] = std::to_string( BTS_TEST_NETWORK_VERSION );
+#endif
       return info;
     }
 
