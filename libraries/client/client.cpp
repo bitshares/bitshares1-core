@@ -3319,9 +3319,9 @@ config load_config( const fc::path& datadir )
            const string& from_account,
            double quantity,
            const string& quantity_symbol,
-           const order_id_type& short_id )
+           const order_id_type& cover_id )
    {
-      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, short_id );
+      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, cover_id );
       network_broadcast_transaction( record.trx );
       return record;
    }

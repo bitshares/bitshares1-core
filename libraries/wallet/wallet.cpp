@@ -4879,7 +4879,7 @@ namespace bts { namespace wallet {
            const string& from_account_name,
            double real_quantity_usd,
            const string& quote_symbol,
-           const order_id_type& short_id,
+           const order_id_type& cover_id,
            bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
@@ -4888,9 +4888,18 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
        if( real_quantity_usd < 0 ) FC_CAPTURE_AND_THROW( negative_bid, (real_quantity_usd) );
 
-       const auto order = my->_blockchain->get_market_order( short_id );
+       optional<market_order> order;
+       const auto covers = my->_blockchain->get_market_covers( quote_symbol );
+       for( const auto& cover : covers )
+       {
+           if( cover.get_id() == cover_id )
+           {
+               order = cover;
+               break;
+           }
+       }
        if( !order.valid() )
-           FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+           FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that cover order!" );
 
        const auto owner_address = order->get_owner();
        const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
@@ -4989,7 +4998,7 @@ namespace bts { namespace wallet {
        cache_transaction( trx, record );
 
        return record;
-   } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(short_id)(sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(cover_id)(sign) ) }
 
    void wallet::set_transaction_fee( const asset& fee )
    { try {
