@@ -433,6 +433,7 @@ namespace bts { namespace cli {
                 return fc::variant( bts::blockchain::address(address_string) );
               }
               else if (this_parameter.type == "string" ||
+                       this_parameter.type == "std::string" ||
                        this_parameter.type == "wallet_name" ||
                        this_parameter.type == "optional_wallet_name" ||
                        this_parameter.type == "wif_private_key" ||
@@ -447,6 +448,8 @@ namespace bts { namespace cli {
                        this_parameter.type == "method_name" ||
                        this_parameter.type == "new_passphrase" ||
                        this_parameter.type == "filename" ||
+                       this_parameter.type == "keyhoteeid" ||
+                       this_parameter.type == "public_key" ||
                        this_parameter.type == "passphrase")
               {
                 string result;
@@ -647,7 +650,7 @@ namespace bts { namespace cli {
 
               if( !_out ) return;
 
-              _print_result.format_and_print(*_out, method_name, arguments, result);
+              _print_result.format_and_print( method_name, arguments, result, _client, *_out );
 
               *_out << std::right; /* Ensure default alignment is restored */
             }
@@ -685,7 +688,6 @@ namespace bts { namespace cli {
     , _saved_out(nullptr)
     ,_out(output_stream ? output_stream : &nullstream)
     ,_command_script(command_script)
-    , _print_result(client)
     {
 #ifdef HAVE_READLINE
       //if( &output_stream == &std::cout ) // readline

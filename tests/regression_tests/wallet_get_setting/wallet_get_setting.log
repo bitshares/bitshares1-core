@@ -8,25 +8,25 @@ Parameters:
 
 Returns:
   optional_variant
-default (unlocked) >>> wallet_set_setting abc 12345678
+default (unlocked) >>> wallet_set_setting abc "12345678"
 OK
-default (unlocked) >>> wallet_set_setting 123 2
+default (unlocked) >>> wallet_set_setting 123 "2"
 OK
-default (unlocked) >>> wallet_set_setting 1 abcd
+default (unlocked) >>> wallet_set_setting 1 "abcd"
 OK
-default (unlocked) >>> wallet_set_setting ac y
+default (unlocked) >>> wallet_set_setting ac "y"
 OK
 default (unlocked) >>> wallet_get_setting abc
 {
   "index": 8,
   "name": "abc",
-  "value": 12345678
+  "value": "12345678"
 }
 default (unlocked) >>> wallet_get_setting 123
 {
   "index": 9,
   "name": "123",
-  "value": 2
+  "value": "2"
 }
 default (unlocked) >>> wallet_get_setting 1
 {
@@ -40,13 +40,13 @@ default (unlocked) >>> wallet_get_setting ac
   "name": "ac",
   "value": "y"
 }
-default (unlocked) >>> wallet_set_setting abc HHH
+default (unlocked) >>> wallet_set_setting abc "HHH"
 OK
-default (unlocked) >>> wallet_set_setting 123 F2
+default (unlocked) >>> wallet_set_setting 123 false
 OK
-default (unlocked) >>> wallet_set_setting 1 12345
+default (unlocked) >>> wallet_set_setting 1 0
 OK
-default (unlocked) >>> wallet_set_setting ac 1
+default (unlocked) >>> wallet_set_setting ac null
 OK
 default (unlocked) >>> wallet_get_setting abc
 {
@@ -58,18 +58,18 @@ default (unlocked) >>> wallet_get_setting 123
 {
   "index": 9,
   "name": "123",
-  "value": "F2"
+  "value": false
 }
 default (unlocked) >>> wallet_get_setting 1
 {
   "index": 10,
   "name": "1",
-  "value": 12345
+  "value": 0
 }
 default (unlocked) >>> wallet_get_setting ac
 {
   "index": 11,
   "name": "ac",
-  "value": 1
+  "value": null
 }
 default (unlocked) >>> quit

@@ -2080,8 +2080,8 @@ namespace bts { namespace wallet {
        return my->_wallet_db.lookup_setting(name);
    }
 
-   public_key_type  wallet::create_account( const string& account_name,
-                                            const variant& private_data )
+   public_key_type wallet::create_account( const string& account_name,
+                                           const variant& private_data )
    { try {
       if( !is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
@@ -5841,17 +5841,18 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
    owallet_account_record wallet::get_account_record( const address& addr)const
-   {
+   { try {
+      FC_ASSERT( is_open() );
       return my->_wallet_db.lookup_account( addr );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    owallet_account_record wallet::get_account_for_address( address addr_in_account )const
-   {
-       auto okey = my->_wallet_db.lookup_key( addr_in_account );
-       if (! okey.valid() )
-           return owallet_account_record();
-       return get_account_record( okey->account_address );
-   }
+   { try {
+      FC_ASSERT( is_open() );
+      const auto okey = my->_wallet_db.lookup_key( addr_in_account );
+      if ( !okey.valid() ) return owallet_account_record();
+      return get_account_record( okey->account_address );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name )const
    { try {

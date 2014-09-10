@@ -1935,14 +1935,17 @@ config load_config( const fc::path& datadir )
     {
       return _wallet->list_accounts();
     }
+
     vector<wallet_account_record> detail::client_impl::wallet_list_my_accounts() const
     {
       return _wallet->list_my_accounts();
     }
+
     vector<wallet_account_record> detail::client_impl::wallet_list_favorite_accounts() const
     {
       return _wallet->list_favorite_accounts();
     }
+
     vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
     {
       return _wallet->list_unregistered_accounts();
@@ -2852,16 +2855,15 @@ config load_config( const fc::path& datadir )
    namespace detail  {
 
     void client_impl::wallet_add_contact_account( const string& account_name,
-                                             const public_key_type& contact_key )
+                                                  const public_key_type& contact_key )
     {
        _wallet->add_contact_account( account_name, contact_key );
        _wallet->auto_backup( "account_add" );
     }
 
     public_key_type client_impl::wallet_account_create( const string& account_name,
-                                                   const variant& private_data )
+                                                        const variant& private_data )
     {
-       ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        const auto result = _wallet->create_account( account_name, private_data );
        _wallet->auto_backup( "account_create" );
        return result;
