@@ -12,11 +12,10 @@ namespace bts { namespace wallet {
 
    namespace detail { class wallet_impl; }
 
-   /** args: current_block, last_block */
-   typedef function<void(uint32_t,uint32_t)> scan_progress_callback;
-
+   typedef map<string, vector<balance_record>> account_balance_record_summary_type;
+   typedef map<string, vector<balance_id_type>> account_balance_id_summary_type;
+   typedef map<string, map<asset_id_type, share_type>> account_balance_summary_type;
    typedef map<string, int64_t> account_vote_summary_type;
-   typedef map<string, std::pair<map<string, share_type>, share_type>> account_balance_summary_type;
 
    enum delegate_status_flags
    {
@@ -152,8 +151,7 @@ namespace bts { namespace wallet {
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
          void      scan_state();
-         void      scan_chain( uint32_t start = 0, uint32_t end = -1,
-                               const scan_progress_callback& progress_callback = scan_progress_callback() );
+         void      scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
 
@@ -341,7 +339,6 @@ namespace bts { namespace wallet {
                  const string& delegate_name,
                  double amount_to_withdraw,
                  const string& withdraw_to_account_name,
-                 const string& memo_message,
                  bool sign = true
                  );
          wallet_transaction_record publish_feeds(
@@ -457,18 +454,19 @@ namespace bts { namespace wallet {
 #endif
          ///@} Transaction Generation Methods
 
-         string              get_key_label( const public_key_type& key )const;
-         pretty_transaction to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
+         string                             get_key_label( const public_key_type& key )const;
+         pretty_transaction                 to_pretty_trx( const wallet_transaction_record& trx_rec ) const;
 
-         void      set_account_approval( const string& account_name, int8_t approval );
-         int8_t    get_account_approval( const string& account_name )const;
+         void                               set_account_approval( const string& account_name, int8_t approval );
+         int8_t                             get_account_approval( const string& account_name )const;
 
-         bool      is_sending_address( const address& addr )const;
-         bool      is_receive_address( const address& addr )const;
+         bool                               is_sending_address( const address& addr )const;
+         bool                               is_receive_address( const address& addr )const;
 
+         account_balance_record_summary_type get_account_balance_records( const string& account_name = "" )const;
+         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "" )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
-         account_balance_summary_type       get_account_rewards( const string& account_name = "" )const;
-
+         account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
          map<order_id_type, market_order>   get_market_orders( const string& account_name, int32_t limit)const;

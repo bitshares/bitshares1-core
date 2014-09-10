@@ -3,17 +3,17 @@
 #include <stdint.h>
 
 /* Define client version here */
-#define BTS_CLIENT_VERSION                                  "Dry Run NN"
+#define BTS_CLIENT_VERSION                                  "testnet"
 
 /* Comment out this line for a non-test network */
 #define BTS_TEST_NETWORK
-#define BTS_TEST_NETWORK_VERSION                            23
+#define BTS_TEST_NETWORK_VERSION                            25
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     135
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     136
 
 /**
  *  The address prepended to string representation of
@@ -27,7 +27,7 @@
 #define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares X Test Network"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
-#define BTS_BLOCKCHAIN_MIN_INTEREST_PERIOD_SEC              (60*60*24) // 24 hours
+#define BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC                 (60*60*24) // 24 hours
 
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
@@ -103,7 +103,7 @@
  *
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
-#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/1000)
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/20000)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC

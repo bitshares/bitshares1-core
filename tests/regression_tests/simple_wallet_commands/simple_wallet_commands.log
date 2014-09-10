@@ -6,7 +6,7 @@ wallet (unlocked) >>> wallet_get_info
   "open": true,
   "name": "wallet",
   "automatic_backups": true,
-  "transaction_scanning": true,
+  "transaction_scanning": false,
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",

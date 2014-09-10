@@ -87,7 +87,6 @@ default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate44                      19,801,980.19801 XTS        
-                                0.82671 XTS (pay)           
 default (unlocked) >>> blockchain_get_account delegate44
 Name: delegate44
 Registered: Genesis (Keyhotee Founder)
@@ -103,12 +102,11 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate44          test                0.10000 XTS             withdraw                                    0.10000 XTS         [redacted]
+[redacted]          PENDING   delegate44          test                0.10000 XTS             withdraw pay                                0.10000 XTS         [redacted]
 default (unlocked) >>> balance delegate44
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate44                      19,801,980.19801 XTS        
-                                0.62671 XTS (pay)           
 default (unlocked) >>> blockchain_get_account delegate44
 Name: delegate44
 Registered: Genesis (Keyhotee Founder)

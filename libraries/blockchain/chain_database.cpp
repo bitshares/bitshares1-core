@@ -1235,7 +1235,7 @@ namespace bts { namespace blockchain {
       transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
 
       trx_eval_state->evaluate( trx );
-      auto fees = trx_eval_state->get_fees();
+      auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
          FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
 
@@ -1754,7 +1754,7 @@ namespace bts { namespace blockchain {
 
    digest_type detail::chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
    { try {
-      auto chain_id = self->chain_id();
+      digest_type chain_id = self->chain_id();
       if( chain_id != digest_type() && !chain_id_only )
       {
          self->sanity_check();
@@ -1782,19 +1782,28 @@ namespace bts { namespace blockchain {
         {
            FC_ASSERT( !"Invalid genesis format", " '${format}'", ("format",genesis_file->extension() ) );
         }
+        fc::sha256::encoder enc;
+        fc::raw::pack( enc, config );
+        chain_id = enc.result();
       }
       else
       {
         // this is the usual case
         std::cout << "Initializing genesis state from built-in genesis file\n";
+#ifdef EMBED_GENESIS_STATE_AS_TEXT
         std::string genesis_file_contents = get_builtin_genesis_json_as_string();
         config = fc::json::from_string(genesis_file_contents).as<genesis_block_config>();
+        fc::sha256::encoder enc;
+        fc::raw::pack( enc, config );
+        chain_id = enc.result();
+#else
+        config = get_builtin_genesis_block_config();
+        chain_id = get_builtin_genesis_block_state_hash();
+#endif
       }
 
-      fc::sha256::encoder enc;
-      fc::raw::pack( enc, config );
-      chain_id = enc.result();
-      if( chain_id_only ) return chain_id;
+      if( chain_id_only ) 
+        return chain_id;
       _chain_id = chain_id;
       self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
 

@@ -45,8 +45,8 @@ delegate1                       19,801,980.19801 XTS
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
 delegate4                       19,801,980.19801 XTS        
-testaccount1                    10,000.00 XMO               
-                                100.00000 XTS               
+testaccount1                    100.00000 XTS               
+                                10,000.00 XMO               
 testaccount2                    10,000.00000 XTS            
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -85,7 +85,7 @@ aliases: bid
 default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   testaccount1        BID-MQcgyL7S        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+[redacted]          PENDING   testaccount1        BID                 1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -98,8 +98,8 @@ delegate1                       19,801,980.19801 XTS
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
 delegate4                       19,801,980.19801 XTS        
-testaccount1                    8,500.00 XMO                
-                                99.50000 XTS                
+testaccount1                    99.50000 XTS                
+                                8,500.00 XMO                
 testaccount2                    10,000.00000 XTS            
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -142,7 +142,7 @@ aliases: ask
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   testaccount2        ASK-Puq81gDv        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          PENDING   testaccount2        ASK                 100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -155,8 +155,8 @@ delegate1                       19,801,980.19801 XTS
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
 delegate4                       19,801,980.19801 XTS        
-testaccount1                    8,500.00 XMO                
-                                99.50000 XTS                
+testaccount1                    99.50000 XTS                
+                                8,500.00 XMO                
 testaccount2                    9,899.50000 XTS             
 default (unlocked) >>> history
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      

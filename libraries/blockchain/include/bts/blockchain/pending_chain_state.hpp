@@ -16,11 +16,10 @@ namespace bts { namespace blockchain {
 
          fc::ripemd160                  get_current_random_seed()const override;
 
-         virtual void                  set_feed( const feed_record&  ) override;
-         virtual ofeed_record          get_feed( const feed_index& )const override;
-         virtual oprice                get_median_delegate_price( const asset_id_type& )const override;
-         virtual void                  set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override;
-
+         virtual void                   set_feed( const feed_record&  ) override;
+         virtual ofeed_record           get_feed( const feed_index& )const override;
+         virtual oprice                 get_median_delegate_price( const asset_id_type& )const override;
+         virtual void                   set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override;
 
          virtual fc::time_point_sec     now()const override;
 

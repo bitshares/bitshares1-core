@@ -636,7 +636,6 @@ string pretty_account( const oaccount_record& record, cptr client )
     return out.str();
 }
 
-// TODO: Print total at the end so that can be compared to (history)
 string pretty_balances( const account_balance_summary_type& balances, cptr client )
 {
     if( balances.empty() ) return "No balances found.\n";
@@ -657,7 +656,7 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
         const auto& account_name = item.first;
 
         bool first = true;
-        for( const auto& asset_balance : item.second.first )
+        for( const auto& asset_balance : item.second )
         {
             if( first )
             {
@@ -669,21 +668,10 @@ string pretty_balances( const account_balance_summary_type& balances, cptr clien
                 out << std::setw( 32 ) << "";
             }
 
-            const auto balance = asset( asset_balance.second, client->get_chain()->get_asset_id( asset_balance.first ) );
+            const auto balance = asset( asset_balance.second, asset_balance.first );
             out << std::setw( 28 ) << client->get_chain()->to_pretty_asset( balance );
 
             out << "\n";
-        }
-
-        const auto& pay_balance = item.second.second;
-        if( pay_balance > 0 )
-        {
-            out << "\b";
-            out << std::setw( 32 ) << "";
-
-            std::stringstream ss;
-            ss << client->get_chain()->to_pretty_asset( asset( pay_balance ) ) << " (pay)";
-            out << std::setw( 28 ) << ss.str() << "\n";
         }
     }
 

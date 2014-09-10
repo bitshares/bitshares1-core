@@ -28,6 +28,8 @@ namespace bts { namespace blockchain {
          virtual ~transaction_evaluation_state();
          virtual share_type get_fees( asset_id_type id = 0)const;
 
+         share_type get_alt_fees()const;
+
          virtual void reset();
 
          virtual void evaluate( const signed_transaction& trx, bool skip_signature_check = false );
@@ -86,7 +88,7 @@ namespace bts { namespace blockchain {
          // track deposits and withdraws by asset type
          unordered_map<asset_id_type, asset>         deposits;
          unordered_map<asset_id_type, asset>         withdraws;
-         unordered_map<asset_id_type, share_type>    rewards;
+         unordered_map<asset_id_type, share_type>    yield;
 
          asset                                       required_fees;
          /**
@@ -134,4 +136,4 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (validation_error)
            (required_deposits)
            (provided_deposits)
-           (deposits)(withdraws)(rewards)(balance)(net_delegate_votes)(balance) )
+           (deposits)(withdraws)(yield)(balance)(net_delegate_votes)(balance) )

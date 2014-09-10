@@ -308,6 +308,10 @@
          "cpp_return_type" : "bts::wallet::account_balance_summary_type"
       },
       {
+         "type_name" : "account_balance_id_summary_type",
+         "cpp_return_type" : "bts::wallet::account_balance_id_summary_type"
+      },
+      {
          "type_name" : "market_order",
          "cpp_return_type" : "bts::blockchain::market_order"
       },

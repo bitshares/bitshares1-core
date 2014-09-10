@@ -33,7 +33,7 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "symbol_size_min": 3,
   "asset_reg_fee": "0.00000 XTS",
   "asset_shares_max": 1000000000000000,
-  "min_market_depth": "2,000,000.00000 XTS",
+  "min_market_depth": "100,000.00000 XTS",
   "max_pending_queue_size": 10,
   "max_trx_per_second": 1,
   "min_block_fee": "0.00000 XTS"

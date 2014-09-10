@@ -295,9 +295,6 @@ class market_engine
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
-#ifndef WIN32
-#warning [HARDFORK] fix price overlap condition, needs testing.
-#endif
                    /**
                     *  If the ask is less than the "max short bid" then that means the
                     *  ask (those with XTS wanting to buy USD) are willing to accept
@@ -533,6 +530,7 @@ class market_engine
 
           bid_payout->balance += mtrx.bid_received.amount;
           bid_payout->last_update = _pending_state->now();
+          bid_payout->deposit_date = _pending_state->now();
           _pending_state->store_balance_record( *bid_payout );
 
 
@@ -593,6 +591,7 @@ class market_engine
 
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
+                ask_payout->deposit_date = _pending_state->now();
 
                 _pending_state->store_balance_record( *ask_payout );
                 _current_ask->collateral = 0;
@@ -623,6 +622,7 @@ class market_engine
              ask_payout = balance_record( mtrx.ask_owner, asset(0,_quote_id), 0 );
           ask_payout->balance += mtrx.ask_received.amount;
           ask_payout->last_update = _pending_state->now();
+          ask_payout->deposit_date = _pending_state->now();
 
           _pending_state->store_balance_record( *ask_payout );
 

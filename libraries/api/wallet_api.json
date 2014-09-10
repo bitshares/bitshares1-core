@@ -614,6 +614,12 @@
               "type" : "uint32_t",
               "description" : "the number of blocks to scan",
               "default_value" : -1
+            },
+            {
+              "name" : "fast_scan",
+              "type" : "bool",
+              "description" : "true to scan as fast as possible but freeze the rest of your computer, and false otherwise",
+              "default_value" : false
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
@@ -955,20 +961,36 @@
          "aliases" : ["balance", "getbalance"]
       },
       {
-         "method_name"    : "wallet_account_rewards",
-         "description"    : "Lists the total accumulated rewards for asset balances",
-         "return_type"    : "account_balance_summary_type",
+         "method_name"    : "wallet_account_balance_ids",
+         "description"    : "Lists the balance record ids for the specified account",
+         "return_type"    : "account_balance_id_summary_type",
          "parameters"     : [
          {
             "name" : "account_name",
             "type" : "account_name",
-            "description" : "the account to get rewards for, or leave empty for all accounts",
+            "description" : "the account to list balance ids for, or leave empty for all accounts",
             "default_value" : ""
          }
          ],
          "is_const" : true,
          "prerequisites" : ["wallet_open"],
-         "aliases" : ["rewards", "getrewards"]
+         "aliases" : []
+      },
+      {
+         "method_name"    : "wallet_account_yield",
+         "description"    : "Lists the total accumulated yield for asset balances",
+         "return_type"    : "account_balance_summary_type",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account to get yield for, or leave empty for all accounts",
+            "default_value" : ""
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["yield", "getyield"]
       },
       {
          "method_name" : "wallet_account_list_public_keys",
@@ -1003,13 +1025,7 @@
                "name" : "amount_to_withdraw",
                "type" : "real_amount",
                "description" : "the amount to withdraw"
-            },
-            {
-               "name" : "memo",
-               "type" : "string",
-               "description" : "memo to add to transaction",
-               "default_value" : "payday"
-      }
+            }
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : ["pay_delegate"]
@@ -1309,7 +1325,7 @@
       },
       {
          "method_name" : "wallet_check_vote_proportion",
-         "description" : "Check how much this account is utilizing its voting power"
+         "description" : "Check how much this account is utilizing its voting power",
          "return_type" : "vote_summary",
          "parameters"  : [
              {

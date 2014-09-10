@@ -56,6 +56,6 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 default (unlocked) >>> wallet_account_balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            1.00 XMO                    
-                                100.00000 XTS               
+test                            100.00000 XTS               
+                                1.00 XMO                    
 default (unlocked) >>> quit

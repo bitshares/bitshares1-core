@@ -3086,9 +3086,9 @@ config load_config( const fc::path& datadir )
         return _chain_db->calculate_base_supply();
     }
 
-    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count)
+    void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
     { try {
-       _wallet->scan_chain( start, start + count );
+       _wallet->scan_chain( start, start + count, fast_scan );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("count",count) ) }
 
     wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
@@ -3224,9 +3224,15 @@ config load_config( const fc::path& datadir )
    {
       return _wallet->get_account_balances( account_name );
    }
-   account_balance_summary_type client_impl::wallet_account_rewards( const string& account_name )const
+
+   account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
    {
-      return _wallet->get_account_rewards( account_name );
+      return _wallet->get_account_balance_ids( account_name );
+   }
+
+   account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
+   {
+      return _wallet->get_account_yield( account_name );
    }
 
    wallet_transaction_record client_impl::wallet_market_submit_bid(
@@ -3304,10 +3310,9 @@ config load_config( const fc::path& datadir )
 
    wallet_transaction_record client_impl::wallet_delegate_withdraw_pay( const string& delegate_name,
                                                                         const string& to_account_name,
-                                                                        double amount_to_withdraw,
-                                                                        const string& memo_message )
+                                                                        double amount_to_withdraw )
    {
-      const auto record = _wallet->withdraw_delegate_pay( delegate_name, amount_to_withdraw, to_account_name, memo_message );
+      const auto record = _wallet->withdraw_delegate_pay( delegate_name, amount_to_withdraw, to_account_name );
       network_broadcast_transaction( record.trx );
       return record;
    }
