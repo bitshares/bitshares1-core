@@ -6191,11 +6191,32 @@ namespace bts { namespace wallet {
        FC_ASSERT(is_open());
        FC_ASSERT(is_unlocked());
        if(!is_receive_address(recipient))
-           FC_THROW_EXCEPTION(unknown_address, "Unknown receiving account address!", ("recipient",recipient));
+           //It's not to us... maybe it's from us.
+           return mail_decrypt(recipient, ciphertext);
 
-       auto recipient_key = get_private_key(recipient);
+       auto recipient_key = get_active_private_key(my->_blockchain->get_account_record(recipient)->name);
        FC_ASSERT(ciphertext.type == mail::encrypted);
        return ciphertext.as<mail::encrypted_message>().decrypt(recipient_key);
+   }
+
+   mail::message wallet::mail_decrypt(const address& recipient, const mail::message& ciphertext)
+   {
+       FC_ASSERT(is_open());
+       FC_ASSERT(is_unlocked());
+       FC_ASSERT(ciphertext.type == mail::encrypted, "Unknown message type");
+
+       oaccount_record recipient_account = my->_blockchain->get_account_record(recipient);
+       FC_ASSERT(recipient_account, "Unknown recipient address");
+       public_key_type recipient_key = recipient_account->active_key();
+       FC_ASSERT(recipient_key != public_key_type(), "Unknown recipient address");
+
+       auto encrypted_message = ciphertext.as<mail::encrypted_message>();
+       FC_ASSERT(my->_wallet_db.has_private_key(encrypted_message.onetimekey));
+       owallet_key_record one_time_key = my->_wallet_db.lookup_key(encrypted_message.onetimekey);
+       private_key_type one_time_private_key = one_time_key->decrypt_private_key(my->_wallet_password);
+
+       auto secret = one_time_private_key.get_shared_secret(recipient_key);
+       return encrypted_message.decrypt(secret);
    }
 
 } } // bts::wallet

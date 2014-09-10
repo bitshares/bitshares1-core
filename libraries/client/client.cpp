@@ -2252,7 +2252,7 @@ config load_config( const fc::path& datadir )
         return _wallet->mail_create(sender, recipient_account->active_key(), subject, body);
     }
 
-    mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message &ciphertext)
+    mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message& ciphertext)
     {
         return _wallet->mail_open(recipient, ciphertext);
     }
@@ -2410,6 +2410,12 @@ config load_config( const fc::path& datadir )
       return _mail_client->get_processing_messages();
     }
 
+    std::multimap<mail::client::mail_status, mail::message_id_type> detail::client_impl::mail_get_archive_messages() const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_archive_messages();
+    }
+
     void detail::client_impl::mail_retry_send(const message_id_type& message_id)
     {
       FC_ASSERT(_mail_client);
@@ -2422,7 +2428,13 @@ config load_config( const fc::path& datadir )
       _mail_client->remove_message(message_id);
     }
 
-    mail::message detail::client_impl::mail_get_sent_message(const mail::message_id_type& message_id) const
+    void detail::client_impl::mail_check_new_messages()
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->check_new_messages();
+    }
+
+    mail::email_record detail::client_impl::mail_get_message(const mail::message_id_type& message_id) const
     {
       FC_ASSERT(_mail_client);
       return _mail_client->get_message(message_id);

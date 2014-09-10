@@ -43,8 +43,13 @@ namespace bts { namespace mail {
    message encrypted_message::decrypt( const fc::ecc::private_key& e )const
    {
       auto shared_secret = e.get_shared_secret(onetimekey);
+      return decrypt(shared_secret);
+   }
+
+   message encrypted_message::decrypt(const fc::sha512& shared_secret) const
+   {
       auto decrypted_data = fc::aes_decrypt( shared_secret, data );
       return fc::raw::unpack<message>( decrypted_data );
-   };
+   }
 
 } } // bts::mail

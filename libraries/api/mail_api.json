@@ -69,6 +69,14 @@
             "prerequisites" : ["json_authenticated"]
         },
         {
+            "method_name": "mail_get_archive_messages",
+            "description": "Get all messages in the mail client which are not in processing (sent and received).",
+            "return_type": "message_status_list",
+            "parameters" : [],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
             "method_name": "mail_retry_send",
             "description": "Retries sending the specified message.",
             "return_type": "void",
@@ -93,11 +101,18 @@
                 }
             ],
             "prerequisites" : ["json_authenticated"]
-        },,
+        },
         {
-            "method_name": "mail_get_sent_message",
+            "method_name": "mail_check_new_messages",
+            "description": "Check mail server for new mail.",
+            "return_type": "void",
+            "parameters" : [],
+            "prerequisites" : ["json_authenticated","wallet_unlocked"]
+        },
+        {
+            "method_name": "mail_get_message",
             "description": "Get a specific message from the client.",
-            "return_type": "message",
+            "return_type": "email_record",
             "parameters" : [
                 {
                     "name" : "message_id",
@@ -106,7 +121,7 @@
                 }
             ],
             "is_const" : true,
-            "prerequisites" : ["json_authenticated"]
+            "prerequisites" : ["json_authenticated","wallet_unlocked"]
         },
         {
             "method_name": "mail_send",

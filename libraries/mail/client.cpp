@@ -1,8 +1,8 @@
 #include <bts/mail/client.hpp>
+#include <bts/mail/server.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/cached_level_map.hpp>
 
-#include <fc/network/ip.hpp>
 #include <fc/network/tcp_socket.hpp>
 #include <fc/io/buffered_iostream.hpp>
 
@@ -21,6 +21,8 @@ using namespace bts::wallet;
 using std::string;
 
 namespace detail {
+#define BTS_MAIL_CLIENT_DATABASE_VERSION 1
+#define BTS_MAIL_CLIENT_MAX_INVENTORY_SIZE 1000
 
 struct mail_record {
     mail_record(string sender = string(),
@@ -47,6 +49,34 @@ struct mail_record {
     string failure_reason;
 };
 
+struct mail_archive_record {
+    mail_archive_record(mail_record&& from_record = mail_record())
+        : id(std::move(from_record.id)),
+          status(from_record.status),
+          sender(std::move(from_record.sender)),
+          recipient(std::move(from_record.recipient)),
+          recipient_address(address(std::move(from_record.recipient_key))),
+          content(std::move(from_record.content)),
+          mail_servers(std::move(from_record.mail_servers))
+    {}
+    mail_archive_record(message&& from_message, string&& sender, const string& recipient, const address& recipient_address)
+        : id(from_message.id()),
+          status(client::received),
+          sender(std::move(sender)),
+          recipient(recipient),
+          recipient_address(recipient_address),
+          content(std::move(from_message))
+    {}
+
+    ripemd160 id;
+    client::mail_status status;
+    string sender;
+    string recipient;
+    address recipient_address;
+    message content;
+    std::unordered_set<ip::endpoint> mail_servers;
+};
+
 class client_impl {
 public:
     client* self;
@@ -60,7 +90,8 @@ public:
     fc::future<void> _transmit_message_worker;
 
     bts::db::cached_level_map<message_id_type, mail_record> _processing_db;
-    bts::db::level_map<message_id_type, mail_record> _archive;
+    bts::db::level_map<message_id_type, mail_archive_record> _archive;
+    bts::db::level_map<string, variant> _property_db;
 
     client_impl(client* self, wallet_ptr wallet, chain_database_ptr chain)
         : self(self),
@@ -72,6 +103,7 @@ public:
 
         _archive.close();
         _processing_db.close();
+        _property_db.close();
     }
 
     void retry_message(mail_record email) {
@@ -88,27 +120,43 @@ public:
         case client::accepted:
             finalize_message(email.id);
             break;
-        case client::failed:
+        default:
             //Do nothing
             break;
         }
     }
 
     void open(const fc::path& data_dir) {
-        _archive.open(data_dir / "archive");
-        _processing_db.open(data_dir / "processing");
+        try {
+            _archive.open(data_dir / "archive");
+            _processing_db.open(data_dir / "processing");
+            _property_db.open(data_dir / "properties");
 
-        //Place all in-processing messages back in their place on the pipeline
-        for (auto itr = _processing_db.begin(); itr.valid(); ++itr)
-            retry_message(itr.value());
+            if (!_property_db.fetch_optional("version"))
+                _property_db.store("version", BTS_MAIL_CLIENT_DATABASE_VERSION);
+
+            if (_property_db.fetch("version").as_int64() != BTS_MAIL_CLIENT_DATABASE_VERSION) {
+                elog("Unable to open mail client: database is wrong version. Supported: ${s}, stored: ${v}",
+                     ("s", BTS_MAIL_CLIENT_DATABASE_VERSION)("v", _property_db.fetch("version").as_int64()));
+                FC_ASSERT(false, "Mail client database is an unknown version.");
+            }
+
+            //Place all in-processing messages back in their place on the pipeline
+            for (auto itr = _processing_db.begin(); itr.valid(); ++itr)
+                retry_message(itr.value());
+        } catch (...) {
+            _archive.close();
+            _processing_db.close();
+            _property_db.close();
+        }
     }
     bool is_open() {
-        return _archive.is_open();
+        return _property_db.is_open();
     }
 
     void process_outgoing_mail(mail_record& mail) {
         //Messages go through a pipeline of processing. This function starts them on that journey.
-        set_mail_servers_on_record(mail);
+        mail.mail_servers = get_mail_servers_for_recipient(mail.recipient);
         _processing_db.store(mail.id, mail);
 
         //The steps required to send a message:
@@ -120,9 +168,9 @@ public:
         get_proof_of_work_target(mail.id);
     }
 
-    void set_mail_servers_on_record(mail_record& record) {
+    std::unordered_set<fc::ip::endpoint> get_mail_servers_for_recipient(string recipient) {
         //TODO: Check recipient's account on blockchain for his mail server
-        record.mail_servers.insert(ip::endpoint(ip::address("127.0.0.1"), 3000));
+        return std::unordered_set<fc::ip::endpoint>({ip::endpoint(ip::address("127.0.0.1"), 3000)});
     }
 
     void get_proof_of_work_target(const message_id_type& message_id) {
@@ -168,6 +216,7 @@ public:
 
             if (email.proof_of_work_target != ripemd160()) {
                 email.status = client::proof_of_work;
+                email.content.timestamp = fc::time_point::now();
                 _processing_db.store(email.id, email);
             } else {
                 //Don't have a proof-of-work target; cannot continue
@@ -283,27 +332,133 @@ public:
     void finalize_message(message_id_type message_id) {
         ulog("Email ${id} sent successfully.", ("id", message_id));
         mail_record email = _processing_db.fetch(message_id);
-        email.status = client::accepted;
-        //TODO: Change archive to use a different struct with more appropriate contents
-        _archive.store(message_id, email);
+        _archive.store(message_id, std::move(email));
         _processing_db.remove(message_id);
     }
 
-    std::multimap<client::mail_status, message_id_type> get_processing_messages() {
+    template<typename Database>
+    std::multimap<client::mail_status, message_id_type> get_database_messages(Database& db) {
         std::multimap<client::mail_status, message_id_type> messages;
-        for(auto itr = _processing_db.begin(); itr.valid(); ++itr) {
-            mail_record email = itr.value();
+        for(auto itr = db.begin(); itr.valid(); ++itr) {
+            auto email = itr.value();
             messages.insert(std::make_pair(email.status, email.id));
         }
         return messages;
     }
 
-    message get_message(message_id_type message_id) {
-        if (_processing_db.fetch_optional(message_id))
-            return _processing_db.fetch_optional(message_id)->content;
-        if (_archive.fetch_optional(message_id))
-            return _archive.fetch_optional(message_id)->content;
+    email_record decrypted_email_record(mail_record&& email) {
+        if (email.content.type != encrypted)
+            return email;
+        email.content = _wallet->mail_decrypt(email.recipient_key, email.content);
+        return email;
+    }
+    email_record decrypted_email_record(mail_archive_record&& email) {
+        if (email.content.type != encrypted)
+            return email;
+        email.content = _wallet->mail_decrypt(email.recipient_address, email.content);
+        return email;
+    }
+
+    email_record get_message(message_id_type message_id) {
+        if (auto op = _processing_db.fetch_optional(message_id))
+            return decrypted_email_record(std::move(*op));
+        if (auto op = _archive.fetch_optional(message_id))
+            return decrypted_email_record(std::move(*op));
         FC_ASSERT(false, "Message ${id} not found.", ("id", message_id));
+    }
+
+    void check_new_mail() {
+        auto accounts = _wallet->list_my_accounts();
+        for (wallet_account_record account : accounts) {
+            auto servers = get_mail_servers_for_recipient(account.name);
+            vector<fc::future<void>> fetch_tasks;
+            fetch_tasks.reserve(servers.size());
+
+            auto last_check_time = account.registration_date;
+            fc::time_point_sec check_time = _chain->now();
+            if (auto op = _property_db.fetch_optional("last_fetch/" + account.name))
+                last_check_time = op->as<fc::time_point_sec>();
+
+            for (ip::endpoint server : servers) {
+                fetch_tasks.push_back(fc::async([=] {
+                    //TODO: This whole design needs to be rethought. This is just a simplistic first effort.
+                    //Right now we get the inventory, then download and store ALL of it locally.
+                    //Downloading is done synchronously, with one message downloaded before the next starts.
+                    //No deduplication of effort is done; i.e. if a given message is on three servers, we'll download it three times.
+                    tcp_socket sock;
+                    sock.connect_to(server);
+
+                    int received = BTS_MAIL_CLIENT_MAX_INVENTORY_SIZE;
+                    while (received == BTS_MAIL_CLIENT_MAX_INVENTORY_SIZE) {
+                        mutable_variant_object request;
+                        request["id"] = 0;
+                        request["method"] = "mail_fetch_inventory";
+                        request["params"] = vector<variant>({variant(address(account.account_address)),
+                                                             variant(last_check_time),
+                                                             variant(BTS_MAIL_CLIENT_MAX_INVENTORY_SIZE)});
+
+                        fc::json::to_stream(sock, variant_object(request));
+                        string raw_response;
+                        fc::getline(sock, raw_response);
+                        variant_object response = fc::json::from_string(raw_response).as<variant_object>();
+
+                        if (response["id"].as_int64() != 0)
+                            wlog("Server response has wrong ID... attempting to press on. Expected: 0; got: ${r}", ("r", response["id"]));
+                        if (response.contains("error")) {
+                            elog("Server ${server} gave error ${error} on request ${request}", ("server", server)("error", response["error"])("request", request));
+                            sock.close();
+                            return;
+                        }
+
+                        inventory_type results = response["result"].as<inventory_type>();
+                        received = results.size();
+
+                        for (std::pair<fc::time_point, message_id_type> email : results) {
+                            request["id"] = 1;
+                            request["method"] = "mail_fetch_message";
+                            request["params"] = vector<variant>({variant(email.second)});
+
+                            fc::json::to_stream(sock, variant_object(request));
+                            fc::getline(sock, raw_response);
+                            response = fc::json::from_string(raw_response).as<variant_object>();
+
+                            if (response["id"].as_int64() != 1)
+                                wlog("Server response has wrong ID... attempting to press on. Expected: 1; got: ${r}", ("r", response["id"]));
+                            if (response.contains("error")) {
+                                elog("Server ${server} gave error ${error} on request ${request}", ("server", server)("error", response["error"])("request", request));
+                                sock.close();
+                                return;
+                            }
+
+
+                            message ciphertext = response["result"].as<message>();
+                            message plaintext = _wallet->mail_open(account.account_address, ciphertext);
+                            string sender = "ANONYMOUS";
+                            if (plaintext.type == mail::email)
+                                if( auto op = _chain->get_account_record(plaintext.as<signed_email_message>().from()))
+                                    sender = op->name;
+                            mail_archive_record record(std::move(ciphertext), std::move(sender), account.name, account.account_address);
+                            _archive.store(email.second, record);
+                        }
+                    }
+                }, "Mail client fetcher"));
+            }
+
+            auto timeout_future = fc::schedule([=] {
+                elog("Timed out fetching new mail.");
+                ulog("Timed out fetching new mail.");
+                for (auto task_future : fetch_tasks)
+                    task_future.cancel();
+            }, fc::time_point::now() + fc::seconds(10), "Mail client fetcher timeout");
+
+            while (!fetch_tasks.empty()) {
+                fetch_tasks.back().wait();
+                fetch_tasks.pop_back();
+            }
+
+            timeout_future.cancel("Finished fetching");
+            _property_db.store("last_fetch/" + account.name, variant(check_time));
+        }
     }
 };
 
@@ -343,12 +498,24 @@ void client::remove_message(message_id_type message_id)
     }
 }
 
-std::multimap<client::mail_status, message_id_type> client::get_processing_messages() {
+void client::check_new_messages()
+{
     FC_ASSERT(my->is_open());
-    return my->get_processing_messages();
+    my->check_new_mail();
 }
 
-message client::get_message(message_id_type message_id) {
+std::multimap<client::mail_status, message_id_type> client::get_processing_messages() {
+    FC_ASSERT(my->is_open());
+    return my->get_database_messages(my->_processing_db);
+}
+
+std::multimap<client::mail_status, message_id_type> client::get_archive_messages()
+{
+    FC_ASSERT(my->is_open());
+    return my->get_database_messages(my->_archive);
+}
+
+email_record client::get_message(message_id_type message_id) {
     FC_ASSERT(my->is_open());
     return my->get_message(message_id);
 }
@@ -361,18 +528,40 @@ message_id_type client::send_email(const string &from, const string &to, const s
     //TODO: Find a thin-clienty way to do this, rather than calling a local chain_database
     oaccount_record recipient = my->_chain->get_account_record(to);
     FC_ASSERT(recipient, "Could not find recipient account: ${name}", ("name", to));
-    public_key_type recipient_key = recipient->active_key();
 
+    //All mail shall be addressed to the owner key, but it is encrypted with the active key.
     detail::mail_record email(from,
                               to,
-                              recipient_key,
-                              my->_wallet->mail_create(from, recipient_key, subject, body));
+                              recipient->owner_key,
+                              my->_wallet->mail_create(from, recipient->active_key(), subject, body));
     my->process_outgoing_mail(email);
 
     return email.id;
 }
 
+email_record::email_record(const detail::mail_record& processing_record)
+    : id(processing_record.id),
+      status(processing_record.status),
+      sender(processing_record.sender),
+      recipient(processing_record.recipient),
+      content(processing_record.content)
+{
+    if (processing_record.status >= client::proof_of_work && processing_record.status != client::failed)
+        *mail_servers = processing_record.mail_servers;
+    if (processing_record.status == client::failed)
+        *failure_reason = processing_record.failure_reason;
+}
+email_record::email_record(const detail::mail_archive_record& archive_record)
+    : id(archive_record.id),
+      status(client::accepted),
+      sender(archive_record.sender),
+      recipient(archive_record.recipient),
+      content(archive_record.content),
+      mail_servers(archive_record.mail_servers)
+{}
+
 }
 }
 
 FC_REFLECT(bts::mail::detail::mail_record, (id)(status)(sender)(recipient)(recipient_key)(content)(mail_servers)(proof_of_work_target))
+FC_REFLECT(bts::mail::detail::mail_archive_record, (id)(status)(sender)(recipient)(recipient_address)(content)(mail_servers))

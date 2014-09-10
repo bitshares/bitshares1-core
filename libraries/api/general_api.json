@@ -52,7 +52,7 @@
           [
             {
               "name" : "address",
-              "type" : "std::string",
+              "type" : "string",
               "description" : "the address or public key to validate"
             }
           ],

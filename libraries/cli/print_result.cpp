@@ -180,6 +180,7 @@ namespace bts { namespace cli {
     _command_to_function["blockchain_calculate_base_supply"] = [](std::ostream& out, const fc::variants& arguments, const fc::variant& result){
       out << _client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n"; };
 
+    _command_to_function["mail_get_message"] = &f_mail_get_message;
   }
 
   void print_result::f_wallet_account_create(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
@@ -916,6 +917,28 @@ namespace bts { namespace cli {
       out << std::setw(30) << (peer.last_error ? peer.last_error->to_detail_string() : "none");
 
       out << "\n";
+    }
+  }
+
+  void print_result::f_mail_get_message(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  {
+    mail::email_record email = result.as<mail::email_record>();
+    mail::email_message content;
+
+    switch (mail::message_type(email.content.type)) {
+    case mail::email:
+      content = email.content.as<mail::signed_email_message>();
+
+      out << "=== Email Message ==="
+             "\nFrom:         " << email.sender
+          << "\nTo:           " << email.recipient
+          << "\nDate:         " << pretty_timestamp(email.content.timestamp)
+          << "\nSubject:      " << content.subject
+          << "\n\n"
+          << content.body << "\n";
+      break;
+    default:
+      out << fc::json::to_pretty_string(result);
     }
   }
 
