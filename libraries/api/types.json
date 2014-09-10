@@ -642,6 +642,16 @@
         "type_name" : "message_status_list",
         "cpp_return_type" : "std::multimap<bts::mail::client::mail_status,bts::mail::message_id_type>",
         "cpp_include_file" : "bts/mail/client.hpp"
+      },
+      {
+        "type_name" : "email_record",
+        "cpp_return_type" : "bts::mail::email_record",
+        "cpp_include_file" : "bts/mail/client.hpp"
+      },
+      {
+        "type_name" : "message_header_list",
+        "cpp_return_type" : "std::vector<bts::mail::email_header>",
+        "cpp_include_file" : "bts/mail/client.hpp"
       }
     ]
 }

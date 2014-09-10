@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE( master_test )
    std::cerr << clienta->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    wlog( "------------------  CLIENT B  -----------------------------------" );
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
-   std::cerr << clientb->execute_command_line( "wallet_create_account c-account" ) << "\n";
+   std::cerr << clientb->execute_command_line( "wallet_account_create c-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_transfer 10 XTS b-account c-account to-me" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history b-account" ) << "\n";
    std::cerr << clientb->execute_command_line( "wallet_account_transaction_history c-account" ) << "\n";

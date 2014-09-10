@@ -1,0 +1,13 @@
+};
+
+genesis_block_config get_builtin_genesis_block_config()
+{
+  return fc::raw::unpack<genesis_block_config>((const char*)raw_genesis_config, sizeof(raw_genesis_config));
+}
+
+fc::sha256 get_builtin_genesis_block_state_hash()
+{
+  return fc::sha256::hash((const char*)raw_genesis_config, sizeof(raw_genesis_config));
+}
+
+} } // end namespace bts::blockchain

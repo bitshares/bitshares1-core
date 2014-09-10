@@ -18,10 +18,10 @@ namespace bts { namespace wallet {
       public:
          wallet_db();
          ~wallet_db();
-         
+
          void open( const fc::path& wallet_file );
          void close();
-         
+
          bool is_open()const;
 
          int32_t              new_wallet_record_index();
@@ -39,7 +39,7 @@ namespace bts { namespace wallet {
          void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );
          void cache_account( const wallet_account_record& );
-         void cache_memo( const memo_status& memo, 
+         void cache_memo( const memo_status& memo,
                           const private_key_type& account_key,
                           const fc::sha512& password );
 
@@ -67,7 +67,7 @@ namespace bts { namespace wallet {
 
          bool has_private_key( const address& a )const;
 
-         void add_account( const string& new_account_name, 
+         void add_account( const string& new_account_name,
                            const public_key_type& new_account_key,
                            const variant& private_data = variant() );
          void add_account( const account_record& blockchain_account,
@@ -83,7 +83,7 @@ namespace bts { namespace wallet {
 
          bool                           validate_password( const fc::sha512& password )const;
          optional<extended_private_key> get_master_key( const fc::sha512& password    )const;
-         void                           set_master_key( const extended_private_key& key, 
+         void                           set_master_key( const extended_private_key& key,
                                                         const fc::sha512& new_password );
 
          void                           change_password( const fc::sha512& old_password,
@@ -101,7 +101,7 @@ namespace bts { namespace wallet {
          {
             return accounts;
          }
-         const unordered_map< address, wallet_key_record >& get_keys()const 
+         const unordered_map< address, wallet_key_record >& get_keys()const
          {
             return keys;
          }
@@ -112,7 +112,6 @@ namespace bts { namespace wallet {
          unordered_map< int32_t,wallet_account_record >                   accounts;
          unordered_map< address, wallet_key_record >                      keys;
          unordered_map< transaction_id_type, wallet_transaction_record >  transactions;
-         map<string,wallet_asset_record>                                  assets;
          unordered_map< balance_id_type,wallet_balance_record >           balances;
          map<property_enum, wallet_property_record>                       properties;
          map< string, wallet_setting_record >                             settings;
@@ -124,12 +123,12 @@ namespace bts { namespace wallet {
 
          void remove_item( int32_t index );
          /**
-          *  This is private 
+          *  This is private
           */
          template<typename T>
          void store_record( T record_to_store, bool sync = false )
          {
-            if( record_to_store.wallet_record_index == 0 ) 
+            if( record_to_store.wallet_record_index == 0 )
                record_to_store.wallet_record_index = new_wallet_record_index();
             store_generic_record( generic_wallet_record( record_to_store ), sync );
          }

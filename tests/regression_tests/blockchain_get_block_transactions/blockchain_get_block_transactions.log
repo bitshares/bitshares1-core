@@ -87,7 +87,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           }
         ]
       ],
-      "rewards": [],
+      "yield": [],
       "balance": [[
           0,
           50000

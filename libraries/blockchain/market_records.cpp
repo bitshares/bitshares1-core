@@ -1,6 +1,7 @@
 #include <bts/blockchain/market_records.hpp>
 #include <fc/exception/exception.hpp>
 #include <sstream>
+#include <boost/algorithm/string.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -11,6 +12,14 @@ order_id_type market_order::get_id()const
           << string( market_index.order_price )
           << string( market_index.owner );
     return fc::ripemd160::hash( id_ss.str() );
+}
+
+string market_order::get_small_id()const
+{
+    string type_prefix = string( type );
+    type_prefix = type_prefix.substr( 0, type_prefix.find( "_" ) );
+    boost::to_upper( type_prefix );
+    return type_prefix + "-" + string( get_id() ).substr( 0, 8 );
 }
 
 asset market_order::get_balance()const

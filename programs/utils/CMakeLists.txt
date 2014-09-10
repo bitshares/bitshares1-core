@@ -16,8 +16,12 @@ target_link_libraries( bts_create_genesis fc bts_blockchain bts_utilities)
 add_executable( key_to_wif key_to_wif.cpp )
 target_link_libraries( key_to_wif fc bts_blockchain bts_utilities)
 
-add_executable( bts_genesis_to_bin bts_genesis_to_bin.cpp )
-target_link_libraries( bts_genesis_to_bin fc bts_blockchain)
+# I've added two small files here that are also compiled in bts_blockchain
+# to avoid a circular dependency.  The circular dependency could be broken more cleanly
+# by splitting bts_blockchain, but it doesn't seem worth it just for this
+add_executable( bts_genesis_to_bin bts_genesis_to_bin.cpp ${CMAKE_SOURCE_DIR}/libraries/blockchain/types.cpp ${CMAKE_SOURCE_DIR}/libraries/blockchain/pts_address.cpp )
+target_link_libraries( bts_genesis_to_bin fc )
+target_include_directories( bts_genesis_to_bin PRIVATE "${CMAKE_SOURCE_DIR}/libraries/blockchain/include" )
 
 add_executable( bts_json_to_cpp bts_json_to_cpp.cpp )
 target_link_libraries( bts_json_to_cpp fc bts_utilities)

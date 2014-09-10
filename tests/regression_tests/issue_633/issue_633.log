@@ -48,7 +48,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            99.50000 XTS                
+test                            99.00000 XTS                
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> wallet_rescan_blockchain 
