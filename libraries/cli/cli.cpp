@@ -448,6 +448,7 @@ namespace bts { namespace cli {
                        this_parameter.type == "new_passphrase" ||
                        this_parameter.type == "filename" ||
                        this_parameter.type == "public_key" ||
+                       this_parameter.type == "order_id" ||
                        this_parameter.type == "passphrase")
               {
                 string result;
