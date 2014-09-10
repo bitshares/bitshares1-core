@@ -2455,6 +2455,7 @@ namespace bts { namespace blockchain {
            auto order = market_order { bid_order, bid_itr.key(), bid_itr.value() };
            if( filter(order) )
                ret.push_back(order);
+           ++bid_itr;
        }
 
        auto ask_itr = my->_ask_db.begin();
@@ -2463,6 +2464,7 @@ namespace bts { namespace blockchain {
            auto order = market_order { ask_order, ask_itr.key(), ask_itr.value() };
            if( filter(order) )
                ret.push_back(order);
+           ++ask_itr;
        }
 
        auto short_itr = my->_short_db.begin();
@@ -2471,8 +2473,8 @@ namespace bts { namespace blockchain {
            auto order = market_order { short_order, short_itr.key(), short_itr.value() };
            if( filter(order) )
                ret.push_back(order);
+           ++short_itr;
        }
-
        return ret;
    }
 
