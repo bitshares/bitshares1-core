@@ -28,4 +28,4 @@ if exist build (
 mkdir build
 cd build
 cmake -DINCLUDE_QT_WALLET=TRUE -DINCLUDE_CRASHRPT=FALSE -G "Visual Studio 12 Win64" ../bitsharesx || exit /b 28
-msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebinfo /p:Platform=x64 /target:rebuild /v:diag BitShares.sln || exit /b 30
+msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=Release /p:Platform=x64 /target:BitSharesX:rebuild /v:diag BitShares.sln || exit /b 30
