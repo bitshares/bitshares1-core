@@ -189,6 +189,7 @@ namespace bts { namespace cli {
       out << _client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n"; };
 
     _command_to_function["mail_get_message"] = &f_mail_get_message;
+    _command_to_function["mail_inbox"] = &f_mail_inbox;
   }
 
   void print_result::f_wallet_account_create(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
@@ -938,15 +939,43 @@ namespace bts { namespace cli {
       content = email.content.as<mail::signed_email_message>();
 
       out << "=== Email Message ==="
-             "\nFrom:         " << email.sender
-          << "\nTo:           " << email.recipient
-          << "\nDate:         " << pretty_timestamp(email.content.timestamp)
+             "\nFrom:         " << email.header.sender
+          << "\nTo:           " << email.header.recipient
+          << "\nDate:         " << pretty_timestamp(email.header.timestamp)
           << "\nSubject:      " << content.subject
           << "\n\n"
           << content.body << "\n";
       break;
     default:
       out << fc::json::to_pretty_string(result);
+    }
+  }
+
+  void print_result::f_mail_inbox(std::ostream& out, const fc::variants& arguments, const fc::variant& result)
+  {
+    vector<mail::email_header> inbox = result.as<vector<mail::email_header>>();
+    if (inbox.empty())
+    {
+      out << "No new mail. Why not go check out the BitUSD markets?\n";
+      return;
+    }
+
+    out << std::left
+        << std::setw(45) << "ID"
+        << std::setw(20) << "FROM"
+        << std::setw(20) << "TO"
+        << std::setw(61) << "SUBJECT"
+        << std::setw(19) << "DATE"
+        << "\n" << string(165, '-') << "\n";
+
+    for (email_header header : inbox)
+    {
+      out << std::setw(45) << header.id.str()
+          << std::setw(20) << pretty_shorten(header.sender, 19)
+          << std::setw(20) << pretty_shorten(header.recipient, 19)
+          << std::setw(61) << pretty_shorten(header.subject, 60)
+          << std::setw(19) << pretty_timestamp(header.timestamp)
+          << "\n";
     }
   }
 

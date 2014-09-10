@@ -77,6 +77,15 @@
             "prerequisites" : ["json_authenticated"]
         },
         {
+            "method_name": "mail_inbox",
+            "description": "Get headers of all messages in the inbox.",
+            "return_type": "message_header_list",
+            "parameters" : [],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated"],
+            "aliases" : ["inbox"]
+        },
+        {
             "method_name": "mail_retry_send",
             "description": "Retries sending the specified message.",
             "return_type": "void",
@@ -91,7 +100,7 @@
         },
         {
             "method_name": "mail_remove_message",
-            "description": "Removes the message from the local database",
+            "description": "Removes the message from the local database.",
             "return_type": "void",
             "parameters" : [
                 {
@@ -101,6 +110,20 @@
                 }
             ],
             "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "mail_archive_message",
+            "description": "Removes the message from the inbox.",
+            "return_type": "void",
+            "parameters" : [
+                {
+                    "name" : "message_id",
+                    "type" : "message_id",
+                    "description" : "ID of the message to archive."
+                }
+            ],
+            "prerequisites" : ["json_authenticated"],
+            "aliases" : ["archive"]
         },
         {
             "method_name": "mail_check_new_messages",

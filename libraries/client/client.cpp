@@ -2416,6 +2416,12 @@ config load_config( const fc::path& datadir )
       return _mail_client->get_archive_messages();
     }
 
+    vector<mail::email_header> detail::client_impl::mail_inbox() const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_inbox();
+    }
+
     void detail::client_impl::mail_retry_send(const message_id_type& message_id)
     {
       FC_ASSERT(_mail_client);
@@ -2426,6 +2432,12 @@ config load_config( const fc::path& datadir )
     {
       FC_ASSERT(_mail_client);
       _mail_client->remove_message(message_id);
+    }
+
+    void detail::client_impl::mail_archive_message(const message_id_type &message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->archive_message(message_id);
     }
 
     void detail::client_impl::mail_check_new_messages()

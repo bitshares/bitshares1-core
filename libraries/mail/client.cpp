@@ -59,11 +59,11 @@ struct mail_archive_record {
           content(std::move(from_record.content)),
           mail_servers(std::move(from_record.mail_servers))
     {}
-    mail_archive_record(message&& from_message, string&& sender, const string& recipient, const address& recipient_address)
+    mail_archive_record(message&& from_message, const email_header& header, const address& recipient_address)
         : id(from_message.id()),
           status(client::received),
-          sender(std::move(sender)),
-          recipient(recipient),
+          sender(header.sender),
+          recipient(header.recipient),
           recipient_address(recipient_address),
           content(std::move(from_message))
     {}
@@ -91,6 +91,7 @@ public:
 
     bts::db::cached_level_map<message_id_type, mail_record> _processing_db;
     bts::db::level_map<message_id_type, mail_archive_record> _archive;
+    bts::db::cached_level_map<message_id_type, email_header> _inbox;
     bts::db::level_map<string, variant> _property_db;
 
     client_impl(client* self, wallet_ptr wallet, chain_database_ptr chain)
@@ -103,6 +104,7 @@ public:
 
         _archive.close();
         _processing_db.close();
+        _inbox.close();
         _property_db.close();
     }
 
@@ -130,6 +132,7 @@ public:
         try {
             _archive.open(data_dir / "archive");
             _processing_db.open(data_dir / "processing");
+            _inbox.open(data_dir / "inbox");
             _property_db.open(data_dir / "properties");
 
             if (!_property_db.fetch_optional("version"))
@@ -332,6 +335,7 @@ public:
     void finalize_message(message_id_type message_id) {
         ulog("Email ${id} sent successfully.", ("id", message_id));
         mail_record email = _processing_db.fetch(message_id);
+        email.status = client::accepted;
         _archive.store(message_id, std::move(email));
         _processing_db.remove(message_id);
     }
@@ -349,13 +353,13 @@ public:
     email_record decrypted_email_record(mail_record&& email) {
         if (email.content.type != encrypted)
             return email;
-        email.content = _wallet->mail_decrypt(email.recipient_key, email.content);
+        email.content = _wallet->mail_open(email.recipient_key, email.content);
         return email;
     }
     email_record decrypted_email_record(mail_archive_record&& email) {
         if (email.content.type != encrypted)
             return email;
-        email.content = _wallet->mail_decrypt(email.recipient_address, email.content);
+        email.content = _wallet->mail_open(email.recipient_address, email.content);
         return email;
     }
 
@@ -365,6 +369,21 @@ public:
         if (auto op = _archive.fetch_optional(message_id))
             return decrypted_email_record(std::move(*op));
         FC_ASSERT(false, "Message ${id} not found.", ("id", message_id));
+    }
+
+    vector<email_header> get_inbox() {
+        vector<email_header> inbox;
+        for (auto itr = _inbox.begin(); itr.valid(); ++itr)
+            inbox.push_back(itr.value());
+        std::sort(inbox.begin(), inbox.end(), [](const email_header& a, const email_header& b) {
+            return a.timestamp < b.timestamp;
+        });
+        return inbox;
+    }
+
+    void archive_message(message_id_type message_id) {
+        if (_inbox.fetch_optional(message_id))
+            _inbox.remove(message_id);
     }
 
     void check_new_mail() {
@@ -433,12 +452,17 @@ public:
 
                             message ciphertext = response["result"].as<message>();
                             message plaintext = _wallet->mail_open(account.account_address, ciphertext);
-                            string sender = "ANONYMOUS";
-                            if (plaintext.type == mail::email)
-                                if( auto op = _chain->get_account_record(plaintext.as<signed_email_message>().from()))
-                                    sender = op->name;
-                            mail_archive_record record(std::move(ciphertext), std::move(sender), account.name, account.account_address);
+                            email_header header;
+                            header.id = ciphertext.id();
+                            if (plaintext.type == mail::email) {
+                                header.sender = _wallet->get_key_label(plaintext.as<signed_email_message>().from());
+                                header.subject = plaintext.as<signed_email_message>().subject;
+                            }
+                            header.recipient = account.name;
+                            header.timestamp = plaintext.timestamp;
+                            mail_archive_record record(std::move(ciphertext), header, account.account_address);
                             _archive.store(email.second, record);
+                            _inbox.store(header.id, header);
                         }
                     }
                 }, "Mail client fetcher"));
@@ -449,7 +473,7 @@ public:
                 ulog("Timed out fetching new mail.");
                 for (auto task_future : fetch_tasks)
                     task_future.cancel();
-            }, fc::time_point::now() + fc::seconds(10), "Mail client fetcher timeout");
+            }, fc::time_point::now() + fc::seconds(60), "Mail client fetcher timeout");
 
             while (!fetch_tasks.empty()) {
                 fetch_tasks.back().wait();
@@ -498,6 +522,12 @@ void client::remove_message(message_id_type message_id)
     }
 }
 
+void client::archive_message(message_id_type message_id_type)
+{
+    FC_ASSERT(my->is_open());
+    my->archive_message(message_id_type);
+}
+
 void client::check_new_messages()
 {
     FC_ASSERT(my->is_open());
@@ -513,6 +543,12 @@ std::multimap<client::mail_status, message_id_type> client::get_archive_messages
 {
     FC_ASSERT(my->is_open());
     return my->get_database_messages(my->_archive);
+}
+
+std::vector<email_header> client::get_inbox()
+{
+    FC_ASSERT(my->is_open());
+    return my->get_inbox();
 }
 
 email_record client::get_message(message_id_type message_id) {
@@ -539,23 +575,40 @@ message_id_type client::send_email(const string &from, const string &to, const s
     return email.id;
 }
 
-email_record::email_record(const detail::mail_record& processing_record)
+email_header::email_header(const detail::mail_record &processing_record)
     : id(processing_record.id),
-      status(processing_record.status),
       sender(processing_record.sender),
       recipient(processing_record.recipient),
+      timestamp(processing_record.content.timestamp)
+{
+    if (processing_record.content.type == email)
+        subject = processing_record.content.as<signed_email_message>().subject;
+}
+
+email_header::email_header(const detail::mail_archive_record& archive_record)
+    : id(archive_record.id),
+      sender(archive_record.sender),
+      recipient(archive_record.recipient),
+      timestamp(archive_record.content.timestamp)
+{
+    if (archive_record.content.type == email)
+        subject = archive_record.content.as<signed_email_message>().subject;
+}
+
+email_record::email_record(const detail::mail_record& processing_record)
+    : header(processing_record),
       content(processing_record.content)
 {
+    header.id = processing_record.id;
+    header.sender = processing_record.sender;
+    header.recipient = processing_record.recipient;
     if (processing_record.status >= client::proof_of_work && processing_record.status != client::failed)
         *mail_servers = processing_record.mail_servers;
     if (processing_record.status == client::failed)
         *failure_reason = processing_record.failure_reason;
 }
 email_record::email_record(const detail::mail_archive_record& archive_record)
-    : id(archive_record.id),
-      status(client::accepted),
-      sender(archive_record.sender),
-      recipient(archive_record.recipient),
+    : header(archive_record),
       content(archive_record.content),
       mail_servers(archive_record.mail_servers)
 {}
