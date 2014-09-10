@@ -203,10 +203,7 @@ namespace bts { namespace cli {
       out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
     };
 
-    _command_to_function["blockchain_calculate_base_supply"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
-    {
-      out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
-    };
+    _command_to_function["mail_get_message"] = &f_mail_get_message;
   }
 
   void print_result::f_wallet_account_create( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
@@ -950,45 +947,26 @@ namespace bts { namespace cli {
     }
   }
 
-} }
+  void print_result::f_mail_get_message( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+  {
+    mail::email_record email = result.as<mail::email_record>();
+    mail::email_message content;
 
-//  else
-//  {
-//    // there was no custom handler for this particular command, see if the return type
-//    // is one we know how to pretty-print
-//    string result_type;
-//    try
-//    {
-//      const bts::api::method_data& method_data = _rpc_server->get_method_data(method_name);
-//      result_type = method_data.return_type;
-//
-//      if(result_type == "asset")
-//      {
-//        *_out << (string)result.as<bts::blockchain::asset>() << "\n";
-//      }
-//      else if(result_type == "address")
-//      {
-//        *_out << (string)result.as<bts::blockchain::address>() << "\n";
-//      }
-//      else if(result_type == "null" || result_type == "void")
-//      {
-//        *_out << "OK\n";
-//      }
-//      else
-//      {
-//        *_out << fc::json::to_pretty_string(result) << "\n";
-//      }
-//    }
-//    catch(const fc::key_not_found_exception&)
-//    {
-//      elog(" KEY NOT FOUND ");
-//      *_out << "key not found \n";
-//    }
-//    catch(...)
-//    {
-//      *_out << "unexpected exception \n";
-//    }
-//  }
-//
-//  *_out << std::right; /* Ensure default alignment is restored */
-//}
+    switch (mail::message_type(email.content.type)) {
+    case mail::email:
+      content = email.content.as<mail::signed_email_message>();
+
+      out << "=== Email Message ==="
+             "\nFrom:         " << email.sender
+          << "\nTo:           " << email.recipient
+          << "\nDate:         " << pretty_timestamp(email.content.timestamp)
+          << "\nSubject:      " << content.subject
+          << "\n\n"
+          << content.body << "\n";
+      break;
+    default:
+      out << fc::json::to_pretty_string(result);
+    }
+  }
+
+} }

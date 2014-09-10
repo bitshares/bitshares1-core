@@ -1616,7 +1616,7 @@
       },
       {
          "method_name" : "wallet_mail_create",
-         "description" : "Creates a new mail message.",
+         "description" : "Creates a new mail message and returns the encrypted message.",
          "return_type" : "message",
          "parameters"  : [
              {
