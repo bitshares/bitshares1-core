@@ -1,30 +1,41 @@
 ##################################################################################################
 # Magic to get the genesis.json converted to a .cpp file and compiled into the bts_client library
 set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis_btsx.json")
-set(genesis_prologue "${CMAKE_CURRENT_SOURCE_DIR}/genesis.prologue")
-set(genesis_epilogue "${CMAKE_CURRENT_SOURCE_DIR}/genesis.epilogue")
+
+set(EMBED_GENESIS_STATE_AS_TEXT TRUE CACHE BOOL "If true, genesis.json is included in text form, causing slower startup times")
+
+if (EMBED_GENESIS_STATE_AS_TEXT)
+  set(genesis_prologue "${CMAKE_CURRENT_SOURCE_DIR}/genesis.prologue")
+  set(genesis_epilogue "${CMAKE_CURRENT_SOURCE_DIR}/genesis.epilogue")
+
+  set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
+
+  add_custom_command(OUTPUT ${generated_genesis_file}
+                     COMMAND bts_json_to_cpp    "--json=${genesis_json}"
+                                                "--prologue=${genesis_prologue}"
+                                                "--epilogue=${genesis_epilogue}"
+                                                "--out=${generated_genesis_file}.new"
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${generated_genesis_file}.new" "${generated_genesis_file}"
+                     COMMAND ${CMAKE_COMMAND} -E remove "${generated_genesis_file}.new"
+                     DEPENDS bts_json_to_cpp ${genesis_json} ${genesis_prologue} ${genesis_epilogue} )
+else(EMBED_GENESIS_STATE_AS_TEXT)
+  set(genesis_prologue "${CMAKE_CURRENT_SOURCE_DIR}/binary_genesis.prologue")
+  set(genesis_epilogue "${CMAKE_CURRENT_SOURCE_DIR}/binary_genesis.epilogue")
+
+  set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
+
+  add_custom_command(OUTPUT ${generated_genesis_file}
+                     COMMAND bts_genesis_to_bin "--json=${genesis_json}"
+                                                "--prologue=${genesis_prologue}"
+                                                "--epilogue=${genesis_epilogue}"
+                                                "--source-out=${generated_genesis_file}.new"
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${generated_genesis_file}.new" "${generated_genesis_file}"
+                     COMMAND ${CMAKE_COMMAND} -E remove "${generated_genesis_file}.new"
+                     DEPENDS bts_genesis_to_bin ${genesis_json} ${genesis_prologue} ${genesis_epilogue} )
+endif(EMBED_GENESIS_STATE_AS_TEXT)
+
 source_group("Genesis JSON Files" FILES ${genesis_json} ${genesis_prologue} ${genesis_epilogue})
 
-set(generated_genesis_file "${CMAKE_CURRENT_BINARY_DIR}/genesis_json.cpp")
-set(rpc_stubs_output_dir "${CMAKE_BINARY_DIR}/libraries/rpc_stubs")
-set(generated_rpc_stubs_files "${rpc_stubs_output_dir}/common_api_rpc_server.cpp" 
-                              "${rpc_stubs_output_dir}/common_api_rpc_client.cpp" 
-                              "${rpc_stubs_output_dir}/common_api_client.cpp" 
-                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_rpc_server.hpp" 
-                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_rpc_client.hpp"
-                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_client.hpp"
-                              "${rpc_stubs_output_dir}/include/bts/rpc_stubs/common_api_overrides.ipp")
-
-add_custom_command(OUTPUT ${generated_genesis_file} 
-                   COMMAND bts_json_to_cpp    "--json=${genesis_json}"
-                                              "--prologue=${genesis_prologue}"
-                                              "--epilogue=${genesis_epilogue}"
-                                              "--out=${generated_genesis_file}.new"
-                   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${generated_genesis_file}.new" "${generated_genesis_file}"
-                   COMMAND ${CMAKE_COMMAND} -E remove "${generated_genesis_file}.new"
-                   DEPENDS bts_json_to_cpp ${genesis_json} ${genesis_prologue} ${genesis_epilogue} )
-
-                   
 ##################################################################################################
 # Regular stuff for the bts_client library
 
@@ -69,8 +80,13 @@ else()
 endif()
 
 target_link_libraries( bts_blockchain fc bts_db leveldb )
-target_include_directories( bts_blockchain 
+target_include_directories( bts_blockchain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+
+if (EMBED_GENESIS_STATE_AS_TEXT)
+  target_compile_definitions( bts_blockchain PRIVATE EMBED_GENESIS_STATE_AS_TEXT )
+endif (EMBED_GENESIS_STATE_AS_TEXT)
+
 if (USE_PCH)
   set_target_properties(bts_blockchain PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
   cotire(bts_blockchain)

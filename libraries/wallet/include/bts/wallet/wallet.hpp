@@ -522,6 +522,7 @@ namespace bts { namespace wallet {
                                     const string& subject,
                                     const string& body );
          mail::message mail_open( const address& recipient, const mail::message& ciphertext );
+         mail::message mail_decrypt( const address& recipient, const mail::message& ciphertext );
 
      private:
          unique_ptr<detail::wallet_impl> my;

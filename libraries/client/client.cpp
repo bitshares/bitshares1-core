@@ -1717,6 +1717,10 @@ config load_config( const fc::path& datadir )
       info["fc_revision"]                    = fc::git_revision_sha;
       info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
       info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
+      info["blockchain_description"]         = BTS_BLOCKCHAIN_DESCRIPTION;
+#ifdef BTS_TEST_NETWORK
+      info["test_network_version"] = std::to_string( BTS_TEST_NETWORK_VERSION );
+#endif
       return info;
     }
 
@@ -1935,14 +1939,17 @@ config load_config( const fc::path& datadir )
     {
       return _wallet->list_accounts();
     }
+
     vector<wallet_account_record> detail::client_impl::wallet_list_my_accounts() const
     {
       return _wallet->list_my_accounts();
     }
+
     vector<wallet_account_record> detail::client_impl::wallet_list_favorite_accounts() const
     {
       return _wallet->list_favorite_accounts();
     }
+
     vector<wallet_account_record> detail::client_impl::wallet_list_unregistered_accounts() const
     {
       return _wallet->list_unregistered_accounts();
@@ -2252,7 +2259,7 @@ config load_config( const fc::path& datadir )
         return _wallet->mail_create(sender, recipient_account->active_key(), subject, body);
     }
 
-    mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message &ciphertext)
+    mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message& ciphertext)
     {
         return _wallet->mail_open(recipient, ciphertext);
     }
@@ -2410,6 +2417,18 @@ config load_config( const fc::path& datadir )
       return _mail_client->get_processing_messages();
     }
 
+    std::multimap<mail::client::mail_status, mail::message_id_type> detail::client_impl::mail_get_archive_messages() const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_archive_messages();
+    }
+
+    vector<mail::email_header> detail::client_impl::mail_inbox() const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_inbox();
+    }
+
     void detail::client_impl::mail_retry_send(const message_id_type& message_id)
     {
       FC_ASSERT(_mail_client);
@@ -2422,7 +2441,19 @@ config load_config( const fc::path& datadir )
       _mail_client->remove_message(message_id);
     }
 
-    mail::message detail::client_impl::mail_get_sent_message(const mail::message_id_type& message_id) const
+    void detail::client_impl::mail_archive_message(const message_id_type &message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->archive_message(message_id);
+    }
+
+    void detail::client_impl::mail_check_new_messages()
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->check_new_messages();
+    }
+
+    mail::email_record detail::client_impl::mail_get_message(const mail::message_id_type& message_id) const
     {
       FC_ASSERT(_mail_client);
       return _mail_client->get_message(message_id);
@@ -2852,16 +2883,15 @@ config load_config( const fc::path& datadir )
    namespace detail  {
 
     void client_impl::wallet_add_contact_account( const string& account_name,
-                                             const public_key_type& contact_key )
+                                                  const public_key_type& contact_key )
     {
        _wallet->add_contact_account( account_name, contact_key );
        _wallet->auto_backup( "account_add" );
     }
 
     public_key_type client_impl::wallet_account_create( const string& account_name,
-                                                   const variant& private_data )
+                                                        const variant& private_data )
     {
-       ilog( "CLIENT: creating account '${account_name}'", ("account_name",account_name) );
        const auto result = _wallet->create_account( account_name, private_data );
        _wallet->auto_backup( "account_create" );
        return result;
@@ -3284,9 +3314,9 @@ config load_config( const fc::path& datadir )
            const string& from_account,
            double quantity,
            const string& quantity_symbol,
-           const order_id_type& short_id )
+           const order_id_type& cover_id )
    {
-      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, short_id );
+      const auto record = _wallet->cover_short( from_account, quantity, quantity_symbol, cover_id );
       network_broadcast_transaction( record.trx );
       return record;
    }

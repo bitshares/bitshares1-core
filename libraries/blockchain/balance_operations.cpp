@@ -284,10 +284,9 @@ namespace bts { namespace blockchain {
             } FC_CAPTURE_AND_RETHROW( (option) )
             break;
          }
-         case withdraw_null_type:
+
+         default:
             FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
-            break;
-      //   default:
       }
       // update delegate vote on withdrawn account..
 

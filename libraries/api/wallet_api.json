@@ -1195,7 +1195,7 @@
                "description" : "the type of asset you are covering (ie: USD)"
             },
             {
-               "name" : "short_id",
+               "name" : "cover_id",
                "type" : "order_id",
                "description" : "the order ID you would like to cover"
             }
@@ -1616,7 +1616,7 @@
       },
       {
          "method_name" : "wallet_mail_create",
-         "description" : "Creates a new mail message.",
+         "description" : "Creates a new mail message and returns the encrypted message.",
          "return_type" : "message",
          "parameters"  : [
              {

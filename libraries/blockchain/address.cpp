@@ -9,7 +9,7 @@ namespace bts {
    address::address(){}
 
    address::address( const std::string& base58str )
-   { 
+   {
       FC_ASSERT( is_valid( base58str ) );
       std::vector<char> v = fc::from_base58( base58str.substr( strlen(BTS_ADDRESS_PREFIX) ) );
       memcpy( (char*)addr._hash, v.data(), std::min<size_t>( v.size()-4, sizeof(addr) ) );
@@ -56,7 +56,7 @@ namespace bts {
    {
        addr = fc::ripemd160::hash( fc::sha512::hash( pub.data, sizeof(pub) ) );
    }
-   
+
    address::address( const bts::blockchain::public_key_type& pub )
    {
        addr = fc::ripemd160::hash( fc::sha512::hash( pub.key_data.data, sizeof(pub.key_data) ) );
@@ -73,8 +73,8 @@ namespace bts {
 
 } } // namespace bts::blockchain
 
-namespace fc 
-{ 
+namespace fc
+{
     void to_variant( const bts::blockchain::address& var,  variant& vo )
     {
         vo = std::string(var);

@@ -47,6 +47,8 @@ int main(int argc, char** argv) {
     for (fc::recursive_directory_iterator itr(pack_dir); itr != fc::recursive_directory_iterator(); ++itr)
     {
         string relative_path = (*itr).to_native_ansi_path().erase(0, pack_dir.to_native_ansi_path().size());
+        if (relative_path[0] != '/')
+            relative_path = "/" + relative_path;
 
         if (!fc::is_regular_file(*itr))
             continue;

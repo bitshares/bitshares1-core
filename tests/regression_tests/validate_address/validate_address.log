@@ -4,7 +4,7 @@ validate_address <address>                                                      
 Return information about given BitShares address
 
 Parameters:
-  address (std::string, required): the address or public key to validate
+  address (string, required): the address or public key to validate
 
 Returns:
   json_object

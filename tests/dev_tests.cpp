@@ -230,7 +230,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "wallet_account_transaction_history b-account" );
    wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "wallet_account_transaction_history b-account" );
-   exec( clientb, "wallet_create_account c-account" );
+   exec( clientb, "wallet_account_create c-account" );
    exec( clientb, "wallet_transfer 10 XTS b-account c-account to-me" );
    exec( clientb, "wallet_account_transaction_history b-account" );
    exec( clientb, "wallet_account_transaction_history c-account" );
