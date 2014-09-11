@@ -858,8 +858,8 @@ class market_engine
 
       vector<market_transaction>  _market_transactions;
 
-      bts::db::level_map< market_index_key, order_record >::iterator       _bid_itr;
-      bts::db::level_map< market_index_key, order_record >::iterator       _ask_itr;
-      bts::db::level_map< market_index_key, order_record >::iterator       _short_itr;
-      bts::db::level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
+      bts::db::cached_level_map< market_index_key, order_record >::iterator       _bid_itr;
+      bts::db::cached_level_map< market_index_key, order_record >::iterator       _ask_itr;
+      bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
+      bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
 };

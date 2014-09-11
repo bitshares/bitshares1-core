@@ -164,7 +164,7 @@ namespace bts { namespace blockchain {
             bool                                                            _skip_signature_verification;
             share_type                                                      _relay_fee;
 
-            bts::db::level_map<uint32_t, std::vector<market_transaction> >  _market_transactions_db;
+            bts::db::cached_level_map<uint32_t, std::vector<market_transaction> >  _market_transactions_db;
             bts::db::level_map<slate_id_type, delegate_slate >              _slate_db;
             bts::db::level_map<uint32_t, std::vector<block_id_type> >       _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>               _fork_db;
@@ -208,11 +208,11 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< time_point_sec, slot_record >               _slot_record_db;
 
-            bts::db::level_map< market_index_key, order_record >            _ask_db;
-            bts::db::level_map< market_index_key, order_record >            _bid_db;
-            bts::db::level_map< market_index_key, order_record >            _short_db;
-            bts::db::level_map< market_index_key, collateral_record >       _collateral_db;
-            bts::db::level_map< feed_index, feed_record>                    _feed_db;
+            bts::db::cached_level_map< market_index_key, order_record >            _ask_db;
+            bts::db::cached_level_map< market_index_key, order_record >            _bid_db;
+            bts::db::cached_level_map< market_index_key, order_record >            _short_db;
+            bts::db::cached_level_map< market_index_key, collateral_record >       _collateral_db;
+            bts::db::cached_level_map< feed_index, feed_record>                    _feed_db;
 
             bts::db::level_map< std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::level_map< market_history_key, market_history_record>             _market_history_db;
@@ -2017,7 +2017,7 @@ namespace bts { namespace blockchain {
        {
          int32_t skip = atoi(first.c_str()) - 1;
 
-         while( skip-- > 0 && itr++.valid() );
+         while( skip-- > 0 && (++itr).valid() );
        }
        else
        {

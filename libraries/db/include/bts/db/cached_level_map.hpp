@@ -119,32 +119,54 @@ namespace bts { namespace db {
              Value value()const { return _it->second; }
 
              iterator& operator++()    { ++_it; return *this; }
-             iterator  operator++(int) { ++_it; return *this; }
+             iterator  operator++(int) {
+                auto backup = *this;
+                ++_it;
+                return backup;
+             }
 
-             iterator& operator--()    { --_it; return *this; }
-             iterator  operator--(int) { --_it; return *this; }
+             iterator& operator--()
+             {
+                if( _it == _begin )
+                   _it = _end;
+                else
+                   --_it;
+                return *this;
+             }
+             iterator  operator--(int) {
+                auto backup = *this;
+                operator--();
+                return backup;
+             }
 
            protected:
              friend class cached_level_map;
-             iterator( typename CacheType::const_iterator it, typename CacheType::const_iterator end )
-             :_it(it),_end(end)
+             iterator( typename CacheType::const_iterator it, typename CacheType::const_iterator begin, typename CacheType::const_iterator end )
+             :_it(it),_begin(begin),_end(end)
              { }
 
              typename CacheType::const_iterator _it;
+             typename CacheType::const_iterator _begin;
              typename CacheType::const_iterator _end;
         };
         iterator begin()const
         {
-           return iterator( _cache.begin(), _cache.end() );
+           return iterator( _cache.begin(), _cache.begin(), _cache.end() );
+        }
+        iterator last()
+        {
+           if( _cache.empty() )
+              return iterator( _cache.end(), _cache.begin(), _cache.end() );
+           return iterator( --_cache.end(), _cache.begin(), _cache.end() );
         }
 
         iterator find( const Key& key )
         {
-           return iterator( _cache.find(key), _cache.end() );
+           return iterator( _cache.find(key), _cache.begin(), _cache.end() );
         }
         iterator lower_bound( const Key& key )
         {
-           return iterator( _cache.lower_bound(key), _cache.end() );
+           return iterator( _cache.lower_bound(key), _cache.begin(), _cache.end() );
         }
 
       private:
