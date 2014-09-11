@@ -74,6 +74,19 @@ class BTSX():
             return amount / self.BTSX_PRECISION
         log("UNKNOWN ASSET TYPE, CANT CONVERT PRECISION: %s" % asset)
         exit(1)
+    def cancel_bids_less_than(self, base, quote, price):
+        response = self.request("wallet_market_order_list", [base, quote])
+        order_ids = []
+        for pair in response.json()["result"]:
+            order_id = pair[0]
+            item = pair[1]
+            if item["type"] == "bid_order":
+                if float(item["market_index"]["order_price"]["ratio"])* (self.BTSX_PRECISION / self.USD_PRECISION) < price:
+                    order_ids.append(order_id)
+                    print "Cancel Order: ", item, price
+        cancel_args = [[item] for item in order_ids]
+        response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
+        return response.json()
     def cancel_bids_out_of_range(self, base, quote, price, tolerance):
         response = self.request("wallet_market_order_list", [base, quote])
         order_ids = []

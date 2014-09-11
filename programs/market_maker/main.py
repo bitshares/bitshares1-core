@@ -73,7 +73,7 @@ def log(msg):
 
 
 SPREAD_PERCENT = 0.05
-TOLERANCE = 0.02 # should be less than SPREAD_PERCENT / 2
+TOLERANCE = 0.01 # should be less than SPREAD_PERCENT / 2
 
 MIN_USD_BALANCE = 10
 MIN_BTSX_BALANCE = 100
@@ -125,6 +125,7 @@ while True:
         new_usd_per_btsx = median * MEDIAN_EDGE_MULTIPLE
 
     client.cancel_asks_out_of_range("USD", SYMBOL, new_usd_per_btsx * (1+SPREAD_PERCENT), TOLERANCE)
+    client.cancel_bids_less_than("USD", SYMBOL, median)
     client.cancel_bids_out_of_range("USD", SYMBOL, new_usd_per_btsx, TOLERANCE)
 
     client.wait_for_block()
