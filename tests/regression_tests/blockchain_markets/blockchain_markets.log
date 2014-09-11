@@ -169,7 +169,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
 [redacted]          4         testaccount1        BID-5854ea64        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
-[redacted]          6         testaccount2        ASK-ea791a42        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          5         testaccount2        ASK-ea791a42        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
