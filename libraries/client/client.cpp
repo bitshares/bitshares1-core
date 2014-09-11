@@ -1721,6 +1721,7 @@ config load_config( const fc::path& datadir )
 #ifdef BTS_TEST_NETWORK
       info["test_network_version"] = std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif
+      info["bitshares_toolkit_version"]      = bts::utilities::git_revision_description;
       return info;
     }
 
