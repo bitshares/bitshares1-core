@@ -24,6 +24,9 @@ namespace bts { namespace db {
                _pending_flush.wait();
             else
                flush();
+            _cache.clear();
+            _dirty.clear();
+            _dirty_remove.clear();
             _db.close();
          }
 
