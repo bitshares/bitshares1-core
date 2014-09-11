@@ -30,9 +30,12 @@ void stcp_socket::do_key_exchange()
   _priv_key = fc::ecc::private_key::generate();
   fc::ecc::public_key pub = _priv_key.get_public_key();
   fc::ecc::public_key_data s = pub.serialize();
-  _sock.write( (char*)&s, sizeof(s) );
+  std::shared_ptr<char> serialized_key_buffer(new char[sizeof(fc::ecc::public_key_data)], [](char* p){ delete[] p; });
+  memcpy(serialized_key_buffer.get(), (char*)&s, sizeof(fc::ecc::public_key_data));
+  _sock.write( serialized_key_buffer, sizeof(fc::ecc::public_key_data) );
+  _sock.read( serialized_key_buffer, sizeof(fc::ecc::public_key_data) );
   fc::ecc::public_key_data rpub;
-  _sock.read( (char*)&rpub, sizeof(rpub) );
+  memcpy((char*)&rpub, serialized_key_buffer.get(), sizeof(fc::ecc::public_key_data));
 
   _shared_secret = _priv_key.get_shared_secret( rpub );
 //    ilog("shared secret ${s}", ("s", shared_secret) );
@@ -80,18 +83,20 @@ size_t stcp_socket::readsome( char* buffer, size_t len )
 
     len = std::min<size_t>(read_buffer_length, len);
 
-    size_t s = _sock.readsome( _read_buffer, len );
+    size_t s = _sock.readsome( _read_buffer, len, 0 );
     if( s % 16 ) 
     {
-      if (!_read_buffer_for_padding)
-        _read_buffer_for_padding.reset(new char[16], [](char* p){ delete[] p; });
-      _sock.read(_read_buffer_for_padding, 16 - (s%16));
-      memcpy(_read_buffer.get() + s, _read_buffer_for_padding.get(), 16 - (s%16));
+      _sock.read(_read_buffer, 16 - (s%16), s);
       s += 16-(s%16);
     }
     _recv_aes.decode( _read_buffer.get(), s, buffer );
     return s;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("len",len) ) }
+
+size_t stcp_socket::readsome( const std::shared_ptr<char>& buf, size_t len, size_t offset ) 
+{
+  return readsome(buf.get() + offset, len);
+}
 
 bool stcp_socket::eof()const
 {
@@ -129,6 +134,11 @@ size_t stcp_socket::writesome( const char* buffer, size_t len )
     _sock.write( _write_buffer, len );
     return len;
 } FC_RETHROW_EXCEPTIONS( warn, "", ("len",len) ) }
+
+size_t stcp_socket::writesome( const std::shared_ptr<const char>& buf, size_t len, size_t offset )
+{
+  return writesome(buf.get() + offset, len);
+}
 
 void stcp_socket::flush()
 {
