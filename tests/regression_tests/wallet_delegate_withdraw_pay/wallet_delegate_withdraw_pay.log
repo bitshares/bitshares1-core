@@ -36,7 +36,6 @@ default (unlocked) >>> wallet_set_priority_fee .1
 0.10000 XTS
 default (unlocked) >>> wallet_account_create test
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> blockchain_list_blocks

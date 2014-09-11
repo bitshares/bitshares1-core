@@ -3232,9 +3232,6 @@ namespace bts { namespace net { namespace detail {
       }
       catch (const fc::canceled_exception&)
       {
-        // I don't think this should happen, because the peer destructor is the thing that cancels the
-        // accept_or_connect_loop, and we're still assuming the peer_connection object is alive here
-        assert(false);
         throw;
       }
       catch ( const fc::exception& except )
