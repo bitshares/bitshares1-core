@@ -168,7 +168,7 @@ namespace bts { namespace blockchain {
             bts::db::level_map<slate_id_type, delegate_slate >              _slate_db;
             bts::db::level_map<uint32_t, std::vector<block_id_type> >       _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>               _fork_db;
-            bts::db::level_map<uint32_t, fc::variant >                      _property_db;
+            bts::db::cached_level_map<uint32_t, fc::variant >               _property_db;
 #if 0
             bts::db::level_map<proposal_id_type, proposal_record >          _proposal_db;
             bts::db::level_map<proposal_vote_id_type, proposal_vote >       _proposal_vote_db;
@@ -199,8 +199,8 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< asset_id_type, asset_record >               _asset_db;
             bts::db::level_map< balance_id_type, balance_record>            _balance_db;
-            bts::db::level_map< account_id_type, account_record>            _account_db;
-            bts::db::level_map< address, account_id_type >                  _address_to_account_db;
+            bts::db::cached_level_map< account_id_type, account_record>     _account_db;
+            bts::db::cached_level_map< address, account_id_type >           _address_to_account_db;
 
             bts::db::level_map< string, account_id_type >                   _account_index_db;
             bts::db::level_map< string, asset_id_type >                     _symbol_index_db;
@@ -2983,7 +2983,7 @@ namespace bts { namespace blockchain {
          ++feed_itr;
       }
       if( prices.size() < BTS_BLOCKCHAIN_MIN_FEEDS )
-         return oprice();
+          return oprice();
       if( prices.size() )
       {
         std::nth_element( prices.begin(), prices.begin() + prices.size()/2, prices.end() );
