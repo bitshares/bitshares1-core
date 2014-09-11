@@ -105,7 +105,6 @@ fc::path get_data_dir(const program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
 void  load_and_configure_chain_database(const fc::path& datadir,
                                         const program_options::variables_map& option_variables);
-fc::variant_object version_info();
 
 program_options::variables_map parse_option_variables(int argc, char** argv)
 {
@@ -1711,17 +1710,20 @@ config load_config( const fc::path& datadir )
 
     fc::variant_object version_info()
     {
-      fc::mutable_variant_object info;
-      info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
-      info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
-      info["fc_revision"]                    = fc::git_revision_sha;
-      info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
-      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
-      info["blockchain_description"]         = BTS_BLOCKCHAIN_DESCRIPTION;
+      string client_version( bts::utilities::git_revision_description );
 #ifdef BTS_TEST_NETWORK
-      info["test_network_version"] = std::to_string( BTS_TEST_NETWORK_VERSION );
+      client_version += "-testnet-" + std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif
-      info["bitshares_toolkit_version"]      = bts::utilities::git_revision_description;
+
+      fc::mutable_variant_object info;
+      info["blockchain_name"]                   = BTS_BLOCKCHAIN_NAME;
+      info["blockchain_description"]            = BTS_BLOCKCHAIN_DESCRIPTION;
+      info["client_version"]                    = client_version;
+      info["bitshares_toolkit_revision"]        = bts::utilities::git_revision_sha;
+      info["bitshares_toolkit_revision_age"]    = fc::get_approximate_relative_time_string( fc::time_point_sec( bts::utilities::git_revision_unix_timestamp ) );
+      info["fc_revision"]                       = fc::git_revision_sha;
+      info["fc_revision_age"]                   = fc::get_approximate_relative_time_string( fc::time_point_sec( fc::git_revision_unix_timestamp ) );
+      info["compile_date"]                      = "compiled on " __DATE__ " at " __TIME__;
       return info;
     }
 
@@ -3026,7 +3028,7 @@ config load_config( const fc::path& datadir )
       info["client_data_dir"]                                   = fc::absolute( _data_dir );
       //info["client_httpd_port"]                                 = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
       //info["client_rpc_port"]                                   = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
-      info["client_version"]                                    = BTS_CLIENT_VERSION;
+      info["client_version"]                                    = bts::client::version_info()["client_version"].as_string();
 
       /* Network */
       info["network_num_connections"]                           = network_get_connection_count();

@@ -1,33 +1,38 @@
-#include <bts/wallet/wallet.hpp>
-#include <bts/wallet/exceptions.hpp>
-#include <bts/wallet/wallet_db.hpp>
-#include <bts/wallet/config.hpp>
-#include <bts/wallet/url.hpp>
-#include <bts/utilities/key_conversion.hpp>
-#include <bts/blockchain/time.hpp>
-#include <bts/blockchain/exceptions.hpp>
-#include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
+#include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/time.hpp>
+
+#include <bts/bitcoin/armory.hpp>
+#include <bts/bitcoin/bitcoin.hpp>
+#include <bts/bitcoin/electrum.hpp>
+#include <bts/bitcoin/multibit.hpp>
+
+#include <bts/client/client.hpp>
 #include <bts/cli/pretty.hpp>
-#include <fc/thread/thread.hpp>
+#include <bts/keyhotee/import_keyhotee_id.hpp>
+
+#include <bts/utilities/git_revision.hpp>
+#include <bts/utilities/key_conversion.hpp>
+
+#include <bts/wallet/config.hpp>
+#include <bts/wallet/exceptions.hpp>
+#include <bts/wallet/url.hpp>
+#include <bts/wallet/wallet.hpp>
+#include <bts/wallet/wallet_db.hpp>
+
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
+#include <fc/io/json.hpp>
+#include <fc/thread/thread.hpp>
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
-#include <fc/io/json.hpp>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
-
-#include <algorithm>
-
-#include <bts/bitcoin/bitcoin.hpp>
-#include <bts/bitcoin/multibit.hpp>
-#include <bts/bitcoin/electrum.hpp>
-#include <bts/bitcoin/armory.hpp>
-#include <bts/keyhotee/import_keyhotee_id.hpp>
 
 namespace bts { namespace wallet {
 
@@ -3165,7 +3170,7 @@ namespace bts { namespace wallet {
       if( current_account->public_data.is_object() )
           public_data = current_account->public_data.get_object();
 
-      const auto version = string( BTS_CLIENT_VERSION );
+      const auto version = bts::client::version_info()["client_version"].as_string();
       public_data[ "version" ] = version;
 
       trx.update_account( current_account->id,
@@ -5021,7 +5026,7 @@ namespace bts { namespace wallet {
       auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
 
 #ifndef WIN32
-#warning [HARDFORK] Non-base asset fees are only supported after a hard fork.
+#warning [HARDFORK] Non-base asset fees are only supported after a hardfork
 #endif
       if( false && desired_fee_asset_id != 0 )
       {

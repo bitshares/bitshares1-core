@@ -27,6 +27,7 @@ namespace bts { namespace client {
 
     boost::program_options::variables_map parse_option_variables(int argc, char** argv);
     fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
+    fc::variant_object version_info();
 
     namespace detail { class client_impl; }
 
