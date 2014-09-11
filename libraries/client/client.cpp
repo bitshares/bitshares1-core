@@ -1721,6 +1721,7 @@ config load_config( const fc::path& datadir )
 #ifdef BTS_TEST_NETWORK
       info["test_network_version"] = std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif
+      info["bitshares_toolkit_version"]      = bts::utilities::git_revision_description;
       return info;
     }
 
@@ -2759,7 +2760,7 @@ config load_config( const fc::path& datadir )
       {
         ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
         // first, try and parse the endpoint as a numeric_ipv4_address:port that doesn't need DNS lookup
-        return fc::ip::endpoint::from_string(remote_endpoint.c_str());
+        return fc::ip::endpoint::from_string(remote_endpoint);
       }
       catch (...)
       {
