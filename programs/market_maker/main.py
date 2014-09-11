@@ -73,12 +73,12 @@ def log(msg):
 
 
 SPREAD_PERCENT = 0.05
-TOLERANCE = 0.02 # should be less than SPREAD_PERCENT / 2
+TOLERANCE = 0.01 # should be less than SPREAD_PERCENT / 2
 
-MIN_USD_BALANCE = 100
-MIN_BTSX_BALANCE = 1000
-MIN_USD_ORDER_SIZE = 100
-MIN_BTSX_ORDER_SIZE = 3000
+MIN_USD_BALANCE = 10
+MIN_BTSX_BALANCE = 100
+MIN_USD_ORDER_SIZE = 2
+MIN_BTSX_ORDER_SIZE = 100
 
 MEDIAN_EDGE_MULTIPLE = 1.001
 
@@ -98,8 +98,9 @@ if live:
 else:
     SYMBOL = "XTS"
 
-client = BTSX(user, password, port, "arbiteur")
+client = BTSX(user, password, port, "local-market-maker")
 
+median = client.get_median("USD")
 
 init_price = get_true_price()
 log("Init price:  %f" % init_price)
@@ -109,10 +110,8 @@ print init_usd_balance
 init_btsx_balance = client.get_balance(SYMBOL)
 print init_btsx_balance
 
-client.cancel_all_orders("USD", SYMBOL)
+#client.cancel_all_orders("USD", SYMBOL)
 print init_usd_balance / init_price
-print client.submit_bid(0.3*(init_usd_balance / init_price), SYMBOL, init_price * (1-SPREAD_PERCENT), "USD")
-print client.submit_ask(0.3*(init_btsx_balance), SYMBOL, init_price * (1+SPREAD_PERCENT), "USD")
 sec_since_update = 0
 last_price = init_price
 while True:
@@ -126,17 +125,18 @@ while True:
         new_usd_per_btsx = median * MEDIAN_EDGE_MULTIPLE
 
     client.cancel_asks_out_of_range("USD", SYMBOL, new_usd_per_btsx * (1+SPREAD_PERCENT), TOLERANCE)
+    client.cancel_bids_less_than("USD", SYMBOL, median)
     client.cancel_bids_out_of_range("USD", SYMBOL, new_usd_per_btsx, TOLERANCE)
 
     client.wait_for_block()
 
     usd_balance = client.get_balance("USD")
     btsx_balance = client.get_balance(SYMBOL)
-    available_usd_balance = usd_balance - MIN_USD_BALANCE
     available_btsx_balance = btsx_balance - MIN_BTSX_BALANCE
-    if available_usd_balance > MIN_USD_ORDER_SIZE:
-        client.submit_bid((available_usd_balance, SYMBOL, new_usd_per_btsx, "USD"))
+    available_usd_buy_quantity = (usd_balance / new_usd_per_btsx) - MIN_BTSX_BALANCE;
+
+    if available_usd_buy_quantity > MIN_BTSX_ORDER_SIZE:
+        client.submit_bid(available_usd_buy_quantity, SYMBOL, new_usd_per_btsx, "USD")
     if available_btsx_balance > MIN_BTSX_ORDER_SIZE:
-        client.submit_ask(available_btsx_balance*true_usd_per_btsx, SYMBOL, new_usd_per_btsx * (1+SPREAD_PERCENT), "USD")
-    last_price = new_price
+        client.submit_ask(available_btsx_balance, SYMBOL, new_usd_per_btsx * (1+SPREAD_PERCENT), "USD")
 

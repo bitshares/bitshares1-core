@@ -1,33 +1,38 @@
-#include <bts/wallet/wallet.hpp>
-#include <bts/wallet/exceptions.hpp>
-#include <bts/wallet/wallet_db.hpp>
-#include <bts/wallet/config.hpp>
-#include <bts/wallet/url.hpp>
-#include <bts/utilities/key_conversion.hpp>
-#include <bts/blockchain/time.hpp>
-#include <bts/blockchain/exceptions.hpp>
-#include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
+#include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/time.hpp>
+
+#include <bts/bitcoin/armory.hpp>
+#include <bts/bitcoin/bitcoin.hpp>
+#include <bts/bitcoin/electrum.hpp>
+#include <bts/bitcoin/multibit.hpp>
+
+#include <bts/client/client.hpp>
 #include <bts/cli/pretty.hpp>
-#include <fc/thread/thread.hpp>
+#include <bts/keyhotee/import_keyhotee_id.hpp>
+
+#include <bts/utilities/git_revision.hpp>
+#include <bts/utilities/key_conversion.hpp>
+
+#include <bts/wallet/config.hpp>
+#include <bts/wallet/exceptions.hpp>
+#include <bts/wallet/url.hpp>
+#include <bts/wallet/wallet.hpp>
+#include <bts/wallet/wallet_db.hpp>
+
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
+#include <fc/io/json.hpp>
+#include <fc/thread/thread.hpp>
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
-#include <fc/io/json.hpp>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
-
-#include <algorithm>
-
-#include <bts/bitcoin/bitcoin.hpp>
-#include <bts/bitcoin/multibit.hpp>
-#include <bts/bitcoin/electrum.hpp>
-#include <bts/bitcoin/armory.hpp>
-#include <bts/keyhotee/import_keyhotee_id.hpp>
 
 namespace bts { namespace wallet {
 
@@ -2704,8 +2709,8 @@ namespace bts { namespace wallet {
            if( a.is_confirmed == b.is_confirmed && a.block_num != b.block_num )
                return a.block_num < b.block_num;
 
-           if( a.received_time != b.received_time)
-               return a.received_time < b.received_time;
+           if( a.timestamp != b.timestamp)
+               return a.timestamp < b.timestamp;
 
            return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
        };
@@ -3165,7 +3170,7 @@ namespace bts { namespace wallet {
       if( current_account->public_data.is_object() )
           public_data = current_account->public_data.get_object();
 
-      const auto version = string( BTS_CLIENT_VERSION );
+      const auto version = bts::client::version_info()["client_version"].as_string();
       public_data[ "version" ] = version;
 
       trx.update_account( current_account->id,
@@ -5188,142 +5193,8 @@ namespace bts { namespace wallet {
       }
 
       pretty_trx.fee = trx_rec.fee;
-      pretty_trx.created_time = trx_rec.created_time;
-      pretty_trx.received_time = trx_rec.received_time;
-      pretty_trx.expiration_time = trx_rec.trx.expiration;
-
-      if( trx_rec.is_virtual ) return pretty_trx;
-
-      // TODO: What is this stuff?
-      auto trx = trx_rec.trx;
-      for( const auto& op : trx.operations )
-      {
-          switch( operation_type_enum( op.type ) )
-          {
-              case (withdraw_op_type):
-              {
-                  auto pretty_op = pretty_withdraw_op();
-                  auto withdraw_op = op.as<withdraw_operation>();
-                  /*
-                  auto name = std::string("");
-                  address owner;
-                  auto balance_rec = my->_blockchain->get_balance_record( withdraw_op.balance_id );
-                  if (balance_rec)
-                  {
-                      owner = balance_rec->owner();
-                      if (owner)
-                      {
-                          owallet_account_record acc_rec = my->_wallet_db.lookup_account( owner );
-                          if ( acc_rec )
-                              name = acc_rec->name;
-                      }
-                  }
-
-                  pretty_op.owner = std::make_pair(owner, name);
-                  pretty_op.amount = withdraw_op.amount;
-                  */
-                  pretty_trx.add_operation(pretty_op);
-                  break;
-              }
-              case (deposit_op_type):
-              {
-                  auto pretty_op = pretty_deposit_op();
-                  auto deposit_op = op.as<deposit_operation>();
-/*
-                  // TODO
-                  account_id_type vote = deposit_op.condition.delegate_id;
-                  account_id_type pos_delegate_id = (vote > 0) ? vote : account_id_type(-vote);
-                  int32_t delegate_account_num = my->_wallet_db.account_id_to_account[pos_delegate_id];
-                  blockchain::oaccount_record delegate_acct_rec = my->_blockchain->get_account_record( delegate_account_num );
-                  string delegate_name = delegate_acct_rec ? delegate_acct_rec->name : "";
-                  pretty_op.vote = std::make_pair(vote, delegate_name);
-
-                  if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
-                  {
-                      auto name = std::string("");
-                      auto condition = deposit_op.condition.as<withdraw_with_signature>();
-                      auto acc_rec = my->_wallet_db.lookup_account( condition.owner );
-                      if ( acc_rec )
-                          name = acc_rec->name;
-                      pretty_op.owner = std::make_pair( condition.owner, name );
-                  }
-                  else
-                  {
-                      FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
-                                      ("c", deposit_op.condition.type));
-                  }
-
-                  pretty_op.amount = deposit_op.amount;
-*/
-                  pretty_trx.add_operation(pretty_op);
-                  break;
-              }
-              case( register_account_op_type ):
-              {
-                  auto reserve_name_op = op.as<register_account_operation>();
-                  auto pretty_op = pretty_reserve_name_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( update_account_op_type ):
-              {
-                  auto update_name_op = op.as<update_account_operation>();
-                  auto pretty_op = pretty_update_name_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( create_asset_op_type ):
-              {
-                  //auto create_asset_op = op.as<create_asset_operation>();
-                  auto pretty_op = pretty_create_asset_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( update_asset_op_type ):
-              {
-                  //auto update_asset_op = op.as<update_asset_operation>();
-                  auto pretty_op = pretty_update_asset_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( issue_asset_op_type ):
-              {
-                  //auto issue_asset_op = op.as<issue_asset_operation>();
-                  auto pretty_op = pretty_issue_asset_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( submit_proposal_op_type ):
-              {
-                  //auto submit_proposal_op = op.as<submit_proposal_operation>();
-                  auto pretty_op = pretty_submit_proposal_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( vote_proposal_op_type ):
-              {
-                  //auto vote_proposal_op = op.as<vote_proposal_operation>();
-                  auto pretty_op = pretty_vote_proposal_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case withdraw_pay_op_type:
-              {
-                 pretty_trx.add_operation( op );
-                 break;
-              }
-              case bid_op_type:
-              {
-                 pretty_trx.add_operation( op );
-                 break;
-              }
-              default:
-              {
-                 pretty_trx.add_operation( op );
-                 break;
-              }
-          } // switch op_type
-      } // for op in trx
+      pretty_trx.timestamp = std::min<time_point_sec>( trx_rec.created_time, trx_rec.received_time );
+      pretty_trx.expiration_timestamp = trx_rec.trx.expiration;
 
       return pretty_trx;
    }
