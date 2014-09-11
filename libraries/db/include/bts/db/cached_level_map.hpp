@@ -27,14 +27,28 @@ namespace bts { namespace db {
             _db.close();
          }
 
+         bool get_flush_on_store()
+         {
+            return _flush_on_store;
+         }
+         void set_flush_on_store( bool should_flush )
+         {
+            if( should_flush )
+               flush();
+            _flush_on_store = should_flush;
+         }
+
          void flush()
          {
             // TODO... 
             // start batch
             for( auto item : _dirty )
                _db.store( item, _cache[item] );
-            // end batch 
+            for( auto item : _dirty_remove )
+               _db.remove( item );
+            // end batch
             _dirty.clear();
+            _dirty_remove.clear();
          }
 
         fc::optional<Value> fetch_optional( const Key& k )
@@ -57,12 +71,14 @@ namespace bts { namespace db {
              if( _flush_on_store )
              {
                  _dirty.insert(key);
+                 _dirty_remove.erase(key);
                  if( !_pending_flush.valid() || _pending_flush.ready() )
                     _pending_flush = fc::async( [this](){ flush(); }, "cached_level_map::flush" );
                 _db.store( key, value );
+             } else {
+                 _dirty.insert(key);
+                 _dirty_remove.erase(key);
              }
-             else
-                _dirty.insert(key);
         } FC_CAPTURE_AND_RETHROW( (key)(value) ) }
 
         bool last( Key& k )
@@ -84,8 +100,13 @@ namespace bts { namespace db {
         void remove( const Key& key )
         { try {
            _cache.erase(key);
-           _db.remove(key);
-           _dirty.erase(key);
+           if( _flush_on_store )
+           {
+              _db.remove(key);
+              _dirty.erase(key);
+           } else {
+              _dirty_remove.insert(key);
+           }
         } FC_CAPTURE_AND_RETHROW( (key) ) }
 
         class iterator
@@ -129,6 +150,7 @@ namespace bts { namespace db {
       private:
         CacheType                _cache;
         std::set<Key>            _dirty;
+        std::set<Key>            _dirty_remove;
         level_map<Key,Value>     _db;
         bool                     _flush_on_store;
         fc::future<void>         _pending_flush;
