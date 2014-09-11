@@ -2,7 +2,7 @@
 # Magic to get the genesis.json converted to a .cpp file and compiled into the bts_client library
 set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis.json")
 
-set(EMBED_GENESIS_STATE_AS_TEXT TRUE CACHE BOOL "If true, genesis.json is included in text form, causing slower startup times")
+set(EMBED_GENESIS_STATE_AS_TEXT FALSE CACHE BOOL "If true, genesis.json is included in text form, causing slower startup times")
 
 if (EMBED_GENESIS_STATE_AS_TEXT)
   set(genesis_prologue "${CMAKE_CURRENT_SOURCE_DIR}/genesis.prologue")
