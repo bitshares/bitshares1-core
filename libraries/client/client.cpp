@@ -39,7 +39,6 @@
 #include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
-#include <fc/thread/scoped_lock.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
@@ -57,7 +56,6 @@
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <boost/thread/mutex.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -512,11 +510,16 @@ config load_config( const fc::path& datadir )
             class user_appender : public fc::appender
             {
                public:
-                  user_appender( client_impl& c )
-                  :_client_impl(c){}
+              user_appender( client_impl& c ) :
+                _client_impl(c),
+                _thread(&fc::thread::current())
+              {}
 
                   virtual void log( const fc::log_message& m ) override
                   {
+                if (!_thread->is_current())
+                  return _thread->async([&](){ log(m); }, "user_appender::log").wait();
+
                      string format = m.get_format();
                      // lookup translation on format here
 
@@ -524,14 +527,11 @@ config load_config( const fc::path& datadir )
                      string message = format_string( format, m.get_data() );
 
 
-                     { // appenders can be called from any thread
-                        fc::scoped_lock<boost::mutex> lock(_history_lock);
                         _history.emplace_back( message );
                         if( _client_impl._cli )
                           _client_impl._cli->display_status_message( message );
                         else
                           std::cout << message << "\n";
-                     }
 
                      // call a callback to the client...
 
@@ -541,21 +541,23 @@ config load_config( const fc::path& datadir )
 
                   vector<string> get_history()const
                   {
-                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                if (!_thread->is_current())
+                  return _thread->async([&](){ return get_history(); }, "user_appender::get_history").wait();
                      return _history;
                   }
 
                   void clear_history()
                   {
-                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                if (!_thread->is_current())
+                  return _thread->async([&](){ return clear_history(); }, "user_appender::clear_history").wait();
                      _history.clear();
                   }
 
                private:
-                  mutable boost::mutex  _history_lock;
                   // TODO: consider a deque and enforce maximum length?
                   vector<string>        _history;
                   client_impl&          _client_impl;
+              fc::thread*           _thread;
             };
 
             client_impl(bts::client::client* self) :
