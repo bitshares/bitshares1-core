@@ -71,31 +71,31 @@ namespace bts { namespace blockchain {
 
          void validate_asset( const asset& a )const;
 
-         signed_transaction                          trx;
-         unordered_set<address>                      signed_keys;
+         signed_transaction                         trx;
+         unordered_set<address>                     signed_keys;
 
          // increases with funds are withdrawn, decreases when funds are deposited or fees paid
-         optional<fc::exception>                     validation_error;
+         optional<fc::exception>                    validation_error;
 
          /** every time a deposit is made this balance is increased
           *  every time a deposit is required this balance is decreased
           *
           *  This balance cannot be negative without an error.
           */
-         unordered_map<balance_id_type, asset>       required_deposits;
-         unordered_map<balance_id_type, asset>       provided_deposits;
+         unordered_map<balance_id_type, asset>      required_deposits;
+         unordered_map<balance_id_type, asset>      provided_deposits;
 
          // track deposits and withdraws by asset type
-         unordered_map<asset_id_type, asset>         deposits;
-         unordered_map<asset_id_type, asset>         withdraws;
-         unordered_map<asset_id_type, share_type>    yield;
+         unordered_map<asset_id_type, asset>        deposits;
+         unordered_map<asset_id_type, asset>        withdraws;
+         unordered_map<asset_id_type, share_type>   yield;
 
-         asset                                       required_fees;
+         asset                                      required_fees;
          /**
           *  The total fees paid by in alternative asset types (like BitUSD) calculated
           *  by using the lowest ask.
           */
-         asset                                       alt_fees_paid;
+         asset                                      alt_fees_paid;
 
          /**
           *  As operation withdraw funds, input balance grows...
@@ -106,7 +106,7 @@ namespace bts { namespace blockchain {
           *  @note - this value should always equal the sum of deposits-withdraws
           *  and is maintained for the purpose of seralization.
           */
-         unordered_map<asset_id_type, share_type>    balance;
+         unordered_map<asset_id_type, share_type>   balance;
 
          struct vote_state
          {
@@ -118,12 +118,12 @@ namespace bts { namespace blockchain {
           *  Tracks the votes for or against each delegate based upon
           *  the deposits and withdraws to addresses.
           */
-         unordered_map<account_id_type, vote_state>     net_delegate_votes;
+         unordered_map<account_id_type, vote_state> net_delegate_votes;
 
       // not serialized
-         chain_interface_ptr                              _current_state;
-         digest_type                                      _chain_id;
-         bool                                             _skip_signature_check;
+         chain_interface_ptr                        _current_state;
+         digest_type                                _chain_id;
+         bool                                       _skip_signature_check;
    };
 
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
@@ -132,8 +132,16 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::transaction_evaluation_state::vote_state, (votes_for) )
 FC_REFLECT( bts::blockchain::transaction_evaluation_state,
-           (trx)(signed_keys)
+           (trx)
+           (signed_keys)
            (validation_error)
            (required_deposits)
            (provided_deposits)
-           (deposits)(withdraws)(yield)(balance)(net_delegate_votes)(balance) )
+           (deposits)
+           (withdraws)
+           (yield)
+           (required_fees)
+           (alt_fees_paid)
+           (balance)
+           (net_delegate_votes)
+          )

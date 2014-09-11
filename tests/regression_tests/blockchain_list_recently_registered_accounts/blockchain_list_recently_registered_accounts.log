@@ -1,20 +1,16 @@
 default (unlocked) >>> wallet_account_create testaccount1
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount1:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_create testaccount2
-
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount2:XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b
 default (unlocked) >>> wallet_account_create testaccount3
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount3:XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM
 default (unlocked) >>> wallet_account_create testaccount4
-
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount4:XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg

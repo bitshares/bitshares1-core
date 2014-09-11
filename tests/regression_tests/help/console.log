@@ -7,7 +7,7 @@ Parameters:
   command_name (method_name, optional, defaults to ""): the name of the method to get detailed help, or omit this for a list of commands
 
 Returns:
-  std::string
+  string
 
 aliases: h
 (wallet closed) >>> quit

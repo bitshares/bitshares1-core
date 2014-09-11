@@ -1,6 +1,5 @@
 default (unlocked) >>> wallet_account_create testaccount2
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount2:XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v
 default (unlocked) >>> wallet_transfer 10000 XTS delegate0 testaccount2
@@ -72,7 +71,7 @@ aliases: ask
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
 RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   testaccount2        ASK-MQcgyL7S        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          PENDING   testaccount2        ASK-f3482357        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -100,7 +99,7 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
 [redacted]          1         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
 [redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
-[redacted]          6         testaccount2        ASK-MQcgyL7S        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          6         testaccount2        ASK-f3482357        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -119,11 +118,11 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
 [redacted]          1         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
 [redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
-[redacted]          6         testaccount2        ASK-MQcgyL7S        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          6         testaccount2        ASK-f3482357        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 XTSMQcgyL7SWdbRyDJgafrj7QhfQGWYHK2dR
+ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 f34823579230fc69cd3e2e08848d2e9c15017324
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -131,5 +130,5 @@ testaccount2                    9,899.50000 XTS
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 XTSMQcgyL7SWdbRyDJgafrj7QhfQGWYHK2dR
+ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 f34823579230fc69cd3e2e08848d2e9c15017324
 default (unlocked) >>> quit
