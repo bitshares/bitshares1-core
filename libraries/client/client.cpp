@@ -1900,6 +1900,10 @@ config load_config( const fc::path& datadir )
             const string& public_message,
             bool anonymous )
     {
+#include <bts/blockchain/fork_blocks.hpp>
+        if( _chain_db->get_pending_state()->get_head_block_num() < BTSX_BURN_FORK_1_BLOCK_NUM )
+            FC_ASSERT( !"Burn operation is not enabled yet!" );
+
         const auto record = _wallet->burn_asset( amount_to_transfer, asset_symbol,
                                                      from_account_name, for_or_against, to_account_name,
                                                      public_message, anonymous );
