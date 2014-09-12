@@ -1,5 +1,5 @@
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -19,15 +19,15 @@ Parameters:
 Returns:
   transaction_record
 default (unlocked) >>> wallet_publish_price_feed delegate0 2 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_publish_price_feed delegate1 .2 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.2 XMO / XTS                 0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_publish_price_feed delegate2 1 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate2           delegate2           0.00000 XTS             publish price 1. XMO / XTS                  0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_publish_price_feed delegate3 -100 XMO
@@ -38,7 +38,7 @@ Invalid price!
 
 
 default (unlocked) >>> wallet_publish_price_feed delegate4 2.5 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate4           delegate4           0.00000 XTS             publish price 2.5 XMO / XTS                 0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_publish_price_feed delegate5 -.5 XMO
@@ -49,11 +49,11 @@ Invalid price!
 
 
 default (unlocked) >>> wallet_publish_price_feed delegate6 .01 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate6           delegate6           0.00000 XTS             publish price 0.01 XMO / XTS                0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_publish_price_feed delegate7 2 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate7           delegate7           0.00000 XTS             publish price 2. XMO / XTS                  0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -119,11 +119,11 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
   }
 ]
 default (unlocked) >>> wallet_publish_price_feed delegate0 99999 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             publish price 99998.999999999995264 XMO ... 0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_publish_price_feed delegate1 .00002 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate1           delegate1           0.00000 XTS             publish price 0.00002 XMO / XTS             0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
@@ -160,7 +160,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
-    "price": 2.0000000000000002e-05,
+    "price": 2.0000000000000002e-005,
     "last_update": "20140620T144050",
     "asset_symbol": "XMO",
     "median_price": null
