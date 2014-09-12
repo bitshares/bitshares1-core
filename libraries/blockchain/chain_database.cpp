@@ -3066,7 +3066,7 @@ namespace bts { namespace blockchain {
       }
 
       itr = my->_burn_db.lower_bound( {-opt_account_record->id} );
-      while( itr.valid() && itr.key().account_id == opt_account_record->id )
+      while( itr.valid() && abs(itr.key().account_id) == opt_account_record->id )
       {
          results.push_back( burn_record( itr.key(), itr.value() ) );
          ++itr;
