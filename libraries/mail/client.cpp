@@ -84,10 +84,13 @@ public:
     chain_database_ptr _chain;
 
     typedef std::queue<message_id_type> job_queue;
+
     job_queue _proof_of_work_jobs;
     fc::future<void> _proof_of_work_worker;
+
     job_queue _transmit_message_jobs;
     fc::future<void> _transmit_message_worker;
+    fc::thread _proof_of_work_thread;
 
     bts::db::cached_level_map<message_id_type, mail_record> _processing_db;
     bts::db::level_map<message_id_type, mail_archive_record> _archive;
@@ -97,7 +100,8 @@ public:
     client_impl(client* self, wallet_ptr wallet, chain_database_ptr chain)
         : self(self),
           _wallet(wallet),
-          _chain(chain)
+          _chain(chain),
+          _proof_of_work_thread("Mail client proof-of-work thread")
     {}
     ~client_impl(){
         _proof_of_work_worker.cancel_and_wait("Mail client destroyed");
@@ -215,31 +219,48 @@ public:
 
     void schedule_proof_of_work(const message_id_type& message_id) {
         schedule_generic_task<message_id_type>(_proof_of_work_jobs, _proof_of_work_worker, message_id, [this](message_id_type message_id){
-            mail_record email = _processing_db.fetch(message_id);
+            //Use a unique_ptr to ensure deletion, but a raw pointer to copy into the worker thread
+            std::unique_ptr<mail_record> email_uptr(new mail_record(_processing_db.fetch(message_id)));
+            mail_record* email = email_uptr.get();
 
-            if (email.proof_of_work_target != ripemd160()) {
-                email.status = client::proof_of_work;
-                email.content.timestamp = fc::time_point::now();
-                _processing_db.store(email.id, email);
+            if (email->proof_of_work_target != ripemd160()) {
+                email->status = client::proof_of_work;
+                _processing_db.store(email->id, *email);
             } else {
                 //Don't have a proof-of-work target; cannot continue
-                email.status = client::failed;
-                email.failure_reason = "No proof of work target. Cannot do proof of work.";
-                _processing_db.store(email.id, email);
+                email->status = client::failed;
+                email->failure_reason = "No proof of work target. Cannot do proof of work.";
+                _processing_db.store(email->id, *email);
                 return;
             }
 
-            uint8_t yielder = 0;
-            while (email.content.id() > email.proof_of_work_target) {
-                if(++yielder == 0)
-                    fc::yield();
-                ++email.content.nonce;
+            std::unique_ptr<fc::future<void>> slave_handle_uptr(new fc::future<void>());
+            fc::future<void>* slave_handle = slave_handle_uptr.get();
+            while (email->content.id() > email->proof_of_work_target) {
+                email->content.timestamp = fc::time_point::now();
+                _processing_db.store(email->id, *email);
+
+                try {
+                    *slave_handle = _proof_of_work_thread.async([email, slave_handle] {
+                        fc::time_point start_time = fc::time_point::now();
+                        while (!slave_handle->canceled() &&
+                               fc::time_point::now() - start_time < fc::seconds(1) &&
+                               email->content.id() > email->proof_of_work_target)
+                            ++email->content.nonce;
+                    }, "Mail client proof-of-work worker");
+
+                    slave_handle->wait();
+                } catch (fc::canceled_exception&) {
+                    slave_handle->cancel();
+                    _proof_of_work_thread.quit();
+                    throw;
+                }
             }
 
-            _processing_db.store(email.id, email);
-            schedule_transmit_message(email.id);
+            _processing_db.store(email->id, *email);
+            schedule_transmit_message(email->id);
             fc::yield();
-        }, "Mail client proof-of-work");
+        }, "Mail client proof-of-work supervisor");
     }
 
     void schedule_transmit_message(message_id_type message_id) {

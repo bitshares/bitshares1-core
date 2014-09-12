@@ -254,9 +254,6 @@ namespace bts { namespace blockchain {
       }
       // update delegate vote on withdrawn account..
 
-      current_balance_record->balance -= this->amount;
-      current_balance_record->last_update = eval_state._current_state->now();
-
       if( current_balance_record->condition.asset_id == 0 && current_balance_record->condition.delegate_slate_id )
          eval_state.adjust_vote( current_balance_record->condition.delegate_slate_id, -this->amount );
 
@@ -278,8 +275,41 @@ namespace bts { namespace blockchain {
          }
       }
 
+      current_balance_record->balance -= this->amount;
+      current_balance_record->last_update = eval_state._current_state->now();
+
       eval_state._current_state->store_balance_record( *current_balance_record );
       eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+   void burn_operation::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+      if( message.size() ) FC_ASSERT( amount.asset_id == 0 );
+      if( amount.asset_id == 0 )
+      {
+         // minimum burn is 1 XTS
+         FC_ASSERT( amount.amount >= BTS_BLOCKCHAIN_MIN_BURN_FEE, "",
+                    ("amount",amount)
+                    ("BTS_BLOCKCHAIN_MIN_BURN_FEE",BTS_BLOCKCHAIN_MIN_BURN_FEE) );
+      }
+
+      auto asset_rec = eval_state._current_state->get_asset_record( amount.asset_id );
+      FC_ASSERT( asset_rec.valid() );
+
+      if( !asset_rec->is_market_issued() )
+      {
+         asset_rec->current_share_supply -= this->amount.amount;
+      }
+
+      eval_state._current_state->store_asset_record( *asset_rec );
+
+      eval_state.sub_balance( address(), this->amount );
+      if( account_id != 0 ) // you can offer burnt offerings to God if you like... otherwise it must be an account
+      {
+          auto account_rec = eval_state._current_state->get_account_record( abs(this->account_id) );
+          FC_ASSERT( account_rec.valid() );
+      }
+      eval_state._current_state->store_burn_record( burn_record( burn_record_key( {account_id, eval_state.trx.id()} ), burn_record_value( {amount,message,message_signature} ) ) );
+   } FC_CAPTURE_AND_RETHROW( (eval_state) ) }
 
 } } // bts::blockchain

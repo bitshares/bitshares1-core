@@ -510,6 +510,53 @@
         "prerequisites" : ["wallet_open"]
       },
       {
+        "method_name": "wallet_burn",
+        "description": "Burns given amount to the given account.  This will allow you to post message and +/- sentiment on someones account as a form of reputation.",
+        "return_type": "transaction_record",
+        "parameters" :
+          [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "for_or_against",
+              "type" : "string",
+              "description" : "the value 'for' or 'against'"
+            },
+            {
+              "name" : "to_account_name",
+              "type" : "receive_account_name",
+              "description" : "the account to which the burn should be credited (for or against) and on which the public message will appear"
+            },
+            {
+              "name" : "public_message",
+              "type" : "string",
+              "description" : "a public message to post",
+              "default_value" : ""
+            },
+            {
+              "name" : "anonymous",
+              "type" : "bool",
+              "description" : "true if anonymous, else signed by from_account_name",
+              "default_value" : "false"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["burn"]
+      },
+      {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
         "return_type": "transaction_record",

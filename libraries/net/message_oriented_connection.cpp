@@ -123,6 +123,10 @@ namespace bts { namespace net {
       static_assert(BUFFER_SIZE >= sizeof(message_header), "insufficient buffer");
 
       _connected_time = fc::time_point::now();
+
+      fc::oexception exception_to_rethrow;
+      bool call_on_connection_closed = false;
+
       try
       {
         message m;
@@ -166,33 +170,37 @@ namespace bts { namespace net {
       catch ( const fc::canceled_exception& e )
       {
         wlog( "caught a canceled_exception in read_loop.  this should mean we're in the process of deleting this object already, so there's no need to notify the delegate: ${e}", ("e", e.to_detail_string() ) );
-        //_delegate->on_connection_closed(_self);
         throw;
       }
       catch ( const fc::eof_exception& e )
       {
         wlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
-        _delegate->on_connection_closed(_self);
+        call_on_connection_closed = true;
       }
-      catch ( fc::exception& e )
+      catch ( const fc::exception& e )
       {
         elog( "disconnected ${er}", ("er", e.to_detail_string() ) );
-        _delegate->on_connection_closed(_self);
-        FC_RETHROW_EXCEPTION(e, warn, "disconnected" );
+        call_on_connection_closed = true;
+        exception_to_rethrow = fc::unhandled_exception(FC_LOG_MESSAGE(warn, "disconnected: ${e}", ("e", e.to_detail_string())));
       }
       catch ( const std::exception& e )
       {
         elog( "disconnected ${er}", ("er", e.what() ) );
-        _delegate->on_connection_closed(_self);
-
-        FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected ${e}", ("e", e.what() ) );
+        call_on_connection_closed = true;
+        exception_to_rethrow = fc::unhandled_exception(FC_LOG_MESSAGE(warn, "disconnected: ${e}", ("e", e.what())));
       }
       catch ( ... )
       {
-         elog( "unexpected exception" );
-        _delegate->on_connection_closed(_self);
-        FC_THROW_EXCEPTION( fc::unhandled_exception, "disconnected: {e}", ("e", fc::except_str() ) );
+        elog( "unexpected exception" );
+        call_on_connection_closed = true;
+        exception_to_rethrow = fc::unhandled_exception(FC_LOG_MESSAGE(warn, "disconnected: ${e}", ("e", fc::except_str())));
       }
+
+      if (call_on_connection_closed)
+        _delegate->on_connection_closed(_self);
+
+      if (exception_to_rethrow)
+        throw *exception_to_rethrow;
     }
 
     void message_oriented_connection_impl::send_message(const message& message_to_send)
