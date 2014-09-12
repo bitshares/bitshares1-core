@@ -1,7 +1,7 @@
 default (unlocked) >>> wallet_set_priority_fee 100000
 100,000.00000 XTS
 default (unlocked) >>> wallet_asset_create XBC ASSET1 delegate0 "CREATING ASSET1" null 500 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XBC (ASSET1)                         100,000.00000 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -9,7 +9,7 @@ OK
 default (unlocked) >>> debug_wait 2 
 OK
 default (unlocked) >>> wallet_asset_create XCD ASSET2 delegate0 "CREATING ASSET2" null 500 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XCD (ASSET2)                         199,998.84160 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -17,7 +17,7 @@ OK
 default (unlocked) >>> debug_wait 2 
 OK
 default (unlocked) >>> wallet_asset_create XDE ASSET3  delegate0 "CREATING ASSET3" null 500 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XDE (ASSET3)                         399,997.73440 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -25,7 +25,7 @@ OK
 default (unlocked) >>> debug_wait 2 
 OK
 default (unlocked) >>> wallet_asset_create XEF ASSET4 delegate0 "CREATING ASSET4" null 500 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XEF (ASSET4)                         799,993.10080 XTS   [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -99,7 +99,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 45    delegate44                      0.00000004 %   1        0        100.00 %      100 %    0.82671 XTS         3                       
 
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate44 test .1 "withdraw"
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate44          test                0.10000 XTS             withdraw pay                                0.10000 XTS         [redacted]
 default (unlocked) >>> balance delegate44

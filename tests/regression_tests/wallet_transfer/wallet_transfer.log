@@ -26,7 +26,7 @@ Returns:
 
 aliases: transfer
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
