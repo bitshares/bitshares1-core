@@ -14,6 +14,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/thread/thread.hpp>
+#include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/variant.hpp>
 
 #include <boost/algorithm/string/join.hpp>
@@ -90,15 +91,14 @@ namespace bts { namespace cli {
                   }
                   else if (!_quit)
                     process_commands(&std::cin);
-                  if( _rpc_server )
-                     _rpc_server->shutdown_rpc_server();
                 }
                 catch ( const fc::exception& e)
                 {
                     *_out << "\nshutting down\n";
                     elog( "${e}", ("e",e.to_detail_string() ) );
-                    _rpc_server->shutdown_rpc_server();
                 }
+                if( _rpc_server )
+                    _rpc_server->shutdown_rpc_server();
             }
 
             string get_prompt()const
@@ -300,6 +300,7 @@ namespace bts { namespace cli {
               }
               catch( const fc::key_not_found_exception& )
               {
+                ASSERT_TASK_NOT_PREEMPTED();
                 return _self->parse_unrecognized_interactive_command(argument_stream, command);
               }
             }
@@ -310,11 +311,23 @@ namespace bts { namespace cli {
               fc::variants arguments;
               for( unsigned i = 0; i < method_data.parameters.size(); ++i )
               {
+                bool parse_argument_threw_eof = false;
                 try
                 {
                   arguments.push_back(_self->parse_argument_of_known_type(argument_stream, method_data, i));
                 }
                 catch( const fc::eof_exception&)
+                {
+                  parse_argument_threw_eof = true;
+                  // handle below
+                } //end catch eof_exception
+                catch( fc::parse_error_exception& e )
+                {
+                  FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
+                                        ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
+                }
+
+                if (parse_argument_threw_eof)
                 {
                   if (method_data.parameters[i].classification != bts::api::required_positional)
                   {
@@ -344,8 +357,8 @@ namespace bts { namespace cli {
                       }
                       catch( const fc::eof_exception& e )
                       {
-                          FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
-                                   ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
+                        FC_THROW("Missing argument ${argument_number} of command \"${command}\"",
+                                  ("argument_number", i + 1)("command", method_data.name)("cause",e.to_detail_string()) );
                       }
                       catch( fc::parse_error_exception& e )
                       {
@@ -353,13 +366,9 @@ namespace bts { namespace cli {
                                               ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
                       }
                     } //else not a passphrase
-                 } //end prompting for missing required argument
-                } //end catch eof_exception
-                catch( fc::parse_error_exception& e )
-                {
-                  FC_RETHROW_EXCEPTION(e, error, "Error parsing argument ${argument_number} of command \"${command}\": ${detail}",
-                                        ("argument_number", i + 1)("command", method_data.name)("detail", e.get_log()));
-                }
+                  } //end prompting for missing required argument
+                } // end if (parse_argument_threw_eof)
+
 
                 if (method_data.parameters[i].classification == bts::api::optional_named)
                   break;
@@ -520,18 +529,27 @@ namespace bts { namespace cli {
                 // try to execute the method.  If the method needs the wallet to be
                 // unlocked, it will throw an exception, and we'll attempt to
                 // unlock it and then retry the command
+                bool wallet_open_needed = false;
+                bool wallet_lock_needed = false;
                 try
                 {
-                    return _rpc_server->direct_invoke_method(command, arguments);
+                  return _rpc_server->direct_invoke_method(command, arguments);
                 }
                 catch( const rpc_wallet_open_needed_exception& )
                 {
-                    interactive_open_wallet();
+                  wallet_open_needed = true;
                 }
                 catch( const rpc_wallet_unlock_needed_exception& )
                 {
-                    fc::istream_ptr unlock_time_arguments = std::make_shared<fc::stringstream>("300"); // default to five minute timeout
-                    parse_and_execute_interactive_command( "wallet_unlock", unlock_time_arguments );
+                  wallet_lock_needed = true;
+                }
+
+                if (wallet_open_needed)
+                  interactive_open_wallet();
+                else if (wallet_lock_needed)
+                {
+                  fc::istream_ptr unlock_time_arguments = std::make_shared<fc::stringstream>("300"); // default to five minute timeout
+                  parse_and_execute_interactive_command( "wallet_unlock", unlock_time_arguments );
                 }
               }
             } FC_RETHROW_EXCEPTIONS( warn, "", ("command",command) ) }
