@@ -92,8 +92,8 @@ if( WIN32 )
                   coroutine
                   locale )
 
-   message("boost date_time ${Boost_DATE_TIME_LIBRARY}")
-   message("boost libraries ${Boost_LIBRARIES}")
+   # message(STATUS "boost date_time ${Boost_DATE_TIME_LIBRARY}")
+   # message(STATUS "boost libraries ${Boost_LIBRARIES}")
 endif (WIN32)
 
 add_executable( deterministic_signature_test deterministic_signature_test.cpp)

@@ -2665,6 +2665,8 @@ namespace bts { namespace net { namespace detail {
       fc::time_point message_receive_time = fc::time_point::now();
 
       dlog( "received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint() ) );
+      std::list<peer_connection_ptr> peers_to_disconnect;
+      fc::oexception bad_block_exception;
 
       try
       {
@@ -2713,16 +2715,16 @@ namespace bts { namespace net { namespace detail {
       {
         // client rejected the block.  Disconnect the client and any other clients that offered us this block
         wlog( "client rejected block sent by peer" );
-        std::list<peer_connection_ptr> peers_to_disconnect;
+        bad_block_exception = e;
         for( const peer_connection_ptr& peer : _active_connections )
           if( !peer->ids_of_items_to_get.empty() &&
               peer->ids_of_items_to_get.front() == block_message_to_process.block_id )
             peers_to_disconnect.push_back( peer );
-        for( const peer_connection_ptr& peer : peers_to_disconnect )
-        {
-          wlog( "disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint() ) );
-          disconnect_from_peer( peer.get(), "You offered me a block that I have deemed to be invalid", true, e );
-        }
+      }
+      for( const peer_connection_ptr& peer : peers_to_disconnect )
+      {
+        wlog( "disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint() ) );
+        disconnect_from_peer( peer.get(), "You offered me a block that I have deemed to be invalid", true, *bad_block_exception );
       }
     }
     void node_impl::process_block_message( peer_connection* originating_peer,
@@ -3160,6 +3162,7 @@ namespace bts { namespace net { namespace detail {
       while ( !_accept_loop_complete.canceled() )
       {
         peer_connection_ptr new_peer(peer_connection::make_shared(this));
+
         try
         {
           _tcp_server.accept( new_peer->get_socket() );
@@ -3221,6 +3224,8 @@ namespace bts { namespace net { namespace detail {
       updated_peer_record.last_connection_attempt_time = fc::time_point::now();;
       _potential_peer_db.update_entry( updated_peer_record );
 
+      fc::oexception connect_failed_exception;
+
       try
       {
         new_peer->connect_to( remote_endpoint, _actual_listening_endpoint );  // blocks until the connection is established and secure connection is negotiated
@@ -3234,11 +3239,12 @@ namespace bts { namespace net { namespace detail {
         updated_peer_record.last_seen_time = fc::time_point::now();
         _potential_peer_db.update_entry( updated_peer_record );
       }
-      catch (const fc::canceled_exception&)
-      {
-        throw;
-      }
       catch ( const fc::exception& except )
+      {
+        connect_failed_exception = except;
+      }
+
+      if (connect_failed_exception)
       {
         // connection failed.  record that in our database
         updated_peer_record.last_connection_disposition = last_connection_failed;
@@ -3246,7 +3252,7 @@ namespace bts { namespace net { namespace detail {
         if (new_peer->connection_closed_error)
           updated_peer_record.last_error = *new_peer->connection_closed_error;
         else
-          updated_peer_record.last_error = except;
+          updated_peer_record.last_error = *connect_failed_exception;
         _potential_peer_db.update_entry( updated_peer_record );
 
         _handshaking_connections.erase(new_peer);
@@ -3260,18 +3266,20 @@ namespace bts { namespace net { namespace detail {
         trigger_p2p_network_connect_loop();
         schedule_peer_for_deletion(new_peer);
 
-        throw except;
+        throw *connect_failed_exception;
       }
+      else
+      {
+        fc::ip::endpoint local_endpoint = new_peer->get_local_endpoint();
+        new_peer->inbound_address = local_endpoint.get_address();
+        new_peer->inbound_port = _node_configuration.accept_incoming_connections ? _actual_listening_endpoint.port() : 0;
+        new_peer->outbound_port = local_endpoint.port();
 
-      fc::ip::endpoint local_endpoint = new_peer->get_local_endpoint();
-      new_peer->inbound_address = local_endpoint.get_address();
-      new_peer->inbound_port = _node_configuration.accept_incoming_connections ? _actual_listening_endpoint.port() : 0;
-      new_peer->outbound_port = local_endpoint.port();
-
-      new_peer->our_state = peer_connection::our_connection_state::just_connected;
-      new_peer->their_state = peer_connection::their_connection_state::just_connected;
-      send_hello_message( new_peer );
-      dlog( "Sent \"hello\" to peer ${peer}", ("peer", new_peer->get_remote_endpoint() ) );
+        new_peer->our_state = peer_connection::our_connection_state::just_connected;
+        new_peer->their_state = peer_connection::their_connection_state::just_connected;
+        send_hello_message( new_peer );
+        dlog( "Sent \"hello\" to peer ${peer}", ("peer", new_peer->get_remote_endpoint() ) );
+      }
     }
 
     // methods implementing node's public interface
@@ -3378,6 +3386,8 @@ namespace bts { namespace net { namespace detail {
         bool first = true;
         for( ;; )
         {
+          bool listen_failed = false;
+
           try
           {
             fc::tcp_server temporary_server;
@@ -3387,7 +3397,12 @@ namespace bts { namespace net { namespace detail {
               temporary_server.listen( listen_endpoint.port() );
             break;
           }
-          catch ( fc::exception& )
+          catch ( const fc::exception&)
+          {
+            listen_failed = true;
+          }
+
+          if (listen_failed)
           {
             if( _node_configuration.wait_if_endpoint_is_busy )
             {
@@ -3415,9 +3430,9 @@ namespace bts { namespace net { namespace detail {
                    ( "endpoint", listen_endpoint ) );
               listen_endpoint.set_port( 0 );
             }
-          }
-        }
-      }
+          } // if (listen_failed)
+        } // for(;;)
+      } // if (listen_endpoint.port() != 0)
       else // port is 0
       {
         // if they requested a random port, we'll just assume it's available

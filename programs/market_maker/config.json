@@ -1,15 +1,14 @@
 {
     "bots": [
         {
-            "block_shorts": true, 
-            "external_price_tolerance": 0.01, 
             "spread_percent": 0.05, 
+            "min_order_size": 100, 
+            "bot_type": "market_maker", 
+            "external_price_tolerance": 0.01, 
             "asset_pair": [
                 "USD", 
                 "BTSX"
             ], 
-            "min_order_size": 100, 
-            "bot_type": "market_maker", 
             "account_name": "test-trader", 
             "min_balance": 100
         }
@@ -17,6 +16,12 @@
     "client": {
         "rpc_password": "a", 
         "rpc_user": "a", 
-        "rpc_port": "50169"
-    }
+        "rpc_port": "52894"
+    }, 
+    "feeds": [
+        {
+            "type": "usd_per_btsx", 
+            "name": "bter_usd_btsx_average"
+        }
+    ]
 }
