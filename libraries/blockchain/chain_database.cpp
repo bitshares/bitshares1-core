@@ -1042,11 +1042,12 @@ namespace bts { namespace blockchain {
              fc::create_directories( data_dir / "index");
              my->open_database( data_dir );
 
+             // TODO: This was causing sync failures after re-indexing
              //For the duration of reindexing, we allow certain databases to postpone flushing until we finish.
-             my->_account_db.set_flush_on_store( false );
-             my->_address_to_account_db.set_flush_on_store( false );
-             my->_account_index_db.set_flush_on_store( false );
-             my->_delegate_vote_index_db.set_flush_on_store( false );
+             //my->_account_db.set_flush_on_store( false );
+             //my->_address_to_account_db.set_flush_on_store( false );
+             //my->_account_index_db.set_flush_on_store( false );
+             //my->_delegate_vote_index_db.set_flush_on_store( false );
 
              my->initialize_genesis( genesis_file );
 
@@ -1100,11 +1101,12 @@ namespace bts { namespace blockchain {
                  }
              }
 
+             // TODO: See above
              //Re-enable flushing on all databases we disabled it on above
-             my->_account_db.set_flush_on_store( true );
-             my->_address_to_account_db.set_flush_on_store( true );
-             my->_account_index_db.set_flush_on_store( true );
-             my->_delegate_vote_index_db.set_flush_on_store( true );
+             //my->_account_db.set_flush_on_store( true );
+             //my->_address_to_account_db.set_flush_on_store( true );
+             //my->_account_index_db.set_flush_on_store( true );
+             //my->_delegate_vote_index_db.set_flush_on_store( true );
 
              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in "
                        << (blockchain::now() - start_time).to_seconds() << " seconds.                     \n" << std::flush;
@@ -1807,7 +1809,8 @@ namespace bts { namespace blockchain {
       else
       {
         // this is the usual case
-        std::cout << "Initializing genesis state from built-in genesis file\n";
+        if( !chain_id_only )
+            std::cout << "Initializing genesis state from built-in genesis file\n";
 #ifdef EMBED_GENESIS_STATE_AS_TEXT
         std::string genesis_file_contents = get_builtin_genesis_json_as_string();
         config = fc::json::from_string(genesis_file_contents).as<genesis_block_config>();
@@ -1820,7 +1823,7 @@ namespace bts { namespace blockchain {
 #endif
       }
 
-      if( chain_id_only ) 
+      if( chain_id_only )
         return chain_id;
       _chain_id = chain_id;
       self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
