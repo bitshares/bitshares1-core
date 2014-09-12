@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 
 class BTC38Feeds():
     def __init__(self, feeds={}):
@@ -14,6 +15,10 @@ class BTC38Feeds():
             "GLD": []
         }
 
+        self.rate_usd_cny = 0
+        self.rate_xau_cny = 0
+        self.get_rate_from_yahoo()
+
     def last_usd_per_btsx(self):
         url="http://api.btc38.com/v1/ticker.php"
         try:
@@ -26,11 +31,27 @@ class BTC38Feeds():
             result = responce.json()
             price_cny = float(result["ticker"]["last"])
             self.price["CNY"].append(price_cny)
-            self.price["USD"].append(price_cny/rate_usd_cny)
-            self.price["GLD"].append(price_cny/rate_xau_cny)
+            self.price["USD"].append(price_cny/self.rate_usd_cny)
+            self.price["GLD"].append(price_cny/self.rate_xau_cny)
             return self.price["USD"][-1]
         except Exception, e:
             print "error in btc38 feed"
             print e
             return None
 
+    def get_rate_from_yahoo(self):
+        try:
+            url="http://download.finance.yahoo.com/d/quotes.csv"
+            params = {'s':'USDCNY=X,XAUCNY=X','f':'l1','e':'.csv'}
+            responce = requests.get(url=url, headers=self.headers,params=params)
+            pos = posnext = 0
+            posnext = responce.text.find("\n", pos)
+            self.rate_usd_cny = float(responce.text[pos:posnext])
+            pos = posnext + 1
+            posnext = responce.text.find("\n", pos)
+            self.rate_xau_cny = float(responce.text[pos:posnext])
+        except Exception, e:
+            print e
+            print "Warning: unknown error, try again after 1 seconds"
+            time.sleep(1)
+            self.get_rate_from_yahoo()

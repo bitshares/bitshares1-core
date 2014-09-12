@@ -16,12 +16,6 @@ default_config = {
             #  "block_shorts": True,    prevent new shorts from entering - default behavior for now
             "asset_pair": ["USD", "BTSX"]
         }
-    ],
-    "feeds": [
-        {
-            "name": "bter_usd_btsx_average",
-            "type": "usd_per_btsx",
-        }
     ]
 }
 

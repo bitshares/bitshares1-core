@@ -37,13 +37,14 @@ class MarketMaker():
         if median > new_usd_per_btsx:
             new_usd_per_btsx = median * MEDIAN_EDGE_MULTIPLE
 
-        self.client.cancel_asks_out_of_range(self.name, quote, base, new_usd_per_btsx * (1+spread), tolerance)
+        canceled = []
+        canceled.extend( self.client.cancel_asks_out_of_range(self.name, quote, base, new_usd_per_btsx * (1+spread), tolerance) )
+        canceled.extend( self.client.cancel_bids_less_than(self.name, quote, base, median) )
+        canceled.extend( self.client.cancel_bids_out_of_range(self.name, quote, base, new_usd_per_btsx, tolerance) )
 
-        self.client.cancel_bids_less_than(self.name, quote, base, median)
-        self.client.cancel_bids_out_of_range(self.name, quote, base, new_usd_per_btsx, tolerance)
-
-        log("waiting for a block...")
-        self.client.wait_for_block()
+        if len(canceled) > 0:
+            log("canceled some orders, waiting...")
+            return # wait for a block if we canceled anything
 
         usd_balance = self.client.get_balance(self.name, quote)
         btsx_balance = self.client.get_balance(self.name, base)
