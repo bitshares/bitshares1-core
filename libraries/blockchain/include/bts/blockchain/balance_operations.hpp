@@ -79,14 +79,18 @@ namespace bts { namespace blockchain {
        static const operation_type_enum type; 
 
        burn_operation( asset amount_to_burn = asset(), 
-                       account_id_type burn_for_or_against = 0 )
-       :amount(amount_to_burn),account_id(burn_for_or_against){}
+                       account_id_type burn_for_or_against = 0,
+                       const string& public_message = "",
+                       optional<signature_type> sig = optional<signature_type>() )
+       :amount(amount_to_burn),account_id(burn_for_or_against),message(public_message),message_signature(sig){}
 
        /** the condition that the funds may be withdrawn,
         *  this is only necessary if the address is new.
         */
        asset                        amount;
        account_id_type              account_id;
+       string                       message;
+       optional<signature_type>     message_signature;
 
        void evaluate( transaction_evaluation_state& eval_state );
    };
@@ -97,4 +101,4 @@ namespace bts { namespace blockchain {
 FC_REFLECT( bts::blockchain::define_delegate_slate_operation, (slate) )
 FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_input_data) )
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
-FC_REFLECT( bts::blockchain::burn_operation, (amount)(account_id) )
+FC_REFLECT( bts::blockchain::burn_operation, (amount)(account_id)(message)(message_signature) )

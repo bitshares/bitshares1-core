@@ -292,6 +292,8 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning [HARDFORK] this operation is only valid once burning is enabled.
 #endif
+      if( message.size() ) FC_ASSERT( amount.asset_id == 0 );
+
       auto asset_rec = eval_state._current_state->get_asset_record( amount.asset_id );
       FC_ASSERT( asset_rec.valid() );
 
