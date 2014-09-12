@@ -303,9 +303,6 @@ namespace bts { namespace blockchain {
       eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
-
-
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       if( eval_state._current_state->get_head_block_num() < BTSX_BURN_FORK_1_BLOCK_NUM )

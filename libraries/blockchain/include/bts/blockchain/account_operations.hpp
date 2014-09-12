@@ -79,7 +79,7 @@ namespace bts { namespace blockchain {
 
    struct link_account_operation
    {
-       static const operation_type_enum type; 
+       static const operation_type_enum type;
 
 
        link_account_operation(){}
