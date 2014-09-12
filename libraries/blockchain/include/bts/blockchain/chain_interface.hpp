@@ -66,6 +66,9 @@ namespace bts { namespace blockchain {
          double                             to_pretty_price_double( const price& a )const;
          string                             to_pretty_price( const price& a )const;
 
+         virtual void                       store_burn_record( const burn_record& br ) = 0;
+         virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
+
          virtual oprice                     get_median_delegate_price( const asset_id_type& )const          = 0;
          virtual void                       set_feed( const feed_record&  )                                 = 0;
          virtual ofeed_record               get_feed( const feed_index& )const                              = 0;

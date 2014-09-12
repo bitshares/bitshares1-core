@@ -274,9 +274,7 @@ namespace bts { namespace blockchain {
             eval_state._current_state->store_asset_record( *asset_rec );
          }
       }
-#ifndef WIN32
-#warning [HARDFORK] moved where balance is deducted so that yield is calculated on old balance rather than new balance
-#endif
+
       current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._current_state->now();
 
@@ -284,15 +282,16 @@ namespace bts { namespace blockchain {
       eval_state.add_balance( asset(this->amount, current_balance_record->condition.asset_id) );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
-
-
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-#ifndef WIN32
-#warning [HARDFORK] this operation is only valid once burning is enabled.
-#endif
       if( message.size() ) FC_ASSERT( amount.asset_id == 0 );
+      if( amount.asset_id == 0 )
+      {
+         // minimum burn is 1 XTS
+         FC_ASSERT( amount.amount >= BTS_BLOCKCHAIN_MIN_BURN_FEE, "",
+                    ("amount",amount)
+                    ("BTS_BLOCKCHAIN_MIN_BURN_FEE",BTS_BLOCKCHAIN_MIN_BURN_FEE) );
+      }
 
       auto asset_rec = eval_state._current_state->get_asset_record( amount.asset_id );
       FC_ASSERT( asset_rec.valid() );
@@ -310,6 +309,7 @@ namespace bts { namespace blockchain {
           auto account_rec = eval_state._current_state->get_account_record( abs(this->account_id) );
           FC_ASSERT( account_rec.valid() );
       }
+      eval_state._current_state->store_burn_record( burn_record( burn_record_key( {account_id, eval_state.trx.id()} ), burn_record_value( {amount,message,message_signature} ) ) );
    } FC_CAPTURE_AND_RETHROW( (eval_state) ) }
 
 } } // bts::blockchain

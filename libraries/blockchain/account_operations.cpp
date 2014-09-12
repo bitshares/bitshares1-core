@@ -4,7 +4,7 @@
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <fc/time.hpp>
 
-namespace bts { namespace blockchain { 
+namespace bts { namespace blockchain {
 
    static const fc::microseconds one_year = fc::seconds( 60*60*24*365 );
 
@@ -28,7 +28,7 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
 
       auto current_account = eval_state._current_state->get_account_record( this->name );
-      if( current_account ) FC_CAPTURE_AND_THROW( account_already_registered, (name) );  
+      if( current_account ) FC_CAPTURE_AND_THROW( account_already_registered, (name) );
 
       string parent_name = get_parent_account_name( this->name );
       if( parent_name.size() )
@@ -100,7 +100,7 @@ namespace bts { namespace blockchain {
                 if( parent_record->is_retracted() )
                    FC_CAPTURE_AND_THROW( parent_account_retracted, (parent_name) );
 
-                if( eval_state.check_signature( parent_record->owner_key ) || 
+                if( eval_state.check_signature( parent_record->owner_key ) ||
                     eval_state.check_signature( parent_record->active_address() ) )
                    verified = true;
                 else
@@ -130,7 +130,7 @@ namespace bts { namespace blockchain {
                 if( parent_record->is_retracted() )
                    FC_CAPTURE_AND_THROW( parent_account_retracted, (parent_name) );
 
-                if( eval_state.check_signature( parent_record->owner_key ) || 
+                if( eval_state.check_signature( parent_record->owner_key ) ||
                     eval_state.check_signature( parent_record->active_address() ) )
                    verified = true;
                 else
@@ -208,12 +208,8 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-
    void link_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-#ifndef WIN32
-#warning [HARDFORK] this operation is only valid once burning is enabled.
-#endif
       auto source_account_rec = eval_state._current_state->get_account_record( source_account );
       FC_ASSERT( source_account_rec.valid() );
 
