@@ -31,5 +31,6 @@ if exist build (
 )
 mkdir build
 cd build
-cmake -DINCLUDE_QT_WALLET=TRUE -G "Visual Studio 12" -T "v120_xp" ../bitsharesx || exit /b 28
-msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=Release /p:Platform=Win32 /target:BitSharesX:rebuild /v:diag BitShares.sln || exit /b 30
+cmake -DINCLUDE_QT_WALLET=TRUE -DINCLUDE_CRASHRPT=TRUE -G "Visual Studio 12" -T "v120_xp" ../bitsharesx || exit /b 28
+msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebInfo /p:Platform=Win32 /target:BitSharesX:rebuild /v:diag BitShares.sln || exit /b 30
+msbuild.exe /M:%NUMBER_OF_PROCESSORS% /p:Configuration=RelWithDebInfo /p:Platform=Win32 /target:bitshares_client:rebuild /v:diag BitShares.sln || exit /b 30
