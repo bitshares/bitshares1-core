@@ -83,9 +83,14 @@ namespace bts { namespace client {
                   "178.62.50.61:1779",
                   "178.62.157.161:1776",
                   "180.153.142.120:1777",
-                  "188.226.195.137:60696",
-                  "auseednode.minebitshares.com:1776",
+                  "188.226.195.137:60696"
+#if !defined(_WIN32) || !defined(_M_AMD64)
+				  // we're currently experiencing an intermittent crash on 64-bit windows
+				  // when adding nodes with symbolic DNS names.  Disable them until
+				  // we get it sorted out
+				  ,"auseednode.minebitshares.com:1776",
                   "euseednode.minebitshares.com:1776"
+#endif
                   }),
           mail_server_enabled(false),
           wallet_enabled(true),
