@@ -103,16 +103,13 @@ namespace bts { namespace db {
         void remove( const Key& key )
         { try {
            _cache.erase(key);
-           //Possibly some bugs in the _dirty_remove logic; disable for now...
-            _db.remove(key);
-            _dirty.erase(key);
-//           if( _flush_on_store )
-//           {
-//              _db.remove(key);
-//              _dirty.erase(key);
-//           } else {
-//              _dirty_remove.insert(key);
-//           }
+           if( _flush_on_store )
+           {
+              _db.remove(key);
+              _dirty.erase(key);
+           } else {
+              _dirty_remove.insert(key);
+           }
         } FC_CAPTURE_AND_RETHROW( (key) ) }
 
         class iterator
