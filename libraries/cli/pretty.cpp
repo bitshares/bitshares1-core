@@ -379,7 +379,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         out << std::setw(  8 ) << block_record.block_num;
         out << std::setw( 20 ) << pretty_timestamp( block_record.timestamp );
 
-        const auto& delegate_name = client->blockchain_get_block_signee( block_record.block_num );
+        const auto& delegate_name = client->blockchain_get_block_signee( std::to_string( block_record.block_num ) );
 
         out << std::setw( 32 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";

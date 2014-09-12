@@ -1740,7 +1740,7 @@ config load_config( const fc::path& datadir )
     }
 
     //JSON-RPC Method Implementations START
-    block_id_type detail::client_impl::blockchain_get_block_hash(uint32_t block_number) const
+    block_id_type detail::client_impl::blockchain_get_block_hash( uint32_t block_number ) const
     {
       return _chain_db->get_block(block_number).id();
     }
@@ -3637,9 +3637,12 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_delegate_slot_records( delegate_record->id );
    }
 
-   string client_impl::blockchain_get_block_signee( uint32_t block_number )const
+   string client_impl::blockchain_get_block_signee( const string& block )const
    {
-      return _chain_db->get_block_signee( block_number ).name;
+      if( block.size() == 40 )
+          return _chain_db->get_block_signee( block_id_type( block ) ).name;
+      else
+          return _chain_db->get_block_signee( std::stoi( block ) ).name;
    }
 
    void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
