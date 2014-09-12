@@ -2,8 +2,8 @@
     "bots": [
         {
             "block_shorts": true, 
-            "external_price_tolerance": 0.01, 
-            "spread_percent": 0.05, 
+            "external_price_tolerance": 0.005, 
+            "spread_percent": 0.03, 
             "asset_pair": [
                 "USD", 
                 "BTSX"
@@ -13,6 +13,7 @@
             "account_name": "test-trader", 
             "min_balance": 100
         }
+
     ], 
     "client": {
         "rpc_password": "a", 
