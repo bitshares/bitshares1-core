@@ -141,6 +141,9 @@ namespace bts { namespace rpc {
 
              s.add_header( "Connection", "close" );
 
+             fc::oexception internal_server_error;
+             bool invalid_request_error = false;
+
              try {
                 if( _config.rpc_user.size() )
                 {
@@ -241,18 +244,26 @@ namespace bts { namespace rpc {
              }
              catch ( const fc::exception& e )
              {
+                    internal_server_error = e;
+             }
+             catch ( ... )
+             {
+                    invalid_request_error = true;
+             }
+
+             if (internal_server_error)
+             {
                     std::string message = "Internal Server Error\n";
-                    message += e.to_detail_string();
+                    message += internal_server_error->to_detail_string();
                     fc_ilog( fc::logger::get("rpc"), "Internal Server Error ${path} - ${msg}", ("path",r.path)("msg",message));
                     elog("Internal Server Error ${path} - ${msg}", ("path",r.path)("msg",message));
                     s.set_length( message.size() );
                     s.set_status( fc::http::reply::InternalServerError );
                     s.write( message.c_str(), message.size() );
-                    elog( "${e}", ("e",e.to_detail_string() ) );
+                    elog( "${e}", ("e", internal_server_error->to_detail_string() ) );
                     status = fc::http::reply::InternalServerError;
-
              }
-             catch ( ... )
+             else if (invalid_request_error)
              {
                     std::string message = "Invalid RPC Request\n";
                     fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path}", ("path",r.path));
@@ -271,8 +282,11 @@ namespace bts { namespace rpc {
          {
                 fc::http::reply::status_code status = fc::http::reply::OK;
                 std::string str(r.body.data(),r.body.size());
-                wlog( "RPC: ${r}", ("r",str) );
+                //wlog( "RPC: ${r}", ("r",str) );
                 fc::string method_name;
+
+                fc::optional<std::string> invalid_rpc_request_message;
+
                 try {
                    auto rpc_call = fc::json::from_string( str ).get_object();
                    method_name = rpc_call["method"].as_string();
@@ -334,31 +348,23 @@ namespace bts { namespace rpc {
                 }
                 catch ( const fc::exception& e )
                 {
-                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.to_detail_string()));
-                    elog( "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.to_detail_string()));
-                    std::string message = "Invalid RPC Request\n";
-                    message += e.to_detail_string();
-                    s.set_length( message.size() );
-                    status = fc::http::reply::BadRequest;
-                    s.set_status( status );
-                    s.write( message.c_str(), message.size() );
+                    invalid_rpc_request_message = e.to_detail_string();
                 }
-                catch ( const std::exception& e )
+                catch (const std::exception& e)
                 {
-                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.what()));
-                    elog( "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",e.what()));
-                    std::string message = "Invalid RPC Request\n";
-                    message += e.what();
-                    s.set_length( message.size() );
-                    status = fc::http::reply::BadRequest;
-                    s.set_status( status );
-                    s.write( message.c_str(), message.size() );
+                    invalid_rpc_request_message = e.what();
                 }
                 catch (...)
                 {
-                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path} ${method} ...", ("path",r.path)("method",method_name));
-                    elog( "Invalid RPC Request ${path} ${method} ...", ("path",r.path)("method",method_name));
+                    invalid_rpc_request_message = "...";
+                }
+
+                if (invalid_rpc_request_message)
+                {
+                    fc_ilog( fc::logger::get("rpc"), "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e", *invalid_rpc_request_message));
+                    elog( "Invalid RPC Request ${path} ${method}: ${e}", ("path",r.path)("method",method_name)("e",*invalid_rpc_request_message));
                     std::string message = "Invalid RPC Request\n";
+                    message += *invalid_rpc_request_message;
                     s.set_length( message.size() );
                     status = fc::http::reply::BadRequest;
                     s.set_status( status );
@@ -680,8 +686,9 @@ namespace bts { namespace rpc {
           ulog("Failed to bind RPC port ${endpoint}; waiting 10 seconds and retrying (attempt ${attempt}/30)",
                ("endpoint", cfg.rpc_endpoint)("attempt", attempts));
           elog("Failed to bind RPC port ${endpoint} with error ${e}", ("endpoint", cfg.rpc_endpoint)("e", e.to_detail_string()));
-          fc::usleep(fc::seconds(10));
         }
+        if (!success)
+          fc::usleep(fc::seconds(10));
       }
 
       ilog( "listening for json rpc connections on port ${port}", ("port",my->_tcp_serv->get_port()) );
@@ -716,8 +723,9 @@ namespace bts { namespace rpc {
           ulog("Failed to bind HTTPD port ${endpoint}; waiting 10 seconds and retrying (attempt ${attempt}/30)",
                ("endpoint", cfg.httpd_endpoint)("attempt", attempts));
           elog("Failed to bind HTTPD port ${endpoint} with error ${e}", ("endpoint", cfg.rpc_endpoint)("e", e.to_detail_string()));
-          fc::usleep(fc::seconds(10));
         }
+        if (!success)
+          fc::usleep(fc::seconds(10));
       }
 
       my->_httpd->on_request([m](const fc::http::request& r, const fc::http::server::response& s){ m->handle_request(r, s); });

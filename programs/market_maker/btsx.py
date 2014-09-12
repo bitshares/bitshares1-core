@@ -59,6 +59,10 @@ class BTSX():
             asset_id = 0
 
         response = self.request("wallet_account_balance", [account_name, asset])
+        if not response.json():
+            log("Error in get_balance: %s", response["_content"]["message"])
+            return None
+
         asset_array = response.json()["result"][0][1]
         amount = 0
         for item in asset_array:
@@ -70,6 +74,7 @@ class BTSX():
             return amount / self.BTSX_PRECISION
         log("UNKNOWN ASSET TYPE, CANT CONVERT PRECISION: %s" % asset)
         exit(1)
+
     def cancel_bids_less_than(self, account, base, quote, price):
         response = self.request("wallet_market_order_list", [base, quote, -1, account])
         order_ids = []
@@ -82,7 +87,8 @@ class BTSX():
                     log("%s canceled an order: %s" % (account_name, str(item)))
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
-        return response.json()
+        return cancel_args
+
     def cancel_bids_out_of_range(self, account, base, quote, price, tolerance):
         response = self.request("wallet_market_order_list", [base, quote, -1, account])
         order_ids = []
@@ -95,7 +101,8 @@ class BTSX():
                     log("%s canceled an order: %s" % (account_name, str(item)))
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
-        return response.json()
+        return cancel_args
+
     def cancel_asks_out_of_range(self, account, base, quote, price, tolerance):
         response = self.request("wallet_market_order_list", [base, quote, -1, account])
         order_ids = []
@@ -107,7 +114,7 @@ class BTSX():
                     order_ids.append(order_id)
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
-        return response.json()
+        return cancel_args
 
     def cancel_all_orders(self, account, base, quote):
         response = self.request("wallet_market_order_list", [base, quote, -1, account])
@@ -116,7 +123,7 @@ class BTSX():
             order_ids.append(item["market_index"]["owner"])
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
-        return response.json()
+        return cancel_args
 
 
     def wait_for_block(self):

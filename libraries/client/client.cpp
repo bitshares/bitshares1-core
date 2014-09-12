@@ -592,15 +592,21 @@ config load_config( const fc::path& datadir )
 
             void start()
             {
+              std::exception_ptr unexpected_exception;
               try
               {
                 _cli->start();
               }
               catch (...)
               {
+                unexpected_exception = std::current_exception();
+              }
+
+              if (unexpected_exception)
+              {
                 if (_notifier)
                   _notifier->notify_client_exiting_unexpectedly();
-                throw;
+                std::rethrow_exception(unexpected_exception);
               }
             }
 
@@ -1300,12 +1306,18 @@ config load_config( const fc::path& datadir )
         for (uint32_t i = 0; i < items_to_get_this_iteration; ++i)
         {
           block_id_type block_id;
+          bool block_id_not_found = false;
           try
           {
             block_id = _chain_db->get_block_id(last_seen_block_num);
             //assert(_chain_db->get_block(last_seen_block_num).id() == block_id);  // expensive assert, remove once we're sure
           }
           catch (const fc::key_not_found_exception&)
+          {
+            block_id_not_found = true;
+          }
+
+          if (block_id_not_found)
           {
             ilog("chain_database::get_block_id failed to return the id for block number ${last_seen_block_num} even though chain_database::get_block_num() provided its block number",
                  ("last_seen_block_num",last_seen_block_num));
@@ -2787,35 +2799,43 @@ config load_config( const fc::path& datadir )
       }
       catch (...)
       {
-        string::size_type colon_pos = remote_endpoint.find(':');
-        try
-        {
-          uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() ) );
+      }
 
-          string hostname = remote_endpoint.substr( 0, colon_pos );
-          std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
-          if ( endpoints.empty() )
-            FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
-          return endpoints.back();
-        }
-        catch (const boost::bad_lexical_cast&)
-        {
-          FC_THROW("Bad port: ${port}", ("port", remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() )));
-        }
+      // couldn't parse as a numeric ip address, try resolving as a DNS name.  This can yield, so don't
+      // do it in the catch block above
+      string::size_type colon_pos = remote_endpoint.find(':');
+      try
+      {
+        uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() ) );
+
+        string hostname = remote_endpoint.substr( 0, colon_pos );
+        std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
+        if ( endpoints.empty() )
+          FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+        return endpoints.back();
+      }
+      catch (const boost::bad_lexical_cast&)
+      {
+        FC_THROW("Bad port: ${port}", ("port", remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() )));
       }
     }
 
     void client::add_node( const string& remote_endpoint )
     {
       fc::ip::endpoint endpoint;
+      fc::oexception string_to_endpoint_error;
       try
       {
         endpoint = string_to_endpoint(remote_endpoint);
       }
       catch (const fc::exception& e)
       {
+        string_to_endpoint_error = e;
+      }
+      if (string_to_endpoint_error)
+      {
         ulog("Unable to add peer ${remote_endpoint}: ${error}",
-             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+             ("remote_endpoint", remote_endpoint)("error", string_to_endpoint_error->to_string()));
         return;
       }
 
@@ -2831,14 +2851,19 @@ config load_config( const fc::path& datadir )
     void client::connect_to_peer(const string& remote_endpoint)
     {
       fc::ip::endpoint endpoint;
+      fc::oexception string_to_endpoint_error;
       try
       {
         endpoint = string_to_endpoint(remote_endpoint);
       }
       catch (const fc::exception& e)
       {
+        string_to_endpoint_error = e;
+      }
+      if (string_to_endpoint_error)
+      {
         ulog("Unable to initiate connection to peer ${remote_endpoint}: ${error}",
-             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+             ("remote_endpoint", remote_endpoint)("error", string_to_endpoint_error->to_string()));
         return;
       }
 

@@ -1164,7 +1164,7 @@ namespace bts { namespace blockchain {
       {
           elog( "error opening database" );
           close();
-          fc::remove_all( data_dir );
+          fc::remove_all( data_dir / "index" );
           throw;
       }
 
