@@ -192,6 +192,11 @@ namespace bts { namespace blockchain {
          virtual void                store_transaction( const transaction_id_type&,
                                                         const transaction_record&  ) override;
 
+
+         virtual void                store_burn_record( const burn_record& br ) override;
+         virtual oburn_record        fetch_burn_record( const burn_record_key& key )const override;
+
+
          map<balance_id_type, balance_record>  get_balances( const string& first,
                                                              uint32_t limit )const;
 

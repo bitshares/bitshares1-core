@@ -199,6 +199,9 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< asset_id_type, asset_record >               _asset_db;
             bts::db::level_map< balance_id_type, balance_record>            _balance_db;
+
+            bts::db::level_map< burn_record_key, burn_record_value>         _burn_db;
+
             bts::db::cached_level_map< account_id_type, account_record>     _account_db;
             bts::db::cached_level_map< address, account_id_type >           _address_to_account_db;
 
@@ -281,6 +284,7 @@ namespace bts { namespace blockchain {
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
+          _burn_db.open( data_dir / "index/burn_db" );
           _account_db.open( data_dir / "index/account_db" );
           _address_to_account_db.open( data_dir / "index/address_to_account_db" );
 
@@ -1165,6 +1169,7 @@ namespace bts { namespace blockchain {
 
       my->_asset_db.close();
       my->_balance_db.close();
+      my->_burn_db.close();
       my->_account_db.close();
       my->_address_to_account_db.close();
 
@@ -3028,6 +3033,24 @@ namespace bts { namespace blockchain {
           feeds.push_back(*record);
 
       return feeds;
+   }
+
+   void           chain_database::store_burn_record( const burn_record& br )
+   {
+      if( br.is_null() )
+      {
+         my->_burn_db.remove( br );
+      }
+      else
+         my->_burn_db.store( br, br );
+   }
+
+   oburn_record    chain_database::fetch_burn_record( const burn_record_key& key )const
+   {
+      auto oval = my->_burn_db.fetch_optional( key );
+      if( oval )
+         return burn_record( key, *oval );
+      return oburn_record();
    }
 
 } } // bts::blockchain
