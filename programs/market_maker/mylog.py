@@ -1,4 +1,8 @@
+import os
 import time
+
+if not os.path.exists("logs"):
+    os.mkdir("logs")
 
 class L():
     current_log = None
