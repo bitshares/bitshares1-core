@@ -36,20 +36,21 @@ class BTSX():
     def submit_bid(self, account_name, amount, quote, price, base):
         response = self.request("bid", [account_name, amount, quote, price, base])
         if response.status_code != 200:
-            print response.json()
+            log("%s submitted a bid" % account_name)
+            log(response.json())
             return False
         else:
             return response.json()
     def submit_ask(self, account_name, amount, quote, price, base):
         response = self.request("ask", [account_name, amount, quote, price, base])
         if response.status_code != 200:
-            print response.json()
+            log("%s submitted an ask" % account_name())
+            log(response.json())
             return False
         else:
             return response.json()
     def get_lowest_ask(self, asset1, asset2):
         response = self.request("blockchain_market_order_book", [asset1, asset2])
-        print response.json()["result"][0][0]
         return response.json()["result"][0][0]
         
     def get_balance(self, account_name, asset):
@@ -58,11 +59,7 @@ class BTSX():
             asset_id = 0
 
         response = self.request("wallet_account_balance", [account_name, asset])
-        print response.json()
-        print response.json()["result"][0]
-        print response.json()["result"][0][1]
-        print response.json()["result"][0][1][0]
-        asset_array = response.json()["result"][0][1] # LOL
+        asset_array = response.json()["result"][0][1]
         amount = 0
         for item in asset_array:
             if item[0] == asset_id:
@@ -82,7 +79,7 @@ class BTSX():
             if item["type"] == "bid_order":
                 if float(item["market_index"]["order_price"]["ratio"])* (self.BTSX_PRECISION / self.USD_PRECISION) < price:
                     order_ids.append(order_id)
-                    print "Cancel Order: ", item, price
+                    log("%s canceled an order: %s" % (account_name, str(item)))
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
         return response.json()
@@ -95,7 +92,7 @@ class BTSX():
             if item["type"] == "bid_order":
                 if abs(price - float(item["market_index"]["order_price"]["ratio"]) * (self.BTSX_PRECISION / self.USD_PRECISION)) > price*tolerance:
                     order_ids.append(order_id)
-                    print "Cancel Order: ", item, price, tolerance 
+                    log("%s canceled an order: %s" % (account_name, str(item)))
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
         return response.json()
@@ -106,9 +103,7 @@ class BTSX():
             order_id = pair[0]
             item = pair[1]
             if item["type"] == "ask_order":
-                print item
                 if abs(price - float(item["market_index"]["order_price"]["ratio"]) * (self.BTSX_PRECISION / self.USD_PRECISION)) > price*tolerance:
-                    print "Cancel Order: ", item
                     order_ids.append(order_id)
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
@@ -126,12 +121,10 @@ class BTSX():
 
     def wait_for_block(self):
         response = self.request("get_info", [])
-        print response.json()
         blocknum = response.json()["result"]["blockchain_head_block_num"]
         while True:
             time.sleep(0.1)            
             response = self.request("get_info", [])
             blocknum2 = response.json()["result"]["blockchain_head_block_num"]
             if blocknum2 != blocknum:
-                print "new block!"
                 return

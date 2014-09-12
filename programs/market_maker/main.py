@@ -1,18 +1,20 @@
+import os
 import sys
 import urllib2
 import json
 import time
 
 from mylog import logger
+log = logger.log
+
 from btsx import BTSX
 
 from config import read_config
 from market_maker import MarketMaker
 
-log = logger.log
-
 if len(sys.argv) < 2:
     print "Usage:  main.py config_path"
+    sys.exit(1)
 
 conf = read_config(sys.argv[1])
 
@@ -26,7 +28,6 @@ client = BTSX(
 
 bots = []
 for botconfig in conf["bots"]:
-    print botconfig
     if botconfig["bot_type"] == "market_maker":
         bots.append(MarketMaker(client, botconfig))
     else:

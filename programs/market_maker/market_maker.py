@@ -27,26 +27,43 @@ class MarketMaker():
 
 
     def execute(self):
-        true_usd_per_btsx = get_true_price()
+        log("Executing bot:  %s" % self.name)
+        tolerance = self.config["external_price_tolerance"]
+        spread = self.config["spread_percent"]
+        min_balance = self.config["min_balance"]
+        quote = self.quote_symbol
+        base = self.base_symbol
 
+
+        true_usd_per_btsx = get_true_price()
         median = self.client.get_median(self.quote_symbol)
         new_usd_per_btsx = true_usd_per_btsx
+
         if median > new_usd_per_btsx:
             new_usd_per_btsx = median * MEDIAN_EDGE_MULTIPLE
 
-        self.client.cancel_asks_out_of_range(self.name, self.qote_symbol, self.base_symbol, new_usd_per_btsx * (1+self.config["spread_percent"]), self.config["tolerance"])
-        self.client.cancel_bids_less_than(self.name, self.quote_symbol, self.base_symbol, median)
-        self.client.cancel_bids_out_of_range(self.name, self.quote_symbol, self.base_symbol, new_usd_per_btsx, self.config["tolerance"])
+        self.client.cancel_asks_out_of_range(self.name, quote, base, new_usd_per_btsx * (1+spread), tolerance)
 
+        self.client.cancel_bids_less_than(self.name, quote, base, median)
+        self.client.cancel_bids_out_of_range(self.name, quote, base, new_usd_per_btsx, tolerance)
+
+        log("waiting for a block...")
         self.client.wait_for_block()
 
-        usd_balance = client.get_balance(self.quote_symbol)
-        btsx_balance = client.get_balance(self.base_symbol)
-        available_btsx_balance = btsx_balance - self.config["min_balance"]
-        available_usd_buy_quantity = (usd_balance / new_usd_per_btsx) - self.config["min_balance"];
+        usd_balance = self.client.get_balance(self.name, quote)
+        btsx_balance = self.client.get_balance(self.name, base)
+        available_btsx_balance = btsx_balance - min_balance
+        available_usd_buy_quantity = (usd_balance / new_usd_per_btsx) - min_balance;
 
         if available_usd_buy_quantity > MIN_BTSX_ORDER_SIZE:
-            self.client.submit_bid(self.name, available_usd_buy_quantity, self.base_symbol, new_usd_per_btsx, self.quote_symbol)
+            log("Submitting a bid...")
+            self.client.submit_bid(self.name, available_usd_buy_quantity, base, new_usd_per_btsx, self.quote_symbol)
+        else:
+            log("Skipping bid - USD balance too low")
+
         if available_btsx_balance > MIN_BTSX_ORDER_SIZE:
-            self.client.submit_ask(self.name, available_btsx_balance, SYMBOL, new_usd_per_btsx * (1+SPREAD_PERCENT), self.quote_symbol)
+            log("submitting an ask...")
+            self.client.submit_ask(self.name, available_btsx_balance, base, new_usd_per_btsx * (1+spread), self.quote_symbol)
+        else:
+            log("Skipping ask - BTSX balance too low")
 
