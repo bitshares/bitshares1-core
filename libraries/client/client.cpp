@@ -3792,6 +3792,11 @@ config load_config( const fc::path& datadir )
       return record;
    }
 
+   vector<burn_record> client_impl::blockchain_get_account_wall( const string& account )const
+   {
+      return _chain_db->fetch_burn_records( account );
+   }
+
    int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )
    {
       return _wallet->regenerate_keys( account, number_to_regenerate );

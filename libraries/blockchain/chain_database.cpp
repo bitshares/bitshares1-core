@@ -3078,6 +3078,27 @@ namespace bts { namespace blockchain {
          return burn_record( key, *oval );
       return oburn_record();
    }
+   vector<burn_record>  chain_database::fetch_burn_records( const string& account_name )const
+   { try {
+      vector<burn_record> results;
+      auto opt_account_record = get_account_record( account_name );
+      FC_ASSERT( opt_account_record.valid() );
+
+      auto itr = my->_burn_db.lower_bound( {opt_account_record->id} );
+      while( itr.valid() && itr.key().account_id == opt_account_record->id )
+      {
+         results.push_back( burn_record( itr.key(), itr.value() ) );
+         ++itr;
+      }
+
+      itr = my->_burn_db.lower_bound( {-opt_account_record->id} );
+      while( itr.valid() && abs(itr.key().account_id) == opt_account_record->id )
+      {
+         results.push_back( burn_record( itr.key(), itr.value() ) );
+         ++itr;
+      }
+      return results;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 } } // bts::blockchain
 

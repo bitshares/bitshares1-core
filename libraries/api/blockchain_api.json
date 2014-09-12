@@ -106,6 +106,22 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "blockchain_get_account_wall",
+        "description": "returns all burn records associated with an account",
+        "return_type": "burn_records",
+        "parameters" : [
+            {
+              "name" : "account_name",
+              "type" : "account_name",
+              "description" : "the name of the account to fetch the burn records for",
+              "default_value" : ""
+            }
+           ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["wall"]
+      },
+      {
         "method_name": "blockchain_list_pending_transactions",
         "description": "Return a list of transactions that are not yet in a block.",
         "return_type": "signed_transaction_array",

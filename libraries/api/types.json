@@ -183,6 +183,10 @@
          "cpp_return_type" : "std::vector<fc::variants>"
       },
       {
+         "type_name" : "burn_records",
+         "cpp_return_type" : "std::vector<bts::blockchain::burn_record>"
+      },
+      {
         "type_name" : "wallet_name_array",
         "container_type" : "array",
         "contained_type" : "wallet_name"
