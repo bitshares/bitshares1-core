@@ -23,6 +23,9 @@ namespace bts { namespace blockchain {
 
          virtual fc::time_point_sec     now()const override;
 
+         virtual void                   store_burn_record( const burn_record& br ) override;
+         virtual oburn_record           fetch_burn_record( const burn_record_key& key )const override;
+
          virtual oasset_record          get_asset_record( const asset_id_type& id )const override;
          virtual obalance_record        get_balance_record( const balance_id_type& id )const override;
          virtual oaccount_record        get_account_record( const account_id_type& id )const override;
@@ -131,6 +134,7 @@ namespace bts { namespace blockchain {
          map< std::pair<asset_id_type,asset_id_type>, market_status>    market_statuses;
          map<operation_type_enum, std::deque<operation>>                recent_operations;
          map<feed_index, feed_record>                                   feeds;
+         map<burn_record_key,burn_record_value>                         burns;
 
          /**
           * Set of markets that have had changes to their bids/asks and therefore must
@@ -147,4 +151,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds)(_dirty_markets) )
+            (properties)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds)(burns)(_dirty_markets) )

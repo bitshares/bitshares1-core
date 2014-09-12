@@ -3,7 +3,7 @@ default (unlocked) >>> wallet_account_create test
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -17,7 +17,7 @@ test                            100.00000 XTS
 default (unlocked) >>> blockchain_get_account test
 No account found.
 default (unlocked) >>> wallet_account_register test test null 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   test                test                0.00000 XTS             register test as a delegate                 0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -41,7 +41,7 @@ ACCOUNT                         BALANCE
 ============================================================
 test                            99.50000 XTS                
 default (unlocked) >>> wallet_account_update_active_key test test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   test                test                0.00000 XTS             update test active key                      0.50000 XTS         [redacted]
 default (unlocked) >>> balance test

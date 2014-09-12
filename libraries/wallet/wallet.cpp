@@ -3662,6 +3662,98 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
                                       ("amount_to_withdraw",real_amount_to_withdraw ) ) }
 
+   /**
+    *  This transfer works like a bitcoin transaction combining multiple inputs
+    *  and producing a single output.
+    */
+   wallet_transaction_record wallet::burn_asset(
+           double real_amount_to_transfer,
+           const string& amount_to_transfer_symbol,
+           const string& paying_account_name,
+           const string& for_or_against,
+           const string& to_account_name,
+           const string& public_message,
+           bool anonymous,
+           bool sign 
+           )
+   {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
+      FC_ASSERT( is_receive_account( paying_account_name ) );
+
+      const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+      FC_ASSERT( asset_rec.valid() );
+      const auto asset_id = asset_rec->id;
+
+      const int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
+      share_type amount_to_transfer = real_amount_to_transfer * precision;
+      asset asset_to_transfer( amount_to_transfer, asset_id );
+
+      private_key_type sender_private_key  = get_active_private_key( paying_account_name );
+      public_key_type  sender_public_key   = sender_private_key.get_public_key();
+      address          sender_account_address( sender_private_key.get_public_key() );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
+      if( required_fees.asset_id == asset_to_transfer.asset_id )
+      {
+         my->withdraw_to_transaction( required_fees + asset_to_transfer,
+                                      sender_account_address,
+                                      trx,
+                                      required_signatures );
+      }
+      else
+      {
+         my->withdraw_to_transaction( asset_to_transfer,
+                                      sender_account_address,
+                                      trx,
+                                      required_signatures );
+
+         my->withdraw_to_transaction( required_fees,
+                                      sender_account_address,
+                                      trx,
+                                      required_signatures );
+      }
+
+      const auto to_account_rec = my->_blockchain->get_account_record( to_account_name );
+      optional<signature_type> message_sig;
+      if( !anonymous )
+      {
+         fc::sha256 digest;
+
+         if( public_message.size() )
+            digest = fc::sha256::hash( public_message.c_str(), public_message.size() );
+
+         message_sig = sender_private_key.sign_compact( digest );
+      }
+
+      FC_ASSERT( to_account_rec.valid() );
+      if( for_or_against == "against" )
+         trx.burn( asset_to_transfer, -to_account_rec->id, public_message, message_sig );
+      else
+      {
+         FC_ASSERT( for_or_against == "for" );
+         trx.burn( asset_to_transfer, to_account_rec->id, public_message, message_sig );
+      }
+
+      auto entry = ledger_entry();
+      entry.from_account = sender_public_key;
+      entry.amount = asset_to_transfer;
+      entry.memo = "burn: public_message";
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+      record.extra_addresses.push_back( to_account_rec->active_key() );
+
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
+   }
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,

@@ -77,8 +77,27 @@ namespace bts { namespace blockchain {
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   struct link_account_operation
+   {
+       static const operation_type_enum type; 
+
+
+       link_account_operation(){}
+       link_account_operation( account_id_type source,
+                               account_id_type destination,
+                               const variant& link_data )
+       :source_account(source),destination_account(destination),data(link_data){}
+
+       account_id_type              source_account;
+       account_id_type              destination_account;
+       variant                      data;
+
+       void evaluate( transaction_evaluation_state& eval_state );
+   };
+
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(owner_key)(active_key)(delegate_pay_rate)(meta_data) )
 FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key)(delegate_pay_rate) )
 FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )
+FC_REFLECT( bts::blockchain::link_account_operation, (source_account)(destination_account)(data) )

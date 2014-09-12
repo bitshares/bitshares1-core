@@ -580,9 +580,9 @@
         "return_type": "string",
         "parameters" : [
             {
-              "name" : "block_number",
-              "type" : "uint32_t",
-              "description" : "Block whose signing delegate to return"
+              "name" : "block",
+              "type" : "string",
+              "description" : "block number or ID to retrieve the signee for"
             }
         ],
         "is_const" : true,

@@ -43,6 +43,12 @@ namespace bts { namespace blockchain {
       operations.emplace_back( define_delegate_slate_operation( std::move(s) ) );
    }
 
+   void transaction::burn( const asset& quantity, account_id_type for_or_against, const string& message, const optional<signature_type>& sig )
+   {
+      if( message.size() ) FC_ASSERT( quantity.asset_id == 0 );
+      operations.emplace_back( burn_operation( quantity, for_or_against, message, sig) );
+   }
+
    void transaction::bid( const asset& quantity,
                           const price& price_per_unit,
                           const address& owner )

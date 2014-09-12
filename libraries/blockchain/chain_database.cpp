@@ -202,6 +202,9 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< asset_id_type, asset_record >               _asset_db;
             bts::db::level_map< balance_id_type, balance_record>            _balance_db;
+
+            bts::db::level_map< burn_record_key, burn_record_value>         _burn_db;
+
             bts::db::cached_level_map< account_id_type, account_record>     _account_db;
             bts::db::cached_level_map< address, account_id_type >           _address_to_account_db;
 
@@ -284,6 +287,7 @@ namespace bts { namespace blockchain {
 
           _asset_db.open( data_dir / "index/asset_db" );
           _balance_db.open( data_dir / "index/balance_db" );
+          _burn_db.open( data_dir / "index/burn_db" );
           _account_db.open( data_dir / "index/account_db" );
           _address_to_account_db.open( data_dir / "index/address_to_account_db" );
 
@@ -1060,11 +1064,12 @@ namespace bts { namespace blockchain {
              fc::create_directories( data_dir / "index");
              my->open_database( data_dir );
 
+             // TODO: This was causing sync failures after re-indexing
              //For the duration of reindexing, we allow certain databases to postpone flushing until we finish.
-             my->_account_db.set_flush_on_store( false );
-             my->_address_to_account_db.set_flush_on_store( false );
-             my->_account_index_db.set_flush_on_store( false );
-             my->_delegate_vote_index_db.set_flush_on_store( false );
+             //my->_account_db.set_flush_on_store( false );
+             //my->_address_to_account_db.set_flush_on_store( false );
+             //my->_account_index_db.set_flush_on_store( false );
+             //my->_delegate_vote_index_db.set_flush_on_store( false );
 
              my->initialize_genesis( genesis_file );
 
@@ -1118,11 +1123,12 @@ namespace bts { namespace blockchain {
                  }
              }
 
+             // TODO: See above
              //Re-enable flushing on all databases we disabled it on above
-             my->_account_db.set_flush_on_store( true );
-             my->_address_to_account_db.set_flush_on_store( true );
-             my->_account_index_db.set_flush_on_store( true );
-             my->_delegate_vote_index_db.set_flush_on_store( true );
+             //my->_account_db.set_flush_on_store( true );
+             //my->_address_to_account_db.set_flush_on_store( true );
+             //my->_account_index_db.set_flush_on_store( true );
+             //my->_delegate_vote_index_db.set_flush_on_store( true );
 
              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in "
                        << (blockchain::now() - start_time).to_seconds() << " seconds.                     \n" << std::flush;
@@ -1187,6 +1193,7 @@ namespace bts { namespace blockchain {
 
       my->_asset_db.close();
       my->_balance_db.close();
+      my->_burn_db.close();
       my->_account_db.close();
       my->_address_to_account_db.close();
 
@@ -1825,7 +1832,8 @@ namespace bts { namespace blockchain {
       else
       {
         // this is the usual case
-        std::cout << "Initializing genesis state from built-in genesis file\n";
+        if( !chain_id_only )
+            std::cout << "Initializing genesis state from built-in genesis file\n";
 #ifdef EMBED_GENESIS_STATE_AS_TEXT
         std::string genesis_file_contents = get_builtin_genesis_json_as_string();
         config = fc::json::from_string(genesis_file_contents).as<genesis_block_config>();
@@ -1838,7 +1846,7 @@ namespace bts { namespace blockchain {
 #endif
       }
 
-      if( chain_id_only ) 
+      if( chain_id_only )
         return chain_id;
       _chain_id = chain_id;
       self->set_property( bts::blockchain::chain_id, fc::variant(_chain_id) );
@@ -3051,6 +3059,24 @@ namespace bts { namespace blockchain {
           feeds.push_back(*record);
 
       return feeds;
+   }
+
+   void           chain_database::store_burn_record( const burn_record& br )
+   {
+      if( br.is_null() )
+      {
+         my->_burn_db.remove( br );
+      }
+      else
+         my->_burn_db.store( br, br );
+   }
+
+   oburn_record    chain_database::fetch_burn_record( const burn_record_key& key )const
+   {
+      auto oval = my->_burn_db.fetch_optional( key );
+      if( oval )
+         return burn_record( key, *oval );
+      return oburn_record();
    }
 
 } } // bts::blockchain

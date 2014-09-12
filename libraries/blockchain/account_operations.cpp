@@ -208,4 +208,24 @@ namespace bts { namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+
+   void link_account_operation::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+#ifndef WIN32
+#warning [HARDFORK] this operation is only valid once burning is enabled.
+#endif
+      auto source_account_rec = eval_state._current_state->get_account_record( source_account );
+      FC_ASSERT( source_account_rec.valid() );
+
+      auto destination_account_rec = eval_state._current_state->get_account_record( destination_account );
+      FC_ASSERT( destination_account_rec.valid() );
+
+      if( !eval_state.check_signature( source_account_rec->active_key() ) )
+      {
+         FC_CAPTURE_AND_THROW( missing_signature, (source_account_rec->active_key()) );
+      }
+
+      // STORE LINK...
+   } FC_CAPTURE_AND_RETHROW( (eval_state) ) }
+
 } } // bts::blockchain

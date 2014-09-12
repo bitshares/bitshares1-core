@@ -71,6 +71,7 @@ namespace bts { namespace blockchain {
       {
          for( const auto& item : items.second )    prev_state->store_recent_operation( item );
       }
+      for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
       prev_state->set_market_transactions( market_transactions );
       prev_state->set_dirty_markets(_dirty_markets);
    }
@@ -206,6 +207,10 @@ namespace bts { namespace blockchain {
          auto prev_value = prev_state->get_feed( item.first );
          if( prev_value ) undo_state->set_feed( *prev_value );
          else undo_state->set_feed( feed_record{item.first} );
+      }
+      for( const auto& item : burns ) 
+      {
+         undo_state->store_burn_record( burn_record( item.first ) );
       }
 
       auto dirty_markets = prev_state->get_dirty_markets();
@@ -579,6 +584,21 @@ namespace bts { namespace blockchain {
       }
 
       return total;
+   }
+   void           pending_chain_state::store_burn_record( const burn_record& br )
+   {
+      burns[br] = br;
+   }
+
+   oburn_record   pending_chain_state::fetch_burn_record( const burn_record_key& key )const 
+   {
+      auto itr = burns.find(key);
+      if( itr == burns.end() )
+      {
+         chain_interface_ptr prev_state = _prev_state.lock();
+         return prev_state->fetch_burn_record( key );
+      }
+      return burn_record( itr->first, itr->second );
    }
 
 } } // bts::blockchain
