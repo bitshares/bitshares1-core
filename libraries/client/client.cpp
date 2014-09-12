@@ -1891,6 +1891,21 @@ config load_config( const fc::path& datadir )
         network_broadcast_transaction( record.trx );
         return record;
     }
+    wallet_transaction_record detail::client_impl::wallet_burn(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& from_account_name,
+            const string& for_or_against,
+            const string& to_account_name,
+            const string& public_message,
+            bool anonymous )
+    {
+        const auto record = _wallet->burn_asset( amount_to_transfer, asset_symbol,
+                                                     from_account_name, for_or_against, to_account_name,
+                                                     public_message, anonymous );
+        network_broadcast_transaction( record.trx );
+        return record;
+    }
 
     wallet_transaction_record detail::client_impl::wallet_transfer_from(
             double amount_to_transfer,
