@@ -1514,6 +1514,7 @@ namespace bts { namespace wallet {
           }
 
           ulog( "Upgrading wallet..." );
+          std::exception_ptr upgrade_failure_exception;
           try
           {
               if( current_version >= 100 )
@@ -1656,8 +1657,13 @@ namespace bts { namespace wallet {
           }
           catch( ... )
           {
+              upgrade_failure_exception = std::current_exception();
+          }
+
+          if (upgrade_failure_exception)
+          {
               ulog( "Wallet upgrade failure." );
-              throw;
+              std::rethrow_exception(upgrade_failure_exception);
           }
       }
 
@@ -1666,6 +1672,7 @@ namespace bts { namespace wallet {
           if( _unlocked_upgrade_tasks.empty() ) return;
 
           ulog( "Continuing wallet upgrade..." );
+          std::exception_ptr upgrade_failure_exception;
           try
           {
               for( const auto& task : _unlocked_upgrade_tasks ) task();
@@ -1675,8 +1682,13 @@ namespace bts { namespace wallet {
           }
           catch( ... )
           {
+              upgrade_failure_exception = std::current_exception();
+          }
+
+          if (upgrade_failure_exception)
+          {
               ulog( "Wallet upgrade failure." );
-              throw;
+              std::rethrow_exception(upgrade_failure_exception);
           }
       }
 
@@ -1722,6 +1734,7 @@ namespace bts { namespace wallet {
       if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
           FC_THROW_EXCEPTION( password_too_short, "Password too short!", ("size",password.size()) );
 
+      std::exception_ptr wallet_create_failure;
       try
       {
           create_file( wallet_file_path, password, brainkey );
@@ -1730,8 +1743,13 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          wallet_create_failure = std::current_exception();
+      }
+
+      if (wallet_create_failure)
+      {
           close();
-          throw;
+          std::rethrow_exception(wallet_create_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}'", ("wallet_name",wallet_name) ) }
 
@@ -1747,6 +1765,7 @@ namespace bts { namespace wallet {
       if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
           FC_THROW_EXCEPTION( password_too_short, "Password too short!", ("size",password.size()) );
 
+      std::exception_ptr create_file_failure;
       try
       {
           close();
@@ -1789,9 +1808,14 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          create_file_failure = std::current_exception();
+      }
+
+      if (create_file_failure)
+      {
           close();
           fc::remove_all( wallet_file_path );
-          throw;
+          std::rethrow_exception(create_file_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_file_path}'", ("wallet_file_path",wallet_file_path) ) }
 
@@ -1806,14 +1830,20 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
+      std::exception_ptr open_file_failure;
       try
       {
           open_file( wallet_file_path );
       }
       catch( ... )
       {
+          open_file_failure = std::current_exception();
+      }
+
+      if (open_file_failure)
+      {
           close();
-          throw;
+          std::rethrow_exception(open_file_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
 
@@ -1827,6 +1857,7 @@ namespace bts { namespace wallet {
       if( is_open() && my->_current_wallet_path == wallet_file_path )
           return;
 
+      std::exception_ptr open_file_failure;
       try
       {
           close();
@@ -1837,8 +1868,13 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          open_file_failure = std::current_exception();
+      }
+
+      if (open_file_failure)
+      {
           close();
-          throw;
+          std::rethrow_exception(open_file_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to open wallet ${wallet_file_path}", ("wallet_file_path",wallet_file_path) ) }
 
@@ -1920,6 +1956,7 @@ namespace bts { namespace wallet {
           FC_THROW_EXCEPTION( invalid_wallet_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
       create( wallet_name, passphrase );
+      std::exception_ptr import_failure;
       try
       {
           my->_wallet_db.set_property( version, variant( 0 ) );
@@ -1930,10 +1967,15 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          import_failure = std::current_exception();
+      }
+
+      if (import_failure)
+      {
           close();
-          auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
+          fc::path wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
           fc::remove_all( wallet_file_path );
-          throw;
+          std::rethrow_exception(import_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
 
@@ -1941,14 +1983,14 @@ namespace bts { namespace wallet {
    { try {
       if( !get_automatic_backups() ) return;
       ulog( "Backing up wallet..." );
-      const auto wallet_path = my->_current_wallet_path;
-      const auto wallet_name = wallet_path.filename().string();
-      const auto wallet_dir = wallet_path.parent_path();
-      auto backup_path = fc::path();
+      fc::path wallet_path = my->_current_wallet_path;
+      std::string wallet_name = wallet_path.filename().string();
+      fc::path wallet_dir = wallet_path.parent_path();
+      fc::path backup_path;
       while( true )
       {
-          const auto now = time_point_sec( time_point::now() );
-          auto backup_filename = wallet_name + "-" + now.to_iso_string();
+          fc::time_point_sec now( time_point::now() );
+          std::string backup_filename = wallet_name + "-" + now.to_iso_string();
           if( !reason.empty() ) backup_filename += "-" + reason;
           backup_filename += ".json";
           backup_path = wallet_dir / ".backups" / wallet_name / backup_filename;
@@ -1989,6 +2031,7 @@ namespace bts { namespace wallet {
 
    void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
+      std::exception_ptr unlock_error;
       try
       {
           FC_ASSERT( is_open() );
@@ -1996,8 +2039,8 @@ namespace bts { namespace wallet {
           if( timeout_seconds < 1 )
               FC_THROW_EXCEPTION( invalid_timeout, "Invalid timeout!" );
 
-          const auto now = fc::time_point::now();
-          const auto new_lock_time = now + fc::seconds( timeout_seconds );
+          fc::time_point now = fc::time_point::now();
+          fc::time_point new_lock_time = now + fc::seconds( timeout_seconds );
           if( new_lock_time.sec_since_epoch() <= now.sec_since_epoch() )
               FC_THROW_EXCEPTION( invalid_timeout, "Invalid timeout!" );
 
@@ -2023,8 +2066,13 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          unlock_error = std::current_exception();
+      }
+
+      if (unlock_error)
+      {
           lock();
-          throw;
+          std::rethrow_exception(unlock_error);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
 
@@ -3215,6 +3263,7 @@ namespace bts { namespace wallet {
       uint32_t regenerated_keys = 0;
       for( uint32_t i = 0; i < count; ++i )
       {
+         fc::oexception regenerate_key_error;
          try {
             auto key = my->_wallet_db.get_private_key( my->_wallet_password, i );
             auto addr = address( key.get_public_key() );
@@ -3225,8 +3274,11 @@ namespace bts { namespace wallet {
             }
          } catch ( const fc::exception& e )
          {
-            ulog( "${e}", ("e", e.to_detail_string()) );
+            regenerate_key_error = e;
          }
+
+         if (regenerate_key_error)
+            ulog( "${e}", ("e", regenerate_key_error->to_detail_string()) );
       }
 
       const auto& accs = my->_wallet_db.get_accounts();
