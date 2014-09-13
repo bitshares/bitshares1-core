@@ -2,9 +2,6 @@
 
 #include <stdint.h>
 
-/* Define client version here */
-#define BTS_CLIENT_VERSION                                  "0.4.14"
-
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
 #define BTS_TEST_NETWORK_VERSION                            25
@@ -13,7 +10,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     136
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     137
 
 /**
  *  The address prepended to string representation of
@@ -29,6 +26,7 @@
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC                 (60*60*24) // 24 hours
 
+#define BTS_BLOCKCHAIN_MIN_BURN_FEE                         BTS_BLOCKCHAIN_PRECISION * 1 // 1 XTS
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
 

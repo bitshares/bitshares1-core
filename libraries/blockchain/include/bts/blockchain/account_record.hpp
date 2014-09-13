@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/types.hpp>
+#include <bts/blockchain/asset.hpp>
 
 #include <fc/time.hpp>
 
@@ -65,6 +66,34 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<account_record> oaccount_record;
 
+   struct burn_record_key
+   {
+      account_id_type     account_id;
+      transaction_id_type transaction_id;
+      friend bool operator < ( const burn_record_key& a, const burn_record_key& b )
+      {
+         return std::tie( a.account_id, a.transaction_id) < std::tie( b.account_id, b.transaction_id);
+      }
+      friend bool operator == ( const burn_record_key& a, const burn_record_key& b )
+      {
+         return std::tie( a.account_id, a.transaction_id) == std::tie( b.account_id, b.transaction_id);
+      }
+   };
+   struct burn_record_value
+   {
+      bool is_null()const { return amount.amount == 0; }
+      asset                    amount;
+      string                   message;
+      optional<signature_type> signer;
+   };
+   struct burn_record : public burn_record_key, public burn_record_value
+   {
+      burn_record(){}
+      burn_record( const burn_record_key& k, const burn_record_value& v = burn_record_value())
+      :burn_record_key(k),burn_record_value(v){}
+   };
+   typedef optional<burn_record> oburn_record;
+
 } } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::account_meta_info, (type)(data) )
@@ -73,3 +102,6 @@ FC_REFLECT( bts::blockchain::account_record,
             (id)(name)(public_data)(owner_key)(active_key_history)(registration_date)(last_update)(delegate_info)(meta_data) )
 FC_REFLECT( bts::blockchain::delegate_stats, 
             (votes_for)(blocks_produced)(blocks_missed)(pay_rate)(pay_balance)(next_secret_hash)(last_block_num_produced) )
+FC_REFLECT( bts::blockchain::burn_record_key,   (account_id)(transaction_id) )
+FC_REFLECT( bts::blockchain::burn_record_value, (amount)(message)(signer) )
+FC_REFLECT_DERIVED( bts::blockchain::burn_record, (bts::blockchain::burn_record_key)(bts::blockchain::burn_record_value), BOOST_PP_SEQ_NIL )

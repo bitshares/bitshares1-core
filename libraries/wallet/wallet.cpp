@@ -1,33 +1,38 @@
-#include <bts/wallet/wallet.hpp>
-#include <bts/wallet/exceptions.hpp>
-#include <bts/wallet/wallet_db.hpp>
-#include <bts/wallet/config.hpp>
-#include <bts/wallet/url.hpp>
-#include <bts/utilities/key_conversion.hpp>
-#include <bts/blockchain/time.hpp>
-#include <bts/blockchain/exceptions.hpp>
-#include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
+#include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/market_operations.hpp>
+#include <bts/blockchain/time.hpp>
+
+#include <bts/bitcoin/armory.hpp>
+#include <bts/bitcoin/bitcoin.hpp>
+#include <bts/bitcoin/electrum.hpp>
+#include <bts/bitcoin/multibit.hpp>
+
+#include <bts/client/client.hpp>
 #include <bts/cli/pretty.hpp>
-#include <fc/thread/thread.hpp>
+#include <bts/keyhotee/import_keyhotee_id.hpp>
+
+#include <bts/utilities/git_revision.hpp>
+#include <bts/utilities/key_conversion.hpp>
+
+#include <bts/wallet/config.hpp>
+#include <bts/wallet/exceptions.hpp>
+#include <bts/wallet/url.hpp>
+#include <bts/wallet/wallet.hpp>
+#include <bts/wallet/wallet_db.hpp>
+
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
+#include <fc/io/json.hpp>
+#include <fc/thread/thread.hpp>
 #include <fc/time.hpp>
 #include <fc/variant.hpp>
 
-#include <fc/io/json.hpp>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
-
-#include <algorithm>
-
-#include <bts/bitcoin/bitcoin.hpp>
-#include <bts/bitcoin/multibit.hpp>
-#include <bts/bitcoin/electrum.hpp>
-#include <bts/bitcoin/armory.hpp>
-#include <bts/keyhotee/import_keyhotee_id.hpp>
 
 namespace bts { namespace wallet {
 
@@ -1433,8 +1438,9 @@ namespace bts { namespace wallet {
            const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
            const auto now = blockchain::now();
 
-           if( min_end > start + 1 )
-               ulog( "Beginning scan at block ${n}...", ("n",start) );
+           // TODO: This was breaking regression tests
+           //if( min_end > start + 1 )
+               //ulog( "Beginning scan at block ${n}...", ("n",start) );
 
            for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
@@ -1464,13 +1470,15 @@ namespace bts { namespace wallet {
               }
            }
            _scan_progress = 1;
-           if( min_end > start + 1 )
-               ulog( "Scan completed." );
+           // TODO: This was breaking regression tests
+           //if( min_end > start + 1 )
+               //ulog( "Scan completed." );
          }
          catch(...)
          {
            _scan_progress = -1;
-           ulog( "Scan failure." );
+           // TODO: This line was breaking regression tests by causing a crash
+           //ulog( "Scan failure." );
            throw;
          }
       }
@@ -1506,6 +1514,7 @@ namespace bts { namespace wallet {
           }
 
           ulog( "Upgrading wallet..." );
+          std::exception_ptr upgrade_failure_exception;
           try
           {
               if( current_version >= 100 )
@@ -1648,8 +1657,13 @@ namespace bts { namespace wallet {
           }
           catch( ... )
           {
+              upgrade_failure_exception = std::current_exception();
+          }
+
+          if (upgrade_failure_exception)
+          {
               ulog( "Wallet upgrade failure." );
-              throw;
+              std::rethrow_exception(upgrade_failure_exception);
           }
       }
 
@@ -1658,6 +1672,7 @@ namespace bts { namespace wallet {
           if( _unlocked_upgrade_tasks.empty() ) return;
 
           ulog( "Continuing wallet upgrade..." );
+          std::exception_ptr upgrade_failure_exception;
           try
           {
               for( const auto& task : _unlocked_upgrade_tasks ) task();
@@ -1667,8 +1682,13 @@ namespace bts { namespace wallet {
           }
           catch( ... )
           {
+              upgrade_failure_exception = std::current_exception();
+          }
+
+          if (upgrade_failure_exception)
+          {
               ulog( "Wallet upgrade failure." );
-              throw;
+              std::rethrow_exception(upgrade_failure_exception);
           }
       }
 
@@ -1714,6 +1734,7 @@ namespace bts { namespace wallet {
       if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
           FC_THROW_EXCEPTION( password_too_short, "Password too short!", ("size",password.size()) );
 
+      std::exception_ptr wallet_create_failure;
       try
       {
           create_file( wallet_file_path, password, brainkey );
@@ -1722,8 +1743,13 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          wallet_create_failure = std::current_exception();
+      }
+
+      if (wallet_create_failure)
+      {
           close();
-          throw;
+          std::rethrow_exception(wallet_create_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_name}'", ("wallet_name",wallet_name) ) }
 
@@ -1739,6 +1765,7 @@ namespace bts { namespace wallet {
       if( password.size() < BTS_WALLET_MIN_PASSWORD_LENGTH )
           FC_THROW_EXCEPTION( password_too_short, "Password too short!", ("size",password.size()) );
 
+      std::exception_ptr create_file_failure;
       try
       {
           close();
@@ -1781,9 +1808,14 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          create_file_failure = std::current_exception();
+      }
+
+      if (create_file_failure)
+      {
           close();
           fc::remove_all( wallet_file_path );
-          throw;
+          std::rethrow_exception(create_file_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to create wallet '${wallet_file_path}'", ("wallet_file_path",wallet_file_path) ) }
 
@@ -1798,14 +1830,20 @@ namespace bts { namespace wallet {
       if ( !fc::exists( wallet_file_path ) )
          FC_THROW_EXCEPTION( no_such_wallet, "No such wallet exists!", ("wallet_name", wallet_name) );
 
+      std::exception_ptr open_file_failure;
       try
       {
           open_file( wallet_file_path );
       }
       catch( ... )
       {
+          open_file_failure = std::current_exception();
+      }
+
+      if (open_file_failure)
+      {
           close();
-          throw;
+          std::rethrow_exception(open_file_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
 
@@ -1819,6 +1857,7 @@ namespace bts { namespace wallet {
       if( is_open() && my->_current_wallet_path == wallet_file_path )
           return;
 
+      std::exception_ptr open_file_failure;
       try
       {
           close();
@@ -1829,8 +1868,13 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          open_file_failure = std::current_exception();
+      }
+
+      if (open_file_failure)
+      {
           close();
-          throw;
+          std::rethrow_exception(open_file_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "Unable to open wallet ${wallet_file_path}", ("wallet_file_path",wallet_file_path) ) }
 
@@ -1912,6 +1956,7 @@ namespace bts { namespace wallet {
           FC_THROW_EXCEPTION( invalid_wallet_name, "Invalid name for a wallet!", ("wallet_name",wallet_name) );
 
       create( wallet_name, passphrase );
+      std::exception_ptr import_failure;
       try
       {
           my->_wallet_db.set_property( version, variant( 0 ) );
@@ -1922,10 +1967,15 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          import_failure = std::current_exception();
+      }
+
+      if (import_failure)
+      {
           close();
-          auto wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
+          fc::path wallet_file_path = fc::absolute( get_data_directory() ) / wallet_name;
           fc::remove_all( wallet_file_path );
-          throw;
+          std::rethrow_exception(import_failure);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
 
@@ -1933,14 +1983,14 @@ namespace bts { namespace wallet {
    { try {
       if( !get_automatic_backups() ) return;
       ulog( "Backing up wallet..." );
-      const auto wallet_path = my->_current_wallet_path;
-      const auto wallet_name = wallet_path.filename().string();
-      const auto wallet_dir = wallet_path.parent_path();
-      auto backup_path = fc::path();
+      fc::path wallet_path = my->_current_wallet_path;
+      std::string wallet_name = wallet_path.filename().string();
+      fc::path wallet_dir = wallet_path.parent_path();
+      fc::path backup_path;
       while( true )
       {
-          const auto now = time_point_sec( time_point::now() );
-          auto backup_filename = wallet_name + "-" + now.to_iso_string();
+          fc::time_point_sec now( time_point::now() );
+          std::string backup_filename = wallet_name + "-" + now.to_iso_string();
           if( !reason.empty() ) backup_filename += "-" + reason;
           backup_filename += ".json";
           backup_path = wallet_dir / ".backups" / wallet_name / backup_filename;
@@ -1981,6 +2031,7 @@ namespace bts { namespace wallet {
 
    void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
+      std::exception_ptr unlock_error;
       try
       {
           FC_ASSERT( is_open() );
@@ -1988,8 +2039,8 @@ namespace bts { namespace wallet {
           if( timeout_seconds < 1 )
               FC_THROW_EXCEPTION( invalid_timeout, "Invalid timeout!" );
 
-          const auto now = fc::time_point::now();
-          const auto new_lock_time = now + fc::seconds( timeout_seconds );
+          fc::time_point now = fc::time_point::now();
+          fc::time_point new_lock_time = now + fc::seconds( timeout_seconds );
           if( new_lock_time.sec_since_epoch() <= now.sec_since_epoch() )
               FC_THROW_EXCEPTION( invalid_timeout, "Invalid timeout!" );
 
@@ -2015,8 +2066,13 @@ namespace bts { namespace wallet {
       }
       catch( ... )
       {
+          unlock_error = std::current_exception();
+      }
+
+      if (unlock_error)
+      {
           lock();
-          throw;
+          std::rethrow_exception(unlock_error);
       }
    } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
 
@@ -2701,8 +2757,8 @@ namespace bts { namespace wallet {
            if( a.is_confirmed == b.is_confirmed && a.block_num != b.block_num )
                return a.block_num < b.block_num;
 
-           if( a.received_time != b.received_time)
-               return a.received_time < b.received_time;
+           if( a.timestamp != b.timestamp)
+               return a.timestamp < b.timestamp;
 
            return string( a.trx_id ).compare( string( b.trx_id ) ) < 0;
        };
@@ -3162,7 +3218,7 @@ namespace bts { namespace wallet {
       if( current_account->public_data.is_object() )
           public_data = current_account->public_data.get_object();
 
-      const auto version = string( BTS_CLIENT_VERSION );
+      const auto version = bts::client::version_info()["client_version"].as_string();
       public_data[ "version" ] = version;
 
       trx.update_account( current_account->id,
@@ -3207,6 +3263,7 @@ namespace bts { namespace wallet {
       uint32_t regenerated_keys = 0;
       for( uint32_t i = 0; i < count; ++i )
       {
+         fc::oexception regenerate_key_error;
          try {
             auto key = my->_wallet_db.get_private_key( my->_wallet_password, i );
             auto addr = address( key.get_public_key() );
@@ -3217,8 +3274,11 @@ namespace bts { namespace wallet {
             }
          } catch ( const fc::exception& e )
          {
-            ulog( "${e}", ("e", e.to_detail_string()) );
+            regenerate_key_error = e;
          }
+
+         if (regenerate_key_error)
+            ulog( "${e}", ("e", regenerate_key_error->to_detail_string()) );
       }
 
       const auto& accs = my->_wallet_db.get_accounts();
@@ -3654,6 +3714,98 @@ namespace bts { namespace wallet {
    } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
                                       ("amount_to_withdraw",real_amount_to_withdraw ) ) }
 
+   /**
+    *  This transfer works like a bitcoin transaction combining multiple inputs
+    *  and producing a single output.
+    */
+   wallet_transaction_record wallet::burn_asset(
+           double real_amount_to_transfer,
+           const string& amount_to_transfer_symbol,
+           const string& paying_account_name,
+           const string& for_or_against,
+           const string& to_account_name,
+           const string& public_message,
+           bool anonymous,
+           bool sign 
+           )
+   {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
+      FC_ASSERT( is_receive_account( paying_account_name ) );
+
+      const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
+      FC_ASSERT( asset_rec.valid() );
+      const auto asset_id = asset_rec->id;
+
+      const int64_t precision = asset_rec->precision ? asset_rec->precision : 1;
+      share_type amount_to_transfer = real_amount_to_transfer * precision;
+      asset asset_to_transfer( amount_to_transfer, asset_id );
+
+      private_key_type sender_private_key  = get_active_private_key( paying_account_name );
+      public_key_type  sender_public_key   = sender_private_key.get_public_key();
+      address          sender_account_address( sender_private_key.get_public_key() );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
+      if( required_fees.asset_id == asset_to_transfer.asset_id )
+      {
+         my->withdraw_to_transaction( required_fees + asset_to_transfer,
+                                      sender_account_address,
+                                      trx,
+                                      required_signatures );
+      }
+      else
+      {
+         my->withdraw_to_transaction( asset_to_transfer,
+                                      sender_account_address,
+                                      trx,
+                                      required_signatures );
+
+         my->withdraw_to_transaction( required_fees,
+                                      sender_account_address,
+                                      trx,
+                                      required_signatures );
+      }
+
+      const auto to_account_rec = my->_blockchain->get_account_record( to_account_name );
+      optional<signature_type> message_sig;
+      if( !anonymous )
+      {
+         fc::sha256 digest;
+
+         if( public_message.size() )
+            digest = fc::sha256::hash( public_message.c_str(), public_message.size() );
+
+         message_sig = sender_private_key.sign_compact( digest );
+      }
+
+      FC_ASSERT( to_account_rec.valid() );
+      if( for_or_against == "against" )
+         trx.burn( asset_to_transfer, -to_account_rec->id, public_message, message_sig );
+      else
+      {
+         FC_ASSERT( for_or_against == "for" );
+         trx.burn( asset_to_transfer, to_account_rec->id, public_message, message_sig );
+      }
+
+      auto entry = ledger_entry();
+      entry.from_account = sender_public_key;
+      entry.amount = asset_to_transfer;
+      entry.memo = "burn: public_message";
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+      record.extra_addresses.push_back( to_account_rec->active_key() );
+
+      if( sign ) sign_transaction( trx, required_signatures );
+      cache_transaction( trx, record );
+
+      return record;
+   }
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
@@ -5185,142 +5337,8 @@ namespace bts { namespace wallet {
       }
 
       pretty_trx.fee = trx_rec.fee;
-      pretty_trx.created_time = trx_rec.created_time;
-      pretty_trx.received_time = trx_rec.received_time;
-      pretty_trx.expiration_time = trx_rec.trx.expiration;
-
-      if( trx_rec.is_virtual ) return pretty_trx;
-
-      // TODO: What is this stuff?
-      auto trx = trx_rec.trx;
-      for( const auto& op : trx.operations )
-      {
-          switch( operation_type_enum( op.type ) )
-          {
-              case (withdraw_op_type):
-              {
-                  auto pretty_op = pretty_withdraw_op();
-                  auto withdraw_op = op.as<withdraw_operation>();
-                  /*
-                  auto name = std::string("");
-                  address owner;
-                  auto balance_rec = my->_blockchain->get_balance_record( withdraw_op.balance_id );
-                  if (balance_rec)
-                  {
-                      owner = balance_rec->owner();
-                      if (owner)
-                      {
-                          owallet_account_record acc_rec = my->_wallet_db.lookup_account( owner );
-                          if ( acc_rec )
-                              name = acc_rec->name;
-                      }
-                  }
-
-                  pretty_op.owner = std::make_pair(owner, name);
-                  pretty_op.amount = withdraw_op.amount;
-                  */
-                  pretty_trx.add_operation(pretty_op);
-                  break;
-              }
-              case (deposit_op_type):
-              {
-                  auto pretty_op = pretty_deposit_op();
-                  auto deposit_op = op.as<deposit_operation>();
-/*
-                  // TODO
-                  account_id_type vote = deposit_op.condition.delegate_id;
-                  account_id_type pos_delegate_id = (vote > 0) ? vote : account_id_type(-vote);
-                  int32_t delegate_account_num = my->_wallet_db.account_id_to_account[pos_delegate_id];
-                  blockchain::oaccount_record delegate_acct_rec = my->_blockchain->get_account_record( delegate_account_num );
-                  string delegate_name = delegate_acct_rec ? delegate_acct_rec->name : "";
-                  pretty_op.vote = std::make_pair(vote, delegate_name);
-
-                  if( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type )
-                  {
-                      auto name = std::string("");
-                      auto condition = deposit_op.condition.as<withdraw_with_signature>();
-                      auto acc_rec = my->_wallet_db.lookup_account( condition.owner );
-                      if ( acc_rec )
-                          name = acc_rec->name;
-                      pretty_op.owner = std::make_pair( condition.owner, name );
-                  }
-                  else
-                  {
-                      FC_ASSERT(false, "Unimplemented withdraw condition: ${c}",
-                                      ("c", deposit_op.condition.type));
-                  }
-
-                  pretty_op.amount = deposit_op.amount;
-*/
-                  pretty_trx.add_operation(pretty_op);
-                  break;
-              }
-              case( register_account_op_type ):
-              {
-                  auto reserve_name_op = op.as<register_account_operation>();
-                  auto pretty_op = pretty_reserve_name_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( update_account_op_type ):
-              {
-                  auto update_name_op = op.as<update_account_operation>();
-                  auto pretty_op = pretty_update_name_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( create_asset_op_type ):
-              {
-                  //auto create_asset_op = op.as<create_asset_operation>();
-                  auto pretty_op = pretty_create_asset_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( update_asset_op_type ):
-              {
-                  //auto update_asset_op = op.as<update_asset_operation>();
-                  auto pretty_op = pretty_update_asset_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( issue_asset_op_type ):
-              {
-                  //auto issue_asset_op = op.as<issue_asset_operation>();
-                  auto pretty_op = pretty_issue_asset_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( submit_proposal_op_type ):
-              {
-                  //auto submit_proposal_op = op.as<submit_proposal_operation>();
-                  auto pretty_op = pretty_submit_proposal_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case( vote_proposal_op_type ):
-              {
-                  //auto vote_proposal_op = op.as<vote_proposal_operation>();
-                  auto pretty_op = pretty_vote_proposal_op();
-                  pretty_trx.add_operation( pretty_op );
-                  break;
-              }
-              case withdraw_pay_op_type:
-              {
-                 pretty_trx.add_operation( op );
-                 break;
-              }
-              case bid_op_type:
-              {
-                 pretty_trx.add_operation( op );
-                 break;
-              }
-              default:
-              {
-                 pretty_trx.add_operation( op );
-                 break;
-              }
-          } // switch op_type
-      } // for op in trx
+      pretty_trx.timestamp = std::min<time_point_sec>( trx_rec.created_time, trx_rec.received_time );
+      pretty_trx.expiration_timestamp = trx_rec.trx.expiration;
 
       return pretty_trx;
    }

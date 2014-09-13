@@ -1,6 +1,5 @@
 default (unlocked) >>> wallet_account_create testaccount
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> help wallet_get_account

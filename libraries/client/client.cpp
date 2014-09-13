@@ -39,7 +39,6 @@
 #include <fc/crypto/hex.hpp>
 
 #include <fc/thread/thread.hpp>
-#include <fc/thread/scoped_lock.hpp>
 #include <fc/thread/non_preemptable_scope_check.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
@@ -57,7 +56,6 @@
 #include <boost/program_options.hpp>
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <boost/thread/mutex.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -105,7 +103,6 @@ fc::path get_data_dir(const program_options::variables_map& option_variables);
 config   load_config( const fc::path& datadir );
 void  load_and_configure_chain_database(const fc::path& datadir,
                                         const program_options::variables_map& option_variables);
-fc::variant_object version_info();
 
 program_options::variables_map parse_option_variables(int argc, char** argv)
 {
@@ -513,11 +510,16 @@ config load_config( const fc::path& datadir )
             class user_appender : public fc::appender
             {
                public:
-                  user_appender( client_impl& c )
-                  :_client_impl(c){}
+              user_appender( client_impl& c ) :
+                _client_impl(c),
+                _thread(&fc::thread::current())
+              {}
 
                   virtual void log( const fc::log_message& m ) override
                   {
+                if (!_thread->is_current())
+                  return _thread->async([&](){ log(m); }, "user_appender::log").wait();
+
                      string format = m.get_format();
                      // lookup translation on format here
 
@@ -525,14 +527,11 @@ config load_config( const fc::path& datadir )
                      string message = format_string( format, m.get_data() );
 
 
-                     { // appenders can be called from any thread
-                        fc::scoped_lock<boost::mutex> lock(_history_lock);
                         _history.emplace_back( message );
                         if( _client_impl._cli )
                           _client_impl._cli->display_status_message( message );
                         else
                           std::cout << message << "\n";
-                     }
 
                      // call a callback to the client...
 
@@ -542,21 +541,23 @@ config load_config( const fc::path& datadir )
 
                   vector<string> get_history()const
                   {
-                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                if (!_thread->is_current())
+                  return _thread->async([&](){ return get_history(); }, "user_appender::get_history").wait();
                      return _history;
                   }
 
                   void clear_history()
                   {
-                     fc::scoped_lock<boost::mutex> lock(_history_lock);
+                if (!_thread->is_current())
+                  return _thread->async([&](){ return clear_history(); }, "user_appender::clear_history").wait();
                      _history.clear();
                   }
 
                private:
-                  mutable boost::mutex  _history_lock;
                   // TODO: consider a deque and enforce maximum length?
                   vector<string>        _history;
                   client_impl&          _client_impl;
+              fc::thread*           _thread;
             };
 
             client_impl(bts::client::client* self) :
@@ -591,15 +592,21 @@ config load_config( const fc::path& datadir )
 
             void start()
             {
+              std::exception_ptr unexpected_exception;
               try
               {
                 _cli->start();
               }
               catch (...)
               {
+                unexpected_exception = std::current_exception();
+              }
+
+              if (unexpected_exception)
+              {
                 if (_notifier)
                   _notifier->notify_client_exiting_unexpectedly();
-                throw;
+                std::rethrow_exception(unexpected_exception);
               }
             }
 
@@ -1299,12 +1306,18 @@ config load_config( const fc::path& datadir )
         for (uint32_t i = 0; i < items_to_get_this_iteration; ++i)
         {
           block_id_type block_id;
+          bool block_id_not_found = false;
           try
           {
             block_id = _chain_db->get_block_id(last_seen_block_num);
             //assert(_chain_db->get_block(last_seen_block_num).id() == block_id);  // expensive assert, remove once we're sure
           }
           catch (const fc::key_not_found_exception&)
+          {
+            block_id_not_found = true;
+          }
+
+          if (block_id_not_found)
           {
             ilog("chain_database::get_block_id failed to return the id for block number ${last_seen_block_num} even though chain_database::get_block_num() provided its block number",
                  ("last_seen_block_num",last_seen_block_num));
@@ -1711,16 +1724,20 @@ config load_config( const fc::path& datadir )
 
     fc::variant_object version_info()
     {
-      fc::mutable_variant_object info;
-      info["bitshares_toolkit_revision"]     = bts::utilities::git_revision_sha;
-      info["bitshares_toolkit_revision_age"] = fc::get_approximate_relative_time_string(fc::time_point_sec(bts::utilities::git_revision_unix_timestamp));
-      info["fc_revision"]                    = fc::git_revision_sha;
-      info["fc_revision_age"]                = fc::get_approximate_relative_time_string(fc::time_point_sec(fc::git_revision_unix_timestamp));
-      info["compile_date"]                   = "compiled on " __DATE__ " at " __TIME__;
-      info["blockchain_description"]         = BTS_BLOCKCHAIN_DESCRIPTION;
+      string client_version( bts::utilities::git_revision_description );
 #ifdef BTS_TEST_NETWORK
-      info["test_network_version"] = std::to_string( BTS_TEST_NETWORK_VERSION );
+      client_version += "-testnet-" + std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif
+
+      fc::mutable_variant_object info;
+      info["blockchain_name"]                   = BTS_BLOCKCHAIN_NAME;
+      info["blockchain_description"]            = BTS_BLOCKCHAIN_DESCRIPTION;
+      info["client_version"]                    = client_version;
+      info["bitshares_toolkit_revision"]        = bts::utilities::git_revision_sha;
+      info["bitshares_toolkit_revision_age"]    = fc::get_approximate_relative_time_string( fc::time_point_sec( bts::utilities::git_revision_unix_timestamp ) );
+      info["fc_revision"]                       = fc::git_revision_sha;
+      info["fc_revision_age"]                   = fc::get_approximate_relative_time_string( fc::time_point_sec( fc::git_revision_unix_timestamp ) );
+      info["compile_date"]                      = "compiled on " __DATE__ " at " __TIME__;
       return info;
     }
 
@@ -1735,7 +1752,7 @@ config load_config( const fc::path& datadir )
     }
 
     //JSON-RPC Method Implementations START
-    block_id_type detail::client_impl::blockchain_get_block_hash(uint32_t block_number) const
+    block_id_type detail::client_impl::blockchain_get_block_hash( uint32_t block_number ) const
     {
       return _chain_db->get_block(block_number).id();
     }
@@ -1883,6 +1900,25 @@ config load_config( const fc::path& datadir )
         const auto record = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
                                                      from_account_name, from_account_name, to_account_name,
                                                      memo_message, selection_method );
+        network_broadcast_transaction( record.trx );
+        return record;
+    }
+    wallet_transaction_record detail::client_impl::wallet_burn(
+            double amount_to_transfer,
+            const string& asset_symbol,
+            const string& from_account_name,
+            const string& for_or_against,
+            const string& to_account_name,
+            const string& public_message,
+            bool anonymous )
+    {
+#include <bts/blockchain/fork_blocks.hpp>
+        if( _chain_db->get_pending_state()->get_head_block_num() < BTSX_BURN_FORK_1_BLOCK_NUM )
+            FC_ASSERT( !"Burn operation is not enabled yet!" );
+
+        const auto record = _wallet->burn_asset( amount_to_transfer, asset_symbol,
+                                                     from_account_name, for_or_against, to_account_name,
+                                                     public_message, anonymous );
         network_broadcast_transaction( record.trx );
         return record;
     }
@@ -2759,39 +2795,47 @@ config load_config( const fc::path& datadir )
       {
         ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
         // first, try and parse the endpoint as a numeric_ipv4_address:port that doesn't need DNS lookup
-        return fc::ip::endpoint::from_string(remote_endpoint.c_str());
+        return fc::ip::endpoint::from_string(remote_endpoint);
       }
       catch (...)
       {
-        string::size_type colon_pos = remote_endpoint.find(':');
-        try
-        {
-          uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() ) );
+      }
 
-          string hostname = remote_endpoint.substr( 0, colon_pos );
-          std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
-          if ( endpoints.empty() )
-            FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
-          return endpoints.back();
-        }
-        catch (const boost::bad_lexical_cast&)
-        {
-          FC_THROW("Bad port: ${port}", ("port", remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() )));
-        }
+      // couldn't parse as a numeric ip address, try resolving as a DNS name.  This can yield, so don't
+      // do it in the catch block above
+      string::size_type colon_pos = remote_endpoint.find(':');
+      try
+      {
+        uint16_t port = boost::lexical_cast<uint16_t>( remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() ) );
+
+        string hostname = remote_endpoint.substr( 0, colon_pos );
+        std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
+        if ( endpoints.empty() )
+          FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+        return endpoints.back();
+      }
+      catch (const boost::bad_lexical_cast&)
+      {
+        FC_THROW("Bad port: ${port}", ("port", remote_endpoint.substr( colon_pos + 1, remote_endpoint.size() )));
       }
     }
 
     void client::add_node( const string& remote_endpoint )
     {
       fc::ip::endpoint endpoint;
+      fc::oexception string_to_endpoint_error;
       try
       {
         endpoint = string_to_endpoint(remote_endpoint);
       }
       catch (const fc::exception& e)
       {
+        string_to_endpoint_error = e;
+      }
+      if (string_to_endpoint_error)
+      {
         ulog("Unable to add peer ${remote_endpoint}: ${error}",
-             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+             ("remote_endpoint", remote_endpoint)("error", string_to_endpoint_error->to_string()));
         return;
       }
 
@@ -2807,14 +2851,19 @@ config load_config( const fc::path& datadir )
     void client::connect_to_peer(const string& remote_endpoint)
     {
       fc::ip::endpoint endpoint;
+      fc::oexception string_to_endpoint_error;
       try
       {
         endpoint = string_to_endpoint(remote_endpoint);
       }
       catch (const fc::exception& e)
       {
+        string_to_endpoint_error = e;
+      }
+      if (string_to_endpoint_error)
+      {
         ulog("Unable to initiate connection to peer ${remote_endpoint}: ${error}",
-             ("remote_endpoint", remote_endpoint)("error", e.to_string()));
+             ("remote_endpoint", remote_endpoint)("error", string_to_endpoint_error->to_string()));
         return;
       }
 
@@ -3025,7 +3074,7 @@ config load_config( const fc::path& datadir )
       info["client_data_dir"]                                   = fc::absolute( _data_dir );
       //info["client_httpd_port"]                                 = _config.is_valid() ? _config.httpd_endpoint.port() : 0;
       //info["client_rpc_port"]                                   = _config.is_valid() ? _config.rpc_endpoint.port() : 0;
-      info["client_version"]                                    = BTS_CLIENT_VERSION;
+      info["client_version"]                                    = bts::client::version_info()["client_version"].as_string();
 
       /* Network */
       info["network_num_connections"]                           = network_get_connection_count();
@@ -3612,9 +3661,12 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_delegate_slot_records( delegate_record->id );
    }
 
-   string client_impl::blockchain_get_block_signee( uint32_t block_number )const
+   string client_impl::blockchain_get_block_signee( const string& block )const
    {
-      return _chain_db->get_block_signee( block_number ).name;
+      if( block.size() == 40 )
+          return _chain_db->get_block_signee( block_id_type( block ) ).name;
+      else
+          return _chain_db->get_block_signee( std::stoi( block ) ).name;
    }
 
    void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
@@ -3763,6 +3815,11 @@ config load_config( const fc::path& datadir )
       const auto record = _wallet->publish_feeds( delegate_account, real_amount_per_xts );
       network_broadcast_transaction( record.trx );
       return record;
+   }
+
+   vector<burn_record> client_impl::blockchain_get_account_wall( const string& account )const
+   {
+      return _chain_db->fetch_burn_records( account );
    }
 
    int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )

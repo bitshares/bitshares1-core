@@ -1,7 +1,7 @@
 /** This file is designed to be included in detail::chain_database_impl, but is pulled into a separate file for
  * ease of maintenance and upgrade.
  */
-// This is used to save & restore the _current_ask with its previous value, required to 
+// This is used to save & restore the _current_ask with its previous value, required to
 // reproduce some quirky behavior in pre-BTSX_MARKET_FORK_4_BLOCK_NUM blocks.
 struct save_and_restore_ask
 {
@@ -120,7 +120,7 @@ class market_engine_v2
                      if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
                        FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
                      save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
-                     
+
                      if( (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount < (10000 * BTS_BLOCKCHAIN_PRECISION) )
                         break;
                 //     idump( (_current_ask) );
@@ -995,15 +995,15 @@ class market_engine_v2
                  _pending_state->market_history[old_key] = new_record;
              }
       }
-      void reset_current_ask() 
-      { 
+      void reset_current_ask()
+      {
         if (_current_ask)
         {
-          if (_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM) 
+          if (_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM)
             _current_ask_backup = _current_ask;
           _current_ask.reset();
         }
-         /* does not reset _current_ask_backup */ 
+         /* does not reset _current_ask_backup */
       }
 
       pending_chain_state_ptr     _pending_state;
@@ -1021,8 +1021,8 @@ class market_engine_v2
 
       vector<market_transaction>  _market_transactions;
 
-      bts::db::level_map< market_index_key, order_record >::iterator       _bid_itr;
-      bts::db::level_map< market_index_key, order_record >::iterator       _ask_itr;
-      bts::db::level_map< market_index_key, order_record >::iterator       _short_itr;
-      bts::db::level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
+      bts::db::cached_level_map< market_index_key, order_record >::iterator       _bid_itr;
+      bts::db::cached_level_map< market_index_key, order_record >::iterator       _ask_itr;
+      bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
+      bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
 };

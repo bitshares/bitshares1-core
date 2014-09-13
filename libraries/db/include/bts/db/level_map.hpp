@@ -137,10 +137,7 @@ namespace bts { namespace db {
              }
 
              iterator& operator++()    { _it->Next(); return *this; }
-             iterator  operator++(int) { _it->Next(); return *this; }
-
              iterator& operator--()    { _it->Prev(); return *this; }
-             iterator  operator--(int) { _it->Prev(); return *this; }
 
            protected:
              friend class level_map;

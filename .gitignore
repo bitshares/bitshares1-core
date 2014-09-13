@@ -6,6 +6,7 @@
 *.sw*
 *.dot
 *.DS_Store
+*.pyc
 
 docs/html
 docs/latex
@@ -48,6 +49,6 @@ tests/dev_tests
 tests/nathan_tests
 tests/server_node
 tests/wallet_tests
-/tests/debug_tests.log
-/tests/failed_tests.log
-/tests/regression_tests/_newtest
+tests/debug_tests.log
+tests/failed_tests.log
+tests/regression_tests/_newtest

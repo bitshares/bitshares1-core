@@ -310,6 +310,22 @@ namespace bts { namespace wallet {
                  vote_selection_method m,
                  bool sign = true
                  );
+
+         /**
+          *  This transfer works like a bitcoin transaction combining multiple inputs
+          *  and producing a single output.
+          */
+         wallet_transaction_record burn_asset(
+                 double real_amount_to_transfer,
+                 const string& amount_to_transfer_symbol,
+                 const string& paying_account_name,
+                 const string& for_or_against,
+                 const string& to_account_name,
+                 const string& public_message,
+                 bool anonymous = true,
+                 bool sign = true
+                 );
+
          /**
           * if the active_key is null then the active key will be made the same as the master key.
           * if the name already exists then it will be updated if this wallet controls the active key

@@ -24,7 +24,21 @@ namespace bts { namespace db {
                _pending_flush.wait();
             else
                flush();
+            _cache.clear();
+            _dirty.clear();
+            _dirty_remove.clear();
             _db.close();
+         }
+
+         bool get_flush_on_store()
+         {
+            return _flush_on_store;
+         }
+         void set_flush_on_store( bool should_flush )
+         {
+            if( should_flush )
+               flush();
+            _flush_on_store = should_flush;
          }
 
          void flush()
@@ -33,8 +47,11 @@ namespace bts { namespace db {
             // start batch
             for( auto item : _dirty )
                _db.store( item, _cache[item] );
-            // end batch 
+            for( auto item : _dirty_remove )
+               _db.remove( item );
+            // end batch
             _dirty.clear();
+            _dirty_remove.clear();
          }
 
         fc::optional<Value> fetch_optional( const Key& k )
@@ -57,12 +74,14 @@ namespace bts { namespace db {
              if( _flush_on_store )
              {
                  _dirty.insert(key);
+                 _dirty_remove.erase(key);
                  if( !_pending_flush.valid() || _pending_flush.ready() )
                     _pending_flush = fc::async( [this](){ flush(); }, "cached_level_map::flush" );
                 _db.store( key, value );
+             } else {
+                 _dirty.insert(key);
+                 _dirty_remove.erase(key);
              }
-             else
-                _dirty.insert(key);
         } FC_CAPTURE_AND_RETHROW( (key)(value) ) }
 
         bool last( Key& k )
@@ -84,8 +103,13 @@ namespace bts { namespace db {
         void remove( const Key& key )
         { try {
            _cache.erase(key);
-           _db.remove(key);
-           _dirty.erase(key);
+           if( _flush_on_store )
+           {
+              _db.remove(key);
+              _dirty.erase(key);
+           } else {
+              _dirty_remove.insert(key);
+           }
         } FC_CAPTURE_AND_RETHROW( (key) ) }
 
         class iterator
@@ -98,37 +122,60 @@ namespace bts { namespace db {
              Value value()const { return _it->second; }
 
              iterator& operator++()    { ++_it; return *this; }
-             iterator  operator++(int) { ++_it; return *this; }
+             iterator  operator++(int) {
+                auto backup = *this;
+                ++_it;
+                return backup;
+             }
 
-             iterator& operator--()    { --_it; return *this; }
-             iterator  operator--(int) { --_it; return *this; }
+             iterator& operator--()
+             {
+                if( _it == _begin )
+                   _it = _end;
+                else
+                   --_it;
+                return *this;
+             }
+             iterator  operator--(int) {
+                auto backup = *this;
+                operator--();
+                return backup;
+             }
 
            protected:
              friend class cached_level_map;
-             iterator( typename CacheType::const_iterator it, typename CacheType::const_iterator end )
-             :_it(it),_end(end)
+             iterator( typename CacheType::const_iterator it, typename CacheType::const_iterator begin, typename CacheType::const_iterator end )
+             :_it(it),_begin(begin),_end(end)
              { }
 
              typename CacheType::const_iterator _it;
+             typename CacheType::const_iterator _begin;
              typename CacheType::const_iterator _end;
         };
         iterator begin()const
         {
-           return iterator( _cache.begin(), _cache.end() );
+           return iterator( _cache.begin(), _cache.begin(), _cache.end() );
+        }
+        iterator last()
+        {
+           if( _cache.empty() )
+              return iterator( _cache.end(), _cache.begin(), _cache.end() );
+           return iterator( --_cache.end(), _cache.begin(), _cache.end() );
         }
 
         iterator find( const Key& key )
         {
-           return iterator( _cache.find(key), _cache.end() );
+           return iterator( _cache.find(key), _cache.begin(), _cache.end() );
         }
         iterator lower_bound( const Key& key )
         {
-           return iterator( _cache.lower_bound(key), _cache.end() );
+           return iterator( _cache.lower_bound(key), _cache.begin(), _cache.end() );
         }
 
       private:
         CacheType                _cache;
         std::set<Key>            _dirty;
+        std::set<Key>            _dirty_remove;
         level_map<Key,Value>     _db;
         bool                     _flush_on_store;
         fc::future<void>         _pending_flush;

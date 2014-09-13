@@ -1,20 +1,16 @@
 default (unlocked) >>> wallet_account_create testaccount1
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount1:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_create testaccount2
-
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount2:XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b
 default (unlocked) >>> wallet_account_create testaccount3
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount3:XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM
 default (unlocked) >>> wallet_account_create testaccount4
-
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount4:XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg
@@ -27,7 +23,7 @@ No account found.
 default (unlocked) >>> blockchain_get_account testaccount4
 No account found.
 default (unlocked) >>> wallet_account_register testaccount1 delegate0 null 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount1        0.00000 XTS             register testaccount1 as a delegate         0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -70,7 +66,7 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount2 delegate0 null 90
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount2        0.00000 XTS             register testaccount2 as a delegate         0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -125,7 +121,7 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount3 delegate0 null 10
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount3        0.00000 XTS             register testaccount3 as a delegate         0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -202,7 +198,7 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
   }
 ]
 default (unlocked) >>> wallet_account_register testaccount4 delegate0 null 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount4        0.00000 XTS             register testaccount4 as a delegate         0.50007 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks

@@ -1,6 +1,5 @@
 default (unlocked) >>> wallet_account_create test
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> wallet_account_balance delegate0
@@ -30,7 +29,7 @@ Parameters:
 Returns:
   transaction_record
 default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate1 as del... test                100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -38,7 +37,7 @@ OK
 default (unlocked) >>> debug_wait 5
 OK
 default (unlocked) >>> history test
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
 [redacted]          2         delegate1 as del... test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         [redacted]
 default (unlocked) >>> wallet_account_balance delegate0

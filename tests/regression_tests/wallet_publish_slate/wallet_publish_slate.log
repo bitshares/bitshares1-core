@@ -14,7 +14,7 @@ Parameters:
 Returns:
   transaction_record
 default (unlocked) >>> wallet_publish_slate delegate0
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             publish slate 13761713000375254272          0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -22,7 +22,7 @@ OK
 default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> history delegate0
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
 [redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    19,801,980.19801 XTS    0.00000 XTS         [redacted]
 [redacted]          2         delegate0           delegate0           0.00000 XTS             publish slate 13761713000375254272          19,801,979.69801 XTS    0.50000 XTS         [redacted]

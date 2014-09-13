@@ -75,7 +75,7 @@ Parameters:
   filename (string, optional, defaults to ""): the filename to save to
 
 Returns:
-  std::string
+  string
 
 aliases: export_forks
 default (unlocked) >>> blockchain_export_fork_graph 1 -1 exported_fork.gv

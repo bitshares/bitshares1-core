@@ -379,7 +379,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         out << std::setw(  8 ) << block_record.block_num;
         out << std::setw( 20 ) << pretty_timestamp( block_record.timestamp );
 
-        const auto& delegate_name = client->blockchain_get_block_signee( block_record.block_num );
+        const auto& delegate_name = client->blockchain_get_block_signee( std::to_string( block_record.block_num ) );
 
         out << std::setw( 32 );
         if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
@@ -422,7 +422,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
 
     if( any_group ) out << " ";
 
-    out << std::setw( 20 ) << "RECEIVED";
+    out << std::setw( 20 ) << "TIMESTAMP";
     out << std::setw( 10 ) << "BLOCK";
     out << std::setw( 20 ) << "FROM";
     out << std::setw( 20 ) << "TO";
@@ -454,7 +454,7 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
             ++count;
             if( count == 1 )
             {
-                out << std::setw( 20 ) << pretty_timestamp( transaction.received_time );
+                out << std::setw( 20 ) << pretty_timestamp( transaction.timestamp );
 
                 out << std::setw( 10 );
                 if( !is_pending )

@@ -1,5 +1,5 @@
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" null 5000000 100
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
@@ -13,24 +13,22 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
 default (unlocked) >>> wallet_account_create testaccount1
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount1:XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v
 default (unlocked) >>> wallet_account_create testaccount2
 
-
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:testaccount2:XTS7CCZsSumbT4xCvu5t21C2ic9msdiYf9oRuNyLBoJz18LTkArfs
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount1
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_transfer 10000 XTS delegate0 testaccount2
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
@@ -49,7 +47,7 @@ testaccount1                    100.00000 XTS
                                 10,000.00 XMO               
 testaccount2                    10,000.00000 XTS            
 default (unlocked) >>> history
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         [redacted]
@@ -83,9 +81,9 @@ Returns:
 
 aliases: bid
 default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   testaccount1        BID                 1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+[redacted]          PENDING   testaccount1        BID-5854ea64        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -102,7 +100,7 @@ testaccount1                    99.50000 XTS
                                 8,500.00 XMO                
 testaccount2                    10,000.00000 XTS            
 default (unlocked) >>> history
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         [redacted]
@@ -113,15 +111,15 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
-[redacted]          4         testaccount1        BID-MQcgyL7S        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+[redacted]          4         testaccount1        BID-5854ea64        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 XTSMQcgyL7SWdbRyDJgafrj7QhfQGWYHK2dR
+bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 5854ea64f8bc0648f063c4add8ac18e0c6bd7538
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 XTSMQcgyL7SWdbRyDJgafrj7QhfQGWYHK2dR
+bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 5854ea64f8bc0648f063c4add8ac18e0c6bd7538
 default (unlocked) >>> help wallet_market_submit_ask
 Usage:
 wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask]   Used to place a request to sell a quantity of assets at a price specified in another asset
@@ -140,9 +138,9 @@ Returns:
 
 aliases: ask
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   testaccount2        ASK                 100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          PENDING   testaccount2        ASK-ea791a42        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -159,7 +157,7 @@ testaccount1                    99.50000 XTS
                                 8,500.00 XMO                
 testaccount2                    9,899.50000 XTS             
 default (unlocked) >>> history
-RECEIVED            BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         [redacted]
@@ -170,17 +168,17 @@ RECEIVED            BLOCK     FROM                TO                  AMOUNT    
 [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
-[redacted]          4         testaccount1        BID-MQcgyL7S        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
-[redacted]          6         testaccount2        ASK-Puq81gDv        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          4         testaccount1        BID-5854ea64        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+[redacted]          5         testaccount2        ASK-ea791a42        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 XTSPuq81gDvFSkg7QVizUVqDtccXrX8pYSkV
+ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 ea791a429f413475795da100875d173c6789fa41
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 XTSMQcgyL7SWdbRyDJgafrj7QhfQGWYHK2dR
-ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 XTSPuq81gDvFSkg7QVizUVqDtccXrX8pYSkV
+bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 5854ea64f8bc0648f063c4add8ac18e0c6bd7538
+ask_order   100.00000 XTS       4. XMO / XTS                  100.00000 XTS       400.00 XMO          N/A                 ea791a429f413475795da100875d173c6789fa41
 default (unlocked) >>> help blockchain_market_order_book
 Usage:
 blockchain_market_order_book <quote_symbol> <base_symbol> [limit]                                     Returns the long and short sides of the order book for a given market
