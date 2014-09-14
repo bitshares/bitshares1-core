@@ -3168,7 +3168,7 @@ config load_config( const fc::path& datadir )
         blockchain_security_state state;
         int64_t required_confirmations = _chain_db->get_required_confirmations();
         double participation_rate = _chain_db->get_average_delegate_participation();
-        if( participation_rate > 100 ) participation_rate = 0;
+        if( participation_rate > 100 ) participation_rate = 100;
 
         state.estimated_confirmation_seconds = (uint32_t)(required_confirmations * BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC);
         state.participation_rate = participation_rate;
