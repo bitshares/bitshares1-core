@@ -8,6 +8,12 @@
 
 #include <queue>
 
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/composite_key.hpp>
+
 #ifndef UNUSED
 #define UNUSED(var) ((void)(var))
 #endif
@@ -19,6 +25,8 @@ using namespace fc;
 using namespace bts::blockchain;
 using namespace bts::wallet;
 using std::string;
+using namespace boost;
+using namespace boost::multi_index;
 
 namespace detail {
 #define BTS_MAIL_CLIENT_DATABASE_VERSION 1
@@ -77,7 +85,30 @@ struct mail_archive_record {
     std::unordered_set<ip::endpoint> mail_servers;
 };
 
+struct mail_index_record {
+    mail_index_record(const email_header& header)
+        : id(header.id),
+          sender(header.sender),
+          recipient(header.recipient),
+          timestamp(header.timestamp)
+    {}
+
+    ripemd160 id;
+    string sender;
+    string recipient;
+    fc::time_point_sec timestamp;
+};
+
 class client_impl {
+protected:
+    //Dummy types to act as mnemonics for multi_index indices
+    struct sender{};
+    struct by_sender{};
+    struct recipient{};
+    struct by_recipient{};
+    struct timestamp{};
+    struct by_timestamp{};
+
 public:
     client* self;
     wallet_ptr _wallet;
@@ -96,6 +127,41 @@ public:
     bts::db::level_map<message_id_type, mail_archive_record> _archive;
     bts::db::cached_level_map<message_id_type, email_header> _inbox;
     bts::db::level_map<string, variant> _property_db;
+
+    multi_index_container<
+        mail_index_record,
+        indexed_by<
+            //Allow indexing by message ID
+            ordered_unique<
+                member<mail_index_record, message_id_type, &mail_index_record::id>
+            >,
+            //Allow indexing by sender-recipient pair
+            //This implicitly allows indexing by sender regardless of recipient
+            ordered_non_unique<
+                tag<sender,by_sender>,
+                composite_key<
+                    mail_index_record,
+                    member<mail_index_record, string, &mail_index_record::sender>,
+                    member<mail_index_record, string, &mail_index_record::recipient>,
+                    member<mail_index_record, time_point_sec, &mail_index_record::timestamp>
+                >
+            >,
+            //Allow indexing by recipient, regardless of sender
+            ordered_non_unique<
+                tag<recipient,by_recipient>,
+                composite_key<
+                    mail_index_record,
+                    member<mail_index_record, string, &mail_index_record::recipient>,
+                    member<mail_index_record, time_point_sec, &mail_index_record::timestamp>
+                >
+            >,
+            //Sort based on timestamp
+            ordered_non_unique<
+                tag<timestamp,by_timestamp>,
+                member<mail_index_record, time_point_sec, &mail_index_record::timestamp>
+            >
+        >
+    > _mail_index;
 
     client_impl(client* self, wallet_ptr wallet, chain_database_ptr chain)
         : self(self),
@@ -357,6 +423,7 @@ public:
         ulog("Email ${id} sent successfully.", ("id", message_id));
         mail_record email = _processing_db.fetch(message_id);
         email.status = client::accepted;
+        _mail_index.insert(email_header(email));
         _archive.store(message_id, std::move(email));
         _processing_db.remove(message_id);
     }
@@ -483,6 +550,7 @@ public:
                             header.timestamp = plaintext.timestamp;
                             mail_archive_record record(std::move(ciphertext), header, account.account_address);
                             _archive.store(email.second, record);
+                            _mail_index.insert(header);
                             _inbox.store(header.id, header);
                         }
                     }
