@@ -2622,6 +2622,33 @@ namespace bts { namespace blockchain {
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
+
+   share_type           chain_database::get_asset_collateral( const string& symbol )
+   { try {
+       auto quote_asset_id = get_asset_id( symbol);
+       auto base_asset_id = 0;
+       auto total = share_type(0);
+
+       auto market_itr = my->_collateral_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+       while( market_itr.valid() )
+       {
+           auto key = market_itr.key();
+           if( key.order_price.quote_asset_id == quote_asset_id
+               &&  key.order_price.base_asset_id == base_asset_id )
+           {
+               total += market_itr.value().collateral_balance;
+           }
+           else
+           {
+               break;
+           }
+
+           market_itr++;
+       }
+       return total;
+
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
    vector<market_order> chain_database::get_market_asks( const string& quote_symbol,
                                                           const string& base_symbol,
                                                           uint32_t limit  )

@@ -3454,6 +3454,11 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->get_market_covers( quote_symbol, limit );
    }
 
+   share_type              client_impl::blockchain_market_get_asset_collateral( const string& symbol )
+   {
+      return _chain_db->get_asset_collateral( symbol );
+   }
+
    std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
                                                                                               const string& base_symbol,
                                                                                               uint32_t limit  )
