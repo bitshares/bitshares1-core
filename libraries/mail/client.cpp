@@ -92,6 +92,12 @@ struct mail_index_record {
           recipient(header.recipient),
           timestamp(header.timestamp)
     {}
+    mail_index_record(mail_archive_record&& from_record)
+        : id(from_record.id),
+          sender(from_record.sender),
+          recipient(from_record.recipient),
+          timestamp(from_record.content.timestamp)
+    {}
 
     ripemd160 id;
     string sender;
@@ -122,6 +128,9 @@ public:
     job_queue _transmit_message_jobs;
     fc::future<void> _transmit_message_worker;
     fc::thread _proof_of_work_thread;
+
+    fc::future<void> _archive_indexing_future;
+    fc::thread _archive_indexing_thread;
 
     bts::db::cached_level_map<message_id_type, mail_record> _processing_db;
     bts::db::level_map<message_id_type, mail_archive_record> _archive;
@@ -167,10 +176,12 @@ public:
         : self(self),
           _wallet(wallet),
           _chain(chain),
-          _proof_of_work_thread("Mail client proof-of-work thread")
+          _proof_of_work_thread("Mail client proof-of-work thread"),
+          _archive_indexing_thread("Mail client indexing thread")
     {}
     ~client_impl(){
         _proof_of_work_worker.cancel_and_wait("Mail client destroyed");
+        _archive_indexing_future.cancel_and_wait();
 
         _archive.close();
         _processing_db.close();
@@ -217,6 +228,8 @@ public:
             //Place all in-processing messages back in their place on the pipeline
             for (auto itr = _processing_db.begin(); itr.valid(); ++itr)
                 retry_message(itr.value());
+
+            index_archive();
         } catch (...) {
             _archive.close();
             _processing_db.close();
@@ -225,6 +238,13 @@ public:
     }
     bool is_open() {
         return _property_db.is_open();
+    }
+
+    void index_archive() {
+        _archive_indexing_future = _archive_indexing_thread.async([this] {
+            for (auto itr = _archive.begin(); itr.valid() && !_archive_indexing_future.canceled(); ++itr)
+                _mail_index.insert(itr.value());
+        }, "Mail client indexing task");
     }
 
     void process_outgoing_mail(mail_record& mail) {
@@ -404,6 +424,7 @@ public:
 
             while (!transmit_tasks.empty()) {
                 transmit_tasks.back().wait();
+                email = _processing_db.fetch(message_id);
                 if (email.status == client::failed) {
                     for (auto task_future : transmit_tasks)
                         task_future.cancel_and_wait();
@@ -692,9 +713,9 @@ email_record::email_record(const detail::mail_record& processing_record)
     header.sender = processing_record.sender;
     header.recipient = processing_record.recipient;
     if (processing_record.status >= client::proof_of_work && processing_record.status != client::failed)
-        *mail_servers = processing_record.mail_servers;
+        mail_servers = processing_record.mail_servers;
     if (processing_record.status == client::failed)
-        *failure_reason = processing_record.failure_reason;
+        failure_reason = processing_record.failure_reason;
 }
 email_record::email_record(const detail::mail_archive_record& archive_record)
     : header(archive_record),
