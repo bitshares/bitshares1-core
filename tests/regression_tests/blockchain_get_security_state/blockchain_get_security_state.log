@@ -24,6 +24,6 @@ default (unlocked) >>> blockchain_get_security_state
 {
   "alert_level": "red",
   "estimated_confirmation_seconds": 2010,
-  "participation_rate": 0
+  "participation_rate": 100
 }
 default (unlocked) >>> quit

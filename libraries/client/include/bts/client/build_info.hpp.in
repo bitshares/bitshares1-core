@@ -1,0 +1,4 @@
+#pragma once
+
+#cmakedefine BTS_CLIENT_JENKINS_BUILD_NUMBER
+#cmakedefine BTS_CLIENT_JENKINS_BUILD_BUILD_URL

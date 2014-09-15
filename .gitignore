@@ -22,6 +22,7 @@ libraries/api/bts_api_generator
 libraries/api/include/bts/api/common_api.hpp
 libraries/api/ruby_generator/output
 libraries/blockchain/genesis_json.cpp
+libraries/client/include/bts/client/build_info.hpp
 libraries/rpc_stubs
 libraries/utilities/git_revision.cpp
 libraries/wallet/include/bts/wallet/url.hpp
