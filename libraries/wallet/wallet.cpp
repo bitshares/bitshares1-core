@@ -1438,9 +1438,8 @@ namespace bts { namespace wallet {
            const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
            const auto now = blockchain::now();
 
-           // TODO: This was breaking regression tests
-           //if( min_end > start + 1 )
-               //ulog( "Beginning scan at block ${n}...", ("n",start) );
+           if( min_end > start + 1 )
+               ulog( "Beginning scan at block ${n}...", ("n",start) );
 
            for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
@@ -1470,15 +1469,13 @@ namespace bts { namespace wallet {
               }
            }
            _scan_progress = 1;
-           // TODO: This was breaking regression tests
-           //if( min_end > start + 1 )
-               //ulog( "Scan completed." );
+           if( min_end > start + 1 )
+               ulog( "Scan completed." );
          }
          catch(...)
          {
            _scan_progress = -1;
-           // TODO: This line was breaking regression tests by causing a crash
-           //ulog( "Scan failure." );
+           ulog( "Scan failure." );
            throw;
          }
       }
@@ -2902,14 +2899,12 @@ namespace bts { namespace wallet {
       }
       else if( empty_before )
       {
-          // TODO: This line was breaking regression tests by getting included in console.log
-          //ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
+          ulog( "Wallet transaction scanning has been automatically disabled due to enabled delegates!" );
           set_transaction_scanning( false );
       }
       else /* if( empty_after ) */
       {
-          // TODO: This line was breaking regression tests by getting included in console.log
-          //ulog( "Wallet transaction scanning has been automatically re-enabled!" );
+          ulog( "Wallet transaction scanning has been automatically re-enabled!" );
           set_transaction_scanning( true );
       }
    }
@@ -3726,7 +3721,7 @@ namespace bts { namespace wallet {
            const string& to_account_name,
            const string& public_message,
            bool anonymous,
-           bool sign 
+           bool sign
            )
    {
       FC_ASSERT( is_open() );
