@@ -25,6 +25,7 @@
 #include <bts/mail/server.hpp>
 #include <bts/mail/client.hpp>
 
+#include <bts/client/build_info.hpp>
 //#include <bts/network/node.hpp>
 
 #include <bts/db/level_map.hpp>
@@ -60,6 +61,10 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/version.hpp>
+
+#include <openssl/opensslv.h>
 
 #include <iostream>
 #include <algorithm>
@@ -1738,6 +1743,28 @@ config load_config( const fc::path& datadir )
       info["fc_revision"]                       = fc::git_revision_sha;
       info["fc_revision_age"]                   = fc::get_approximate_relative_time_string( fc::time_point_sec( fc::git_revision_unix_timestamp ) );
       info["compile_date"]                      = "compiled on " __DATE__ " at " __TIME__;
+      info["boost_version"]                     = boost::replace_all_copy(std::string(BOOST_LIB_VERSION), "_", ".");
+      info["openssl_version"]                   = OPENSSL_VERSION_TEXT;
+
+      std::string bitness = boost::lexical_cast<std::string>(8 * sizeof(int*)) + "-bit";
+#if defined(__APPLE__)
+      std::string os = "osx";
+#elif defined(__linux__)
+      std::string os = "linux";
+#elif defined(_MSC_VER)
+      std::string os = "win32";
+#else
+      std::string os = "other";
+#endif
+      info["build"] = os + " " + bitness;
+
+#if defined(BTS_CLIENT_JENKINS_BUILD_NUMBER)
+      info["jenkins_build_number"] = BTS_CLIENT_JENKINS_BUILD_NUMBER;
+#endif
+#if defined(BTS_CLIENT_JENKINS_BUILD_URL)
+      info["jenkins_build_url"] = BTS_CLIENT_JENKINS_BUILD_URL;
+#endif
+
       return info;
     }
 
