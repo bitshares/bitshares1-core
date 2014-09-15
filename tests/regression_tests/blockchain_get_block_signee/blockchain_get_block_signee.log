@@ -1,10 +1,10 @@
 default (unlocked) >>> help blockchain_get_block_signee
 Usage:
-blockchain_get_block_signee <block_number>                                                            Get the delegate that signed a given block
+blockchain_get_block_signee <block>                                                                   Get the delegate that signed a given block
 Get the delegate that signed a given block
 
 Parameters:
-  block_number (uint32_t, required): Block whose signing delegate to return
+  block (string, required): block number or ID to retrieve the signee for
 
 Returns:
   string
