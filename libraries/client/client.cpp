@@ -103,9 +103,9 @@ namespace bts { namespace client {
 const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
 
 void print_banner();
-fc::logging_config create_default_logging_config(const fc::path&);
+fc::logging_config create_default_logging_config( const fc::path&, bool enable_ulog );
 fc::path get_data_dir(const program_options::variables_map& option_variables);
-config   load_config( const fc::path& datadir );
+config load_config( const fc::path& datadir, bool enable_ulog );
 void  load_and_configure_chain_database(const fc::path& datadir,
                                         const program_options::variables_map& option_variables);
 
@@ -156,6 +156,8 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
 
        ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
        ("log-commands", "Log all command input and output")
+       ("ulog", program_options::value<bool>()->default_value( true ), "Enable CLI user logging")
+
        ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
        ("growl-password", program_options::value<std::string>(), "Password for authenticating to a Growl server")
        ("growl-identifier", program_options::value<std::string>(), "A name displayed in growl messages to identify this bitshares_client instance")
@@ -232,7 +234,7 @@ void print_banner()
     std::cout<<"================================================================\n";
 }
 
-fc::logging_config create_default_logging_config(const fc::path& data_dir)
+fc::logging_config create_default_logging_config( const fc::path& data_dir, bool enable_ulog )
 {
     fc::logging_config cfg;
     fc::path log_dir = data_dir / "logs";
@@ -352,7 +354,8 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_p2p.appenders.push_back("p2p");
 
     fc::logger_config dlc_user;
-    dlc_user.level = fc::log_level::debug;
+    if( enable_ulog ) dlc_user.level = fc::log_level::debug;
+    else dlc_user.level = fc::log_level::off;
     dlc_user.name = "user";
     dlc_user.appenders.push_back("user");
 
@@ -433,7 +436,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
 
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 
-config load_config( const fc::path& datadir )
+config load_config( const fc::path& datadir, bool enable_ulog )
 { try {
       fc::path config_file = datadir/"config.json";
       config cfg;
@@ -458,7 +461,7 @@ config load_config( const fc::path& datadir )
       else
       {
          std::cerr << "Creating default config file at: " << config_file.generic_string() << "\n";
-         cfg.logging = create_default_logging_config( datadir );
+         cfg.logging = create_default_logging_config( datadir, enable_ulog );
       }
       fc::json::save_to_file( cfg, config_file );
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
@@ -676,6 +679,7 @@ config load_config( const fc::path& datadir )
             std::unique_ptr<std::ostream>                           _output_stream;
             std::unique_ptr<TeeDevice>                              _tee_device;
             std::unique_ptr<TeeStream>                              _tee_stream;
+            bool                                                    _enable_ulog = false;
 
             fc::path                                                _data_dir;
 
@@ -1629,7 +1633,7 @@ config load_config( const fc::path& datadir )
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(float)> reindex_status_callback )
     { try {
-        my->_config   = load_config(data_dir);
+        my->_config = load_config( data_dir, my->_enable_ulog );
 
 #ifndef DISABLE_DELEGATE_NETWORK
         /*
@@ -2587,6 +2591,7 @@ config load_config( const fc::path& datadir )
       if (option_variables.count("genesis-config"))
         genesis_file_path = option_variables["genesis-config"].as<string>();
 
+      my->_enable_ulog = option_variables["ulog"].as<bool>();
       this->open( datadir, genesis_file_path );
 
       if (option_variables.count("min-delegate-connection-count"))
@@ -2986,7 +2991,7 @@ config load_config( const fc::path& datadir )
 
     void client_impl::debug_update_logging_config()
     {
-      config temp_config   = load_config(_data_dir);
+      config temp_config = load_config( _data_dir, _enable_ulog );
       fc::configure_logging( temp_config.logging );
     }
 
@@ -3447,6 +3452,11 @@ config load_config( const fc::path& datadir )
                                                                        uint32_t limit  )
    {
       return _chain_db->get_market_covers( quote_symbol, limit );
+   }
+
+   share_type              client_impl::blockchain_market_get_asset_collateral( const string& symbol )
+   {
+      return _chain_db->get_asset_collateral( symbol );
    }
 
    std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
