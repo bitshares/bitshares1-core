@@ -57,7 +57,7 @@ namespace bts { namespace blockchain {
       void set_ratio_from_string( const std::string& ratio_str );
       std::string ratio_string()const;
       operator std::string()const;
-      operator double()const;
+      explicit operator double()const;
 
       fc::uint128_t ratio; // 64.64
 
@@ -106,6 +106,7 @@ namespace bts { namespace blockchain {
    *  bitasset_id_type::bit_shares < bitasset_id_type::bit_usd.
    */
   price operator / ( const asset& a, const asset& b );
+  asset operator / ( const asset& a, const price& b );
 
   /**
    *  Assuming a.type is either the numerator.type or denominator.type in

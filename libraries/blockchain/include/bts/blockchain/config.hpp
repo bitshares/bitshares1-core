@@ -101,7 +101,7 @@
  *
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
-#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/2000000)
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             0 //(BTS_BLOCKCHAIN_INITIAL_SHARES/200000000)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC

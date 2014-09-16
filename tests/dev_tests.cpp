@@ -60,10 +60,11 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "wallet_delegate_set_block_production delegate32 true" );
    exec(clientb, "wallet_set_transaction_scanning true");
 
+   exec( clientb, "balance delegate30");
    exec( clientb, "wallet_asset_create BUSD BitUSD delegate30 \"paper bucks\" null 1000000000 10000 true" );
    produce_block(clientb);
 
-   exec(clientb, "wallet_publish_price_feed delegate0 1 BUSD" );
+   exec(clientb, "wallet_publish_price_feed delegate0 1 BUSD" ); //[[\"USD\",1]]" );
    exec(clientb, "wallet_publish_price_feed delegate2 1 BUSD" );
    exec(clientb, "wallet_publish_price_feed delegate4 1 BUSD" );
    exec(clientb, "wallet_publish_price_feed delegate6 1 BUSD" );
@@ -124,9 +125,20 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec(clienta, "wallet_publish_price_feed delegate51 1 BUSD" );
 
    produce_block(clienta);
+   exec(clienta, "balance" );
+   exec(clientb, "balance" );
 
-   exec( clientb, "short delegate30 105 1.05 BUSD" );
-   exec( clientb, "short delegate32 10500 0.001 BUSD" );
+   exec( clientb, "short delegate30 101 BUSD 2 " );
+   exec( clientb, "short delegate32 102 BUSD 1.1 " );
+   exec( clientb, "short delegate32 103 BUSD 0.9 " );
+   exec( clienta, "ask delegate31 100 XTS .95 BUSD" );
+   produce_block(clientb);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clienta, "blockchain_market_list_shorts BUSD");
+   produce_block(clientb);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clienta, "blockchain_market_list_shorts BUSD");
+   return;
    //Next line is intended to fail due to overly-high price
    exec( clientb, "short delegate32 300 1000 BUSD" );
    exec( clienta, "ask delegate31 100 XTS .95 BUSD" );
