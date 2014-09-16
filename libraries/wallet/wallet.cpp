@@ -2962,7 +2962,7 @@ namespace bts { namespace wallet {
            const string& account_to_publish_under,
            map<string,double> amount_per_xts, // map symbol to amount per xts
            bool sign )
-   {
+   { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
@@ -2986,6 +2986,7 @@ namespace bts { namespace wallet {
 
       for( auto item : amount_per_xts )
       {
+         ilog( "${item}", ("item", item) );
          auto quote_asset_record = my->_blockchain->get_asset_record( item.first );
          auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
 
@@ -3036,7 +3037,7 @@ namespace bts { namespace wallet {
       cache_transaction( trx, record );
 
       return record;
-   }
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts) ) }
 
    wallet_transaction_record wallet::publish_price(
            const string& account_to_publish_under,
@@ -3064,13 +3065,16 @@ namespace bts { namespace wallet {
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
+      FC_ASSERT( base_asset_record.valid() );
+      FC_ASSERT( quote_asset_record.valid() );
 
       asset price_shares( amount_per_xts *  quote_asset_record->get_precision(), quote_asset_record->id );
-      asset base_one_quantity( base_asset_record->get_precision(), 0 );
+//      asset base_one_quantity( base_asset_record->get_precision(), 0 );
 
      // auto quote_price_shares = price_shares / base_one_quantity;
       price quote_price_shares( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
+      idump( (quote_price_shares) );
       if( amount_per_xts > 0 )
       {
          trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
@@ -5899,8 +5903,10 @@ namespace bts { namespace wallet {
           if( !account_name.empty() && name != account_name ) return;
 
           const auto pending_record = pending_state->get_balance_record( record.id() );
+          my->_wallet_db.cache_balance( record );
           if( !pending_record.valid() ) return;
 
+          my->_wallet_db.cache_balance( *pending_record );
           balance_records[ name ].push_back( *pending_record );
       };
 
