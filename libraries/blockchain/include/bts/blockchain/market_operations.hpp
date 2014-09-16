@@ -42,6 +42,7 @@ namespace bts { namespace blockchain {
 
         void evaluate( transaction_evaluation_state& eval_state );
         void evaluate_v1( transaction_evaluation_state& eval_state );
+        void evaluate_v2( transaction_evaluation_state& eval_state );
    };
    
    struct cover_operation
