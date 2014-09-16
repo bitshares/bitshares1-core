@@ -336,7 +336,7 @@ namespace bts { namespace blockchain {
          virtual void                       set_feed( const feed_record& )override;
          virtual ofeed_record               get_feed( const feed_index& )const override;
 
-         virtual asset                      calculate_base_supply()const override;
+         asset                              calculate_base_supply()const;
          asset                              unclaimed_genesis();
 
          // TODO: Only call on pending chain state

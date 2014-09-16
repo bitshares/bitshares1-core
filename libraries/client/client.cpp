@@ -3078,7 +3078,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
-      info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
       info["blockchain_share_supply"]                           = variant();
@@ -3378,19 +3377,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    wallet_transaction_record client_impl::wallet_market_submit_short(
            const string& from_account,
            double quantity,
-           double quote_price,
            const string& quote_symbol,
-           bool allow_stupid_short )
+           double collateral_ratio)
    {
-      vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, _chain_db->get_asset_symbol(0), 1).second;
-
-      if (!allow_stupid_short && lowest_ask.size()
-          && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
-        FC_THROW_EXCEPTION(stupid_order, "You are attempting to short at more than 5% above the buy price. "
-                                         "This short is based on economically unsound principles, and is ill-advised. "
-                                         "If you're sure you want to do this, place your short again and set allow_stupid_short to true.");
-
-      const auto record = _wallet->submit_short( from_account, quantity, quote_price, quote_symbol );
+      const auto record = _wallet->submit_short( from_account, quantity, quote_symbol, collateral_ratio );
       network_broadcast_transaction( record.trx );
       return record;
    }
@@ -3467,41 +3457,9 @@ config load_config( const fc::path& datadir, bool enable_ulog )
                                                                                               uint32_t limit  )
    {
       auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
-
-      if( _chain_db->get_asset_id(base_symbol) == 0 )
-      {
-        auto shorts = blockchain_market_list_shorts(quote_symbol, limit);
-        bids.reserve(bids.size() + shorts.size());
-
-        for( auto order : shorts )
-            bids.push_back(order);
-
-        std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
-          return a.market_index < b.market_index;
-        });
-
-        if( bids.size() > limit )
-          bids.resize(limit);
-      }
-
       auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
-      if( _chain_db->get_asset_id(base_symbol) == 0 )
-      {
-        auto covers = blockchain_market_list_covers(quote_symbol, limit);
-        asks.reserve(asks.size() + covers.size());
-        for( auto order : covers )
-          asks.push_back(order);
 
-        std::sort(asks.rbegin(), asks.rend(), [](const market_order& a, const market_order& b) -> bool {
-          return a.market_index < b.market_index;
-        });
-
-        if( asks.size() > limit )
-          asks.resize(limit);
-      }
-
-
-      std::sort(asks.begin(), asks.end(), [](const market_order& a, const market_order& b) -> bool {
+      std::sort(asks.rbegin(), asks.rend(), [](const market_order& a, const market_order& b) -> bool {
         return a.market_index < b.market_index;
       });
 

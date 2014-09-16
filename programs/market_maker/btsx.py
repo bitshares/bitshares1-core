@@ -84,7 +84,7 @@ class BTSX():
             if item["type"] == "bid_order":
                 if float(item["market_index"]["order_price"]["ratio"])* (self.BTSX_PRECISION / self.USD_PRECISION) < price:
                     order_ids.append(order_id)
-                    log("%s canceled an order: %s" % (account_name, str(item)))
+                    log("%s canceled an order: %s" % (account, str(item)))
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
         return cancel_args
@@ -98,7 +98,7 @@ class BTSX():
             if item["type"] == "bid_order":
                 if abs(price - float(item["market_index"]["order_price"]["ratio"]) * (self.BTSX_PRECISION / self.USD_PRECISION)) > price*tolerance:
                     order_ids.append(order_id)
-                    log("%s canceled an order: %s" % (account_name, str(item)))
+                    log("%s canceled an order: %s" % (account, order_id))
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
         return cancel_args
@@ -112,6 +112,7 @@ class BTSX():
             if item["type"] == "ask_order":
                 if abs(price - float(item["market_index"]["order_price"]["ratio"]) * (self.BTSX_PRECISION / self.USD_PRECISION)) > price*tolerance:
                     order_ids.append(order_id)
+                    log("%s canceled an order: %s" % (account, order_id))
         cancel_args = [[item] for item in order_ids]
         response = self.request("batch", ["wallet_market_cancel_order", cancel_args])
         return cancel_args

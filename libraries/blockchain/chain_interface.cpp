@@ -70,19 +70,19 @@ namespace bts{ namespace blockchain {
        return get_property( chain_property_enum::last_asset_id ).as<asset_id_type>();
    }
 
-   asset_id_type  chain_interface::new_asset_id()
+   asset_id_type chain_interface::new_asset_id()
    {
       auto next_id = last_asset_id() + 1;
       set_property( chain_property_enum::last_asset_id, next_id );
       return next_id;
    }
 
-   account_id_type   chain_interface::last_account_id()const
+   account_id_type chain_interface::last_account_id()const
    {
        return get_property( chain_property_enum::last_account_id ).as<account_id_type>();
    }
 
-   account_id_type   chain_interface::new_account_id()
+   account_id_type chain_interface::new_account_id()
    {
       auto next_id = last_account_id() + 1;
       set_property( chain_property_enum::last_account_id, next_id );
@@ -165,7 +165,7 @@ namespace bts{ namespace blockchain {
       }
    }
 
-   int64_t   chain_interface::get_required_confirmations()const
+   int64_t chain_interface::get_required_confirmations()const
    {
       return get_property( confirmation_requirement ).as_int64();
    }
@@ -183,22 +183,14 @@ namespace bts{ namespace blockchain {
       return true;
    }
 
-   share_type  chain_interface::get_delegate_pay_rate()const
+   share_type chain_interface::get_delegate_pay_rate()const
    {
-      return get_accumulated_fees() / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY*14);
+       const auto base_record = get_asset_record( asset_id_type( 0 ) );
+       FC_ASSERT( base_record.valid() );
+       return base_record->collected_fees / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14);
    }
 
-   share_type  chain_interface::get_accumulated_fees()const
-   {
-      return get_property( accumulated_fees ).as_int64();
-   }
-
-   void  chain_interface::set_accumulated_fees( share_type fees )
-   {
-      set_property( accumulated_fees, variant(fees) );
-   }
-
-   map<asset_id_type, asset_id_type>  chain_interface::get_dirty_markets()const
+   map<asset_id_type, asset_id_type> chain_interface::get_dirty_markets()const
    {
       try{
          return get_property( dirty_markets ).as<map<asset_id_type,asset_id_type> >();
@@ -208,7 +200,7 @@ namespace bts{ namespace blockchain {
       }
    }
 
-   void  chain_interface::set_dirty_markets( const map<asset_id_type,asset_id_type>& d )
+   void chain_interface::set_dirty_markets( const map<asset_id_type,asset_id_type>& d )
    {
       set_property( dirty_markets, fc::variant(d) );
    }

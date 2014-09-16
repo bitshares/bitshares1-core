@@ -471,7 +471,7 @@ namespace bts { namespace wallet {
 
          auto required = _blockchain->to_pretty_asset( amount_to_withdraw );
          auto available = _blockchain->to_pretty_asset( amount_to_withdraw - amount_remaining );
-         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available) );
+         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available)(items) );
       } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_address)(trx)(required_signatures) ) }
 
       void wallet_impl::authorize_update(unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key )
@@ -2962,7 +2962,7 @@ namespace bts { namespace wallet {
            const string& account_to_publish_under,
            map<string,double> amount_per_xts, // map symbol to amount per xts
            bool sign )
-   {
+   { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
@@ -2986,6 +2986,7 @@ namespace bts { namespace wallet {
 
       for( auto item : amount_per_xts )
       {
+         ilog( "${item}", ("item", item) );
          auto quote_asset_record = my->_blockchain->get_asset_record( item.first );
          auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
 
@@ -3036,7 +3037,7 @@ namespace bts { namespace wallet {
       cache_transaction( trx, record );
 
       return record;
-   }
+   } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts) ) }
 
    wallet_transaction_record wallet::publish_price(
            const string& account_to_publish_under,
@@ -3064,13 +3065,16 @@ namespace bts { namespace wallet {
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
+      FC_ASSERT( base_asset_record.valid() );
+      FC_ASSERT( quote_asset_record.valid() );
 
       asset price_shares( amount_per_xts *  quote_asset_record->get_precision(), quote_asset_record->id );
-      asset base_one_quantity( base_asset_record->get_precision(), 0 );
+//      asset base_one_quantity( base_asset_record->get_precision(), 0 );
 
      // auto quote_price_shares = price_shares / base_one_quantity;
       price quote_price_shares( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
+      idump( (quote_price_shares) );
       if( amount_per_xts > 0 )
       {
          trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
@@ -3713,6 +3717,9 @@ namespace bts { namespace wallet {
     *  This transfer works like a bitcoin transaction combining multiple inputs
     *  and producing a single output.
     */
+#ifndef WIN32
+#warning [UNTESTED] Asset burning needs to be tested!
+#endif
    wallet_transaction_record wallet::burn_asset(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
@@ -4886,8 +4893,8 @@ namespace bts { namespace wallet {
    wallet_transaction_record wallet::submit_short(
            const string& from_account_name,
            double real_quantity,
-           double quote_price,
            const string& quote_symbol,
+           double collateral_per_usd,
            bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
@@ -4896,8 +4903,8 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
        if( real_quantity <= 0 )
           FC_CAPTURE_AND_THROW( negative_bid, (real_quantity) );
-       if( quote_price <= 0 )
-          FC_CAPTURE_AND_THROW( invalid_price, (quote_price) );
+       if( collateral_per_usd <= 0 )
+          FC_CAPTURE_AND_THROW( invalid_price, (collateral_per_usd) );
 
        auto quote_asset_record = my->_blockchain->get_asset_record( quote_symbol );
        auto base_asset_record  = my->_blockchain->get_asset_record( asset_id_type(0) );
@@ -4911,15 +4918,11 @@ namespace bts { namespace wallet {
        if( quote_asset_record->id == 0 )
           FC_CAPTURE_AND_THROW( shorting_base_shares, (quote_symbol) );
 
-       double cost = real_quantity / quote_price;
-       idump( (cost)(real_quantity)(quote_price) );
+       double cost = real_quantity * collateral_per_usd;
+       idump( (cost)(real_quantity)(collateral_per_usd) );
 
-       asset cost_shares( cost *  base_asset_record->get_precision(), base_asset_record->id );
-       asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
-       asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
-
-       //auto quote_price_shares = price_shares / base_one_quantity;
-       price quote_price_shares( (quote_price * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+       asset cost_shares( (real_quantity * collateral_per_usd)  * base_asset_record->get_precision(), base_asset_record->id );
+       price quote_price_shares( ((1.0/collateral_per_usd) * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
        auto order_key = get_new_public_key( from_account_name );
        auto order_address = order_key;
@@ -4968,7 +4971,7 @@ namespace bts { namespace wallet {
 
        return record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
-                             (real_quantity) (quote_price)(quote_symbol)(sign) ) }
+                             (real_quantity)(collateral_per_usd)(quote_symbol)(sign) ) }
 
    wallet_transaction_record wallet::add_collateral(
            const string& from_account_name,
@@ -5165,9 +5168,9 @@ namespace bts { namespace wallet {
       auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
 
 #ifndef WIN32
-#warning [HARDFORK] Non-base asset fees are only supported after a hardfork
+#warning [UNTESTED] Non-base asset fees need to be tested!
 #endif
-      if( false && desired_fee_asset_id != 0 )
+      if( desired_fee_asset_id != 0 )
       {
          const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );
@@ -5903,8 +5906,10 @@ namespace bts { namespace wallet {
           if( !account_name.empty() && name != account_name ) return;
 
           const auto pending_record = pending_state->get_balance_record( record.id() );
+          my->_wallet_db.cache_balance( record );
           if( !pending_record.valid() ) return;
 
+          my->_wallet_db.cache_balance( *pending_record );
           balance_records[ name ].push_back( *pending_record );
       };
 

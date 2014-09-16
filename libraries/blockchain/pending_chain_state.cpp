@@ -530,7 +530,7 @@ namespace bts { namespace blockchain {
       feeds[r.feed] = r;
    }
 
-   ofeed_record    pending_chain_state::get_feed( const feed_index& i )const
+   ofeed_record pending_chain_state::get_feed( const feed_index& i )const
    {
       auto itr = feeds.find(i);
       if( itr != feeds.end() ) return itr->second;
@@ -545,52 +545,12 @@ namespace bts { namespace blockchain {
       return prev_state->get_median_delegate_price( asset_id );
    }
 
-   asset pending_chain_state::calculate_base_supply()const
-   {
-      auto total = asset( 0, 0 );
-
-      for( const auto& balance_item : balances )
-      {
-        const balance_record balance = balance_item.second;
-        if( balance.asset_id() != total.asset_id ) continue;
-        total += balance.get_balance();
-      }
-
-      total.amount += get_accumulated_fees();
-
-      for( const auto& account_item : accounts )
-      {
-        const account_record account = account_item.second;
-        if( !account.delegate_info.valid() ) continue;
-        total.amount += account.delegate_info->pay_balance;
-      }
-
-      for( const auto& ask_item : asks )
-      {
-        const order_record ask = ask_item.second;
-        total.amount += ask.balance;
-      }
-
-      for( const auto& short_item : shorts )
-      {
-        const order_record sh = short_item.second;
-        total.amount += sh.balance;
-      }
-
-      for( const auto& collateral_item : collateral )
-      {
-        const collateral_record col = collateral_item.second;
-        total.amount += col.collateral_balance;
-      }
-
-      return total;
-   }
-   void           pending_chain_state::store_burn_record( const burn_record& br )
+   void pending_chain_state::store_burn_record( const burn_record& br )
    {
       burns[br] = br;
    }
 
-   oburn_record   pending_chain_state::fetch_burn_record( const burn_record_key& key )const 
+   oburn_record pending_chain_state::fetch_burn_record( const burn_record_key& key )const 
    {
       auto itr = burns.find(key);
       if( itr == burns.end() )
