@@ -136,7 +136,7 @@ class market_engine
 
                    // check for rounding errors
                    if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
-                       mtrx.bid_collateral = _current_bid->get_balance(); 
+                       mtrx.bid_collateral = _current_bid->get_balance();
 
                    order_did_execute = true;
                    if( *mtrx.bid_collateral < mtrx.ask_paid )
@@ -225,7 +225,7 @@ class market_engine
                       mtrx.ask_paid = _current_ask->get_balance();
 
                    if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
-                       mtrx.bid_collateral = _current_bid->get_balance(); 
+                       mtrx.bid_collateral = _current_bid->get_balance();
 
                    order_did_execute = true;
 
@@ -415,9 +415,6 @@ class market_engine
           }
 
           auto cover_price = mtrx.bid_price;
-#ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX
-#endif
           cover_price.ratio *= 2;
           cover_price.ratio /= 3;
          // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
@@ -511,12 +508,6 @@ class market_engine
                 // these go to the network... as dividends..
                 mtrx.fees_collected  += asset(fee,0);
 
-#ifndef WIN32
-#warning [HARDFORK] Removing these lines hardforks BTSX by changing how fees are accumulated
-#endif
-                //auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                //_pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
-
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
                 ask_payout->deposit_date = _pending_state->now();
@@ -574,7 +565,7 @@ class market_engine
 
          /** while there is an ask less than the avg price, then shorts take priority
           * in order of the collateral (XTS) per USD.  The "price" field is represented
-          * as USD per XTS thus we want 1/price which means that lower prices are 
+          * as USD per XTS thus we want 1/price which means that lower prices are
           * higher collateral.  Therefore, we start low and move high through the
           * short order book.
           */
@@ -591,7 +582,7 @@ class market_engine
                    return _current_bid.valid();
                }
             }
-         } 
+         }
 
          if( _bid_itr.valid() )
          {

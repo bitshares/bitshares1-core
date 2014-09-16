@@ -567,9 +567,6 @@ namespace bts { namespace blockchain {
             const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
             const auto accepted_paycheck = ( pay_rate_percent * max_available_paycheck ) / 100;
 
-#ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX by changing how accumulated fees are calculated
-#endif
             auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
             FC_ASSERT( pending_base_record.valid() );
             pending_base_record->collected_fees -= max_available_paycheck;

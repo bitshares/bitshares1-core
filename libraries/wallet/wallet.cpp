@@ -3717,6 +3717,9 @@ namespace bts { namespace wallet {
     *  This transfer works like a bitcoin transaction combining multiple inputs
     *  and producing a single output.
     */
+#ifndef WIN32
+#warning [UNTESTED] Asset burning needs to be tested!
+#endif
    wallet_transaction_record wallet::burn_asset(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
@@ -5165,9 +5168,9 @@ namespace bts { namespace wallet {
       auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
 
 #ifndef WIN32
-#warning [HARDFORK] Non-base asset fees are only supported after a hardfork
+#warning [UNTESTED] Non-base asset fees need to be tested!
 #endif
-      if( false && desired_fee_asset_id != 0 )
+      if( desired_fee_asset_id != 0 )
       {
          const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );
