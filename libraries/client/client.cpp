@@ -150,6 +150,7 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
        ("rpcuser", program_options::value<string>(), "Set username for JSON-RPC")
        ("rpcpassword", program_options::value<string>(), "Set password for JSON-RPC")
        ("rpcport", program_options::value<uint16_t>(), "Set port to listen for JSON-RPC connections")
+       ("httpdendpoint", program_options::value<string>(), "Set interface/port to listen for HTTP JSON-RPC connections")
        ("httpport", program_options::value<uint16_t>(), "Set port to listen for HTTP JSON-RPC connections")
 
        ("chain-server-port", program_options::value<uint16_t>(), "Run a chain server on this port")
@@ -740,6 +741,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
           if (option_variables.count("rpcport"))
               cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
+          if (option_variables.count("httpdendpoint"))
+            cfg.rpc.httpd_endpoint = fc::ip::endpoint::from_string(option_variables["httpdendpoint"].as<string>());
           if (option_variables.count("httpport"))
               cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
 
@@ -3079,7 +3082,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
-      info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
       info["blockchain_share_supply"]                           = variant();
@@ -3451,6 +3453,11 @@ config load_config( const fc::path& datadir, bool enable_ulog )
                                                                        uint32_t limit  )
    {
       return _chain_db->get_market_covers( quote_symbol, limit );
+   }
+
+   share_type              client_impl::blockchain_market_get_asset_collateral( const string& symbol )
+   {
+      return _chain_db->get_asset_collateral( symbol );
    }
 
    std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,

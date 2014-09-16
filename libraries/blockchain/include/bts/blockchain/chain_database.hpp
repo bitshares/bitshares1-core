@@ -253,6 +253,8 @@ namespace bts { namespace blockchain {
                                                                uint32_t limit = uint32_t(-1) );
          vector<market_order>               get_market_covers( const string& quote_symbol,
                                                                uint32_t limit = uint32_t(-1) );
+   
+         share_type                         get_asset_collateral( const string& symbol );
 
          virtual omarket_order              get_lowest_ask_record( const asset_id_type& quote_id,
                                                                    const asset_id_type& base_id )override;
@@ -334,7 +336,7 @@ namespace bts { namespace blockchain {
          virtual void                       set_feed( const feed_record& )override;
          virtual ofeed_record               get_feed( const feed_index& )const override;
 
-         virtual asset                      calculate_base_supply()const override;
+         asset                              calculate_base_supply()const;
          asset                              unclaimed_genesis();
 
          // TODO: Only call on pending chain state
