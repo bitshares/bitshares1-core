@@ -110,7 +110,7 @@ namespace bts { namespace cli {
 
     _command_to_function["blockchain_market_list_asks"] = &f_blockchain_market_list;
     _command_to_function["blockchain_market_list_bids"] = &f_blockchain_market_list;
-    _command_to_function["blockchain_market_list_shorts"] = &f_blockchain_market_list;
+    _command_to_function["blockchain_market_list_shorts"] = &f_blockchain_market_short_list;
 
     _command_to_function["wallet_list_my_accounts"] = &f_wallet_list_my_accounts;
 
@@ -241,6 +241,30 @@ namespace bts { namespace cli {
       (out) << item.second.to_detail_string();
       (out) << "\n";
       }
+  }
+
+  void print_result::f_blockchain_market_short_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+  {
+    const auto& market_orders = result.as<vector<market_order>>();
+    map<order_id_type, market_order> order_map;
+
+    out << std::left;
+    out << std::setw( 20 ) << "ID";
+    out << std::setw( 20 ) << "AMOUNT";
+    out << std::setw( 20 ) << "COLLATERAL_RATIO";
+    out << std::setw( 30 ) << "COLLATERAL";
+    out << "\n";
+    out << pretty_line( 128 );
+
+    for( const auto& order : market_orders )
+    {
+       out << std::setw( 20 ) <<  variant(order.get_id()).as_string();
+       out << std::setw( 20 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() / order.get_price() );
+       out << std::setw( 20 ) <<  (1.0 / client->get_chain()->to_pretty_price_double( order.get_price() ));
+       out << std::setw( 20 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() );
+       out << "\n";
+    }
+    out << "\n";
   }
 
   void print_result::f_blockchain_market_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
