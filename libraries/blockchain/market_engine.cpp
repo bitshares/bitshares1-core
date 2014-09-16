@@ -493,8 +493,8 @@ class market_engine
           }
 
           auto cover_price = mtrx.bid_price;
-          cover_price.ratio *= 3;
-          cover_price.ratio /= 4;
+          cover_price.ratio *= 2;
+          cover_price.ratio /= 3;
          // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
 
           market_index_key cover_index( cover_price, _current_bid->get_owner() );
