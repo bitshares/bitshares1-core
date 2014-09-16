@@ -156,16 +156,12 @@ class market_engine_v2
                      if( mtrx.ask_type == ask_order )
                         pay_current_ask( mtrx, *base_asset );
                      else
-                        pay_current_cover( mtrx, *quote_asset );
+                        pay_current_cover( mtrx, *quote_asset, *base_asset );
 
                      market_stat->ask_depth -= mtrx.ask_paid.amount;
 
                      quote_asset->collected_fees -= mtrx.bid_paid.amount;
-                     _pending_state->store_asset_record(*quote_asset);
-                     _pending_state->store_asset_record(*base_asset);
-
-                     auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                     _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.ask_paid.amount );
+                     base_asset->collected_fees += mtrx.ask_paid.amount;
                   }
                 //  wlog( "==========================  DONE LIQUIDATE FEES BALANCE: ${amount}=========================\n", ("amount", quote_asset->collected_fees) );
                 }
@@ -300,7 +296,7 @@ class market_engine_v2
 
                    order_did_execute = true;
                    pay_current_short( mtrx, xts_paid_by_short, *quote_asset );
-                   pay_current_cover( mtrx, *quote_asset );
+                   pay_current_cover( mtrx, *quote_asset, *base_asset );
 
                    market_stat->bid_depth -= xts_paid_by_short.amount;
                    market_stat->ask_depth += xts_paid_by_short.amount;
@@ -368,7 +364,7 @@ class market_engine_v2
                    market_stat->ask_depth -= mtrx.ask_paid.amount;
                    order_did_execute = true;
                    pay_current_bid( mtrx, *quote_asset );
-                   pay_current_cover( mtrx, *quote_asset );
+                   pay_current_cover( mtrx, *quote_asset, *base_asset );
                 }
                 else if( _current_ask->type == ask_order && _current_bid->type == short_order )
                 {
@@ -476,7 +472,10 @@ class market_engine_v2
                   opening_price = mtrx.bid_price;
                 closing_price = mtrx.bid_price;
 
-                accumulate_fees( mtrx, *quote_asset );
+                if( mtrx.fees_collected.asset_id == base_asset->id )
+                    base_asset->collected_fees += mtrx.fees_collected.amount;
+                else if( mtrx.fees_collected.asset_id == quote_asset->id )
+                    quote_asset->collected_fees += mtrx.fees_collected.amount;
              } // while( next bid && next ask )
 
 
@@ -686,7 +685,7 @@ class market_engine_v2
           _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset )
+      void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset, asset_record& base_asset )
       { try {
           FC_ASSERT( _current_ask->type == cover_order );
           FC_ASSERT( mtrx.ask_type == cover_order );
@@ -729,8 +728,7 @@ class market_engine_v2
                 // these go to the network... as dividends..
                 mtrx.fees_collected  += asset(fee,0);
 
-                auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                _pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
+                base_asset.collected_fees += fee;
 
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
@@ -779,21 +777,6 @@ class market_engine_v2
           _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
 
       } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
-
-      void accumulate_fees( const market_transaction& mtrx, asset_record& quote_asset )
-      {
-         if( mtrx.fees_collected.amount == 0 ) return;
-         if( mtrx.fees_collected.asset_id == 0 )
-         {
-             auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-             _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.fees_collected.amount );
-         }
-         else
-         {
-            FC_ASSERT( quote_asset.id == mtrx.fees_collected.asset_id );
-            quote_asset.collected_fees += mtrx.fees_collected.amount;
-         }
-      }
 
       bool get_next_bid()
       { try {

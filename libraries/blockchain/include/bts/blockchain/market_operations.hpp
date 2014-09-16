@@ -57,6 +57,7 @@ namespace bts { namespace blockchain {
         fc::optional<price> new_cover_price;
 
         void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate_v1( transaction_evaluation_state& eval_state );
    };
 
    struct add_collateral_operation

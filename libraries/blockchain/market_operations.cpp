@@ -212,6 +212,12 @@ namespace bts { namespace blockchain {
    */
    void cover_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
+      {
+         evaluate_v1( eval_state );
+         return;
+      }
+
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
@@ -240,9 +246,6 @@ namespace bts { namespace blockchain {
 
       if( current_cover->payoff_balance > 0 )
       {
-#ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX
-#endif
          auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
                                asset((current_cover->collateral_balance*2)/3, 0);
 

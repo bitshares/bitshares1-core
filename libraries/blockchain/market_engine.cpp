@@ -124,7 +124,7 @@ class market_engine
                      if( mtrx.ask_type == ask_order )
                         pay_current_ask( mtrx, *base_asset );
                      else
-                        pay_current_cover( mtrx, *quote_asset );
+                        pay_current_cover( mtrx, *quote_asset, *base_asset );
 
                      market_stat->ask_depth -= mtrx.ask_paid.amount;
 
@@ -235,7 +235,7 @@ class market_engine
 
                    order_did_execute = true;
                    pay_current_short( mtrx, xts_paid_by_short, *quote_asset );
-                   pay_current_cover( mtrx, *quote_asset );
+                   pay_current_cover( mtrx, *quote_asset, *base_asset );
 
                    market_stat->bid_depth -= xts_paid_by_short.amount;
                    market_stat->ask_depth += xts_paid_by_short.amount;
@@ -285,7 +285,7 @@ class market_engine
                    market_stat->ask_depth -= mtrx.ask_paid.amount;
                    order_did_execute = true;
                    pay_current_bid( mtrx, *quote_asset );
-                   pay_current_cover( mtrx, *quote_asset );
+                   pay_current_cover( mtrx, *quote_asset, *base_asset );
                 }
                 else if( _current_ask->type == ask_order && _current_bid->type == short_order )
                 {
@@ -493,11 +493,8 @@ class market_engine
           }
 
           auto cover_price = mtrx.bid_price;
-#ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX
-#endif
-          cover_price.ratio *= 2;
-          cover_price.ratio /= 3;
+          cover_price.ratio *= 3;
+          cover_price.ratio /= 4;
          // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
 
           market_index_key cover_index( cover_price, _current_bid->get_owner() );
@@ -546,7 +543,7 @@ class market_engine
           _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset )
+      void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset, asset_record& base_asset )
       { try {
           FC_ASSERT( _current_ask->type == cover_order );
           FC_ASSERT( mtrx.ask_type == cover_order );
@@ -589,11 +586,7 @@ class market_engine
                 // these go to the network... as dividends..
                 mtrx.fees_collected  += asset(fee,0);
 
-#ifndef WIN32
-#warning [HARDFORK] Removing these lines hardforks BTSX by changing how fees are accumulated
-#endif
-                //auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                //_pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
+                base_asset.collected_fees += fee;
 
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
