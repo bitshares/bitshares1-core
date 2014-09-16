@@ -107,8 +107,6 @@ namespace bts { namespace blockchain {
 
          virtual void                   set_market_transactions( vector<market_transaction> trxs )override;
 
-         virtual asset                  calculate_base_supply()const override;
-
          // NOTE: this isn't really part of the chain state, but more part of the block state
          vector<market_transaction>                                     market_transactions;
 

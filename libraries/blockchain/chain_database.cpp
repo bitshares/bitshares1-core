@@ -180,16 +180,12 @@ namespace bts { namespace blockchain {
             // blocks in the current 'official' chain.
             bts::db::level_map<uint32_t,block_id_type >                     _block_num_to_id_db;
             // all blocks from any fork..
-            //bts::db::level_map<block_id_type,full_block>                  _block_id_to_block_db;
             bts::db::level_map<block_id_type,block_record >                 _block_id_to_block_record_db;
 
             bts::db::level_map<block_id_type,full_block>                    _block_id_to_block_data_db;
 
             std::unordered_set<transaction_id_type>                         _known_transactions;
             bts::db::level_map<transaction_id_type,transaction_record>      _id_to_transaction_record_db;
-
-            // used to revert block state in the event of a fork
-            // bts::db::level_map<uint32_t,undo_data>                       _block_num_to_undo_data_db;
 
             signed_block_header                                             _head_block_header;
             block_id_type                                                   _head_block_id;
@@ -219,10 +215,6 @@ namespace bts { namespace blockchain {
 
             bts::db::level_map< std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::level_map< market_history_key, market_history_record>             _market_history_db;
-
-
-            /** used to prevent duplicate processing */
-            // bts::db::level_pod_map< transaction_id_type, transaction_location > _processed_transaction_id_db;
 
             std::map<operation_type_enum, std::deque<operation>>            _recent_operations;
 
@@ -254,7 +246,6 @@ namespace bts { namespace blockchain {
                 rebuild_index = true;
               }
               self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
-              self->set_property( chain_property_enum::accumulated_fees, 0 );
               self->set_property( chain_property_enum::dirty_markets, variant( map<asset_id_type,asset_id_type>() ) );
           }
           else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
@@ -542,8 +533,8 @@ namespace bts { namespace blockchain {
          //ilog( "apply transactions from block: ${block_num}  ${trxs}", ("block_num",block.block_num)("trxs",user_transactions) );
          ilog( "Applying transactions from block: ${n}", ("n",block.block_num) );
          uint32_t trx_num = 0;
-         try {
-            share_type total_fees = 0;
+         try
+         {
             // apply changes from each transaction
             for( const auto& trx : block.user_transactions )
             {
@@ -561,20 +552,9 @@ namespace bts { namespace blockchain {
                transaction_record record( trx_loc, *trx_eval_state);
                pending_state->store_transaction( trx.id(), record );
                ++trx_num;
-
-               total_fees += record.get_fees();
             }
-            /* Collect fees in block record */
-            auto block_id = block.id();
-            auto block_record = self->get_block_record( block_id );
-            FC_ASSERT( block_record.valid() );
-            block_record->total_fees += total_fees;
-            _block_id_to_block_record_db.store( block_id, *block_record );
-
-            auto prev_accumulated_fees = pending_state->get_accumulated_fees();
-            pending_state->set_accumulated_fees( prev_accumulated_fees + total_fees );
-
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) ) }
+         } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
+      }
 
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const pending_chain_state_ptr& pending_state,
@@ -582,25 +562,26 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            const auto pay_percent = delegate_record->delegate_info->pay_rate;
-            FC_ASSERT( pay_percent <= 100 );
-            const auto pending_pay = pending_state->get_delegate_pay_rate();
-            const auto pay = ( pay_percent * pending_pay ) / 100;
+            const auto pay_rate_percent = delegate_record->delegate_info->pay_rate;
+            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
+            const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
+            const auto accepted_paycheck = ( pay_rate_percent * max_available_paycheck ) / 100;
 
-            const auto prev_accumulated_fees = pending_state->get_accumulated_fees();
 #ifndef WIN32
 #warning [HARDFORK] This will hardfork BTSX by changing how accumulated fees are calculated
 #endif
-            //pending_state->set_accumulated_fees( prev_accumulated_fees - pay );
-            pending_state->set_accumulated_fees( prev_accumulated_fees - pending_pay );
+            auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+            FC_ASSERT( pending_base_record.valid() );
+            pending_base_record->collected_fees -= max_available_paycheck;
+            pending_state->store_asset_record( *pending_base_record );
 
-            delegate_record->delegate_info->pay_balance += pay;
-            delegate_record->delegate_info->votes_for += pay;
+            delegate_record->delegate_info->pay_balance += accepted_paycheck;
+            delegate_record->delegate_info->votes_for += accepted_paycheck;
             pending_state->store_account_record( *delegate_record );
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply -= (pending_pay - pay);
+            base_asset_record->current_share_supply -= (max_available_paycheck - accepted_paycheck);
             pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
@@ -1189,8 +1170,6 @@ namespace bts { namespace blockchain {
 
       my->_market_history_db.close();
       my->_market_status_db.close();
-
-      //my->_processed_transaction_id_db.close();
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    account_record chain_database::get_delegate_record_for_signee( const public_key_type& block_signee )const
@@ -1742,7 +1721,7 @@ namespace bts { namespace blockchain {
          {
             trx_eval_state->evaluate( item->trx );
             // TODO: what about fees in other currencies?
-            total_fees += trx_eval_state->get_fees(0);
+            total_fees += trx_eval_state->get_fees( 0 );
             /* Apply temporary state to block state */
             pending_trx_state->apply_changes();
             next_block.user_transactions.push_back( item->trx );
@@ -2951,7 +2930,9 @@ namespace bts { namespace blockchain {
         total += balance.get_balance();
       }
 
-      total.amount += get_accumulated_fees();
+      auto base_record = get_asset_record( asset_id_type( 0 ) );
+      FC_ASSERT( base_record.valid() );
+      total.amount += base_record->collected_fees;
 
       for( auto account_itr = my->_account_db.begin(); account_itr.valid(); ++account_itr )
       {

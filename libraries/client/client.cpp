@@ -3078,7 +3078,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
-      info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
       info["blockchain_share_supply"]                           = variant();

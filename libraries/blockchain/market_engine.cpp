@@ -21,6 +21,7 @@ class market_engine
              _base_id = base_id;
              auto quote_asset = _pending_state->get_asset_record( _quote_id );
              auto base_asset = _pending_state->get_asset_record( _base_id );
+             FC_ASSERT( quote_asset.valid() && base_asset.valid() );
 
              // the order book is sorted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
              // next market class and then back up one
@@ -128,11 +129,7 @@ class market_engine
                      market_stat->ask_depth -= mtrx.ask_paid.amount;
 
                      quote_asset->collected_fees -= mtrx.bid_paid.amount;
-                     _pending_state->store_asset_record(*quote_asset);
-                     _pending_state->store_asset_record(*base_asset);
-
-                     auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                     _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.ask_paid.amount );
+                     base_asset->collected_fees += mtrx.ask_paid.amount;
                   }
                 //  wlog( "==========================  DONE LIQUIDATE FEES BALANCE: ${amount}=========================\n", ("amount", quote_asset->collected_fees) );
                 }
@@ -254,7 +251,7 @@ class market_engine
                    /**
                     *  Don't allow margin calls to be executed too far below
                     *  the minimum ask, this could lead to an attack where someone
-                    *  walks the whole book to steal the collateral.  
+                    *  walks the whole book to steal the collateral.
                     */
                    if( mtrx.bid_price < market_stat->minimum_ask() )
                    {
@@ -383,7 +380,10 @@ class market_engine
                   opening_price = mtrx.bid_price;
                 closing_price = mtrx.bid_price;
 
-                accumulate_fees( mtrx, *quote_asset );
+                if( mtrx.fees_collected.asset_id == base_asset->id )
+                    base_asset->collected_fees += mtrx.fees_collected.amount;
+                else if( mtrx.fees_collected.asset_id == quote_asset->id )
+                    quote_asset->collected_fees += mtrx.fees_collected.amount;
              } // while( next bid && next ask )
 
 
@@ -632,7 +632,6 @@ class market_engine
 
           _pending_state->store_balance_record( *ask_payout );
 
-
           // if the balance is less than 1 XTS * PRICE < .001 USD XTS goes to fees
           if( (_current_ask->get_quantity() * _current_ask->get_price()).amount == 0 )
           {
@@ -642,21 +641,6 @@ class market_engine
           _pending_state->store_ask_record( _current_ask->market_index, _current_ask->state );
 
       } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
-
-      void accumulate_fees( const market_transaction& mtrx, asset_record& quote_asset )
-      {
-         if( mtrx.fees_collected.amount == 0 ) return;
-         if( mtrx.fees_collected.asset_id == 0 )
-         {
-             auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-             _pending_state->set_accumulated_fees( prev_accumulated_fees + mtrx.fees_collected.amount );
-         }
-         else
-         {
-            FC_ASSERT( quote_asset.id == mtrx.fees_collected.asset_id );
-            quote_asset.collected_fees += mtrx.fees_collected.amount;
-         }
-      }
 
       bool get_next_bid()
       { try {
