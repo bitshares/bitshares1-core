@@ -471,7 +471,7 @@ namespace bts { namespace wallet {
 
          auto required = _blockchain->to_pretty_asset( amount_to_withdraw );
          auto available = _blockchain->to_pretty_asset( amount_to_withdraw - amount_remaining );
-         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available) );
+         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available)(items) );
       } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_address)(trx)(required_signatures) ) }
 
       void wallet_impl::authorize_update(unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key )
