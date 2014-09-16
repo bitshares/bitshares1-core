@@ -586,8 +586,11 @@ class market_engine
                 // these go to the network... as dividends..
                 mtrx.fees_collected  += asset(fee,0);
 
-                auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                _pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
+#ifndef WIN32
+#warning [HARDFORK] Removing these lines hardforks BTSX by changing how fees are accumulated
+#endif
+                //auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
+                //_pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
 
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
