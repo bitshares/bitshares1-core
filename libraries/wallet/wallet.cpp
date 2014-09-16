@@ -471,7 +471,7 @@ namespace bts { namespace wallet {
 
          auto required = _blockchain->to_pretty_asset( amount_to_withdraw );
          auto available = _blockchain->to_pretty_asset( amount_to_withdraw - amount_remaining );
-         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available) );
+         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available)(items) );
       } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_address)(trx)(required_signatures) ) }
 
       void wallet_impl::authorize_update(unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key )
@@ -3713,6 +3713,9 @@ namespace bts { namespace wallet {
     *  This transfer works like a bitcoin transaction combining multiple inputs
     *  and producing a single output.
     */
+#ifndef WIN32
+#warning [UNTESTED] Asset burning needs to be tested!
+#endif
    wallet_transaction_record wallet::burn_asset(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
@@ -5160,7 +5163,10 @@ namespace bts { namespace wallet {
 
       auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
 
-      if( false && desired_fee_asset_id != 0 )
+#ifndef WIN32
+#warning [UNTESTED] Non-base asset fees need to be tested!
+#endif
+      if( desired_fee_asset_id != 0 )
       {
          const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );

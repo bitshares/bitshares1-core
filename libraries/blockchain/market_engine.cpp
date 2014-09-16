@@ -100,7 +100,6 @@ class market_engine
                 auto bid_quantity_xts = _current_bid->get_quantity();
                 auto ask_quantity_xts = _current_ask->get_quantity();
 
-                asset xts_paid_by_short( 0, base_id );
                 asset current_bid_balance  = _current_bid->get_balance();
 
                 /** the market transaction we are filling out */
@@ -120,8 +119,12 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
+                   auto collateral_rate = _current_bid->get_price();
+                   if( _current_bid->get_price() > market_stat->avg_price_1h )
+                      collateral_rate = market_stat->avg_price_1h;
+
                    auto ask_quantity_usd   = _current_ask->get_quote_quantity();
-                   auto short_quantity_usd = _current_bid->get_balance() / _current_bid->get_price();
+                   auto short_quantity_usd = _current_bid->get_balance() / collateral_rate;
 
                    auto trade_quantity_usd = std::min(short_quantity_usd,ask_quantity_usd);
 
@@ -129,18 +132,27 @@ class market_engine
                    mtrx.bid_paid       = trade_quantity_usd;
                    mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
                    mtrx.bid_received   = mtrx.ask_paid;
-                   mtrx.bid_collateral = mtrx.bid_paid / _current_bid->get_price();
+                   mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
 
                    // check for rounding errors
                    if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
                        mtrx.bid_collateral = _current_bid->get_balance();
 
                    order_did_execute = true;
-                   pay_current_short( mtrx, xts_paid_by_short, *quote_asset );
-                   pay_current_cover( mtrx, *quote_asset );
+                   if( *mtrx.bid_collateral < mtrx.ask_paid )
+                   {
+                       market_stat->bid_depth -= mtrx.bid_collateral->amount;
+                       // cancel short... too little collateral at these prices
+                       cancel_current_short( mtrx, *quote_asset );
+                   }
+                   else
+                   {
+                      pay_current_short( mtrx, *quote_asset );
+                      pay_current_cover( mtrx, *quote_asset );
 
-                   market_stat->bid_depth -= mtrx.bid_collateral->amount;
-                   market_stat->ask_depth += mtrx.bid_collateral->amount;
+                      market_stat->bid_depth -= mtrx.bid_collateral->amount;
+                      market_stat->ask_depth += mtrx.bid_collateral->amount;
+                   }
                 }
                 else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
                 {
@@ -193,9 +205,12 @@ class market_engine
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.bid_price < mtrx.ask_price ) // the ask asn't been reached.
                       break;
+                   auto collateral_rate = _current_bid->get_price();
+                   if( _current_bid->get_price() > market_stat->avg_price_1h )
+                      collateral_rate = market_stat->avg_price_1h;
 
                    auto ask_quantity_usd   = _current_ask->get_quote_quantity();
-                   auto short_quantity_usd = _current_bid->get_balance() / _current_bid->get_price();
+                   auto short_quantity_usd = _current_bid->get_balance() / collateral_rate;
 
                    auto trade_quantity_usd = std::min(short_quantity_usd,ask_quantity_usd);
 
@@ -203,7 +218,7 @@ class market_engine
                    mtrx.bid_paid       = trade_quantity_usd;
                    mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
                    mtrx.bid_received   = mtrx.ask_paid;
-                   mtrx.bid_collateral = mtrx.bid_paid / _current_bid->get_price();
+                   mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
 
                    // check for rounding errors
                    if( (mtrx.ask_paid - _current_ask->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
@@ -213,11 +228,22 @@ class market_engine
                        mtrx.bid_collateral = _current_bid->get_balance();
 
                    order_did_execute = true;
-                   pay_current_short( mtrx, xts_paid_by_short, *quote_asset );
-                   pay_current_cover( mtrx, *quote_asset );
 
-                   market_stat->bid_depth -= mtrx.bid_collateral->amount;
-                   market_stat->ask_depth += mtrx.bid_collateral->amount;
+                   if( *mtrx.bid_collateral < mtrx.ask_paid )
+                   {
+                       market_stat->bid_depth -= mtrx.bid_collateral->amount;
+                       // cancel short... too little collateral at these prices
+                       cancel_current_short( mtrx, *quote_asset );
+                       market_stat->bid_depth -= mtrx.bid_received.amount;
+                   }
+                   else
+                   {
+                       pay_current_short( mtrx, *quote_asset );
+                       pay_current_ask( mtrx, *quote_asset );
+                       market_stat->bid_depth -= mtrx.bid_collateral->amount;
+                       market_stat->ask_depth += mtrx.bid_collateral->amount;
+                   }
+
                 }
                 else if( _current_ask->type == ask_order && _current_bid->type == bid_order )
                 {
@@ -344,7 +370,29 @@ class market_engine
           _market_transactions.push_back(mtrx);
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_short(const market_transaction& mtrx, const asset& xts_paid_by_short, asset_record& quote_asset  )
+      void cancel_current_short( market_transaction& mtrx, asset_record& quote_asset  )
+      {
+         mtrx.ask_paid       = asset();
+         mtrx.ask_received   = asset(0,quote_asset.id);
+         mtrx.bid_received   = _current_bid->get_balance();
+         mtrx.bid_paid       = asset(0,quote_asset.id);
+         mtrx.bid_collateral.reset();
+
+         auto bid_payout = _pending_state->get_balance_record(
+                                   withdraw_condition( withdraw_with_signature(mtrx.bid_owner), _base_id ).get_address() );
+
+         if( !bid_payout )
+            bid_payout = balance_record( mtrx.bid_owner, asset(0,_base_id), 0 );
+
+         bid_payout->balance += mtrx.bid_received.amount;
+         bid_payout->last_update = _pending_state->now();
+         bid_payout->deposit_date = _pending_state->now();
+         _pending_state->store_balance_record( *bid_payout );
+
+         _current_bid->state.balance = 0;
+      }
+
+      void pay_current_short(const market_transaction& mtrx, asset_record& quote_asset  )
       { try {
           FC_ASSERT( _current_bid->type == short_order );
           FC_ASSERT( mtrx.bid_type == short_order );
@@ -352,25 +400,21 @@ class market_engine
           /** NOTE: the short may pay extra XTS to the collateral in the event rounding occurs.  This
            * just checks to make sure it is reasonable.
            */
-          FC_ASSERT( mtrx.ask_paid <= xts_paid_by_short, "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
+          FC_ASSERT( mtrx.ask_paid <= *mtrx.bid_collateral, "", ("mtrx",mtrx) );
           /** sanity check to make sure that the only difference is rounding error */
-          FC_ASSERT( mtrx.ask_paid.amount >= (xts_paid_by_short.amount - BTS_BLOCKCHAIN_PRECISION), "", ("mtrx",mtrx)("xts_paid_by_short",xts_paid_by_short) );
+          FC_ASSERT( mtrx.ask_paid.amount >= (mtrx.bid_collateral->amount - BTS_BLOCKCHAIN_PRECISION), "", ("mtrx",mtrx) );
 
           quote_asset.current_share_supply += mtrx.bid_paid.amount;
 
-          auto collateral  = xts_paid_by_short + mtrx.ask_paid;
+          auto collateral  = *mtrx.bid_collateral + mtrx.ask_paid;
           if( mtrx.bid_paid.amount <= 0 ) // WHY is this ever negitive??
           {
              FC_ASSERT( mtrx.bid_paid.amount >= 0 );
-             //ulog( "bid paid ${c}  collateral ${xts} \nbid: ${current}\nask: ${ask}", ("c",mtrx.bid_paid)("xts",xts_paid_by_short)("current", (*_current_bid))("ask",*_current_ask) );
-             _current_bid->state.balance -= xts_paid_by_short.amount;
+             _current_bid->state.balance -= mtrx.bid_collateral->amount;
              return;
           }
 
           auto cover_price = mtrx.bid_price;
-#ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX
-#endif
           cover_price.ratio *= 2;
           cover_price.ratio /= 3;
          // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
@@ -386,7 +430,7 @@ class market_engine
           FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
           FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));
 
-          _current_bid->state.balance -= xts_paid_by_short.amount;
+          _current_bid->state.balance -= mtrx.bid_collateral->amount;
           FC_ASSERT( _current_bid->state.balance >= 0 );
 
           _pending_state->store_collateral_record( cover_index, *ocover_record );
@@ -463,12 +507,6 @@ class market_engine
 
                 // these go to the network... as dividends..
                 mtrx.fees_collected  += asset(fee,0);
-
-#ifndef WIN32
-#warning [HARDFORK] Removing these lines hardforks BTSX by changing how fees are accumulated
-#endif
-                //auto prev_accumulated_fees = _pending_state->get_accumulated_fees();
-                //_pending_state->set_accumulated_fees( prev_accumulated_fees + fee );
 
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
