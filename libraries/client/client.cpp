@@ -3376,19 +3376,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    wallet_transaction_record client_impl::wallet_market_submit_short(
            const string& from_account,
            double quantity,
-           double quote_price,
            const string& quote_symbol,
-           bool allow_stupid_short )
+           double collateral_ratio)
    {
-      vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, _chain_db->get_asset_symbol(0), 1).second;
-
-      if (!allow_stupid_short && lowest_ask.size()
-          && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
-        FC_THROW_EXCEPTION(stupid_order, "You are attempting to short at more than 5% above the buy price. "
-                                         "This short is based on economically unsound principles, and is ill-advised. "
-                                         "If you're sure you want to do this, place your short again and set allow_stupid_short to true.");
-
-      const auto record = _wallet->submit_short( from_account, quantity, quote_price, quote_symbol );
+      const auto record = _wallet->submit_short( from_account, quantity, quote_symbol, collateral_ratio );
       network_broadcast_transaction( record.trx );
       return record;
    }

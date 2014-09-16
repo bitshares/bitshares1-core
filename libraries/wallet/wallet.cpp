@@ -4886,8 +4886,8 @@ namespace bts { namespace wallet {
    wallet_transaction_record wallet::submit_short(
            const string& from_account_name,
            double real_quantity,
-           double quote_price,
            const string& quote_symbol,
+           double collateral_per_usd,
            bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
@@ -4896,8 +4896,8 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
        if( real_quantity <= 0 )
           FC_CAPTURE_AND_THROW( negative_bid, (real_quantity) );
-       if( quote_price <= 0 )
-          FC_CAPTURE_AND_THROW( invalid_price, (quote_price) );
+       if( collateral_per_usd <= 0 )
+          FC_CAPTURE_AND_THROW( invalid_price, (collateral_per_usd) );
 
        auto quote_asset_record = my->_blockchain->get_asset_record( quote_symbol );
        auto base_asset_record  = my->_blockchain->get_asset_record( asset_id_type(0) );
@@ -4911,15 +4911,11 @@ namespace bts { namespace wallet {
        if( quote_asset_record->id == 0 )
           FC_CAPTURE_AND_THROW( shorting_base_shares, (quote_symbol) );
 
-       double cost = real_quantity / quote_price;
-       idump( (cost)(real_quantity)(quote_price) );
+       double cost = real_quantity * collateral_per_usd;
+       idump( (cost)(real_quantity)(collateral_per_usd) );
 
-       asset cost_shares( cost *  base_asset_record->get_precision(), base_asset_record->id );
-       asset price_shares( quote_price *  quote_asset_record->get_precision(), quote_asset_record->id );
-       asset base_one_quantity( base_asset_record->get_precision(), base_asset_record->id );
-
-       //auto quote_price_shares = price_shares / base_one_quantity;
-       price quote_price_shares( (quote_price * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+       asset cost_shares( (real_quantity * collateral_per_usd)  * base_asset_record->get_precision(), base_asset_record->id );
+       price quote_price_shares( ((1.0/collateral_per_usd) * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
 
        auto order_key = get_new_public_key( from_account_name );
        auto order_address = order_key;
@@ -4968,7 +4964,7 @@ namespace bts { namespace wallet {
 
        return record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
-                             (real_quantity) (quote_price)(quote_symbol)(sign) ) }
+                             (real_quantity)(collateral_per_usd)(quote_symbol)(sign) ) }
 
    wallet_transaction_record wallet::add_collateral(
            const string& from_account_name,
