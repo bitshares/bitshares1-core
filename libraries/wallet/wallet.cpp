@@ -128,6 +128,7 @@ namespace bts { namespace wallet {
             bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
+            void sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record );
             void sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
@@ -1385,14 +1386,19 @@ namespace bts { namespace wallet {
         return cache_deposit;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit
 
+      void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record )
+      {
+         if( !record.valid() || record->balance == 0 )
+             _wallet_db.remove_balance( balance_id );
+         else
+             _wallet_db.cache_balance( *record );
+      }
+
       void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
       {
          const auto pending_state = _blockchain->get_pending_state();
-         const auto balance_record = pending_state->get_balance_record( balance_id );
-         if( !balance_record.valid() || balance_record->balance == 0 )
-             _wallet_db.remove_balance( balance_id );
-         else
-             _wallet_db.cache_balance( *balance_record );
+         const auto record = pending_state->get_balance_record( balance_id );
+         sync_balance_with_blockchain( balance_id, record );
       }
 
       void wallet_impl::reschedule_relocker()
@@ -5911,12 +5917,13 @@ namespace bts { namespace wallet {
           const auto name = account_record.valid() ? account_record->name : string( account_address );
           if( !account_name.empty() && name != account_name ) return;
 
-          const auto pending_record = pending_state->get_balance_record( record.id() );
-          my->_wallet_db.cache_balance( record );
+          const auto balance_id = record.id();
+          const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
-
-          my->_wallet_db.cache_balance( *pending_record );
           balance_records[ name ].push_back( *pending_record );
+
+          /* Re-cache the pending balance just in case */
+          my->sync_balance_with_blockchain( balance_id, pending_record );
       };
 
       my->_blockchain->scan_balances( scan_balance );
