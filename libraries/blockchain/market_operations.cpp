@@ -211,9 +211,6 @@ namespace bts { namespace blockchain {
 
       if( current_cover->payoff_balance > 0 )
       {
-#ifndef WIN32
-#warning [HARDFORK] This will hardfork BTSX
-#endif
          auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
                                asset((current_cover->collateral_balance*2)/3, 0);
 
