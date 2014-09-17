@@ -151,6 +151,7 @@ namespace bts { namespace blockchain {
      return number;
   } FC_RETHROW_EXCEPTIONS( warn, "" )}
 
+
   /**
    *  A price will reorder the asset types such that the
    *  asset type with the lower enum value is always the
@@ -183,6 +184,12 @@ namespace bts { namespace blockchain {
         p.ratio = result;
         return p;
     } FC_RETHROW_EXCEPTIONS( warn, "${a} / ${b}", ("a",a)("b",b) );
+  }
+
+
+  asset operator / ( const asset& a, const price& p )
+  {
+        return a * p;
   }
 
   /**

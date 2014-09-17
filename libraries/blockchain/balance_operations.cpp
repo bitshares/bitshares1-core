@@ -8,11 +8,11 @@ namespace bts { namespace blockchain {
    #include "balance_operations_v1.cpp"
    #include "balance_operations_v2.cpp"
 
-   asset   balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
+   asset balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
    {
       if( amount <= 0 )       return asset(0,condition.asset_id);
       if( share_supply <= 0 ) return asset(0,condition.asset_id);
-      if( yield_pool <= 0 ) return asset(0,condition.asset_id);
+      if( yield_pool <= 0 )   return asset(0,condition.asset_id);
 
       auto elapsed_time = (now - deposit_date);
       if(  elapsed_time > fc::seconds( BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC ) )

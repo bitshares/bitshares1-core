@@ -384,10 +384,12 @@ namespace bts { namespace wallet {
                oacct->is_my_account = true;
                store_record( *oacct );
                cache_account( *oacct );
+               /*
                ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
                      ("key",key_to_store.public_key)
                      ("account",key_to_store.account_address)
                     ("account_name",get_account_name(key_to_store.account_address)) );
+                    */
             }
          }
          else
@@ -399,7 +401,7 @@ namespace bts { namespace wallet {
                   ("account_name",get_account_name(key_to_store.account_address)) );
                   */
          }
-         ilog( "storing key" );
+         //ilog( "storing key" );
 
          store_record( key_itr->second, true );
       }

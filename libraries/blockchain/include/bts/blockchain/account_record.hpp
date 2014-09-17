@@ -79,6 +79,7 @@ namespace bts { namespace blockchain {
          return std::tie( a.account_id, a.transaction_id) == std::tie( b.account_id, b.transaction_id);
       }
    };
+
    struct burn_record_value
    {
       bool is_null()const { return amount.amount == 0; }
@@ -86,6 +87,7 @@ namespace bts { namespace blockchain {
       string                   message;
       optional<signature_type> signer;
    };
+
    struct burn_record : public burn_record_key, public burn_record_value
    {
       burn_record(){}

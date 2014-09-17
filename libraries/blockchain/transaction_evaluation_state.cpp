@@ -146,7 +146,7 @@ namespace bts { namespace blockchain {
       try {
         if( trx_arg.expiration < _current_state->now() )
         {
-           auto expired_by_sec = (trx_arg.expiration - _current_state->now()).to_seconds();
+           const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
            FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
         }
         if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )

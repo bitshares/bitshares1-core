@@ -15,9 +15,9 @@ OK
 default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
-===================================================================================================================
-1       [redacted]          [redacted]                      2       627     1.00000 XTS     [redacted][redacted]     
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
+===================================================================================================
+1       [redacted]          [redacted]                      2       627     [redacted][redacted]     
 default (unlocked) >>> wallet_account_balance testaccount1
 ACCOUNT                         BALANCE                     
 ============================================================

@@ -52,8 +52,8 @@ namespace bts { namespace blockchain {
       new_record.name              = this->name;
       new_record.public_data       = this->public_data;
       new_record.owner_key         = this->owner_key;
-      new_record.last_update       = now;
       new_record.registration_date = now;
+      new_record.last_update       = now;
 
       new_record.set_active_key( now, this->active_key );
       if( this->is_delegate() )

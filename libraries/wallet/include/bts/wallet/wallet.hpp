@@ -432,6 +432,7 @@ namespace bts { namespace wallet {
                  double real_quantity_usd,
                  const string& quote_symbol,
                  double collateral_per_usd,
+                 double price_limit = 0,
                  bool sign = true
                  );
          wallet_transaction_record cover_short(
