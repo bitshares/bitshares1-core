@@ -389,13 +389,20 @@ class market_engine
       } // execute(...)
       void push_market_transaction( const market_transaction& mtrx )
       { try {
-          FC_ASSERT( mtrx.bid_paid.amount >= 0 );
-          FC_ASSERT( mtrx.ask_paid.amount >= 0 );
-          FC_ASSERT( mtrx.bid_received.amount >= 0 );
-          FC_ASSERT( mtrx.ask_received .amount>= 0 );
-          FC_ASSERT( mtrx.bid_paid >= mtrx.ask_received );
-          FC_ASSERT( mtrx.ask_paid >= mtrx.bid_received );
-          FC_ASSERT( mtrx.fees_collected.amount >= 0 );
+          if( mtrx.ask_paid.amount != 0
+              || mtrx.ask_received.amount != 0
+              || mtrx.bid_received.asset_id != 0
+              || mtrx.bid_paid.amount != 0 )
+          {
+              // These checks only apply for non-cancel orders
+              FC_ASSERT( mtrx.bid_paid.amount >= 0 );
+              FC_ASSERT( mtrx.ask_paid.amount >= 0 );
+              FC_ASSERT( mtrx.bid_received.amount >= 0 );
+              FC_ASSERT( mtrx.ask_received .amount>= 0 );
+              FC_ASSERT( mtrx.bid_paid >= mtrx.ask_received );
+              FC_ASSERT( mtrx.ask_paid >= mtrx.bid_received );
+              FC_ASSERT( mtrx.fees_collected.amount >= 0 );
+          }
 
           wlog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
 
