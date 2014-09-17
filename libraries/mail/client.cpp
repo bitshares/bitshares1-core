@@ -480,6 +480,39 @@ public:
         FC_ASSERT(false, "Message ${id} not found.", ("id", message_id));
     }
 
+    vector<email_header> get_messages_by_sender(string sender) {
+        vector<email_header> results;
+
+        for (auto itr = _mail_index.get<by_sender>().lower_bound(boost::make_tuple(sender));
+             itr != _mail_index.get<by_sender>().upper_bound(boost::make_tuple(sender));
+             ++itr)
+            results.push_back(get_message(itr->id).header);
+
+        return results;
+    }
+
+    vector<email_header> get_messages_by_recipient(string recipient) {
+        vector<email_header> results;
+
+        for (auto itr = _mail_index.get<by_recipient>().lower_bound(boost::make_tuple(recipient));
+             itr != _mail_index.get<by_recipient>().upper_bound(boost::make_tuple(recipient));
+             ++itr)
+            results.push_back(get_message(itr->id).header);
+
+        return results;
+    }
+
+    vector<email_header> get_messages_from_to(string sender, string recipient) {
+        vector<email_header> results;
+
+        for (auto itr = _mail_index.get<by_sender>().lower_bound(boost::make_tuple(sender, recipient));
+             itr != _mail_index.get<by_sender>().upper_bound(boost::make_tuple(sender, recipient));
+             ++itr)
+            results.push_back(get_message(itr->id).header);
+
+        return results;
+    }
+
     vector<email_header> get_inbox() {
         vector<email_header> inbox;
         for (auto itr = _inbox.begin(); itr.valid(); ++itr)
@@ -683,6 +716,39 @@ message_id_type client::send_email(const string &from, const string &to, const s
     my->process_outgoing_mail(email);
 
     return email.id;
+}
+
+std::vector<email_header> client::get_messages_by_sender(std::string sender)
+{
+    FC_ASSERT(my->is_open());
+    if (my->_archive_indexing_future.valid() && !my->_archive_indexing_future.ready()) {
+        ulog("Mail archive is currently indexing. Please try again later.");
+        return vector<email_header>();
+    }
+
+    return my->get_messages_by_sender(sender);
+}
+
+std::vector<email_header> client::get_messages_by_recipient(std::string recipient)
+{
+    FC_ASSERT(my->is_open());
+    if (my->_archive_indexing_future.valid() && !my->_archive_indexing_future.ready()) {
+        ulog("Mail archive is currently indexing. Please try again later.");
+        return vector<email_header>();
+    }
+
+    return my->get_messages_by_recipient(recipient);
+}
+
+std::vector<email_header> client::get_messages_from_to(std::string sender, std::string recipient)
+{
+    FC_ASSERT(my->is_open());
+    if (my->_archive_indexing_future.valid() && !my->_archive_indexing_future.ready()) {
+        ulog("Mail archive is currently indexing. Please try again later.");
+        return vector<email_header>();
+    }
+
+    return my->get_messages_from_to(sender, recipient);
 }
 
 email_header::email_header(const detail::mail_record &processing_record)
