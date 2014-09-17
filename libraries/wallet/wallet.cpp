@@ -5193,12 +5193,12 @@ namespace bts { namespace wallet {
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
-             omarket_order lowest_ask = my->_blockchain->get_lowest_ask_record( desired_fee_asset_id, 0 );
-             if( lowest_ask )
+             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
+             if( median_price )
              {
                 xts_fee += xts_fee + xts_fee;
                 // fees paid in something other than XTS are discounted 50%
-                auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;
+                auto alt_fees_paid = xts_fee * *median_price;
                 return alt_fees_paid;
              }
          }
