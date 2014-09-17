@@ -716,20 +716,6 @@ namespace bts { namespace wallet {
           {
               switch( operation_type_enum( op.type ) )
               {
-                  case null_op_type:
-                      FC_THROW_EXCEPTION( invalid_operation, "Null operation type!", ("op",op) );
-                      break;
-
-                  case withdraw_op_type: /* Done above */
-                      //store_record |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record );
-                      break;
-                  case withdraw_pay_op_type: /* Done above */
-                      //FC_THROW( "withdraw_pay_op_type not implemented!" );
-                      break;
-                  case deposit_op_type: /* Done above */
-                      //store_record |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
-                      break;
-
                   case register_account_op_type:
                       store_record |= scan_register_account( op.as<register_account_operation>(), *transaction_record );
                       break;
@@ -741,51 +727,13 @@ namespace bts { namespace wallet {
                       store_record |= scan_create_asset( op.as<create_asset_operation>(), *transaction_record );
                       break;
                   case update_asset_op_type:
-                      // TODO: FC_THROW( "update_asset_op_type not implemented!" );
+                      // TODO
                       break;
                   case issue_asset_op_type:
                       store_record |= scan_issue_asset( op.as<issue_asset_operation>(), *transaction_record );
                       break;
 
-                  case fire_delegate_op_type:
-                      // TODO: FC_THROW( "fire_delegate_op_type not implemented!" );
-                      break;
-
-                  case submit_proposal_op_type:
-                      // TODO: FC_THROW( "submit_proposal_op_type not implemented!" );
-                      break;
-                  case vote_proposal_op_type:
-                      // TODO: FC_THROW( "vote_proposal_op_type not implemented!" );
-                      break;
-
-                  case bid_op_type: /* Done above */
-                      //store_record |= scan_bid( *transaction_record, op.as<bid_operation>() );
-                      break;
-                  case ask_op_type: /* Done above */
-                      //store_record |= scan_ask( *transaction_record, op.as<ask_operation>() );
-                      break;
-                  case short_op_type: /* Done above */
-                      //store_record |= scan_short( *transaction_record, op.as<short_operation>() );
-                      break;
-                  case cover_op_type:
-                      // TODO: FC_THROW( "cover_op_type not implemented!" );
-                      break;
-                  case add_collateral_op_type:
-                      // TODO: FC_THROW( "add_collateral_op_type not implemented!" );
-                      break;
-                  case remove_collateral_op_type:
-                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                      break;
-
-                  case define_delegate_slate_op_type:
-                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                      break;
-                  case update_feed_op_type:
-                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                      break;
-
                   default:
-                      FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type!", ("op",op) );
                       break;
               }
           }
