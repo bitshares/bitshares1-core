@@ -252,11 +252,10 @@ namespace bts { namespace wallet {
                           auto entry = ledger_entry();
                           entry.from_account = okey_bid->public_key;
                           entry.to_account = okey_bid->public_key;
-#ifndef WIN32
-#warning [BTSX] BTSX needs to support old and new after merging
-#endif
-                          FC_ASSERT( mtrx.bid_collateral );
-                          entry.amount = *mtrx.bid_collateral;
+                          if( mtrx.bid_collateral.valid() )
+                              entry.amount = *mtrx.bid_collateral;
+                          else
+                              entry.amount = mtrx.bid_received;
                           entry.memo = "add collateral";
                           record.ledger_entries.push_back( entry );
                       }
