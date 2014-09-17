@@ -259,7 +259,7 @@ namespace bts { namespace cli {
 
     out << std::left;
     out << std::setw( 30 ) << "AMOUNT";
-    out << std::setw( 30 ) << "COLLATERAL_RATIO";
+    out << std::setw( 30 ) << "COLLATERAL RATIO"; // XTS per USD (BitAsset) held as collateral 
     out << std::setw( 30 ) << "COLLATERAL";
     out << std::setw( 30 ) << "PRICE LIMIT";
     out << std::setw( 40 ) << "ID";
@@ -717,9 +717,11 @@ namespace bts { namespace cli {
 
     auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     // fee order is the market order to convert fees from other asset classes to XTS
+    /*
     bool show_fee_order_record = base_id == 0
       && !quote_asset_record->is_market_issued()
       && quote_asset_record->collected_fees > 0;
+    */
 
     oprice  median_price = client->get_chain()->get_median_delegate_price(quote_id);
     auto status = client->get_chain()->get_market_status(quote_id, base_id);

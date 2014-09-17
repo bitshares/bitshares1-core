@@ -95,7 +95,7 @@ namespace bts { namespace wallet {
             virtual void block_applied( const block_summary& summary )override;
 
             void scan_market_transaction(
-                    const market_transaction& trx,
+                    const market_transaction& mtrx,
                     uint32_t block_num,
                     const time_point_sec& block_time,
                     const time_point_sec& received_time
@@ -128,6 +128,7 @@ namespace bts { namespace wallet {
             bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
+            void sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record );
             void sync_balance_with_blockchain( const balance_id_type& balance_id );
 
             vector<wallet_transaction_record> get_pending_transactions()const;
@@ -185,30 +186,30 @@ namespace bts { namespace wallet {
       }
 
       void wallet_impl::scan_market_transaction(
-              const market_transaction& trx,
+              const market_transaction& mtrx,
               uint32_t block_num,
               const time_point_sec& block_time,
               const time_point_sec& received_time
               )
       { try {
-          auto okey_bid = _wallet_db.lookup_key( trx.bid_owner );
+          auto okey_bid = _wallet_db.lookup_key( mtrx.bid_owner );
           if( okey_bid && okey_bid->has_private_key() )
           {
               const auto bid_account_key = _wallet_db.lookup_key( okey_bid->account_address );
 
-              auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner),
-                                                                                  trx.bid_price.base_asset_id ).get_address() );
+              auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
+                                                                                  mtrx.bid_price.base_asset_id ).get_address() );
               if( bal_rec.valid() )
                   sync_balance_with_blockchain( bal_rec->id() );
 
-              bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.bid_owner),
-                                                                            trx.ask_price.quote_asset_id ).get_address() );
+              bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
+                                                                            mtrx.ask_price.quote_asset_id ).get_address() );
               if( bal_rec.valid() )
                   sync_balance_with_blockchain( bal_rec->id() );
 
               /* Construct a unique record id */
               std::stringstream id_ss;
-              id_ss << block_num << string( trx.bid_owner ) << string( trx.ask_owner );
+              id_ss << block_num << string( mtrx.bid_owner ) << string( mtrx.ask_owner );
 
               // TODO: Don't blow away memo, etc.
               auto record = wallet_transaction_record();
@@ -220,76 +221,97 @@ namespace bts { namespace wallet {
               record.created_time = block_time;
               record.received_time = received_time;
 
-              if( trx.bid_type == bid_order )
+              if( mtrx.bid_type == bid_order )
               {
                   {
                       auto entry = ledger_entry();
                       entry.from_account = okey_bid->public_key;
                       //entry.to_account = "MARKET";
-                      entry.amount = trx.bid_paid;
-                      entry.memo = "pay bid @ " + _blockchain->to_pretty_price( trx.bid_price );
+                      entry.amount = mtrx.bid_paid;
+                      entry.memo = "pay bid @ " + _blockchain->to_pretty_price( mtrx.bid_price );
                       record.ledger_entries.push_back( entry );
                   }
                   {
                       auto entry = ledger_entry();
                       entry.from_account = okey_bid->public_key;
                       entry.to_account = bid_account_key->public_key;
-                      entry.amount = trx.bid_received;
-                      entry.memo = "bid proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
+                      entry.amount = mtrx.bid_received;
+                      entry.memo = "bid proceeds @ " + _blockchain->to_pretty_price( mtrx.bid_price );
                       record.ledger_entries.push_back( entry );
                       self->wallet_claimed_transaction( entry );
                   }
               }
-              else /* if( trx.bid_type == short_order ) */
+              else /* if( mtrx.bid_type == short_order ) */
               {
+                  if( mtrx.ask_paid.amount != 0
+                      || mtrx.ask_received.amount != 0
+                      || mtrx.bid_received.asset_id != 0
+                      || mtrx.bid_paid.amount != 0 )
                   {
-                      auto entry = ledger_entry();
-                      entry.from_account = okey_bid->public_key;
-                      entry.to_account = okey_bid->public_key;
-                      entry.amount = trx.bid_received;
-                      entry.memo = "add collateral @ " + _blockchain->to_pretty_price( trx.bid_price );
-                      record.ledger_entries.push_back( entry );
+                      {
+                          auto entry = ledger_entry();
+                          entry.from_account = okey_bid->public_key;
+                          entry.to_account = okey_bid->public_key;
+#ifndef WIN32
+#warning [BTSX] BTSX needs to support old and new after merging
+#endif
+                          FC_ASSERT( mtrx.bid_collateral );
+                          entry.amount = *mtrx.bid_collateral;
+                          entry.memo = "add collateral";
+                          record.ledger_entries.push_back( entry );
+                      }
+                      {
+                          auto entry = ledger_entry();
+                          //entry.from_account = "MARKET";
+                          entry.to_account =  okey_bid->public_key;
+                          entry.amount = mtrx.ask_paid;
+                          entry.memo = "add collateral";
+                          record.ledger_entries.push_back( entry );
+                      }
+                      {
+                          auto entry = ledger_entry();
+                          entry.from_account = okey_bid->public_key;
+                          //entry.to_account = "MARKET";
+                          entry.amount = mtrx.bid_paid;
+                          entry.memo = "short proceeds @ " + _blockchain->to_pretty_price( mtrx.bid_price );
+                          record.ledger_entries.push_back( entry );
+                          self->update_margin_position( entry );
+                      }
                   }
+                  else
                   {
-                      auto entry = ledger_entry();
-                      //entry.from_account = "MARKET";
-                      entry.to_account =  okey_bid->public_key;
-                      entry.amount = trx.ask_paid;
-                      entry.memo = "add collateral @ " + _blockchain->to_pretty_price( trx.bid_price );
-                      record.ledger_entries.push_back( entry );
-                  }
-                  {
-                      auto entry = ledger_entry();
-                      entry.from_account = okey_bid->public_key;
-                      //entry.to_account = "MARKET";
-                      entry.amount = trx.bid_paid;
-                      entry.memo = "short proceeds @ " + _blockchain->to_pretty_price( trx.bid_price );
-                      record.ledger_entries.push_back( entry );
-                      self->update_margin_position( entry );
+                      {
+                          auto entry = ledger_entry();
+                          entry.from_account = okey_bid->public_key;
+                          entry.to_account = bid_account_key->public_key;
+                          entry.amount = mtrx.bid_received;
+                          entry.memo = "automatic market cancel";
+                          record.ledger_entries.push_back( entry );
+                      }
                   }
               }
 
               _wallet_db.store_transaction( record );
           }
 
-          auto okey_ask = _wallet_db.lookup_key( trx.ask_owner );
+          auto okey_ask = _wallet_db.lookup_key( mtrx.ask_owner );
           if( okey_ask && okey_ask->has_private_key() )
           {
               const auto ask_account_key = _wallet_db.lookup_key( okey_ask->account_address );
 
-              auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
-                                                                                  trx.ask_price.base_asset_id ).get_address() );
+              auto bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
+                                                                                  mtrx.ask_price.base_asset_id ).get_address() );
               if( bal_rec.valid() )
                   sync_balance_with_blockchain( bal_rec->id() );
 
-              bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(trx.ask_owner),
-                                                                            trx.ask_price.quote_asset_id ).get_address() );
+              bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.ask_owner),
+                                                                            mtrx.ask_price.quote_asset_id ).get_address() );
               if( bal_rec.valid() )
                   sync_balance_with_blockchain( bal_rec->id() );
 
               /* Construct a unique record id */
               std::stringstream id_ss;
-              id_ss << block_num << string( trx.ask_owner ) << string( trx.bid_owner );
+              id_ss << block_num << string( mtrx.ask_owner ) << string( mtrx.bid_owner );
 
               // TODO: Don't blow away memo, etc.
               auto record = wallet_transaction_record();
@@ -301,54 +323,54 @@ namespace bts { namespace wallet {
               record.created_time = block_time;
               record.received_time = received_time;
 
-              if( trx.ask_type == ask_order )
+              if( mtrx.ask_type == ask_order )
               {
                   {
                       auto entry = ledger_entry();
                       entry.from_account = okey_ask->public_key;
                       //entry.to_account = "MARKET";
-                      entry.amount = trx.ask_paid;
-                      entry.memo = "fill ask @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      entry.amount = mtrx.ask_paid;
+                      entry.memo = "fill ask @ " + _blockchain->to_pretty_price( mtrx.ask_price );
                       record.ledger_entries.push_back( entry );
                   }
                   {
                       auto entry = ledger_entry();
                       entry.from_account = okey_ask->public_key;
                       entry.to_account = ask_account_key->public_key;
-                      entry.amount = trx.ask_received;
-                      entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      entry.amount = mtrx.ask_received;
+                      entry.memo = "ask proceeds @ " + _blockchain->to_pretty_price( mtrx.ask_price );
                       record.ledger_entries.push_back( entry );
                       self->wallet_claimed_transaction( entry );
                   }
               }
-              else /* if( trx.ask_type == cover_order ) */
+              else /* if( mtrx.ask_type == cover_order ) */
               {
                   {
                       auto entry = ledger_entry();
                       entry.from_account = okey_ask->public_key;
                       //entry.to_account = "MARKET";
-                      entry.amount = trx.ask_paid;
-                      entry.memo = "sell collateral @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      entry.amount = mtrx.ask_paid;
+                      entry.memo = "sell collateral @ " + _blockchain->to_pretty_price( mtrx.ask_price );
                       record.ledger_entries.push_back( entry );
                   }
                   {
                       auto entry = ledger_entry();
                       //entry.from_account = "MARKET";
                       entry.to_account = okey_ask->public_key;
-                      entry.amount = trx.ask_received;
-                      entry.memo = "payoff debt @ " + _blockchain->to_pretty_price( trx.ask_price );
+                      entry.amount = mtrx.ask_received;
+                      entry.memo = "payoff debt @ " + _blockchain->to_pretty_price( mtrx.ask_price );
                       record.ledger_entries.push_back( entry );
                   }
-                  if( trx.fees_collected.amount > 0 )
+                  if( mtrx.fees_collected.amount > 0 )
                   {
                       auto entry = ledger_entry();
                       entry.from_account = okey_ask->public_key;
                       entry.to_account = ask_account_key->public_key;
-                      entry.amount = trx.fees_collected * 19;
+                      entry.amount = mtrx.fees_collected * 19;
                       entry.memo = "cover proceeds - 5% margin call fee";
                       record.ledger_entries.push_back( entry );
                       self->wallet_claimed_transaction( entry );
-                      record.fee = trx.fees_collected;
+                      record.fee = mtrx.fees_collected;
                   }
               }
 
@@ -1385,14 +1407,19 @@ namespace bts { namespace wallet {
         return cache_deposit;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit
 
+      void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record )
+      {
+         if( !record.valid() || record->balance == 0 )
+             _wallet_db.remove_balance( balance_id );
+         else
+             _wallet_db.cache_balance( *record );
+      }
+
       void wallet_impl::sync_balance_with_blockchain( const balance_id_type& balance_id )
       {
          const auto pending_state = _blockchain->get_pending_state();
-         const auto balance_record = pending_state->get_balance_record( balance_id );
-         if( !balance_record.valid() || balance_record->balance == 0 )
-             _wallet_db.remove_balance( balance_id );
-         else
-             _wallet_db.cache_balance( *balance_record );
+         const auto record = pending_state->get_balance_record( balance_id );
+         sync_balance_with_blockchain( balance_id, record );
       }
 
       void wallet_impl::reschedule_relocker()
@@ -2165,7 +2192,7 @@ namespace bts { namespace wallet {
 
    void wallet::account_set_favorite( const string& account_name,
                                       const bool is_favorite )
-   {
+   { try {
        FC_ASSERT( is_open() );
 
        auto judged_account = my->_wallet_db.lookup_account( account_name );
@@ -2180,7 +2207,7 @@ namespace bts { namespace wallet {
        }
        judged_account->is_favorite = is_favorite;
        my->_wallet_db.cache_account( *judged_account );
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("is_favorite",is_favorite) ) }
 
    /**
     *  Creates a new private key under the specified account. This key
@@ -2224,7 +2251,7 @@ namespace bts { namespace wallet {
 
    /**
     *  A contact is an account for which this wallet does not have the private
-    *  key.   If account_name is globally registered then this call will assume
+    *  key. If account_name is globally registered then this call will assume
     *  it is the same account and will fail if the key is not the same.
     *
     *  @param account_name - the name the account is known by to this wallet
@@ -2242,13 +2269,14 @@ namespace bts { namespace wallet {
 
       const auto current_registered_account = my->_blockchain->get_account_record( account_name );
       if( current_registered_account.valid() && current_registered_account->owner_key != key )
-         FC_THROW_EXCEPTION( invalid_name, "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
+         FC_THROW_EXCEPTION( invalid_name,
+                             "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
                              ("p",key)("r",current_registered_account->active_key()) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
       {
-         wlog( "current account is valid... ${name}", ("name",*current_account) );
+         wlog( "current account is valid... ${account}", ("account",*current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
          if( !private_data.is_null() )
@@ -2258,20 +2286,24 @@ namespace bts { namespace wallet {
       }
       else
       {
-         auto account_key = my->_wallet_db.lookup_key( address( key ) );
-         if( account_key.valid() )
-             FC_THROW_EXCEPTION( duplicate_key, "Provided key already belongs to another wallet account!" );
+         current_account = my->_wallet_db.lookup_account( address( key ) );
+         if( current_account.valid() )
+         {
+             if( current_account->name != account_name )
+                 FC_THROW_EXCEPTION( duplicate_key,
+                         "Provided key already belongs to another wallet account! Provided: ${p}, existing: ${e}",
+                         ("p",account_name)("e",current_account->name) );
+
+             if( !private_data.is_null() )
+                current_account->private_data = private_data;
+             my->_wallet_db.cache_account( *current_account );
+             return;
+         }
 
          if( current_registered_account.valid() )
-         {
             my->_wallet_db.add_account( *current_registered_account, private_data );
-         }
          else
-         {
             my->_wallet_db.add_account( account_name, key, private_data );
-         }
-         account_key = my->_wallet_db.lookup_key( address(key) );
-         FC_ASSERT( account_key.valid() );
       }
    } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) }
 
@@ -5911,12 +5943,13 @@ namespace bts { namespace wallet {
           const auto name = account_record.valid() ? account_record->name : string( account_address );
           if( !account_name.empty() && name != account_name ) return;
 
-          const auto pending_record = pending_state->get_balance_record( record.id() );
-          my->_wallet_db.cache_balance( record );
+          const auto balance_id = record.id();
+          const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
-
-          my->_wallet_db.cache_balance( *pending_record );
           balance_records[ name ].push_back( *pending_record );
+
+          /* Re-cache the pending balance just in case */
+          my->sync_balance_with_blockchain( balance_id, pending_record );
       };
 
       my->_blockchain->scan_balances( scan_balance );

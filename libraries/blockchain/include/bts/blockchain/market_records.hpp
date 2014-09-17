@@ -135,7 +135,6 @@ namespace bts { namespace blockchain {
       cover_order
    };
 
-
    struct market_order
    {
       market_order( order_type_enum t, market_index_key k, order_record s )

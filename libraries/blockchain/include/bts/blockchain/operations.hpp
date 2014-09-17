@@ -126,6 +126,8 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (remove_collateral_op_type)
                  (define_delegate_slate_op_type)
                  (update_feed_op_type)
+                 (burn_op_type)
+                 (link_account_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
