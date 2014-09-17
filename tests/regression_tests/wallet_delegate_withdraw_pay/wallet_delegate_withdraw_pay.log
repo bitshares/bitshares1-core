@@ -39,13 +39,13 @@ default (unlocked) >>> wallet_account_create test
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
 xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
-===================================================================================================================
-5       [redacted]          [redacted]                      1       381     799,993.10080 XTS[redacted][redacted]     
-4       [redacted]          [redacted]                      1       381     399,997.73440 XTS[redacted][redacted]     
-3       [redacted]          [redacted]                      1       381     199,998.84160 XTS[redacted][redacted]     
-2       [redacted]          [redacted]                      1       381     100,000.00000 XTS[redacted][redacted]     
-1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
+===================================================================================================
+5       [redacted]          [redacted]                      1       381     [redacted][redacted]     
+4       [redacted]          [redacted]                      1       381     [redacted][redacted]     
+3       [redacted]          [redacted]                      1       381     [redacted][redacted]     
+2       [redacted]          [redacted]                      1       381     [redacted][redacted]     
+1       [redacted]          [redacted]                      0       166     [redacted][redacted]     
 default (unlocked) >>> blockchain_get_account delegate41 
 Name: delegate41
 Registered: Genesis (Keyhotee Founder)
