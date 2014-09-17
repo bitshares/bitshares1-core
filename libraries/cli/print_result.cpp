@@ -151,6 +151,7 @@ namespace bts { namespace cli {
     _command_to_function["wallet_publish_feeds"]                = &f_wallet_transfer;
     _command_to_function["wallet_scan_transaction"]             = &f_wallet_transfer;
     _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
+    _command_to_function["wallet_burn"]                         = &f_wallet_transfer;
 
     _command_to_function["wallet_list"] = &f_wallet_list;
 

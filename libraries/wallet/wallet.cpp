@@ -122,11 +122,15 @@ namespace bts { namespace wallet {
 
             bool scan_register_account( const register_account_operation& op, wallet_transaction_record& trx_rec );
             bool scan_update_account( const update_account_operation& op, wallet_transaction_record& trx_rec );
+
             bool scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec );
             bool scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec );
+
             bool scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
+
+            bool scan_burn( const burn_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
             void sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record );
             void sync_balance_with_blockchain( const balance_id_type& balance_id );
@@ -677,6 +681,11 @@ namespace bts { namespace wallet {
                           has_deposit |= scan_short( short_op, *transaction_record, total_fee );
                       break;
                   }
+                  case burn_op_type:
+                  {
+                      store_record |= scan_burn( op.as<burn_operation>(), *transaction_record, total_fee );
+                      break;
+                  }
                   default:
                       break;
               }
@@ -1200,6 +1209,22 @@ namespace bts { namespace wallet {
           }
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
+
+      bool wallet_impl::scan_burn( const burn_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      {
+          if( op.amount.asset_id == total_fee.asset_id )
+              total_fee -= op.amount;
+
+          if( trx_rec.ledger_entries.size() == 1 )
+          {
+              //trx_rec.ledger_entries.front().amount = op.amount;
+              trx_rec.ledger_entries.front().memo = "burn";
+              if( !op.message.empty() )
+                  trx_rec.ledger_entries.front().memo += ": " + op.message;
+          }
+
+          return false;
+      }
 
       // TODO: optimize
       bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<private_key_type>& keys,
@@ -3696,9 +3721,6 @@ namespace bts { namespace wallet {
     *  This transfer works like a bitcoin transaction combining multiple inputs
     *  and producing a single output.
     */
-#ifndef WIN32
-#warning [UNTESTED] Asset burning needs to be tested!
-#endif
    wallet_transaction_record wallet::burn_asset(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
@@ -3775,7 +3797,9 @@ namespace bts { namespace wallet {
       auto entry = ledger_entry();
       entry.from_account = sender_public_key;
       entry.amount = asset_to_transfer;
-      entry.memo = "burn: public_message";
+      entry.memo = "burn";
+      if( !public_message.empty() )
+          entry.memo += ": " + public_message;
 
       auto record = wallet_transaction_record();
       record.ledger_entries.push_back( entry );
@@ -5293,6 +5317,8 @@ namespace bts { namespace wallet {
                 }
              }
           }
+          else if( entry.memo.find( "burn" ) == 0 )
+             pretty_entry.to_account = "NETWORK";
 
           /* I'm sorry - Vikram */
           /* You better be. - Dan */
