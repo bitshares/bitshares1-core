@@ -66,7 +66,8 @@
             "return_type": "message_status_list",
             "parameters" : [],
             "is_const" : true,
-            "prerequisites" : ["json_authenticated"]
+            "prerequisites" : ["json_authenticated"],
+            "aliases" : ["outbox"]
         },
         {
             "method_name": "mail_get_archive_messages",
