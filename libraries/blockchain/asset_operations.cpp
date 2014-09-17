@@ -91,7 +91,8 @@ namespace bts { namespace blockchain {
       current_asset_record->description       = this->description;
       current_asset_record->public_data       = this->public_data;
       current_asset_record->issuer_account_id = this->issuer_account_id;
-      current_asset_record->last_update       = eval_state._current_state->now();
+      current_asset_record->registration_date = eval_state._current_state->now();
+      current_asset_record->last_update       = current_asset_record->registration_date;
 
       eval_state._current_state->store_asset_record( *current_asset_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }

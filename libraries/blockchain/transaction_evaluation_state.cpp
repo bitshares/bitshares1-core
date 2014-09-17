@@ -2,7 +2,7 @@
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
-namespace bts { namespace blockchain { 
+namespace bts { namespace blockchain {
 
    transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state, digest_type chain_id )
    :_current_state( current_state ),_chain_id(chain_id),_skip_signature_check(false)
@@ -39,8 +39,8 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::add_required_deposit( const address& owner_key, const asset& amount )
    {
       FC_ASSERT( trx.delegate_slate_id );
-      balance_id_type balance_id = withdraw_condition( 
-                                       withdraw_with_signature( owner_key ), 
+      balance_id_type balance_id = withdraw_condition(
+                                       withdraw_with_signature( owner_key ),
                                        amount.asset_id, *trx.delegate_slate_id ).get_address();
 
       auto itr = required_deposits.find( balance_id );
@@ -73,7 +73,7 @@ namespace bts { namespace blockchain {
       asset xts_fees;
       auto fee_itr = balance.find( 0 );
       if( fee_itr != balance.end() ) xts_fees += asset( fee_itr->second, 0);
-      
+
       xts_fees += alt_fees_paid;
 
       if( required_fees > xts_fees )
@@ -108,8 +108,8 @@ namespace bts { namespace blockchain {
          omarket_order lowest_ask = _current_state->get_lowest_ask_record( fee.first, 0 );
          if( lowest_ask )
          {
-            // fees paid in something other than XTS are discounted 50% 
-            alt_fees_paid += asset( fee.second/2, fee.first ) * lowest_ask->market_index.order_price;  
+            // fees paid in something other than XTS are discounted 50%
+            alt_fees_paid += asset( fee.second/2, fee.first ) * lowest_ask->market_index.order_price;
          }
       }
 
@@ -132,7 +132,7 @@ namespace bts { namespace blockchain {
       for( const auto& required_deposit : required_deposits )
       {
          auto provided_itr = provided_deposits.find( required_deposit.first );
-         
+
          if( provided_itr->second < required_deposit.second )
             FC_CAPTURE_AND_THROW( missing_deposit, (required_deposit) );
       }
@@ -146,7 +146,7 @@ namespace bts { namespace blockchain {
       try {
         if( trx_arg.expiration < _current_state->now() )
         {
-           auto expired_by_sec = (trx_arg.expiration - _current_state->now()).to_seconds();
+           const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
            FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
         }
         if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )
@@ -156,7 +156,7 @@ namespace bts { namespace blockchain {
 
         if( _current_state->is_known_transaction( trx_id ) )
            FC_CAPTURE_AND_THROW( duplicate_transaction, (trx_id) );
-       
+
         trx = trx_arg;
         if( !_skip_signature_check )
         {
@@ -178,7 +178,7 @@ namespace bts { namespace blockchain {
         post_evaluate();
         validate_required_fee();
         update_delegate_votes();
-      } 
+      }
       catch ( const fc::exception& e )
       {
          validation_error = e;
@@ -199,7 +199,7 @@ namespace bts { namespace blockchain {
          if( !slate ) FC_CAPTURE_AND_THROW( unknown_delegate_slate, (slate_id) );
          for( const auto& delegate_id : slate->supported_delegates )
          {
-            if( BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES && delegate_id < signed_int(0) ) 
+            if( BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES && delegate_id < signed_int(0) )
                net_delegate_votes[abs(delegate_id)].votes_for -= amount;
             else
                net_delegate_votes[abs(delegate_id)].votes_for += amount;
@@ -216,7 +216,7 @@ namespace bts { namespace blockchain {
    }
 
    /**
-    *  
+    *
     */
    void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
    {
@@ -231,7 +231,7 @@ namespace bts { namespace blockchain {
       }
 
       auto deposit_itr = deposits.find(amount.asset_id);
-      if( deposit_itr == deposits.end()  ) 
+      if( deposit_itr == deposits.end()  )
       {
          deposits[amount.asset_id] = amount;
       }
@@ -272,7 +272,7 @@ namespace bts { namespace blockchain {
    void transaction_evaluation_state::validate_asset( const asset& asset_to_validate )const
    {
       auto asset_rec = _current_state->get_asset_record( asset_to_validate.asset_id );
-      if( NOT asset_rec ) 
+      if( NOT asset_rec )
          FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_to_validate) );
    }
 

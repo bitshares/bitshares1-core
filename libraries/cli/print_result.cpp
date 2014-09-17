@@ -714,9 +714,11 @@ namespace bts { namespace cli {
 
     auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     // fee order is the market order to convert fees from other asset classes to XTS
+    /*
     bool show_fee_order_record = base_id == 0
       && !quote_asset_record->is_market_issued()
       && quote_asset_record->collected_fees > 0;
+    */
 
     oprice  median_price = client->get_chain()->get_median_delegate_price(quote_id);
     auto status = client->get_chain()->get_market_status(quote_id, base_id);

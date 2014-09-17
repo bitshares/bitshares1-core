@@ -1,7 +1,5 @@
-#pragma  once
-
+#pragma once
 #include <bts/blockchain/chain_interface.hpp>
-
 #include <deque>
 
 namespace bts { namespace blockchain {
@@ -9,8 +7,8 @@ namespace bts { namespace blockchain {
    class pending_chain_state : public chain_interface, public std::enable_shared_from_this<pending_chain_state>
    {
       public:
-         pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
-         virtual ~pending_chain_state()override;
+                                        pending_chain_state( chain_interface_ptr prev_state = chain_interface_ptr() );
+         virtual                        ~pending_chain_state()override;
 
          void                           set_prev_state( chain_interface_ptr prev_state );
 
@@ -147,6 +145,7 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
+// TODO: Why not reflect all members?
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
             (properties)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds)(burns)(_dirty_markets) )

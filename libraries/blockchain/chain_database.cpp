@@ -406,7 +406,7 @@ namespace bts { namespace blockchain {
        *  otherwise, returns the block id and fork data of the new block
        */
       std::pair<block_id_type, block_fork_data> chain_database_impl::store_and_index( const block_id_type& block_id,
-                                                            const full_block& block_data )
+                                                                                      const full_block& block_data )
       { try {
           auto now = blockchain::now();
           //ilog( "block_number: ${n}   id: ${id}  prev: ${prev}",
@@ -431,7 +431,6 @@ namespace bts { namespace blockchain {
             parallel_blocks.push_back( block_id );
             _fork_number_db.store( block_data.block_num, parallel_blocks );
           }
-
 
           // now find how it links in.
           block_fork_data prev_fork_data;
@@ -591,7 +590,7 @@ namespace bts { namespace blockchain {
            if( _head_block_header.block_num < last_checkpoint_block_num )
                  return;  // don't bother saving it...
 
-           pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>(nullptr);
+           pending_chain_state_ptr undo_state = std::make_shared<pending_chain_state>( nullptr );
            pending_state->get_undo_state( undo_state );
            _undo_state_db.store( block_id, *undo_state );
            auto block_num = self->get_head_block_num();
@@ -724,7 +723,7 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_random_seed( const secret_hash_type& new_secret,
                                                     const pending_chain_state_ptr& pending_state )
       {
-         auto current_seed = pending_state->get_current_random_seed();
+         const auto current_seed = pending_state->get_current_random_seed();
          fc::sha512::encoder enc;
          fc::raw::pack( enc, new_secret );
          fc::raw::pack( enc, current_seed );
@@ -740,7 +739,7 @@ namespace bts { namespace blockchain {
              // perform a random shuffle of the sorted delegate list.
 
              auto active_del = self->next_round_active_delegates();
-             auto rand_seed = fc::sha256::hash(self->get_current_random_seed());
+             auto rand_seed = fc::sha256::hash( pending_state->get_current_random_seed() );
              size_t num_del = active_del.size();
              for( uint32_t i = 0; i < num_del; ++i )
              {
@@ -888,7 +887,7 @@ namespace bts { namespace blockchain {
          return history;
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",id) ) }
 
-      void  chain_database_impl::pop_block()
+      void chain_database_impl::pop_block()
       { try {
          if( _head_block_header.block_num == 0 )
          {
