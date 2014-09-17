@@ -258,6 +258,7 @@ namespace bts { namespace cli {
     out << std::setw( 30 ) << "AMOUNT";
     out << std::setw( 30 ) << "COLLATERAL_RATIO";
     out << std::setw( 30 ) << "COLLATERAL";
+    out << std::setw( 30 ) << "PRICE LIMIT";
     out << std::setw( 40 ) << "ID";
     out << "\n";
     out << pretty_line( 128 );
@@ -268,6 +269,10 @@ namespace bts { namespace cli {
        out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() / order.get_price() );
        out << std::setw( 30 ) <<  (1.0 / client->get_chain()->to_pretty_price_double( order.get_price() ));
        out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() );
+       if( order.state.short_price_limit.valid() )
+          out << std::setw( 30 ) <<  client->get_chain()->to_pretty_price( *order.state.short_price_limit );
+       else
+          out << std::setw( 30 ) <<  "NONE";
        out << std::setw( 40 ) <<  variant(order.get_id()).as_string();
        out << "\n";
     }

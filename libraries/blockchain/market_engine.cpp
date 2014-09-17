@@ -87,8 +87,14 @@ class market_engine
              int last_orders_filled = -1;
 
              bool order_did_execute = false;
+             // prime the pump
+             get_next_bid(); get_next_ask();
+             get_next_bid(); get_next_ask();
+             idump( (_current_bid)(_current_ask) );
              while( get_next_bid() && get_next_ask() )
              {
+                idump( (_current_bid)(_current_ask) );
+
                 // make sure that at least one order was matched
                 // every time we enter the loop.
                 if( _orders_filled == last_orders_filled )
@@ -119,8 +125,18 @@ class market_engine
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
+                   if( _current_bid->state.short_price_limit.valid() )
+                   {
+                      if( *_current_bid->state.short_price_limit < mtrx.bid_price )
+                      {
+                         elog( "." );
+                         _current_bid.reset();
+                         continue; // skip shorts that are over the price limit.
+                      }
+                   }
+
                    auto collateral_rate = _current_bid->get_price();
-                   if( _current_bid->get_price() > market_stat->avg_price_1h )
+                   if( collateral_rate > market_stat->avg_price_1h )
                       collateral_rate = market_stat->avg_price_1h;
 
                    auto ask_quantity_usd   = _current_ask->get_quote_quantity();
@@ -138,21 +154,23 @@ class market_engine
                    if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
                        mtrx.bid_collateral = _current_bid->get_balance();
 
-                   order_did_execute = true;
                    if( *mtrx.bid_collateral < mtrx.ask_paid )
                    {
+                       elog( "Skipping Short for Insufficient Collateral" );
+                       edump( (mtrx) );
+                       _current_bid.reset(); // skip this bid, its price is too low
+                       continue;
                        market_stat->bid_depth -= mtrx.bid_collateral->amount;
                        // cancel short... too little collateral at these prices
                        cancel_current_short( mtrx, *quote_asset );
                    }
-                   else
-                   {
-                      pay_current_short( mtrx, *quote_asset );
-                      pay_current_cover( mtrx, *quote_asset );
 
-                      market_stat->bid_depth -= mtrx.bid_collateral->amount;
-                      market_stat->ask_depth += mtrx.bid_collateral->amount;
-                   }
+                   order_did_execute = true;
+                   pay_current_short( mtrx, *quote_asset );
+                   pay_current_cover( mtrx, *quote_asset );
+
+                   market_stat->bid_depth -= mtrx.bid_collateral->amount;
+                   market_stat->ask_depth += mtrx.bid_collateral->amount;
                 }
                 else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
                 {
@@ -205,8 +223,19 @@ class market_engine
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.bid_price < mtrx.ask_price ) // the ask asn't been reached.
                       break;
+
+                   if( _current_bid->state.short_price_limit.valid() )
+                   {
+                      if( *_current_bid->state.short_price_limit < mtrx.bid_price )
+                      {
+                         elog( "short price limit < bid price" );
+                         _current_bid.reset();
+                         continue; // skip shorts that are over the price limit.
+                      }
+                   }
+
                    auto collateral_rate = _current_bid->get_price();
-                   if( _current_bid->get_price() > market_stat->avg_price_1h )
+                   if( collateral_rate > market_stat->avg_price_1h )
                       collateral_rate = market_stat->avg_price_1h;
 
                    auto ask_quantity_usd   = _current_ask->get_quote_quantity();
@@ -215,34 +244,36 @@ class market_engine
                    auto trade_quantity_usd = std::min(short_quantity_usd,ask_quantity_usd);
 
                    mtrx.ask_received   = trade_quantity_usd;
-                   mtrx.bid_paid       = trade_quantity_usd;
                    mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
+                   mtrx.bid_paid       = trade_quantity_usd;
                    mtrx.bid_received   = mtrx.ask_paid;
                    mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
 
                    // check for rounding errors
-                   if( (mtrx.ask_paid - _current_ask->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
-                      mtrx.ask_paid = _current_ask->get_balance();
+                   //if( (mtrx.ask_paid - _current_ask->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
+                   //   mtrx.ask_paid = _current_ask->get_balance();
 
                    if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
                        mtrx.bid_collateral = _current_bid->get_balance();
 
-                   order_did_execute = true;
 
                    if( *mtrx.bid_collateral < mtrx.ask_paid )
                    {
+                       elog( "Skipping Short for Insufficient Collateral" );
+                       edump( (mtrx) );
+                       _current_bid.reset(); // skip this bid, its price is too low
+                       continue;
                        market_stat->bid_depth -= mtrx.bid_collateral->amount;
                        // cancel short... too little collateral at these prices
                        cancel_current_short( mtrx, *quote_asset );
                        market_stat->bid_depth -= mtrx.bid_received.amount;
                    }
-                   else
-                   {
-                       pay_current_short( mtrx, *quote_asset );
-                       pay_current_ask( mtrx, *quote_asset );
-                       market_stat->bid_depth -= mtrx.bid_collateral->amount;
-                       market_stat->ask_depth += mtrx.bid_collateral->amount;
-                   }
+
+                   order_did_execute = true;
+                   pay_current_short( mtrx, *quote_asset );
+                   pay_current_ask( mtrx, *quote_asset );
+                   market_stat->bid_depth -= mtrx.bid_collateral->amount;
+                   market_stat->ask_depth += mtrx.bid_collateral->amount;
 
                 }
                 else if( _current_ask->type == ask_order && _current_bid->type == bid_order )
@@ -343,6 +374,7 @@ class market_engine
              update_market_history( trading_volume, opening_price, closing_price, market_stat, timestamp );
 
              wlog( "done matching orders" );
+             idump( (_current_bid)(_current_ask) );
              _pending_state->apply_changes();
         }
         catch( const fc::exception& e )
@@ -365,7 +397,7 @@ class market_engine
           FC_ASSERT( mtrx.ask_paid >= mtrx.bid_received );
           FC_ASSERT( mtrx.fees_collected.amount >= 0 );
 
-          //elog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
+          wlog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
 
           _market_transactions.push_back(mtrx);
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
@@ -401,8 +433,6 @@ class market_engine
            * just checks to make sure it is reasonable.
            */
           FC_ASSERT( mtrx.ask_paid <= *mtrx.bid_collateral, "", ("mtrx",mtrx) );
-          /** sanity check to make sure that the only difference is rounding error */
-          FC_ASSERT( mtrx.ask_paid.amount >= (mtrx.bid_collateral->amount - BTS_BLOCKCHAIN_PRECISION), "", ("mtrx",mtrx) );
 
           quote_asset.current_share_supply += mtrx.bid_paid.amount;
 
@@ -414,9 +444,13 @@ class market_engine
              return;
           }
 
-          auto cover_price = mtrx.bid_price;
-          cover_price.ratio *= 2;
-          cover_price.ratio /= 3;
+          auto call_collateral = collateral;
+          call_collateral.amount *= 2;
+          call_collateral.amount /= 3;
+          //auto cover_price = mtrx.bid_price;
+          auto cover_price = mtrx.bid_paid / call_collateral;
+          //cover_price.ratio *= 2;
+          //cover_price.ratio /= 3;
          // auto cover_price = mtrx.bid_paid / asset( (3*collateral.amount)/4, _base_id );
 
           market_index_key cover_index( cover_price, _current_bid->get_owner() );
@@ -665,7 +699,6 @@ class market_engine
                 _current_ask = ask;
             }
             ++_ask_itr;
-            return _current_ask.valid();
          }
          return _current_ask.valid();
       } FC_CAPTURE_AND_RETHROW() }
