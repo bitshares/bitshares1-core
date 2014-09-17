@@ -128,16 +128,27 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec(clienta, "balance" );
    exec(clientb, "balance" );
 
-   exec( clientb, "short delegate30 101 BUSD 2 " );
-   exec( clientb, "short delegate32 102 BUSD 1.1 " );
+   exec( clientb, "short delegate30 101 BUSD 2 1.01" );
+   exec( clientb, "short delegate32 102 BUSD 1.01 " );
    exec( clientb, "short delegate32 103 BUSD 0.9 " );
-   exec( clienta, "ask delegate31 100 XTS .95 BUSD" );
+   exec( clienta, "ask delegate31 100 XTS .09997 BUSD" );
+   exec( clienta, "ask delegate31 200 XTS .9998 BUSD" );
+   exec( clienta, "ask delegate31 300 XTS .9999 BUSD" );
    produce_block(clientb);
    exec(clienta, "blockchain_market_order_book BUSD XTS");
    exec(clienta, "blockchain_market_list_shorts BUSD");
    produce_block(clientb);
    exec(clienta, "blockchain_market_order_book BUSD XTS");
    exec(clienta, "blockchain_market_list_shorts BUSD");
+   exec(clienta, "blockchain_market_list_covers BUSD");
+   exec(clienta, "balance" );
+   exec( clienta, "bid delegate31 40 XTS .92 BUSD" );
+   exec( clienta, "bid delegate31 50 XTS .91 BUSD" );
+   produce_block(clientb);
+   produce_block(clientb);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
+   exec(clienta, "blockchain_market_list_shorts BUSD");
+   exec(clienta, "blockchain_market_order_history BUSD XTS");
    return;
    //Next line is intended to fail due to overly-high price
    exec( clientb, "short delegate32 300 1000 BUSD" );

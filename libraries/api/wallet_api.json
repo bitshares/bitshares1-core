@@ -1210,6 +1210,12 @@
                "name" : "collateral_ratio",
                "type" : "real_amount",
                "description" : "the ratio XTS per USD that your USD will be collateralized at (ie: XTS / USD)"
+            },
+            {
+               "name" : "short_price_limit",
+               "type" : "real_amount",
+               "description" : "maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied",
+               "default_value" : 0
             }
          ],
          "prerequisites" : ["wallet_unlocked"],

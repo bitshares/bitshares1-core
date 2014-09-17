@@ -39,6 +39,7 @@ namespace bts { namespace blockchain {
 
         share_type       amount;
         market_index_key short_index;
+        optional<price>  short_price_limit;
 
         void evaluate( transaction_evaluation_state& eval_state );
    };
@@ -86,7 +87,7 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::bid_operation, (amount)(bid_index))
 FC_REFLECT( bts::blockchain::ask_operation, (amount)(ask_index))
-FC_REFLECT( bts::blockchain::short_operation, (amount)(short_index))
+FC_REFLECT( bts::blockchain::short_operation, (amount)(short_index)(short_price_limit) )
 FC_REFLECT( bts::blockchain::cover_operation, (amount)(cover_index)(new_cover_price) )
 FC_REFLECT( bts::blockchain::add_collateral_operation, (amount)(cover_index))
 FC_REFLECT( bts::blockchain::remove_collateral_operation, (amount)(owner))

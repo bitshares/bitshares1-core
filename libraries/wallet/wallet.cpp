@@ -4895,6 +4895,7 @@ namespace bts { namespace wallet {
            double real_quantity,
            const string& quote_symbol,
            double collateral_per_usd,
+           double price_limit,
            bool sign )
    { try {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
@@ -4942,8 +4943,13 @@ namespace bts { namespace wallet {
                                     trx,
                                     required_signatures );
 
+       optional<price> short_price_limit;
+       if( price_limit > 0 )
+       {
+          short_price_limit = price( (price_limit * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+       }
        // withdraw to transaction cost_share_quantity + fee
-       trx.short_sell( cost_shares, quote_price_shares, order_address );
+       trx.short_sell( cost_shares, quote_price_shares, order_address, short_price_limit );
 
        std::stringstream memo;
        memo << "short " << quote_asset_record->symbol << " @ " << my->_blockchain->to_pretty_price( quote_price_shares );

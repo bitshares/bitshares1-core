@@ -3378,9 +3378,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
            const string& from_account,
            double quantity,
            const string& quote_symbol,
-           double collateral_ratio)
+           double collateral_ratio,
+           double short_price_limit )
    {
-      const auto record = _wallet->submit_short( from_account, quantity, quote_symbol, collateral_ratio );
+      const auto record = _wallet->submit_short( from_account, quantity, quote_symbol, collateral_ratio, short_price_limit );
       network_broadcast_transaction( record.trx );
       return record;
    }
@@ -3458,8 +3459,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    {
       auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
       auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
+      auto covers = blockchain_market_list_covers(quote_symbol,limit);
+      asks.insert( asks.end(), covers.begin(), covers.end() );
 
-      std::sort(asks.rbegin(), asks.rend(), [](const market_order& a, const market_order& b) -> bool {
+      std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
         return a.market_index < b.market_index;
       });
 
