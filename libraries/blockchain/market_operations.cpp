@@ -6,7 +6,6 @@
 namespace bts { namespace blockchain {
 
    #include "market_operations_v1.cpp"
-   #include "market_operations_v2.cpp"
 
    /**
     *  If the amount is negative then it will withdraw/cancel the bid assuming
@@ -121,18 +120,10 @@ namespace bts { namespace blockchain {
       //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void short_operation::evaluate( transaction_evaluation_state& eval_state )
+   void short_operation_v2::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_5_BLOCK_NUM )
-      {
-         evaluate_v1( eval_state );
-         return;
-      }
-      else if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
-      {
-         evaluate_v2( eval_state );
-         return;
-      }
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
+          FC_ASSERT( !"SHORT V2 not supported yet!" );
 
       if( this->short_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );

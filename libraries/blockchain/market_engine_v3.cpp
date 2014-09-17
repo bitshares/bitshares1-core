@@ -1,7 +1,7 @@
 /** This file is designed to be included in detail::chain_database_impl, but is pulled into a separate file for
  * ease of maintenance and upgrade.
  */
-
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT_V3             (BTS_BLOCKCHAIN_INITIAL_SHARES/4000)
 class market_engine_v3
 {
    public:
@@ -428,12 +428,12 @@ class market_engine_v3
 
              if( quote_asset->is_market_issued() && base_id == 0 )
              {
-                if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT
-                    || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT )
+                if( market_stat->ask_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT_V3
+                    || market_stat->bid_depth < BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT_V3 )
                 {
                    _market_transactions.clear(); // nothing should have executed
                   std::string reason = "After executing orders there was insufficient depth remaining";
-                  FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT) );
+                  FC_CAPTURE_AND_THROW( insufficient_depth, (reason)(market_stat)(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT_V3) );
                 }
              }
              _pending_state->store_market_status( *market_stat );

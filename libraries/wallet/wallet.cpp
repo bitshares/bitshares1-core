@@ -126,7 +126,8 @@ namespace bts { namespace wallet {
             bool scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec );
             bool scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
-            bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_short_v1( const short_operation_v1& op, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_short_v2( const short_operation_v2& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
             void sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record );
             void sync_balance_with_blockchain( const balance_id_type& balance_id );
@@ -613,9 +614,16 @@ namespace bts { namespace wallet {
                   }
                   case short_op_type:
                   {
-                      const auto short_op = op.as<short_operation>();
+                      const auto short_op = op.as<short_operation_v1>();
                       if( short_op.amount < 0 )
-                          has_withdrawal |= scan_short( short_op, *transaction_record, total_fee );
+                          has_withdrawal |= scan_short_v1( short_op, *transaction_record, total_fee );
+                      break;
+                  }
+                  case short_v2_op_type:
+                  {
+                      const auto short_op = op.as<short_operation_v2>();
+                      if( short_op.amount < 0 )
+                          has_withdrawal |= scan_short_v2( short_op, *transaction_record, total_fee );
                       break;
                   }
                   default:
@@ -652,9 +660,16 @@ namespace bts { namespace wallet {
                   }
                   case short_op_type:
                   {
-                      const auto short_op = op.as<short_operation>();
+                      const auto short_op = op.as<short_operation_v1>();
                       if( short_op.amount >= 0 )
-                          has_deposit |= scan_short( short_op, *transaction_record, total_fee );
+                          has_deposit |= scan_short_v1( short_op, *transaction_record, total_fee );
+                      break;
+                  }
+                  case short_v2_op_type:
+                  {
+                      const auto short_op = op.as<short_operation_v2>();
+                      if( short_op.amount >= 0 )
+                          has_deposit |= scan_short_v2( short_op, *transaction_record, total_fee );
                       break;
                   }
                   default:
@@ -743,7 +758,7 @@ namespace bts { namespace wallet {
                   case ask_op_type: /* Done above */
                       //store_record |= scan_ask( *transaction_record, op.as<ask_operation>() );
                       break;
-                  case short_op_type: /* Done above */
+                  case short_op_type: /* Done above */ // and v2
                       //store_record |= scan_short( *transaction_record, op.as<short_operation>() );
                       break;
                   case cover_op_type:
@@ -1172,7 +1187,68 @@ namespace bts { namespace wallet {
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
       // TODO: Refactor scan_{bid|ask|short}; exactly the same
-      bool wallet_impl::scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      bool wallet_impl::scan_short_v1( const short_operation_v1& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      { try {
+          const auto amount = op.get_amount();
+          if( amount.asset_id == total_fee.asset_id )
+              total_fee -= amount;
+
+          auto okey_rec = _wallet_db.lookup_key( op.short_index.owner );
+          if( okey_rec.valid() && okey_rec->has_private_key() )
+          {
+             /* Restore key label */
+             const auto order = _blockchain->get_market_short( op.short_index );
+             if( order.valid() )
+             {
+                 okey_rec->memo = order->get_small_id();
+                 _wallet_db.store_key( *okey_rec );
+             }
+             else
+             {
+                 elog( "Unknown index in short operation: ${op}", ("op",op) );
+             }
+
+             for( auto& entry : trx_rec.ledger_entries )
+             {
+                 if( amount.amount >= 0 )
+                 {
+                     if( !entry.to_account.valid() )
+                     {
+                         entry.to_account = okey_rec->public_key;
+                         entry.amount = amount;
+                         //entry.memo =
+                         break;
+                     }
+                     else if( *entry.to_account == okey_rec->public_key )
+                     {
+                         entry.amount = amount;
+                         break;
+                     }
+                 }
+                 else /* Cancel order */
+                 {
+                     if( !entry.from_account.valid() )
+                     {
+                         entry.from_account = okey_rec->public_key;
+                         entry.amount = amount;
+                         entry.memo = "cancel " + *okey_rec->memo;
+                         break;
+                     }
+                     else if( *entry.from_account == okey_rec->public_key )
+                     {
+                         entry.amount = amount;
+                         entry.memo = "cancel " + *okey_rec->memo;
+                         break;
+                     }
+                 }
+             }
+
+             return true;
+          }
+          return false;
+      } FC_CAPTURE_AND_RETHROW( (op) ) }
+
+      bool wallet_impl::scan_short_v2( const short_operation_v2& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
           if( amount.asset_id == total_fee.asset_id )

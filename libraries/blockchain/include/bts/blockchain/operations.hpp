@@ -53,7 +53,10 @@ namespace bts { namespace blockchain {
 
       update_feed_op_type         = 19,
       burn_op_type                = 20,
-      link_account_op_type        = 21
+      link_account_op_type        = 21,
+
+
+      short_v2_op_type            = 34
    };
 
    /**
@@ -126,6 +129,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (remove_collateral_op_type)
                  (define_delegate_slate_op_type)
                  (update_feed_op_type)
+                 (short_v2_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
@@ -134,4 +138,3 @@ namespace fc {
    void to_variant( const bts::blockchain::operation& var,  variant& vo );
    void from_variant( const variant& var,  bts::blockchain::operation& vo );
 }
-

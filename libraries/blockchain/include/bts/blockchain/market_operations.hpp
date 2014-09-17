@@ -30,10 +30,24 @@ namespace bts { namespace blockchain {
         void evaluate( transaction_evaluation_state& eval_state );
    };
 
-   struct short_operation
+   struct short_operation_v1
    {
         static const operation_type_enum type; 
-        short_operation():amount(0){}
+        short_operation_v1():amount(0){}
+
+        asset            get_amount()const { return asset( amount, 0 ); }
+
+        share_type       amount;
+        market_index_key short_index;
+
+        void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate_v1( transaction_evaluation_state& eval_state );
+   };
+
+   struct short_operation_v2
+   {
+        static const operation_type_enum type; 
+        short_operation_v2():amount(0){}
 
         asset            get_amount()const { return asset( amount, 0 ); }
 
@@ -42,8 +56,6 @@ namespace bts { namespace blockchain {
         optional<price>  short_price_limit;
 
         void evaluate( transaction_evaluation_state& eval_state );
-        void evaluate_v1( transaction_evaluation_state& eval_state );
-        void evaluate_v2( transaction_evaluation_state& eval_state );
    };
    
    struct cover_operation
@@ -90,7 +102,8 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::bid_operation, (amount)(bid_index))
 FC_REFLECT( bts::blockchain::ask_operation, (amount)(ask_index))
-FC_REFLECT( bts::blockchain::short_operation, (amount)(short_index)(short_price_limit) )
+FC_REFLECT( bts::blockchain::short_operation_v1, (amount)(short_index) )
+FC_REFLECT( bts::blockchain::short_operation_v2, (amount)(short_index)(short_price_limit) )
 FC_REFLECT( bts::blockchain::cover_operation, (amount)(cover_index)(new_cover_price) )
 FC_REFLECT( bts::blockchain::add_collateral_operation, (amount)(cover_index))
 FC_REFLECT( bts::blockchain::remove_collateral_operation, (amount)(owner))
