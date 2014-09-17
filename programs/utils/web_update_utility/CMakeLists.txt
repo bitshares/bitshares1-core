@@ -18,4 +18,4 @@ set( SOURCES
   update_utility.cpp
 )
 add_executable( web_update_utility ${SOURCES} )
-target_link_libraries( web_update_utility fc bts_utilities Qt5::Core )
+target_link_libraries( web_update_utility fc bts_blockchain bts_utilities Qt5::Core )

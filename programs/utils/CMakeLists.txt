@@ -33,4 +33,6 @@ target_link_libraries( map_bts_network fc bts_net bts_client)
 add_executable( pack_web pack_web.cpp )
 target_link_libraries( pack_web fc )
 
-add_subdirectory( web_update_utility )
+if( INCLUDE_QT_WALLET )
+  add_subdirectory( web_update_utility )
+endif()

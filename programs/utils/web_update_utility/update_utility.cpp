@@ -76,8 +76,8 @@ void update_utility::sign_update(WebUpdateManifest::UpdateDetails& update, fc::p
         c = infile.get();
     }
     infile.close();
+    std::string desc = update.signable_string();
+    enc.write(desc.c_str(), desc.size());
 
-    for (char c : update.timestamp.to_iso_string())
-        enc.put(c);
     update.signatures.insert(signing_key.sign_compact(enc.result()));
 }

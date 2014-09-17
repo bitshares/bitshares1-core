@@ -55,18 +55,19 @@ int main()
                 update.patchVersion = 'a';
             }
         }
+        string response;
         cout << "What is the major version of this update [" << (short)update.majorVersion << "]? ";
-        option = cin.get();
-        if (isdigit(option)) update.majorVersion = option - '0';
+        getline(cin, response);
+        if (response != "") update.majorVersion = atoi(response.c_str());
         cout << "What is the fork version of this update [" << (short)update.forkVersion << "]? ";
-        option = cin.get();
-        if (isdigit(option)) update.forkVersion = option - '0';
+        getline(cin, response);
+        if (response != "") update.forkVersion = atoi(response.c_str());
         cout << "What is the minor version of this update [" << (short)update.minorVersion << "]? ";
-        option = cin.get();
-        if (isdigit(option)) update.minorVersion = option - '0';
+        getline(cin, response);
+        if (response != "") update.minorVersion = atoi(response.c_str());
         cout << "What is the patch version of this update [" << (char)update.patchVersion << "]? ";
-        option = cin.get();
-        if (isalpha(option)) update.patchVersion = tolower(option);
+        getline(cin, response);
+        if (response != "") update.patchVersion = tolower(response[0]);
         update.timestamp = fc::time_point::now();
 
         update.releaseNotes.clear();
