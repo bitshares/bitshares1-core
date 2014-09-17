@@ -1,9 +1,9 @@
 default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
-===================================================================================================================
-1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
+===================================================================================================
+1       [redacted]          [redacted]                      0       166     [redacted][redacted]     
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -53,17 +53,17 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 9
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
-===================================================================================================================
-9       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-8       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-7       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-6       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-5       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-4       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-3       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-2       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-1       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
+===================================================================================================
+9       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+8       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+7       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+6       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+5       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+4       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+3       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+2       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+1       [redacted]          [redacted]                      0       166     [redacted][redacted]     
 default (unlocked) >>> help blockchain_export_fork_graph
 Usage:
 blockchain_export_fork_graph [start_block] [end_block] [filename]                                     dumps the fork data to graphviz format

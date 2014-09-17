@@ -749,7 +749,7 @@ namespace bts { namespace cli {
       else
         out << std::string(77, ' ');
 
-      out << "| ";
+      out << " | ";
 
       while(ask_itr != bids_asks.second.end())
       {

@@ -17,7 +17,6 @@ default (unlocked) >>> get_info
   "blockchain_head_block_timestamp": "[redacted]",
   "blockchain_average_delegate_participation": null,
   "blockchain_confirmation_requirement": 201,
-  "blockchain_accumulated_fees": "0.00000 XTS",
   "blockchain_delegate_pay_rate": "0.00000 XTS",
   "blockchain_share_supply": "1,999,999,999.99901 XTS",
   "blockchain_blocks_left_in_round": 100,

@@ -336,7 +336,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     out << std::setw( 15 ) << "PROCESSING TIME";
     out << "\n";
 
-    out << pretty_line( 115 );
+    out << pretty_line( 99 );
     out << "\n";
 
     auto last_block_timestamp = block_records.front().timestamp;
