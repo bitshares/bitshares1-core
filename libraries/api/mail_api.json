@@ -148,6 +148,53 @@
             "prerequisites" : ["json_authenticated","wallet_unlocked"]
         },
         {
+            "method_name": "mail_get_messages_from",
+            "description": "Get a list of messages from a given sender.",
+            "return_type": "message_header_list",
+            "parameters" : [
+                {
+                    "name" : "sender",
+                    "type" : "string",
+                    "description" : "The name of the sender to search for."
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated","wallet_unlocked"]
+        },
+        {
+            "method_name": "mail_get_messages_to",
+            "description": "Get a list of messages to a given recipient.",
+            "return_type": "message_header_list",
+            "parameters" : [
+                {
+                    "name" : "recipient",
+                    "type" : "string",
+                    "description" : "The name of the recipient to search for."
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated","wallet_unlocked"]
+        },
+        {
+            "method_name": "mail_get_messages_in_conversation",
+            "description": "Get a list of messages between a given pair of accounts.",
+            "return_type": "message_header_list",
+            "parameters" : [
+                {
+                    "name" : "account_one",
+                    "type" : "string",
+                    "description" : "The name of an account in the conversation."
+                },
+                {
+                    "name" : "account_two",
+                    "type" : "string",
+                    "description" : "The name of an account in the conversation."
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated","wallet_unlocked"]
+        },
+        {
             "method_name": "mail_send",
             "description": "Create a new email, encrypt it, and send it to the recipient's mail server.",
             "return_type": "message_id",

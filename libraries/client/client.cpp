@@ -2525,6 +2525,29 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _mail_client->get_message(message_id);
     }
 
+    vector<mail::email_header> detail::client_impl::mail_get_messages_from(const std::string &sender) const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_messages_by_sender(sender);
+    }
+
+    vector<mail::email_header> detail::client_impl::mail_get_messages_to(const std::string &recipient) const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_messages_by_recipient(recipient);
+    }
+
+    vector<mail::email_header> detail::client_impl::mail_get_messages_in_conversation(const std::string &account_one, const std::string &account_two) const
+    {
+      FC_ASSERT(_mail_client);
+      auto forward = _mail_client->get_messages_from_to(account_one, account_two);
+      auto backward = _mail_client->get_messages_from_to(account_two, account_one);
+
+      std::move(backward.begin(), backward.end(), std::back_inserter(forward));
+      std::sort(forward.begin(), forward.end(), [](const email_header& a, const email_header& b) {return a.timestamp < b.timestamp;});
+      return forward;
+    }
+
     mail::message_id_type detail::client_impl::mail_send(const std::string &from,
                                                          const std::string &to,
                                                          const std::string &subject,

@@ -45,6 +45,10 @@ public:
     email_record get_message(message_id_type message_id);
 
     message_id_type send_email(const string& from, const string& to, const string& subject, const string& body);
+
+    std::vector<email_header> get_messages_by_sender(string sender);
+    std::vector<email_header> get_messages_by_recipient(string recipient);
+    std::vector<email_header> get_messages_from_to(string sender, string recipient);
 private:
     std::shared_ptr<detail::client_impl> my;
 };
