@@ -21,10 +21,10 @@ test                            100.00000 XTS
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
-===================================================================================================================
-2       [redacted]          [redacted]                      1       392     0.50000 XTS     [redacted][redacted]     
-1       [redacted]          [redacted]                      1       410     0.50000 XTS     [redacted][redacted]     
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
+===================================================================================================
+2       [redacted]          [redacted]                      1       392     [redacted][redacted]     
+1       [redacted]          [redacted]                      1       410     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
