@@ -1,6 +1,10 @@
 void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
 {
-   if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_5_BLOCK_NUM )
+   if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_7_BLOCK_NUM )
+   {
+      FC_ASSERT( !"short_operation_v1 is no longer supported!" );
+   }
+   else if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_5_BLOCK_NUM )
    {
       evaluate_v1( eval_state );
       return;
