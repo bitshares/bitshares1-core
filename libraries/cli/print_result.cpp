@@ -151,6 +151,7 @@ namespace bts { namespace cli {
     _command_to_function["wallet_publish_feeds"]                = &f_wallet_transfer;
     _command_to_function["wallet_scan_transaction"]             = &f_wallet_transfer;
     _command_to_function["wallet_recover_transaction"]          = &f_wallet_transfer;
+    _command_to_function["wallet_burn"]                         = &f_wallet_transfer;
 
     _command_to_function["wallet_list"] = &f_wallet_list;
 
@@ -215,7 +216,10 @@ namespace bts { namespace cli {
     };
 
     _command_to_function["mail_get_message"] = &f_mail_get_message;
-    _command_to_function["mail_inbox"] = &f_mail_inbox;
+    _command_to_function["mail_inbox"] = &f_mail_header_list;
+    _command_to_function["mail_get_messages_from"] = &f_mail_header_list;
+    _command_to_function["mail_get_messages_to"] = &f_mail_header_list;
+    _command_to_function["mail_get_messages_in_conversation"] = &f_mail_header_list;
   }
 
   void print_result::f_wallet_account_create( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
@@ -973,7 +977,7 @@ namespace bts { namespace cli {
     }
   }
 
-  void print_result::f_mail_inbox(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)
+  void print_result::f_mail_header_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)
   {
     vector<mail::email_header> inbox = result.as<vector<mail::email_header>>();
     if (inbox.empty())

@@ -122,12 +122,16 @@ namespace bts { namespace wallet {
 
             bool scan_register_account( const register_account_operation& op, wallet_transaction_record& trx_rec );
             bool scan_update_account( const update_account_operation& op, wallet_transaction_record& trx_rec );
+
             bool scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec );
             bool scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec );
+
             bool scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_short_v1( const short_operation_v1& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_short_v2( const short_operation_v2& op, wallet_transaction_record& trx_rec, asset& total_fee );
+
+            bool scan_burn( const burn_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
             void sync_balance_with_blockchain( const balance_id_type& balance_id, const obalance_record& record );
             void sync_balance_with_blockchain( const balance_id_type& balance_id );
@@ -444,8 +448,8 @@ namespace bts { namespace wallet {
                  auto existing_account_record = _wallet_db.lookup_account( key_rec->account_address );
                  if( existing_account_record.valid() )
                  {
-                    account_record& blockchain_account_record = *existing_account_record;
-                    blockchain_account_record = scanned_account_record;
+                    blockchain::account_record& as_blockchain_account_record = *existing_account_record;
+                    as_blockchain_account_record = scanned_account_record;
                     _wallet_db.cache_account( *existing_account_record );
                  }
               }
@@ -692,6 +696,11 @@ namespace bts { namespace wallet {
                           has_deposit |= scan_short_v2( short_op, *transaction_record, total_fee );
                       break;
                   }
+                  case burn_op_type:
+                  {
+                      store_record |= scan_burn( op.as<burn_operation>(), *transaction_record, total_fee );
+                      break;
+                  }
                   default:
                       break;
               }
@@ -730,20 +739,6 @@ namespace bts { namespace wallet {
           {
               switch( operation_type_enum( op.type ) )
               {
-                  case null_op_type:
-                      FC_THROW_EXCEPTION( invalid_operation, "Null operation type!", ("op",op) );
-                      break;
-
-                  case withdraw_op_type: /* Done above */
-                      //store_record |= scan_withdraw( op.as<withdraw_operation>(), *transaction_record );
-                      break;
-                  case withdraw_pay_op_type: /* Done above */
-                      //FC_THROW( "withdraw_pay_op_type not implemented!" );
-                      break;
-                  case deposit_op_type: /* Done above */
-                      //store_record |= scan_deposit( op.as<deposit_operation>(), keys, *transaction_record, total_fee );
-                      break;
-
                   case register_account_op_type:
                       store_record |= scan_register_account( op.as<register_account_operation>(), *transaction_record );
                       break;
@@ -755,51 +750,13 @@ namespace bts { namespace wallet {
                       store_record |= scan_create_asset( op.as<create_asset_operation>(), *transaction_record );
                       break;
                   case update_asset_op_type:
-                      // TODO: FC_THROW( "update_asset_op_type not implemented!" );
+                      // TODO
                       break;
                   case issue_asset_op_type:
                       store_record |= scan_issue_asset( op.as<issue_asset_operation>(), *transaction_record );
                       break;
 
-                  case fire_delegate_op_type:
-                      // TODO: FC_THROW( "fire_delegate_op_type not implemented!" );
-                      break;
-
-                  case submit_proposal_op_type:
-                      // TODO: FC_THROW( "submit_proposal_op_type not implemented!" );
-                      break;
-                  case vote_proposal_op_type:
-                      // TODO: FC_THROW( "vote_proposal_op_type not implemented!" );
-                      break;
-
-                  case bid_op_type: /* Done above */
-                      //store_record |= scan_bid( *transaction_record, op.as<bid_operation>() );
-                      break;
-                  case ask_op_type: /* Done above */
-                      //store_record |= scan_ask( *transaction_record, op.as<ask_operation>() );
-                      break;
-                  case short_op_type: /* Done above */ // and v2
-                      //store_record |= scan_short( *transaction_record, op.as<short_operation>() );
-                      break;
-                  case cover_op_type:
-                      // TODO: FC_THROW( "cover_op_type not implemented!" );
-                      break;
-                  case add_collateral_op_type:
-                      // TODO: FC_THROW( "add_collateral_op_type not implemented!" );
-                      break;
-                  case remove_collateral_op_type:
-                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                      break;
-
-                  case define_delegate_slate_op_type:
-                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                      break;
-                  case update_feed_op_type:
-                      // TODO: FC_THROW( "remove_collateral_op_type not implemented!" );
-                      break;
-
                   default:
-                      FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type!", ("op",op) );
                       break;
               }
           }
@@ -968,8 +925,8 @@ namespace bts { namespace wallet {
           auto account_name_rec = _blockchain->get_account_record( op.name );
           FC_ASSERT( account_name_rec.valid() );
 
-          blockchain::account_record& tmp = *opt_account;
-          tmp = *account_name_rec;
+          blockchain::account_record& as_blockchain_account_record = *opt_account;
+          as_blockchain_account_record = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
           for( auto& entry : trx_rec.ledger_entries )
@@ -1009,8 +966,8 @@ namespace bts { namespace wallet {
           auto account_name_rec = _blockchain->get_account_record( oaccount->name );
           FC_ASSERT( account_name_rec.valid() );
 
-          blockchain::account_record& tmp = *opt_account;
-          tmp = *account_name_rec;
+          blockchain::account_record& as_blockchain_account_record = *opt_account;
+          as_blockchain_account_record = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
           if( !opt_account->is_my_account )
@@ -1328,6 +1285,22 @@ namespace bts { namespace wallet {
           }
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
+
+      bool wallet_impl::scan_burn( const burn_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      {
+          if( op.amount.asset_id == total_fee.asset_id )
+              total_fee -= op.amount;
+
+          if( trx_rec.ledger_entries.size() == 1 )
+          {
+              //trx_rec.ledger_entries.front().amount = op.amount;
+              trx_rec.ledger_entries.front().memo = "burn";
+              if( !op.message.empty() )
+                  trx_rec.ledger_entries.front().memo += ": " + op.message;
+          }
+
+          return false;
+      }
 
       // TODO: optimize
       bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<private_key_type>& keys,
@@ -2354,8 +2327,16 @@ namespace bts { namespace wallet {
          wlog( "current account is valid... ${account}", ("account",*current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
+
+         if( current_registered_account.valid() )
+         {
+             blockchain::account_record& as_blockchain_account_record = *current_account;
+             as_blockchain_account_record = *current_registered_account;
+         }
+
          if( !private_data.is_null() )
             current_account->private_data = private_data;
+
          my->_wallet_db.cache_account( *current_account );
          return;
       }
@@ -2369,8 +2350,15 @@ namespace bts { namespace wallet {
                          "Provided key already belongs to another wallet account! Provided: ${p}, existing: ${e}",
                          ("p",account_name)("e",current_account->name) );
 
+             if( current_registered_account.valid() )
+             {
+                 blockchain::account_record& as_blockchain_account_record = *current_account;
+                 as_blockchain_account_record = *current_registered_account;
+             }
+
              if( !private_data.is_null() )
                 current_account->private_data = private_data;
+
              my->_wallet_db.cache_account( *current_account );
              return;
          }
@@ -2995,7 +2983,7 @@ namespace bts { namespace wallet {
       for( auto& delegate_record : delegate_records )
       {
           delegate_record.block_production_enabled = enabled;
-          my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
+          my->_wallet_db.cache_account( delegate_record );
       }
 
       const auto empty_after = get_my_delegates( enabled_delegate_status ).empty();
@@ -3824,9 +3812,6 @@ namespace bts { namespace wallet {
     *  This transfer works like a bitcoin transaction combining multiple inputs
     *  and producing a single output.
     */
-#ifndef WIN32
-#warning [UNTESTED] Asset burning needs to be tested!
-#endif
    wallet_transaction_record wallet::burn_asset(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
@@ -3903,7 +3888,9 @@ namespace bts { namespace wallet {
       auto entry = ledger_entry();
       entry.from_account = sender_public_key;
       entry.amount = asset_to_transfer;
-      entry.memo = "burn: public_message";
+      entry.memo = "burn";
+      if( !public_message.empty() )
+          entry.memo += ": " + public_message;
 
       auto record = wallet_transaction_record();
       record.ledger_entries.push_back( entry );
@@ -4394,7 +4381,7 @@ namespace bts { namespace wallet {
    {
       get_account( account_to_update ); /* Just to check input */
       auto oacct = my->_wallet_db.lookup_account( account_to_update );
-
+      FC_ASSERT( oacct.valid() );
       oacct->private_data = private_data;
       my->_wallet_db.cache_account( *oacct );
    }
@@ -5289,12 +5276,12 @@ namespace bts { namespace wallet {
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
-             omarket_order lowest_ask = my->_blockchain->get_lowest_ask_record( desired_fee_asset_id, 0 );
-             if( lowest_ask )
+             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
+             if( median_price )
              {
                 xts_fee += xts_fee + xts_fee;
                 // fees paid in something other than XTS are discounted 50%
-                auto alt_fees_paid = xts_fee * lowest_ask->market_index.order_price;
+                auto alt_fees_paid = xts_fee * *median_price;
                 return alt_fees_paid;
              }
          }
@@ -5421,6 +5408,8 @@ namespace bts { namespace wallet {
                 }
              }
           }
+          else if( entry.memo.find( "burn" ) == 0 )
+             pretty_entry.to_account = "NETWORK";
 
           /* I'm sorry - Vikram */
           /* You better be. - Dan */

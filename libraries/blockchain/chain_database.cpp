@@ -3058,7 +3058,7 @@ namespace bts { namespace blockchain {
      } FC_CAPTURE_AND_RETHROW( (asset_id) ) }
 
    vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type& asset_id )const
-   {
+   {  try {
       vector<feed_record> feeds;
       auto feed_itr = my->_feed_db.lower_bound(feed_index{asset_id});
       while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
@@ -3068,21 +3068,21 @@ namespace bts { namespace blockchain {
       }
 
       return feeds;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    vector<feed_record> chain_database::get_feeds_from_delegate( const account_id_type& delegate_id )const
-   {
+   {  try {
       vector<feed_record> feeds;
-      auto assets = get_assets(string(), -1);
+      const auto assets = get_assets( string(), -1 );
 
       for( const auto& asset : assets )
-        if( auto record = my->_feed_db.fetch_optional(feed_index{asset.id, delegate_id}) )
+        if( const auto record = my->_feed_db.fetch_optional( feed_index{ asset.id, delegate_id } ) )
           feeds.push_back(*record);
 
       return feeds;
-   }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void           chain_database::store_burn_record( const burn_record& br )
+   void chain_database::store_burn_record( const burn_record& br )
    {
       if( br.is_null() )
       {
