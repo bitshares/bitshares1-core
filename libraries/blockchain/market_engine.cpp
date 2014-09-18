@@ -8,8 +8,22 @@ class market_engine
       market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
       :_pending_state(ps),_db_impl(cdi),_orders_filled(0)
       {
-          _pending_state = std::make_shared<pending_chain_state>( ps );
-          _prior_state = ps;
+         _pending_state = std::make_shared<pending_chain_state>( ps );
+         _prior_state = ps;
+      }
+
+      void cancel_all_shorts()
+      {
+         for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
+         {
+             const auto market_idx = short_itr.key();
+             const auto quote_asset = _pending_state->get_asset_record( market_idx.order_price.quote_asset_id );
+             _current_bid = market_order( short_order, short_itr.key(), short_itr.value() );
+
+             market_transaction mtrx;
+             cancel_current_short( mtrx, *quote_asset );
+             push_market_transaction( mtrx );
+         }
       }
 
       void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
@@ -409,7 +423,7 @@ class market_engine
           _market_transactions.push_back(mtrx);
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void cancel_current_short( market_transaction& mtrx, asset_record& quote_asset  )
+      void cancel_current_short( market_transaction& mtrx, const asset_record& quote_asset  )
       {
          mtrx.ask_paid       = asset();
          mtrx.ask_received   = asset(0,quote_asset.id);
