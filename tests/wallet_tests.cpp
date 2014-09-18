@@ -486,6 +486,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
     {
       line += " --disable-default-peers ";
       line += " --log-commands ";
+      line += " --ulog=0 ";
       line += " --min-delegate-connection-count=0 ";
       line += " --upnp=false ";
 

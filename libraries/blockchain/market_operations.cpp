@@ -122,11 +122,8 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_5_BLOCK_NUM )
-      {
-         evaluate_v1( eval_state );
-         return;
-      }
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
+          FC_ASSERT( !"New short operation is not supported yet!" );
 
       if( this->short_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
@@ -164,39 +161,19 @@ namespace bts { namespace blockchain {
       }
       else // this->amount > 0 - deposit
       {
-          FC_ASSERT( this->amount >=  (BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE) ); // 100 XTS min short order
+          FC_ASSERT( this->amount >=  0 ); // 100 XTS min short order
           if( NOT current_short )  // then initialize to 0
             current_short = order_record();
           // sub the delta amount from the eval state that we deposited to the short
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
-
+      current_short->short_price_limit = this->short_price_limit;
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
 
       auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
       if( !market_stat )
          market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
-
-      if( amount > 0 )
-      {
-         /**
-          *  If there is an average, then keep it within 10% of the average.
-          */
-         if( market_stat->avg_price_1h.quote_asset_id != 0 )
-         {
-            FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
-         }
-         else // if there is no average, there must be a median feed and the short must not be more than 10% above the feed
-         {
-            auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
-            FC_ASSERT( median_delegate_price.valid() );
-            auto feed_max_short_bid = *median_delegate_price;
-            feed_max_short_bid.ratio *= 10;
-            feed_max_short_bid.ratio /= 9;
-            FC_ASSERT( short_index.order_price < feed_max_short_bid, "", ("order",*this)("max_short_price",feed_max_short_bid) );
-         }
-      }
 
       market_stat->bid_depth += delta_amount.amount;
 
@@ -212,6 +189,12 @@ namespace bts { namespace blockchain {
    */
    void cover_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
+      {
+         evaluate_v1( eval_state );
+         return;
+      }
+
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
@@ -241,7 +224,7 @@ namespace bts { namespace blockchain {
       if( current_cover->payoff_balance > 0 )
       {
          auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
-                               asset((current_cover->collateral_balance*3)/4, 0);
+                               asset((current_cover->collateral_balance*2)/3, 0);
 
          if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
             eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),

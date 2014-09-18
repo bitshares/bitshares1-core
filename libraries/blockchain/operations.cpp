@@ -31,7 +31,7 @@ namespace bts { namespace blockchain {
 
    const operation_type_enum bid_operation::type                    = bid_op_type;
    const operation_type_enum ask_operation::type                    = ask_op_type;
-   const operation_type_enum short_operation::type                  = short_op_type;
+   const operation_type_enum short_operation_v1::type               = short_op_type;
    const operation_type_enum cover_operation::type                  = cover_op_type;
    const operation_type_enum add_collateral_operation::type         = add_collateral_op_type;
    const operation_type_enum remove_collateral_operation::type      = remove_collateral_op_type;
@@ -41,6 +41,8 @@ namespace bts { namespace blockchain {
    const operation_type_enum update_feed_operation::type            = update_feed_op_type;
    const operation_type_enum burn_operation::type                   = burn_op_type;
    const operation_type_enum link_account_operation::type           = link_account_op_type;
+
+   const operation_type_enum short_operation::type                  = short_op_v2_type;
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
@@ -58,7 +60,7 @@ namespace bts { namespace blockchain {
 #endif
       bts::blockchain::operation_factory::instance().register_operation<bid_operation>();
       bts::blockchain::operation_factory::instance().register_operation<ask_operation>();
-      bts::blockchain::operation_factory::instance().register_operation<short_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<short_operation_v1>();
       bts::blockchain::operation_factory::instance().register_operation<cover_operation>();
       bts::blockchain::operation_factory::instance().register_operation<add_collateral_operation>();
       bts::blockchain::operation_factory::instance().register_operation<remove_collateral_operation>();
@@ -66,6 +68,8 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<update_feed_operation>();
       bts::blockchain::operation_factory::instance().register_operation<burn_operation>();
       bts::blockchain::operation_factory::instance().register_operation<link_account_operation>();
+
+      bts::blockchain::operation_factory::instance().register_operation<short_operation>();
       return true;
    }();
 

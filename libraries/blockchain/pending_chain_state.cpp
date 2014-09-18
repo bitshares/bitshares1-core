@@ -7,18 +7,14 @@ namespace bts { namespace blockchain {
    {
    }
 
-   uint32_t pending_chain_state::get_head_block_num() const
+   pending_chain_state::~pending_chain_state()
    {
-        auto state = _prev_state.lock();
-        return state->get_head_block_num();
    }
 
-   fc::ripemd160  pending_chain_state::get_current_random_seed()const
+   /** polymorphically allcoate a new state */
+   chain_interface_ptr pending_chain_state::create( const chain_interface_ptr& prev_state )const
    {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state )
-         return prev_state->get_current_random_seed();
-      return fc::ripemd160();
+      return std::make_shared<pending_chain_state>( prev_state );
    }
 
    void pending_chain_state::set_prev_state( chain_interface_ptr prev_state )
@@ -26,7 +22,26 @@ namespace bts { namespace blockchain {
       _prev_state = prev_state;
    }
 
-   pending_chain_state::~pending_chain_state(){}
+   uint32_t pending_chain_state::get_head_block_num()const
+   {
+      const chain_interface_ptr prev_state = _prev_state.lock();
+      FC_ASSERT( prev_state );
+      return prev_state->get_head_block_num();
+   }
+
+   fc::time_point_sec pending_chain_state::now()const
+   {
+      const chain_interface_ptr prev_state = _prev_state.lock();
+      FC_ASSERT( prev_state );
+      return prev_state->now();
+   }
+
+   fc::ripemd160 pending_chain_state::get_current_random_seed()const
+   {
+      const chain_interface_ptr prev_state = _prev_state.lock();
+      FC_ASSERT( prev_state );
+      return prev_state->get_current_random_seed();
+   }
 
    /**
     *  Based upon the current state of the database, calculate any updates that
@@ -36,12 +51,6 @@ namespace bts { namespace blockchain {
    {
       /** nothing to do for now... charge 5% inactivity fee? */
       /** execute order matching */
-   }
-
-   /** polymorphically allcoate a new state */
-   chain_interface_ptr pending_chain_state::create( const chain_interface_ptr& prev_state )const
-   {
-      return std::make_shared<pending_chain_state>(prev_state);
    }
 
    /** Apply changes from this pending state to the previous state */
@@ -104,7 +113,7 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::get_undo_state( const chain_interface_ptr& undo_state_arg )const
    {
-      auto undo_state = std::dynamic_pointer_cast<pending_chain_state>(undo_state_arg);
+      auto undo_state = std::dynamic_pointer_cast<pending_chain_state>( undo_state_arg );
       chain_interface_ptr prev_state = _prev_state.lock();
       FC_ASSERT( prev_state );
       for( const auto& item : properties )
@@ -202,18 +211,18 @@ namespace bts { namespace blockchain {
             undo_state->store_market_status( market_status() );
          }
       }
-      for( auto const& item : feeds )
+      for( const auto& item : feeds )
       {
          auto prev_value = prev_state->get_feed( item.first );
          if( prev_value ) undo_state->set_feed( *prev_value );
          else undo_state->set_feed( feed_record{item.first} );
       }
-      for( const auto& item : burns ) 
+      for( const auto& item : burns )
       {
          undo_state->store_burn_record( burn_record( item.first ) );
       }
 
-      auto dirty_markets = prev_state->get_dirty_markets();
+      const auto dirty_markets = prev_state->get_dirty_markets();
       undo_state->set_dirty_markets(dirty_markets);
 
       /* NOTE: Recent operations are currently not rewound on undo */
@@ -253,14 +262,6 @@ namespace bts { namespace blockchain {
       else if( prev_state )
         return prev_state->get_asset_record( symbol );
       return oasset_record();
-   }
-
-   fc::time_point_sec pending_chain_state::now()const
-   {
-      chain_interface_ptr prev_state = _prev_state.lock();
-      if( prev_state )
-        return prev_state->now();
-      FC_ASSERT( false, "No current timestamp set" );
    }
 
    obalance_record pending_chain_state::get_balance_record( const balance_id_type& balance_id )const
@@ -530,7 +531,7 @@ namespace bts { namespace blockchain {
       feeds[r.feed] = r;
    }
 
-   ofeed_record    pending_chain_state::get_feed( const feed_index& i )const
+   ofeed_record pending_chain_state::get_feed( const feed_index& i )const
    {
       auto itr = feeds.find(i);
       if( itr != feeds.end() ) return itr->second;
@@ -545,52 +546,12 @@ namespace bts { namespace blockchain {
       return prev_state->get_median_delegate_price( asset_id );
    }
 
-   asset pending_chain_state::calculate_base_supply()const
-   {
-      auto total = asset( 0, 0 );
-
-      for( const auto& balance_item : balances )
-      {
-        const balance_record balance = balance_item.second;
-        if( balance.asset_id() != total.asset_id ) continue;
-        total += balance.get_balance();
-      }
-
-      total.amount += get_accumulated_fees();
-
-      for( const auto& account_item : accounts )
-      {
-        const account_record account = account_item.second;
-        if( !account.delegate_info.valid() ) continue;
-        total.amount += account.delegate_info->pay_balance;
-      }
-
-      for( const auto& ask_item : asks )
-      {
-        const order_record ask = ask_item.second;
-        total.amount += ask.balance;
-      }
-
-      for( const auto& short_item : shorts )
-      {
-        const order_record sh = short_item.second;
-        total.amount += sh.balance;
-      }
-
-      for( const auto& collateral_item : collateral )
-      {
-        const collateral_record col = collateral_item.second;
-        total.amount += col.collateral_balance;
-      }
-
-      return total;
-   }
-   void           pending_chain_state::store_burn_record( const burn_record& br )
+   void pending_chain_state::store_burn_record( const burn_record& br )
    {
       burns[br] = br;
    }
 
-   oburn_record   pending_chain_state::fetch_burn_record( const burn_record_key& key )const 
+   oburn_record pending_chain_state::fetch_burn_record( const burn_record_key& key )const
    {
       auto itr = burns.find(key);
       if( itr == burns.end() )

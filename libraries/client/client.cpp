@@ -103,9 +103,9 @@ namespace bts { namespace client {
 const string BTS_MESSAGE_MAGIC = "BitShares Signed Message:\n";
 
 void print_banner();
-fc::logging_config create_default_logging_config(const fc::path&);
+fc::logging_config create_default_logging_config( const fc::path&, bool enable_ulog );
 fc::path get_data_dir(const program_options::variables_map& option_variables);
-config   load_config( const fc::path& datadir );
+config load_config( const fc::path& datadir, bool enable_ulog );
 void  load_and_configure_chain_database(const fc::path& datadir,
                                         const program_options::variables_map& option_variables);
 
@@ -150,12 +150,15 @@ program_options::variables_map parse_option_variables(int argc, char** argv)
        ("rpcuser", program_options::value<string>(), "Set username for JSON-RPC")
        ("rpcpassword", program_options::value<string>(), "Set password for JSON-RPC")
        ("rpcport", program_options::value<uint16_t>(), "Set port to listen for JSON-RPC connections")
+       ("httpdendpoint", program_options::value<string>(), "Set interface/port to listen for HTTP JSON-RPC connections")
        ("httpport", program_options::value<uint16_t>(), "Set port to listen for HTTP JSON-RPC connections")
 
        ("chain-server-port", program_options::value<uint16_t>(), "Run a chain server on this port")
 
        ("input-log", program_options::value< vector<string> >(), "Set log file with CLI commands to execute at startup")
        ("log-commands", "Log all command input and output")
+       ("ulog", program_options::value<bool>()->default_value( true ), "Enable CLI user logging")
+
        ("growl", program_options::value<std::string>()->implicit_value("127.0.0.1"), "Send notifications about potential problems to Growl")
        ("growl-password", program_options::value<std::string>(), "Password for authenticating to a Growl server")
        ("growl-identifier", program_options::value<std::string>(), "A name displayed in growl messages to identify this bitshares_client instance")
@@ -232,7 +235,7 @@ void print_banner()
     std::cout<<"================================================================\n";
 }
 
-fc::logging_config create_default_logging_config(const fc::path& data_dir)
+fc::logging_config create_default_logging_config( const fc::path& data_dir, bool enable_ulog )
 {
     fc::logging_config cfg;
     fc::path log_dir = data_dir / "logs";
@@ -352,7 +355,8 @@ fc::logging_config create_default_logging_config(const fc::path& data_dir)
     dlc_p2p.appenders.push_back("p2p");
 
     fc::logger_config dlc_user;
-    dlc_user.level = fc::log_level::debug;
+    if( enable_ulog ) dlc_user.level = fc::log_level::debug;
+    else dlc_user.level = fc::log_level::off;
     dlc_user.name = "user";
     dlc_user.appenders.push_back("user");
 
@@ -433,7 +437,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
 
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 
-config load_config( const fc::path& datadir )
+config load_config( const fc::path& datadir, bool enable_ulog )
 { try {
       fc::path config_file = datadir/"config.json";
       config cfg;
@@ -458,7 +462,7 @@ config load_config( const fc::path& datadir )
       else
       {
          std::cerr << "Creating default config file at: " << config_file.generic_string() << "\n";
-         cfg.logging = create_default_logging_config( datadir );
+         cfg.logging = create_default_logging_config( datadir, enable_ulog );
       }
       fc::json::save_to_file( cfg, config_file );
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
@@ -676,6 +680,7 @@ config load_config( const fc::path& datadir )
             std::unique_ptr<std::ostream>                           _output_stream;
             std::unique_ptr<TeeDevice>                              _tee_device;
             std::unique_ptr<TeeStream>                              _tee_stream;
+            bool                                                    _enable_ulog = false;
 
             fc::path                                                _data_dir;
 
@@ -736,6 +741,8 @@ config load_config( const fc::path& datadir )
               cfg.rpc.rpc_password = option_variables["rpcpassword"].as<string>();
           if (option_variables.count("rpcport"))
               cfg.rpc.rpc_endpoint.set_port(option_variables["rpcport"].as<uint16_t>());
+          if (option_variables.count("httpdendpoint"))
+            cfg.rpc.httpd_endpoint = fc::ip::endpoint::from_string(option_variables["httpdendpoint"].as<string>());
           if (option_variables.count("httpport"))
               cfg.rpc.httpd_endpoint.set_port(option_variables["httpport"].as<uint16_t>());
 
@@ -1629,7 +1636,7 @@ config load_config( const fc::path& datadir )
 
     void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_path, std::function<void(float)> reindex_status_callback )
     { try {
-        my->_config   = load_config(data_dir);
+        my->_config = load_config( data_dir, my->_enable_ulog );
 
 #ifndef DISABLE_DELEGATE_NETWORK
         /*
@@ -2141,25 +2148,26 @@ config load_config( const fc::path& datadir )
         return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
 
-    vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
+    vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( const string& delegate_name )const
     { try {
-        auto delegate_record = _chain_db->get_account_record(delegate_name);
-        FC_ASSERT( delegate_record.valid(), "Unknown account name." );
+        const auto delegate_record = _chain_db->get_account_record( delegate_name );
+        if( !delegate_record.valid() || !delegate_record->is_delegate() )
+            FC_THROW_EXCEPTION( unknown_account, "Unknown delegate account!" );
 
-        auto raw_feeds = _chain_db->get_feeds_from_delegate(delegate_record->id);
+        const auto raw_feeds = _chain_db->get_feeds_from_delegate( delegate_record->id );
         vector<feed_entry> result_feeds;
-        for( auto feed : raw_feeds )
-        {
-            auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
-            if( !delegate )
-              FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
-            string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
-            double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
-            auto omedian_price = _chain_db->get_median_delegate_price(feed.feed.feed_id);
-            fc::optional<double> median_price;
-            if( omedian_price ) median_price = _chain_db->to_pretty_price_double(*omedian_price);
+        result_feeds.reserve( raw_feeds.size() );
 
-            result_feeds.push_back({delegate->name, price, feed.last_update, asset, median_price});
+        for( const auto& raw_feed : raw_feeds )
+        {
+            const double price = _chain_db->to_pretty_price_double( raw_feed.value.as<blockchain::price>() );
+            const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.feed.feed_id );
+            const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.feed.feed_id );
+            fc::optional<double> median_price;
+            if( omedian_price )
+                median_price = _chain_db->to_pretty_price_double( *omedian_price );
+
+            result_feeds.push_back( feed_entry{ delegate_name, price, raw_feed.last_update, asset_symbol, median_price } );
         }
 
         return result_feeds;
@@ -2522,6 +2530,29 @@ config load_config( const fc::path& datadir )
       return _mail_client->get_message(message_id);
     }
 
+    vector<mail::email_header> detail::client_impl::mail_get_messages_from(const std::string &sender) const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_messages_by_sender(sender);
+    }
+
+    vector<mail::email_header> detail::client_impl::mail_get_messages_to(const std::string &recipient) const
+    {
+      FC_ASSERT(_mail_client);
+      return _mail_client->get_messages_by_recipient(recipient);
+    }
+
+    vector<mail::email_header> detail::client_impl::mail_get_messages_in_conversation(const std::string &account_one, const std::string &account_two) const
+    {
+      FC_ASSERT(_mail_client);
+      auto forward = _mail_client->get_messages_from_to(account_one, account_two);
+      auto backward = _mail_client->get_messages_from_to(account_two, account_one);
+
+      std::move(backward.begin(), backward.end(), std::back_inserter(forward));
+      std::sort(forward.begin(), forward.end(), [](const email_header& a, const email_header& b) {return a.timestamp < b.timestamp;});
+      return forward;
+    }
+
     mail::message_id_type detail::client_impl::mail_send(const std::string &from,
                                                          const std::string &to,
                                                          const std::string &subject,
@@ -2591,6 +2622,7 @@ config load_config( const fc::path& datadir )
       if (option_variables.count("genesis-config"))
         genesis_file_path = option_variables["genesis-config"].as<string>();
 
+      my->_enable_ulog = option_variables["ulog"].as<bool>();
       this->open( datadir, genesis_file_path );
 
       if (option_variables.count("min-delegate-connection-count"))
@@ -2990,7 +3022,7 @@ config load_config( const fc::path& datadir )
 
     void client_impl::debug_update_logging_config()
     {
-      config temp_config   = load_config(_data_dir);
+      config temp_config = load_config( _data_dir, _enable_ulog );
       fc::configure_logging( temp_config.logging );
     }
 
@@ -3074,7 +3106,6 @@ config load_config( const fc::path& datadir )
 
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
-      info["blockchain_accumulated_fees"]                       = _chain_db->get_accumulated_fees();
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
       info["blockchain_share_supply"]                           = variant();
@@ -3369,19 +3400,11 @@ config load_config( const fc::path& datadir )
    wallet_transaction_record client_impl::wallet_market_submit_short(
            const string& from_account,
            double quantity,
-           double quote_price,
            const string& quote_symbol,
-           bool allow_stupid_short )
+           double collateral_ratio,
+           double short_price_limit )
    {
-      vector<market_order> lowest_ask = blockchain_market_order_book(quote_symbol, _chain_db->get_asset_symbol(0), 1).second;
-
-      if (!allow_stupid_short && lowest_ask.size()
-          && fc::variant(quote_price).as_double() > _chain_db->to_pretty_price_double(lowest_ask.front().get_price()) * 1.05)
-        FC_THROW_EXCEPTION(stupid_order, "You are attempting to short at more than 5% above the buy price. "
-                                         "This short is based on economically unsound principles, and is ill-advised. "
-                                         "If you're sure you want to do this, place your short again and set allow_stupid_short to true.");
-
-      const auto record = _wallet->submit_short( from_account, quantity, quote_price, quote_symbol );
+      const auto record = _wallet->submit_short( from_account, quantity, quote_symbol, collateral_ratio, short_price_limit );
       network_broadcast_transaction( record.trx );
       return record;
    }
@@ -3438,7 +3461,7 @@ config load_config( const fc::path& datadir )
    }
 
    vector<market_order>    client_impl::blockchain_market_list_shorts( const string& quote_symbol,
-                                                                       uint32_t limit  )
+                                                                       uint32_t limit  )const
    {
       return _chain_db->get_market_shorts( quote_symbol, limit );
    }
@@ -3448,46 +3471,21 @@ config load_config( const fc::path& datadir )
       return _chain_db->get_market_covers( quote_symbol, limit );
    }
 
+   share_type              client_impl::blockchain_market_get_asset_collateral( const string& symbol )
+   {
+      return _chain_db->get_asset_collateral( symbol );
+   }
+
    std::pair<vector<market_order>,vector<market_order>> client_impl::blockchain_market_order_book( const string& quote_symbol,
                                                                                               const string& base_symbol,
                                                                                               uint32_t limit  )
    {
       auto bids = blockchain_market_list_bids(quote_symbol, base_symbol, limit);
-
-      if( _chain_db->get_asset_id(base_symbol) == 0 )
-      {
-        auto shorts = blockchain_market_list_shorts(quote_symbol, limit);
-        bids.reserve(bids.size() + shorts.size());
-
-        for( auto order : shorts )
-            bids.push_back(order);
-
-        std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
-          return a.market_index < b.market_index;
-        });
-
-        if( bids.size() > limit )
-          bids.resize(limit);
-      }
-
       auto asks = blockchain_market_list_asks(quote_symbol, base_symbol, limit);
-      if( _chain_db->get_asset_id(base_symbol) == 0 )
-      {
-        auto covers = blockchain_market_list_covers(quote_symbol, limit);
-        asks.reserve(asks.size() + covers.size());
-        for( auto order : covers )
-          asks.push_back(order);
+      auto covers = blockchain_market_list_covers(quote_symbol,limit);
+      asks.insert( asks.end(), covers.begin(), covers.end() );
 
-        std::sort(asks.rbegin(), asks.rend(), [](const market_order& a, const market_order& b) -> bool {
-          return a.market_index < b.market_index;
-        });
-
-        if( asks.size() > limit )
-          asks.resize(limit);
-      }
-
-
-      std::sort(asks.begin(), asks.end(), [](const market_order& a, const market_order& b) -> bool {
+      std::sort(bids.rbegin(), bids.rend(), [](const market_order& a, const market_order& b) -> bool {
         return a.market_index < b.market_index;
       });
 
@@ -3519,24 +3517,24 @@ config load_config( const fc::path& datadir )
    }
 
    wallet_transaction_record client_impl::wallet_market_add_collateral( const std::string &from_account_name,
-                                                                        const order_id_type &short_id,
+                                                                        const order_id_type &cover_id,
                                                                         const share_type &collateral_to_add )
    {
-      const auto record = _wallet->add_collateral( from_account_name, short_id, collateral_to_add );
+      const auto record = _wallet->add_collateral( from_account_name, cover_id, collateral_to_add );
       network_broadcast_transaction( record.trx );
       return record;
    }
 
    map<order_id_type, market_order> client_impl::wallet_account_order_list( const string& account_name,
-                                                                            int64_t limit )
+                                                                            uint32_t limit )
    {
       return _wallet->get_market_orders( account_name, limit );
    }
 
    map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
-                                                                            const string& base_symbol,
-                                                                            int64_t limit,
-                                                                            const string& account_name )
+                                                                           const string& base_symbol,
+                                                                           uint32_t limit,
+                                                                           const string& account_name )
    {
       return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }

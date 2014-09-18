@@ -342,6 +342,7 @@
            }
         ],
         "prerequisites" : ["no_prerequisites"],
+        "is_const" : true,
         "aliases" : ["market_shorts"]
       },
       {
@@ -363,6 +364,20 @@
         ],
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["market_covers"]
+      },
+      {
+        "method_name" : "blockchain_market_get_asset_collateral",
+        "description" : "Returns the total collateral for an asset of a given type",
+        "return_type" : "share_type",
+        "parameters"  : [
+           {
+              "name" : "symbol",
+              "type" : "asset_symbol",
+              "description" : "the symbol for the asset to count collateral for"
+           }
+        ],
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["collateral"]
       },
       {
         "method_name" : "blockchain_market_order_book",

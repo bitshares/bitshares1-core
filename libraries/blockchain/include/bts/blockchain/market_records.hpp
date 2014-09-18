@@ -122,6 +122,7 @@ namespace bts { namespace blockchain {
       bool is_null() const { return 0 == balance; }
 
       share_type       balance;
+      optional<price>  short_price_limit;
    };
    typedef fc::optional<order_record> oorder_record;
 
@@ -167,6 +168,8 @@ namespace bts { namespace blockchain {
       price                                     ask_price;
       asset                                     bid_paid;
       asset                                     bid_received;
+      /** if bid_type == short, then collateral will be paid from short to cover positon */
+      optional<asset>                           bid_collateral;
       asset                                     ask_paid;
       asset                                     ask_received;
       fc::enum_type<uint8_t, order_type_enum>   bid_type = null_order;
@@ -256,7 +259,7 @@ FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(opening_price)(closing_price)(volume)(recent_average_price) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
 FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(opening_price)(closing_price)(volume)(recent_average_price) )
-FC_REFLECT( bts::blockchain::order_record, (balance) )
+FC_REFLECT( bts::blockchain::order_record, (balance)(short_price_limit) )
 FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance) )
 FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral) )
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::market_transaction> )
@@ -268,6 +271,7 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (ask_price)
             (bid_paid)
             (bid_received)
+            (bid_collateral)
             (ask_paid)
             (ask_received)
             (bid_type)

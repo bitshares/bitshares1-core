@@ -17,9 +17,6 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 
-# Set to ON to run network code in a dedicated thread; OFF to keep in bitshares thread
-set (THREADED_P2P OFF CACHE BOOL "Run P2P network in a separate thread")
-
 #set (ENABLE_INSTALLER 1)
 #set (USE_PCH 1)
 

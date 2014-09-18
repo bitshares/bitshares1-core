@@ -1199,12 +1199,7 @@
             {
                "name" : "short_quantity",
                "type" : "real_amount",
-               "description" : "the quantity of items you would like to short sell (borrow into existance and sell)"
-            },
-            {
-               "name" : "short_price",
-               "type" : "real_amount",
-               "description" : "the price (ie: 2.0 USD) per XTS that you would like to short at"
+               "description" : "the quantity of items you would like to short sell (USD you would like to sell)"
             },
             {
                "name" : "short_symbol",
@@ -1212,10 +1207,15 @@
                "description" : "the type of asset you would like to short, ie: USD"
             },
             {
-               "name" : "allow_stupid_short",
-               "type" : "bool",
-               "description" : "Allow user to place short at more than 5% above the current sell price.",
-               "default_value" : "false"
+               "name" : "collateral_ratio",
+               "type" : "real_amount",
+               "description" : "the ratio XTS per USD that your USD will be collateralized at (ie: XTS / USD)"
+            },
+            {
+               "name" : "short_price_limit",
+               "type" : "real_amount",
+               "description" : "maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied",
+               "default_value" : 0
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1261,7 +1261,7 @@
                "description" : "the account that will provide funds for the ask"
             },
             {
-               "name" : "short_id",
+               "name" : "cover_id",
                "type" : "order_id",
                "description" : "the ID of the order to recollateralize"
             },
@@ -1291,7 +1291,7 @@
             },
             {
                "name" : "limit",
-               "type" : "int64_t",
+               "type" : "uint32_t",
                "description" : "the maximum number of items to return",
                "default_value" : -1
             },
@@ -1318,7 +1318,7 @@
             },
             {
                "name" : "limit",
-               "type" : "int64_t",
+               "type" : "uint32_t",
                "description" : "the maximum number of items to return",
                "default_value" : -1
             }

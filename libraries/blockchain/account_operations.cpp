@@ -52,8 +52,8 @@ namespace bts { namespace blockchain {
       new_record.name              = this->name;
       new_record.public_data       = this->public_data;
       new_record.owner_key         = this->owner_key;
-      new_record.last_update       = now;
       new_record.registration_date = now;
+      new_record.last_update       = now;
 
       new_record.set_active_key( now, this->active_key );
       if( this->is_delegate() )
@@ -211,7 +211,7 @@ namespace bts { namespace blockchain {
    void link_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
 #include <bts/blockchain/fork_blocks.hpp>
-      if( eval_state._current_state->get_head_block_num() < BTSX_BURN_FORK_1_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTSX_LINK_FORK_1_BLOCK_NUM )
           FC_ASSERT( !"Link account operation is not enabled yet!" );
 
       auto source_account_rec = eval_state._current_state->get_account_record( source_account );

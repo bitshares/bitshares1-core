@@ -75,12 +75,14 @@ namespace bts { namespace blockchain {
 
    void transaction::short_sell( const asset& quantity,
                           const price& price_per_unit,
-                          const address& owner )
+                          const address& owner,
+                          const optional<price>& limit_price )
    {
       short_operation op;
       op.amount = quantity.amount;
       op.short_index.order_price = price_per_unit;
       op.short_index.owner = owner;
+      op.short_price_limit = limit_price;
 
       operations.emplace_back(op);
    }
@@ -244,6 +246,9 @@ namespace bts { namespace blockchain {
                   if( op.as<ask_operation>().amount < 0 ) return true;
                   break;
               case short_op_type:
+                  if( op.as<short_operation_v1>().amount < 0 ) return true;
+                  break;
+              case short_op_v2_type:
                   if( op.as<short_operation>().amount < 0 ) return true;
                   break;
               default:

@@ -4,13 +4,13 @@
 
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
-#define BTS_TEST_NETWORK_VERSION                            25
+#define BTS_TEST_NETWORK_VERSION                            28
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     137
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     138
 
 /**
  *  The address prepended to string representation of
@@ -101,7 +101,7 @@
  *
  *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
  */
-#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             (BTS_BLOCKCHAIN_INITIAL_SHARES/4000)
+#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             0 //(BTS_BLOCKCHAIN_INITIAL_SHARES/200000000)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC

@@ -8,6 +8,12 @@
 
 #include <queue>
 
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/composite_key.hpp>
+
 #ifndef UNUSED
 #define UNUSED(var) ((void)(var))
 #endif
@@ -19,6 +25,8 @@ using namespace fc;
 using namespace bts::blockchain;
 using namespace bts::wallet;
 using std::string;
+using namespace boost;
+using namespace boost::multi_index;
 
 namespace detail {
 #define BTS_MAIL_CLIENT_DATABASE_VERSION 1
@@ -77,7 +85,36 @@ struct mail_archive_record {
     std::unordered_set<ip::endpoint> mail_servers;
 };
 
+struct mail_index_record {
+    mail_index_record(const email_header& header)
+        : id(header.id),
+          sender(header.sender),
+          recipient(header.recipient),
+          timestamp(header.timestamp)
+    {}
+    mail_index_record(mail_archive_record&& from_record)
+        : id(from_record.id),
+          sender(from_record.sender),
+          recipient(from_record.recipient),
+          timestamp(from_record.content.timestamp)
+    {}
+
+    ripemd160 id;
+    string sender;
+    string recipient;
+    fc::time_point_sec timestamp;
+};
+
 class client_impl {
+protected:
+    //Dummy types to act as mnemonics for multi_index indices
+    struct sender{};
+    struct by_sender{};
+    struct recipient{};
+    struct by_recipient{};
+    struct timestamp{};
+    struct by_timestamp{};
+
 public:
     client* self;
     wallet_ptr _wallet;
@@ -92,19 +129,59 @@ public:
     fc::future<void> _transmit_message_worker;
     fc::thread _proof_of_work_thread;
 
+    fc::future<void> _archive_indexing_future;
+    fc::thread _archive_indexing_thread;
+
     bts::db::cached_level_map<message_id_type, mail_record> _processing_db;
     bts::db::level_map<message_id_type, mail_archive_record> _archive;
     bts::db::cached_level_map<message_id_type, email_header> _inbox;
     bts::db::level_map<string, variant> _property_db;
 
+    multi_index_container<
+        mail_index_record,
+        indexed_by<
+            //Allow indexing by message ID
+            ordered_unique<
+                member<mail_index_record, message_id_type, &mail_index_record::id>
+            >,
+            //Allow indexing by sender-recipient pair
+            //This implicitly allows indexing by sender regardless of recipient
+            ordered_non_unique<
+                tag<sender,by_sender>,
+                composite_key<
+                    mail_index_record,
+                    member<mail_index_record, string, &mail_index_record::sender>,
+                    member<mail_index_record, string, &mail_index_record::recipient>,
+                    member<mail_index_record, time_point_sec, &mail_index_record::timestamp>
+                >
+            >,
+            //Allow indexing by recipient, regardless of sender
+            ordered_non_unique<
+                tag<recipient,by_recipient>,
+                composite_key<
+                    mail_index_record,
+                    member<mail_index_record, string, &mail_index_record::recipient>,
+                    member<mail_index_record, time_point_sec, &mail_index_record::timestamp>
+                >
+            >,
+            //Sort based on timestamp
+            ordered_non_unique<
+                tag<timestamp,by_timestamp>,
+                member<mail_index_record, time_point_sec, &mail_index_record::timestamp>
+            >
+        >
+    > _mail_index;
+
     client_impl(client* self, wallet_ptr wallet, chain_database_ptr chain)
         : self(self),
           _wallet(wallet),
           _chain(chain),
-          _proof_of_work_thread("Mail client proof-of-work thread")
+          _proof_of_work_thread("Mail client proof-of-work thread"),
+          _archive_indexing_thread("Mail client indexing thread")
     {}
     ~client_impl(){
         _proof_of_work_worker.cancel_and_wait("Mail client destroyed");
+        _archive_indexing_future.cancel_and_wait();
 
         _archive.close();
         _processing_db.close();
@@ -151,6 +228,8 @@ public:
             //Place all in-processing messages back in their place on the pipeline
             for (auto itr = _processing_db.begin(); itr.valid(); ++itr)
                 retry_message(itr.value());
+
+            index_archive();
         } catch (...) {
             _archive.close();
             _processing_db.close();
@@ -159,6 +238,13 @@ public:
     }
     bool is_open() {
         return _property_db.is_open();
+    }
+
+    void index_archive() {
+        _archive_indexing_future = _archive_indexing_thread.async([this] {
+            for (auto itr = _archive.begin(); itr.valid() && !_archive_indexing_future.canceled(); ++itr)
+                _mail_index.insert(itr.value());
+        }, "Mail client indexing task");
     }
 
     void process_outgoing_mail(mail_record& mail) {
@@ -338,6 +424,7 @@ public:
 
             while (!transmit_tasks.empty()) {
                 transmit_tasks.back().wait();
+                email = _processing_db.fetch(message_id);
                 if (email.status == client::failed) {
                     for (auto task_future : transmit_tasks)
                         task_future.cancel_and_wait();
@@ -357,6 +444,7 @@ public:
         ulog("Email ${id} sent successfully.", ("id", message_id));
         mail_record email = _processing_db.fetch(message_id);
         email.status = client::accepted;
+        _mail_index.insert(email_header(email));
         _archive.store(message_id, std::move(email));
         _processing_db.remove(message_id);
     }
@@ -390,6 +478,39 @@ public:
         if (auto op = _archive.fetch_optional(message_id))
             return decrypted_email_record(std::move(*op));
         FC_ASSERT(false, "Message ${id} not found.", ("id", message_id));
+    }
+
+    vector<email_header> get_messages_by_sender(string sender) {
+        vector<email_header> results;
+
+        for (auto itr = _mail_index.get<by_sender>().lower_bound(boost::make_tuple(sender));
+             itr != _mail_index.get<by_sender>().upper_bound(boost::make_tuple(sender));
+             ++itr)
+            results.push_back(get_message(itr->id).header);
+
+        return results;
+    }
+
+    vector<email_header> get_messages_by_recipient(string recipient) {
+        vector<email_header> results;
+
+        for (auto itr = _mail_index.get<by_recipient>().lower_bound(boost::make_tuple(recipient));
+             itr != _mail_index.get<by_recipient>().upper_bound(boost::make_tuple(recipient));
+             ++itr)
+            results.push_back(get_message(itr->id).header);
+
+        return results;
+    }
+
+    vector<email_header> get_messages_from_to(string sender, string recipient) {
+        vector<email_header> results;
+
+        for (auto itr = _mail_index.get<by_sender>().lower_bound(boost::make_tuple(sender, recipient));
+             itr != _mail_index.get<by_sender>().upper_bound(boost::make_tuple(sender, recipient));
+             ++itr)
+            results.push_back(get_message(itr->id).header);
+
+        return results;
     }
 
     vector<email_header> get_inbox() {
@@ -483,6 +604,7 @@ public:
                             header.timestamp = plaintext.timestamp;
                             mail_archive_record record(std::move(ciphertext), header, account.account_address);
                             _archive.store(email.second, record);
+                            _mail_index.insert(header);
                             _inbox.store(header.id, header);
                         }
                     }
@@ -596,6 +718,39 @@ message_id_type client::send_email(const string &from, const string &to, const s
     return email.id;
 }
 
+std::vector<email_header> client::get_messages_by_sender(std::string sender)
+{
+    FC_ASSERT(my->is_open());
+    if (my->_archive_indexing_future.valid() && !my->_archive_indexing_future.ready()) {
+        ulog("Mail archive is currently indexing. Please try again later.");
+        return vector<email_header>();
+    }
+
+    return my->get_messages_by_sender(sender);
+}
+
+std::vector<email_header> client::get_messages_by_recipient(std::string recipient)
+{
+    FC_ASSERT(my->is_open());
+    if (my->_archive_indexing_future.valid() && !my->_archive_indexing_future.ready()) {
+        ulog("Mail archive is currently indexing. Please try again later.");
+        return vector<email_header>();
+    }
+
+    return my->get_messages_by_recipient(recipient);
+}
+
+std::vector<email_header> client::get_messages_from_to(std::string sender, std::string recipient)
+{
+    FC_ASSERT(my->is_open());
+    if (my->_archive_indexing_future.valid() && !my->_archive_indexing_future.ready()) {
+        ulog("Mail archive is currently indexing. Please try again later.");
+        return vector<email_header>();
+    }
+
+    return my->get_messages_from_to(sender, recipient);
+}
+
 email_header::email_header(const detail::mail_record &processing_record)
     : id(processing_record.id),
       sender(processing_record.sender),
@@ -624,9 +779,9 @@ email_record::email_record(const detail::mail_record& processing_record)
     header.sender = processing_record.sender;
     header.recipient = processing_record.recipient;
     if (processing_record.status >= client::proof_of_work && processing_record.status != client::failed)
-        *mail_servers = processing_record.mail_servers;
+        mail_servers = processing_record.mail_servers;
     if (processing_record.status == client::failed)
-        *failure_reason = processing_record.failure_reason;
+        failure_reason = processing_record.failure_reason;
 }
 email_record::email_record(const detail::mail_archive_record& archive_record)
     : header(archive_record),

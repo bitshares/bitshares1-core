@@ -23,11 +23,11 @@ OK
 default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> blockchain_list_blocks
-HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    TOTAL FEES      LATENCY PROCESSING TIME
-===================================================================================================================
-3       [redacted]          [redacted]                      0       166     0.00000 XTS     [redacted][redacted]     
-2       [redacted]          [redacted]                      1       318     0.50000 XTS     [redacted][redacted]     
-1       [redacted]          [redacted]                      1       410     0.50000 XTS     [redacted][redacted]     
+HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
+===================================================================================================
+3       [redacted]          [redacted]                      0       166     [redacted][redacted]     
+2       [redacted]          [redacted]                      1       318     [redacted][redacted]     
+1       [redacted]          [redacted]                      1       410     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================

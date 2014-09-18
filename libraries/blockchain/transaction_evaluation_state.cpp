@@ -105,11 +105,11 @@ namespace bts { namespace blockchain {
          // lowest ask is someone with XTS offered at a price of USD / XTS, fee.first
          // is an amount of USD which can be converted to price*USD XTS provided we
          // send lowest_ask.index.owner the USD
-         omarket_order lowest_ask = _current_state->get_lowest_ask_record( fee.first, 0 );
-         if( lowest_ask )
+         oprice median_price = _current_state->get_median_delegate_price( fee.first );
+         if( median_price )
          {
             // fees paid in something other than XTS are discounted 50%
-            alt_fees_paid += asset( fee.second/2, fee.first ) * lowest_ask->market_index.order_price;
+            alt_fees_paid += asset( (fee.second*2)/3, fee.first ) * *median_price;
          }
       }
 
@@ -146,7 +146,7 @@ namespace bts { namespace blockchain {
       try {
         if( trx_arg.expiration < _current_state->now() )
         {
-           auto expired_by_sec = (trx_arg.expiration - _current_state->now()).to_seconds();
+           const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
            FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
         }
         if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )

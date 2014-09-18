@@ -91,9 +91,6 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         info["blockchain_average_delegate_participation"] = pretty_percent( participation, 100 );
     }
 
-    const auto fees = info["blockchain_accumulated_fees"].as<share_type>();
-    info["blockchain_accumulated_fees"] = client->get_chain()->to_pretty_asset( asset( fees ) );
-
     const auto pay_rate = info["blockchain_delegate_pay_rate"].as<share_type>();
     info["blockchain_delegate_pay_rate"] = client->get_chain()->to_pretty_asset( asset( pay_rate ) );
 
@@ -335,12 +332,11 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
     out << std::setw( 32 ) << "SIGNING DELEGATE";
     out << std::setw(  8 ) << "# TXS";
     out << std::setw(  8 ) << "SIZE";
-    out << std::setw( 16 ) << "TOTAL FEES";
     out << std::setw(  8 ) << "LATENCY";
     out << std::setw( 15 ) << "PROCESSING TIME";
     out << "\n";
 
-    out << pretty_line( 115 );
+    out << pretty_line( 99 );
     out << "\n";
 
     auto last_block_timestamp = block_records.front().timestamp;
@@ -368,7 +364,6 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
             out << std::setw(  8 ) << "N/A";
             out << std::setw(  8 ) << "N/A";
-            out << std::setw( 16 ) << "N/A";
             out << std::setw(  8 ) << "N/A";
             out << std::setw( 15 ) << "N/A";
             out << '\n';
@@ -387,7 +382,6 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
         out << std::setw(  8 ) << block_record.user_transaction_ids.size();
         out << std::setw(  8 ) << block_record.block_size;
-        out << std::setw( 16 ) << client->get_chain()->to_pretty_asset( asset( block_record.total_fees ) );
 
         if( FILTER_OUTPUT_FOR_TESTS )
         {
