@@ -296,10 +296,8 @@ namespace bts { namespace blockchain {
       auto asset_rec = eval_state._current_state->get_asset_record( amount.asset_id );
       FC_ASSERT( asset_rec.valid() );
 
-      if( !asset_rec->is_market_issued() )
-      {
-         asset_rec->current_share_supply -= this->amount.amount;
-      }
+      FC_ASSERT( !asset_rec->is_market_issued() );
+      asset_rec->current_share_supply -= this->amount.amount;
 
       eval_state._current_state->store_asset_record( *asset_rec );
 
