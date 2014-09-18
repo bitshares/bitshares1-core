@@ -2855,18 +2855,21 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       get_current_connections_reply_message reply;
 
-      reply.upload_rate_one_minute = _average_network_usage_minutes.back();
-      reply.download_rate_one_minute = _average_network_usage_minutes.back();
+      if (!_average_network_usage_minutes.empty())
+      {
+        reply.upload_rate_one_minute = _average_network_usage_minutes.back();
+        reply.download_rate_one_minute = _average_network_usage_minutes.back();
 
-      size_t minutes_to_average = std::min(_average_network_usage_minutes.size(), (size_t)15);
-      boost::circular_buffer<uint32_t>::iterator start_iter = _average_network_usage_minutes.end() - minutes_to_average;
-      reply.upload_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
-      reply.download_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
+        size_t minutes_to_average = std::min(_average_network_usage_minutes.size(), (size_t)15);
+        boost::circular_buffer<uint32_t>::iterator start_iter = _average_network_usage_minutes.end() - minutes_to_average;
+        reply.upload_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
+        reply.download_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
 
-      minutes_to_average = std::min(_average_network_usage_minutes.size(), (size_t)60);
-      start_iter = _average_network_usage_minutes.end() - minutes_to_average;
-      reply.upload_rate_one_hour = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
-      reply.download_rate_one_hour = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
+        minutes_to_average = std::min(_average_network_usage_minutes.size(), (size_t)60);
+        start_iter = _average_network_usage_minutes.end() - minutes_to_average;
+        reply.upload_rate_one_hour = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
+        reply.download_rate_one_hour = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
+      }
 
       fc::time_point now = fc::time_point::now();
       for (const peer_connection_ptr& peer : _active_connections)
