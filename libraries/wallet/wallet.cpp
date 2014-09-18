@@ -128,8 +128,8 @@ namespace bts { namespace wallet {
 
             bool scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
+            bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_short_v1( const short_operation_v1& op, wallet_transaction_record& trx_rec, asset& total_fee );
-            bool scan_short_v2( const short_operation_v2& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
             bool scan_burn( const burn_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
@@ -636,18 +636,18 @@ namespace bts { namespace wallet {
                           has_withdrawal |= scan_ask( ask_op, *transaction_record, total_fee );
                       break;
                   }
+                  case short_op_v2_type:
+                  {
+                      const auto short_op = op.as<short_operation>();
+                      if( short_op.amount < 0 )
+                          has_withdrawal |= scan_short( short_op, *transaction_record, total_fee );
+                      break;
+                  }
                   case short_op_type:
                   {
                       const auto short_op = op.as<short_operation_v1>();
                       if( short_op.amount < 0 )
                           has_withdrawal |= scan_short_v1( short_op, *transaction_record, total_fee );
-                      break;
-                  }
-                  case short_v2_op_type:
-                  {
-                      const auto short_op = op.as<short_operation_v2>();
-                      if( short_op.amount < 0 )
-                          has_withdrawal |= scan_short_v2( short_op, *transaction_record, total_fee );
                       break;
                   }
                   default:
@@ -682,18 +682,18 @@ namespace bts { namespace wallet {
                           has_deposit |= scan_ask( ask_op, *transaction_record, total_fee );
                       break;
                   }
+                  case short_op_v2_type:
+                  {
+                      const auto short_op = op.as<short_operation>();
+                      if( short_op.amount >= 0 )
+                          has_deposit |= scan_short( short_op, *transaction_record, total_fee );
+                      break;
+                  }
                   case short_op_type:
                   {
                       const auto short_op = op.as<short_operation_v1>();
                       if( short_op.amount >= 0 )
                           has_deposit |= scan_short_v1( short_op, *transaction_record, total_fee );
-                      break;
-                  }
-                  case short_v2_op_type:
-                  {
-                      const auto short_op = op.as<short_operation_v2>();
-                      if( short_op.amount >= 0 )
-                          has_deposit |= scan_short_v2( short_op, *transaction_record, total_fee );
                       break;
                   }
                   case burn_op_type:
@@ -1163,8 +1163,7 @@ namespace bts { namespace wallet {
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-      // TODO: Refactor scan_{bid|ask|short}; exactly the same
-      bool wallet_impl::scan_short_v1( const short_operation_v1& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      bool wallet_impl::scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
           if( amount.asset_id == total_fee.asset_id )
@@ -1225,7 +1224,8 @@ namespace bts { namespace wallet {
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-      bool wallet_impl::scan_short_v2( const short_operation_v2& op, wallet_transaction_record& trx_rec, asset& total_fee )
+      // TODO: Refactor scan_{bid|ask|short}; exactly the same
+      bool wallet_impl::scan_short_v1( const short_operation_v1& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
           if( amount.asset_id == total_fee.asset_id )

@@ -42,7 +42,7 @@ namespace bts { namespace blockchain {
    const operation_type_enum burn_operation::type                   = burn_op_type;
    const operation_type_enum link_account_operation::type           = link_account_op_type;
 
-   const operation_type_enum short_operation_v2::type               = short_v2_op_type;
+   const operation_type_enum short_operation::type                  = short_op_v2_type;
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
@@ -69,7 +69,7 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<burn_operation>();
       bts::blockchain::operation_factory::instance().register_operation<link_account_operation>();
 
-      bts::blockchain::operation_factory::instance().register_operation<short_operation_v2>();
+      bts::blockchain::operation_factory::instance().register_operation<short_operation>();
       return true;
    }();
 

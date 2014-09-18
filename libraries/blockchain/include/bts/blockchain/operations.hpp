@@ -44,7 +44,7 @@ namespace bts { namespace blockchain {
       /** market operations */
       bid_op_type                   = 12,
       ask_op_type                   = 13,
-      short_op_type                 = 14,
+      short_op_type                 = 14, /* Deprecated */
       cover_op_type                 = 15,
       add_collateral_op_type        = 16,
       remove_collateral_op_type     = 17,
@@ -55,7 +55,7 @@ namespace bts { namespace blockchain {
       burn_op_type                  = 20,
       link_account_op_type          = 21,
 
-      short_v2_op_type              = 34
+      short_op_v2_type              = 34
    };
 
    /**
@@ -130,7 +130,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (update_feed_op_type)
                  (burn_op_type)
                  (link_account_op_type)
-                 (short_v2_op_type)
+                 (short_op_v2_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

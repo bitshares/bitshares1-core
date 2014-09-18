@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
                           const address& owner,
                           const optional<price>& limit_price )
    {
-      short_operation_v2 op;
+      short_operation op;
       op.amount = quantity.amount;
       op.short_index.order_price = price_per_unit;
       op.short_index.owner = owner;
@@ -248,8 +248,8 @@ namespace bts { namespace blockchain {
               case short_op_type:
                   if( op.as<short_operation_v1>().amount < 0 ) return true;
                   break;
-              case short_v2_op_type:
-                  if( op.as<short_operation_v2>().amount < 0 ) return true;
+              case short_op_v2_type:
+                  if( op.as<short_operation>().amount < 0 ) return true;
                   break;
               default:
                   break;
