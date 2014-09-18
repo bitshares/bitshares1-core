@@ -447,8 +447,8 @@ namespace bts { namespace wallet {
                  auto existing_account_record = _wallet_db.lookup_account( key_rec->account_address );
                  if( existing_account_record.valid() )
                  {
-                    account_record& blockchain_account_record = *existing_account_record;
-                    blockchain_account_record = scanned_account_record;
+                    blockchain::account_record& as_blockchain_account_record = *existing_account_record;
+                    as_blockchain_account_record = scanned_account_record;
                     _wallet_db.cache_account( *existing_account_record );
                  }
               }
@@ -910,8 +910,8 @@ namespace bts { namespace wallet {
           auto account_name_rec = _blockchain->get_account_record( op.name );
           FC_ASSERT( account_name_rec.valid() );
 
-          blockchain::account_record& tmp = *opt_account;
-          tmp = *account_name_rec;
+          blockchain::account_record& as_blockchain_account_record = *opt_account;
+          as_blockchain_account_record = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
           for( auto& entry : trx_rec.ledger_entries )
@@ -951,8 +951,8 @@ namespace bts { namespace wallet {
           auto account_name_rec = _blockchain->get_account_record( oaccount->name );
           FC_ASSERT( account_name_rec.valid() );
 
-          blockchain::account_record& tmp = *opt_account;
-          tmp = *account_name_rec;
+          blockchain::account_record& as_blockchain_account_record = *opt_account;
+          as_blockchain_account_record = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
           if( !opt_account->is_my_account )
@@ -2251,8 +2251,16 @@ namespace bts { namespace wallet {
          wlog( "current account is valid... ${account}", ("account",*current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
+
+         if( current_registered_account.valid() )
+         {
+             blockchain::account_record& as_blockchain_account_record = *current_account;
+             as_blockchain_account_record = *current_registered_account;
+         }
+
          if( !private_data.is_null() )
             current_account->private_data = private_data;
+
          my->_wallet_db.cache_account( *current_account );
          return;
       }
@@ -2266,8 +2274,15 @@ namespace bts { namespace wallet {
                          "Provided key already belongs to another wallet account! Provided: ${p}, existing: ${e}",
                          ("p",account_name)("e",current_account->name) );
 
+             if( current_registered_account.valid() )
+             {
+                 blockchain::account_record& as_blockchain_account_record = *current_account;
+                 as_blockchain_account_record = *current_registered_account;
+             }
+
              if( !private_data.is_null() )
                 current_account->private_data = private_data;
+
              my->_wallet_db.cache_account( *current_account );
              return;
          }
@@ -2892,7 +2907,7 @@ namespace bts { namespace wallet {
       for( auto& delegate_record : delegate_records )
       {
           delegate_record.block_production_enabled = enabled;
-          my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
+          my->_wallet_db.cache_account( delegate_record );
       }
 
       const auto empty_after = get_my_delegates( enabled_delegate_status ).empty();
@@ -4290,7 +4305,7 @@ namespace bts { namespace wallet {
    {
       get_account( account_to_update ); /* Just to check input */
       auto oacct = my->_wallet_db.lookup_account( account_to_update );
-
+      FC_ASSERT( oacct.valid() );
       oacct->private_data = private_data;
       my->_wallet_db.cache_account( *oacct );
    }
