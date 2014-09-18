@@ -5267,9 +5267,6 @@ namespace bts { namespace wallet {
 
       auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
 
-#ifndef WIN32
-#warning [UNTESTED] Non-base asset fees need to be tested!
-#endif
       if( desired_fee_asset_id != 0 )
       {
          const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );

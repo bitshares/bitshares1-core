@@ -74,12 +74,16 @@ namespace bts { namespace net
       struct queued_message
       {
         message        message_to_send;
+        size_t         message_send_time_field_offset;
         fc::time_point enqueue_time;
         fc::time_point transmission_start_time;
         fc::time_point transmission_finish_time;
 
-        queued_message(message message_to_send, fc::time_point enqueue_time = fc::time_point::now()) :
+        queued_message(message message_to_send, 
+                       size_t message_send_time_field_offset = (size_t)-1, 
+                       fc::time_point enqueue_time = fc::time_point::now()) :
           message_to_send(std::move(message_to_send)),
+          message_send_time_field_offset(message_send_time_field_offset),
           enqueue_time(enqueue_time)
         {}
       };
@@ -93,7 +97,8 @@ namespace bts { namespace net
       peer_connection_direction direction;
       //connection_state state;
       firewalled_state is_firewalled;
-      fc::microseconds latency;
+      fc::microseconds clock_offset;
+      fc::microseconds round_trip_delay;
 
       our_connection_state our_state;
       bool they_have_requested_close;
@@ -190,7 +195,7 @@ namespace bts { namespace net
       void on_message(message_oriented_connection* originating_connection, const message& received_message) override;
       void on_connection_closed(message_oriented_connection* originating_connection) override;
 
-      void send_message(const message& message_to_send);
+      void send_message(const message& message_to_send, size_t message_send_time_field_offset = (size_t)-1);
       void close_connection();
       void destroy_connection();
 
