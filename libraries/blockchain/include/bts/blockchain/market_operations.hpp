@@ -7,7 +7,7 @@ namespace bts { namespace blockchain {
 
    struct bid_operation
    {
-        static const operation_type_enum type; 
+        static const operation_type_enum type;
         bid_operation():amount(0){}
 
         /** bid amount is in the quote unit */
@@ -20,7 +20,7 @@ namespace bts { namespace blockchain {
 
    struct ask_operation
    {
-        static const operation_type_enum type; 
+        static const operation_type_enum type;
         ask_operation():amount(0){}
 
         asset             get_amount()const { return asset( amount, ask_index.order_price.base_asset_id ); }
@@ -32,7 +32,7 @@ namespace bts { namespace blockchain {
 
    struct short_operation_v1
    {
-        static const operation_type_enum type; 
+        static const operation_type_enum type;
         short_operation_v1():amount(0){}
 
         asset            get_amount()const { return asset( amount, 0 ); }
@@ -46,7 +46,7 @@ namespace bts { namespace blockchain {
 
    struct short_operation_v2
    {
-        static const operation_type_enum type; 
+        static const operation_type_enum type;
         short_operation_v2():amount(0){}
 
         asset            get_amount()const { return asset( amount, 0 ); }
@@ -57,10 +57,10 @@ namespace bts { namespace blockchain {
 
         void evaluate( transaction_evaluation_state& eval_state );
    };
-   
+
    struct cover_operation
    {
-        static const operation_type_enum type; 
+        static const operation_type_enum type;
         cover_operation():amount(0){}
         cover_operation( share_type a, const market_index_key& idx )
         :amount(a),cover_index(idx){}
@@ -76,7 +76,7 @@ namespace bts { namespace blockchain {
 
    struct add_collateral_operation
    {
-        static const operation_type_enum type; 
+        static const operation_type_enum type;
         add_collateral_operation(share_type amount = 0, market_index_key cover_index = market_index_key())
           : amount(amount), cover_index(cover_index){}
 
@@ -89,7 +89,7 @@ namespace bts { namespace blockchain {
 
    struct remove_collateral_operation
    {
-        static const operation_type_enum type; 
+        static const operation_type_enum type;
         remove_collateral_operation():amount(0){}
 
         share_type   amount;
