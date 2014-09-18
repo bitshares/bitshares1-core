@@ -3462,7 +3462,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    }
 
    vector<market_order>    client_impl::blockchain_market_list_shorts( const string& quote_symbol,
-                                                                       uint32_t limit  )
+                                                                       uint32_t limit  )const
    {
       return _chain_db->get_market_shorts( quote_symbol, limit );
    }
