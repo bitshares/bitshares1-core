@@ -883,6 +883,14 @@ namespace bts { namespace blockchain {
             _block_num_to_id_db.store( block_data.block_num, block_id );
 
             // self->sanity_check();
+
+            if( block_data.block_num == BTSX_BURN_FORK_1_BLOCK_NUM )
+            {
+                auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
+                FC_ASSERT( base_asset_record.valid() );
+                base_asset_record->current_share_supply = self->calculate_base_supply().amount;
+                self->store_asset_record( *base_asset_record );
+            }
          }
          catch ( const fc::exception& e )
          {
