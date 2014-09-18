@@ -1261,7 +1261,7 @@
                "description" : "the account that will provide funds for the ask"
             },
             {
-               "name" : "short_id",
+               "name" : "cover_id",
                "type" : "order_id",
                "description" : "the ID of the order to recollateralize"
             },
@@ -1291,7 +1291,7 @@
             },
             {
                "name" : "limit",
-               "type" : "int64_t",
+               "type" : "uint32_t",
                "description" : "the maximum number of items to return",
                "default_value" : -1
             },
@@ -1318,7 +1318,7 @@
             },
             {
                "name" : "limit",
-               "type" : "int64_t",
+               "type" : "uint32_t",
                "description" : "the maximum number of items to return",
                "default_value" : -1
             }

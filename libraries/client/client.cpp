@@ -3518,24 +3518,24 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    }
 
    wallet_transaction_record client_impl::wallet_market_add_collateral( const std::string &from_account_name,
-                                                                        const order_id_type &short_id,
+                                                                        const order_id_type &cover_id,
                                                                         const share_type &collateral_to_add )
    {
-      const auto record = _wallet->add_collateral( from_account_name, short_id, collateral_to_add );
+      const auto record = _wallet->add_collateral( from_account_name, cover_id, collateral_to_add );
       network_broadcast_transaction( record.trx );
       return record;
    }
 
    map<order_id_type, market_order> client_impl::wallet_account_order_list( const string& account_name,
-                                                                            int64_t limit )
+                                                                            uint32_t limit )
    {
       return _wallet->get_market_orders( account_name, limit );
    }
 
    map<order_id_type, market_order> client_impl::wallet_market_order_list( const string& quote_symbol,
-                                                                            const string& base_symbol,
-                                                                            int64_t limit,
-                                                                            const string& account_name )
+                                                                           const string& base_symbol,
+                                                                           uint32_t limit,
+                                                                           const string& account_name )
    {
       return _wallet->get_market_orders( quote_symbol, base_symbol, limit, account_name );
    }
