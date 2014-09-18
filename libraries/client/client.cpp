@@ -2144,25 +2144,26 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         return result_feeds;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("asset",asset) ) }
 
-    vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate(const std::string& delegate_name) const
+    vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( const string& delegate_name )const
     { try {
-        auto delegate_record = _chain_db->get_account_record(delegate_name);
-        FC_ASSERT( delegate_record.valid(), "Unknown account name." );
+        const auto delegate_record = _chain_db->get_account_record( delegate_name );
+        if( !delegate_record.valid() || !delegate_record->is_delegate() )
+            FC_THROW_EXCEPTION( unknown_account, "Unknown delegate account!" );
 
-        auto raw_feeds = _chain_db->get_feeds_from_delegate(delegate_record->id);
+        const auto raw_feeds = _chain_db->get_feeds_from_delegate( delegate_record->id );
         vector<feed_entry> result_feeds;
-        for( auto feed : raw_feeds )
-        {
-            auto delegate = _chain_db->get_account_record(feed.feed.delegate_id);
-            if( !delegate )
-              FC_THROW_EXCEPTION( unknown_account, "Unknown delegate", ("delegate_id", feed.feed.delegate_id) );
-            string asset = _chain_db->get_asset_symbol(feed.feed.feed_id);
-            double price = _chain_db->to_pretty_price_double(feed.value.as<blockchain::price>());
-            auto omedian_price = _chain_db->get_median_delegate_price(feed.feed.feed_id);
-            fc::optional<double> median_price;
-            if( omedian_price ) median_price = _chain_db->to_pretty_price_double(*omedian_price);
+        result_feeds.reserve( raw_feeds.size() );
 
-            result_feeds.push_back({delegate->name, price, feed.last_update, asset, median_price});
+        for( const auto& raw_feed : raw_feeds )
+        {
+            const double price = _chain_db->to_pretty_price_double( raw_feed.value.as<blockchain::price>() );
+            const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.feed.feed_id );
+            const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.feed.feed_id );
+            fc::optional<double> median_price;
+            if( omedian_price )
+                median_price = _chain_db->to_pretty_price_double( *omedian_price );
+
+            result_feeds.push_back( feed_entry{ delegate_name, price, raw_feed.last_update, asset_symbol, median_price } );
         }
 
         return result_feeds;
