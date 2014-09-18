@@ -338,6 +338,12 @@ namespace bts { namespace net {
   struct get_current_connections_reply_message
   {
     static const core_message_type_enum type;
+    uint32_t upload_rate_one_minute;
+    uint32_t download_rate_one_minute;
+    uint32_t upload_rate_fifteen_minutes;
+    uint32_t download_rate_fifteen_minutes;
+    uint32_t upload_rate_one_hour;
+    uint32_t download_rate_one_hour;
     std::vector<current_connection_data> current_connections;
   };
 
@@ -437,7 +443,13 @@ FC_REFLECT(bts::net::current_connection_data, (connection_duration)
                                               (connection_direction)
                                               (firewalled)
                                               (user_data))
-FC_REFLECT(bts::net::get_current_connections_reply_message, (current_connections))
+FC_REFLECT(bts::net::get_current_connections_reply_message, (upload_rate_one_minute)
+                                                            (download_rate_one_minute)
+                                                            (upload_rate_fifteen_minutes)
+                                                            (download_rate_fifteen_minutes)
+                                                            (upload_rate_one_hour)
+                                                            (download_rate_one_hour)
+                                                            (current_connections))
 
 #include <unordered_map>
 #include <fc/crypto/city.hpp>

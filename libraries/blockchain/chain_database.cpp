@@ -1045,6 +1045,7 @@ namespace bts { namespace blockchain {
    void chain_database::open( const fc::path& data_dir, fc::optional<fc::path> genesis_file, std::function<void(float)> reindex_status_callback )
    { try {
       bool must_rebuild_index = !fc::exists( data_dir / "index" );
+      std::exception_ptr error_opening_database;
       try
       {
           //This function will yield the first time it is called. Do that now, before calling push_block
@@ -1174,12 +1175,17 @@ namespace bts { namespace blockchain {
              ++pending_itr;
           }
       }
-      catch( ... )
+      catch (...)
       {
-          elog( "error opening database" );
-          close();
-          fc::remove_all( data_dir / "index" );
-          throw;
+        error_opening_database = std::current_exception();
+      }
+
+      if (error_opening_database)
+      {
+        elog( "error opening database" );
+        close();
+        fc::remove_all( data_dir / "index" );
+        std::rethrow_exception(error_opening_database);
       }
 
    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
