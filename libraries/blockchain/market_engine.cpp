@@ -12,6 +12,22 @@ class market_engine
           _prior_state = ps;
       }
 
+      void cancel_all_shorts()
+      {
+          auto short_itr  = _db_impl._short_db.begin();
+          while( short_itr.valid() )
+          {
+              auto market_idx = short_itr.key();
+              auto quote_asset = _pending_state->get_asset_record( market_idx.order_price.quote_asset_id );
+
+              _current_bid =  market_order( short_order, short_itr.key(), short_itr.value() );
+              market_transaction mtrx;
+              cancel_current_short( mtrx,  *quote_asset );
+              push_market_transaction(mtrx);
+              ++short_itr;
+          }
+      }
+
       void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try {
