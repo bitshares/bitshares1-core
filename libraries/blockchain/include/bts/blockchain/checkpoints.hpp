@@ -5,8 +5,10 @@
 const static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCKS
 {
     {      1, bts::blockchain::block_id_type( "8abcfb93c52f999e3ef5288c4f837f4f15af5521" ) },
-    { 225000, bts::blockchain::block_id_type( "2e09195c3e4ef6d58736151ea22f78f08556e6a9" ) },
-    { 442700, bts::blockchain::block_id_type( "c22e2dc1954f7d3a9620048d64587018e98c03f8" ) },
-    { 452700, bts::blockchain::block_id_type( "b678b7b86a8b05593df49acc5e8ba62f7177276e" ) },
-    { 470000, bts::blockchain::block_id_type( "3051d50d14149abfdece236f0cd9c5bdfa814cdc" ) }
+    { 100000, bts::blockchain::block_id_type( "96f98d49722848a6a47ad04aece8b9f93c9e9c23" ) },
+    { 200000, bts::blockchain::block_id_type( "222ddc49db592103c51ad22cdc4140185ef564d9" ) },
+    { 300000, bts::blockchain::block_id_type( "0d1d0b8f7f1f4590f8e083edc03869383ed74e3e" ) },
+    { 400000, bts::blockchain::block_id_type( "053d398b6597d5c61365afd100d87b824bf49f65" ) },
+    { 500000, bts::blockchain::block_id_type( "f02910a7115fb826984ce3a432cb371d5d7a99b8" ) },
+    { 520000, bts::blockchain::block_id_type( "46c1ba3b7ef95586876cf609a127696ba54a4e3d" ) }
 };
