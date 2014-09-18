@@ -46,12 +46,12 @@ namespace bts { namespace net {
      {
         msg_type = T::type;
         data     = fc::raw::pack(m);
-        size     = data.size();
+        size     = (uint32_t)data.size();
      }
 
      fc::uint160_t id()const
      {
-        return fc::ripemd160::hash( data.data(), data.size() );
+        return fc::ripemd160::hash( data.data(), (uint32_t)data.size() );
      }
 
 

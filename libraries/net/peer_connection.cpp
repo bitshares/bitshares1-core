@@ -235,6 +235,15 @@ namespace bts { namespace net
           dlog("peer_connection::send_queued_messages_task() calling message_oriented_connection::send_message() "
                "to send message of type ${type} for peer ${endpoint}",
                ("type", _queued_messages.front().message_to_send.msg_type)("endpoint", get_remote_endpoint()));
+          if (_queued_messages.front().message_send_time_field_offset != (size_t)-1)
+          {
+            // patch the current time into the message.  Since this operates on the packed version of the structure,
+            // it won't work for anything after a variable-length field
+            std::vector<char> packed_current_time = fc::raw::pack(fc::time_point::now());
+            assert(_queued_messages.front().message_send_time_field_offset + packed_current_time.size() <= _queued_messages.front().message_to_send.data.size());
+            memcpy(_queued_messages.front().message_to_send.data.data() + _queued_messages.front().message_send_time_field_offset,
+                   packed_current_time.data(), packed_current_time.size());
+          }
           _message_connection.send_message(_queued_messages.front().message_to_send);
           dlog("peer_connection::send_queued_messages_task()'s call to message_oriented_connection::send_message() completed normally for peer ${endpoint}",
                ("endpoint", get_remote_endpoint()));
@@ -272,12 +281,12 @@ namespace bts { namespace net
       dlog("leaving peer_connection::send_queued_messages_task() due to queue exhaustion");
     }
 
-    void peer_connection::send_message( const message& message_to_send )
+    void peer_connection::send_message(const message& message_to_send, size_t message_send_time_field_offset)
     {
       VERIFY_CORRECT_THREAD();
       dlog("peer_connection::send_message() enqueueing message of type ${type} for peer ${endpoint}",
            ("type", message_to_send.msg_type)("endpoint", get_remote_endpoint()));
-      _queued_messages.emplace(queued_message(message_to_send));
+      _queued_messages.emplace(queued_message(message_to_send, message_send_time_field_offset));
       _total_queued_messages_size += message_to_send.size;
       if (_total_queued_messages_size > BTS_NET_MAXIMUM_QUEUED_MESSAGES_IN_BYTES)
       {
