@@ -133,17 +133,18 @@ class market_engine
 
                 if( _current_ask->type == cover_order && _current_bid->type == short_order )
                 {
-                   mtrx.bid_price = _market_stat.avg_price_1h;
-                   mtrx.ask_price = _market_stat.avg_price_1h;
-                   FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
+
+                   mtrx.bid_price = _market_stat.avg_price_1h;
+                   mtrx.ask_price = _market_stat.avg_price_1h;
+
+                   FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
                    if( _current_bid->state.short_price_limit.valid() )
                    {
                       if( *_current_bid->state.short_price_limit < mtrx.bid_price )
                       {
-                         elog( "." );
                          _current_bid.reset();
                          continue; // skip shorts that are over the price limit.
                       }
@@ -170,13 +171,9 @@ class market_engine
 
                    if( *mtrx.bid_collateral < mtrx.ask_paid )
                    {
-                       elog( "Skipping Short for Insufficient Collateral" );
                        edump( (mtrx) );
                        _current_bid.reset(); // skip this bid, its price is too low
                        continue;
-                       market_stat->bid_depth -= mtrx.bid_collateral->amount;
-                       // cancel short... too little collateral at these prices
-                       cancel_current_short( mtrx, *quote_asset );
                    }
 
                    order_did_execute = true;
