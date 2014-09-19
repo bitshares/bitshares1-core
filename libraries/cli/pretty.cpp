@@ -194,9 +194,6 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     const auto asset_reg_fee = info["asset_reg_fee"].as<share_type>();
     info["asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( asset_reg_fee ) );
 
-    const auto min_market_depth = info["min_market_depth"].as<share_type>();
-    info["min_market_depth"] = client->get_chain()->to_pretty_asset( asset( min_market_depth ) );
-
     out << fc::json::to_pretty_string( info ) << "\n";
     return out.str();
 }

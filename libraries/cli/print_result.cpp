@@ -724,8 +724,8 @@ namespace bts { namespace cli {
 
     auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     auto status = client->get_chain()->get_market_status(quote_id, base_id);
-    auto max_short_price = status ? status->avg_price_1h : price(0, quote_id, base_id);
-    auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->avg_price_1h;
+    auto max_short_price = status ? status->center_price : price(0, quote_id, base_id);
+    auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->center_price;
 
     vector<market_order> shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
     shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&max_short_price](const market_order& short_order) -> bool {
@@ -852,7 +852,6 @@ namespace bts { namespace cli {
 
         out << "Bid Depth: " << client->get_chain()->to_pretty_asset(asset(status->bid_depth, base_id)) << "     ";
         out << "Ask Depth: " << client->get_chain()->to_pretty_asset(asset(status->ask_depth, base_id)) << "     ";
-        out << "Min Depth: " << client->get_chain()->to_pretty_asset(asset(BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT)) << "\n";
         if(status->last_error)
         {
           out << "Last Error:  ";

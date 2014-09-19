@@ -211,7 +211,7 @@ BOOST_FIXTURE_TEST_CASE( rapid_price_change, nathan_fixture )
     }
     produce_block(clienta);
 
-    double avg_price = clienta->blockchain_market_status("USD", "XTS").avg_price_1h;
+    double avg_price = clienta->blockchain_market_status("USD", "XTS").center_price;
     double target_price = avg_price * 2.0 / 3.0;
 
     exec(clienta, "wallet_market_cancel_order XTS5N1fDwFABDNsP37rTZfsfmkq84eneWotk");
@@ -226,13 +226,13 @@ BOOST_FIXTURE_TEST_CASE( rapid_price_change, nathan_fixture )
     exec(clienta, "blockchain_market_order_book USD XTS");
 
     int blocks = 0;
-    while (clienta->blockchain_market_status("USD", "XTS").avg_price_1h > target_price) {
+    while (clienta->blockchain_market_status("USD", "XTS").center_price > target_price) {
         exec(clienta, "ask delegate25 .00001 XTS .00000000001 USD");
 
         produce_block(clienta);
         ++blocks;
     }
-    std::cout << "Moved the price by 1/3 (from " << avg_price << " to " << clienta->blockchain_market_status("USD", "XTS").avg_price_1h << ") in " << blocks << " blocks.\n";
+    std::cout << "Moved the price by 1/3 (from " << avg_price << " to " << clienta->blockchain_market_status("USD", "XTS").center_price << ") in " << blocks << " blocks.\n";
 
     exec(clienta, "blockchain_market_order_book USD XTS");
 
