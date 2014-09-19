@@ -194,7 +194,7 @@ Returns:
 
 aliases: market_book
 default (unlocked) >>> blockchain_market_order_book XMO XTS
-                  BIDS (* Short Order)                                       |                                   ASKS                                  
+                  BIDS (* Short Wall)                                        |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 1,500.00 XMO              500.00000 XTS                   3.000000000000 XMO | 4.000000000000 XMO                      100.00000 XTS                400.00 XMO
@@ -203,7 +203,7 @@ OK
 default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> blockchain_market_order_book XMO  XTS
-                  BIDS (* Short Order)                                       |                                   ASKS                                  
+                  BIDS (* Short Wall)                                        |                                   ASKS                                  
 TOTAL                     QUANTITY                                     PRICE | PRICE                                        QUANTITY                     TOTAL   COLLATERAL
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 1,500.00 XMO              500.00000 XTS                   3.000000000000 XMO | 4.000000000000 XMO                      100.00000 XTS                400.00 XMO

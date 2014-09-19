@@ -4068,7 +4068,8 @@ namespace bts { namespace net { namespace detail {
 
   void node::set_node_delegate( node_delegate* del )
   {
-    INVOKE_IN_IMPL(set_node_delegate, del, &fc::thread::current());
+    fc::thread* delegate_thread = &fc::thread::current();
+    INVOKE_IN_IMPL(set_node_delegate, del, delegate_thread);
   }
 
   void node::load_configuration( const fc::path& configuration_directory )
