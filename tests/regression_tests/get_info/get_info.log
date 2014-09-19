@@ -33,7 +33,7 @@ default (unlocked) >>> get_info
   "wallet_unlocked": true,
   "wallet_unlocked_until": "[redacted]",
   "wallet_unlocked_until_timestamp": "[redacted]",
-  "wallet_last_scanned_block_timestamp": null,
+  "wallet_last_scanned_block_timestamp": "[redacted]",
   "wallet_scan_progress": "100.00 %",
   "wallet_block_production_enabled": true,
   "wallet_next_block_production_time": "[redacted]",
