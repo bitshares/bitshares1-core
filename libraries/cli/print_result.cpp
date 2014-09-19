@@ -997,6 +997,7 @@ namespace bts { namespace cli {
           << "\nTo:           " << email.header.recipient
           << "\nDate:         " << pretty_timestamp(email.header.timestamp)
           << "\nSubject:      " << content.subject
+          << (content.reply_to != mail::message_id_type()? "\nIn Reply To:  " + content.reply_to.str() : std::string())
           << "\n\n"
           << content.body << "\n";
       break;

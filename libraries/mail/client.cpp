@@ -441,11 +441,12 @@ public:
     }
 
     void finalize_message(message_id_type message_id) {
-        ulog("Email ${id} sent successfully.", ("id", message_id));
         mail_record email = _processing_db.fetch(message_id);
+        ulog("Email ${id} sent successfully, and is now known as ${newid}.", ("id", message_id)("newid", email.content.id()));
+        email.id = email.content.id();
         email.status = client::accepted;
         _mail_index.insert(email_header(email));
-        _archive.store(message_id, std::move(email));
+        _archive.store(email.id, std::move(email));
         _processing_db.remove(message_id);
     }
 
@@ -699,7 +700,7 @@ email_record client::get_message(message_id_type message_id) {
     return my->get_message(message_id);
 }
 
-message_id_type client::send_email(const string &from, const string &to, const string &subject, const string &body) {
+message_id_type client::send_email(const string &from, const string &to, const string &subject, const string &body, const message_id_type& reply_to) {
     FC_ASSERT(my->_wallet->is_open());
     FC_ASSERT(my->_wallet->is_unlocked());
     FC_ASSERT(my->is_open());
@@ -708,11 +709,11 @@ message_id_type client::send_email(const string &from, const string &to, const s
     oaccount_record recipient = my->_chain->get_account_record(to);
     FC_ASSERT(recipient, "Could not find recipient account: ${name}", ("name", to));
 
-    //All mail shall be addressed to the owner key, but it is encrypted with the active key.
+    //All mail shall be addressed to the owner key, but encrypted with the active key.
     detail::mail_record email(from,
                               to,
                               recipient->owner_key,
-                              my->_wallet->mail_create(from, recipient->active_key(), subject, body));
+                              my->_wallet->mail_encrypt(recipient->active_key(), my->_wallet->mail_create(from, subject, body, reply_to)));
     my->process_outgoing_mail(email);
 
     return email.id;
@@ -758,7 +759,10 @@ email_header::email_header(const detail::mail_record &processing_record)
       timestamp(processing_record.content.timestamp)
 {
     if (processing_record.content.type == email)
-        subject = processing_record.content.as<signed_email_message>().subject;
+    {
+        auto sem = processing_record.content.as<signed_email_message>();
+        subject = sem.subject;
+    }
 }
 
 email_header::email_header(const detail::mail_archive_record& archive_record)
@@ -768,7 +772,10 @@ email_header::email_header(const detail::mail_archive_record& archive_record)
       timestamp(archive_record.content.timestamp)
 {
     if (archive_record.content.type == email)
-        subject = archive_record.content.as<signed_email_message>().subject;
+    {
+        auto sem = archive_record.content.as<signed_email_message>();
+        subject = sem.subject;
+    }
 }
 
 email_record::email_record(const detail::mail_record& processing_record)
