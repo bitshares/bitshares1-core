@@ -473,9 +473,12 @@ namespace bts { namespace net { namespace detail {
 
       fc::future<void> _fetch_updated_peer_lists_loop_done;
 
-      boost::circular_buffer<uint32_t> _average_network_usage_seconds;
-      boost::circular_buffer<uint32_t> _average_network_usage_minutes;
-      boost::circular_buffer<uint32_t> _average_network_usage_hours;
+      boost::circular_buffer<uint32_t> _average_network_read_speed_seconds;
+      boost::circular_buffer<uint32_t> _average_network_write_speed_seconds;
+      boost::circular_buffer<uint32_t> _average_network_read_speed_minutes;
+      boost::circular_buffer<uint32_t> _average_network_write_speed_minutes;
+      boost::circular_buffer<uint32_t> _average_network_read_speed_hours;
+      boost::circular_buffer<uint32_t> _average_network_write_speed_hours;
       unsigned _average_network_usage_second_counter;
       unsigned _average_network_usage_minute_counter;
 
@@ -528,7 +531,7 @@ namespace bts { namespace net { namespace detail {
       void terminate_inactive_connections_loop();
 
       void fetch_updated_peer_lists_loop();
-      void update_bandwidth_data(uint32_t usage_this_second);
+      void update_bandwidth_data(uint32_t bytes_read_this_second, uint32_t bytes_written_this_second);
       void bandwidth_monitor_loop();
       void dump_node_status_task();
 
@@ -725,9 +728,12 @@ namespace bts { namespace net { namespace detail {
       _rate_limiter( 0, 0 ),
       _last_reported_number_of_connections( 0 ),
       _peer_advertising_disabled(false),
-      _average_network_usage_seconds(60),
-      _average_network_usage_minutes(60),
-      _average_network_usage_hours(72),
+      _average_network_read_speed_seconds(60),
+      _average_network_write_speed_seconds(60),
+      _average_network_read_speed_minutes(60),
+      _average_network_write_speed_minutes(60),
+      _average_network_read_speed_hours(72),
+      _average_network_write_speed_hours(72),
       _average_network_usage_second_counter(0),
       _average_network_usage_minute_counter(0),
       _node_is_shutting_down(false)
@@ -1316,22 +1322,27 @@ namespace bts { namespace net { namespace detail {
                                                              fc::time_point::now() + fc::minutes(15),
                                                              "fetch_updated_peer_lists_loop" );
     }
-    void node_impl::update_bandwidth_data(uint32_t usage_this_second)
+    void node_impl::update_bandwidth_data(uint32_t bytes_read_this_second, uint32_t bytes_written_this_second)
     {
       VERIFY_CORRECT_THREAD();
-      _average_network_usage_seconds.push_back(usage_this_second);
+      _average_network_read_speed_seconds.push_back(bytes_read_this_second);
+      _average_network_write_speed_seconds.push_back(bytes_written_this_second);
       ++_average_network_usage_second_counter;
       if (_average_network_usage_second_counter >= 60)
       {
         _average_network_usage_second_counter = 0;
         ++_average_network_usage_minute_counter;
-        uint32_t average_this_minute = (uint32_t)boost::accumulate(_average_network_usage_seconds, UINT64_C(0)) / (uint32_t)_average_network_usage_seconds.size();
-        _average_network_usage_minutes.push_back(average_this_minute);
+        uint32_t average_read_this_minute = (uint32_t)boost::accumulate(_average_network_read_speed_seconds, UINT64_C(0)) / (uint32_t)_average_network_read_speed_seconds.size();
+        _average_network_read_speed_minutes.push_back(average_read_this_minute);
+        uint32_t average_written_this_minute = (uint32_t)boost::accumulate(_average_network_write_speed_seconds, UINT64_C(0)) / (uint32_t)_average_network_write_speed_seconds.size();
+        _average_network_write_speed_minutes.push_back(average_written_this_minute);
         if (_average_network_usage_minute_counter >= 60)
         {
           _average_network_usage_minute_counter = 0;
-          uint32_t average_this_hour = (uint32_t)boost::accumulate(_average_network_usage_minutes, UINT64_C(0)) / (uint32_t)_average_network_usage_minutes.size();
-          _average_network_usage_hours.push_back(average_this_hour);
+          uint32_t average_read_this_hour = (uint32_t)boost::accumulate(_average_network_read_speed_minutes, UINT64_C(0)) / (uint32_t)_average_network_read_speed_minutes.size();
+          _average_network_read_speed_hours.push_back(average_read_this_hour);
+          uint32_t average_written_this_hour = (uint32_t)boost::accumulate(_average_network_write_speed_minutes, UINT64_C(0)) / (uint32_t)_average_network_write_speed_minutes.size();
+          _average_network_write_speed_hours.push_back(average_written_this_hour);
         }
       }
     }
@@ -1345,10 +1356,11 @@ namespace bts { namespace net { namespace detail {
 
       uint32_t seconds_since_last_update = current_time.sec_since_epoch() - _bandwidth_monitor_last_update_time.sec_since_epoch();
       seconds_since_last_update = std::max(UINT32_C(1), seconds_since_last_update);
-      uint32_t usage_this_second = _rate_limiter.get_actual_download_rate() + _rate_limiter.get_actual_upload_rate();
+      uint32_t bytes_read_this_second = _rate_limiter.get_actual_download_rate();
+      uint32_t bytes_written_this_second = _rate_limiter.get_actual_upload_rate();
       for (uint32_t i = 0; i < seconds_since_last_update - 1; ++i)
-        update_bandwidth_data(0);
-      update_bandwidth_data(usage_this_second);
+        update_bandwidth_data(0, 0);
+      update_bandwidth_data(bytes_read_this_second, bytes_written_this_second);
       _bandwidth_monitor_last_update_time = current_time;
 
       if (!_node_is_shutting_down && !_bandwidth_monitor_loop_done.canceled())
@@ -2855,20 +2867,22 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       get_current_connections_reply_message reply;
 
-      if (!_average_network_usage_minutes.empty())
+      if (!_average_network_read_speed_minutes.empty())
       {
-        reply.upload_rate_one_minute = _average_network_usage_minutes.back();
-        reply.download_rate_one_minute = _average_network_usage_minutes.back();
+        reply.upload_rate_one_minute = _average_network_write_speed_minutes.back();
+        reply.download_rate_one_minute = _average_network_read_speed_minutes.back();
 
-        size_t minutes_to_average = std::min(_average_network_usage_minutes.size(), (size_t)15);
-        boost::circular_buffer<uint32_t>::iterator start_iter = _average_network_usage_minutes.end() - minutes_to_average;
-        reply.upload_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
-        reply.download_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
+        size_t minutes_to_average = std::min(_average_network_write_speed_minutes.size(), (size_t)15);
+        boost::circular_buffer<uint32_t>::iterator start_iter = _average_network_write_speed_minutes.end() - minutes_to_average;
+        reply.upload_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_write_speed_minutes.end(), 0) / (uint32_t)minutes_to_average;
+        start_iter = _average_network_read_speed_minutes.end() - minutes_to_average;
+        reply.download_rate_fifteen_minutes = std::accumulate(start_iter, _average_network_read_speed_minutes.end(), 0) / (uint32_t)minutes_to_average;
 
-        minutes_to_average = std::min(_average_network_usage_minutes.size(), (size_t)60);
-        start_iter = _average_network_usage_minutes.end() - minutes_to_average;
-        reply.upload_rate_one_hour = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
-        reply.download_rate_one_hour = std::accumulate(start_iter, _average_network_usage_minutes.end(), 0) / minutes_to_average;
+        minutes_to_average = std::min(_average_network_write_speed_minutes.size(), (size_t)60);
+        start_iter = _average_network_write_speed_minutes.end() - minutes_to_average;
+        reply.upload_rate_one_hour = std::accumulate(start_iter, _average_network_write_speed_minutes.end(), 0) / (uint32_t)minutes_to_average;
+        start_iter = _average_network_read_speed_minutes.end() - minutes_to_average;
+        reply.download_rate_one_hour = std::accumulate(start_iter, _average_network_read_speed_minutes.end(), 0) / (uint32_t)minutes_to_average;
       }
 
       fc::time_point now = fc::time_point::now();
@@ -4032,9 +4046,27 @@ namespace bts { namespace net { namespace detail {
     fc::variant_object node_impl::network_get_usage_stats() const
     {
       VERIFY_CORRECT_THREAD();
-      std::vector<uint32_t> network_usage_by_second(_average_network_usage_seconds.begin(), _average_network_usage_seconds.end());
-      std::vector<uint32_t> network_usage_by_minute(_average_network_usage_minutes.begin(), _average_network_usage_minutes.end());
-      std::vector<uint32_t> network_usage_by_hour(_average_network_usage_hours.begin(), _average_network_usage_hours.end());
+      std::vector<uint32_t> network_usage_by_second;
+      network_usage_by_second.reserve(_average_network_read_speed_seconds.size());
+      std::transform(_average_network_read_speed_seconds.begin(), _average_network_read_speed_seconds.end(),
+                     _average_network_write_speed_seconds.begin(), 
+                     std::back_inserter(network_usage_by_second),
+                     std::plus<uint32_t>());
+
+      std::vector<uint32_t> network_usage_by_minute;
+      network_usage_by_minute.reserve(_average_network_read_speed_minutes.size());
+      std::transform(_average_network_read_speed_minutes.begin(), _average_network_read_speed_minutes.end(),
+                     _average_network_write_speed_minutes.begin(),
+                     std::back_inserter(network_usage_by_minute),
+                     std::plus<uint32_t>());
+
+      std::vector<uint32_t> network_usage_by_hour;
+      network_usage_by_hour.reserve(_average_network_read_speed_hours.size());
+      std::transform(_average_network_read_speed_hours.begin(), _average_network_read_speed_hours.end(),
+                     _average_network_write_speed_hours.begin(),
+                     std::back_inserter(network_usage_by_hour),
+                     std::plus<uint32_t>());
+
       fc::mutable_variant_object result;
       result["usage_by_second"] = network_usage_by_second;
       result["usage_by_minute"] = network_usage_by_minute;
@@ -4068,7 +4100,8 @@ namespace bts { namespace net { namespace detail {
 
   void node::set_node_delegate( node_delegate* del )
   {
-    INVOKE_IN_IMPL(set_node_delegate, del, &fc::thread::current());
+    fc::thread* delegate_thread = &fc::thread::current();
+    INVOKE_IN_IMPL(set_node_delegate, del, delegate_thread);
   }
 
   void node::load_configuration( const fc::path& configuration_directory )

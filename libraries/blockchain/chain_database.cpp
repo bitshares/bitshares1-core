@@ -768,26 +768,24 @@ namespace bts { namespace blockchain {
       { try {
         vector<market_transaction> market_transactions;
 
-        const auto pending_block_num = pending_state->get_head_block_num();
-        if( pending_block_num == BTSX_MARKET_FORK_7_BLOCK_NUM )
-        {
-            market_engine engine( pending_state, *this );
-            engine.cancel_all_shorts();
-            market_transactions.insert( market_transactions.end(),
-                                        engine._market_transactions.begin(),
-                                        engine._market_transactions.end() );
-        }
-
         const auto dirty_markets = pending_state->get_dirty_markets();
         //dlog( "execute markets ${e}", ("e",dirty_markets) );
+
+        const auto pending_block_num = pending_state->get_head_block_num();
 
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num >= BTSX_MARKET_FORK_7_BLOCK_NUM )
+           if( pending_block_num > BTSX_MARKET_FORK_7_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+           else if( pending_block_num == BTSX_MARKET_FORK_7_BLOCK_NUM )
+           {
+              market_engine engine( pending_state, *this );
+              engine.cancel_all_shorts();
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
            else if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
@@ -2403,7 +2401,6 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order )
    {
-      wlog( "STORE ASK ${k} ${o}", ("k",key)("o",order) );
       if( order.is_null() )
          my->_ask_db.remove( key );
       else

@@ -10,7 +10,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     138
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     139
 
 /**
  *  The address prepended to string representation of
@@ -86,22 +86,6 @@
  * by 100 so that new shares may be issued without exceeding BTS_BLOCKCHAIN_MAX_SHARES
  */
 #define BTS_BLOCKCHAIN_INITIAL_SHARES                       (BTS_BLOCKCHAIN_MAX_SHARES/5)
-
-/**
- *   How much XTS must be allocated between the short/ask sides of the market before
- *   trading can begin.   The purpose of this is to prevent trading shorts/asks/covers
- *   when there is not enough depth to represent meaningful consensus.
- *
- *   In theory someone with BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT shares could cause
- *   a bitasset to start at any price they like.  If they start the price too low then
- *   the asset will never be able to track.   The assumption is that when a new DAC is
- *   launched anyone with 1% or more has no financial interest in attacking and if they
- *   did their stake could be removed and the chain relaunched or a new BitAsset could
- *   be created.
- *
- *   Currently set to 1% of the share in the DAC, or 0.5% for each side of the market.
- */
-#define BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT             0 //(BTS_BLOCKCHAIN_INITIAL_SHARES/200000000)
 
 /**
  *  The number of blocks expected per hour based upon the BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC

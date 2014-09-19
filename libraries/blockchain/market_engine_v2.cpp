@@ -87,7 +87,7 @@ class market_engine_v2
              {
                 if( quote_asset->is_market_issued() )
                 {
-                   if( market_stat->avg_price_1h.ratio == fc::uint128_t() )
+                   if( market_stat->center_price.ratio == fc::uint128_t() )
                    {
                       if( !median_price )
                       {
@@ -95,7 +95,7 @@ class market_engine_v2
                       }
                       else
                       {
-                         market_stat->avg_price_1h = *median_price;
+                         market_stat->center_price = *median_price;
                       }
                    }
                    max_short_bid = market_stat->maximum_bid();
@@ -106,7 +106,7 @@ class market_engine_v2
                       if( median_price )
                          max_short_bid = *median_price;
                       else
-                         max_short_bid = market_stat->avg_price_1h;
+                         max_short_bid = market_stat->center_price;
                    }
                 }
                 else // we only liquidate fees collected for user issued assets
@@ -492,12 +492,12 @@ class market_engine_v2
              {
                 if( median_price && pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
                 {
-                   market_stat->avg_price_1h = *median_price;
+                   market_stat->center_price = *median_price;
                 }
                 else
                 {
                    // after the market is running solid we can use this metric...
-                   market_stat->avg_price_1h.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
+                   market_stat->center_price.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
                    if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
                    {
@@ -505,38 +505,38 @@ class market_engine_v2
 
                       // limit the maximum movement rate of the price.
                       if( _current_bid->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                         market_stat->center_price.ratio += min_cover_ask.ratio;
                       else if( _current_bid->get_price() > max_bid )
-                         market_stat->avg_price_1h.ratio += max_bid.ratio; //max_short_bid.ratio;
+                         market_stat->center_price.ratio += max_bid.ratio; //max_short_bid.ratio;
                       else
-                         market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
+                         market_stat->center_price.ratio += _current_bid->get_price().ratio;
 
                       if( _current_ask->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                         market_stat->center_price.ratio += min_cover_ask.ratio;
                       else if( _current_ask->get_price() > max_bid )
-                         market_stat->avg_price_1h.ratio += max_bid.ratio;
+                         market_stat->center_price.ratio += max_bid.ratio;
                       else
-                         market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
+                         market_stat->center_price.ratio += _current_ask->get_price().ratio;
                    }
                    else
                    {
                       // limit the maximum movement rate of the price.
                       if( _current_bid->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                         market_stat->center_price.ratio += min_cover_ask.ratio;
                       else if( _current_bid->get_price() > max_short_bid )
-                         market_stat->avg_price_1h.ratio += max_short_bid.ratio;
+                         market_stat->center_price.ratio += max_short_bid.ratio;
                       else
-                         market_stat->avg_price_1h.ratio += _current_bid->get_price().ratio;
+                         market_stat->center_price.ratio += _current_bid->get_price().ratio;
 
                       if( _current_ask->get_price() < min_cover_ask )
-                         market_stat->avg_price_1h.ratio += min_cover_ask.ratio;
+                         market_stat->center_price.ratio += min_cover_ask.ratio;
                       else if( _current_ask->get_price() > max_short_bid )
-                         market_stat->avg_price_1h.ratio += max_short_bid.ratio;
+                         market_stat->center_price.ratio += max_short_bid.ratio;
                       else
-                         market_stat->avg_price_1h.ratio += _current_ask->get_price().ratio;
+                         market_stat->center_price.ratio += _current_ask->get_price().ratio;
                    }
 
-                   market_stat->avg_price_1h.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
+                   market_stat->center_price.ratio /= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR+1);
                 }
              }
 
@@ -921,7 +921,7 @@ class market_engine_v2
                                                 trading_volume.amount);
 
                FC_ASSERT( market_stat );
-               new_record.recent_average_price = market_stat->avg_price_1h;
+               new_record.recent_average_price = market_stat->center_price;
 
                //LevelDB iterators are dumb and don't support proper past-the-end semantics.
                auto last_key_itr = _db_impl._market_history_db.lower_bound(key);

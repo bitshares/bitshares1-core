@@ -1679,26 +1679,33 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             fc::remove_all( data_dir / "exceptions" );
             my->_exception_db.open( data_dir / "exceptions", true );
           }
+          //FIXME: is it really correct to continue here without rethrowing?
         }
 
+        bool attempt_to_recover_database = false;
         try
         {
           my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
         }
         catch( const db::db_in_use_exception& e )
         {
-          if( e.to_string().find("Corruption") != string::npos )
+          if (e.to_string().find("Corruption") != string::npos)
           {
             elog("Chain database corrupted. Deleting it and attempting to recover.");
-            fc::remove_all( data_dir / "chain" );
-            my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
+            attempt_to_recover_database = true;
           }
+          //FIXME: is it really correct to continue here without rethrowing?
         }
         catch ( const wrong_chain_id& )
         {
           elog("Wrong chain ID. Deleting database and attempting to recover.");
-          fc::remove_all( data_dir / "chain" );
-          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          attempt_to_recover_database = true;
+        }
+
+        if (attempt_to_recover_database)
+        {
+          fc::remove_all(data_dir / "chain");
+          my->_chain_db->open(data_dir / "chain", genesis_file_path, reindex_status_callback);
         }
 
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
@@ -3073,8 +3080,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        info["asset_reg_fee"]                = _chain_db->get_asset_registration_fee();
        info["asset_shares_max"]             = BTS_BLOCKCHAIN_MAX_SHARES;
 
-       info["min_market_depth"]             = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
-
        info["max_pending_queue_size"]       = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]           = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -3811,13 +3816,13 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       FC_ASSERT( oresult );
 
       api_market_status result(*oresult);
-      if( oresult->avg_price_1h.ratio == fc::uint128() )
+      if( oresult->center_price.ratio == fc::uint128() )
       {
         oprice median_delegate_price = _chain_db->get_median_delegate_price(qrec->id);
-        result.avg_price_1h = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
+        result.center_price = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
       }
       else
-        result.avg_price_1h = _chain_db->to_pretty_price_double(oresult->avg_price_1h);
+        result.center_price = _chain_db->to_pretty_price_double(oresult->center_price);
       return result;
    }
 
