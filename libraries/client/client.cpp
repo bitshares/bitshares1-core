@@ -3073,8 +3073,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        info["asset_reg_fee"]                = _chain_db->get_asset_registration_fee();
        info["asset_shares_max"]             = BTS_BLOCKCHAIN_MAX_SHARES;
 
-       info["min_market_depth"]             = BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT;
-
        info["max_pending_queue_size"]       = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
        info["max_trx_per_second"]           = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
@@ -3811,13 +3809,13 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       FC_ASSERT( oresult );
 
       api_market_status result(*oresult);
-      if( oresult->avg_price_1h.ratio == fc::uint128() )
+      if( oresult->center_price.ratio == fc::uint128() )
       {
         oprice median_delegate_price = _chain_db->get_median_delegate_price(qrec->id);
-        result.avg_price_1h = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
+        result.center_price = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
       }
       else
-        result.avg_price_1h = _chain_db->to_pretty_price_double(oresult->avg_price_1h);
+        result.center_price = _chain_db->to_pretty_price_double(oresult->center_price);
       return result;
    }
 

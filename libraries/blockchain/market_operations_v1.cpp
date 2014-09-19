@@ -65,7 +65,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
       /**
        *  If there is an average, then keep it within 10% of the average.
        */
-      if( market_stat->avg_price_1h.quote_asset_id != 0 )
+      if( market_stat->center_price.quote_asset_id != 0 )
       {
          FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
       }
@@ -111,7 +111,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    if( !market_stat )
       market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
 
-   if( market_stat->avg_price_1h.quote_asset_id != 0 )
+   if( market_stat->center_price.quote_asset_id != 0 )
    {
       FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
    }
