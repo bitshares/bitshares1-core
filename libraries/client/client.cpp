@@ -1679,26 +1679,33 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             fc::remove_all( data_dir / "exceptions" );
             my->_exception_db.open( data_dir / "exceptions", true );
           }
+          //FIXME: is it really correct to continue here without rethrowing?
         }
 
+        bool attempt_to_recover_database = false;
         try
         {
           my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
         }
         catch( const db::db_in_use_exception& e )
         {
-          if( e.to_string().find("Corruption") != string::npos )
+          if (e.to_string().find("Corruption") != string::npos)
           {
             elog("Chain database corrupted. Deleting it and attempting to recover.");
-            fc::remove_all( data_dir / "chain" );
-            my->_chain_db->open( data_dir / "chain", genesis_file_path, reindex_status_callback );
+            attempt_to_recover_database = true;
           }
+          //FIXME: is it really correct to continue here without rethrowing?
         }
         catch ( const wrong_chain_id& )
         {
           elog("Wrong chain ID. Deleting database and attempting to recover.");
-          fc::remove_all( data_dir / "chain" );
-          my->_chain_db->open( data_dir / "chain", genesis_file_path );
+          attempt_to_recover_database = true;
+        }
+
+        if (attempt_to_recover_database)
+        {
+          fc::remove_all(data_dir / "chain");
+          my->_chain_db->open(data_dir / "chain", genesis_file_path, reindex_status_callback);
         }
 
         my->_wallet = std::make_shared<bts::wallet::wallet>( my->_chain_db, my->_config.wallet_enabled );
