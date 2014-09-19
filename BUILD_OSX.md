@@ -68,5 +68,6 @@ Building BitShares Toolkit on OS X 10.9
     export CMAKE_PREFIX_PATH=~/Qt/5.3/
     make buildweb
     cmake -DINCLUDE_QT_WALLET=TRUE -DCMAKE_PREFIX_PATH=/usr/local/ssl  .
+    make
 
 By default, the web wallet will not be rebuilt even after pulling new changes. To force the web wallet to rebuild, use `make forcebuildweb`.

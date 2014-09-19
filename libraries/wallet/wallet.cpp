@@ -447,8 +447,8 @@ namespace bts { namespace wallet {
                  auto existing_account_record = _wallet_db.lookup_account( key_rec->account_address );
                  if( existing_account_record.valid() )
                  {
-                    account_record& blockchain_account_record = *existing_account_record;
-                    blockchain_account_record = scanned_account_record;
+                    blockchain::account_record& as_blockchain_account_record = *existing_account_record;
+                    as_blockchain_account_record = scanned_account_record;
                     _wallet_db.cache_account( *existing_account_record );
                  }
               }
@@ -910,8 +910,8 @@ namespace bts { namespace wallet {
           auto account_name_rec = _blockchain->get_account_record( op.name );
           FC_ASSERT( account_name_rec.valid() );
 
-          blockchain::account_record& tmp = *opt_account;
-          tmp = *account_name_rec;
+          blockchain::account_record& as_blockchain_account_record = *opt_account;
+          as_blockchain_account_record = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
           for( auto& entry : trx_rec.ledger_entries )
@@ -951,8 +951,8 @@ namespace bts { namespace wallet {
           auto account_name_rec = _blockchain->get_account_record( oaccount->name );
           FC_ASSERT( account_name_rec.valid() );
 
-          blockchain::account_record& tmp = *opt_account;
-          tmp = *account_name_rec;
+          blockchain::account_record& as_blockchain_account_record = *opt_account;
+          as_blockchain_account_record = *account_name_rec;
           _wallet_db.cache_account( *opt_account );
 
           if( !opt_account->is_my_account )
@@ -2251,8 +2251,16 @@ namespace bts { namespace wallet {
          wlog( "current account is valid... ${account}", ("account",*current_account) );
          FC_ASSERT( current_account->account_address == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
+
+         if( current_registered_account.valid() )
+         {
+             blockchain::account_record& as_blockchain_account_record = *current_account;
+             as_blockchain_account_record = *current_registered_account;
+         }
+
          if( !private_data.is_null() )
             current_account->private_data = private_data;
+
          my->_wallet_db.cache_account( *current_account );
          return;
       }
@@ -2266,8 +2274,15 @@ namespace bts { namespace wallet {
                          "Provided key already belongs to another wallet account! Provided: ${p}, existing: ${e}",
                          ("p",account_name)("e",current_account->name) );
 
+             if( current_registered_account.valid() )
+             {
+                 blockchain::account_record& as_blockchain_account_record = *current_account;
+                 as_blockchain_account_record = *current_registered_account;
+             }
+
              if( !private_data.is_null() )
                 current_account->private_data = private_data;
+
              my->_wallet_db.cache_account( *current_account );
              return;
          }
@@ -2892,7 +2907,7 @@ namespace bts { namespace wallet {
       for( auto& delegate_record : delegate_records )
       {
           delegate_record.block_production_enabled = enabled;
-          my->_wallet_db.cache_account( delegate_record ); //store_record( *delegate_record );
+          my->_wallet_db.cache_account( delegate_record );
       }
 
       const auto empty_after = get_my_delegates( enabled_delegate_status ).empty();
@@ -4290,7 +4305,7 @@ namespace bts { namespace wallet {
    {
       get_account( account_to_update ); /* Just to check input */
       auto oacct = my->_wallet_db.lookup_account( account_to_update );
-
+      FC_ASSERT( oacct.valid() );
       oacct->private_data = private_data;
       my->_wallet_db.cache_account( *oacct );
    }
@@ -4984,7 +4999,7 @@ namespace bts { namespace wallet {
 
    wallet_transaction_record wallet::add_collateral(
            const string& from_account_name,
-           const order_id_type& short_id,
+           const order_id_type& cover_id,
            share_type collateral_to_add,
            bool sign )
    { try {
@@ -4993,9 +5008,9 @@ namespace bts { namespace wallet {
        if (!is_receive_account(from_account_name)) FC_CAPTURE_AND_THROW (unknown_receive_account);
        if (collateral_to_add <= 0) FC_CAPTURE_AND_THROW (bad_collateral_amount);
 
-       const auto order = my->_blockchain->get_market_order( short_id );
+       const auto order = my->_blockchain->get_market_order( cover_id, cover_order );
        if( !order.valid() )
-           FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+           FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that cover order!" );
 
        const auto owner_address = order->get_owner();
        const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
@@ -5032,7 +5047,7 @@ namespace bts { namespace wallet {
        cache_transaction( trx, record );
 
        return record;
-   } FC_CAPTURE_AND_RETHROW((from_account_name)(short_id)(collateral_to_add)(sign)) }
+   } FC_CAPTURE_AND_RETHROW((from_account_name)(cover_id)(collateral_to_add)(sign)) }
 
    wallet_transaction_record wallet::cover_short(
            const string& from_account_name,
@@ -5047,16 +5062,7 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( unknown_receive_account, (from_account_name) );
        if( real_quantity_usd < 0 ) FC_CAPTURE_AND_THROW( negative_bid, (real_quantity_usd) );
 
-       optional<market_order> order;
-       const auto covers = my->_blockchain->get_market_covers( quote_symbol );
-       for( const auto& cover : covers )
-       {
-           if( cover.get_id() == cover_id )
-           {
-               order = cover;
-               break;
-           }
-       }
+       const auto order = my->_blockchain->get_market_order( cover_id, cover_order );
        if( !order.valid() )
            FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that cover order!" );
 
@@ -5176,9 +5182,6 @@ namespace bts { namespace wallet {
 
       auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
 
-#ifndef WIN32
-#warning [UNTESTED] Non-base asset fees need to be tested!
-#endif
       if( desired_fee_asset_id != 0 )
       {
          const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
@@ -6134,28 +6137,36 @@ namespace bts { namespace wallet {
       return account_keys;
    }
 
-   map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, int32_t limit )const
+   map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, uint32_t limit )const
    {
-      auto db = &(my->_wallet_db);
-      auto orders = my->_blockchain->get_market_orders( [db, account_name]( market_order order) {
-          auto okey = db->lookup_key( order.get_owner() );
-          if( !okey.valid() )
-              return false;
-          auto oacct = db->lookup_account( okey->account_address );
-          if( !oacct.valid() )
-              return false;
-          return (oacct->name == account_name || account_name == "ALL");
-      }, limit);
-      auto order_map = map<order_id_type, market_order>();
-      for( auto item : orders )
+      map<order_id_type, market_order> order_map;
+
+      const auto filter = [&]( const market_order& order ) -> bool
       {
-          order_map[ item.get_id() ] = item;
-      }
+          const auto okey = my->_wallet_db.lookup_key( order.get_owner() );
+          if( !okey.valid() || !okey->has_private_key() )
+              return false;
+
+          if( account_name == "ALL" )
+              return true;
+
+          const auto oaccount = my->_wallet_db.lookup_account( okey->account_address );
+          if( !oaccount.valid() )
+              return false;
+
+          return oaccount->name == account_name;
+      };
+
+      const auto orders = my->_blockchain->get_market_orders( filter, limit );
+      for( const auto& order : orders )
+          order_map[ order.get_id() ] = order;
+
       return order_map;
    }
 
+   // TODO: We don't need this anymore
    map<order_id_type, market_order> wallet::get_market_orders( const string& quote_symbol, const string& base_symbol,
-                                                               int32_t limit, const string& account_name)const
+                                                               uint32_t limit, const string& account_name)const
    { try {
       auto bids   = my->_blockchain->get_market_bids( quote_symbol, base_symbol );
       auto asks   = my->_blockchain->get_market_asks( quote_symbol, base_symbol );

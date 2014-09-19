@@ -351,6 +351,7 @@
            }
         ],
         "prerequisites" : ["no_prerequisites"],
+        "is_const" : true,
         "aliases" : ["market_shorts"]
       },
       {

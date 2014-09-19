@@ -253,7 +253,7 @@ namespace bts { namespace blockchain {
                                                                uint32_t limit = uint32_t(-1) );
          vector<market_order>               get_market_covers( const string& quote_symbol,
                                                                uint32_t limit = uint32_t(-1) );
-   
+
          share_type                         get_asset_collateral( const string& symbol );
 
          virtual omarket_order              get_lowest_ask_record( const asset_id_type& quote_id,
@@ -263,9 +263,9 @@ namespace bts { namespace blockchain {
                                                              const string& base_symbol,
                                                              uint32_t limit = uint32_t(-1) );
 
-         // TODO: Specify order type and/or market
-         vector<market_order>               get_market_orders( std::function<bool(market_order)> filter, int32_t limit ) const;
-         optional<market_order>             get_market_order( const order_id_type& order_id )const;
+         vector<market_order>               get_market_orders( std::function<bool( const market_order& )> filter,
+                                                               uint32_t limit = -1, order_type_enum type = null_order )const;
+         optional<market_order>             get_market_order( const order_id_type& order_id, order_type_enum type = null_order )const;
 
          void                               scan_assets( function<void( const asset_record& )> callback );
          void                               scan_balances( function<void( const balance_record& )> callback );

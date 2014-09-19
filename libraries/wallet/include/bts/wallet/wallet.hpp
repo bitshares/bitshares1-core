@@ -486,9 +486,9 @@ namespace bts { namespace wallet {
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
-         map<order_id_type, market_order>   get_market_orders( const string& account_name, int32_t limit)const;
+         map<order_id_type, market_order>   get_market_orders( const string& account_name, uint32_t limit)const;
          map<order_id_type, market_order>   get_market_orders( const string& quote, const string& base,
-                                                               int32_t limit, const string& account_name )const;
+                                                               uint32_t limit, const string& account_name )const;
 
          vector<wallet_transaction_record>  get_transaction_history( const string& account_name = string(),
                                                                      uint32_t start_block_num = 0,

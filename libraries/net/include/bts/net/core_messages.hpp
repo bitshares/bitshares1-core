@@ -38,25 +38,27 @@ namespace bts { namespace net {
 
   enum core_message_type_enum
   {
-    trx_message_type                           = 1000,
-    block_message_type                         = 1001,
-    core_message_type_first                    = 5000,
-    item_ids_inventory_message_type            = 5001,
-    blockchain_item_ids_inventory_message_type = 5002,
-    fetch_blockchain_item_ids_message_type     = 5003,
-    fetch_items_message_type                   = 5004,
-    item_not_available_message_type            = 5005,
-    hello_message_type                         = 5006,
-    connection_accepted_message_type           = 5007,
-    connection_rejected_message_type           = 5008,
-    address_request_message_type               = 5009,
-    address_message_type                       = 5010,
-    closing_connection_message_type            = 5011,
-    current_time_request_message_type          = 5012,
-    current_time_reply_message_type            = 5013,
-    check_firewall_message_type                = 5014,
-    check_firewall_reply_message_type          = 5015,
-    core_message_type_last                     = 5099
+    trx_message_type                             = 1000,
+    block_message_type                           = 1001,
+    core_message_type_first                      = 5000,
+    item_ids_inventory_message_type              = 5001,
+    blockchain_item_ids_inventory_message_type   = 5002,
+    fetch_blockchain_item_ids_message_type       = 5003,
+    fetch_items_message_type                     = 5004,
+    item_not_available_message_type              = 5005,
+    hello_message_type                           = 5006,
+    connection_accepted_message_type             = 5007,
+    connection_rejected_message_type             = 5008,
+    address_request_message_type                 = 5009,
+    address_message_type                         = 5010,
+    closing_connection_message_type              = 5011,
+    current_time_request_message_type            = 5012,
+    current_time_reply_message_type              = 5013,
+    check_firewall_message_type                  = 5014,
+    check_firewall_reply_message_type            = 5015,
+    get_current_connections_request_message_type = 5016,
+    get_current_connections_reply_message_type   = 5017,
+    core_message_type_last                       = 5099
   };
 
   const uint32_t core_protocol_version = BTS_NET_PROTOCOL_VERSION;
@@ -287,7 +289,7 @@ namespace bts { namespace net {
     current_time_reply_message(){}
     current_time_reply_message(const fc::time_point& request_sent_time,
                                const fc::time_point& request_received_time,
-                               const fc::time_point& reply_transmitted_time) :
+                               const fc::time_point& reply_transmitted_time = fc::time_point()) :
       request_sent_time(request_sent_time),
       request_received_time(request_received_time),
       reply_transmitted_time(reply_transmitted_time)
@@ -316,6 +318,36 @@ namespace bts { namespace net {
     fc::enum_type<uint8_t, firewall_check_result> result;
   };
 
+  struct get_current_connections_request_message
+  {
+    static const core_message_type_enum type;
+  };
+
+  struct current_connection_data
+  {
+    uint32_t           connection_duration; // in seconds
+    fc::ip::endpoint   remote_endpoint;
+    node_id_t          node_id;
+    fc::microseconds   clock_offset;
+    fc::microseconds   round_trip_delay;
+    fc::enum_type<uint8_t, peer_connection_direction> connection_direction;
+    fc::enum_type<uint8_t, firewalled_state> firewalled;
+    fc::variant_object user_data;
+  };
+
+  struct get_current_connections_reply_message
+  {
+    static const core_message_type_enum type;
+    uint32_t upload_rate_one_minute;
+    uint32_t download_rate_one_minute;
+    uint32_t upload_rate_fifteen_minutes;
+    uint32_t download_rate_fifteen_minutes;
+    uint32_t upload_rate_one_hour;
+    uint32_t download_rate_one_hour;
+    std::vector<current_connection_data> current_connections;
+  };
+
+
 } } // bts::client
 
 FC_REFLECT_ENUM( bts::net::core_message_type_enum, 
@@ -337,6 +369,8 @@ FC_REFLECT_ENUM( bts::net::core_message_type_enum,
                  (current_time_reply_message_type)
                  (check_firewall_message_type)
                  (check_firewall_reply_message_type)
+                 (get_current_connections_request_message_type)
+                 (get_current_connections_reply_message_type)
                  (core_message_type_last) )
 FC_REFLECT( bts::net::item_id, (item_type)
                                (item_hash) )
@@ -400,6 +434,22 @@ FC_REFLECT_ENUM(bts::net::firewall_check_result, (unable_to_check)
                                                  (connection_successful))
 FC_REFLECT(bts::net::check_firewall_message, (node_id)(endpoint_to_check))
 FC_REFLECT(bts::net::check_firewall_reply_message, (node_id)(endpoint_checked)(result))
+FC_REFLECT_EMPTY(bts::net::get_current_connections_request_message)
+FC_REFLECT(bts::net::current_connection_data, (connection_duration)
+                                              (remote_endpoint)
+                                              (node_id)
+                                              (clock_offset)
+                                              (round_trip_delay)
+                                              (connection_direction)
+                                              (firewalled)
+                                              (user_data))
+FC_REFLECT(bts::net::get_current_connections_reply_message, (upload_rate_one_minute)
+                                                            (download_rate_one_minute)
+                                                            (upload_rate_fifteen_minutes)
+                                                            (download_rate_fifteen_minutes)
+                                                            (upload_rate_one_hour)
+                                                            (download_rate_one_hour)
+                                                            (current_connections))
 
 #include <unordered_map>
 #include <fc/crypto/city.hpp>

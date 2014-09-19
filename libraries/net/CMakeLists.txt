@@ -1,10 +1,5 @@
 file(GLOB HEADERS "include/bts/net/*.hpp")
 
-if (THREADED_P2P)
-  message(STATUS "Enabling dedicated thread for P2P code")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DP2P_IN_DEDICATED_THREAD")
-endif()
-    
 set(SOURCES node.cpp
             stcp_socket.cpp
             core_messages.cpp
