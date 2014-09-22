@@ -2123,6 +2123,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return oasset_record();
     }
 
+    share_type detail::client_impl::blockchain_get_true_supply( const string& symbol )const
+    {
+        return _chain_db->get_true_supply( symbol );
+    }
+
+
     //TODO: Refactor: most of these next two functions are identical. Should extract a function.
     vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
     { try {

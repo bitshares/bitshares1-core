@@ -1436,6 +1436,33 @@ namespace bts { namespace blockchain {
       return oasset_record();
    }
 
+   share_type      chain_database::get_true_supply( const string& symbol)const
+   {
+      share_type supply = 0;
+      auto oasset = get_asset_record( symbol );
+      FC_ASSERT(oasset.valid());
+      auto asset_id = oasset->id;
+      auto itr = my->_balance_db.begin();
+      while( itr.valid() )
+      {
+          if( itr.value().asset_id() == asset_id )
+              supply += itr.value().balance;
+          ++itr;
+      }
+
+      auto bid_itr = my->_bid_db.begin();
+      while( bid_itr.valid() )
+      {
+          if( bid_itr.key().order_price.quote_asset_id == asset_id )
+          {
+              supply += bid_itr.value().balance;
+          }
+          ++itr;
+      }
+      supply += oasset->collected_fees;
+      return supply;
+   }
+
    oaccount_record chain_database::get_account_record( const address& account_owner )const
    { try {
       auto itr = my->_address_to_account_db.find( account_owner );
