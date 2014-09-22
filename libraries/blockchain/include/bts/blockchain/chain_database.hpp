@@ -284,6 +284,7 @@ namespace bts { namespace blockchain {
          virtual oaccount_record            get_account_record( const address& owner )const override;
 
          virtual oasset_record              get_asset_record( const string& symbol )const override;
+         share_type                         get_true_supply( const string& symbol)const;
          virtual oaccount_record            get_account_record( const string& name )const override;
 
          virtual void                       store_asset_record( const asset_record& r )override;
