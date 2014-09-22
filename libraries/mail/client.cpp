@@ -119,6 +119,7 @@ public:
     client* self;
     wallet_ptr _wallet;
     chain_database_ptr _chain;
+    uint32_t _messages_in;
 
     typedef std::queue<message_id_type> job_queue;
 
@@ -529,8 +530,10 @@ public:
             _inbox.remove(message_id);
     }
 
-    void check_new_mail() {
+    int check_new_mail() {
         auto accounts = _wallet->list_my_accounts();
+        _messages_in = 0;
+
         for (wallet_account_record account : accounts) {
             auto servers = get_mail_servers_for_recipient(account.name);
             vector<fc::future<void>> fetch_tasks;
@@ -592,7 +595,6 @@ public:
                                 return;
                             }
 
-
                             message ciphertext = response["result"].as<message>();
                             message plaintext = _wallet->mail_open(account.account_address, ciphertext);
                             email_header header;
@@ -604,9 +606,22 @@ public:
                             header.recipient = account.name;
                             header.timestamp = plaintext.timestamp;
                             mail_archive_record record(std::move(ciphertext), header, account.account_address);
+                            bool new_mail = false;
+
+                            if (auto optional_record = _archive.fetch_optional(email.second))
+                                record = *optional_record;
+                            else
+                                new_mail = true;
+
+                            record.mail_servers.insert(server);
+
                             _archive.store(email.second, record);
                             _mail_index.insert(header);
-                            _inbox.store(header.id, header);
+
+                            if (new_mail) {
+                                _inbox.store(header.id, header);
+                                ++_messages_in;
+                            }
                         }
                     }
                 }, "Mail client fetcher"));
@@ -627,6 +642,8 @@ public:
             timeout_future.cancel("Finished fetching");
             _property_db.store("last_fetch/" + account.name, variant(check_time));
         }
+
+        return _messages_in;
     }
 };
 
@@ -672,10 +689,13 @@ void client::archive_message(message_id_type message_id_type)
     my->archive_message(message_id_type);
 }
 
-void client::check_new_messages()
+int client::check_new_messages()
 {
     FC_ASSERT(my->is_open());
-    my->check_new_mail();
+    int new_messages = my->check_new_mail();
+    if (new_messages > 0)
+        new_mail_notifier(new_messages);
+    return new_messages;
 }
 
 std::multimap<client::mail_status, message_id_type> client::get_processing_messages() {

@@ -128,8 +128,8 @@
         },
         {
             "method_name": "mail_check_new_messages",
-            "description": "Check mail server for new mail.",
-            "return_type": "void",
+            "description": "Check mail server for new mail and return number of new messages.",
+            "return_type": "int32_t",
             "parameters" : [],
             "prerequisites" : ["json_authenticated","wallet_unlocked"]
         },
@@ -223,7 +223,7 @@
                     "name" : "reply_to",
                     "type" : "message_id",
                     "description" : "The ID of the email this email is in reply to.",
-                    "default_value" : "message_id_type()"
+                    "default_value" : "0000000000000000000000000000000000000000"
                 }
             ],
             "prerequisites" : ["json_authenticated","wallet_unlocked"]

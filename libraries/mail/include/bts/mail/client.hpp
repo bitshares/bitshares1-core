@@ -17,6 +17,8 @@ struct email_record;
 
 class client : public std::enable_shared_from_this<client> {
 public:
+    boost::signals2::signal<void(int)> new_mail_notifier;
+
     enum mail_status {
         submitted,              //The message has been submitted to the client for processing
         proof_of_work,          //The message is undergoing proof-of-work before transmission to server
@@ -37,7 +39,7 @@ public:
     void remove_message(message_id_type message_id);
     void archive_message(message_id_type message_id_type);
 
-    void check_new_messages();
+    int check_new_messages();
 
     std::multimap<mail_status, message_id_type> get_processing_messages();
     std::multimap<mail_status, message_id_type> get_archive_messages();
@@ -79,6 +81,8 @@ struct email_record {
         return content.id();
     }
 };
+
+typedef std::shared_ptr<client> mail_client_ptr;
 
 }
 }
