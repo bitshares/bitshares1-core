@@ -34,6 +34,8 @@
 #include <iostream>
 #include <sstream>
 
+#define BTS_NUM_SCANNING_THREADS 4
+
 namespace bts { namespace wallet {
 
    FC_REGISTER_EXCEPTIONS( (wallet_exception)
@@ -155,7 +157,7 @@ namespace bts { namespace wallet {
 
       wallet_impl::wallet_impl()
       {
-         for( uint32_t i = 0; i < 4; ++i )
+         for( uint32_t i = 0; i < BTS_NUM_SCANNING_THREADS; ++i )
          {
            _scanner_thread[i].reset( new fc::thread( "wallet_scanner") );
          }
@@ -1260,12 +1262,11 @@ namespace bts { namespace wallet {
                    vector< fc::future<void> > scan_key_progress;
                    scan_key_progress.resize( keys.size() );
                    for( uint32_t i = 0; i < keys.size(); ++i )
-                   //for( const auto& key : keys )
                    {
                       const auto& key = keys[i];
                       scan_key_progress[i] = fc::async([&,i](){
                          omemo_status status;
-                         _scanner_thread[i%4]->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
+                         _scanner_thread[i%BTS_NUM_SCANNING_THREADS]->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
                          if( status.valid() ) /* If I've successfully decrypted then it's for me */
                          {
                             cache_deposit = true;
@@ -1330,7 +1331,8 @@ namespace bts { namespace wallet {
                             }
                          }
                      });
-                   } // for
+                   } // for each key
+
                    for( auto& fut : scan_key_progress )
                    {
                       try {
