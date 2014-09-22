@@ -2116,7 +2116,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       try
       {
           ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+          if( !std::all_of( asset.begin(), asset.end(), ::isdigit ) )
               return _chain_db->get_asset_record( asset );
           else
               return _chain_db->get_asset_record( std::stoi( asset ) );
@@ -2474,7 +2474,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         std::cout << "Http server was not started, configuration error\n";
     }
 
-    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message) {
+    void detail::client_impl::ntp_update_time()
+    {
+      FC_ASSERT(blockchain::ntp_time());
+      blockchain::update_ntp_time();
+    }
+
+    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
+    {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
       _mail_server->store(owner, message);
     }
@@ -3217,9 +3224,26 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return info;
     }
 
-    asset client_impl::blockchain_calculate_base_supply()const
+    asset client_impl::blockchain_calculate_supply( const string& asset )const
     {
-        return _chain_db->calculate_base_supply();
+       asset_id_type asset_id;
+       if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
+           asset_id = std::stoi( asset );
+       else
+           asset_id = _chain_db->get_asset_id( asset );
+
+       return _chain_db->calculate_supply( asset_id );
+    }
+
+    asset client_impl::blockchain_calculate_debt( const string& asset )const
+    {
+       asset_id_type asset_id;
+       if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
+           asset_id = std::stoi( asset );
+       else
+           asset_id = _chain_db->get_asset_id( asset );
+
+       return _chain_db->calculate_debt( asset_id );
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )

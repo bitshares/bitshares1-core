@@ -198,25 +198,29 @@ namespace bts { namespace cli {
 
     _command_to_function["blockchain_unclaimed_genesis"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
+      out << client->get_chain()->to_pretty_asset( result.as<asset>() ) << "\n";
     };
 
-
-    _command_to_function["blockchain_calculate_base_supply"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    _command_to_function["blockchain_calculate_supply"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
+      out << client->get_chain()->to_pretty_asset( result.as<asset>() ) << "\n";
+    };
+
+    _command_to_function["blockchain_calculate_debt"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      out << client->get_chain()->to_pretty_asset( result.as<asset>() ) << "\n";
     };
 
     _command_to_function["network_list_potential_peers"] = &f_network_list_potential_peers;
 
     _command_to_function["wallet_set_transaction_fee"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
+      out << client->get_chain()->to_pretty_asset( result.as<asset>() ) << "\n";
     };
 
     _command_to_function["wallet_get_transaction_fee"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      out << client->get_chain()->to_pretty_asset(result.as<asset>()) << "\n";
+      out << client->get_chain()->to_pretty_asset( result.as<asset>() ) << "\n";
     };
 
     _command_to_function["mail_get_message"] = &f_mail_get_message;
