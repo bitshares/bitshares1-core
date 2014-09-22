@@ -261,9 +261,10 @@
         "return_type": "share_type",
         "parameters" : [
             {
-              "name" : "asset",
-              "type" : "string",
-              "description" : "asset ticker symbol or ID to retrieve"
+              "name" : "symbol",
+              "type" : "asset_symbol",
+              "description" : "asset ticker symbol or ID to retrieve",
+              "default_value" : "XTS"
             }
         ],
         "is_const" : true,
