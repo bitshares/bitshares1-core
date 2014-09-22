@@ -284,7 +284,6 @@ namespace bts { namespace blockchain {
          virtual oaccount_record            get_account_record( const address& owner )const override;
 
          virtual oasset_record              get_asset_record( const string& symbol )const override;
-         share_type                         get_true_supply( const string& symbol)const;
          virtual oaccount_record            get_account_record( const string& name )const override;
 
          virtual void                       store_asset_record( const asset_record& r )override;
@@ -337,7 +336,8 @@ namespace bts { namespace blockchain {
          virtual void                       set_feed( const feed_record& )override;
          virtual ofeed_record               get_feed( const feed_index& )const override;
 
-         asset                              calculate_base_supply()const;
+         asset                              calculate_supply( const asset_id_type& asset_id )const;
+         asset                              calculate_debt( const asset_id_type& asset_id )const;
          asset                              unclaimed_genesis();
 
          // TODO: Only call on pending chain state
