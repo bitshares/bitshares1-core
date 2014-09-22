@@ -1457,8 +1457,19 @@ namespace bts { namespace blockchain {
           {
               supply += bid_itr.value().balance;
           }
-          ++itr;
+          ++bid_itr;
       }
+
+      auto ask_itr = my->_ask_db.begin();
+      while( ask_itr.valid() )
+      {
+          if( ask_itr.key().order_price.base_asset_id == asset_id )
+          {
+              supply += ask_itr.value().balance;
+          }
+          ++ask_itr;
+      }
+
       supply += oasset->collected_fees;
       return supply;
    }
