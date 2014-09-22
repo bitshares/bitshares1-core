@@ -305,9 +305,6 @@ namespace bts { namespace blockchain {
 
    void burn_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_BURN_FORK_1_BLOCK_NUM )
-          FC_ASSERT( !"Burn operation is not enabled yet!" );
-
       if( message.size() ) FC_ASSERT( amount.asset_id == 0 );
       if( amount.asset_id == 0 )
       {

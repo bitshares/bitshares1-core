@@ -573,7 +573,7 @@ namespace bts { namespace blockchain {
 
             auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
             FC_ASSERT( pending_base_record.valid() );
-            if( pending_state->get_head_block_num() >= BTSX_BURN_FORK_1_BLOCK_NUM )
+            if( pending_state->get_head_block_num() >= BTSX_SUPPLY_FORK_1_BLOCK_NUM )
             {
                 pending_base_record->collected_fees -= max_available_paycheck;
             }
@@ -885,12 +885,44 @@ namespace bts { namespace blockchain {
 
             // self->sanity_check();
 
-            if( block_data.block_num == BTSX_BURN_FORK_1_BLOCK_NUM )
+            if( block_data.block_num == BTSX_SUPPLY_FORK_1_BLOCK_NUM )
             {
                 auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
                 base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
                 self->store_asset_record( *base_asset_record );
+            }
+            else if( block_data.block_num == BTSX_SUPPLY_FORK_2_BLOCK_NUM )
+            {
+                vector<asset_record> records;
+                records.reserve( 40 );
+
+                for( auto itr = _asset_db.begin(); itr.valid(); ++itr )
+                    records.push_back( itr.value() );
+
+                for( auto& record : records )
+                {
+                    asset supply = self->calculate_supply( record.id );
+                    share_type fees = record.collected_fees;
+
+                    if( record.is_market_issued() )
+                    {
+                        asset debt = self->calculate_debt( record.id );
+                        if( supply != debt )
+                        {
+                            const share_type difference = debt.amount - supply.amount;
+                            supply.amount += difference;
+                            fees += difference;
+                        }
+                    }
+
+                    if( supply.amount != record.current_share_supply || fees != record.collected_fees )
+                    {
+                        record.current_share_supply = supply.amount;
+                        record.collected_fees = fees;
+                        self->store_asset_record( record );
+                    }
+                }
             }
          }
          catch ( const fc::exception& e )
