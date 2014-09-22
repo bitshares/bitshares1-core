@@ -5,6 +5,7 @@
 
 namespace bts { namespace blockchain {
 
+   #include "market_operations_v2.cpp"
    #include "market_operations_v1.cpp"
 
    /**
@@ -192,6 +193,11 @@ namespace bts { namespace blockchain {
       if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
       {
          evaluate_v1( eval_state );
+         return;
+      }
+      else if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_8_BLOCK_NUM )
+      {
+         evaluate_v2( eval_state );
          return;
       }
 

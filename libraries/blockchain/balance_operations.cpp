@@ -5,8 +5,8 @@
 
 namespace bts { namespace blockchain {
 
-   #include "balance_operations_v1.cpp"
    #include "balance_operations_v2.cpp"
+   #include "balance_operations_v1.cpp"
 
    asset balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
    {

@@ -79,10 +79,10 @@ namespace bts { namespace blockchain {
       class chain_database_impl
       {
          public:
-            #include "market_engine_v1.cpp"
-            #include "market_engine_v2.cpp"
-            #include "market_engine_v3.cpp"
             #include "market_engine.cpp"
+            #include "market_engine_v3.cpp"
+            #include "market_engine_v2.cpp"
+            #include "market_engine_v1.cpp"
 
             void                                        open_database(const fc::path& data_dir );
             digest_type                                 initialize_genesis( const optional<path>& genesis_file, bool chain_id_only = false );
