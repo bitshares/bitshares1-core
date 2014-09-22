@@ -839,7 +839,7 @@ namespace bts { namespace cli {
         }
       }
 
-      out << "Average Price in Recent Trades: "
+      out << "Center Price: "
         << client->get_chain()->to_pretty_price(recent_average_price)
         << "     ";
 
