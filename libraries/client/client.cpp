@@ -2470,7 +2470,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         std::cout << "Http server was not started, configuration error\n";
     }
 
-    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message) {
+    void detail::client_impl::ntp_update_time()
+    {
+      FC_ASSERT(blockchain::ntp_time());
+      blockchain::update_ntp_time();
+    }
+
+    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
+    {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
       _mail_server->store(owner, message);
     }
