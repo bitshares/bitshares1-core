@@ -218,7 +218,7 @@ namespace bts { namespace wallet {
                   sync_balance_with_blockchain( bal_rec->id() );
 
               bal_rec = _blockchain->get_balance_record( withdraw_condition( withdraw_with_signature(mtrx.bid_owner),
-                                                                            mtrx.ask_price.quote_asset_id ).get_address() );
+                                                                            mtrx.bid_price.quote_asset_id ).get_address() );
               if( bal_rec.valid() )
                   sync_balance_with_blockchain( bal_rec->id() );
 
@@ -258,6 +258,7 @@ namespace bts { namespace wallet {
               }
               else /* if( mtrx.bid_type == short_order ) */
               {
+                  /* If not automatic market cancel */
                   if( mtrx.ask_paid.amount != 0
                       || mtrx.ask_received.amount != 0
                       || mtrx.bid_received.asset_id != 0
@@ -292,7 +293,7 @@ namespace bts { namespace wallet {
                           self->update_margin_position( entry );
                       }
                   }
-                  else
+                  else /* Automatic market cancel */
                   {
                       {
                           auto entry = ledger_entry();

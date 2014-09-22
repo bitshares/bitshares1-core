@@ -2112,7 +2112,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       try
       {
           ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+          if( !std::all_of( asset.begin(), asset.end(), ::isdigit ) )
               return _chain_db->get_asset_record( asset );
           else
               return _chain_db->get_asset_record( std::stoi( asset ) );
@@ -2122,12 +2122,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       }
       return oasset_record();
     }
-
-    share_type detail::client_impl::blockchain_get_true_supply( const string& symbol )const
-    {
-        return _chain_db->get_true_supply( symbol );
-    }
-
 
     //TODO: Refactor: most of these next two functions are identical. Should extract a function.
     vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std::string &asset) const
@@ -3226,9 +3220,26 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return info;
     }
 
-    asset client_impl::blockchain_calculate_base_supply()const
+    asset client_impl::blockchain_calculate_supply( const string& asset )const
     {
-        return _chain_db->calculate_base_supply();
+       asset_id_type asset_id;
+       if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
+           asset_id = std::stoi( asset );
+       else
+           asset_id = _chain_db->get_asset_id( asset );
+
+       return _chain_db->calculate_supply( asset_id );
+    }
+
+    asset client_impl::blockchain_calculate_debt( const string& asset )const
+    {
+       asset_id_type asset_id;
+       if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
+           asset_id = std::stoi( asset );
+       else
+           asset_id = _chain_db->get_asset_id( asset );
+
+       return _chain_db->calculate_debt( asset_id );
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
