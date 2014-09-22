@@ -182,6 +182,14 @@
           ],
         "is_const"   : false,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name" : "ntp_update_time",
+        "description" : "Update the NTP time right now.",
+        "return_type" : "void",
+        "parameters"  : [],
+        "is_const"   : false,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }
