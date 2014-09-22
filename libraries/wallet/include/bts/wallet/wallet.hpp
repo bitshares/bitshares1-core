@@ -535,9 +535,10 @@ namespace bts { namespace wallet {
                                    const fc::ecc::compact_signature& client_signature );
 
          mail::message mail_create( const string& sender,
-                                    const public_key_type& recipient,
                                     const string& subject,
-                                    const string& body );
+                                    const string& body,
+                                    const mail::message_id_type& reply_to = mail::message_id_type());
+         mail::message mail_encrypt( const public_key_type& recipient, const mail::message& plaintext );
          mail::message mail_open( const address& recipient, const mail::message& ciphertext );
          mail::message mail_decrypt( const address& recipient, const mail::message& ciphertext );
 

@@ -2325,16 +2325,20 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return "key not found";
     }
 
-    mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
-                                                          const std::string& recipient,
-                                                          const std::string& subject,
-                                                          const std::string& body)
+    message detail::client_impl::wallet_mail_create(const std::string& sender,
+                                                    const std::string& subject,
+                                                    const std::string& body,
+                                                    const message_id_type& reply_to)
+    {
+        return _wallet->mail_create(sender, subject, body, reply_to);
+    }
+
+    message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, const message &plaintext)
     {
         auto recipient_account = _chain_db->get_account_record(recipient);
-        if (!recipient_account.valid())
-            FC_THROW_EXCEPTION(unknown_account_name, "Could not find recipient account: ${name}", ("name", recipient));
+        FC_ASSERT(recipient_account, "Unknown recipient name.");
 
-        return _wallet->mail_create(sender, recipient_account->active_key(), subject, body);
+        return _wallet->mail_encrypt(recipient_account->active_key(), plaintext);
     }
 
     mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message& ciphertext)
@@ -2560,12 +2564,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return forward;
     }
 
-    mail::message_id_type detail::client_impl::mail_send(const std::string &from,
-                                                         const std::string &to,
-                                                         const std::string &subject,
-                                                         const std::string &body)
+    mail::message_id_type detail::client_impl::mail_send(const std::string& from,
+                                                         const std::string& to,
+                                                         const std::string& subject,
+                                                         const std::string& body,
+                                                         const message_id_type& reply_to)
     {
-      return _mail_client->send_email(from, to, subject, body);
+      FC_ASSERT(_mail_client);
+      return _mail_client->send_email(from, to, subject, body, reply_to);
     }
 
     //JSON-RPC Method Implementations END

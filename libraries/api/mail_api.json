@@ -218,6 +218,12 @@
                     "name" : "body",
                     "type" : "string",
                     "description" : "The body of the email."
+                },
+                {
+                    "name" : "reply_to",
+                    "type" : "message_id",
+                    "description" : "The ID of the email this email is in reply to.",
+                    "default_value" : "message_id_type()"
                 }
             ],
             "prerequisites" : ["json_authenticated","wallet_unlocked"]

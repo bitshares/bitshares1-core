@@ -44,7 +44,7 @@ public:
     std::vector<email_header> get_inbox();
     email_record get_message(message_id_type message_id);
 
-    message_id_type send_email(const string& from, const string& to, const string& subject, const string& body);
+    message_id_type send_email(const string& from, const string& to, const string& subject, const string& body, const message_id_type& reply_to = message_id_type());
 
     std::vector<email_header> get_messages_by_sender(string sender);
     std::vector<email_header> get_messages_by_recipient(string recipient);

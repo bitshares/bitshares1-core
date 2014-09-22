@@ -4685,7 +4685,6 @@ namespace bts { namespace wallet {
 
         edump( (order) );
 
-        auto required_fees = get_transaction_fee();
 
         if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
 
@@ -4710,7 +4709,8 @@ namespace bts { namespace wallet {
         }
 
         asset deposit_amount = balance;
-        if( balance.asset_id == 0 )
+        auto required_fees = get_transaction_fee( balance.asset_id );
+        if( balance.asset_id == required_fees.asset_id )
         {
            if( required_fees.amount < balance.amount )
            {
@@ -6315,7 +6315,7 @@ namespace bts { namespace wallet {
          if( !okey_rec.valid() )
              continue;
          auto oacct = my->_wallet_db.lookup_account( okey_rec->account_address );
-         FC_ASSERT( oacct.valid(), "Account for that account_addres doesn't exist!");
+         FC_ASSERT( oacct.valid(), "Account for that account_address doesn't exist!");
          if( oacct->name == account_name || account_name == "ALL" )
          {
              if( my->_wallet_db.has_private_key( order.get_owner() ) )
@@ -6327,20 +6327,30 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
 
    bts::mail::message wallet::mail_create(const string& sender,
-                                          const bts::blockchain::public_key_type& recipient,
                                           const string& subject,
-                                          const string& body)
+                                          const string& body,
+                                          const mail::message_id_type& reply_to)
    {
        FC_ASSERT(is_open());
        FC_ASSERT(is_unlocked());
        if(!is_receive_account(sender))
            FC_THROW_EXCEPTION(unknown_account, "Unknown sending account name!", ("sender",sender));
 
-       auto sender_key = get_active_private_key(sender);
        mail::signed_email_message plaintext;
        plaintext.subject = subject;
+       plaintext.reply_to = reply_to;
        plaintext.body = body;
+
+       auto sender_key = get_active_private_key(sender);
        plaintext.sign(sender_key);
+
+       return plaintext;
+   }
+
+   mail::message wallet::mail_encrypt(const public_key_type& recipient, const mail::message& plaintext)
+   {
+       FC_ASSERT(is_open());
+       FC_ASSERT(is_unlocked());
 
        auto one_time_key = my->create_one_time_key();
        return mail::message(plaintext).encrypt(one_time_key, recipient);

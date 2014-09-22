@@ -1663,18 +1663,13 @@
       },
       {
          "method_name" : "wallet_mail_create",
-         "description" : "Creates a new mail message and returns the encrypted message.",
+         "description" : "Creates a new mail message and returns the unencrypted message.",
          "return_type" : "message",
          "parameters"  : [
              {
                 "name" : "sender",
                 "type" : "string",
                 "description" : "The name of the message's sender."
-             },
-             {
-                "name" : "recipient",
-                "type" : "string",
-                "description" : "The name of the message's recipient."
              },
              {
                 "name" : "subject",
@@ -1685,6 +1680,30 @@
                 "name" : "body",
                 "type" : "string",
                 "description" : "The body of the message."
+             },
+             {
+                "name" : "reply_to",
+                "type" : "message_id",
+                "description" : "The ID of the message this is in reply to.",
+                "default_value" : "message_id_type()"
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_mail_encrypt",
+         "description" : "Encrypts a mail message and returns the encrypted message.",
+         "return_type" : "message",
+         "parameters"  : [
+             {
+                "name" : "recipient",
+                "type" : "string",
+                "description" : "The name of the message's recipient."
+             },
+             {
+                "name" : "plaintext",
+                "type" : "message",
+                "description" : "The plaintext message, such as from wallet_mail_create."
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
