@@ -3417,6 +3417,10 @@ namespace bts { namespace net { namespace detail {
         {
           _node_configuration = fc::json::from_file( configuration_file_name ).as<detail::node_configuration>();
           ilog( "Loaded configuration from file ${filename}", ("filename", configuration_file_name ) );
+
+          if( _node_configuration.private_key == fc::ecc::private_key() )
+            _node_configuration.private_key = fc::ecc::private_key::generate();
+
           node_configuration_loaded = true;
         }
         catch ( fc::parse_error_exception& parse_error )
