@@ -135,6 +135,7 @@ namespace bts { namespace client {
 
          chain_database_ptr         get_chain()const;
          wallet_ptr                 get_wallet()const;
+         mail_client_ptr            get_mail_client()const;
          mail_server_ptr            get_mail_server()const;
          bts::rpc::rpc_server_ptr   get_rpc_server()const;
          bts::net::node_ptr         get_node()const;

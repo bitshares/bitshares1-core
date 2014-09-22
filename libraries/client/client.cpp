@@ -1735,7 +1735,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }
-
+    mail_client_ptr client::get_mail_client()const { return my->_mail_client; }
     mail_server_ptr client::get_mail_server()const { return my->_mail_server; }
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }

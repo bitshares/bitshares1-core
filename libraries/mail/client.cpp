@@ -692,7 +692,10 @@ void client::archive_message(message_id_type message_id_type)
 int client::check_new_messages()
 {
     FC_ASSERT(my->is_open());
-    return my->check_new_mail();
+    int new_messages = my->check_new_mail();
+    if (new_messages > 0)
+        new_mail_notifier(new_messages);
+    return new_messages;
 }
 
 std::multimap<client::mail_status, message_id_type> client::get_processing_messages() {
