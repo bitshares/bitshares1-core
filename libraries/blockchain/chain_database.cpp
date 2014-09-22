@@ -888,7 +888,7 @@ namespace bts { namespace blockchain {
             {
                 auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
-                base_asset_record->current_share_supply = self->calculate_base_supply().amount;
+                base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
                 self->store_asset_record( *base_asset_record );
             }
          }
