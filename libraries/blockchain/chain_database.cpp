@@ -784,9 +784,10 @@ namespace bts { namespace blockchain {
            }
            else if( pending_block_num == BTSX_MARKET_FORK_7_BLOCK_NUM )
            {
-              market_engine engine( pending_state, *this );
-              engine.cancel_all_shorts();
-              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+              // This was never executed like it should have been
+              //market_engine engine( pending_state, *this );
+              //engine.cancel_all_shorts();
+              //market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
            else if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
            {
