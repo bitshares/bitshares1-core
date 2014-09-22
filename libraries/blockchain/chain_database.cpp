@@ -2344,7 +2344,6 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order )
    {
-      wlog( "STORE ASK ${k} ${o}", ("k",key)("o",order) );
       if( order.is_null() )
          my->_ask_db.remove( key );
       else

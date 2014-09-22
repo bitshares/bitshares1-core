@@ -119,7 +119,7 @@ namespace bts { namespace blockchain {
       order_record( share_type b )
       :balance(b){}
 
-      bool is_null() const { return 0 == balance; }
+      bool is_null() const { return balance == 0; }
 
       share_type       balance;
       optional<price>  short_price_limit;
@@ -211,14 +211,14 @@ namespace bts { namespace blockchain {
 
        price minimum_ask()const
        {
-         auto avg = avg_price_1h;
+         auto avg = center_price;
          avg.ratio *= 9;
          avg.ratio /= 10;
          return avg;
        }
        price maximum_bid()const
        {
-         auto avg = avg_price_1h;
+         auto avg = center_price;
          avg.ratio *= 10;
          avg.ratio /= 9;
          return avg;
@@ -237,7 +237,7 @@ namespace bts { namespace blockchain {
         *  number which serves as a natural rate limitor on price movement
         *  and thus limits the potential manipulation.
         */
-       price                    avg_price_1h;
+       price                    center_price;
        optional<fc::exception>  last_error;
    };
    typedef optional<market_status> omarket_status;
@@ -246,15 +246,15 @@ namespace bts { namespace blockchain {
        api_market_status(const market_status& market_stat = market_status())
          : market_status(market_stat)
        {}
-       double                   avg_price_1h;
+       double                   center_price;
    };
 
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (null_order)(bid_order)(ask_order)(short_order)(cover_order) )
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
-FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(bid_depth)(ask_depth)(avg_price_1h)(last_error) )
-FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (avg_price_1h) )
+FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(bid_depth)(ask_depth)(center_price)(last_error) )
+FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (center_price) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
 FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(opening_price)(closing_price)(volume)(recent_average_price) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
