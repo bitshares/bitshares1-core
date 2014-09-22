@@ -4609,7 +4609,6 @@ namespace bts { namespace wallet {
 
         edump( (order) );
 
-        auto required_fees = get_transaction_fee();
 
         if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
 
@@ -4634,7 +4633,8 @@ namespace bts { namespace wallet {
         }
 
         asset deposit_amount = balance;
-        if( balance.asset_id == 0 )
+        auto required_fees = get_transaction_fee( balance.asset_id );
+        if( balance.asset_id == required_fees.asset_id )
         {
            if( required_fees.amount < balance.amount )
            {
