@@ -60,7 +60,7 @@ namespace bts { namespace wallet {
              fc::future<void>                           _relocker_done;
              fc::future<void>                           _scan_in_progress;
 
-             vector<std::unique_ptr<fc::thread>>        _scanner_thread;
+             vector<std::unique_ptr<fc::thread>>        _scanner_threads;
              float                                      _scan_progress = 0;
 
              struct login_record
@@ -157,16 +157,17 @@ namespace bts { namespace wallet {
 
       wallet_impl::wallet_impl()
       {
-         for( uint32_t i = 0; i < BTS_NUM_SCANNING_THREADS; ++i )
-         {
-           _scanner_thread[i].reset( new fc::thread( "wallet_scanner") );
-         }
+          _scanner_threads.reserve( BTS_NUM_SCANNING_THREADS );
+          for( uint32_t i = 0; i < BTS_NUM_SCANNING_THREADS; ++i )
+          {
+              _scanner_threads.push_back( std::unique_ptr<fc::thread>( new fc::thread( "wallet_scanner_" + std::to_string( i ) ) ) );
+          }
       }
 
       wallet_impl::~wallet_impl()
       {
           try { 
-             for( auto& scan_thread : _scanner_thread )
+             for( auto& scan_thread : _scanner_threads )
              { 
                 if( scan_thread ) scan_thread->quit(); 
              }
@@ -1266,7 +1267,7 @@ namespace bts { namespace wallet {
                       const auto& key = keys[i];
                       scan_key_progress[i] = fc::async([&,i](){
                          omemo_status status;
-                         _scanner_thread[i%BTS_NUM_SCANNING_THREADS]->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
+                         _scanner_threads[i%BTS_NUM_SCANNING_THREADS]->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
                          if( status.valid() ) /* If I've successfully decrypted then it's for me */
                          {
                             cache_deposit = true;
