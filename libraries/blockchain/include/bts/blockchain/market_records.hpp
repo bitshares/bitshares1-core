@@ -121,9 +121,9 @@ namespace bts { namespace blockchain {
 
       bool is_null() const { return balance == 0; }
 
-      share_type       balance;
-      optional<price>  short_price_limit;
-      fc::time_point   last_update;
+      share_type            balance;
+      optional<price>       short_price_limit;
+      fc::time_point_sec    last_update;
    };
    typedef fc::optional<order_record> oorder_record;
 
