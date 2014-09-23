@@ -96,7 +96,7 @@ namespace bts { namespace wallet {
        int8_t   approved = 0;
        bool     is_favorite = false;
        bool     block_production_enabled = false;
-       uint32_t last_used_gen_sequence   = 10000;
+       uint32_t last_used_gen_sequence = 10000;
    };
 
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
@@ -167,6 +167,85 @@ namespace bts { namespace wallet {
        vector<address>           extra_addresses;
    };
 
+   // don't use -- work in progress
+   /*
+    * Example ledger entries
+    *
+claim genesis
+    addr1 -> payee | amount
+    addr2 -> payee | amount
+    …
+
+register account
+    payer -> NETWORK | fee
+
+update account
+    payer -> NETWORK | fee
+
+create asset
+    payer -> NETWORK | fee
+
+update asset
+    payer -> NETWORK | fee
+
+issue asset
+    payer -> NETWORK | fee
+    NETWORK -> payee | amount
+
+create order
+    payer -> NETWORK | fee
+    payer -> ORDER | amount
+
+cancel order ???
+    ORDER -> NETWORK | fee
+    ORDER -> payee | amount
+
+withdraw_pay
+    INCOME-name -> NETWORK | fee
+    INCOME-name -> payee
+
+publish_price/feed
+    INCOME-name -> NETWORK | fee
+
+normal transfer
+    payer -> NETWORK | fee
+    payer -> payee | amount
+    NETWORK -> payer | yield
+
+burn
+    payer -> NETWORK | fee
+    payer -> NOBODY | amount
+    *
+    */
+   struct transaction_ledger_entry
+   {
+       transaction_id_type              id;
+       uint32_t                         block_num = -1;
+       time_point_sec                   timestamp;
+
+       struct line_item
+       {
+           // string (or public key?)
+           // possible entities:
+           // { name, INCOME-name, GENESIS, {ASK,BID,SHORT,COVER}-id, NETWORK, ANONYMOUS, UNKNOWN }
+           string                       payer;
+           string                       payee;
+           //fix labels on account rename -- rare operation
+
+           asset                        amount;
+
+           string                       description;
+       };
+       vector<line_item>                line_items;
+
+       optional<transaction_id_type>    transaction_id;
+
+       //variant                        user_data;
+
+       bool is_confirmed()const { return block_num != -1; }
+       bool is_virtual()const   { return !transaction_id.valid(); }
+   };
+
 #if 0
    struct market_order_status
    {
@@ -194,12 +273,14 @@ namespace bts { namespace wallet {
    };
 
    /** cached blockchain data */
+   // TODO: Only cache balance ids
    typedef wallet_record< bts::blockchain::balance_record, balance_record_type     >  wallet_balance_record;
 
    /** records unique to the wallet */
    typedef wallet_record< transaction_data,                transaction_record_type >  wallet_transaction_record;
    typedef wallet_record< master_key,                      master_key_record_type  >  wallet_master_key_record;
    typedef wallet_record< key_data,                        key_record_type         >  wallet_key_record;
+   // TODO: Do not derive from blockchain account record
    typedef wallet_record< account,                         account_record_type     >  wallet_account_record;
    typedef wallet_record< wallet_property,                 property_record_type    >  wallet_property_record;
    //typedef wallet_record< market_order_status,             market_order_record_type>  wallet_market_order_status_record;
@@ -216,6 +297,22 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
+FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
+        (master_key_record_type)
+        (account_record_type)
+        (key_record_type)
+        (transaction_record_type)
+        (balance_record_type)
+        (property_record_type)
+        (market_order_record_type)
+        (setting_record_type)
+        )
+
+FC_REFLECT( bts::wallet::generic_wallet_record,
+        (type)
+        (data)
+        )
+
 FC_REFLECT_ENUM( bts::wallet::property_enum,
         (version)
         (next_record_number)
@@ -227,49 +324,78 @@ FC_REFLECT_ENUM( bts::wallet::property_enum,
         (transaction_expiration_sec)
         )
 
-FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
-                   (master_key_record_type)
-                   (account_record_type)
-                   (key_record_type)
-                   (transaction_record_type)
-                   (balance_record_type)
-                   (property_record_type)
-                   (market_order_record_type)
-                   (setting_record_type)
-                )
-
-FC_REFLECT( bts::wallet::wallet_property, (key)(value) )
-FC_REFLECT( bts::wallet::generic_wallet_record, (type)(data) )
-FC_REFLECT( bts::wallet::master_key, (encrypted_key)(checksum) )
-FC_REFLECT( bts::wallet::key_data, (account_address)(public_key)(encrypted_private_key)(memo)(gen_seq_number) )
-
-FC_REFLECT( bts::wallet::ledger_entry, (from_account)(to_account)(amount)(memo)(memo_from_account) );
-FC_REFLECT( bts::wallet::transaction_data,
-            (record_id)
-            (block_num)
-            (is_virtual)
-            (is_confirmed)
-            (is_market)
-            (trx)
-            (ledger_entries)
-            (fee)
-            (created_time)
-            (received_time)
-            (extra_addresses)
-          )
+FC_REFLECT( bts::wallet::wallet_property,
+        (key)
+        (value)
+        )
 
 FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record),
-                    (account_address)
-                    (private_data)
-                    (is_my_account)
-                    (approved)
-                    (is_favorite)
-                    (block_production_enabled)
-                    (last_used_gen_sequence)
-                  )
+        (account_address)
+        (private_data)
+        (is_my_account)
+        (approved)
+        (is_favorite)
+        (block_production_enabled)
+        (last_used_gen_sequence)
+        )
+
+FC_REFLECT( bts::wallet::master_key,
+        (encrypted_key)
+        (checksum)
+        )
+
+FC_REFLECT( bts::wallet::key_data,
+        (account_address)
+        (public_key)
+        (encrypted_private_key)
+        (valid_from_signature)
+        (memo)
+        (gen_seq_number)
+        )
+
+FC_REFLECT( bts::wallet::ledger_entry,
+        (from_account)
+        (to_account)
+        (amount)
+        (memo)
+        (memo_from_account)
+        )
+
+FC_REFLECT( bts::wallet::transaction_data,
+        (record_id)
+        (block_num)
+        (is_virtual)
+        (is_confirmed)
+        (is_market)
+        (trx)
+        (ledger_entries)
+        (fee)
+        (created_time)
+        (received_time)
+        (extra_addresses)
+        )
 
 //FC_REFLECT( bts::wallet::market_order_status, (order)(proceeds)(transactions) )
-FC_REFLECT( bts::wallet::setting, (name)(value) )
+
+FC_REFLECT( bts::wallet::setting,
+        (name)
+        (value)
+        )
+
+// do not use -- see above
+FC_REFLECT( bts::wallet::transaction_ledger_entry,
+        (id)
+        (block_num)
+        (timestamp)
+        (line_items)
+        (transaction_id)
+        )
+FC_REFLECT( bts::wallet::transaction_ledger_entry::line_item,
+        (payer)
+        (payee)
+        (amount)
+        (description)
+        )
 
 /**
  *  Implement generic reflection for wallet record types
