@@ -18,7 +18,9 @@ class market_engine_v4
          {
              const market_index_key market_idx = short_itr.key();
              const order_record order_rec = short_itr.value();
-             if( order_rec.last_update > limit_timestamp ) continue;
+
+             if( order_rec.last_update >= limit_timestamp )
+                 continue;
 
              _current_bid = market_order( short_order, market_idx, order_rec );
 
