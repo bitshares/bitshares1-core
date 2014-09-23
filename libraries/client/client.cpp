@@ -1735,7 +1735,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_ptr client::get_wallet()const { return my->_wallet; }
-
+    mail_client_ptr client::get_mail_client()const { return my->_mail_client; }
     mail_server_ptr client::get_mail_server()const { return my->_mail_server; }
     chain_database_ptr client::get_chain()const { return my->_chain_db; }
     bts::rpc::rpc_server_ptr client::get_rpc_server()const { return my->_rpc_server; }
@@ -2112,7 +2112,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       try
       {
           ASSERT_TASK_NOT_PREEMPTED(); // make sure no cancel gets swallowed by catch(...)
-          if( !std::all_of( asset.begin(), asset.end(), ::isdigit) )
+          if( !std::all_of( asset.begin(), asset.end(), ::isdigit ) )
               return _chain_db->get_asset_record( asset );
           else
               return _chain_db->get_asset_record( std::stoi( asset ) );
@@ -2321,16 +2321,20 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return "key not found";
     }
 
-    mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
-                                                          const std::string& recipient,
-                                                          const std::string& subject,
-                                                          const std::string& body)
+    message detail::client_impl::wallet_mail_create(const std::string& sender,
+                                                    const std::string& subject,
+                                                    const std::string& body,
+                                                    const message_id_type& reply_to)
+    {
+        return _wallet->mail_create(sender, subject, body, reply_to);
+    }
+
+    message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, const message &plaintext)
     {
         auto recipient_account = _chain_db->get_account_record(recipient);
-        if (!recipient_account.valid())
-            FC_THROW_EXCEPTION(unknown_account_name, "Could not find recipient account: ${name}", ("name", recipient));
+        FC_ASSERT(recipient_account, "Unknown recipient name.");
 
-        return _wallet->mail_create(sender, recipient_account->active_key(), subject, body);
+        return _wallet->mail_encrypt(recipient_account->active_key(), plaintext);
     }
 
     mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message& ciphertext)
@@ -2466,7 +2470,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         std::cout << "Http server was not started, configuration error\n";
     }
 
-    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message) {
+    void detail::client_impl::ntp_update_time()
+    {
+      FC_ASSERT(blockchain::ntp_time());
+      blockchain::update_ntp_time();
+    }
+
+    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
+    {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
       _mail_server->store(owner, message);
     }
@@ -2521,10 +2532,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       _mail_client->archive_message(message_id);
     }
 
-    void detail::client_impl::mail_check_new_messages()
+    int detail::client_impl::mail_check_new_messages()
     {
       FC_ASSERT(_mail_client);
-      _mail_client->check_new_messages();
+      return _mail_client->check_new_messages();
     }
 
     mail::email_record detail::client_impl::mail_get_message(const mail::message_id_type& message_id) const
@@ -2556,12 +2567,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return forward;
     }
 
-    mail::message_id_type detail::client_impl::mail_send(const std::string &from,
-                                                         const std::string &to,
-                                                         const std::string &subject,
-                                                         const std::string &body)
+    mail::message_id_type detail::client_impl::mail_send(const std::string& from,
+                                                         const std::string& to,
+                                                         const std::string& subject,
+                                                         const std::string& body,
+                                                         const message_id_type& reply_to)
     {
-      return _mail_client->send_email(from, to, subject, body);
+      FC_ASSERT(_mail_client);
+      return _mail_client->send_email(from, to, subject, body, reply_to);
     }
 
     //JSON-RPC Method Implementations END
@@ -3207,9 +3220,26 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return info;
     }
 
-    asset client_impl::blockchain_calculate_base_supply()const
+    asset client_impl::blockchain_calculate_supply( const string& asset )const
     {
-        return _chain_db->calculate_base_supply();
+       asset_id_type asset_id;
+       if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
+           asset_id = std::stoi( asset );
+       else
+           asset_id = _chain_db->get_asset_id( asset );
+
+       return _chain_db->calculate_supply( asset_id );
+    }
+
+    asset client_impl::blockchain_calculate_debt( const string& asset )const
+    {
+       asset_id_type asset_id;
+       if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
+           asset_id = std::stoi( asset );
+       else
+           asset_id = _chain_db->get_asset_id( asset );
+
+       return _chain_db->calculate_debt( asset_id );
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )

@@ -4,13 +4,37 @@
 #include <bts/blockchain/asset.hpp>
 
 #include <fc/time.hpp>
+#include <fc/io/enum_type.hpp>
 
 namespace bts { namespace blockchain {
 
+   enum account_type
+   {
+      titan_account  = 0,
+      public_account = 1
+   };
+
    struct account_meta_info
    {
-      fc::unsigned_int type;
-      vector<char>     data;
+      fc::enum_type<fc::unsigned_int,account_type> type;
+      vector<char>                                 data;
+
+      account_meta_info( account_type atype = titan_account )
+      :type( atype ){}
+
+      template<typename AccountType>
+      account_meta_info(  const AccountType& t )
+      :type( AccountType::type )
+      {
+         data = fc::raw::pack( t );
+      }
+
+      template<typename AccountType>
+      AccountType as()const
+      {
+         FC_ASSERT( type == AccountType::type, "", ("AccountType",AccountType::type) );
+         return fc::raw::unpack<AccountType>(data);
+      }
    };
 
    struct delegate_stats
@@ -107,3 +131,5 @@ FC_REFLECT( bts::blockchain::delegate_stats,
 FC_REFLECT( bts::blockchain::burn_record_key,   (account_id)(transaction_id) )
 FC_REFLECT( bts::blockchain::burn_record_value, (amount)(message)(signer) )
 FC_REFLECT_DERIVED( bts::blockchain::burn_record, (bts::blockchain::burn_record_key)(bts::blockchain::burn_record_value), BOOST_PP_SEQ_NIL )
+FC_REFLECT_ENUM( bts::blockchain::account_type, (titan_account)(public_account) )
+

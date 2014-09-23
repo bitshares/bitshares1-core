@@ -14,6 +14,3 @@
 	path = libraries/leveldb
 	url = https://github.com/bitcoin/leveldb.git
     ignore = dirty
-[submodule "programs/btsx_bots"]
-	path = programs/btsx_bots
-	url = https://github.com/freetradebots/btsx_bots

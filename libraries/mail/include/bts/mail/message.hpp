@@ -45,6 +45,7 @@ namespace bts { namespace mail {
       string                 subject;
       string                 body;
       vector< attachment >   attachments;
+      message_id_type        reply_to;
    };
 
    struct signed_email_message : public email_message
@@ -106,6 +107,6 @@ FC_REFLECT( bts::mail::encrypted_message, (onetimekey)(data) )
 FC_REFLECT( bts::mail::message, (type)(nonce)(timestamp)(data) )
 FC_REFLECT( bts::mail::attachment, (name)(data) )
 FC_REFLECT( bts::mail::transaction_notice_message, (trx)(extended_memo) )
-FC_REFLECT( bts::mail::email_message, (subject)(body)(attachments) )
+FC_REFLECT( bts::mail::email_message, (subject)(body)(attachments)(reply_to) )
 FC_REFLECT_DERIVED( bts::mail::signed_email_message, (bts::mail::email_message), (from_signature) )
 
