@@ -11,7 +11,7 @@ These instructions worked on a fresh Ubuntu 14.04 LTS image.
 
 For the Qt Wallet, some extra steps are required:
 
-	sudo apt-get install npm qt5-default libqt5webkit5-dev
+	sudo apt-get install npm qt5-default libqt5webkit5-dev qttools5-dev qttools5-dev-tools
 	cd bitshares-toolkit
 	cmake -DINCLUDE_QT_WALLET=ON .
 	cd programs/web_wallet

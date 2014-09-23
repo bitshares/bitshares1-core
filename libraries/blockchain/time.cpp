@@ -55,6 +55,11 @@ fc::time_point_sec now()
       return fc::time_point::now() + fc::seconds( adjusted_time_sec );
 }
 
+void update_ntp_time()
+{
+  detail::ntp_service.load()->request_now();
+}
+
 fc::microseconds ntp_error()
 {
   fc::optional<fc::time_point> current_ntp_time = ntp_time();

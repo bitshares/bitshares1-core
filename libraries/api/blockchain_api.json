@@ -12,6 +12,36 @@
         "aliases" : ["getconfig","get_config", "config", "blockchain_get_config"]
       },
       {
+        "method_name": "blockchain_calculate_supply",
+        "description": "Calculate the total supply of an asset from the current blockchain database state",
+        "return_type": "asset",
+        "parameters" : [
+            {
+              "name" : "asset",
+              "type" : "string",
+              "description" : "asset ticker symbol or ID to calculate supply for"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["supply", "calculate_supply"]
+      },
+      {
+        "method_name": "blockchain_calculate_debt",
+        "description": "Calculate the total amount of a market-issued asset that is owed to the network by open short positions",
+        "return_type": "asset",
+        "parameters" : [
+            {
+              "name" : "asset",
+              "type" : "string",
+              "description" : "asset ticker symbol or ID to calculate debt for"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["debt", "calculate_debt"]
+      },
+      {
         "method_name": "blockchain_is_synced",
         "description": "Returns true if the local blockchain is synced with the network; false otherwise",
         "return_type": "bool",

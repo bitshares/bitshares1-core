@@ -5,6 +5,7 @@
 
 namespace bts { namespace blockchain {
 
+   #include "market_operations_v2.cpp"
    #include "market_operations_v1.cpp"
 
    /**
@@ -194,6 +195,11 @@ namespace bts { namespace blockchain {
          evaluate_v1( eval_state );
          return;
       }
+      else if( eval_state._current_state->get_head_block_num() < BTSX_SUPPLY_FORK_2_BLOCK_NUM )
+      {
+         evaluate_v2( eval_state );
+         return;
+      }
 
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
@@ -215,6 +221,11 @@ namespace bts { namespace blockchain {
       auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
       if( NOT current_cover )
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
+
+      auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
+      FC_ASSERT( asset_to_cover.valid() );
+      asset_to_cover->current_share_supply -= delta_amount.amount;
+      eval_state._current_state->store_asset_record( *asset_to_cover );
 
       current_cover->payoff_balance -= delta_amount.amount;
       // changing the payoff balance changes the call price... so we need to remove the old record
