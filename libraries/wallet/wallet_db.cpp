@@ -270,7 +270,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( wallet_master_key.valid() );
 
       const auto master_ext_priv_key = wallet_master_key->decrypt_key( password );
-      const auto key_index    = new_key_child_index(parent_account_address);
+      const auto key_index = new_key_child_index( parent_account_address );
       auto new_priv_key = master_ext_priv_key.child( key_index );
       if( key_index >= 10000 )
       {
@@ -290,9 +290,7 @@ namespace bts { namespace wallet {
 
       // if there is no parent account address, then the account_address of this key is itself
       if( parent_account_address == address() )
-      {
          new_key.account_address = address( new_key.public_key );
-      }
 
       this->store_key( new_key );
       return new_priv_key;
@@ -375,7 +373,7 @@ namespace bts { namespace wallet {
          key_data& old_data = key_itr->second;
          old_data = key_to_store;
 
-         if( key_to_store.has_private_key())
+         if( key_to_store.has_private_key() )
          {
             auto oacct = lookup_account( key_to_store.account_address );
             if( oacct )
@@ -408,17 +406,17 @@ namespace bts { namespace wallet {
       else
       {
          auto r = wallet_key_record( key_to_store, new_wallet_record_index() );
-         store_record( keys[key_to_store.get_address()] = r, true );
+         store_record( keys[ key_to_store.get_address() ] = r, true );
 
          auto key = key_to_store.public_key;
          auto bts_addr = key_to_store.get_address();
-         btc_to_bts_address[ address(key) ] = bts_addr;
-         btc_to_bts_address[ address(pts_address(key,false,56) )] = bts_addr;
-         btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
-         btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
-         btc_to_bts_address[ address(pts_address(key,true,0) )  ] = bts_addr;
-         ilog( "indexing key ${k}", ("k",address(pts_address(key,false,56) )  ) );
-         ilog( "indexing key ${k}", ("k",address(pts_address(key,true,56) )  ) );
+         btc_to_bts_address[ address( key ) ] = bts_addr;
+         btc_to_bts_address[ address( pts_address( key, false, 56 ) ) ] = bts_addr;
+         btc_to_bts_address[ address( pts_address( key, true, 56 ) ) ] = bts_addr;
+         btc_to_bts_address[ address( pts_address( key, false, 0 ) ) ] = bts_addr;
+         btc_to_bts_address[ address( pts_address( key, true, 0 ) ) ] = bts_addr;
+         ilog( "indexing key ${k}", ("k",address( pts_address( key, false, 0 ) )) );
+         ilog( "indexing key ${k}", ("k",address( pts_address( key, true, 56 ) )) );
       }
    } FC_CAPTURE_AND_RETHROW() }
 
