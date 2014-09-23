@@ -1944,7 +1944,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         network_broadcast_transaction( record.trx );
         return record;
     }
-
     wallet_transaction_record detail::client_impl::wallet_burn(
             double amount_to_transfer,
             const string& asset_symbol,

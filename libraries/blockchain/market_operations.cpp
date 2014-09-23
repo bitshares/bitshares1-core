@@ -123,9 +123,6 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
-          FC_ASSERT( !"New short operation is not supported yet!" );
-
       if( this->short_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
 
