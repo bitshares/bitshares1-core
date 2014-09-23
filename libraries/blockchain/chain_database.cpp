@@ -774,14 +774,25 @@ namespace bts { namespace blockchain {
 
         const auto pending_block_num = pending_state->get_head_block_num();
 
+        if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
+        {
+           market_engine_v4 engine( pending_state, *this );
+           engine.cancel_all_shorts( self->get_block_header( BTSX_MARKET_FORK_7_BLOCK_NUM ).timestamp );
+           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+        }
+
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num >= BTSX_MARKET_FORK_8_BLOCK_NUM )
+           if( pending_block_num > BTSX_MARKET_FORK_8_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+           else if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
+           {
+               // See above
            }
            else if( pending_block_num > BTSX_MARKET_FORK_7_BLOCK_NUM )
            {
@@ -791,10 +802,7 @@ namespace bts { namespace blockchain {
            }
            else if( pending_block_num == BTSX_MARKET_FORK_7_BLOCK_NUM )
            {
-              // This was never executed like it should have been
-              //market_engine engine( pending_state, *this );
-              //engine.cancel_all_shorts();
-              //market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+               // Missed it
            }
            else if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
            {

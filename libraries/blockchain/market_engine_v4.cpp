@@ -12,12 +12,14 @@ class market_engine_v4
          _prior_state = ps;
       }
 
-      void cancel_all_shorts()
+      void cancel_all_shorts( const time_point_sec& limit_timestamp )
       {
          for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
          {
              const market_index_key market_idx = short_itr.key();
              const order_record order_rec = short_itr.value();
+             if( order_rec.last_update > limit_timestamp ) continue;
+
              _current_bid = market_order( short_order, market_idx, order_rec );
 
              // Initialize the market transaction
