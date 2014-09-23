@@ -93,8 +93,7 @@ class market_engine
              int last_orders_filled = -1;
 
              bool order_did_execute = false;
-             // prime the pump
-             get_next_bid(); get_next_ask();
+             // prime the pump, to make sure that margin calls (asks) have a bid to check against.
              get_next_bid(); get_next_ask();
              idump( (_current_bid)(_current_ask) );
              while( get_next_bid() && get_next_ask() )
@@ -599,6 +598,22 @@ class market_engine
 
       } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
+      bool get_next_short()
+      {
+         if( _short_itr.valid() )
+         {
+            auto bid = market_order( short_order, _short_itr.key(), _short_itr.value() );
+            if( bid.get_price().quote_asset_id == _quote_id &&
+                bid.get_price().base_asset_id == _base_id )
+            {
+                ++_short_itr;
+                _current_bid = bid;
+                return _current_bid.valid();
+            }
+         }
+         return false;
+      }
+
       bool get_next_bid()
       { try {
          if( _current_bid && _current_bid->get_quantity().amount > 0 )
@@ -607,37 +622,23 @@ class market_engine
          ++_orders_filled;
          _current_bid.reset();
 
-         /** while there is an ask less than the avg price, then shorts take priority
-          * in order of the collateral (XTS) per USD.  The "price" field is represented
-          * as USD per XTS thus we want 1/price which means that lower prices are
-          * higher collateral.  Therefore, we start low and move high through the
-          * short order book.
-          */
-         if( _current_ask && _current_ask->get_price() <= _market_stat.center_price )
-         {
-            if( _short_itr.valid() )
-            {
-               auto bid = market_order( short_order, _short_itr.key(), _short_itr.value() );
-               if( bid.get_price().quote_asset_id == _quote_id &&
-                   bid.get_price().base_asset_id == _base_id )
-               {
-                   ++_short_itr;
-                   _current_bid = bid;
-                   return _current_bid.valid();
-               }
-            }
-         }
-
          if( _bid_itr.valid() )
          {
             auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
             if( bid.get_price().quote_asset_id == _quote_id &&
                 bid.get_price().base_asset_id == _base_id )
             {
+                if( bid.get_price() < _market_stat.center_price && get_next_short() )
+                {
+                   return _current_bid.valid();
+                }
+
                 _current_bid = bid;
                 --_bid_itr;
+                return _current_bid.valid();
             }
          }
+         get_next_short();
          return _current_bid.valid();
       } FC_CAPTURE_AND_RETHROW() }
 
