@@ -80,6 +80,7 @@ namespace bts { namespace blockchain {
       {
          public:
             #include "market_engine.cpp"
+            #include "market_engine_v4.cpp"
             #include "market_engine_v3.cpp"
             #include "market_engine_v2.cpp"
             #include "market_engine_v1.cpp"
@@ -776,9 +777,15 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num > BTSX_MARKET_FORK_7_BLOCK_NUM )
+           if( pending_block_num >= BTSX_MARKET_FORK_8_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+           else if( pending_block_num > BTSX_MARKET_FORK_7_BLOCK_NUM )
+           {
+              market_engine_v4 engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
