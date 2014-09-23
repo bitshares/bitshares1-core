@@ -34,8 +34,6 @@
 #include <iostream>
 #include <sstream>
 
-#define BTS_NUM_SCANNING_THREADS 4
-
 namespace bts { namespace wallet {
 
    FC_REGISTER_EXCEPTIONS( (wallet_exception)
@@ -142,7 +140,7 @@ namespace bts { namespace wallet {
             void scan_balances();
             void scan_registered_accounts();
             void withdraw_to_transaction( const asset& amount_to_withdraw,
-                                          const address& from_account_address,
+                                          const string& from_account_name,
                                           signed_transaction& trx,
                                           unordered_set<address>& required_fees );
             void authorize_update( unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key = false );
@@ -157,8 +155,8 @@ namespace bts { namespace wallet {
 
       wallet_impl::wallet_impl()
       {
-          _scanner_threads.reserve( BTS_NUM_SCANNING_THREADS );
-          for( uint32_t i = 0; i < BTS_NUM_SCANNING_THREADS; ++i )
+          _scanner_threads.reserve( BTS_WALLET_NUM_SCANNING_THREADS );
+          for( uint32_t i = 0; i < BTS_WALLET_NUM_SCANNING_THREADS; ++i )
           {
               _scanner_threads.push_back( std::unique_ptr<fc::thread>( new fc::thread( "wallet_scanner_" + std::to_string( i ) ) ) );
           }
@@ -166,10 +164,10 @@ namespace bts { namespace wallet {
 
       wallet_impl::~wallet_impl()
       {
-          try { 
+          try {
              for( auto& scan_thread : _scanner_threads )
-             { 
-                if( scan_thread ) scan_thread->quit(); 
+             {
+                if( scan_thread ) scan_thread->quit();
              }
           } catch( ... ) {}
       }
@@ -470,46 +468,39 @@ namespace bts { namespace wallet {
 
       void wallet_impl::withdraw_to_transaction(
               const asset& amount_to_withdraw,
-              const address& from_account_address,
+              const string& from_account_name,
               signed_transaction& trx,
               unordered_set<address>& required_signatures
               )
       { try {
-         const auto pending_state = _blockchain->get_pending_state();
+         FC_ASSERT( !from_account_name.empty() );
          auto amount_remaining = amount_to_withdraw;
 
-         const auto items = _wallet_db.get_balances();
-         for( const auto& item : items )
+         const account_balance_record_summary_type balance_records = self->get_account_balance_records( from_account_name );
+         for( const auto& record : balance_records.at( from_account_name ) )
          {
-             const auto owner = item.second.owner();
-             const auto okey_rec = _wallet_db.lookup_key( owner );
-             if( !okey_rec.valid() || !okey_rec->has_private_key() ) continue;
-             if( okey_rec->account_address != from_account_address ) continue;
-
-             const auto balance_id = item.first;
-             const auto obalance = pending_state->get_balance_record( balance_id );
-             if( !obalance.valid() ) continue;
-             const auto balance = obalance->get_balance();
-             if( balance.amount <= 0 || balance.asset_id != amount_remaining.asset_id ) continue;
+             const asset balance = record.get_balance();
+             if( balance.amount <= 0 || balance.asset_id != amount_remaining.asset_id )
+                 continue;
 
              if( amount_remaining.amount > balance.amount )
              {
-                 trx.withdraw( balance_id, balance.amount );
-                 required_signatures.insert( owner );
+                 trx.withdraw( record.id(), balance.amount );
+                 required_signatures.insert( record.owner() );
                  amount_remaining -= balance;
              }
              else
              {
-                 trx.withdraw( balance_id, amount_remaining.amount );
-                 required_signatures.insert( owner );
+                 trx.withdraw( record.id(), amount_remaining.amount );
+                 required_signatures.insert( record.owner() );
                  return;
              }
          }
 
-         auto required = _blockchain->to_pretty_asset( amount_to_withdraw );
-         auto available = _blockchain->to_pretty_asset( amount_to_withdraw - amount_remaining );
-         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available)(items) );
-      } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_address)(trx)(required_signatures) ) }
+         const string required = _blockchain->to_pretty_asset( amount_to_withdraw );
+         const string available = _blockchain->to_pretty_asset( amount_to_withdraw - amount_remaining );
+         FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available)(balance_records) );
+      } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_name)(trx)(required_signatures) ) }
 
       void wallet_impl::authorize_update(unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key )
       {
@@ -1268,7 +1259,8 @@ namespace bts { namespace wallet {
                       const auto& key = keys[i];
                       scan_key_progress[i] = fc::async([&,i](){
                          omemo_status status;
-                         _scanner_threads[i%BTS_NUM_SCANNING_THREADS]->async( [&]() { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
+                         _scanner_threads[ i % BTS_WALLET_NUM_SCANNING_THREADS ]->async( [&]()
+                             { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
                          if( status.valid() ) /* If I've successfully decrypted then it's for me */
                          {
                             cache_deposit = true;
@@ -1339,7 +1331,7 @@ namespace bts { namespace wallet {
                    {
                       try {
                          fut.wait();
-                      } 
+                      }
                       catch ( const fc::exception& e )
                       {
                          elog( "unexpected exception ${e}", ("e",e.to_detail_string()) );
@@ -2480,7 +2472,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_receive_account( account_name ) );
 
       auto pub_key = key.get_public_key();
-      address key_address(pub_key);
+      address key_address( pub_key );
       current_key_record = my->_wallet_db.lookup_key( key_address );
       if( current_key_record.valid() )
       {
@@ -3057,7 +3049,7 @@ namespace bts { namespace wallet {
 
       auto required_fees = get_transaction_fee();
 
-      if( required_fees.amount <  current_account->delegate_pay_balance() )
+      if( required_fees.amount < current_account->delegate_pay_balance() )
       {
         // withdraw delegate pay...
         trx.withdraw_pay( current_account->id, required_fees.amount );
@@ -3065,8 +3057,9 @@ namespace bts { namespace wallet {
       else
       {
          my->withdraw_to_transaction( required_fees,
-                                      payer_public_key,
-                                      trx, required_signatures );
+                                      account_to_publish_under,
+                                      trx,
+                                      required_signatures );
       }
       required_signatures.insert( current_account->active_key() );
 
@@ -3142,8 +3135,9 @@ namespace bts { namespace wallet {
       else
       {
          my->withdraw_to_transaction( required_fees,
-                                      payer_public_key,
-                                      trx, required_signatures );
+                                      account_to_publish_under,
+                                      trx,
+                                      required_signatures );
       }
       required_signatures.insert( current_account->active_key() );
 
@@ -3214,7 +3208,7 @@ namespace bts { namespace wallet {
       else
       {
          my->withdraw_to_transaction( required_fees,
-                                      payer_public_key,
+                                      paying_account,
                                       trx,
                                       required_signatures );
       }
@@ -3283,7 +3277,7 @@ namespace bts { namespace wallet {
       else
       {
          my->withdraw_to_transaction( required_fees,
-                                      payer_public_key,
+                                      paying_account,
                                       trx,
                                       required_signatures );
       }
@@ -3798,19 +3792,19 @@ namespace bts { namespace wallet {
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
-                                      sender_account_address,
+                                      paying_account_name,
                                       trx,
                                       required_signatures );
       }
       else
       {
          my->withdraw_to_transaction( asset_to_transfer,
-                                      sender_account_address,
+                                      paying_account_name,
                                       trx,
                                       required_signatures );
 
          my->withdraw_to_transaction( required_fees,
-                                      sender_account_address,
+                                      paying_account_name,
                                       trx,
                                       required_signatures );
       }
@@ -3886,19 +3880,19 @@ namespace bts { namespace wallet {
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
-                                      sender_account_address,
+                                      from_account_name,
                                       trx,
                                       required_signatures );
       }
       else
       {
          my->withdraw_to_transaction( asset_to_transfer,
-                                      sender_account_address,
+                                      from_account_name,
                                       trx,
                                       required_signatures );
 
          my->withdraw_to_transaction( required_fees,
-                                      sender_account_address,
+                                      from_account_name,
                                       trx,
                                       required_signatures );
       }
@@ -3964,7 +3958,7 @@ namespace bts { namespace wallet {
             asset asset_to_transfer( amount_to_transfer, asset_id );
 
             my->withdraw_to_transaction( asset_to_transfer,
-                                         sender_account_address,
+                                         from_account_name,
                                          trx,
                                          required_signatures );
 
@@ -3976,7 +3970,7 @@ namespace bts { namespace wallet {
          }
 
          my->withdraw_to_transaction( required_fees,
-                                      sender_account_address,
+                                      from_account_name,
                                       trx,
                                       required_signatures );
 
@@ -4051,19 +4045,19 @@ namespace bts { namespace wallet {
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
          my->withdraw_to_transaction( required_fees + asset_to_transfer,
-                                      payer_account_address,
+                                      paying_account_name,
                                       trx,
                                       required_signatures );
       }
       else
       {
          my->withdraw_to_transaction( asset_to_transfer,
-                                      payer_account_address,
+                                      paying_account_name,
                                       trx,
                                       required_signatures );
 
          my->withdraw_to_transaction( required_fees,
-                                      payer_account_address,
+                                      paying_account_name,
                                       trx,
                                       required_signatures );
       }
@@ -4169,7 +4163,7 @@ namespace bts { namespace wallet {
       }
 
       my->withdraw_to_transaction( required_fees,
-                                   from_account_address,
+                                   pay_with_account_name,
                                    trx,
                                    required_signatures );
 
@@ -4222,7 +4216,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( oname_rec.valid() );
 
       my->withdraw_to_transaction( required_fees,
-                                   from_account_address,
+                                   issuer_account_name,
                                    trx,
                                    required_signatures );
 
@@ -4287,7 +4281,7 @@ namespace bts { namespace wallet {
 
       asset shares_to_issue( amount_to_issue * asset_record->get_precision(), asset_record->id );
       my->withdraw_to_transaction( required_fees,
-                                   get_account_public_key( issuer_account->name ),
+                                   issuer_account->name,
                                    trx,
                                    required_signatures );
 
@@ -4353,7 +4347,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
 
       signed_transaction trx;
-      unordered_set<address>     required_signatures;
+      unordered_set<address> required_signatures;
       auto payer_public_key = get_account_public_key( pay_from_account );
 
       auto account = my->_blockchain->get_account_record( account_to_update );
@@ -4377,7 +4371,7 @@ namespace bts { namespace wallet {
       }
 
       my->withdraw_to_transaction( required_fees,
-                                   payer_public_key,
+                                   pay_from_account,
                                    trx,
                                    required_signatures );
 
@@ -4419,7 +4413,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_unlocked() );
 
       signed_transaction trx;
-      unordered_set<address>     required_signatures;
+      unordered_set<address> required_signatures;
       auto payer_public_key = get_account_public_key( pay_from_account );
 
       owallet_account_record account = my->_wallet_db.lookup_account( account_to_update );
@@ -4449,7 +4443,7 @@ namespace bts { namespace wallet {
       auto required_fees = get_transaction_fee();
 
       my->withdraw_to_transaction( required_fees,
-                                   payer_public_key,
+                                   pay_from_account,
                                    trx,
                                    required_signatures );
 
@@ -4502,7 +4496,7 @@ namespace bts { namespace wallet {
 
       /*
       my->withdraw_to_transaction( required_fees,
-                                   get_account_public_key( delegate_account->name ),
+                                   delegate_account->name,
                                    trx,
                                    required_signatures );
       */
@@ -4562,7 +4556,7 @@ namespace bts { namespace wallet {
 
       /*
       my->withdraw_to_transaction( required_fees,
-                                   get_account_public_key( account->name ),
+                                   account->name,
                                    trx,
                                    required_signatures );
       */
@@ -4628,14 +4622,13 @@ namespace bts { namespace wallet {
         const auto account_key_record = my->_wallet_db.lookup_key( owner_key_record->account_address );
         FC_ASSERT( account_key_record.valid() && account_key_record->has_private_key() );
 
-        auto from_address = owner_key_record->account_address;
+        const auto account_record = my->_wallet_db.lookup_account( account_key_record->public_key );
+        FC_ASSERT( account_record.valid() );
+
         auto from_account_key = account_key_record->public_key;
         auto& to_account_key = from_account_key;
 
         asset balance = order->get_balance();
-
-        edump( (order) );
-
 
         if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
 
@@ -4678,7 +4671,7 @@ namespace bts { namespace wallet {
            trx.deposit( owner_address, balance, 0 );
 
            my->withdraw_to_transaction( required_fees,
-                                        from_address,  // get address of account
+                                        account_record->name,
                                         trx,
                                         required_signatures );
         }
@@ -4755,7 +4748,7 @@ namespace bts { namespace wallet {
        unordered_set<address> required_signatures;
        required_signatures.insert( order_address );
 
-       private_key_type from_private_key  = get_active_private_key( from_account_name );
+       private_key_type from_private_key = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
        auto required_fees = get_transaction_fee( cost_shares.asset_id );
@@ -4763,7 +4756,7 @@ namespace bts { namespace wallet {
        if( cost_shares.asset_id == required_fees.asset_id )
        {
           my->withdraw_to_transaction( cost_shares + required_fees,
-                                       from_address,
+                                       from_account_name,
                                        trx,
                                        required_signatures );
        }
@@ -4773,12 +4766,12 @@ namespace bts { namespace wallet {
           ///        quote_asset_record->symbol );
 
           my->withdraw_to_transaction( cost_shares,
-                                       from_address,
+                                       from_account_name,
                                        trx,
                                        required_signatures );
           // pay our fees in XTS
           my->withdraw_to_transaction( required_fees,
-                                       from_address,
+                                       from_account_name,
                                        trx,
                                        required_signatures );
        }
@@ -4876,7 +4869,7 @@ namespace bts { namespace wallet {
        if( cost_shares.asset_id == 0 )
        {
           my->withdraw_to_transaction( cost_shares + required_fees,
-                                       from_address,
+                                       from_account_name,
                                        trx,
                                        required_signatures );
        }
@@ -4886,12 +4879,12 @@ namespace bts { namespace wallet {
           ///        quote_asset_record->symbol );
 
           my->withdraw_to_transaction( cost_shares,
-                                       from_address,
+                                       from_account_name,
                                        trx,
                                        required_signatures );
           // pay our fees in XTS
           my->withdraw_to_transaction( required_fees,
-                                       from_address,
+                                       from_account_name,
                                        trx,
                                        required_signatures );
        }
@@ -4984,7 +4977,7 @@ namespace bts { namespace wallet {
 
        idump( (cost_shares)(required_fees) );
        my->withdraw_to_transaction( cost_shares + required_fees,
-                                    from_address,
+                                    from_account_name,
                                     trx,
                                     required_signatures );
 
@@ -5051,13 +5044,13 @@ namespace bts { namespace wallet {
        unordered_set<address> required_signatures;
        required_signatures.insert( owner_address );
 
-       trx.add_collateral(collateral_to_add, order->market_index);
+       trx.add_collateral( collateral_to_add, order->market_index );
 
        auto required_fees = get_transaction_fee();
-       my->withdraw_to_transaction (asset(collateral_to_add) + required_fees,
-                                    from_address,
+       my->withdraw_to_transaction( asset(collateral_to_add) + required_fees,
+                                    from_account_name,
                                     trx,
-                                    required_signatures);
+                                    required_signatures );
 
        auto record = wallet_transaction_record();
        record.is_market = true;
@@ -5128,7 +5121,7 @@ namespace bts { namespace wallet {
        trx.cover( amount_to_cover, order->market_index );
 
        my->withdraw_to_transaction( amount_to_cover,
-                                    from_address,
+                                    from_account_name,
                                     trx,
                                     required_signatures );
 
@@ -5161,7 +5154,10 @@ namespace bts { namespace wallet {
        }
        if( !fees_paid )
        {
-           my->withdraw_to_transaction( required_fees, from_address, trx, required_signatures );
+           my->withdraw_to_transaction( required_fees,
+                                        from_account_name,
+                                        trx,
+                                        required_signatures );
        }
 
        auto record = wallet_transaction_record();
