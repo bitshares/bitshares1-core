@@ -3149,7 +3149,7 @@ namespace bts { namespace blockchain {
    /**
     *  Given the list of active delegates and price feeds for asset_id return the median value.
     */
-   oprice chain_database::get_median_delegate_price( const asset_id_type& asset_id )const
+   oprice chain_database::get_median_delegate_price( const asset_id_type& asset_id, const asset_id_type& base_id )const
    { try {
       auto feed_itr = my->_feed_db.lower_bound( feed_index{asset_id} );
       vector<price> prices;
@@ -3165,7 +3165,7 @@ namespace bts { namespace blockchain {
                {
                   prices.push_back(  val.value.as<price>() );
                   if( prices.back().quote_asset_id != asset_id ||
-                      prices.back().base_asset_id != 0 )
+                      prices.back().base_asset_id != base_id )
                   {
                      prices.pop_back();
                   }
@@ -3188,16 +3188,17 @@ namespace bts { namespace blockchain {
       return oprice();
      } FC_CAPTURE_AND_RETHROW( (asset_id) ) }
 
-   vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type& asset_id )const
+   vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type& asset_id, const asset_id_type& base_id )const
    {  try {
       vector<feed_record> feeds;
       auto feed_itr = my->_feed_db.lower_bound(feed_index{asset_id});
       while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
       {
-        feeds.push_back(feed_itr.value());
+        auto val = feed_itr.value();
+        if( val.value.as<price>().base_asset_id == base_id )
+           feeds.push_back(val);
         ++feed_itr;
       }
-
       return feeds;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
