@@ -75,15 +75,15 @@ class market_engine
              price opening_price;
              price closing_price;
 
-             const oprice median_feed_price = _db_impl.self->get_median_delegate_price( quote_id );
-             if( base_id == 0 && quote_asset->is_market_issued() )
+             const oprice median_feed_price = _db_impl.self->get_median_delegate_price( quote_id, base_id );
+             if( quote_asset->is_market_issued() )
              {
                  // If bootstrapping market for the very first time
                  if( _market_stat.center_price.ratio == fc::uint128_t() )
                  {
                      if( median_feed_price.valid() )
                          _market_stat.center_price = *median_feed_price;
-                     else
+                     else 
                          FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
                  }
 
@@ -93,6 +93,7 @@ class market_engine
              int last_orders_filled = -1;
 
              bool order_did_execute = false;
+
              // prime the pump, to make sure that margin calls (asks) have a bid to check against.
              get_next_bid(); get_next_ask();
              idump( (_current_bid)(_current_ask) );
@@ -121,17 +122,28 @@ class market_engine
 
                 if( _current_ask->type == cover_order && _current_bid->type == short_order )
                 {
-                   FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
+                   FC_ASSERT( quote_asset->is_market_issued() ); 
+
+                   /** don't allow new shorts to execute unless there is a feed, all other
+                    * trades are still valid. (we shouldn't stop the market)
+                    */
+                   if( !median_feed_price.valid() )
+                   {
+                      _current_bid.reset();
+                      continue;
+                   }
+
                    if( mtrx.ask_price < mtrx.bid_price ) // The call price has not been reached
                       break;
 
                    if( _current_bid->state.short_price_limit.valid() )
                    {
-                      if( *_current_bid->state.short_price_limit < mtrx.bid_price )
+                      if( *_current_bid->state.short_price_limit < mtrx.ask_price )
                       {
                          _current_bid.reset();
                          continue; // skip shorts that are over the price limit.
                       }
+                      mtrx.bid_price = *_current_bid->state.short_price_limit;
                    }
 
                    mtrx.ask_price = mtrx.bid_price;
@@ -176,7 +188,7 @@ class market_engine
                 }
                 else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
                 {
-                   FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
+                   FC_ASSERT( quote_asset->is_market_issued()  );
                    if( mtrx.ask_price < mtrx.bid_price ) // The call price has not been reached
                       break;
 
@@ -193,7 +205,7 @@ class market_engine
 
                    mtrx.ask_price = mtrx.bid_price;
 
-                   const asset max_usd_purchase = asset( *_current_ask->collateral, 0 ) * mtrx.bid_price;
+                   const asset max_usd_purchase = asset( *_current_ask->collateral, _base_id ) * mtrx.bid_price;
                    asset usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
 
                    // Bound quote asset amount exchanged
@@ -206,7 +218,7 @@ class market_engine
 
                    // Handle rounding errors
                    if( usd_exchanged == max_usd_purchase )
-                      mtrx.ask_paid = asset(*_current_ask->collateral,0);
+                      mtrx.ask_paid = asset(*_current_ask->collateral,_base_id);
                    else
                       mtrx.ask_paid = usd_exchanged * mtrx.bid_price;
 
@@ -222,18 +234,29 @@ class market_engine
                 }
                 else if( _current_ask->type == ask_order && _current_bid->type == short_order )
                 {
-                   FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
+                   FC_ASSERT( quote_asset->is_market_issued() );
+
+                   /** don't allow new shorts to execute unless there is a feed, all other
+                    * trades are still valid.
+                    */
+                   if( !median_feed_price.valid() )
+                   {
+                      _current_bid.reset();
+                      continue;
+                   }
+
                    if( mtrx.bid_price < mtrx.ask_price ) // The ask price hasn't been reached
                       break;
 
                    if( _current_bid->state.short_price_limit.valid() )
                    {
-                      if( *_current_bid->state.short_price_limit < mtrx.bid_price )
+                      if( *_current_bid->state.short_price_limit < mtrx.ask_price )
                       {
                          elog( "short price limit < bid price" );
                          _current_bid.reset();
                          continue; // skip shorts that are over the price limit.
                       }
+                      mtrx.bid_price = *_current_bid->state.short_price_limit;
                    }
 
                    // Bound collateral ratio
@@ -548,7 +571,7 @@ class market_engine
                 FC_ASSERT( mtrx.fees_collected.amount == 0 );
 
                 // these go to the network... as dividends..
-                mtrx.fees_collected += asset( fee, 0 );
+                mtrx.fees_collected += asset( fee, _base_id );
 
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();

@@ -129,11 +129,11 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
 
       auto owner = this->short_index.owner;
-      if( !eval_state.check_signature( owner ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
 
       asset delta_amount  = this->get_amount();
       asset delta_quote   = delta_amount * this->short_index.order_price;
+
+      FC_ASSERT( delta_amount.asset_id == 0 );
 
       /** if the USD amount of the order is effectively then don't bother */
       FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
@@ -150,6 +150,9 @@ namespace bts { namespace blockchain {
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
       {
+          if( !eval_state.check_signature( owner ) )
+             FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
+
           if( NOT current_short )
              FC_CAPTURE_AND_THROW( unknown_market_order, (short_index) );
 

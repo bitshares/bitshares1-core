@@ -6152,7 +6152,7 @@ namespace bts { namespace wallet {
 
        info["name"]                                     = variant();
        info["automatic_backups"]                        = variant();
-       info["transaction_scanning"]                     = variant();
+       info["transaction_scanning_enabled"]             = variant();
        info["last_scanned_block_num"]                   = variant();
        info["last_scanned_block_timestamp"]             = variant();
        info["transaction_fee"]                          = variant();
@@ -6170,7 +6170,7 @@ namespace bts { namespace wallet {
        {
          info["name"]                                   = my->_current_wallet_path.filename().string();
          info["automatic_backups"]                      = get_automatic_backups();
-         info["transaction_scanning"]                   = get_transaction_scanning();
+         info["transaction_scanning_enabled"]           = get_transaction_scanning();
 
          const auto last_scanned_block_num              = get_last_scanned_block_number();
          if( last_scanned_block_num > 0 )
