@@ -1175,6 +1175,7 @@ namespace bts { namespace wallet {
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
+      // TODO: Refactor scan_{bid|ask|short}; exactly the same
       bool wallet_impl::scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
@@ -1236,7 +1237,6 @@ namespace bts { namespace wallet {
           return false;
       } FC_CAPTURE_AND_RETHROW( (op) ) }
 
-      // TODO: Refactor scan_{bid|ask|short}; exactly the same
       bool wallet_impl::scan_short_v1( const short_operation_v1& op, wallet_transaction_record& trx_rec, asset& total_fee )
       { try {
           const auto amount = op.get_amount();
