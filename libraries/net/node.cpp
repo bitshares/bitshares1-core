@@ -522,6 +522,7 @@ namespace bts { namespace net { namespace detail {
       void fetch_sync_items_loop();
       void trigger_fetch_sync_items_loop();
 
+      bool is_item_in_any_peers_inventory(const item_id& item) const;
       void fetch_items_loop();
       void trigger_fetch_items_loop();
 
@@ -1001,6 +1002,16 @@ namespace bts { namespace net { namespace detail {
       _sync_items_to_fetch_updated = true;
       if( _retrigger_fetch_sync_items_loop_promise )
         _retrigger_fetch_sync_items_loop_promise->set_value();
+    }
+
+    bool node_impl::is_item_in_any_peers_inventory(const item_id& item) const
+    {
+      for( const peer_connection_ptr& peer : _active_connections )
+      {
+        if (peer->inventory_peer_advertised_to_us.find(item) != peer->inventory_peer_advertised_to_us.end() )
+          return true;
+      }
+      return false;
     }
 
     void node_impl::fetch_items_loop()
@@ -2321,21 +2332,33 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_item_not_available_message( peer_connection* originating_peer, const item_not_available_message& item_not_available_message_received )
     {
       VERIFY_CORRECT_THREAD();
-      auto regular_item_iter = originating_peer->items_requested_from_peer.find( item_not_available_message_received.requested_item );
+      const item_id& requested_item = item_not_available_message_received.requested_item;
+      auto regular_item_iter = originating_peer->items_requested_from_peer.find( requested_item );
       if( regular_item_iter != originating_peer->items_requested_from_peer.end() )
       {
         originating_peer->items_requested_from_peer.erase( regular_item_iter );
-        dlog( "Peer doesn't have the requested item." );
+        originating_peer->inventory_peer_advertised_to_us.erase( requested_item );
+        if (is_item_in_any_peers_inventory(requested_item))
+        {
+          _items_to_fetch.insert(prioritized_item_id(requested_item, _items_to_fetch_sequence_counter++));
+        }
+        wlog( "Peer doesn't have the requested item." );
         trigger_fetch_items_loop();
         return;
         // TODO: reschedule fetching this item from a different peer
       }
 
-      auto sync_item_iter = originating_peer->sync_items_requested_from_peer.find( item_not_available_message_received.requested_item );
+      auto sync_item_iter = originating_peer->sync_items_requested_from_peer.find( requested_item );
       if( sync_item_iter != originating_peer->sync_items_requested_from_peer.end() )
       {
         originating_peer->sync_items_requested_from_peer.erase( sync_item_iter );
-        dlog( "Peer doesn't have the requested sync item.  This really shouldn't happen" );
+
+        if( originating_peer->peer_needs_sync_items_from_us )
+          originating_peer->inhibit_fetching_sync_blocks = true;
+        else
+          disconnect_from_peer(originating_peer, "You are missing a sync item you claim to have, your database is probably corrupted. Try --rebuild-index.",true,
+                               fc::exception(FC_LOG_MESSAGE(error,"You are missing a sync item you claim to have, your database is probably corrupted. Try --rebuild-index.",("item_id",requested_item))));
+        wlog( "Peer doesn't have the requested sync item.  This really shouldn't happen" );
         trigger_fetch_sync_items_loop();
         return;
       }
@@ -2472,8 +2495,8 @@ namespace bts { namespace net { namespace detail {
       {
         for (auto item_and_time : originating_peer->items_requested_from_peer)
         {
-          // TODO: track and re-insert with original priority
-          _items_to_fetch.insert(prioritized_item_id(item_and_time.first, _items_to_fetch_sequence_counter++));
+          if (is_item_in_any_peers_inventory(item_and_time.first))
+            _items_to_fetch.insert(prioritized_item_id(item_and_time.first, _items_to_fetch_sequence_counter++));
         }
         trigger_fetch_items_loop();
       }
@@ -3775,8 +3798,10 @@ namespace bts { namespace net { namespace detail {
         error_message << "I am disconnecting peer " << fc::variant( peer_to_disconnect->get_remote_endpoint() ).as_string() <<
                          " for reason: " << reason_for_disconnect;
         _delegate->error_encountered( error_message.str(), fc::oexception() );
+        dlog(error_message.str());
       }
-
+      else
+        dlog("Disconnecting from ${peer} for ${reason}", ("peer",peer_to_disconnect->get_remote_endpoint()) ("reason",reason_for_disconnect));
       // peer_to_disconnect->close_connection();
     }
 
