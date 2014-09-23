@@ -133,9 +133,7 @@ namespace bts { namespace blockchain {
       asset delta_amount  = this->get_amount();
       asset delta_quote   = delta_amount * this->short_index.order_price;
 
-#ifndef WIN32 // TODO... remove this warning once BTSX updates
-#warning BTSX should assert that delta_amount.asset_id == 0
-#endif
+      FC_ASSERT( delta_amount.asset_id == 0 );
 
       /** if the USD amount of the order is effectively then don't bother */
       FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
