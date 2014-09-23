@@ -178,8 +178,8 @@ namespace bts { namespace blockchain {
          oblock_record               get_block_record( uint32_t block_num )const;
 
 
-         virtual oprice              get_median_delegate_price( const asset_id_type& )const override;
-         vector<feed_record>         get_feeds_for_asset( const asset_id_type& asset_id )const;
+         virtual oprice              get_median_delegate_price( const asset_id_type& quote_id, const asset_id_type& base_id = 0 )const override;
+         vector<feed_record>         get_feeds_for_asset( const asset_id_type& quote_id, const asset_id_type& base_id = 0 )const;
          vector<feed_record>         get_feeds_from_delegate( const account_id_type& delegate_id )const;
 
          virtual odelegate_slate     get_delegate_slate( slate_id_type id )const override;

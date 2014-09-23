@@ -35,7 +35,7 @@ namespace bts { namespace blockchain {
         static const operation_type_enum type;
         short_operation():amount(0){}
 
-        asset            get_amount()const { return asset( amount, 0 ); }
+        asset            get_amount()const { return asset( amount, short_index.order_price.base_asset_id ); }
 
         share_type       amount;
         market_index_key short_index;

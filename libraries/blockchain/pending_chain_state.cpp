@@ -540,10 +540,10 @@ namespace bts { namespace blockchain {
       return prev_state->get_feed(i);
    }
 
-   oprice pending_chain_state::get_median_delegate_price( const asset_id_type& asset_id )const
+   oprice pending_chain_state::get_median_delegate_price( const asset_id_type& asset_id, const asset_id_type& base_id  )const
    {
       chain_interface_ptr prev_state = _prev_state.lock();
-      return prev_state->get_median_delegate_price( asset_id );
+      return prev_state->get_median_delegate_price( asset_id, base_id );
    }
 
    void pending_chain_state::store_burn_record( const burn_record& br )
