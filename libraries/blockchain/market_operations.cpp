@@ -45,6 +45,7 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
 
+      current_bid->last_update = eval_state._current_state->now();
       current_bid->balance     += this->amount;
 
       // bids do not count toward depth... they can set any price they like and create arbitrary depth
@@ -101,6 +102,7 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
 
+      current_ask->last_update = eval_state._current_state->now();
       current_ask->balance     += this->amount;
       FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
@@ -162,6 +164,7 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
       current_short->short_price_limit = this->short_price_limit;
+      current_short->last_update = eval_state._current_state->now();
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
 
@@ -264,7 +267,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
       auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
-                            asset((current_cover->collateral_balance*3)/4, 0);
+                            asset((current_cover->collateral_balance*2)/3, 0);
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
