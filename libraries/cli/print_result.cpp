@@ -731,7 +731,11 @@ namespace bts { namespace cli {
     auto max_short_price = status ? status->center_price : price(0, quote_id, base_id);
     auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->center_price;
 
-    vector<market_order> shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
+    vector<market_order> shorts;
+    if (arguments.size() <= 2)
+        shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
+    else
+        shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
     shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&max_short_price](const market_order& short_order) -> bool {
       //Filter out if insufficient collateral (i.e. XTS/USD < 1/max_short_price) or if price limit (i.e. USD/XTS) is less than short execution price
       return short_order.get_price() > max_short_price || (short_order.state.short_price_limit.valid()?
