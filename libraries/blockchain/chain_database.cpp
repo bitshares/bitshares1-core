@@ -792,7 +792,7 @@ namespace bts { namespace blockchain {
            }
            else if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
            {
-               // See above
+               // Cancel all shorts before BTSX_MARKET_FORK_7_BLOCK_NUM -- see above
            }
            else if( pending_block_num > BTSX_MARKET_FORK_7_BLOCK_NUM )
            {
@@ -802,7 +802,7 @@ namespace bts { namespace blockchain {
            }
            else if( pending_block_num == BTSX_MARKET_FORK_7_BLOCK_NUM )
            {
-               // Missed it
+               // Should have canceled all shorts but we missed it
            }
            else if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
            {
@@ -931,12 +931,9 @@ namespace bts { namespace blockchain {
                         }
                     }
 
-                    if( supply.amount != record.current_share_supply || fees != record.collected_fees )
-                    {
-                        record.current_share_supply = supply.amount;
-                        record.collected_fees = fees;
-                        self->store_asset_record( record );
-                    }
+                    record.current_share_supply = supply.amount;
+                    record.collected_fees = fees;
+                    self->store_asset_record( record );
                 }
             }
          }
