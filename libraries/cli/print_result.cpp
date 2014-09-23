@@ -865,6 +865,8 @@ namespace bts { namespace cli {
             out << "Details:\n";
             out << status->last_error->to_detail_string() << "\n";
           }
+        } else {
+          out << "\n";
         }
       }
 
