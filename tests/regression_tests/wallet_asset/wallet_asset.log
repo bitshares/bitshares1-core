@@ -23,7 +23,8 @@ OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
 ===================================================================================================
-2       [redacted]          [redacted]                      1       392     [redacted][redacted]     
+3       [redacted]          [redacted]                      1       392     [redacted][redacted]     
+2       [redacted]          [redacted]                      0       166     [redacted][redacted]     
 1       [redacted]          [redacted]                      1       410     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      

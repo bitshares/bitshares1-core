@@ -40,7 +40,7 @@ struct chain_fixture
       ilog( "." );
 
       try {
-      sim_network = std::make_shared<bts::net::simulated_network>();
+      sim_network = std::make_shared<bts::net::simulated_network>("dev_fixture");
 
       bts::blockchain::start_simulated_time(fc::time_point::from_iso_string( "20200101T000000" ));
       set_random_seed_for_testing( fc::sha512() );
@@ -169,14 +169,14 @@ struct chain_fixture
       fc::json::save_to_file( config, clienta_dir.path() / "genesis.json" );
       fc::json::save_to_file( config, clientb_dir.path() / "genesis.json" );
 
-      clienta = std::make_shared<bts::client::client>(sim_network);
+      clienta = std::make_shared<bts::client::client>("dev_fixture", sim_network);
       clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
       clienta->configure_from_command_line( 0, nullptr );
       clienta->set_daemon_mode(true);
       clienta->start();
       ilog( "... " );
 
-      clientb = std::make_shared<bts::client::client>(sim_network);
+      clientb = std::make_shared<bts::client::client>("dev_fixture", sim_network);
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
       clientb->set_daemon_mode(true);

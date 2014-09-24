@@ -211,7 +211,12 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec(clienta, "wallet_publish_price_feed delegate51 .74 BUSD" );
    produce_block(clientb);
 
-   exec( clienta, "bid delegate31 67 XTS .69 BUSD" );
+   exec( clienta, "bid delegate31 37 XTS .69 BUSD" );
+
+   produce_block(clientb);
+   produce_block(clientb);
+
+   exec( clienta, "short delegate35 500 BUSD 30" );
 
    produce_block(clientb);
    produce_block(clientb);

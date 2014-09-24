@@ -24,13 +24,13 @@ namespace bts { namespace wallet {
 
          bool is_open()const;
 
-         int32_t              new_wallet_record_index();
-         int32_t              new_key_child_index( const address& parent_account_address );
-         private_key_type get_private_key( const fc::sha512& password, int index );
+         int32_t            new_wallet_record_index();
+         int32_t            new_key_child_index( const address& parent_account_address );
+         private_key_type   get_private_key( const fc::sha512& password, int index );
 
-         private_key_type new_private_key( const fc::sha512& password,
-                                           const address& parent_account_address = address(),
-                                           bool store_key = true );
+         private_key_type   new_private_key( const fc::sha512& password,
+                                             const address& parent_account_address = address(),
+                                             bool store_key = true );
 
          void        set_property( property_enum property_id, const fc::variant& v );
          fc::variant get_property( property_enum property_id )const;

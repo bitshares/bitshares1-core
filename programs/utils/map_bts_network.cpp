@@ -104,7 +104,9 @@ public:
   void on_hello_message(bts::net::peer_connection* originating_peer,
                         const bts::net::hello_message& hello_message_received)
   {
-    _node_id = hello_message_received.node_id;
+    _node_id = hello_message_received.node_public_key;
+    if (hello_message_received.user_data.contains("node_id"))
+      originating_peer->node_id = hello_message_received.user_data["node_id"].as<bts::net::node_id_t>();
     originating_peer->send_message(bts::net::connection_rejected_message());
   }
 

@@ -103,14 +103,14 @@ BOOST_AUTO_TEST_CASE( master_test )
    fc::temp_directory clientb_dir;
    fc::json::save_to_file( config, clientb_dir.path() / "genesis.json" );
 
-   auto sim_network = std::make_shared<bts::net::simulated_network>();
+   bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
 
-   auto clienta = std::make_shared<bts::client::client>(sim_network);
+   bts::client::client_ptr clienta = std::make_shared<bts::client::client>("wallet_tests", sim_network);
    clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
    clienta->configure_from_command_line( 0, nullptr );
    clienta->start().wait();
 
-   auto clientb = std::make_shared<bts::client::client>(sim_network);
+   bts::client::client_ptr clientb = std::make_shared<bts::client::client>("wallet_tests", sim_network);
    clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
    clientb->configure_from_command_line( 0, nullptr );
    clientb->start().wait();
@@ -478,7 +478,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
     std::ifstream test_config_file(test_config_file_name.string());
 
     //create one client per line and run each client's input commands
-    auto sim_network = std::make_shared<bts::net::simulated_network>();
+    auto sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
     vector<test_file> tests;
     string line;
     std::vector<bts::client::client_ptr> clients;
@@ -547,7 +547,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
       }
       else
       {
-        bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
+        bts::client::client_ptr client = std::make_shared<bts::client::client>("wallet_tests", sim_network);
         clients.push_back(client);
         client->configure_from_command_line(argc, argv);
         client_done = client->start();
@@ -590,7 +590,7 @@ BOOST_AUTO_TEST_CASE(replay_chain_database)
 {
   fc::temp_directory client_dir;
   //auto sim_network = std::make_shared<bts::net::simulated_network>();
-  bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>();
+  bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
   bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
   client->open( client_dir.path() );
   client->configure_from_command_line( 0, nullptr );
