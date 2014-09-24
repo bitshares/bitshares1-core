@@ -129,10 +129,6 @@ namespace bts { namespace blockchain {
       asset delta_amount  = this->get_amount();
       asset delta_quote   = delta_amount * this->short_index.order_price;
 
-#ifndef WIN32 // TODO... remove this warning once BTSX updates
-#warning BTSX should assert that delta_amount.asset_id == 0
-#endif
-
       /** if the USD amount of the order is effectively then don't bother */
       FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
@@ -140,7 +136,7 @@ namespace bts { namespace blockchain {
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-
+      FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );

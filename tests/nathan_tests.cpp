@@ -148,7 +148,10 @@ public:
 
 BOOST_FIXTURE_TEST_CASE( short_below_feed, nathan_fixture )
 { try {
-    exec(clienta, "short delegate21 100 USD 5 .195");
+    //This should fail.
+    exec(clienta, "short delegate21 100 USD 5 .194");
+    //This should work.
+    exec(clienta, "short delegate21 100 USD 10 .195");
     produce_block(clienta);
     produce_block(clientb);
 

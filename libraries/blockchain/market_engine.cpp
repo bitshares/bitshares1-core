@@ -277,9 +277,12 @@ class market_engine
 
                    mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
 
-                   // Handle rounding errors
-                   if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
-                       mtrx.bid_collateral = _current_bid->get_balance();
+                   if( (*mtrx.bid_collateral - mtrx.ask_paid).amount < 0 )
+                   {
+                       edump( (mtrx) );
+                       _current_bid.reset();
+                       continue;
+                   }
 
                    // If too little collateral at this price
                    if( *mtrx.bid_collateral < mtrx.ask_paid )
