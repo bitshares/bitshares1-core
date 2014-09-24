@@ -48,6 +48,28 @@ while True:
     url = "http://" + user + ":" + password + "@localhost:" + str(port) + "/rpc"
     print url
 
+    count = 0
+    for name in delegates:
+        payload = {
+            "method": "wallet_transfer",
+            "params": [5, "XTS", "init0", "init" + str(count)],
+            "jsonrpc": "2.0",
+            "id": 0,
+        }
+
+        print payload
+
+        headers = {
+          'content-type': 'application/json',
+          'Authorization': "Basic YTph"
+        }
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        print response
+        print response.json()
+
+        count += 1
+
+
     for name in delegates:
         payload = {
             "method": "wallet_publish_price_feed",
