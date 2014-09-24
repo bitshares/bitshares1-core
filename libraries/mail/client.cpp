@@ -2,6 +2,7 @@
 #include <bts/mail/server.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/cached_level_map.hpp>
+#include <bts/blockchain/time.hpp>
 
 #include <fc/network/tcp_socket.hpp>
 #include <fc/io/buffered_iostream.hpp>
@@ -324,7 +325,7 @@ public:
             std::unique_ptr<fc::future<void>> slave_handle_uptr(new fc::future<void>());
             fc::future<void>* slave_handle = slave_handle_uptr.get();
             while (email->content.id() > email->proof_of_work_target) {
-                email->content.timestamp = fc::time_point::now();
+                email->content.timestamp = blockchain::now();
                 _processing_db.store(email->id, *email);
 
                 try {
