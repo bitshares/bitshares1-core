@@ -143,7 +143,11 @@ namespace bts { namespace blockchain {
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-      FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
+
+      if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_8_BLOCK_NUM )
+      {
+          FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
+      }
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
