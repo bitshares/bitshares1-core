@@ -1,7 +1,10 @@
 #include <bts/mail/server.hpp>
+#include <bts/mail/exceptions.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/level_pod_map.hpp>
+#include <bts/blockchain/time.hpp>
 #include <fc/reflect/variant.hpp>
+#include <fc/crypto/ripemd160.hpp>
 #include <fc/time.hpp>
 
 namespace bts { namespace mail {
@@ -61,7 +64,8 @@ namespace bts { namespace mail {
                /**
                 *  Prevent the same message from going to multiple accounts.
                 */
-               FC_ASSERT( !_mail_data_db.fetch_optional(inventory_id) );
+               if( _mail_data_db.fetch_optional(inventory_id) )
+                  FC_THROW_EXCEPTION( message_already_stored, "Message already stored on server." );
 
                _mail_inventory_db.store( mail_index{owner,fc::time_point::now()}, inventory_id );
                _mail_data_db.store( inventory_id, msg );
@@ -95,6 +99,27 @@ namespace bts { namespace mail {
                return _mail_data_db.fetch( inventory_id );
             } FC_CAPTURE_AND_RETHROW( (inventory_id) ) }
 
+            void check_incoming_message( const message& msg )
+            { try {
+               auto now = blockchain::now();
+               if( msg.timestamp > now )
+                  FC_THROW_EXCEPTION( timestamp_in_future,
+                                      "Incoming message has timestamp ${message_stamp}, but current time is ${now}",
+                                      ("message_stamp", msg.timestamp)("now", now) );
+               if( now - msg.timestamp > BTS_MAIL_MAX_MESSAGE_AGE )
+                  FC_THROW_EXCEPTION( timestamp_too_old,
+                                      "Incoming message has timestamp ${message_stamp}, but current time is ${now}",
+                                      ("message_stamp", msg.timestamp)("now", now) );
+               if( msg.id() > BTS_MAIL_PROOF_OF_WORK_TARGET )
+                  FC_THROW_EXCEPTION( invalid_proof_of_work,
+                                      "Incoming message ID ${id} does not meet proof-of-work requirement ${req}",
+                                      ("id", msg.id())("req", BTS_MAIL_PROOF_OF_WORK_TARGET) );
+               if( msg.data.size() > BTS_MAIL_MAX_MESSAGE_SIZE_BYTES )
+                  FC_THROW_EXCEPTION( message_too_large,
+                                      "Incoming message size is ${size}, larger than one megabyte.",
+                                      ("size", msg.data.size()) );
+            } FC_CAPTURE_AND_RETHROW( (msg) ) }
+
          private:
             bts::db::level_pod_map< mail_index, message_id_type >   _mail_inventory_db;
             bts::db::level_map< message_id_type, message >          _mail_data_db;
@@ -117,6 +142,7 @@ namespace bts { namespace mail {
 
    void server::store( const bts::blockchain::address& owner, const message& msg )
    {
+      my->check_incoming_message(msg);
       my->store(owner,msg);
    }
 

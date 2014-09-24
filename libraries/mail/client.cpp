@@ -279,7 +279,7 @@ public:
         }
 
         //TODO: Contact mail servers, get their PoW requirements, set target to min() of these
-        email.proof_of_work_target = ripemd160("000000fffdeadbeeffffffffffffffffffffffff");
+        email.proof_of_work_target = BTS_MAIL_PROOF_OF_WORK_TARGET;
         _processing_db.store(message_id, email);
 
         schedule_proof_of_work(message_id);
