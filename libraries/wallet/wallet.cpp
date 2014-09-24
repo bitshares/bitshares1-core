@@ -115,6 +115,15 @@ namespace bts { namespace wallet {
                     bool overwrite_existing = false
                     );
 
+            void scan_transaction_new(
+                    const signed_transaction& transaction,
+                    uint32_t block_num,
+                    const time_point_sec& block_timestamp,
+                    const vector<private_key_type>& keys,
+                    const time_point_sec& received_time,
+                    bool overwrite_existing = false
+                    );
+
             bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee, public_key_type& from_pub_key );
             bool scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
 
@@ -571,6 +580,194 @@ namespace bts { namespace wallet {
             scan_market_transaction( market_trx, block_num, block.timestamp, received_time );
       }
 
+      void wallet_impl::scan_transaction_new(
+              const signed_transaction& transaction,
+              uint32_t block_num,
+              const time_point_sec& block_timestamp,
+              const vector<private_key_type>& keys,
+              const time_point_sec& received_time,
+              bool overwrite_existing )
+      { try {
+          // go thru all ops to decide if this trx is relevant to me
+          // and classify trx based on ops
+          // fill out transaction ledger entry as classified above
+
+          const auto id = transaction.id();
+
+          //auto transaction_record = _wallet_db.lookup_transaction( record_id );
+
+          //const auto already_exists = transaction_record.valid();
+          //if( !already_exists )
+          //{
+          transaction_ledger_entry record;
+          record.id = id;
+          record.block_num = block_num;
+          record.timestamp = block_timestamp; // really min of existing
+          record.transaction_id = id;
+
+          const otransaction_record blockchain_record = _blockchain->get_transaction( id, true );
+          FC_ASSERT( blockchain_record.valid() );
+
+          // TODO: this should be passed in from the outermost call
+          const account_balance_id_summary_type balance_ids = self->get_account_balance_ids( "" );
+          map<balance_id_type, string> id_map;
+          for( const auto& item : balance_ids )
+          {
+              for( const auto& id : item.second )
+                  id_map[ id ] = item.first;
+          }
+          string payer;
+
+          // TODO: we only support single "payer" account transactions
+          for( const auto& generic_op : transaction.operations )
+          {
+              switch( operation_type_enum( generic_op.type ) )
+              {
+                  case withdraw_op_type:
+                  {
+                      const auto op = generic_op.as<withdraw_operation>();
+                      payer = id_map[ op.balance_id ];
+                      break;
+                  }
+                  default:
+                      break;
+              }
+          }
+
+          for( const auto& generic_op : transaction.operations )
+          {
+              switch( operation_type_enum( generic_op.type ) )
+              {
+                  case withdraw_op_type:
+                  {
+                      break;
+                  }
+                  case deposit_op_type:
+                  {
+                      break;
+                  }
+                  case register_account_op_type:
+                  {
+                      const auto op = generic_op.as<register_account_operation>();
+
+                      transaction_ledger_entry::line_item line;
+                      // line payer should be whoever did the withdraw
+                      line.payer = payer;
+                      line.payee = "NETWORK";
+                      // TODO: fix this hardcode
+                      line.amount = asset( blockchain_record->balance.at( asset_id_type( 0 ) ) );
+                      line.description = "register account: " + op.name;
+                      record.line_items.push_back( line );
+                      break;
+                  }
+                  case update_account_op_type:
+                  {
+                      break;
+                  }
+                  case withdraw_pay_op_type:
+                  {
+                      break;
+                  }
+                  case create_asset_op_type:
+                  {
+                      break;
+                  }
+                  case update_asset_op_type:
+                  {
+                      break;
+                  }
+                  case issue_asset_op_type:
+                  {
+                      break;
+                  }
+                  case bid_op_type:
+                  {
+                      break;
+                  }
+                  case ask_op_type:
+                  {
+                      const auto op = generic_op.as<ask_operation>();
+                      if( op.amount >= 0 ) // create new ask
+                      {
+                          {
+                              transaction_ledger_entry::line_item line;
+                              // line payer should be whoever did the withdraw
+                              line.payer = payer;
+                              line.payee = "NETWORK";
+                              // TODO: fix this hardcode
+                              line.amount = asset( blockchain_record->balance.at( asset_id_type( 0 ) ) );
+                              line.description = "pay fee";
+                              record.line_items.push_back( line );
+                          }
+                          {
+                              transaction_ledger_entry::line_item line;
+                              // line payer should be whoever did the withdraw
+                              line.payer = payer;
+                              line.payee = "ASK-...";
+                              // TODO: fix this hardcode
+                              line.amount = asset( op.amount );
+                              line.description = "create ask blah blah";
+                              record.line_items.push_back( line );
+                          }
+                      }
+                      else // cancel ask
+                      {
+                          {
+                              transaction_ledger_entry::line_item line;
+                              // line payer should be whoever did the withdraw
+                              line.payer = "ASK-...";
+                              line.payee = "NETWORK";
+                              // TODO: fix this hardcode
+                              line.amount = asset( blockchain_record->balance.at( asset_id_type( 0 ) ) );
+                              line.description = "pay fee";
+                              record.line_items.push_back( line );
+                          }
+                          {
+                              transaction_ledger_entry::line_item line;
+                              // line payer should be whoever did the withdraw
+                              line.payer = "ASK-...";
+                              //line.payee = payer; // my account as dest of deposit op
+                              // TODO: fix this hardcode
+                              line.amount = asset( op.amount ); // TODO fix this
+                              line.description = "cancel ask blah blah";
+                              record.line_items.push_back( line );
+                          }
+                      }
+                      break;
+                  }
+                  case short_op_type:
+                  {
+                      break;
+                  }
+                  case cover_op_type:
+                  {
+                      break;
+                  }
+                  case define_delegate_slate_op_type:
+                  {
+                      break;
+                  }
+                  case update_feed_op_type:
+                  {
+                      break;
+                  }
+                  case burn_op_type:
+                  {
+                      break;
+                  }
+                  case link_account_op_type:
+                  {
+                      break;
+                  }
+                  default:
+                      break;
+              }
+          }
+
+          ulog( "${rec}", ("rec",record) );
+
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
       wallet_transaction_record wallet_impl::scan_transaction(
               const signed_transaction& transaction,
               uint32_t block_num,
@@ -579,6 +776,9 @@ namespace bts { namespace wallet {
               const time_point_sec& received_time,
               bool overwrite_existing )
       { try {
+
+                //scan_transaction_new( transaction, block_num, block_timestamp, keys, received_time, overwrite_existing );
+
           const auto record_id = transaction.id();
           auto transaction_record = _wallet_db.lookup_transaction( record_id );
           const auto already_exists = transaction_record.valid();

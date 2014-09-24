@@ -145,7 +145,7 @@ namespace bts { namespace net {
    class node : public std::enable_shared_from_this<node>
    {
       public:
-        node();
+        node(const std::string& user_agent);
         ~node();
 
         void close();
@@ -200,7 +200,7 @@ namespace bts { namespace net {
         /**
          *  @return a list of peers that are currently connected.
          */
-        std::vector<peer_status> get_connected_peers()const;
+        std::vector<peer_status> get_connected_peers() const;
 
         /** return the number of peers we're actively connected to */
         virtual uint32_t get_connection_count() const;
@@ -217,7 +217,7 @@ namespace bts { namespace net {
          */
         virtual void      sync_from( const item_id& );
 
-        bool      is_connected()const;
+        bool      is_connected() const;
 
         void set_advanced_node_parameters(const fc::variant_object& params);
         fc::variant_object get_advanced_node_parameters();
@@ -237,7 +237,7 @@ namespace bts { namespace net {
         fc::variant_object network_get_info() const;
         fc::variant_object network_get_usage_stats() const;
 
-        std::vector<potential_peer_record> get_potential_peers()const;
+        std::vector<potential_peer_record> get_potential_peers() const;
 
         void disable_peer_advertising();
         fc::variant_object get_call_statistics() const;
@@ -249,7 +249,7 @@ namespace bts { namespace net {
     {
     public:
       ~simulated_network();
-
+      simulated_network(const std::string& user_agent) : node(user_agent) {}
       void      listen_to_p2p_network() override {}
       void      connect_to_p2p_network() override {}
       void      connect_to(const fc::ip::endpoint& ep) override {}

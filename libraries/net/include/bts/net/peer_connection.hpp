@@ -113,7 +113,13 @@ namespace bts { namespace net
 
       /// data about the peer node
       /// @{
-      node_id_t        node_id;
+      /** node_public_key from the hello message, zero-initialized before we get the hello */
+      node_id_t        node_public_key; 
+      /** the unique identifier we'll use to refer to the node with.  zero-initialized before
+       * we receive the hello message, at which time it will be filled with either the "node_id"
+       * from the user_data field of the hello, or if none is present it will be filled with a 
+       * copy of node_public_key */
+      node_id_t        node_id; 
       uint32_t         core_protocol_version;
       std::string      user_agent;
       fc::optional<std::string> bitshares_git_revision_sha;
@@ -121,6 +127,7 @@ namespace bts { namespace net
       fc::optional<std::string> fc_git_revision_sha;
       fc::optional<fc::time_point_sec> fc_git_revision_unix_timestamp;
       fc::optional<std::string> platform;
+      fc::optional<uint32_t> bitness;
 
       // for inbound connections, these fields record what the peer sent us in
       // its hello message.  For outbound, they record what we sent the peer

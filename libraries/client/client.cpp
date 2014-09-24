@@ -569,8 +569,9 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               fc::thread*           _thread;
             };
 
-            client_impl(bts::client::client* self) :
+            client_impl(bts::client::client* self, const std::string& user_agent) :
               _self(self),
+              _user_agent(user_agent),
               _last_sync_status_message_indicated_in_sync(true),
               _last_sync_status_head_block(0),
               _remaining_items_to_sync(0),
@@ -668,7 +669,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
 
-            bts::client::client*                                    _self = nullptr;
+            bts::client::client*                                    _self;
+            std::string                                             _user_agent;
             bts::cli::cli*                                          _cli = nullptr;
 
 #ifndef DISABLE_DELEGATE_NETWORK
@@ -1617,13 +1619,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     } // end namespace detail
 
-    client::client()
-    :my( new detail::client_impl(this))
+    client::client(const std::string& user_agent)
+    :my(new detail::client_impl(this, user_agent))
     {
     }
 
-    client::client(bts::net::simulated_network_ptr network_to_connect_to)
-    : my( new detail::client_impl(this) )
+    client::client(const std::string& user_agent,
+                   bts::net::simulated_network_ptr network_to_connect_to)
+    : my( new detail::client_impl(this, user_agent) )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
@@ -1721,7 +1724,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
-          my->_p2p_node = std::make_shared<bts::net::node>();
+          my->_p2p_node = std::make_shared<bts::net::node>(my->_user_agent);
         my->_p2p_node->set_node_delegate(my.get());
 
         my->start_rebroadcast_pending_loop();

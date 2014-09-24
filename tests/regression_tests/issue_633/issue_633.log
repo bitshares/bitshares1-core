@@ -59,15 +59,11 @@ ACCOUNT                         BALANCE
 ============================================================
 test                            99.00000 XTS                
 default (unlocked) >>> wallet_account_update_active_key test test
-Command failed with exception: insufficient funds (20010)
-
-
-
-
-
-
+TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
+======================================================================================================================================================================
+[redacted]          PENDING   test                test                0.00000 XTS             update test active key                      0.50000 XTS         [redacted]
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
-test                            99.00000 XTS                
+test                            98.50000 XTS                
 default (unlocked) >>> quit
