@@ -90,10 +90,12 @@ public:
     void prompt()
     {
         string cmd;
+        std::cout << ">>> ";
         std::getline(std::cin, cmd);
         while (!cmd.empty()) {
             exec(clienta, cmd);
             exec(clientb, cmd);
+            std::cout << ">>> ";
             std::getline(std::cin, cmd);
         }
     }
@@ -147,10 +149,19 @@ public:
 BOOST_FIXTURE_TEST_CASE( short_below_feed, nathan_fixture )
 { try {
     exec(clienta, "short delegate21 100 USD 5 .195");
-    exec(clientb, "ask delegate20 10 XTS .19 USD");
-
     produce_block(clienta);
     produce_block(clientb);
+
+    exec(clientb, "blockchain_market_order_book USD XTS");
+    exec(clientb, "blockchain_market_list_shorts USD");
+    exec(clientb, "ask delegate20 10 XTS .19 USD");
+
+    produce_block(clientb);
+    exec(clientb, "blockchain_market_order_book USD XTS");
+    exec(clientb, "blockchain_market_list_shorts USD");
+    produce_block(clientb);
+    exec(clientb, "blockchain_market_order_book USD XTS");
+    exec(clientb, "blockchain_market_list_shorts USD");
 
     prompt();
 } FC_LOG_AND_RETHROW() }

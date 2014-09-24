@@ -699,7 +699,7 @@ namespace bts { namespace cli {
       return;
     }
 
-    out << std::string(18, ' ') << "BIDS (* Short Wall)"
+    out << std::string(18, ' ') << "BIDS (* Short)"
       << std::string(39, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
       << std::string(34, ' ') << "\n"
@@ -736,6 +736,11 @@ namespace bts { namespace cli {
         shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
     else
         shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
+
+    std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&max_short_price](const market_order& order) -> bool {
+        return order.state.short_price_limit && *order.state.short_price_limit < max_short_price;
+    });
+
     shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&max_short_price](const market_order& short_order) -> bool {
       //Filter out if insufficient collateral (i.e. XTS/USD < 1/max_short_price) or if price limit (i.e. USD/XTS) is less than short execution price
       return short_order.get_price() > max_short_price || (short_order.state.short_price_limit.valid()?
@@ -754,22 +759,32 @@ namespace bts { namespace cli {
         return !(a.market_index == b.market_index) && !(a.market_index < b.market_index);
       });
       if (short_wall.state.balance != 0)
-      {
         bids_asks.first.insert(pos, short_wall);
-        bid_itr = bids_asks.first.begin();
-      }
     }
+
+    //bid_itr may be invalidated by now... reset it.
+    bid_itr = bids_asks.first.begin();
 
     while(bid_itr != bids_asks.first.end() || ask_itr != bids_asks.second.end())
     {
       if(bid_itr != bids_asks.first.end())
       {
         bool short_wall = (bid_itr->get_owner() == address());
-        out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_balance())
-          << std::setw(20) << client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
-          << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(bid_itr->get_price())) + " " + quote_asset_record->symbol);
+        bool is_short_order = bid_itr->type == short_order;
 
-        if (short_wall)
+        if (is_short_order)
+        {
+          asset quantity(bid_itr->get_quote_quantity() * (*bid_itr->state.short_price_limit));
+          out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity())
+              << std::setw(20) << client->get_chain()->to_pretty_asset(quantity)
+              << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(*bid_itr->state.short_price_limit)) + " " + quote_asset_record->symbol);
+        } else {
+          out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_balance())
+              << std::setw(20) << client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
+              << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(bid_itr->get_price())) + " " + quote_asset_record->symbol);
+        }
+
+        if (short_wall || is_short_order)
           out << "*";
         else
           out << " ";
