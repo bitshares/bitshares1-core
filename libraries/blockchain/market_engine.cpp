@@ -28,6 +28,8 @@ class market_engine
              cancel_current_short( mtrx, market_idx.order_price.quote_asset_id );
              push_market_transaction( mtrx );
          }
+
+         _pending_state->apply_changes();
       }
 
       void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
