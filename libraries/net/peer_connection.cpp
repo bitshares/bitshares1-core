@@ -56,12 +56,14 @@ namespace bts { namespace net
     {
       VERIFY_CORRECT_THREAD();
 
+#if 0 // this gets too verbose
 #ifndef NDEBUG
       struct scope_logger {
         fc::optional<fc::ip::endpoint> endpoint;
         scope_logger(const fc::optional<fc::ip::endpoint>& endpoint) : endpoint(endpoint) { dlog("entering peer_connection::destroy() for peer ${endpoint}", ("endpoint", endpoint)); }
         ~scope_logger() { dlog("leaving peer_connection::destroy() for peer ${endpoint}", ("endpoint", endpoint)); }
       } send_message_scope_logger(get_remote_endpoint());
+#endif
 #endif
 
       try

@@ -144,7 +144,7 @@ namespace bts { namespace net {
     fc::ip::address            inbound_address;
     uint16_t                   inbound_port;
     uint16_t                   outbound_port;
-    node_id_t                  node_id;
+    node_id_t                  node_public_key;
     fc::ecc::compact_signature signed_shared_secret;
     fc::sha256                 chain_id;
     fc::variant_object         user_data;
@@ -155,7 +155,7 @@ namespace bts { namespace net {
                   const fc::ip::address& inbound_address,
                   uint16_t inbound_port,
                   uint16_t outbound_port,
-                  const node_id_t& node_id_arg, 
+                  const node_id_t& node_public_key, 
                   const fc::ecc::compact_signature& signed_shared_secret,
                   const fc::sha256& chain_id_arg,
                   const fc::variant_object& user_data ) :
@@ -164,7 +164,7 @@ namespace bts { namespace net {
       inbound_address(inbound_address),
       inbound_port(inbound_port),
       outbound_port(outbound_port),
-      node_id(node_id_arg),
+      node_public_key(node_public_key),
       signed_shared_secret(signed_shared_secret),
       chain_id(chain_id_arg),
       user_data(user_data)
@@ -389,7 +389,7 @@ FC_REFLECT( bts::net::hello_message, (user_agent)
                                      (inbound_address)
                                      (inbound_port)
                                      (outbound_port)
-                                     (node_id)
+                                     (node_public_key)
                                      (signed_shared_secret)
                                      (chain_id)
                                      (user_data) )
