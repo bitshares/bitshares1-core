@@ -12,7 +12,7 @@ Returns:
 aliases: getconfig, get_config, config, blockchain_get_config
 (wallet closed) >>> blockchain_get_info
 {
-  "blockchain_id": "7cb60eb8be0e3dcd434120b451fa7a8226fe78a41834b637f5a95740ba0e35c7",
+  "blockchain_id": "3622ad3cbd09f839b921bace52bf4432b91f636d625f53401bbf6b6cb01f754c",
   "symbol": "XTS",
   "name": "BitShares XTS",
   "version": 109,

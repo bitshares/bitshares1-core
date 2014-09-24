@@ -19,8 +19,8 @@ aliases: get_asset
   "public_data": "",
   "issuer_account_id": 0,
   "precision": 100000,
-  "registration_date": "20200101T000000",
-  "last_update": "20200101T000000",
+  "registration_date": "20140620T144027",
+  "last_update": "20140620T144027",
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0
@@ -34,8 +34,8 @@ aliases: get_asset
   "public_data": "",
   "issuer_account_id": 0,
   "precision": 100000,
-  "registration_date": "20200101T000000",
-  "last_update": "20200101T000000",
+  "registration_date": "20140620T144027",
+  "last_update": "20140620T144027",
   "current_share_supply": 199999999999901,
   "maximum_share_supply": 1000000000000000,
   "collected_fees": 0
