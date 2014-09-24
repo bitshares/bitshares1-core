@@ -45,6 +45,7 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
 
+      current_bid->last_update = eval_state._current_state->now();
       current_bid->balance     += this->amount;
 
       // bids do not count toward depth... they can set any price they like and create arbitrary depth
@@ -101,6 +102,7 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
 
+      current_ask->last_update = eval_state._current_state->now();
       current_ask->balance     += this->amount;
       FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
@@ -123,11 +125,13 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
 
       auto owner = this->short_index.owner;
-      if( !eval_state.check_signature( owner ) )
-         FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
 
       asset delta_amount  = this->get_amount();
       asset delta_quote   = delta_amount * this->short_index.order_price;
+
+#ifndef WIN32 // TODO... remove this warning once BTSX updates
+#warning BTSX should assert that delta_amount.asset_id == 0
+#endif
 
       /** if the USD amount of the order is effectively then don't bother */
       FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
@@ -144,6 +148,9 @@ namespace bts { namespace blockchain {
       if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
       if( this->amount <  0 ) // withdraw
       {
+          if( !eval_state.check_signature( owner ) )
+             FC_CAPTURE_AND_THROW( missing_signature, (short_index.owner) );
+
           if( NOT current_short )
              FC_CAPTURE_AND_THROW( unknown_market_order, (short_index) );
 
@@ -162,6 +169,7 @@ namespace bts { namespace blockchain {
           eval_state.sub_balance( balance_id_type(), delta_amount );
       }
       current_short->short_price_limit = this->short_price_limit;
+      current_short->last_update = eval_state._current_state->now();
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
 
@@ -264,7 +272,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
       auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
-                            asset((current_cover->collateral_balance*3)/4, 0);
+                            asset((current_cover->collateral_balance*2)/3, 0);
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
