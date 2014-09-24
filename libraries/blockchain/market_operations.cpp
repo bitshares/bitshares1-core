@@ -109,7 +109,7 @@ namespace bts { namespace blockchain {
       auto market_stat = eval_state._current_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
 
       if( !market_stat )
-         market_stat = market_status(ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id, 0,0);
+         market_stat = market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id, 0, 0 );
       market_stat->ask_depth += delta_amount.amount;
 
       eval_state._current_state->store_market_status( *market_stat );
@@ -134,7 +134,7 @@ namespace bts { namespace blockchain {
 #endif
 
       /** if the USD amount of the order is effectively then don't bother */
-      FC_ASSERT( llabs(delta_quote.amount) > 0, "", ("delta_quote",delta_quote)("order",*this));
+      FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
@@ -175,7 +175,7 @@ namespace bts { namespace blockchain {
 
       auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
       if( !market_stat )
-         market_stat = market_status(short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0,0);
+         market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0, 0 );
 
       market_stat->bid_depth += delta_amount.amount;
 
@@ -224,19 +224,19 @@ namespace bts { namespace blockchain {
 
       if( current_cover->payoff_balance > 0 )
       {
-         auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
-                               asset((current_cover->collateral_balance*2)/3, 0);
+         auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id) /
+                               asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
          if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
-            eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner),
+            eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
                                                                 *current_cover );
          else
-            eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
+            eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner ),
                                                                 *current_cover );
       }
       else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
       {
-         eval_state.add_balance( asset( current_cover->collateral_balance, 0 ) );
+         eval_state.add_balance( asset( current_cover->collateral_balance, cover_index.order_price.base_asset_id ) );
 
          auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
          FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
@@ -271,8 +271,8 @@ namespace bts { namespace blockchain {
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
-      auto new_call_price = asset(current_cover->payoff_balance, delta_amount.asset_id) /
-                            asset((current_cover->collateral_balance*2)/3, 0);
+      auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id ) /
+                            asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
@@ -287,6 +287,7 @@ namespace bts { namespace blockchain {
    void remove_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       // Should this even be allowed?
+      FC_ASSERT( !"Not implemented!" );
    }
 
 } } // bts::blockchain
