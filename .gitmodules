@@ -1,16 +1,20 @@
 [submodule "vendor"]
 	path = vendor
 	url = https://github.com/BitShares/vendor.git
+  ignore = dirty
 [submodule "libraries/fc"]
 	path = libraries/fc
 	url = https://github.com/InvictusInnovations/fc.git
+  ignore = dirty
 [submodule "programs/web_wallet"]
 	path = programs/web_wallet
 	url = https://github.com/BitShares/web_wallet.git
+  ignore = dirty
 [submodule "programs/qt_wallet"]
 	path = programs/qt_wallet
 	url = https://github.com/BitShares/qt_wallet.git
+  ignore = dirty
 [submodule "libraries/leveldb"]
 	path = libraries/leveldb
 	url = https://github.com/bitcoin/leveldb.git
-    ignore = dirty
+  ignore = dirty

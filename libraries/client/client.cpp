@@ -238,7 +238,7 @@ void print_banner()
 fc::logging_config create_default_logging_config( const fc::path& data_dir, bool enable_ulog )
 {
     fc::logging_config cfg;
-    fc::path log_dir = data_dir / "logs";
+    fc::path log_dir("logs");
 
     fc::file_appender::config ac;
     ac.filename             = log_dir / "default" / "default.log";
@@ -249,7 +249,7 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
     ac.rotation_limit       = fc::days( 1 );
     ac.rotation_compression = true;
 
-    std::cout << "Logging to file: " << ac.filename.generic_string() << "\n";
+    std::cout << "Logging to file: " << (data_dir / ac.filename).preferred_string() << "\n";
 
     fc::file_appender::config ac_rpc;
     ac_rpc.filename             = log_dir / "rpc" / "rpc.log";
@@ -260,7 +260,7 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
     ac_rpc.rotation_limit       = fc::days( 1 );
     ac_rpc.rotation_compression = true;
 
-    std::cout << "Logging RPC to file: " << ac_rpc.filename.generic_string() << "\n";
+    std::cout << "Logging RPC to file: " << (data_dir / ac_rpc.filename).preferred_string() << "\n";
 
     fc::file_appender::config ac_blockchain;
     ac_blockchain.filename             = log_dir / "blockchain" / "blockchain.log";
@@ -271,7 +271,7 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
     ac_blockchain.rotation_limit       = fc::days( 1 );
     ac_blockchain.rotation_compression = true;
 
-    std::cout << "Logging blockchain to file: " << ac_blockchain.filename.generic_string() << "\n";
+    std::cout << "Logging blockchain to file: " << (data_dir / ac_blockchain.filename).preferred_string() << "\n";
 
     fc::file_appender::config ac_p2p;
     ac_p2p.filename             = log_dir / "p2p" / "p2p.log";
@@ -286,7 +286,7 @@ fc::logging_config create_default_logging_config( const fc::path& data_dir, bool
     ac_p2p.rotation_limit       = fc::days( 1 );
     ac_p2p.rotation_compression = true;
 
-    std::cout << "Logging P2P to file: " << ac_p2p.filename.generic_string() << "\n";
+    std::cout << "Logging P2P to file: " << (data_dir / ac_p2p.filename).preferred_string() << "\n";
 
     fc::variants  c  {
                 fc::mutable_variant_object( "level","debug")("color", "green"),
@@ -407,7 +407,7 @@ void load_and_configure_chain_database( const fc::path& datadir,
 
   if (option_variables.count("resync-blockchain"))
   {
-    std::cout << "Deleting old copy of the blockchain in: " << ( datadir / "chain" ).generic_string() << "\n";
+    std::cout << "Deleting old copy of the blockchain in: " << ( datadir / "chain" ).preferred_string() << "\n";
     try
     {
       fc::remove_all(datadir / "chain");
@@ -432,18 +432,18 @@ void load_and_configure_chain_database( const fc::path& datadir,
   }
   else
   {
-    std::cout << "Loading blockchain from: " << ( datadir / "chain" ).generic_string()  << "\n";
+    std::cout << "Loading blockchain from: " << ( datadir / "chain" ).preferred_string()  << "\n";
   }
 
 } FC_RETHROW_EXCEPTIONS( warn, "unable to open blockchain from ${data_dir}", ("data_dir",datadir/"chain") ) }
 
 config load_config( const fc::path& datadir, bool enable_ulog )
 { try {
-      fc::path config_file = datadir/"config.json";
+      fc::path config_file = datadir / "config.json";
       config cfg;
       if( fc::exists( config_file ) )
       {
-         std::cout << "Loading config from file: " << config_file.generic_string() << "\n";
+         std::cout << "Loading config from file: " << config_file.preferred_string() << "\n";
          const auto default_peers = cfg.default_peers;
          cfg = fc::json::from_file( config_file ).as<config>();
 
@@ -461,10 +461,33 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       }
       else
       {
-         std::cerr << "Creating default config file at: " << config_file.generic_string() << "\n";
+         std::cerr << "Creating default config file at: " << config_file.preferred_string() << "\n";
          cfg.logging = create_default_logging_config( datadir, enable_ulog );
       }
       fc::json::save_to_file( cfg, config_file );
+
+      // the logging_config may contain relative paths.  If it does, expand those to full
+      // paths, relative to the data_dir
+      for (fc::appender_config& appender : cfg.logging.appenders)
+      {
+        if (appender.type == "file")
+        {
+          try
+          {
+            fc::file_appender::config file_appender_config = appender.args.as<fc::file_appender::config>();
+            if (file_appender_config.filename.is_relative())
+            {
+              file_appender_config.filename = fc::canonical(datadir / file_appender_config.filename);
+              appender.args = fc::variant(file_appender_config);
+            }
+          }
+          catch (const fc::exception& e)
+          {
+            wlog("Unexpected exception processing logging config: ${e}", ("e", e));
+          }
+        }
+      }
+
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
       return cfg;
 } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
@@ -569,8 +592,9 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               fc::thread*           _thread;
             };
 
-            client_impl(bts::client::client* self) :
+            client_impl(bts::client::client* self, const std::string& user_agent) :
               _self(self),
+              _user_agent(user_agent),
               _last_sync_status_message_indicated_in_sync(true),
               _last_sync_status_head_block(0),
               _remaining_items_to_sync(0),
@@ -668,7 +692,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
 
-            bts::client::client*                                    _self = nullptr;
+            bts::client::client*                                    _self;
+            std::string                                             _user_agent;
             bts::cli::cli*                                          _cli = nullptr;
 
 #ifndef DISABLE_DELEGATE_NETWORK
@@ -1617,13 +1642,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     } // end namespace detail
 
-    client::client()
-    :my( new detail::client_impl(this))
+    client::client(const std::string& user_agent)
+    :my(new detail::client_impl(this, user_agent))
     {
     }
 
-    client::client(bts::net::simulated_network_ptr network_to_connect_to)
-    : my( new detail::client_impl(this) )
+    client::client(const std::string& user_agent,
+                   bts::net::simulated_network_ptr network_to_connect_to)
+    : my( new detail::client_impl(this, user_agent) )
     {
       network_to_connect_to->add_node_delegate(my.get());
       my->_p2p_node = network_to_connect_to;
@@ -1721,7 +1747,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)
-          my->_p2p_node = std::make_shared<bts::net::node>();
+          my->_p2p_node = std::make_shared<bts::net::node>(my->_user_agent);
         my->_p2p_node->set_node_delegate(my.get());
 
         my->start_rebroadcast_pending_loop();
@@ -3040,6 +3066,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     {
       config temp_config = load_config( _data_dir, _enable_ulog );
       fc::configure_logging( temp_config.logging );
+      // re-register the _user_appender which was overwritten by configure_logging()
+      fc::logger::get("user").add_appender(_user_appender);
     }
 
     fc::variant_object client_impl::about() const

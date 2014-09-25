@@ -1,19 +1,19 @@
 default (unlocked) >>> wallet_account_create testaccount1
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount1:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+xts:testaccount1:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 default (unlocked) >>> wallet_account_create testaccount2
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount2:XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b
+xts:testaccount2:XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41
 default (unlocked) >>> wallet_account_create testaccount3
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount3:XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM
+xts:testaccount3:XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4
 default (unlocked) >>> wallet_account_create testaccount4
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount4:XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg
+xts:testaccount4:XTS52aPLfCxir5QcsjCWa6qMg31YRjbBUr3sU8Jc2MdaVTFA31jVQ
 default (unlocked) >>> blockchain_get_account testaccount1
 No account found.
 default (unlocked) >>> blockchain_get_account testaccount2
@@ -45,10 +45,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 102,
     "name": "testaccount1",
     "public_data": null,
-    "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+    "owner_key": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
     "active_key_history": [[
         "20140620T144030",
-        "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+        "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
       ]
     ],
     "registration_date": "20140620T144030",
@@ -78,10 +78,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 102,
     "name": "testaccount1",
     "public_data": null,
-    "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+    "owner_key": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
     "active_key_history": [[
         "20140620T144030",
-        "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+        "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
       ]
     ],
     "registration_date": "20140620T144030",
@@ -100,10 +100,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 103,
     "name": "testaccount2",
     "public_data": null,
-    "owner_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
+    "owner_key": "XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41",
     "active_key_history": [[
         "20140620T144040",
-        "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b"
+        "XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41"
       ]
     ],
     "registration_date": "20140620T144040",
@@ -133,10 +133,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 102,
     "name": "testaccount1",
     "public_data": null,
-    "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+    "owner_key": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
     "active_key_history": [[
         "20140620T144030",
-        "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+        "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
       ]
     ],
     "registration_date": "20140620T144030",
@@ -155,10 +155,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 103,
     "name": "testaccount2",
     "public_data": null,
-    "owner_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
+    "owner_key": "XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41",
     "active_key_history": [[
         "20140620T144040",
-        "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b"
+        "XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41"
       ]
     ],
     "registration_date": "20140620T144040",
@@ -177,10 +177,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 104,
     "name": "testaccount3",
     "public_data": null,
-    "owner_key": "XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM",
+    "owner_key": "XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4",
     "active_key_history": [[
         "20140620T144050",
-        "XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM"
+        "XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4"
       ]
     ],
     "registration_date": "20140620T144050",
@@ -209,9 +209,9 @@ default (unlocked) >>> blockchain_get_account testaccount1
 Name: testaccount1
 Registered: [redacted]
 Last Updated: [redacted]
-Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Owner Key: XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 Active Key History:
-- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+- XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
@@ -221,9 +221,9 @@ default (unlocked) >>> blockchain_get_account testaccount2
 Name: testaccount2
 Registered: [redacted]
 Last Updated: [redacted]
-Owner Key: XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b
+Owner Key: XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41
 Active Key History:
-- XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b, last used [redacted]
+- XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
@@ -233,9 +233,9 @@ default (unlocked) >>> blockchain_get_account testaccount3
 Name: testaccount3
 Registered: [redacted]
 Last Updated: [redacted]
-Owner Key: XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM
+Owner Key: XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4
 Active Key History:
-- XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM, last used [redacted]
+- XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
@@ -245,9 +245,9 @@ default (unlocked) >>> blockchain_get_account testaccount4
 Name: testaccount4
 Registered: [redacted]
 Last Updated: [redacted]
-Owner Key: XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg
+Owner Key: XTS52aPLfCxir5QcsjCWa6qMg31YRjbBUr3sU8Jc2MdaVTFA31jVQ
 Active Key History:
-- XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg, last used [redacted]
+- XTS52aPLfCxir5QcsjCWa6qMg31YRjbBUr3sU8Jc2MdaVTFA31jVQ, last used [redacted]
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
@@ -258,10 +258,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 102,
     "name": "testaccount1",
     "public_data": null,
-    "owner_key": "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp",
+    "owner_key": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
     "active_key_history": [[
         "20140620T144030",
-        "XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp"
+        "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
       ]
     ],
     "registration_date": "20140620T144030",
@@ -280,10 +280,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 103,
     "name": "testaccount2",
     "public_data": null,
-    "owner_key": "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b",
+    "owner_key": "XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41",
     "active_key_history": [[
         "20140620T144040",
-        "XTS7wWv82L4JRAD6CH5bZCZgcqaFsJo2qDrNf5pDDqNkZtHviyf7b"
+        "XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41"
       ]
     ],
     "registration_date": "20140620T144040",
@@ -302,10 +302,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 104,
     "name": "testaccount3",
     "public_data": null,
-    "owner_key": "XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM",
+    "owner_key": "XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4",
     "active_key_history": [[
         "20140620T144050",
-        "XTS59EbWFCp7fv5Hyz9R9kkiysXzienVUTHyfNaZiNDiTpYejftfM"
+        "XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4"
       ]
     ],
     "registration_date": "20140620T144050",
@@ -324,10 +324,10 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "id": 105,
     "name": "testaccount4",
     "public_data": null,
-    "owner_key": "XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg",
+    "owner_key": "XTS52aPLfCxir5QcsjCWa6qMg31YRjbBUr3sU8Jc2MdaVTFA31jVQ",
     "active_key_history": [[
         "20140620T144100",
-        "XTS5iThXoJbP9rnNsP83W9u7FzrinCCdV39PsgfQv1CNznBKqK1bg"
+        "XTS52aPLfCxir5QcsjCWa6qMg31YRjbBUr3sU8Jc2MdaVTFA31jVQ"
       ]
     ],
     "registration_date": "20140620T144100",

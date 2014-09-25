@@ -1,7 +1,7 @@
 default (unlocked) >>> wallet_account_create test
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:test:XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v
+xts:test:XTS5kmVHDwLN9zsxa18jKFrLn6yPJkBsxJJHmFeRygEpUaBWCqcb4
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -23,7 +23,8 @@ OK
 default (unlocked) >>> blockchain_list_blocks
 HEIGHT  TIMESTAMP           SIGNING DELEGATE                # TXS   SIZE    LATENCY PROCESSING TIME
 ===================================================================================================
-2       [redacted]          [redacted]                      1       392     [redacted][redacted]     
+3       [redacted]          [redacted]                      1       392     [redacted][redacted]     
+2       [redacted]          [redacted]                      0       166     [redacted][redacted]     
 1       [redacted]          [redacted]                      1       410     [redacted][redacted]     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      

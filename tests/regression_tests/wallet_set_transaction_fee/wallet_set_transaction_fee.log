@@ -1,14 +1,14 @@
 default (unlocked) >>> wallet_account_create test
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+xts:test:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 default (unlocked) >>> wallet_get_info
 {
   "data_dir": "[redacted]",
   "open": true,
   "name": "default",
   "automatic_backups": false,
-  "transaction_scanning": true,
+  "transaction_scanning_enabled": true,
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "[redacted]",
   "transaction_fee": "0.50000 XTS",
@@ -43,7 +43,7 @@ default (unlocked) >>> wallet_get_info
   "open": true,
   "name": "default",
   "automatic_backups": false,
-  "transaction_scanning": true,
+  "transaction_scanning_enabled": true,
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "[redacted]",
   "transaction_fee": "0.00001 XTS",
@@ -72,7 +72,7 @@ default (unlocked) >>> wallet_get_info
   "open": true,
   "name": "default",
   "automatic_backups": false,
-  "transaction_scanning": true,
+  "transaction_scanning_enabled": true,
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "[redacted]",
   "transaction_fee": "123.45600 XTS",
@@ -95,7 +95,7 @@ default (unlocked) >>> wallet_get_info
   "open": true,
   "name": "default",
   "automatic_backups": false,
-  "transaction_scanning": true,
+  "transaction_scanning_enabled": true,
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "[redacted]",
   "transaction_fee": "0.10000 XTS",
