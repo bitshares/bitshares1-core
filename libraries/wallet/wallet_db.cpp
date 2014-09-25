@@ -380,7 +380,6 @@ namespace bts { namespace wallet {
             {
               // FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
                oacct->is_my_account = true;
-               store_record( *oacct );
                cache_account( *oacct );
                /*
                ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
@@ -461,7 +460,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( fc::exists( filename ) );
       FC_ASSERT( is_open() );
 
-      auto records = fc::json::from_file< std::vector<generic_wallet_record> >( filename );
+      auto records = fc::json::from_file<std::vector<generic_wallet_record>>( filename );
       for( const auto& record : records )
          store_generic_record( record );
    } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
