@@ -90,6 +90,8 @@ namespace bts { namespace blockchain {
          unordered_map<asset_id_type, asset>        withdraws;
          unordered_map<asset_id_type, share_type>   yield;
 
+         map<uint32_t, asset>                       deltas;
+
          asset                                      required_fees;
          /**
           *  The total fees paid by in alternative asset types (like BitUSD) calculated
@@ -106,7 +108,8 @@ namespace bts { namespace blockchain {
           *  @note - this value should always equal the sum of deposits-withdraws
           *  and is maintained for the purpose of seralization.
           */
-         unordered_map<asset_id_type, share_type>   balance;
+         //unordered_map<asset_id_type, share_type>   balance;
+         map<asset_id_type, share_type>   balance;
 
          struct vote_state
          {
@@ -123,7 +126,9 @@ namespace bts { namespace blockchain {
       // not serialized
          chain_interface_ptr                        _current_state;
          digest_type                                _chain_id;
-         bool                                       _skip_signature_check;
+         bool                                       _skip_signature_check = false;
+
+         uint32_t                                   _current_op_index = 0;
    };
 
    typedef shared_ptr<transaction_evaluation_state> transaction_evaluation_state_ptr;
@@ -140,6 +145,7 @@ FC_REFLECT( bts::blockchain::transaction_evaluation_state,
            (deposits)
            (withdraws)
            (yield)
+           (deltas)
            (required_fees)
            (alt_fees_paid)
            (balance)

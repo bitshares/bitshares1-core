@@ -3280,6 +3280,13 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        return _wallet->scan_transaction( transaction_id, overwrite_existing );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
 
+    void client_impl::wallet_scan_transaction_experimental( const string& transaction_id, bool overwrite_existing )
+    { try {
+#ifdef BTS_TEST_NETWORK
+       _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
+#endif
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
+
     wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
     { try {
        return _wallet->get_transaction( transaction_id );
