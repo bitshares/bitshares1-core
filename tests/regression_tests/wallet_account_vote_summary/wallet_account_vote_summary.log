@@ -15,7 +15,7 @@ No votes found.
 default (unlocked) >>> wallet_account_create test
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+xts:test:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test my_message vote_all
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
