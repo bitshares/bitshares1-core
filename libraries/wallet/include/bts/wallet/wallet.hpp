@@ -448,8 +448,8 @@ namespace bts { namespace wallet {
                  share_type collateral_to_add,
                  bool sign = true
                  );
-         wallet_transaction_record cancel_market_order(
-                 const order_id_type& order_id,
+         wallet_transaction_record cancel_market_orders(
+                 const vector<order_id_type>& order_ids,
                  bool sign = true
                  );
 #if 0
