@@ -146,27 +146,49 @@ public:
 //    BOOST_CHECK(rm.attachments[0].data == attach.data);
 //} FC_LOG_AND_RETHROW() }
 
-BOOST_FIXTURE_TEST_CASE( short_below_feed, nathan_fixture )
+//BOOST_FIXTURE_TEST_CASE( short_below_feed, nathan_fixture )
+//{ try {
+//    //This should fail.
+//    exec(clienta, "short delegate21 100 USD 5 .194");
+//    //This should work.
+//    exec(clienta, "short delegate21 100 USD 10 .195");
+//    produce_block(clienta);
+//    produce_block(clientb);
+
+//    exec(clientb, "blockchain_market_order_book USD XTS");
+//    exec(clientb, "blockchain_market_list_shorts USD");
+//    exec(clientb, "ask delegate20 10 XTS .19 USD");
+
+//    produce_block(clientb);
+//    exec(clientb, "blockchain_market_order_book USD XTS");
+//    exec(clientb, "blockchain_market_list_shorts USD");
+//    produce_block(clientb);
+//    exec(clientb, "blockchain_market_order_book USD XTS");
+//    exec(clientb, "blockchain_market_list_shorts USD");
+
+//    prompt();
+//} FC_LOG_AND_RETHROW() }
+
+BOOST_FIXTURE_TEST_CASE( to_ugly_asset, nathan_fixture )
 { try {
-    //This should fail.
-    exec(clienta, "short delegate21 100 USD 5 .194");
-    //This should work.
-    exec(clienta, "short delegate21 100 USD 10 .195");
-    produce_block(clienta);
-    produce_block(clientb);
+    chain_interface_ptr chain = clienta->get_chain();
 
-    exec(clientb, "blockchain_market_order_book USD XTS");
-    exec(clientb, "blockchain_market_list_shorts USD");
-    exec(clientb, "ask delegate20 10 XTS .19 USD");
-
-    produce_block(clientb);
-    exec(clientb, "blockchain_market_order_book USD XTS");
-    exec(clientb, "blockchain_market_list_shorts USD");
-    produce_block(clientb);
-    exec(clientb, "blockchain_market_order_book USD XTS");
-    exec(clientb, "blockchain_market_list_shorts USD");
-
-    prompt();
+    BOOST_CHECK(chain->to_ugly_asset("100.005", "XTS") == asset(10000500));
+    BOOST_CHECK(chain->to_ugly_asset("100", "XTS") == asset(10000000));
+    BOOST_CHECK(chain->to_ugly_asset("100.00500", "XTS") == asset(10000500));
+    BOOST_CHECK(chain->to_ugly_asset("100.0050000", "XTS") == asset(10000500));
+    BOOST_CHECK(chain->to_ugly_asset("100.0050001", "XTS") == asset(10000500));
+    BOOST_CHECK(chain->to_ugly_asset("100.", "XTS") == asset(10000000));
+    BOOST_CHECK(chain->to_ugly_asset("100.123456", "XTS") == asset(10012345));
+    BOOST_CHECK(chain->to_ugly_asset("100.0000001", "XTS") == asset(10000000));
+    BOOST_CHECK(chain->to_ugly_asset("-100.005", "XTS") == asset(-10000500));
+    BOOST_CHECK(chain->to_ugly_asset("-100", "XTS") == asset(-10000000));
+    BOOST_CHECK(chain->to_ugly_asset("-100.00500", "XTS") == asset(-10000500));
+    BOOST_CHECK(chain->to_ugly_asset("-100.0050000", "XTS") == asset(-10000500));
+    BOOST_CHECK(chain->to_ugly_asset("-100.0050001", "XTS") == asset(-10000500));
+    BOOST_CHECK(chain->to_ugly_asset("-100.", "XTS") == asset(-10000000));
+    BOOST_CHECK(chain->to_ugly_asset("-100.123456", "XTS") == asset(-10012345));
+    BOOST_CHECK(chain->to_ugly_asset("-100.0000001", "XTS") == asset(-10000000));
 } FC_LOG_AND_RETHROW() }
 
 /*
