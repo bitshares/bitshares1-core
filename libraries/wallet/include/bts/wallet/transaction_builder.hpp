@@ -73,8 +73,20 @@ namespace bts { namespace wallet {
       transaction_builder& submit_bid(const wallet_account_record& from_account,
                                       const asset& real_quantity,
                                       const price& quote_price);
+      /**
+       * @brief Submit an ask order
+       * @param from_account The account to place the ask
+       * @param real_quantity The quantity to sell
+       * @param quote_price The price to sell at
+       *
+       * The account is expected to be a receive account.
+       * The quantity and price are expected to be positive values.
+       * The price's quote and base IDs are expected to be registered with the blockchain.
+       */
+      transaction_builder& submit_ask(const wallet_account_record& from_account,
+                                      const asset& cost,
+                                      const price& quote_price);
       /// @}
-
    private:
       detail::wallet_impl* _wimpl;
       //Shorthand name for the signed_transaction

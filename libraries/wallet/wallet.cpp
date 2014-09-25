@@ -4914,7 +4914,9 @@ namespace bts { namespace wallet {
       {
          switch(order_description.first)
          {
+         //Bid and ask take the same args. Combine them to avoid code duplication in argument parsing.
          case bid_order:
+         case ask_order:
          {
             const auto& args = order_description.second;
             // args: from_account_name, real_quantity, quantity_symbol, quote_price, quote_symbol[, sign]
@@ -4923,13 +4925,20 @@ namespace bts { namespace wallet {
                FC_CAPTURE_AND_THROW( unknown_receive_account, (args[0]) );
 
             asset quantity = my->_blockchain->to_ugly_asset(args[1], args[2]);
+            if( quantity.amount <= 0 )
+               FC_CAPTURE_AND_THROW( invalid_asset_amount, (quantity) );
             oasset_record quote_rec = my->_blockchain->get_asset_record(args[4]);
             if( !quote_rec )
                FC_CAPTURE_AND_THROW( unknown_asset_symbol, (args[4]) );
             price quote_price = price("0" + args[3] + " " + std::to_string(quote_rec->id) +
                     " / " + std::to_string(quantity.asset_id));
+            if( double(quote_price) <= 0 )
+              FC_CAPTURE_AND_THROW( invalid_price, (quote_price) );
 
-            builder.submit_bid(get_account(args[0]), quantity, quote_price);
+            if( order_description.first == bid_order )
+               builder.submit_bid(get_account(args[0]), quantity, quote_price);
+            else
+               builder.submit_ask(get_account(args[0]), quantity, quote_price);
             break;
          }
          default:
@@ -6679,6 +6688,40 @@ namespace bts { namespace wallet {
       required_signatures.insert(order_key);
       return *this;
    } FC_CAPTURE_AND_RETHROW( (from_account.name)(real_quantity)(quote_price) ) }
+
+   transaction_builder& transaction_builder::submit_ask(const wallet_account_record& from_account,
+                                                        const asset& cost,
+                                                        const price& quote_price)
+   { try {
+      auto quote_asset_record = _wimpl->_blockchain->get_asset_record( quote_price.quote_asset_id );
+      auto base_asset_record  = _wimpl->_blockchain->get_asset_record( quote_price.base_asset_id );
+
+      if( quote_asset_record->id < base_asset_record->id )
+      {
+         // force user to submit an ask rather than a bid
+         FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_record->symbol)(base_asset_record->symbol) );
+      }
+
+      FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
+
+      auto order_key = order_key_for_account(from_account.account_address);
+
+      //Charge this account for the ask
+      outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
+      trx.ask(cost, quote_price, order_key);
+
+      auto entry = ledger_entry();
+      entry.from_account = from_account.owner_key;
+      entry.to_account = order_key;
+      entry.amount = cost;
+      entry.memo = "sell " + base_asset_record->symbol + " @ " + _wimpl->_blockchain->to_pretty_price(quote_price);
+
+      transaction_record.is_market = true;
+      transaction_record.ledger_entries.push_back(entry);
+
+      required_signatures.insert(order_key);
+      return *this;
+   } FC_CAPTURE_AND_RETHROW( (from_account.name)(cost)(quote_price) ) }
 
    /********  END  TRANSACTION BUILDER IMPLEMENTATION ********/
 
