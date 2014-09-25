@@ -60,10 +60,12 @@ namespace bts { namespace blockchain {
          virtual bool                       is_valid_symbol_name( const string& name ) const;
          virtual bool                       is_valid_account_name( const string& name ) const;
 
-         /** convers an asset + asset_id to a more friendly representation using the symbol name */
+         /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
          double                             to_pretty_price_double( const price& a )const;
          string                             to_pretty_price( const price& a )const;
+         /** converts a numeric string + asset symbol to an asset */
+         asset                              to_ugly_asset( const string& amount, const string& symbol )const;
 
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
