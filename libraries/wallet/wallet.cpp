@@ -620,6 +620,7 @@ namespace bts { namespace wallet {
               return false;
           };
 
+          // TODO: Recipient address label needs to be saved at time of creation
           const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
           {
               const balance_id_type balance_id = op.balance_id();
@@ -734,6 +735,30 @@ namespace bts { namespace wallet {
               return false;
           };
 
+          // TODO: Recipient address label needs to be saved at time of creation
+          const auto scan_issue_asset = [&]( const issue_asset_operation& op ) -> bool
+          {
+              const asset delta = eval_state->deltas.at( op_index );
+              record.delta_amounts[ "NETWORK" ][ delta.asset_id ] += delta.amount;
+
+              const auto asset_rec = _blockchain->get_asset_record( delta.asset_id );
+              if( !asset_rec.valid() ) // This should never happen
+                  return false;
+
+              record.operation_details[ op_index ] = string( "issue asset: " + asset_rec->symbol );
+
+              const auto account_rec = _blockchain->get_account_record( asset_rec->issuer_account_id );
+              if( !account_rec.valid() ) // This should never happen
+                  return false;
+
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
           const auto scan_ask = [&]( const ask_operation& op ) -> bool
           {
               const asset delta = eval_state->deltas.at( op_index );
@@ -810,6 +835,7 @@ namespace bts { namespace wallet {
                   case update_asset_op_type:
                       break;
                   case issue_asset_op_type:
+                      store_record |= scan_issue_asset( op.as<issue_asset_operation>() );
                       break;
                   case bid_op_type:
                       break;
@@ -850,7 +876,8 @@ namespace bts { namespace wallet {
               }
           }
 
-          record.delta_amounts[ "NETWORK" ] = eval_state->balance;
+          for( const auto& delta_item : eval_state->balance )
+              record.delta_amounts[ "NETWORK" ][ delta_item.first ] += delta_item.second;
 
           if( store_record )
               ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
