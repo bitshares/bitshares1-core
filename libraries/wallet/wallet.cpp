@@ -606,6 +606,8 @@ namespace bts { namespace wallet {
           const auto my_accounts = self->list_my_accounts();
           uint16_t op_index = 0;
 
+          // TODO: Check that we don't overwrite existing address labels
+
 
           const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
           {
@@ -620,6 +622,7 @@ namespace bts { namespace wallet {
               return false;
           };
 
+          // TODO: Recipient address label needs to be saved at time of creation
           const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
           {
               const balance_id_type balance_id = op.balance_id();
@@ -683,10 +686,73 @@ namespace bts { namespace wallet {
           const auto scan_update_account = [&]( const update_account_operation& op ) -> bool
           {
               const auto account_rec = _blockchain->get_account_record( op.account_id );
-              if( !account_rec.valid() )
+              if( !account_rec.valid() ) // This should never happen
                   return false;
 
               record.operation_details[ op_index ] = string( "update account: " + account_rec->name );
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
+          const auto scan_withdraw_pay = [&]( const withdraw_pay_operation& op ) -> bool
+          {
+              const asset delta = eval_state->deltas.at( op_index );
+
+              const auto account_rec = _blockchain->get_account_record( op.account_id );
+              if( !account_rec.valid() ) // This should never happen
+              {
+                  record.delta_amounts[ "INCOME-" + std::to_string( op.account_id ) ][ delta.asset_id ] += delta.amount;
+                  return false;
+              }
+
+              const address balance_id = address( account_rec->owner_key );
+              deltas[ balance_id ][ delta.asset_id ] += delta.amount;
+              record.address_labels[ balance_id ] = "INCOME-" + account_rec->name;
+
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
+          const auto scan_create_asset = [&]( const create_asset_operation& op ) -> bool
+          {
+              record.operation_details[ op_index ] = string( "create asset: " + op.symbol );
+
+              const auto account_rec = _blockchain->get_account_record( op.issuer_account_id );
+              if( !account_rec.valid() ) // This should never happen
+                  return false;
+
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
+          // TODO: Recipient address label needs to be saved at time of creation
+          const auto scan_issue_asset = [&]( const issue_asset_operation& op ) -> bool
+          {
+              const asset delta = eval_state->deltas.at( op_index );
+              record.delta_amounts[ "NETWORK" ][ delta.asset_id ] += delta.amount;
+
+              const auto asset_rec = _blockchain->get_asset_record( delta.asset_id );
+              if( !asset_rec.valid() ) // This should never happen
+                  return false;
+
+              record.operation_details[ op_index ] = string( "issue asset: " + asset_rec->symbol );
+
+              const auto account_rec = _blockchain->get_account_record( asset_rec->issuer_account_id );
+              if( !account_rec.valid() ) // This should never happen
+                  return false;
+
               for( const auto& rec : my_accounts )
               {
                   if( rec.name == account_rec->name )
@@ -725,13 +791,34 @@ namespace bts { namespace wallet {
               return okey_rec.valid() && okey_rec->has_private_key();
           };
 
+          const auto scan_update_feed = [&]( const update_feed_operation& op ) -> bool
+          {
+              const auto asset_rec = _blockchain->get_asset_record( op.feed.feed_id );
+              if( !asset_rec.valid() ) // This should never happen
+                  return false;
+
+              const auto account_rec = _blockchain->get_account_record( op.feed.delegate_id );
+              if( !account_rec.valid() ) // This should never happen
+                  return false;
+
+              // TODO: Include price string
+              record.operation_details[ op_index ] = string( "update price feed: " + asset_rec->symbol + " / " + account_rec->name );
+
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
           const auto scan_burn = [&]( const burn_operation& op ) -> bool
           {
               record.delta_amounts[ "INCINERATOR" ][ op.amount.asset_id ] += op.amount.amount;
 
               const auto account_rec = _blockchain->get_account_record( abs( op.account_id ) );
 
-              // TODO: add info about for or against and who
+              // TODO: Include info about for or against and who
               record.operation_details[ op_index ] = string( "burn" );
 
               if( account_rec.valid() )
@@ -745,48 +832,59 @@ namespace bts { namespace wallet {
               return false;
           };
 
-          bool for_me = false;
+          // TODO: Only check operations if we need to store record if we don't yet know
+          bool store_record = false;
           for( const auto& op : transaction.operations )
           {
               switch( operation_type_enum( op.type ) )
               {
                   case withdraw_op_type:
-                      for_me |= scan_withdraw( op.as<withdraw_operation>() );
+                      store_record |= scan_withdraw( op.as<withdraw_operation>() );
                       break;
                   case deposit_op_type:
-                      for_me |= scan_deposit( op.as<deposit_operation>() );
+                      store_record |= scan_deposit( op.as<deposit_operation>() );
                       break;
                   case register_account_op_type:
-                      for_me |= scan_register_account( op.as<register_account_operation>() );
+                      store_record |= scan_register_account( op.as<register_account_operation>() );
                       break;
                   case update_account_op_type:
-                      for_me |= scan_update_account( op.as<update_account_operation>() );
+                      store_record |= scan_update_account( op.as<update_account_operation>() );
                       break;
                   case withdraw_pay_op_type:
+                      store_record |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
                       break;
                   case create_asset_op_type:
+                      store_record |= scan_create_asset( op.as<create_asset_operation>() );
                       break;
                   case update_asset_op_type:
+                      // Not yet exposed to users
                       break;
                   case issue_asset_op_type:
+                      store_record |= scan_issue_asset( op.as<issue_asset_operation>() );
                       break;
                   case bid_op_type:
+                      // TODO
                       break;
                   case ask_op_type:
-                      for_me |= scan_ask( op.as<ask_operation>() );
+                      store_record |= scan_ask( op.as<ask_operation>() );
                       break;
                   case short_op_type:
+                      // TODO
                       break;
                   case cover_op_type:
+                      // TODO
                       break;
                   case define_delegate_slate_op_type:
+                      // Don't care; do nothing
                       break;
                   case update_feed_op_type:
+                      store_record |= scan_update_feed( op.as<update_feed_operation>() );
                       break;
                   case burn_op_type:
-                      for_me |= scan_burn( op.as<burn_operation>() );
+                      store_record |= scan_burn( op.as<burn_operation>() );
                       break;
                   case link_account_op_type:
+                      // Future feature
                       break;
                   default:
                       break;
@@ -809,9 +907,10 @@ namespace bts { namespace wallet {
               }
           }
 
-          record.delta_amounts[ "NETWORK" ] = eval_state->balance;
+          for( const auto& delta_item : eval_state->balance )
+              record.delta_amounts[ "NETWORK" ][ delta_item.first ] += delta_item.second;
 
-          if( for_me )
+          if( store_record )
               ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
 
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -1904,6 +2003,18 @@ namespace bts { namespace wallet {
                   self->set_last_scanned_block_number( block_num );
                   _wallet_db.remove_transaction( transaction_id_type() );
 #endif
+              }
+
+              if( current_version < 107 )
+              {
+                  const auto items = _wallet_db.get_transactions();
+                  for( const auto& item : items )
+                  {
+                      const auto id = item.first;
+                      const auto trx_rec = item.second;
+                      if( trx_rec.is_virtual && trx_rec.is_market && trx_rec.block_num == 554801 )
+                          _wallet_db.remove_transaction( id );
+                  }
               }
 
               if( _unlocked_upgrade_tasks.empty() )
