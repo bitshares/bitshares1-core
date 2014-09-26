@@ -7136,17 +7136,19 @@ namespace bts { namespace wallet {
          if( checked_accounts.find(itr->first.first) != checked_accounts.end() ) continue;
          checked_accounts.insert(itr->first.first);
 
-         account_balance_summary_type balances = _wimpl->self->get_account_balances(
-                     _wimpl->_wallet_db.lookup_account(itr->first.first)->name);
+         auto account_rec = _wimpl->_wallet_db.lookup_account(itr->first.first);
+         if( !account_rec || !account_rec->is_my_account ) continue;
+         account_balance_summary_type balances = _wimpl->self->get_account_balances(account_rec->name);
          if( balances.empty() ) continue;
 
          for( auto balance_itr : balances.begin()->second )
          {
             asset balance(balance_itr.second, balance_itr.first);
-            if( balance >= _wimpl->self->get_transaction_fee(balance.asset_id) )
+            asset fee = _wimpl->self->get_transaction_fee(balance.asset_id);
+            if( fee.asset_id == balance.asset_id && balance >= fee )
             {
                _wimpl->withdraw_to_transaction(_wimpl->self->get_transaction_fee(balance.asset_id),
-                                               balances.begin()->first,
+                                               account_rec->name,
                                                trx,
                                                required_signatures);
                return true;
