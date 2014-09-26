@@ -32,6 +32,17 @@ namespace bts { namespace blockchain {
       return fc::ripemd160::hash( enc.result() );
    }
 
+   transaction_id_type signed_transaction::permanent_id()const
+   {
+      signed_transaction cpy( *this );
+      cpy.signatures.clear();
+      // TODO: get rid of sha512 above
+      //return cpy.id();
+      fc::ripemd160::encoder enc;
+      fc::raw::pack( enc, cpy );
+      return enc.result();
+   }
+
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
    {
       signatures.push_back( signer.sign_compact( digest(chain_id) ) );
@@ -214,6 +225,7 @@ namespace bts { namespace blockchain {
    {
       operations.push_back( issue_asset_operation( amount_to_issue ) );
    }
+
    void transaction::cover( const asset& cover_amount,
                             const market_index_key& order_idx )
    {

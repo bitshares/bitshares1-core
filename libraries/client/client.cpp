@@ -477,7 +477,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             fc::file_appender::config file_appender_config = appender.args.as<fc::file_appender::config>();
             if (file_appender_config.filename.is_relative())
             {
-              file_appender_config.filename = fc::canonical(datadir / file_appender_config.filename);
+              file_appender_config.filename = fc::absolute(datadir / file_appender_config.filename);
               appender.args = fc::variant(file_appender_config);
             }
           }
@@ -3278,6 +3278,13 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     wallet_transaction_record client_impl::wallet_scan_transaction( const string& transaction_id, bool overwrite_existing )
     { try {
        return _wallet->scan_transaction( transaction_id, overwrite_existing );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
+
+    void client_impl::wallet_scan_transaction_experimental( const string& transaction_id, bool overwrite_existing )
+    { try {
+#ifdef BTS_TEST_NETWORK
+       _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
+#endif
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
 
     wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )

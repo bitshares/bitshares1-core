@@ -1,7 +1,7 @@
 default (unlocked) >>> wallet_account_create test
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:test:XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v
+xts:test:XTS5kmVHDwLN9zsxa18jKFrLn6yPJkBsxJJHmFeRygEpUaBWCqcb4
 default (unlocked) >>> wallet_transfer 10000 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -44,26 +44,26 @@ Returns:
   transaction_record
 
 aliases: short
-default (unlocked) >>> wallet_market_submit_short test 100 XMO 0.5 1.8
+default (unlocked) >>> wallet_market_submit_short test 100 XMO 0.5 2.1
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   test                SHORT-39b5f7b4      50.00000 XTS            short XMO @ 2. XMO / XTS                    0.50000 XTS         [redacted]
+[redacted]          PENDING   test                SHORT-9cf0bb0c      50.00000 XTS            short XMO @ 2. XMO / XTS                    0.50000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
-default (unlocked) >>> wallet_market_submit_short test 100 XMO 0.3 2.1
+default (unlocked) >>> wallet_market_submit_short test 100 XMO 0.3 3.3334
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   test                SHORT-fc34e9d5      30.00000 XTS            short XMO @ 3.333333333333333 XMO / XTS     0.50000 XTS         [redacted]
+[redacted]          PENDING   test                SHORT-ac6f9eac      30.00000 XTS            short XMO @ 3.333333333333333 XMO / XTS     0.50000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_market_submit_short test 100 XMO 0.1 10.1
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   test                SHORT-195440a0      10.00000 XTS            short XMO @ 10. XMO / XTS                   0.50000 XTS         [redacted]
+[redacted]          PENDING   test                SHORT-89316638      10.00000 XTS            short XMO @ 10. XMO / XTS                   0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_market_submit_short test 100 XMO 2
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   test                SHORT-3f97caa9      200.00000 XTS           short XMO @ 0.5 XMO / XTS                   0.50000 XTS         [redacted]
+[redacted]          PENDING   test                SHORT-310558c0      200.00000 XTS           short XMO @ 0.5 XMO / XTS                   0.50000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> balance test
@@ -85,23 +85,23 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
 [redacted]          1         delegate0           test                10,000.00000 XTS                                                    0.50000 XTS         [redacted]
 [redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (TEST_XMO)                       0.50000 XTS         [redacted]
-[redacted]          3         test                SHORT-39b5f7b4      50.00000 XTS            short XMO @ 2. XMO / XTS                    0.50000 XTS         [redacted]
-[redacted]          4         test                SHORT-fc34e9d5      30.00000 XTS            short XMO @ 3.333333333333333 XMO / XTS     0.50000 XTS         [redacted]
-[redacted]          5         test                SHORT-195440a0      10.00000 XTS            short XMO @ 10. XMO / XTS                   0.50000 XTS         [redacted]
-[redacted]          5         test                SHORT-3f97caa9      200.00000 XTS           short XMO @ 0.5 XMO / XTS                   0.50000 XTS         [redacted]
+[redacted]          3         test                SHORT-9cf0bb0c      50.00000 XTS            short XMO @ 2. XMO / XTS                    0.50000 XTS         [redacted]
+[redacted]          4         test                SHORT-ac6f9eac      30.00000 XTS            short XMO @ 3.333333333333333 XMO / XTS     0.50000 XTS         [redacted]
+[redacted]          5         test                SHORT-89316638      10.00000 XTS            short XMO @ 10. XMO / XTS                   0.50000 XTS         [redacted]
+[redacted]          5         test                SHORT-310558c0      200.00000 XTS           short XMO @ 0.5 XMO / XTS                   0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_shorts XMO
 AMOUNT                        COLLATERAL RATIO              COLLATERAL                    PRICE LIMIT                   ID                                      
 ================================================================================================================================
-100.00 XMO                    2                             200.00000 XTS                 NONE                          3f97caa9c3787b0883d6080af899f5d253616c96
-100.00 XMO                    0.5                           50.00000 XTS                  1.8 XMO / XTS                 39b5f7b48cc2466099139be4521b426f7f3e2683
-99.99 XMO                     0.3                           30.00000 XTS                  2.1 XMO / XTS                 fc34e9d50dcd9eeae7bb3fc7fb91def82f58efb7
-100.00 XMO                    0.1                           10.00000 XTS                  10.1 XMO / XTS                195440a0eed18ac773ed7f235a21346001a256f6
+100.00 XMO                    2                             200.00000 XTS                 NONE                          310558c03c54724754a8f62b4023580925d5b124
+100.00 XMO                    0.5                           50.00000 XTS                  2.1 XMO / XTS                 9cf0bb0c47720927e03f8633d492782cc864cc01
+99.99 XMO                     0.3                           30.00000 XTS                  3.3334 XMO / XTS              ac6f9eac670621c613ba2fdad35a994e93b0536e
+100.00 XMO                    0.1                           10.00000 XTS                  10.1 XMO / XTS                8931663848a39b6460ceb8995bc9b006d057685f
 
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
 ================================================================================================================================
-short_order 10.00000 XTS        10. XMO / XTS                 10.00000 XTS        100.00 XMO          N/A                 195440a0eed18ac773ed7f235a21346001a256f6
-short_order 50.00000 XTS        2. XMO / XTS                  50.00000 XTS        100.00 XMO          N/A                 39b5f7b48cc2466099139be4521b426f7f3e2683
-short_order 200.00000 XTS       0.5 XMO / XTS                 200.00000 XTS       100.00 XMO          N/A                 3f97caa9c3787b0883d6080af899f5d253616c96
-short_order 30.00000 XTS        3.333333333333333 XMO / XTS   30.00000 XTS        99.99 XMO           N/A                 fc34e9d50dcd9eeae7bb3fc7fb91def82f58efb7
+short_order 200.00000 XTS       0.5 XMO / XTS                 200.00000 XTS       100.00 XMO          N/A                 310558c03c54724754a8f62b4023580925d5b124
+short_order 10.00000 XTS        10. XMO / XTS                 10.00000 XTS        100.00 XMO          N/A                 8931663848a39b6460ceb8995bc9b006d057685f
+short_order 50.00000 XTS        2. XMO / XTS                  50.00000 XTS        100.00 XMO          N/A                 9cf0bb0c47720927e03f8633d492782cc864cc01
+short_order 30.00000 XTS        3.333333333333333 XMO / XTS   30.00000 XTS        99.99 XMO           N/A                 ac6f9eac670621c613ba2fdad35a994e93b0536e
 default (unlocked) >>> quit
