@@ -22,6 +22,7 @@
 #include <bts/wallet/url.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_db.hpp>
+#include <bts/wallet/transaction_builder.hpp>
 
 #include <fc/crypto/base58.hpp>
 #include <fc/filesystem.hpp>
@@ -4882,96 +4883,160 @@ namespace bts { namespace wallet {
     *         price_per_unit   = 1 / price_per_unit
     *  @endcode
     */
-   wallet_transaction_record wallet::cancel_market_order(
-           const order_id_type& order_id,
+   wallet_transaction_record wallet::cancel_market_orders(
+           const vector<order_id_type>& order_ids,
            bool sign )
    { try {
         if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
         if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-        const auto order = my->_blockchain->get_market_order( order_id );
-        if( !order.valid() )
-            FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+        signed_transaction               trx;
+        unordered_set<address>           required_signatures;
+        map<asset_id_type,share_type>    proceeds;
 
-        const auto owner_address = order->get_owner();
-        const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
-        if( !owner_key_record.valid() || !owner_key_record->has_private_key() )
-            FC_THROW_EXCEPTION( private_key_not_found, "Cannot find the private key for that market order!" );
+        auto record = wallet_transaction_record();
 
-        const auto account_key_record = my->_wallet_db.lookup_key( owner_key_record->account_address );
-        FC_ASSERT( account_key_record.valid() && account_key_record->has_private_key() );
-
-        const auto account_record = my->_wallet_db.lookup_account( account_key_record->public_key );
-        FC_ASSERT( account_record.valid() );
-
-        auto from_account_key = account_key_record->public_key;
-        auto& to_account_key = from_account_key;
-
-        asset balance = order->get_balance();
-
-        if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
-
-        signed_transaction trx;
-        unordered_set<address>     required_signatures;
-        required_signatures.insert( owner_address );
-
-        switch( order_type_enum( order->type ) )
+        address         owner_address;
+        owallet_account_record account_record;
+        for( auto order_id : order_ids )
         {
-           case ask_order:
-              trx.ask( -balance, order->market_index.order_price, owner_address );
-              break;
-           case bid_order:
-              trx.bid( -balance, order->market_index.order_price, owner_address );
-              break;
-           case short_order:
-              trx.short_sell( -balance, order->market_index.order_price, owner_address );
-              break;
-           default:
-              FC_THROW_EXCEPTION( invalid_cancel, "You cannot cancel this type of order!" );
-              break;
+           const auto order = my->_blockchain->get_market_order( order_id );
+           if( !order.valid() )
+               FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+
+           owner_address = order->get_owner();
+           const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
+           if( !owner_key_record.valid() || !owner_key_record->has_private_key() )
+               FC_THROW_EXCEPTION( private_key_not_found, "Cannot find the private key for that market order!" );
+
+           const auto account_key_record = my->_wallet_db.lookup_key( owner_key_record->account_address );
+           FC_ASSERT( account_key_record.valid() && account_key_record->has_private_key() );
+
+           account_record = my->_wallet_db.lookup_account( account_key_record->public_key );
+           FC_ASSERT( account_record.valid() );
+
+           auto from_account_key = account_key_record->public_key;
+           auto& to_account_key = from_account_key;
+
+           asset balance = order->get_balance();
+
+           if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
+
+           required_signatures.insert( owner_address );
+
+           switch( order_type_enum( order->type ) )
+           {
+              case ask_order:
+                 trx.ask( -balance, order->market_index.order_price, owner_address );
+                 break;
+              case bid_order:
+                 trx.bid( -balance, order->market_index.order_price, owner_address );
+                 break;
+              case short_order:
+                 trx.short_sell( -balance, order->market_index.order_price, owner_address );
+                 break;
+              default:
+                 FC_THROW_EXCEPTION( invalid_cancel, "You cannot cancel this type of order!" );
+                 break;
+           }
+           proceeds[balance.asset_id] += balance.amount;
+
+           auto entry = ledger_entry();
+           entry.from_account = owner_key_record->public_key;
+           entry.to_account = to_account_key;
+           entry.amount = balance;
+           if( owner_key_record->memo.valid() )
+               entry.memo = "cancel " + *owner_key_record->memo;
+           record.ledger_entries.push_back( entry );
+        }
+        FC_ASSERT( proceeds.size(), "No orders canceled" );
+
+        bool fee_paid = false;
+        for( auto balance_item : proceeds )
+        {
+           if( !fee_paid )
+           {
+              auto required_fees = get_transaction_fee( balance_item.first );
+              if( required_fees.asset_id == balance_item.first && balance_item.second > required_fees.amount )
+              {
+                 balance_item.second -= required_fees.amount;
+                 fee_paid = true;
+                 record.fee = required_fees;
+              }
+           }
+           asset deposit_amount(balance_item.second, balance_item.first);
+           trx.deposit( owner_address, deposit_amount, 0 );
         }
 
-        asset deposit_amount = balance;
-        auto required_fees = get_transaction_fee( balance.asset_id );
-        if( balance.asset_id == required_fees.asset_id )
+        if( !fee_paid )
         {
-           if( required_fees.amount < balance.amount )
-           {
-              deposit_amount -= required_fees;
-              trx.deposit( owner_address, deposit_amount, 0 );
-           }
-           else
-           {
-              FC_CAPTURE_AND_THROW( fee_greater_than_amount, (balance)(required_fees) );
-           }
-        }
-        else
-        {
-           trx.deposit( owner_address, balance, 0 );
-
+           auto required_fees = get_transaction_fee();
            my->withdraw_to_transaction( required_fees,
                                         account_record->name,
                                         trx,
                                         required_signatures );
+           record.fee = required_fees;
         }
 
-        auto entry = ledger_entry();
-        entry.from_account = owner_key_record->public_key;
-        entry.to_account = to_account_key;
-        entry.amount = deposit_amount;
-        if( owner_key_record->memo.valid() )
-            entry.memo = "cancel " + *owner_key_record->memo;
-
-        auto record = wallet_transaction_record();
         record.is_market = true;
-        record.ledger_entries.push_back( entry );
-        record.fee = required_fees;
 
         if( sign ) sign_transaction( trx, required_signatures );
         cache_transaction( trx, record );
 
         return record;
-   } FC_CAPTURE_AND_RETHROW( (order_id) ) }
+   } FC_CAPTURE_AND_RETHROW( (order_ids) ) }
+
+   wallet_transaction_record wallet::batch_market_update(const vector<order_id_type>& cancel_order_ids,
+                                                         const vector<std::pair<order_type_enum,vector<string>>>&
+                                                                     new_orders,
+                                                         bool sign)
+   { try {
+      if( !is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( !is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+
+      FC_ASSERT(false, "This function is not yet implemented.");
+
+      transaction_builder builder(my.get());
+
+      for( const auto& id : cancel_order_ids )
+         builder.cancel_market_order(id);
+
+      for( const auto& order_description : new_orders)
+      {
+         switch(order_description.first)
+         {
+         //Bid and ask take the same args. Combine them to avoid code duplication in argument parsing.
+         case bid_order:
+         case ask_order:
+         {
+            const auto& args = order_description.second;
+            // args: from_account_name, real_quantity, quantity_symbol, quote_price, quote_symbol[, sign]
+            FC_ASSERT(args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
+            if( !is_receive_account(args[0]) )
+               FC_CAPTURE_AND_THROW( unknown_receive_account, (args[0]) );
+
+            asset quantity = my->_blockchain->to_ugly_asset(args[1], args[2]);
+            if( quantity.amount <= 0 )
+               FC_CAPTURE_AND_THROW( invalid_asset_amount, (quantity) );
+            oasset_record quote_rec = my->_blockchain->get_asset_record(args[4]);
+            if( !quote_rec )
+               FC_CAPTURE_AND_THROW( unknown_asset_symbol, (args[4]) );
+            price quote_price = price("0" + args[3] + " " + std::to_string(quote_rec->id) +
+                    " / " + std::to_string(quantity.asset_id));
+            if( double(quote_price) <= 0 )
+              FC_CAPTURE_AND_THROW( invalid_price, (quote_price) );
+
+            if( order_description.first == bid_order )
+               builder.submit_bid(get_account(args[0]), quantity, quote_price);
+            else
+               builder.submit_ask(get_account(args[0]), quantity, quote_price);
+            break;
+         }
+         default:
+            FC_ASSERT(false, "Unimplemented order type: ${type}", ("type", order_description.first));
+         }
+      }
+   } FC_CAPTURE_AND_RETHROW( (cancel_order_ids)(new_orders) ) }
 
    wallet_transaction_record wallet::submit_bid(
            const string& from_account_name,
@@ -6614,5 +6679,141 @@ namespace bts { namespace wallet {
        auto secret = one_time_private_key.get_shared_secret(recipient_key);
        return encrypted_message.decrypt(secret);
    }
+
+   /******** BEGIN TRANSACTION BUILDER IMPLEMENTATION ********/
+   public_key_type transaction_builder::order_key_for_account(const address& account_address)
+   {
+      auto order_key = order_keys[account_address];
+      if( order_key == public_key_type() )
+         order_key = _wimpl->_wallet_db.new_private_key(_wimpl->_wallet_password, account_address).get_public_key();
+      return order_key;
+   }
+
+   transaction_builder& transaction_builder::cancel_market_order(const order_id_type& order_id)
+   { try {
+      const auto order = _wimpl->_blockchain->get_market_order( order_id );
+      if( !order.valid() )
+          FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that market order!" );
+
+      const auto owner_address = order->get_owner();
+      const auto owner_key_record = _wimpl->_wallet_db.lookup_key( owner_address );
+      if( !owner_key_record.valid() || !owner_key_record->has_private_key() )
+          FC_THROW_EXCEPTION( private_key_not_found, "Cannot find the private key for that market order!" );
+
+      const auto account_key_record = _wimpl->_wallet_db.lookup_key( owner_key_record->account_address );
+      FC_ASSERT( account_key_record.valid() && account_key_record->has_private_key() );
+
+      const auto account_record = _wimpl->_wallet_db.lookup_account( account_key_record->public_key );
+      FC_ASSERT( account_record.valid() );
+
+      asset balance = order->get_balance();
+
+      if( balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
+
+      switch( order_type_enum( order->type ) )
+      {
+         case ask_order:
+            trx.ask( -balance, order->market_index.order_price, owner_address );
+            break;
+         case bid_order:
+            trx.bid( -balance, order->market_index.order_price, owner_address );
+            break;
+         case short_order:
+            trx.short_sell( -balance, order->market_index.order_price, owner_address );
+            break;
+         default:
+            FC_THROW_EXCEPTION( invalid_cancel, "You cannot cancel this type of order!" );
+            break;
+      }
+
+      //Credit this account the cancel proceeds
+      outstanding_balances[std::make_pair(account_record->account_address, balance.asset_id)] += balance.amount;
+      //Set order key for this account if not already set
+      if( order_keys.find(account_record->account_address) == order_keys.end() )
+         order_keys[account_record->account_address] = owner_key_record->public_key;
+
+      auto entry = ledger_entry();
+      entry.from_account = owner_key_record->public_key;
+      entry.to_account = account_key_record->public_key;
+      entry.amount = balance;
+      entry.memo = "cancel " + order->get_small_id();
+
+      transaction_record.is_market = true;
+      transaction_record.ledger_entries.push_back( entry );
+
+      required_signatures.insert( owner_address );
+      return *this;
+   } FC_CAPTURE_AND_RETHROW( (order_id) ) }
+
+   transaction_builder& transaction_builder::submit_bid(const wallet_account_record& from_account,
+                                                        const asset& real_quantity,
+                                                        const price& quote_price)
+   { try {
+      auto quote_asset_record = _wimpl->_blockchain->get_asset_record( quote_price.quote_asset_id );
+      auto base_asset_record  = _wimpl->_blockchain->get_asset_record( quote_price.base_asset_id );
+
+      if( quote_asset_record->id < base_asset_record->id )
+      {
+         // force user to submit an ask rather than a bid
+         FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_record->symbol)(base_asset_record->symbol) );
+      }
+
+      asset cost = real_quantity * quote_price;
+      FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
+
+      auto order_key = order_key_for_account(from_account.account_address);
+
+      //Charge this account for the bid
+      outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
+      trx.bid(cost, quote_price, order_key);
+
+      auto entry = ledger_entry();
+      entry.from_account = from_account.owner_key;
+      entry.to_account = order_key;
+      entry.amount = cost;
+      entry.memo = "buy " + base_asset_record->symbol + " @ " + _wimpl->_blockchain->to_pretty_price(quote_price);
+
+      transaction_record.is_market = true;
+      transaction_record.ledger_entries.push_back(entry);
+
+      required_signatures.insert(order_key);
+      return *this;
+   } FC_CAPTURE_AND_RETHROW( (from_account.name)(real_quantity)(quote_price) ) }
+
+   transaction_builder& transaction_builder::submit_ask(const wallet_account_record& from_account,
+                                                        const asset& cost,
+                                                        const price& quote_price)
+   { try {
+      auto quote_asset_record = _wimpl->_blockchain->get_asset_record( quote_price.quote_asset_id );
+      auto base_asset_record  = _wimpl->_blockchain->get_asset_record( quote_price.base_asset_id );
+
+      if( quote_asset_record->id < base_asset_record->id )
+      {
+         // force user to submit an ask rather than a bid
+         FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_record->symbol)(base_asset_record->symbol) );
+      }
+
+      FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
+
+      auto order_key = order_key_for_account(from_account.account_address);
+
+      //Charge this account for the ask
+      outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
+      trx.ask(cost, quote_price, order_key);
+
+      auto entry = ledger_entry();
+      entry.from_account = from_account.owner_key;
+      entry.to_account = order_key;
+      entry.amount = cost;
+      entry.memo = "sell " + base_asset_record->symbol + " @ " + _wimpl->_blockchain->to_pretty_price(quote_price);
+
+      transaction_record.is_market = true;
+      transaction_record.ledger_entries.push_back(entry);
+
+      required_signatures.insert(order_key);
+      return *this;
+   } FC_CAPTURE_AND_RETHROW( (from_account.name)(cost)(quote_price) ) }
+
+   /********  END  TRANSACTION BUILDER IMPLEMENTATION ********/
 
 } } // bts::wallet
