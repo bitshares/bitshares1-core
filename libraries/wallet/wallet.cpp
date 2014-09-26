@@ -789,13 +789,34 @@ namespace bts { namespace wallet {
               return okey_rec.valid() && okey_rec->has_private_key();
           };
 
+          const auto scan_update_feed = [&]( const update_feed_operation& op ) -> bool
+          {
+              const auto asset_rec = _blockchain->get_asset_record( op.feed.feed_id );
+              if( !asset_rec.valid() ) // This should never happen
+                  return false;
+
+              const auto account_rec = _blockchain->get_account_record( op.feed.delegate_id );
+              if( !account_rec.valid() ) // This should never happen
+                  return false;
+
+              // TODO: Include price string
+              record.operation_details[ op_index ] = string( "update price feed: " + asset_rec->symbol + " / " + account_rec->name );
+
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
           const auto scan_burn = [&]( const burn_operation& op ) -> bool
           {
               record.delta_amounts[ "INCINERATOR" ][ op.amount.asset_id ] += op.amount.amount;
 
               const auto account_rec = _blockchain->get_account_record( abs( op.account_id ) );
 
-              // TODO: add info about for or against and who
+              // TODO: Include info about for or against and who
               record.operation_details[ op_index ] = string( "burn" );
 
               if( account_rec.valid() )
@@ -809,6 +830,7 @@ namespace bts { namespace wallet {
               return false;
           };
 
+          // TODO: Only check operations if we need to store record if we don't yet know
           bool store_record = false;
           for( const auto& op : transaction.operations )
           {
@@ -833,27 +855,34 @@ namespace bts { namespace wallet {
                       store_record |= scan_create_asset( op.as<create_asset_operation>() );
                       break;
                   case update_asset_op_type:
+                      // Not yet exposed to users
                       break;
                   case issue_asset_op_type:
                       store_record |= scan_issue_asset( op.as<issue_asset_operation>() );
                       break;
                   case bid_op_type:
+                      // TODO
                       break;
                   case ask_op_type:
                       store_record |= scan_ask( op.as<ask_operation>() );
                       break;
                   case short_op_type:
+                      // TODO
                       break;
                   case cover_op_type:
+                      // TODO
                       break;
                   case define_delegate_slate_op_type:
+                      // Don't care; do nothing
                       break;
                   case update_feed_op_type:
+                      store_record |= scan_update_feed( op.as<update_feed_operation>() );
                       break;
                   case burn_op_type:
                       store_record |= scan_burn( op.as<burn_operation>() );
                       break;
                   case link_account_op_type:
+                      // Future feature
                       break;
                   default:
                       break;
