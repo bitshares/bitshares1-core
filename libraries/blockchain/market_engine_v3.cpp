@@ -846,3 +846,4 @@ class market_engine_v3
       bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
       bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
 };
+#undef BTS_BLOCKCHAIN_MARKET_DEPTH_REQUIREMENT_V3
