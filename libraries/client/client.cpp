@@ -3605,7 +3605,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    wallet_transaction_record client_impl::wallet_market_cancel_order( const order_id_type& order_id )
    {
-      const auto record = _wallet->cancel_market_order( order_id );
+      const auto record = _wallet->cancel_market_orders( {order_id} );
+      network_broadcast_transaction( record.trx );
+      return record;
+   }
+
+   wallet_transaction_record client_impl::wallet_market_cancel_orders( const vector<order_id_type>& order_ids )
+   {
+      const auto record = _wallet->cancel_market_orders( order_ids );
       network_broadcast_transaction( record.trx );
       return record;
    }
