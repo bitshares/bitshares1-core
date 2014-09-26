@@ -683,10 +683,33 @@ namespace bts { namespace wallet {
           const auto scan_update_account = [&]( const update_account_operation& op ) -> bool
           {
               const auto account_rec = _blockchain->get_account_record( op.account_id );
-              if( !account_rec.valid() )
+              if( !account_rec.valid() ) // This should never happen
                   return false;
 
               record.operation_details[ op_index ] = string( "update account: " + account_rec->name );
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
+          const auto scan_withdraw_pay = [&]( const withdraw_pay_operation& op ) -> bool
+          {
+              const asset delta = eval_state->deltas.at( op_index );
+
+              const auto account_rec = _blockchain->get_account_record( op.account_id );
+              if( !account_rec.valid() ) // This should never happen
+              {
+                  record.delta_amounts[ "INCOME-" + std::to_string( op.account_id ) ][ delta.asset_id ] += delta.amount;
+                  return false;
+              }
+
+              const address balance_id = address( account_rec->owner_key );
+              deltas[ balance_id ][ delta.asset_id ] += delta.amount;
+              record.address_labels[ balance_id ] = "INCOME-" + account_rec->name;
+
               for( const auto& rec : my_accounts )
               {
                   if( rec.name == account_rec->name )
@@ -745,24 +768,25 @@ namespace bts { namespace wallet {
               return false;
           };
 
-          bool for_me = false;
+          bool store_record = false;
           for( const auto& op : transaction.operations )
           {
               switch( operation_type_enum( op.type ) )
               {
                   case withdraw_op_type:
-                      for_me |= scan_withdraw( op.as<withdraw_operation>() );
+                      store_record |= scan_withdraw( op.as<withdraw_operation>() );
                       break;
                   case deposit_op_type:
-                      for_me |= scan_deposit( op.as<deposit_operation>() );
+                      store_record |= scan_deposit( op.as<deposit_operation>() );
                       break;
                   case register_account_op_type:
-                      for_me |= scan_register_account( op.as<register_account_operation>() );
+                      store_record |= scan_register_account( op.as<register_account_operation>() );
                       break;
                   case update_account_op_type:
-                      for_me |= scan_update_account( op.as<update_account_operation>() );
+                      store_record |= scan_update_account( op.as<update_account_operation>() );
                       break;
                   case withdraw_pay_op_type:
+                      store_record |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
                       break;
                   case create_asset_op_type:
                       break;
@@ -773,7 +797,7 @@ namespace bts { namespace wallet {
                   case bid_op_type:
                       break;
                   case ask_op_type:
-                      for_me |= scan_ask( op.as<ask_operation>() );
+                      store_record |= scan_ask( op.as<ask_operation>() );
                       break;
                   case short_op_type:
                       break;
@@ -784,7 +808,7 @@ namespace bts { namespace wallet {
                   case update_feed_op_type:
                       break;
                   case burn_op_type:
-                      for_me |= scan_burn( op.as<burn_operation>() );
+                      store_record |= scan_burn( op.as<burn_operation>() );
                       break;
                   case link_account_op_type:
                       break;
@@ -811,7 +835,7 @@ namespace bts { namespace wallet {
 
           record.delta_amounts[ "NETWORK" ] = eval_state->balance;
 
-          if( for_me )
+          if( store_record )
               ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
 
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
