@@ -606,6 +606,8 @@ namespace bts { namespace wallet {
           const auto my_accounts = self->list_my_accounts();
           uint16_t op_index = 0;
 
+          // TODO: Check that we don't overwrite existing address labels
+
 
           const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
           {
@@ -2001,6 +2003,18 @@ namespace bts { namespace wallet {
                   self->set_last_scanned_block_number( block_num );
                   _wallet_db.remove_transaction( transaction_id_type() );
 #endif
+              }
+
+              if( current_version < 107 )
+              {
+                  const auto items = _wallet_db.get_transactions();
+                  for( const auto& item : items )
+                  {
+                      const auto id = item.first;
+                      const auto trx_rec = item.second;
+                      if( trx_rec.is_virtual && trx_rec.is_market && trx_rec.block_num == 554801 )
+                          _wallet_db.remove_transaction( id );
+                  }
               }
 
               if( _unlocked_upgrade_tasks.empty() )
