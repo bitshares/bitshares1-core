@@ -718,6 +718,22 @@ namespace bts { namespace wallet {
               return false;
           };
 
+          const auto scan_create_asset = [&]( const create_asset_operation& op ) -> bool
+          {
+              record.operation_details[ op_index ] = string( "create asset: " + op.symbol );
+
+              const auto account_rec = _blockchain->get_account_record( op.issuer_account_id );
+              if( !account_rec.valid() ) // This should never happen
+                  return false;
+
+              for( const auto& rec : my_accounts )
+              {
+                  if( rec.name == account_rec->name )
+                      return true;
+              }
+              return false;
+          };
+
           const auto scan_ask = [&]( const ask_operation& op ) -> bool
           {
               const asset delta = eval_state->deltas.at( op_index );
@@ -789,6 +805,7 @@ namespace bts { namespace wallet {
                       store_record |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
                       break;
                   case create_asset_op_type:
+                      store_record |= scan_create_asset( op.as<create_asset_operation>() );
                       break;
                   case update_asset_op_type:
                       break;
