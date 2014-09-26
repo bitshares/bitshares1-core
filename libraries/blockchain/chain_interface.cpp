@@ -146,6 +146,34 @@ namespace bts{ namespace blockchain {
 
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
 
+   asset chain_interface::to_ugly_asset(const std::string& amount, const std::string& symbol) const
+   { try {
+      auto record = get_asset_record( symbol );
+      if( !record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (symbol) );
+
+      auto decimal = amount.find(".");
+      if( decimal == string::npos )
+         return asset(atoll(amount.c_str()) * record->precision, record->id);
+
+      share_type whole = atoll(amount.substr(0, decimal).c_str()) * record->precision;
+      string fraction_string = amount.substr(decimal+1);
+      share_type fraction = atoll(fraction_string.c_str());
+
+      if( fraction_string.empty() || fraction <= 0 )
+         return asset(whole, record->id);
+
+      while( fraction < record->precision )
+         fraction *= 10;
+      while( fraction > record->precision )
+         fraction /= 10;
+      while( fraction_string.size() && fraction_string[0] == '0')
+      {
+         fraction /= 10;
+         fraction_string.erase(0, 1);
+      }
+      return asset(whole > 0? whole + fraction : whole - fraction, record->id);
+   } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
+
    string chain_interface::to_pretty_asset( const asset& a )const
    {
       const auto oasset = get_asset_record( a.asset_id );

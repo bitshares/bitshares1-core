@@ -452,6 +452,22 @@ namespace bts { namespace wallet {
                  const vector<order_id_type>& order_ids,
                  bool sign = true
                  );
+
+         /**
+          * @brief Perform arbitrarily many market operations in a single transaction
+          * @param cancel_order_ids List of order IDs to cancel in the transaction
+          * @param new_orders List of new orders to create. Each list element contains an order type and a list of
+          * arguments. The arguments are the same as are taken by the wallet methods to execute that market operation in
+          * its own transaction. If the final sign argument is provided in the arguments list, it will be ignored in
+          * favor of the sign flag passed to batch_market_update.
+          * @param sign Transaction will be signed and broadcast if true.
+          * @return The resulting, potentially monstrously large, transaction
+          */
+         wallet_transaction_record batch_market_update(
+                 const vector<order_id_type>& cancel_order_ids,
+                 const vector<std::pair<order_type_enum,vector<string>>>& new_orders,
+                 bool sign = true
+                 );
 #if 0
          wallet_transaction_record create_proposal(
                  const string& delegate_account_name,
