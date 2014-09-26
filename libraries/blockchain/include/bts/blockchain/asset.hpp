@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
   /**
    *  An asset is a fixed point number with
    *  64.64 bit precision.  This is used
-   *  for accumalating dividends and 
+   *  for accumalating dividends and
    *  calculating prices on the built-in exchange.
    */
   struct asset
@@ -34,11 +34,11 @@ namespace bts { namespace blockchain {
       asset operator-()const { return asset( -amount, asset_id); }
 
       operator std::string()const;
-       
+
       share_type     amount;
       asset_id_type  asset_id;
   };
-  
+
   /**
    *  A price is the result of dividing 2 asset classes and has
    *  the fixed point format 64.64 and -1 equals infinite.
@@ -61,7 +61,7 @@ namespace bts { namespace blockchain {
 
       fc::uint128_t ratio; // 64.64
 
-      std::pair<asset_id_type,asset_id_type> asset_pair()const { return std::make_pair(base_asset_id,quote_asset_id); }
+      std::pair<asset_id_type,asset_id_type> asset_pair()const { return std::make_pair( quote_asset_id, base_asset_id ); }
 
       asset_id_type base_asset_id;
       asset_id_type quote_asset_id;
@@ -79,21 +79,21 @@ namespace bts { namespace blockchain {
 
   inline bool operator == ( const price& l, const price& r ) { return l.ratio == r.ratio; }
   inline bool operator != ( const price& l, const price& r ) { return l.ratio == r.ratio; }
-  inline bool operator <  ( const price& l, const price& r ) 
-  { 
+  inline bool operator <  ( const price& l, const price& r )
+  {
      if( l.quote_asset_id < r.quote_asset_id ) return true;
      if( l.quote_asset_id > r.quote_asset_id ) return false;
      if( l.base_asset_id < r.base_asset_id ) return true;
      if( l.base_asset_id > r.base_asset_id ) return false;
-     return l.ratio <  r.ratio; 
+     return l.ratio <  r.ratio;
   }
-  inline bool operator >  ( const price& l, const price& r ) 
-  { 
+  inline bool operator >  ( const price& l, const price& r )
+  {
      if( l.quote_asset_id > r.quote_asset_id ) return true;
      if( l.quote_asset_id < r.quote_asset_id ) return false;
      if( l.base_asset_id > r.base_asset_id ) return true;
      if( l.base_asset_id < r.base_asset_id ) return false;
-     return l.ratio >  r.ratio; 
+     return l.ratio >  r.ratio;
   }
   inline bool operator <= ( const price& l, const price& r ) { return l.ratio <= r.ratio && l.asset_pair() == r.asset_pair(); }
   inline bool operator >= ( const price& l, const price& r ) { return l.ratio >= r.ratio && l.asset_pair() == r.asset_pair(); }
@@ -114,7 +114,7 @@ namespace bts { namespace blockchain {
    *  could be exchanged at price p.
    *
    *  ie:  p = 3 usd/bts & a = 4 bts then result = 12 usd
-   *  ie:  p = 3 usd/bts & a = 4 usd then result = 1.333 bts 
+   *  ie:  p = 3 usd/bts & a = 4 usd then result = 1.333 bts
    */
   asset operator * ( const asset& a, const price& p );
 

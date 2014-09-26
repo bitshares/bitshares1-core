@@ -169,8 +169,8 @@ namespace bts { namespace blockchain {
                                                                          const market_history_record& record ) = 0;
          virtual omarket_history_record     get_market_history_record( const market_history_key& key )const = 0;
 
-         virtual map<asset_id_type, asset_id_type>  get_dirty_markets()const;
-         virtual void                               set_dirty_markets( const map<asset_id_type,asset_id_type>& );
+         virtual void set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& );
+         virtual std::set<std::pair<asset_id_type, asset_id_type>> get_dirty_markets()const;
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
    };

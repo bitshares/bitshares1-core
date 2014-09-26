@@ -252,7 +252,6 @@ namespace bts { namespace blockchain {
                 rebuild_index = true;
               }
               self->set_property( chain_property_enum::database_version, BTS_BLOCKCHAIN_DATABASE_VERSION );
-              self->set_property( chain_property_enum::dirty_markets, variant( map<asset_id_type,asset_id_type>() ) );
           }
           else if( database_version && !database_version->is_null() && database_version->as_int64() > BTS_BLOCKCHAIN_DATABASE_VERSION )
           {
@@ -769,11 +768,7 @@ namespace bts { namespace blockchain {
       { try {
         vector<market_transaction> market_transactions;
 
-        const auto dirty_markets = pending_state->get_dirty_markets();
-        //dlog( "execute markets ${e}", ("e",dirty_markets) );
-
         const auto pending_block_num = pending_state->get_head_block_num();
-
         if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
         {
            market_engine_v4 engine( pending_state, *this );
@@ -781,6 +776,7 @@ namespace bts { namespace blockchain {
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
         }
 
+        const auto dirty_markets = self->get_dirty_markets();
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
@@ -823,7 +819,6 @@ namespace bts { namespace blockchain {
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
         }
-        //dlog( "market trxs: ${trx}", ("trx", fc::json::to_pretty_string( market_transactions ) ) );
 
         if( pending_block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
             pending_state->set_dirty_markets( pending_state->_dirty_markets );

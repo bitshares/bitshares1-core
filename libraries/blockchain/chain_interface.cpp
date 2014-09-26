@@ -218,19 +218,21 @@ namespace bts{ namespace blockchain {
        return base_record->collected_fees / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14);
    }
 
-   map<asset_id_type, asset_id_type> chain_interface::get_dirty_markets()const
+   void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& d )
    {
-      try{
-         return get_property( dirty_markets ).as<map<asset_id_type,asset_id_type> >();
-      } catch ( ... )
-      {
-         return map<asset_id_type,asset_id_type>();
-      }
+       set_property( dirty_markets, fc::variant( d ) );
    }
 
-   void chain_interface::set_dirty_markets( const map<asset_id_type,asset_id_type>& d )
+   std::set<std::pair<asset_id_type, asset_id_type>> chain_interface::get_dirty_markets()const
    {
-      set_property( dirty_markets, fc::variant(d) );
+       try
+       {
+           return get_property( dirty_markets ).as<std::set<std::pair<asset_id_type, asset_id_type>>>();
+       }
+       catch( ... )
+       {
+       }
+       return std::set<std::pair<asset_id_type, asset_id_type>>();
    }
 
 } } // bts::blockchain

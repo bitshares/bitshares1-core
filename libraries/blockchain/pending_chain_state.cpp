@@ -82,7 +82,7 @@ namespace bts { namespace blockchain {
       }
       for( const auto& item : burns ) prev_state->store_burn_record( burn_record(item.first,item.second) );
       prev_state->set_market_transactions( market_transactions );
-      prev_state->set_dirty_markets(_dirty_markets);
+      prev_state->set_dirty_markets( _dirty_markets );
    }
 
    otransaction_record pending_chain_state::get_transaction( const transaction_id_type& trx_id,
@@ -223,7 +223,7 @@ namespace bts { namespace blockchain {
       }
 
       const auto dirty_markets = prev_state->get_dirty_markets();
-      undo_state->set_dirty_markets(dirty_markets);
+      undo_state->set_dirty_markets( dirty_markets );
 
       /* NOTE: Recent operations are currently not rewound on undo */
    }
@@ -454,31 +454,31 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_bid_record( const market_index_key& key, const order_record& rec )
    {
-      bids[key] = rec;
-      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
+      bids[ key ] = rec;
+      _dirty_markets.insert( key.order_price.asset_pair() );
    }
 
    void pending_chain_state::store_ask_record( const market_index_key& key, const order_record& rec )
    {
-      asks[key] = rec;
-      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
+      asks[ key ] = rec;
+      _dirty_markets.insert( key.order_price.asset_pair() );
    }
 
    void pending_chain_state::store_short_record( const market_index_key& key, const order_record& rec )
    {
-      shorts[key] = rec;
-      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
+      shorts[ key ] = rec;
+      _dirty_markets.insert( key.order_price.asset_pair() );
    }
 
    void pending_chain_state::set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )
    {
-      _dirty_markets[quote_id] = base_id;
+      _dirty_markets.insert( std::make_pair( quote_id, base_id ) );
    }
 
    void pending_chain_state::store_collateral_record( const market_index_key& key, const collateral_record& rec )
    {
-      collateral[key] = rec;
-      _dirty_markets[key.order_price.quote_asset_id] = key.order_price.base_asset_id;
+      collateral[ key ] = rec;
+      _dirty_markets.insert( key.order_price.asset_pair() );
    }
 
    void pending_chain_state::store_slot_record( const slot_record& r )
@@ -497,7 +497,7 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_market_history_record(const market_history_key& key, const market_history_record& record)
    {
-     market_history[key] = record;
+     market_history[ key ] = record;
    }
 
    omarket_history_record pending_chain_state::get_market_history_record(const market_history_key& key) const
