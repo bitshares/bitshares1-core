@@ -132,11 +132,7 @@ namespace bts { namespace blockchain {
          map<feed_index, feed_record>                                   feeds;
          map<burn_record_key,burn_record_value>                         burns;
 
-         /**
-          * Set of markets that have had changes to their bids/asks and therefore must
-          * be executed   map<QUOTE,BASE>
-          */
-         map<asset_id_type, asset_id_type>                              _dirty_markets;
+         std::set<std::pair<asset_id_type, asset_id_type>>              _dirty_markets;
 
          chain_interface_weak_ptr                                       _prev_state;
    };
