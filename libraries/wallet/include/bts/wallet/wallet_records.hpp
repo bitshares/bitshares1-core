@@ -152,7 +152,8 @@ namespace bts { namespace wallet {
         * record_id
         * - non-virtual transactions: trx.id()
         * - virtual genesis claims: fc::ripemd160::hash( owner_account_name )
-        * - virtual market transactions: fc::ripemd160::hash( block_num + get_key_label( owner ) + N )
+        * - virtual market bids: fc::ripemd160::hash( block_num + string( mtrx.bid_owner ) + string( mtrx.ask_owner ) )
+        * - virtual market asks: fc::ripemd160::hash( block_num + string( mtrx.ask_owner ) + string( mtrx.bid_owner ) )
         */
        transaction_id_type       record_id;
        uint32_t                  block_num = 0;
@@ -168,79 +169,20 @@ namespace bts { namespace wallet {
    };
 
    // don't use -- work in progress
-   /*
-    * Example ledger entries
-    *
-claim genesis
-    addr1 -> payee | amount
-    addr2 -> payee | amount
-    …
-
-register account
-    payer -> NETWORK | fee
-
-update account
-    payer -> NETWORK | fee
-
-create asset
-    payer -> NETWORK | fee
-
-update asset
-    payer -> NETWORK | fee
-
-issue asset
-    payer -> NETWORK | fee
-    NETWORK -> payee | amount
-
-create order
-    payer -> NETWORK | fee
-    payer -> ORDER | amount
-
-cancel order ???
-    ORDER -> NETWORK | fee
-    ORDER -> payee | amount
-
-withdraw_pay
-    INCOME-name -> NETWORK | fee
-    INCOME-name -> payee
-
-publish_price/feed
-    INCOME-name -> NETWORK | fee
-
-normal transfer
-    payer -> NETWORK | fee
-    payer -> payee | amount
-    NETWORK -> payer | yield
-
-burn
-    payer -> NETWORK | fee
-    payer -> NOBODY | amount
-    *
-    */
    struct transaction_ledger_entry
    {
-       transaction_id_type              id;
-       uint32_t                         block_num = -1;
-       time_point_sec                   timestamp;
+       transaction_id_type                          id;
+       uint32_t                                     block_num = -1;
+       time_point_sec                               timestamp;
 
-       struct line_item
-       {
-           // string (or public key?)
-           // possible entities:
-           // { name, INCOME-name, GENESIS, {ASK,BID,SHORT,COVER}-id, NETWORK, ANONYMOUS, UNKNOWN }
-           string                       payer;
-           string                       payee;
-           //fix labels on account rename -- rare operation
+       map<string, map<asset_id_type, share_type>>  delta_amounts;
+       // e.g. { name, INCOME-name, GENESIS, {ASK,BID,SHORT,COVER}-id, NETWORK, ANONYMOUS, UNKNOWN }
+       map<address, string>                         address_labels;
 
-           asset                        amount;
+       // either memo_data for a titan transfer or string otherwise
+       map<uint16_t, variant>                       operation_details;
 
-           string                       description;
-       };
-       vector<line_item>                line_items;
-
-       optional<transaction_id_type>    transaction_id;
-
-       //variant                        user_data;
+       optional<transaction_id_type>                transaction_id;
 
        bool is_confirmed()const { return block_num != -1; }
        bool is_virtual()const   { return !transaction_id.valid(); }
@@ -382,19 +324,15 @@ FC_REFLECT( bts::wallet::setting,
         (value)
         )
 
-// do not use -- see above
+// do not use -- see notes above
 FC_REFLECT( bts::wallet::transaction_ledger_entry,
         (id)
         (block_num)
         (timestamp)
-        (line_items)
+        (delta_amounts)
+        (address_labels)
+        (operation_details)
         (transaction_id)
-        )
-FC_REFLECT( bts::wallet::transaction_ledger_entry::line_item,
-        (payer)
-        (payee)
-        (amount)
-        (description)
         )
 
 /**

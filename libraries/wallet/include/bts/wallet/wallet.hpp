@@ -154,6 +154,7 @@ namespace bts { namespace wallet {
          void      scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
+         void                              scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 

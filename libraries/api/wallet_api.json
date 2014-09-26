@@ -709,6 +709,27 @@
         "aliases" : ["scan_transaction", "wallet_transaction_scan"]
       },
       {
+        "method_name": "wallet_scan_transaction_experimental",
+        "description": "Scans the specified transaction",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "transaction_id",
+              "type" : "string",
+              "description" : "the id (or id prefix) of the transaction"
+            },
+            {
+              "name" : "overwrite_existing",
+              "type" : "bool",
+              "description" : "true to overwrite existing wallet transaction record and false otherwise",
+              "default_value": false
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["scanx", "st"]
+      },
+      {
         "method_name": "wallet_rebroadcast_transaction",
         "description": "Rebroadcasts the specified transaction",
         "return_type": "void",
