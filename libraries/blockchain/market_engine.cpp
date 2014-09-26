@@ -85,7 +85,7 @@ class market_engine
                  {
                      if( median_feed_price.valid() )
                          _market_stat.center_price = *median_feed_price;
-                     else 
+                     else
                          FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
                  }
 
@@ -124,7 +124,7 @@ class market_engine
 
                 if( _current_ask->type == cover_order && _current_bid->type == short_order )
                 {
-                   FC_ASSERT( quote_asset->is_market_issued() ); 
+                   FC_ASSERT( quote_asset->is_market_issued() );
 
                    /** don't allow new shorts to execute unless there is a feed, all other
                     * trades are still valid. (we shouldn't stop the market)
@@ -649,6 +649,58 @@ class market_engine
       } FC_CAPTURE_AND_RETHROW() }
 
       bool get_next_ask()
+      { try {
+         if( _pending_state->get_head_block_num() < BTSX_MARKET_FORK_9_BLOCK_NUM )
+             return get_next_ask_v1();
+
+         if( _current_ask && _current_ask->state.balance > 0 )
+         {
+            //idump( (_current_ask) );
+            return _current_ask.valid();
+         }
+         _current_ask.reset();
+         ++_orders_filled;
+
+         /**
+          *  Margin calls take priority over all other ask orders
+          */
+         while( _current_bid && _collateral_itr.valid() )
+         {
+            auto cover_ask = market_order( cover_order,
+                                     _collateral_itr.key(),
+                                     order_record(_collateral_itr.value().payoff_balance),
+                                     _collateral_itr.value().collateral_balance  );
+
+            if( cover_ask.get_price().quote_asset_id == _quote_id &&
+                cover_ask.get_price().base_asset_id == _base_id )
+            {
+                // don't cover unless the price is below margin...
+                if( _market_stat.center_price  < cover_ask.get_price() )
+                {
+                   _current_ask = cover_ask;
+                   _current_payoff_balance = _collateral_itr.value().payoff_balance;
+                   --_collateral_itr;
+                   return _current_ask.valid();
+                }
+            }
+            break;
+         }
+
+         if( _ask_itr.valid() )
+         {
+            auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
+            //wlog( "ASK ITER VALID: ${o}", ("o",ask) );
+            if( ask.get_price().quote_asset_id == _quote_id &&
+                ask.get_price().base_asset_id == _base_id )
+            {
+                _current_ask = ask;
+            }
+            ++_ask_itr;
+         }
+         return _current_ask.valid();
+      } FC_CAPTURE_AND_RETHROW() }
+
+      bool get_next_ask_v1()
       { try {
          if( _current_ask && _current_ask->state.balance > 0 )
          {

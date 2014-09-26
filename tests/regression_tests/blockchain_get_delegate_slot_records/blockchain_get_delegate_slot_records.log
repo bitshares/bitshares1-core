@@ -33,7 +33,7 @@ default (unlocked) >>> blockchain_get_delegate_slot_records delegate42
     "start_time": "20140620T144030",
     "block_producer_id": 43,
     "block_produced": true,
-    "block_id": "b212308c046b816d99ddfaac3b1643fc83fccdfa"
+    "block_id": "9dfe96a1e0e8be4a74270713104833d6c228c415"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate43
@@ -41,7 +41,7 @@ default (unlocked) >>> blockchain_get_delegate_slot_records delegate43
     "start_time": "20140620T144040",
     "block_producer_id": 44,
     "block_produced": true,
-    "block_id": "f940daef3a5ce85f54428dcaef75af0ba1becab5"
+    "block_id": "fa34dd5da95c835f06328076dfbb3d0640c62aa3"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate44
@@ -49,7 +49,7 @@ default (unlocked) >>> blockchain_get_delegate_slot_records delegate44
     "start_time": "20140620T144050",
     "block_producer_id": 45,
     "block_produced": true,
-    "block_id": "c7e1a427287d54bbda6800db4e8ae0d3bb3f4a94"
+    "block_id": "22d4712b8bef986c00dd2679b471b40b6af024d1"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate45
@@ -57,7 +57,7 @@ default (unlocked) >>> blockchain_get_delegate_slot_records delegate45
     "start_time": "20140620T144100",
     "block_producer_id": 46,
     "block_produced": true,
-    "block_id": "82f653d3fd88da91215ea53f539c89e250973a30"
+    "block_id": "ab2b59c1781df451e31d6bf89109e7f3fa242ffc"
   }
 ]
 default (unlocked) >>> quit

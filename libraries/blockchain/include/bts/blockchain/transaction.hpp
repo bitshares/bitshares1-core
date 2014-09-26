@@ -92,9 +92,9 @@ namespace bts { namespace blockchain {
                          share_type   max_share_supply,
                          int64_t      precision );
 
-      void burn( const asset& quantity, 
-                 account_id_type for_or_against, 
-                 const string& public_message, 
+      void burn( const asset& quantity,
+                 account_id_type for_or_against,
+                 const string& public_message,
                  const fc::optional<signature_type>& message_sig );
 
       void bid( const asset& quantity,
@@ -123,48 +123,10 @@ namespace bts { namespace blockchain {
       bool is_cancel()const;
    }; // transaction
 
-   struct transaction_summary_details
-   {
-      /**
-       *  Bitcoin compatibility
-       */
-      ///@{
-        string        account;
-        string        category;
-        string        address;
-        share_type         amount;
-      ///@}
-        asset_id_type      asset_id;
-   };
-
-   struct transaction_summary
-   {
-      transaction_summary():amount(0),confirmations(0),blockindex(0){}
-
-      /**
-       *  Bitcoin compatibility
-       */
-      ///@{
-      share_type                                 amount;
-      uint32_t                                   confirmations;
-      block_id_type                              blockhash;
-      uint32_t                                   blockindex;
-      fc::time_point_sec                         blocktime;
-      transaction_id_type                        txid;
-      fc::time_point_sec                         time;
-      fc::time_point_sec                         timereceived;
-      vector<transaction_summary_details>   details;
-      vector<char>                          hex;
-      ///@}
-
-      vector<asset>                         fees;
-      vector<asset>                         amounts;
-      variant                                public_data;
-   }; // transaction_summary
-
    struct signed_transaction : public transaction
    {
       transaction_id_type                     id()const;
+      transaction_id_type                     permanent_id()const;
       size_t                                  data_size()const;
       void                                    sign( const fc::ecc::private_key& signer, const digest_type& chain_id );
 
@@ -187,7 +149,4 @@ namespace bts { namespace blockchain {
 
 FC_REFLECT( bts::blockchain::transaction, (expiration)(delegate_slate_id)(operations) )
 FC_REFLECT_DERIVED( bts::blockchain::signed_transaction, (bts::blockchain::transaction), (signatures) )
-
 FC_REFLECT( bts::blockchain::transaction_location, (block_num)(trx_num) )
-FC_REFLECT( bts::blockchain::transaction_summary_details, (account)(category)(address)(amount)(asset_id) )
-FC_REFLECT( bts::blockchain::transaction_summary, (amount)(confirmations)(blockhash)(blockindex)(blocktime)(txid)(time)(timereceived)(details)(fees)(amounts)(hex)(public_data) )

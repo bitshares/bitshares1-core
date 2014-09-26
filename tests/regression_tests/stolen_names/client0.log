@@ -1,7 +1,7 @@
 default (unlocked) >>> wallet_account_create thief
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:thief:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+xts:thief:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 default (unlocked) >>> wallet_account_register thief delegate0
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -14,9 +14,9 @@ default (unlocked) >>> blockchain_get_account thief
 Name: thief
 Registered: [redacted]
 Last Updated: [redacted]
-Owner Key: XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+Owner Key: XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 Active Key History:
-- XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp, last used [redacted]
+- XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp, last used [redacted]
 Not a delegate.
 default (unlocked) >>> wallet_rename_account thief thiever
 Command failed with exception: invalid account name (20017)

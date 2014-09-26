@@ -1,10 +1,10 @@
 default (unlocked) >>> wallet_account_create test
 
 Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:test:XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
+xts:test:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-test                               XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp           NO                    NO             0         
+test                               XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0         
 default (unlocked) >>> help wallet_dump_private_key
 Usage:
 wallet_dump_private_key <input>                                                                       Reveals the private key corresponding to an account, public key, or address
@@ -18,9 +18,9 @@ Returns:
 
 aliases: dump_private_key, dumpprivkey
 default (unlocked) >>> wallet_dump_private_key test
-"5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
-default (unlocked) >>> wallet_dump_private_key XTS5drpKagoTFiMsg1urDXvrtY7Fkuyb4vkgBUCxrsnrer8ioRGrp
-"5JD4mvHByhzb3RsdoiXJhnU4vBnVEAJdDMDC4fs6iwm4CtjX54L"
+"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
+default (unlocked) >>> wallet_dump_private_key XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
+"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
 default (unlocked) >>> wallet_dump_private_key test2
 "key not found"
 default (unlocked) >>> quit

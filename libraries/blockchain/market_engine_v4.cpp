@@ -32,7 +32,7 @@ class market_engine_v4
              cancel_current_short( mtrx, market_idx.order_price.quote_asset_id );
              push_market_transaction( mtrx );
          }
-         
+
          _pending_state->apply_changes();
       }
 

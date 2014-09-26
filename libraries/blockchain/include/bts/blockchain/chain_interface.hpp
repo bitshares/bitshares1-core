@@ -60,10 +60,12 @@ namespace bts { namespace blockchain {
          virtual bool                       is_valid_symbol_name( const string& name ) const;
          virtual bool                       is_valid_account_name( const string& name ) const;
 
-         /** convers an asset + asset_id to a more friendly representation using the symbol name */
+         /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
          double                             to_pretty_price_double( const price& a )const;
          string                             to_pretty_price( const price& a )const;
+         /** converts a numeric string + asset symbol to an asset */
+         asset                              to_ugly_asset( const string& amount, const string& symbol )const;
 
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;
@@ -167,8 +169,8 @@ namespace bts { namespace blockchain {
                                                                          const market_history_record& record ) = 0;
          virtual omarket_history_record     get_market_history_record( const market_history_key& key )const = 0;
 
-         virtual map<asset_id_type, asset_id_type>  get_dirty_markets()const;
-         virtual void                               set_dirty_markets( const map<asset_id_type,asset_id_type>& );
+         virtual void set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& );
+         virtual std::set<std::pair<asset_id_type, asset_id_type>> get_dirty_markets()const;
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )      = 0;
    };

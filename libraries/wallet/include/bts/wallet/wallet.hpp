@@ -154,6 +154,7 @@ namespace bts { namespace wallet {
          void      scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
+         void                              scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
@@ -448,8 +449,24 @@ namespace bts { namespace wallet {
                  share_type collateral_to_add,
                  bool sign = true
                  );
-         wallet_transaction_record cancel_market_order(
-                 const order_id_type& order_id,
+         wallet_transaction_record cancel_market_orders(
+                 const vector<order_id_type>& order_ids,
+                 bool sign = true
+                 );
+
+         /**
+          * @brief Perform arbitrarily many market operations in a single transaction
+          * @param cancel_order_ids List of order IDs to cancel in the transaction
+          * @param new_orders List of new orders to create. Each list element contains an order type and a list of
+          * arguments. The arguments are the same as are taken by the wallet methods to execute that market operation in
+          * its own transaction. If the final sign argument is provided in the arguments list, it will be ignored in
+          * favor of the sign flag passed to batch_market_update.
+          * @param sign Transaction will be signed and broadcast if true.
+          * @return The resulting, potentially monstrously large, transaction
+          */
+         wallet_transaction_record batch_market_update(
+                 const vector<order_id_type>& cancel_order_ids,
+                 const vector<std::pair<order_type_enum,vector<string>>>& new_orders,
                  bool sign = true
                  );
 #if 0

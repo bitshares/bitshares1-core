@@ -709,6 +709,27 @@
         "aliases" : ["scan_transaction", "wallet_transaction_scan"]
       },
       {
+        "method_name": "wallet_scan_transaction_experimental",
+        "description": "Scans the specified transaction",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "transaction_id",
+              "type" : "string",
+              "description" : "the id (or id prefix) of the transaction"
+            },
+            {
+              "name" : "overwrite_existing",
+              "type" : "bool",
+              "description" : "true to overwrite existing wallet transaction record and false otherwise",
+              "default_value": false
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["scanx", "st"]
+      },
+      {
         "method_name": "wallet_rebroadcast_transaction",
         "description": "Rebroadcasts the specified transaction",
         "return_type": "void",
@@ -1328,13 +1349,27 @@
       },
       {
          "method_name" : "wallet_market_cancel_order",
-         "description" : "Cancel an order",
+         "description" : "Cancel an order: deprecated - use wallet_market_cancel_orders",
          "return_type" : "transaction_record",
          "parameters"  : [
             {
                "name" : "order_id",
                "type" : "order_id",
                "description" : "the ID of the order to cancel"
+            }
+          ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : []
+      },
+      {
+         "method_name" : "wallet_market_cancel_orders",
+         "description" : "Cancel more than one order at a time",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "order_ids",
+               "type" : "order_ids",
+               "description" : "the IDs of the orders to cancel"
             }
           ],
          "prerequisites" : ["wallet_unlocked"],

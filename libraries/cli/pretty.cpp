@@ -402,7 +402,8 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     if( transactions.empty() ) return "No transactions found.\n";
     FC_ASSERT( client != nullptr );
 
-    const bool account_specified = transactions.front().ledger_entries.front().running_balances.size() == 1;
+    const bool account_specified = !transactions.front().ledger_entries.empty()
+            && transactions.front().ledger_entries.front().running_balances.size() == 1;
 
     auto any_group = false;
     for( const auto& transaction : transactions )

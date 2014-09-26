@@ -2968,6 +2968,9 @@ namespace bts { namespace net { namespace detail {
           user_data["fc_git_revision_unix_timestamp"] = *peer->fc_git_revision_unix_timestamp;
         if (peer->platform)
           user_data["platform"] = *peer->platform;
+        if (peer->bitness)
+          user_data["bitness"] = *peer->bitness;
+        user_data["user_agent"] = peer->user_agent;
         data_for_this_peer.user_data = user_data;
         reply.current_connections.emplace_back(data_for_this_peer);
       }
