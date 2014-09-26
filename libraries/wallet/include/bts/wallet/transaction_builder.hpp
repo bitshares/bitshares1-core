@@ -145,7 +145,7 @@ namespace bts { namespace wallet {
        *signature requirements, this function will apply all signatures for which keys are available and return the
        *partially signed transaction. To determine if all necessary signatures are present, use the is_signed() method.
        */
-      signed_transaction& sign();
+      wallet_transaction_record& sign();
       bool is_signed() const
       {
          return required_signatures.size() == trx.signatures.size();

@@ -5164,8 +5164,7 @@ namespace bts { namespace wallet {
       builder.finalize();
 
       if( sign )
-         cache_transaction(builder.sign(), builder.transaction_record);
-
+         return builder.sign();
       return builder.transaction_record;
    } FC_CAPTURE_AND_RETHROW( (cancel_order_ids)(new_orders) ) }
 
@@ -7075,7 +7074,7 @@ namespace bts { namespace wallet {
       return *this;
        } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   signed_transaction& transaction_builder::sign()
+   wallet_transaction_record& transaction_builder::sign()
    {
       auto chain_id = _wimpl->_blockchain->chain_id();
       trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
@@ -7088,7 +7087,8 @@ namespace bts { namespace wallet {
          } catch( ... ) {}
       }
 
-      return trx;
+      _wimpl->self->cache_transaction(trx, transaction_record);
+      return transaction_record;
    }
 
    void transaction_builder::pay_fees()
