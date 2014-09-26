@@ -329,6 +329,11 @@
          "cpp_return_type" : "bts::blockchain::order_id_type"
       },
       {
+         "type_name" : "order_ids",
+         "container_type" : "array",
+         "contained_type" : "order_id"
+      },
+      {
          "type_name" : "market_order_map",
          "cpp_return_type" : "std::map<bts::blockchain::order_id_type, bts::blockchain::market_order>"
       },

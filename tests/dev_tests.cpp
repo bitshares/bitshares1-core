@@ -215,16 +215,31 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 
    produce_block(clientb);
    produce_block(clientb);
+   elog( "=====================================================================\n" );
+   elog( "=====================================================================\n" );
+   elog( "=====================================================================\n" );
+   elog( "=====================================================================\n" );
+   elog( "=====================================================================\n" );
+   exec(clientb, "blockchain_market_order_book BUSD XTS");
 
-   exec( clienta, "short delegate35 500 BUSD 30" );
+   exec( clienta, "short delegate35 4000 BUSD 30" );
+   exec( clienta, "short delegate37 5000 BUSD 40" );
+   exec( clienta, "short delegate39 4000 BUSD 50" );
+
+   exec( clientb, "ask delegate38 5000 XTS .739 BUSD" );
+   exec( clientb, "ask delegate40 5000 XTS .74 BUSD" );
+   exec( clientb, "ask delegate42 5000 XTS .741 BUSD" );
 
    produce_block(clientb);
+   exec(clienta, "blockchain_market_order_book BUSD XTS");
    produce_block(clientb);
-
    exec(clienta, "balance");
    exec(clientb, "balance");
    exec(clienta, "blockchain_get_asset BUSD");
    exec(clienta, "blockchain_market_order_book BUSD XTS");
+
+
+
 
    return;
    //Next line is intended to fail due to overly-high price

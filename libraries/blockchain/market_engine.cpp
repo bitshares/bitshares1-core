@@ -671,36 +671,13 @@ class market_engine
             if( cover_ask.get_price().quote_asset_id == _quote_id &&
                 cover_ask.get_price().base_asset_id == _base_id )
             {
-#if 0 // we will cover at any price that is within range of the price feed.
-                if( _current_bid->get_price() < cover_ask.get_highest_cover_price()  )
+                // don't cover unless the price is below margin...
+                if( _market_stat.center_price  < cover_ask.get_price() )
                 {
-                   // cover position has been blown out, current bid is not able to
-                   // cover the position, so it will sit until the price recovers
-                   // enough to fill it.
-                   //
-                   // The idea here is that the longs have agreed to a maximum
-                   // protection equal to the collateral.  If they would like to
-                   // sell their USD for XTS this is the best price the short is
-                   // obligated to offer.
-                   //
-                   // In other words, this ask MUST be filled before any thing else
-                   FC_CAPTURE_AND_THROW( insufficient_collateral, (_current_bid)(cover_ask)(cover_ask.get_highest_cover_price()));
+                   _current_ask = cover_ask;
+                   _current_payoff_balance = _collateral_itr.value().payoff_balance;
                    --_collateral_itr;
-                   continue;
-                }
-#endif
-                // max bid must be greater than call price
-                if( _current_bid->get_price() < cover_ask.get_price() )
-                {
-                 //  if( _current_ask->get_price() > cover_ask.get_price() )
-                   {
-                      _current_ask = cover_ask;
-                      _current_payoff_balance = _collateral_itr.value().payoff_balance;
-                      //wlog( "--collateral_iter" );
-                      --_collateral_itr;
-                      //idump( (_current_ask) );
-                      return _current_ask.valid();
-                   }
+                   return _current_ask.valid();
                 }
             }
             break;
