@@ -699,7 +699,8 @@ string pretty_vote_summary( const account_vote_summary_type& votes, cptr client 
 
     return out.str();
 }
-string pretty_order_list( const vector< std::pair<order_id_type, market_order> >& order_items, cptr client )
+
+string pretty_order_list( const vector<std::pair<order_id_type, market_order>>& order_items, cptr client )
 {
     if( order_items.empty() ) return "No market orders found.\n";
     FC_ASSERT( client != nullptr );
@@ -713,10 +714,10 @@ string pretty_order_list( const vector< std::pair<order_id_type, market_order> >
     out << std::setw( 20 ) << "BALANCE";
     out << std::setw( 20 ) << "COST";
     out << std::setw( 20 ) << "COLLATERAL";
-    out << std::setw( 36 ) << "ID";
+    out << std::setw( 40 ) << "ID";
     out << "\n";
 
-    out << pretty_line( 128 );
+    out << pretty_line( 162 );
     out << "\n";
 
     for( const auto& item : order_items )
@@ -733,49 +734,7 @@ string pretty_order_list( const vector< std::pair<order_id_type, market_order> >
            out << std::setw( 20 ) << "N/A";
         else
            out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( *order.collateral ) );
-        out << std::setw( 36 ) << string( id );
-
-        out << "\n";
-    }
-
-    return out.str();
-}
-
-string pretty_order_list( const map<order_id_type, market_order>& order_items, cptr client )
-{
-    if( order_items.empty() ) return "No market orders found.\n";
-    FC_ASSERT( client != nullptr );
-
-    std::stringstream out;
-    out << std::left;
-
-    out << std::setw( 12 ) << "TYPE";
-    out << std::setw( 20 ) << "QUANTITY";
-    out << std::setw( 30 ) << "PRICE";
-    out << std::setw( 20 ) << "BALANCE";
-    out << std::setw( 20 ) << "COST";
-    out << std::setw( 20 ) << "COLLATERAL";
-    out << std::setw( 36 ) << "ID";
-    out << "\n";
-
-    out << pretty_line( 128 );
-    out << "\n";
-
-    for( const auto& item : order_items )
-    {
-        const auto id = item.first;
-        const auto order = item.second;
-
-        out << std::setw( 12 ) << variant( order.type ).as_string();
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() );
-        out << std::setw( 30 ) << client->get_chain()->to_pretty_price( order.get_price() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_balance() );
-        out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( order.get_quantity() * order.get_price() );
-        if( order.type != cover_order )
-           out << std::setw( 20 ) << "N/A";
-        else
-           out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( asset( *order.collateral ) );
-        out << std::setw( 36 ) << string( id );
+        out << std::setw( 40 ) << string( id );
 
         out << "\n";
     }
