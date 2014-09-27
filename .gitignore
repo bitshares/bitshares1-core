@@ -29,6 +29,7 @@ libraries/wallet/include/bts/wallet/url.hpp
 
 programs/client/bitshares_client
 
+programs/btsx_bots
 programs/utils/btc_wallet_dump
 programs/utils/bts_create_genesis
 programs/utils/bts_create_key
