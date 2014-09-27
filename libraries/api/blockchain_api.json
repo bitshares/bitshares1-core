@@ -689,6 +689,31 @@
         "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "blockchain_verify_signature",
+        "description": "Verify that the given signature proves the given hash was signed by the given account.",
+        "return_type": "bool",
+        "parameters" : [
+            {
+                "name" : "signing_account",
+                "type" : "string",
+                "description" : "The account the signature claims to be from"
+            },
+            {
+                "name" : "hash",
+                "type" : "sha256",
+                "description" : "The hash the signature claims to be for"
+            },
+            {
+                "name" : "signature",
+                "type" : "compact_signature",
+                "description" : "A signature produced by wallet_sign_hash"
+            }
+        ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["verify_signature", "verify_sig", "blockchain_verify_sig"]
       }
     ]
 }
