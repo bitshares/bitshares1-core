@@ -294,9 +294,9 @@ namespace bts { namespace cli {
   void print_result::f_blockchain_market_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     const auto& market_orders = result.as<vector<market_order>>();
-    map<order_id_type, market_order> order_map;
+    vector< std::pair<order_id_type, market_order> > order_map;
     for( const auto& order : market_orders )
-        order_map[ order.get_id() ] = order;
+        order_map.push_back( std::make_pair( order.get_id(), order) );
     out << pretty_order_list( order_map, client );
   }
 
