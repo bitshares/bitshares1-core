@@ -732,10 +732,13 @@ namespace bts { namespace cli {
     auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->center_price;
 
     vector<market_order> shorts;
-    if (arguments.size() <= 2)
-        shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
-    else
-        shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
+    if( base_id == 0 )
+    {
+       if (arguments.size() <= 2)
+           shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
+       else
+           shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
+    }
 
     std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&max_short_price](const market_order& order) -> bool {
         return order.state.short_price_limit && *order.state.short_price_limit < max_short_price;
