@@ -123,8 +123,6 @@ namespace bts { namespace blockchain {
               FC_CAPTURE_AND_THROW( unknown_asset_id, (fee.first) );
 
             asset_record->collected_fees += fee.second;
-            // collecting fees should not decrease share supply.
-            // asset_record->current_share_supply -= fee.second;
             _current_state->store_asset_record( *asset_record );
          }
       }
