@@ -108,8 +108,14 @@ namespace bts { namespace cli {
 
     _command_to_function["wallet_market_order_list"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      const auto& market_orders = result.as<map<order_id_type, market_order>>();
-      out << pretty_order_list( market_orders, client );
+      const auto& order_map = result.as<map<order_id_type, market_order>>();
+
+      vector<std::pair<order_id_type, market_order>> order_list;
+      order_list.reserve( order_map.size() );
+      for( const auto& order_item : order_map )
+          order_list.push_back( std::make_pair( order_item.first, order_item.second ) );
+
+      out << pretty_order_list( order_list, client );
     };
 
     _command_to_function["blockchain_market_list_asks"] = &f_blockchain_market_list;
@@ -268,7 +274,7 @@ namespace bts { namespace cli {
 
     out << std::left;
     out << std::setw( 30 ) << "AMOUNT";
-    out << std::setw( 30 ) << "COLLATERAL RATIO"; // XTS per USD (BitAsset) held as collateral 
+    out << std::setw( 30 ) << "COLLATERAL RATIO"; // XTS per USD (BitAsset) held as collateral
     out << std::setw( 30 ) << "COLLATERAL";
     out << std::setw( 30 ) << "PRICE LIMIT";
     out << std::setw( 40 ) << "ID";
@@ -293,11 +299,14 @@ namespace bts { namespace cli {
 
   void print_result::f_blockchain_market_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
-    const auto& market_orders = result.as<vector<market_order>>();
-    vector< std::pair<order_id_type, market_order> > order_map;
-    for( const auto& order : market_orders )
-        order_map.push_back( std::make_pair( order.get_id(), order) );
-    out << pretty_order_list( order_map, client );
+    const auto& order_map = result.as<vector<market_order>>();
+
+    vector<std::pair<order_id_type, market_order>> order_list;
+    order_list.reserve( order_map.size() );
+    for( const auto& order_item : order_map )
+        order_list.push_back( std::make_pair( order_item.get_id(), order_item ) );
+
+    out << pretty_order_list( order_list, client );
   }
 
   void print_result::f_wallet_list_my_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
