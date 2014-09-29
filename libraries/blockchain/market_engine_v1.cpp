@@ -1,14 +1,15 @@
-class market_engine_v1
-{
-   public:
-      market_engine_v1( pending_chain_state_ptr ps, chain_database_impl& cdi )
+#include <bts/blockchain/market_engine_v1.hpp>
+
+namespace bts { namespace blockchain { namespace detail {
+
+      market_engine_v1::market_engine_v1( pending_chain_state_ptr ps, chain_database_impl& cdi )
       :_pending_state(ps),_db_impl(cdi)
       {
           _pending_state = std::make_shared<pending_chain_state>( ps );
           _prior_state = ps;
       }
 
-      void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+      void market_engine_v1::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try {
              _quote_id = quote_id;
@@ -320,7 +321,7 @@ class market_engine_v1
         }
       } // execute(...)
 
-      bool get_next_bid()
+      bool market_engine_v1::get_next_bid()
       { try {
          if( _current_bid && _current_bid->get_quantity().amount > 0 )
             return _current_bid.valid();
@@ -360,7 +361,7 @@ class market_engine_v1
          return _current_bid.valid();
       } FC_CAPTURE_AND_RETHROW() }
 
-      bool get_next_ask()
+      bool market_engine_v1::get_next_ask()
       { try {
          if( _current_ask && _current_ask->state.balance > 0 )
          {
@@ -426,20 +427,4 @@ class market_engine_v1
          return _current_ask.valid();
       } FC_CAPTURE_AND_RETHROW() }
 
-      pending_chain_state_ptr     _pending_state;
-      pending_chain_state_ptr     _prior_state;
-      chain_database_impl&        _db_impl;
-
-      optional<market_order>      _current_bid;
-      optional<market_order>      _current_ask;
-      share_type                  _current_payoff_balance;
-      asset_id_type               _quote_id;
-      asset_id_type               _base_id;
-
-      vector<market_transaction>  _market_transactions;
-
-      bts::db::cached_level_map< market_index_key, order_record >::iterator       _bid_itr;
-      bts::db::cached_level_map< market_index_key, order_record >::iterator       _ask_itr;
-      bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
-      bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
-};
+} } } // end namespace bts::blockchain::detail

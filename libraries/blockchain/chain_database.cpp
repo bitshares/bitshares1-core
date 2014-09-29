@@ -25,11 +25,15 @@
 #include <iomanip>
 #include <iostream>
 
-#include <bts/blockchain/fork_blocks.hpp>
-
 // the definition of detail::chain_database_impl is moved to a separate file so it can be shared by the market_engine(s)
 #include <bts/blockchain/chain_database_impl.hpp>
 #include <bts/blockchain/market_engine.hpp>
+
+#include <bts/blockchain/fork_blocks.hpp>
+#include <bts/blockchain/market_engine_v4.hpp>
+#include <bts/blockchain/market_engine_v3.hpp>
+#include <bts/blockchain/market_engine_v2.hpp>
+#include <bts/blockchain/market_engine_v1.hpp>
 
 namespace bts { namespace blockchain {
 

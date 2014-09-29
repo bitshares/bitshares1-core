@@ -1,18 +1,15 @@
-/** This file is designed to be included in detail::chain_database_impl, but is pulled into a separate file for
- * ease of maintenance and upgrade.
- */
+#include <bts/blockchain/market_engine_v4.hpp>
 
-class market_engine_v4
-{
-   public:
-      market_engine_v4( pending_chain_state_ptr ps, chain_database_impl& cdi )
+namespace bts { namespace blockchain { namespace detail {
+
+      market_engine_v4::market_engine_v4( pending_chain_state_ptr ps, chain_database_impl& cdi )
       :_pending_state(ps),_db_impl(cdi)
       {
          _pending_state = std::make_shared<pending_chain_state>( ps );
          _prior_state = ps;
       }
 
-      void cancel_all_shorts( const time_point_sec& limit_timestamp )
+      void market_engine_v4::cancel_all_shorts( const time_point_sec& limit_timestamp )
       {
          for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
          {
@@ -36,7 +33,7 @@ class market_engine_v4
          _pending_state->apply_changes();
       }
 
-      void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+      void market_engine_v4::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try
          {
@@ -386,7 +383,7 @@ class market_engine_v4
         }
       } // execute(...)
 
-      void push_market_transaction( const market_transaction& mtrx )
+      void market_engine_v4::push_market_transaction( const market_transaction& mtrx )
       { try {
           // If not an automatic market cancel
           if( mtrx.ask_paid.amount != 0
@@ -408,7 +405,7 @@ class market_engine_v4
           _market_transactions.push_back(mtrx);
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id )
+      void market_engine_v4::cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id )
       {
          FC_ASSERT( _current_bid->type == short_order );
          FC_ASSERT( mtrx.bid_type == short_order );
@@ -439,7 +436,7 @@ class market_engine_v4
          _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
       }
 
-      void pay_current_short( const market_transaction& mtrx, asset_record& quote_asset )
+      void market_engine_v4::pay_current_short( const market_transaction& mtrx, asset_record& quote_asset )
       { try {
           FC_ASSERT( _current_bid->type == short_order );
           FC_ASSERT( mtrx.bid_type == short_order );
@@ -487,7 +484,7 @@ class market_engine_v4
           _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
       } FC_CAPTURE_AND_RETHROW( (mtrx)  ) }
 
-      void pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset )
+      void market_engine_v4::pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset )
       { try {
           FC_ASSERT( _current_bid->type == bid_order );
           FC_ASSERT( mtrx.bid_type == bid_order );
@@ -515,7 +512,7 @@ class market_engine_v4
           _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset )
+      void market_engine_v4::pay_current_cover( market_transaction& mtrx, asset_record& quote_asset )
       { try {
           FC_ASSERT( _current_ask->type == cover_order );
           FC_ASSERT( mtrx.ask_type == cover_order );
@@ -577,7 +574,7 @@ class market_engine_v4
                                                                       _current_ask->state.balance ) );
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
+      void market_engine_v4::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
       { try {
           FC_ASSERT( _current_ask->type == ask_order );
           FC_ASSERT( mtrx.ask_type == ask_order );
@@ -605,7 +602,7 @@ class market_engine_v4
 
       } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
-      bool get_next_bid()
+      bool market_engine_v4::get_next_bid()
       { try {
          if( _current_bid && _current_bid->get_quantity().amount > 0 )
             return _current_bid.valid();
@@ -647,7 +644,7 @@ class market_engine_v4
          return _current_bid.valid();
       } FC_CAPTURE_AND_RETHROW() }
 
-      bool get_next_ask()
+      bool market_engine_v4::get_next_ask()
       { try {
          if( _current_ask && _current_ask->state.balance > 0 )
          {
@@ -724,7 +721,7 @@ class market_engine_v4
        *  This method should not affect market execution or validation and
        *  is for historical purposes only.
        */
-      void update_market_history( const asset& trading_volume,
+      void market_engine_v4::update_market_history( const asset& trading_volume,
                                   const price& opening_price,
                                   const price& closing_price,
                                   const omarket_status& market_stat,
@@ -798,23 +795,4 @@ class market_engine_v4
              }
       }
 
-      pending_chain_state_ptr       _pending_state;
-      pending_chain_state_ptr       _prior_state;
-      chain_database_impl&          _db_impl;
-
-      optional<market_order>        _current_bid;
-      optional<market_order>        _current_ask;
-      share_type                    _current_payoff_balance = 0;
-      asset_id_type                 _quote_id;
-      asset_id_type                 _base_id;
-      market_status                 _market_stat;
-
-      int                           _orders_filled = 0;
-
-      vector<market_transaction>    _market_transactions;
-
-      bts::db::cached_level_map< market_index_key, order_record >::iterator         _bid_itr;
-      bts::db::cached_level_map< market_index_key, order_record >::iterator         _ask_itr;
-      bts::db::cached_level_map< market_index_key, order_record >::iterator         _short_itr;
-      bts::db::cached_level_map< market_index_key, collateral_record >::iterator    _collateral_itr;
-};
+} } } // end namespace bts::blockchain::detail

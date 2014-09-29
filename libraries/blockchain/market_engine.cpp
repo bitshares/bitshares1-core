@@ -1,5 +1,7 @@
 #include <bts/blockchain/market_engine.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain { namespace detail {
 
   market_engine::market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
