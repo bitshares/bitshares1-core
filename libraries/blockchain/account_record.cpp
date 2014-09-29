@@ -63,10 +63,10 @@ namespace bts { namespace blockchain {
         return public_key_type();
     }
 
-    share_type account_record::delegate_pay_rate()const
+    uint8_t account_record::delegate_pay_rate()const
     {
         if( is_delegate() ) return delegate_info->pay_rate;
-        return 0;
+        return 255;
     }
 
 }} // bts::blockchain
