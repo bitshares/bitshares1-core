@@ -78,7 +78,7 @@ namespace bts { namespace blockchain {
      std::string fraction_part = "0";
 
      //Skip any junk at the beginning; we want to start with a digit or decimal point.
-     while( !isnumber(ss.peek()) && ss.peek() != '.' )
+     while( !isdigit(ss.peek()) && ss.peek() != '.' )
         ss.get();
      if( ss.peek() == '.' )
         //Number is formatted like .5
@@ -88,7 +88,7 @@ namespace bts { namespace blockchain {
         ss >> int_part;
         if( ss.peek() == '.' )
            ss.get();
-        if( isnumber(ss.peek()) )
+        if( isdigit(ss.peek()) )
            //Number is formatted like 1.5
            ss >> dot >> fraction_part;
      }
