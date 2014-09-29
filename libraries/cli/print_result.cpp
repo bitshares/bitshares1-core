@@ -755,8 +755,7 @@ namespace bts { namespace cli {
 
     shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&max_short_price](const market_order& short_order) -> bool {
       //Filter out if insufficient collateral (i.e. XTS/USD < 1/max_short_price) or if price limit (i.e. USD/XTS) is less than short execution price
-      return short_order.get_price() > max_short_price || (short_order.state.short_price_limit.valid()?
-                                                               *short_order.state.short_price_limit < max_short_price : false);
+      return (short_order.state.short_price_limit.valid() ?  *short_order.state.short_price_limit < max_short_price : false);
     }), shorts.end());
 
     if (base_id == 0 && quote_asset_record->is_market_issued())
@@ -766,7 +765,13 @@ namespace bts { namespace cli {
       short_wall.state.balance = 0;
       short_wall.market_index.order_price = recent_average_price;
       for (auto order : shorts)
-        short_wall.state.balance += order.get_quote_quantity().amount;
+      {
+         if( order.get_price() >= max_short_price )
+           short_wall.state.balance += ((order.get_quantity() * max_short_price)).amount;
+         else
+           short_wall.state.balance += (order.get_quantity() * order.get_price()).amount;
+      }
+
       auto pos = std::lower_bound(bids_asks.first.begin(), bids_asks.first.end(), short_wall, [](const market_order& a, const market_order& b) -> bool {
         return !(a.market_index == b.market_index) && !(a.market_index < b.market_index);
       });
@@ -844,9 +849,18 @@ namespace bts { namespace cli {
           if(bid_itr != shorts.end())
           {
             double ratio = (1/client->get_chain()->to_pretty_price_double(bid_itr->get_price()));
-            asset quantity(bid_itr->get_quote_quantity() * max_short_price);
-            out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity())
-              << std::setw(20) << client->get_chain()->to_pretty_asset(quantity)
+            asset quantity_usd(bid_itr->get_quantity() * max_short_price); //, bid_itr->get_price()) );
+            asset quantity_xts = bid_itr->get_quantity(); //quantity_usd * max_short_price;
+
+            if( bid_itr->get_price() >= max_short_price )
+              quantity_usd = ((bid_itr->get_quantity() * max_short_price));
+            else
+              quantity_usd = (bid_itr->get_quantity() * bid_itr->get_price());
+
+            quantity_xts = quantity_usd * max_short_price;
+
+            out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(quantity_usd)
+              << std::setw(20) << client->get_chain()->to_pretty_asset(quantity_xts)
               << std::right << std::setw(30) << std::fixed << std::setprecision(2) << ratio;
 
             ++bid_itr;
