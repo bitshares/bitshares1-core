@@ -66,6 +66,10 @@ namespace bts { namespace blockchain {
          string                             to_pretty_price( const price& a )const;
          /** converts a numeric string + asset symbol to an asset */
          asset                              to_ugly_asset( const string& amount, const string& symbol )const;
+         /** converts a numeric string and two asset symbols to a price */
+         price to_ugly_price( const string& price_string,
+                                                           const string& base_symbol,
+                                                           const string& quote_symbol )const;
 
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;

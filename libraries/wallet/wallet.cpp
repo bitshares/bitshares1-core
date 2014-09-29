@@ -486,6 +486,8 @@ namespace bts { namespace wallet {
          auto amount_remaining = amount_to_withdraw;
 
          const account_balance_record_summary_type balance_records = self->get_account_balance_records( from_account_name );
+         if( balance_records.find( from_account_name ) == balance_records.end() )
+            FC_CAPTURE_AND_THROW( insufficient_funds, (from_account_name)(amount_to_withdraw)(balance_records) );
          for( const auto& record : balance_records.at( from_account_name ) )
          {
              const asset balance = record.get_balance();
@@ -4990,8 +4992,6 @@ namespace bts { namespace wallet {
       if( !is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( !is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-      FC_ASSERT(false, "This function is not yet tested.");
-
       transaction_builder builder(my.get());
 
       for( const auto& id : cancel_order_ids )
@@ -5000,7 +5000,6 @@ namespace bts { namespace wallet {
       for( const auto& order_description : new_orders)
       {
          const auto& args = order_description.second;
-         FC_ASSERT(args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
          //args always starts with the account name and a quantity
          if( !is_receive_account(args[0]) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (args[0]) );
@@ -5019,10 +5018,9 @@ namespace bts { namespace wallet {
          case bid_order:
          case ask_order:
          {
+            FC_ASSERT(args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
             //args: from_account_name, real_quantity, quantity_symbol, quote_price, quote_symbol[, sign]
-            asset_id_type quote_id = my->_blockchain->get_asset_id(args[4]);
-            price quote_price = price("0" + args[3] + " " + std::to_string(quote_id) +
-                    " / " + std::to_string(quantity.asset_id));
+            price quote_price = my->_blockchain->to_ugly_price(args[3], args[2], args[4]);
 
             if( order_description.first == bid_order )
                builder.submit_bid(get_account(args[0]), quantity, quote_price);
@@ -5032,14 +5030,22 @@ namespace bts { namespace wallet {
          }
          case short_order:
          {
-            //args: from_account_name, short_quantity, short_symbol, collateral_ratio, price_limit[, sign]
-            string quote_str = std::to_string(quantity.asset_id);
-            price collateral_ratio("0" + args[3] + " 0 / " + quote_str);
+            FC_ASSERT(args.size() == 4 || args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
+            //args: from_account_name, short_quantity, short_symbol, collateral_ratio[, price_limit[, sign]]
+            price collateral_ratio = my->_blockchain->to_ugly_price(args[3], args[2], BTS_BLOCKCHAIN_SYMBOL);
             oprice price_limit;
-            if( atof(args[4].c_str()) > 0 )
-               price_limit = price("0" + args[4] + quote_str + " / 0");
+            if( args.size() > 4 && atof(args[4].c_str()) > 0 )
+               price_limit = my->_blockchain->to_ugly_price(args[4], BTS_BLOCKCHAIN_SYMBOL, args[2]);
 
             builder.submit_short(get_account(args[0]), quantity, collateral_ratio, price_limit);
+            break;
+         }
+         case cover_order:
+         {
+            FC_ASSERT(args.size() == 4 || args.size() == 5, "Incorrect number of arguments");
+            //args: from_account_name, quantity, symbol, ID
+            builder.submit_cover(get_account(args[0]), quantity, fc::ripemd160(args[3]));
+            break;
          }
          default:
             FC_ASSERT(false, "Unimplemented order type: ${type}", ("type", order_description.first));
@@ -6767,7 +6773,7 @@ namespace bts { namespace wallet {
       validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
 
       asset cost = real_quantity * quote_price;
-      FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
+      FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
 
       auto order_key = order_key_for_account(from_account.account_address);
 
@@ -6834,7 +6840,7 @@ namespace bts { namespace wallet {
       auto order_key = order_key_for_account(from_account.account_address);
 
       outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
-      trx.short_sell(short_amount, collateral_rate, order_key, price_limit);
+      trx.short_sell(cost, short_amount / cost, order_key, price_limit);
 
       auto entry = ledger_entry();
       entry.from_account = from_account.owner_key;
@@ -6900,7 +6906,7 @@ namespace bts { namespace wallet {
                  ("c", cover_amount.asset_id)("s", order_balance.asset_id) );
 
       //Don't over-cover the short position
-      if( cover_amount > order_balance )
+      if( cover_amount > order_balance || cover_amount.amount == 0 )
           cover_amount = order_balance;
 
       order_balance -= cover_amount;
@@ -6939,8 +6945,10 @@ namespace bts { namespace wallet {
 
       auto slate = _wimpl->self->select_delegate_vote(vote_recommended);
       auto slate_id = slate.id();
-      if( !_wimpl->_blockchain->get_delegate_slate(slate_id) )
+      if( slate.supported_delegates.size() > 0 && !_wimpl->_blockchain->get_delegate_slate(slate_id) )
          trx.define_delegate_slate(slate);
+      else
+         slate_id = 0;
 
       pay_fees();
 
@@ -6953,11 +6961,11 @@ namespace bts { namespace wallet {
 
          if( balance.amount == 0 ) continue;
          else if( balance.amount > 0 ) trx.deposit(deposit_address, balance, slate_id);
-         else _wimpl->withdraw_to_transaction(balance, account_name, trx, required_signatures);
+         else _wimpl->withdraw_to_transaction(-balance, account_name, trx, required_signatures);
       }
 
       return *this;
-       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
    wallet_transaction_record& transaction_builder::sign()
    {
@@ -6986,6 +6994,7 @@ namespace bts { namespace wallet {
          if( itr->second >= _wimpl->self->get_transaction_fee(itr->first).amount )
          {
             required_fee = _wimpl->self->get_transaction_fee(itr->first);
+            transaction_record.fee = required_fee;
             break;
          }
 
@@ -7032,7 +7041,8 @@ namespace bts { namespace wallet {
             asset fee = _wimpl->self->get_transaction_fee(balance.asset_id);
             if( fee.asset_id == balance.asset_id && balance >= fee )
             {
-               _wimpl->withdraw_to_transaction(_wimpl->self->get_transaction_fee(balance.asset_id),
+               transaction_record.fee = _wimpl->self->get_transaction_fee(balance.asset_id);
+               _wimpl->withdraw_to_transaction(transaction_record.fee,
                                                account_rec->name,
                                                trx,
                                                required_signatures);
