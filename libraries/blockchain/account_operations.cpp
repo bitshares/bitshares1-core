@@ -60,7 +60,8 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          eval_state.required_fees += asset(delegate_pay_rate * BTS_BLOCKCHAIN_NUM_DELEGATES,0); 
+          const share_type reg_fee = eval_state._current_state->get_delegate_registration_fee( delegate_pay_rate );
+          eval_state.required_fees += asset( reg_fee, 0 );
       }
       new_record.meta_data = this->meta_data;
 
@@ -163,7 +164,8 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-            eval_state.required_fees += asset(this->delegate_pay_rate * BTS_BLOCKCHAIN_NUM_DELEGATES,0);
+            const share_type reg_fee = eval_state._current_state->get_delegate_registration_fee( delegate_pay_rate );
+            eval_state.required_fees += asset( reg_fee, 0 );
          }
       }
 

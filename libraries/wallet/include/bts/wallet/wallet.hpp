@@ -335,7 +335,7 @@ namespace bts { namespace wallet {
          wallet_transaction_record register_account(
                  const string& account_name,
                  const variant& json_data,
-                 uint8_t delegate_pay_rate,
+                 share_type delegate_pay_rate,
                  const string& pay_with_account_name,
                  bool sign = true
                  );
@@ -343,7 +343,7 @@ namespace bts { namespace wallet {
                  const string& account_name,
                  const string& pay_from_account,
                  optional<variant> public_data,
-                 uint8_t delegate_pay_rate = 255,
+                 share_type delegate_pay_rate,
                  bool sign = true
                  );
          wallet_transaction_record update_active_key(

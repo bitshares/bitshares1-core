@@ -65,10 +65,10 @@ namespace bts { namespace blockchain {
                              const variant& public_data,
                              const public_key_type& master,
                              const public_key_type& active,
-                             uint8_t pay_rate = 255 );
+                             share_type pay_rate );
 
       void update_account( account_id_type account_id,
-                        uint8_t delegate_pay_rate,
+                        share_type delegate_pay_rate,
                         const optional<variant>& public_data,
                         const optional<public_key_type>& active );
 

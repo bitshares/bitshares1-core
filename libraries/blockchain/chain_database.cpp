@@ -560,11 +560,12 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            auto pay_per_block = delegate_record->delegate_info->pay_rate;
+            share_type pay_per_block = delegate_record->delegate_info->pay_rate;
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
 
+            // FIXME: Fix this check -- signed integer overflow is undefined behaviour
             if( base_asset_record->current_share_supply + pay_per_block > base_asset_record->maximum_share_supply ||
                 base_asset_record->current_share_supply + pay_per_block < base_asset_record->current_share_supply /* overflow */)
             {
@@ -576,9 +577,9 @@ namespace bts { namespace blockchain {
             pending_state->store_account_record( *delegate_record );
 
             base_asset_record->current_share_supply += pay_per_block;
+            // Destroy collected fees
             base_asset_record->current_share_supply -= base_asset_record->collected_fees;
             base_asset_record->collected_fees = 0;
-
             pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 

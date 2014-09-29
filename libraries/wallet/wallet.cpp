@@ -4499,7 +4499,7 @@ namespace bts { namespace wallet {
    wallet_transaction_record wallet::register_account(
            const string& account_to_register,
            const variant& public_data,
-           uint8_t delegate_pay_rate,
+           share_type delegate_pay_rate,
            const string& pay_with_account_name,
            bool sign )
    { try {
@@ -4525,7 +4525,7 @@ namespace bts { namespace wallet {
                             public_data,
                             account_public_key, // master
                             account_public_key, // active
-                            delegate_pay_rate <= 100 ? delegate_pay_rate : 255 );
+                            delegate_pay_rate );
 
       const auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
@@ -4547,9 +4547,9 @@ namespace bts { namespace wallet {
       auto required_fees = get_transaction_fee();
 
       bool as_delegate = false;
-      if( delegate_pay_rate <= 100  )
+      if( delegate_pay_rate != 0  )
       {
-        required_fees += asset((delegate_pay_rate * my->_blockchain->get_delegate_registration_fee())/100,0);
+        required_fees += asset( my->_blockchain->get_delegate_registration_fee( delegate_pay_rate ), 0 );
         as_delegate = true;
       }
 
@@ -4572,9 +4572,9 @@ namespace bts { namespace wallet {
 
       return record;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
-                                      ("public_data", public_data)
-                                      ("pay_with_account_name", pay_with_account_name)
-                                      ("delegate_pay_rate",int(delegate_pay_rate)) ) }
+                                      ("public_data",public_data)
+                                      ("pay_with_account_name",pay_with_account_name)
+                                      ("delegate_pay_rate",delegate_pay_rate) ) }
 
    wallet_transaction_record wallet::create_asset(
            const string& symbol,
@@ -4726,7 +4726,7 @@ namespace bts { namespace wallet {
            const string& account_to_update,
            const string& pay_from_account,
            optional<variant> public_data,
-           uint8_t delegate_pay_rate,
+           share_type delegate_pay_rate,
            bool sign )
    { try {
       if( !is_valid_account_name( account_to_update ) )
@@ -4755,9 +4755,9 @@ namespace bts { namespace wallet {
       }
       else
       {
-         if( delegate_pay_rate <= 100  )
+         if( delegate_pay_rate != 0  )
          {
-           required_fees += asset((delegate_pay_rate * my->_blockchain->get_delegate_registration_fee())/100,0);
+            required_fees += asset( my->_blockchain->get_delegate_registration_fee( delegate_pay_rate ), 0 );
          }
       }
 

@@ -149,14 +149,14 @@ namespace bts { namespace blockchain {
                                        const fc::variant& public_data,
                                        const public_key_type& master,
                                        const public_key_type& active,
-                                       uint8_t pay_rate )
+                                       share_type pay_rate )
    {
       const auto op = register_account_operation( name, public_data, master, active, pay_rate );
       operations.push_back( op );
    }
 
    void transaction::update_account( account_id_type account_id,
-                                  uint8_t delegate_pay_rate,
+                                  share_type delegate_pay_rate,
                                   const fc::optional<fc::variant>& public_data,
                                   const fc::optional<public_key_type>& active   )
    {
