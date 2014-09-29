@@ -39,28 +39,26 @@ namespace bts { namespace blockchain {
 
    struct delegate_stats
    {
-      delegate_stats( uint8_t pay_rate = 100 )
-      :votes_for(0),
-       blocks_produced(0),
-       blocks_missed(0),
-       last_block_num_produced(0),
-       pay_rate(pay_rate),
-       pay_balance(0){}
+      delegate_stats( share_type pr = 0 ):pay_rate(pr){}
 
-      share_type                     votes_for;
-      uint32_t                       blocks_produced;
-      uint32_t                       blocks_missed;
+      share_type                     votes_for       = 0;
+      uint32_t                       blocks_produced = 0;
+      uint32_t                       blocks_missed   = 0;
       secret_hash_type               next_secret_hash;
-      uint32_t                       last_block_num_produced;
-      uint8_t                        pay_rate;
+      uint32_t                       last_block_num_produced = 0;
+      /**
+       *  XTS per block produced
+       */
+      share_type                     pay_rate      = 0;
 
       /**
        *  Delegate pay is held in escrow and may be siezed 
        *  and returned to the shareholders if they are fired
        *  for provable cause.
        */
-      share_type                     pay_balance;
+      share_type                     pay_balance = 0;
    };
+
    typedef fc::optional<delegate_stats> odelegate_stats;
 
    struct account_record
@@ -76,7 +74,7 @@ namespace bts { namespace blockchain {
       address           active_address()const;
       void              set_active_key( const time_point_sec& now, const public_key_type& new_key );
       public_key_type   active_key()const;
-      uint8_t           delegate_pay_rate()const;
+      share_type        delegate_pay_rate()const;
 
       account_id_type                        id = 0;
       std::string                            name;
