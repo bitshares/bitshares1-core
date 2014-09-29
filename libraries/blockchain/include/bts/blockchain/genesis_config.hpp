@@ -7,7 +7,7 @@ namespace bts { namespace blockchain {
 
   struct name_config
   {
-     name_config():delegate_pay_rate(0){}
+     name_config():delegate_pay_rate(255){}
 
      std::string        name;
      public_key_type    owner;
@@ -28,7 +28,7 @@ namespace bts { namespace blockchain {
      double            min_price;
      double            max_price;
   };
-  
+
   struct genesis_block_config
   {
      fc::time_point_sec                         timestamp;

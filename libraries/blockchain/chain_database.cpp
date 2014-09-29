@@ -566,7 +566,6 @@ namespace bts { namespace blockchain {
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-
             const auto pay_rate_percent = delegate_record->delegate_info->pay_rate;
             FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
             const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
@@ -587,6 +586,11 @@ namespace bts { namespace blockchain {
             delegate_record->delegate_info->pay_balance += accepted_paycheck;
             delegate_record->delegate_info->votes_for += accepted_paycheck;
             pending_state->store_account_record( *delegate_record );
+
+            auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
+            FC_ASSERT( base_asset_record.valid() );
+            base_asset_record->current_share_supply -= (max_available_paycheck - accepted_paycheck);
+            pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
@@ -1910,7 +1914,7 @@ namespace bts { namespace blockchain {
       std::vector<name_config> delegate_config;
       for( const auto& item : config.names )
       {
-         if( item.delegate_pay_rate > 0 ) delegate_config.push_back( item );
+         if( item.delegate_pay_rate <= 100 ) delegate_config.push_back( item );
       }
 
       FC_ASSERT( delegate_config.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
@@ -1932,7 +1936,7 @@ namespace bts { namespace blockchain {
          rec.set_active_key( timestamp, name.owner );
          rec.registration_date = timestamp;
          rec.last_update       = timestamp;
-         if( name.delegate_pay_rate > 0 )
+         if( name.delegate_pay_rate <= 100 )
          {
             rec.delegate_info = delegate_stats( name.delegate_pay_rate );
             delegate_ids.push_back( account_id );

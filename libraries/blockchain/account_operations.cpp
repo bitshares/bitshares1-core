@@ -17,7 +17,7 @@ namespace bts { namespace blockchain {
 
    bool register_account_operation::is_delegate()const
    {
-       return delegate_pay_rate != 0;
+       return delegate_pay_rate <= 100;
    }
 
    void register_account_operation::evaluate( transaction_evaluation_state& eval_state )
@@ -60,7 +60,8 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          eval_state.required_fees += asset(delegate_pay_rate * BTS_BLOCKCHAIN_NUM_DELEGATES,0); 
+          auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
+          eval_state.required_fees += asset( (max_reg_fee * delegate_pay_rate) / 100, 0 );
       }
       new_record.meta_data = this->meta_data;
 
@@ -69,7 +70,7 @@ namespace bts { namespace blockchain {
 
    bool update_account_operation::is_delegate()const
    {
-       return delegate_pay_rate != 0;
+       return delegate_pay_rate <= 100;
    }
 
    void update_account_operation::evaluate( transaction_evaluation_state& eval_state )
@@ -163,7 +164,8 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-            eval_state.required_fees += asset(this->delegate_pay_rate * BTS_BLOCKCHAIN_NUM_DELEGATES,0);
+            auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
+            eval_state.required_fees += asset( (max_reg_fee * this->delegate_pay_rate) / 100, 0 );
          }
       }
 
