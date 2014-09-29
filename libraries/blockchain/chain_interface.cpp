@@ -25,14 +25,16 @@ namespace bts{ namespace blockchain {
       return address();
    }
 
-   share_type chain_interface::get_delegate_registration_fee()const
+   share_type chain_interface::get_delegate_registration_fee( share_type pay_rate )const
    {
-      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/BTS_BLOCKCHAIN_NUM_DELEGATES;
+      return pay_rate * BTS_BLOCKCHAIN_NUM_DELEGATES;
    }
 
+   // TODO: Do not price fix this
    share_type chain_interface::get_asset_registration_fee()const
    {
-      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
+      //return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
+      return BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE;
    }
 
    bool chain_interface::is_valid_account_name( const std::string& str )const
@@ -209,13 +211,6 @@ namespace bts{ namespace blockchain {
          if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
             return false;
       return true;
-   }
-
-   share_type chain_interface::get_delegate_pay_rate()const
-   {
-       const auto base_record = get_asset_record( asset_id_type( 0 ) );
-       FC_ASSERT( base_record.valid() );
-       return base_record->collected_fees / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14);
    }
 
    void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& d )

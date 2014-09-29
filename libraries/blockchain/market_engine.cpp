@@ -1,4 +1,4 @@
-#include "market_engine.hpp"
+#include <bts/blockchain/market_engine.hpp>
 
 namespace bts { namespace blockchain { namespace detail {
 
@@ -82,7 +82,7 @@ namespace bts { namespace blockchain { namespace detail {
               {
                   if( median_feed_price.valid() )
                       _market_stat.center_price = *median_feed_price;
-                  else 
+                  else
                       FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
               }
 
@@ -121,7 +121,7 @@ namespace bts { namespace blockchain { namespace detail {
 
             if( _current_ask->type == cover_order && _current_bid->type == short_order )
             {
-                FC_ASSERT( quote_asset->is_market_issued() ); 
+                FC_ASSERT( quote_asset->is_market_issued() );
 
                 /** don't allow new shorts to execute unless there is a feed, all other
                 * trades are still valid. (we shouldn't stop the market)

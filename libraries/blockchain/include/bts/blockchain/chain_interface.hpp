@@ -78,13 +78,11 @@ namespace bts { namespace blockchain {
 
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 
-         share_type                         get_delegate_pay_rate()const;
-
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const                     = 0;
          virtual void                       store_delegate_slate( slate_id_type id,
                                                                   const delegate_slate& slate )             = 0;
 
-         virtual share_type                 get_delegate_registration_fee()const;
+         virtual share_type                 get_delegate_registration_fee( share_type pay_rate )const;
          virtual share_type                 get_asset_registration_fee()const;
 
          virtual int64_t                    get_required_confirmations()const;

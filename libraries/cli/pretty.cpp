@@ -91,9 +91,6 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         info["blockchain_average_delegate_participation"] = pretty_percent( participation, 100 );
     }
 
-    const auto pay_rate = info["blockchain_delegate_pay_rate"].as<share_type>();
-    info["blockchain_delegate_pay_rate"] = client->get_chain()->to_pretty_asset( asset( pay_rate ) );
-
     if( !info["blockchain_share_supply"].is_null() )
     {
         const auto share_supply = info["blockchain_share_supply"].as<share_type>();
@@ -187,9 +184,6 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
 
     const auto relay_fee = info["relay_fee"].as<share_type>();
     info["relay_fee"] = client->get_chain()->to_pretty_asset( asset( relay_fee ) );
-
-    const auto delegate_reg_fee = info["delegate_reg_fee"].as<share_type>();
-    info["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
 
     const auto asset_reg_fee = info["asset_reg_fee"].as<share_type>();
     info["asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( asset_reg_fee ) );
@@ -294,7 +288,7 @@ string pretty_delegate_list( const vector<account_record>& delegate_records, cpt
         out << std::setw(  9 ) << num_missed;
         out << std::setw( 14 ) << pretty_percent( num_produced, num_produced + num_missed, 2 );
 
-        out << std::setw(  9 ) << pretty_percent( delegate_record.delegate_info->pay_rate, 100, 0 );
+        out << std::setw(  9 ) << client->get_chain()->to_pretty_asset( asset( delegate_record.delegate_info->pay_rate, 0 ) );
         const auto pay_balance = asset( delegate_record.delegate_info->pay_balance );
         out << std::setw( 20 ) << client->get_chain()->to_pretty_asset( pay_balance );
 

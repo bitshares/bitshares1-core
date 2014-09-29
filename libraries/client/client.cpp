@@ -3106,7 +3106,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        info["relay_fee"]                    = _chain_db->get_relay_fee();
 
        info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
-       info["delegate_reg_fee"]             = _chain_db->get_delegate_registration_fee();
 
        info["name_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
@@ -3147,8 +3146,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
           info["blockchain_average_delegate_participation"]     = participation;
 
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
-
-      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
       info["blockchain_share_supply"]                           = variant();
       const auto share_record                                   = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
@@ -3326,7 +3323,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                                     const string& pay_with_account,
                                                                     const fc::variant& data,
-                                                                    uint8_t delegate_pay_rate )
+                                                                    const share_type& delegate_pay_rate )
     { try {
         const auto record = _wallet->register_account( account_name, data, delegate_pay_rate, pay_with_account );
         network_broadcast_transaction( record.trx );
@@ -3348,7 +3345,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             const string& account_to_update,
             const string& pay_from_account,
             const variant& public_data,
-            uint8_t delegate_pay_rate )
+            const share_type& delegate_pay_rate )
     {
        const auto record = _wallet->update_registered_account( account_to_update, pay_from_account, public_data, delegate_pay_rate );
        network_broadcast_transaction( record.trx );

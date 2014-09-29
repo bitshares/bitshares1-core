@@ -767,9 +767,9 @@
                },
                {
                   "name" : "delegate_pay_rate",
-                  "type" : "uint8_t",
-                  "description" : "A value between 0 and 100 for delegates, 255 for non delegates",
-                  "default_value" : 255
+                  "type" : "share_type",
+                  "description" : "Number of shares to be issued per produced block; set to 0 for non-delegates",
+                  "default_value" : 0
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
@@ -818,9 +818,9 @@
                },
                {
                   "name" : "delegate_pay_rate",
-                  "type" : "uint8_t",
-                  "description" : "delegate pay rate: 0 to 100 if updating or upgrading to a delegate, and 255 for a normal account",
-                  "default_value" : 255
+                  "type" : "share_type",
+                  "description" : "Number of shares to be issued per produced block; set to 0 for non-delegates",
+                  "default_value" : 0
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
