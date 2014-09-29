@@ -70,14 +70,30 @@ namespace bts { namespace blockchain {
   { try {
      
      std::stringstream ss(s);
-     std::string price_int;
      char div;
      int quote_int;
      int base_int;
      char dot;
-     int64_t int_part;
-     std::string fraction_part;
-     ss >> int_part >> dot >> fraction_part >> quote_int >> div >> base_int;
+     int64_t int_part = 0;
+     std::string fraction_part = "0";
+
+     //Skip any junk at the beginning; we want to start with a digit or decimal point.
+     while( !isnumber(ss.peek()) && ss.peek() != '.' )
+        ss.get();
+     if( ss.peek() == '.' )
+        //Number is formatted like .5
+        ss >> dot >> fraction_part;
+     else
+     {
+        ss >> int_part;
+        if( ss.peek() == '.' )
+           ss.get();
+        if( isnumber(ss.peek()) )
+           //Number is formatted like 1.5
+           ss >> dot >> fraction_part;
+     }
+
+     ss >> quote_int >> div >> base_int;
 
      std::string fract_str( fc::uint128( BTS_PRICE_PRECISION ) );
      for( uint32_t i =0 ; i < fraction_part.size(); ++i )
