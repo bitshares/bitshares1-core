@@ -3480,6 +3480,16 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return record;
    }
 
+   wallet_transaction_record client_impl::wallet_market_batch_update(const std::vector<order_id_type> &cancel_order_ids,
+                                                                     const std::vector<order_description> &new_orders,
+                                                                     bool sign)
+   {
+      const auto record = _wallet->batch_market_update(cancel_order_ids, new_orders, sign);
+      if( sign )
+         network_broadcast_transaction( record.trx );
+      return record;
+   }
+
    wallet_transaction_record client_impl::wallet_market_cover(
            const string& from_account,
            double quantity,
@@ -3510,6 +3520,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    asset client_impl::wallet_get_transaction_fee( const string& fee_symbol )
    {
+      if( fee_symbol.empty() )
+         return _wallet->get_transaction_fee( _chain_db->get_asset_id( BTS_BLOCKCHAIN_SYMBOL ) );
       return _wallet->get_transaction_fee( _chain_db->get_asset_id( fee_symbol ) );
    }
 

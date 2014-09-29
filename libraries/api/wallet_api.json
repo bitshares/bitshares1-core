@@ -1121,7 +1121,7 @@
             "name" : "symbol",
             "type" : "asset_symbol",
             "description" : "the wallet transaction if paid in the given asset type",
-            "default_value" : "XTS"
+            "default_value" : ""
          }
          ],
          "prerequisites" : ["wallet_open"],
@@ -1266,6 +1266,30 @@
                "name" : "cover_id",
                "type" : "order_id",
                "description" : "the order ID you would like to cover"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : []
+      },
+      {
+         "method_name" : "wallet_market_batch_update",
+         "description" : "Cancel and/or create many market orders in a single transaction.",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "cancel_order_ids",
+               "type" : "order_ids",
+               "description" : "Order IDs of all market orders to cancel in this transaction."
+            },
+            {
+               "name" : "new_orders",
+               "type" : "order_descriptions",
+               "description" : "Descriptions of all new orders to create in this transaction."
+            },
+            {
+               "name" : "sign",
+               "type" : "bool",
+               "description" : "True if transaction should be signed and broadcast (if possible), false otherwse."
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
