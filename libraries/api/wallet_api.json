@@ -768,8 +768,8 @@
                {
                   "name" : "delegate_pay_rate",
                   "type" : "share_type",
-                  "description" : "Number of shares to be issued per produced block; set to 0 for non-delegates",
-                  "default_value" : 0
+                  "description" : "Negative for non-delegates; otherwise the number of shares to be issued per produced block",
+                  "default_value" : -1
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
@@ -819,8 +819,8 @@
                {
                   "name" : "delegate_pay_rate",
                   "type" : "share_type",
-                  "description" : "Number of shares to be issued per produced block; set to 0 for non-delegates",
-                  "default_value" : 0
+                  "description" : "Negative for non-delegates; otherwise the number of shares to be issued per produced block",
+                  "default_value" : -1
                }
             ],
          "prerequisites" : ["wallet_unlocked"],

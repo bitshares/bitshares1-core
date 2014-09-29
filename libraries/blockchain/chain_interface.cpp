@@ -27,6 +27,7 @@ namespace bts{ namespace blockchain {
 
    share_type chain_interface::get_delegate_registration_fee( share_type pay_rate )const
    {
+      FC_ASSERT( pay_rate >= 0 );
       return pay_rate * BTS_BLOCKCHAIN_NUM_DELEGATES;
    }
 

@@ -4435,7 +4435,7 @@ namespace bts { namespace wallet {
       auto required_fees = get_transaction_fee();
 
       bool as_delegate = false;
-      if( delegate_pay_rate != 0  )
+      if( delegate_pay_rate >= 0  )
       {
         required_fees += asset( my->_blockchain->get_delegate_registration_fee( delegate_pay_rate ), 0 );
         as_delegate = true;
@@ -4641,12 +4641,9 @@ namespace bts { namespace wallet {
          if( delegate_pay_rate > account->delegate_info->pay_rate )
             FC_THROW_EXCEPTION( invalid_pay_rate, "Pay rate can only be decreased!", ("delegate_pay_rate",delegate_pay_rate) );
       }
-      else
+      else if( delegate_pay_rate >= 0  )
       {
-         if( delegate_pay_rate != 0  )
-         {
-            required_fees += asset( my->_blockchain->get_delegate_registration_fee( delegate_pay_rate ), 0 );
-         }
+         required_fees += asset( my->_blockchain->get_delegate_registration_fee( delegate_pay_rate ), 0 );
       }
 
       my->withdraw_to_transaction( required_fees,

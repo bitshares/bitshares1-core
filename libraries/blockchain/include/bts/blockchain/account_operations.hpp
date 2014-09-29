@@ -15,7 +15,7 @@ namespace bts { namespace blockchain {
                                   const fc::variant& d,
                                   const public_key_type& owner,
                                   const public_key_type& active,
-                                  share_type pay_rate = 0 )
+                                  share_type pay_rate = -1 )
       :name(n),public_data(d),owner_key(owner),active_key(active),delegate_pay_rate(pay_rate){}
 
       std::string                 name;
@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
       bool                        is_delegate()const;
 
       // 0-100% of the transaction fees to be paid to delegate
-      share_type                  delegate_pay_rate = 0;
+      share_type                  delegate_pay_rate = -1;
 
       /**
        *  Meta information is used by clients to evaluate
@@ -55,7 +55,7 @@ namespace bts { namespace blockchain {
       // 0-100% of the transaction fees to be paid to delegate
       // this value can only be reduced, never increased from
       // the prior value.
-      share_type                        delegate_pay_rate = 0;
+      share_type                        delegate_pay_rate = -1;
 
       bool is_delegate()const;
       void evaluate( transaction_evaluation_state& eval_state );

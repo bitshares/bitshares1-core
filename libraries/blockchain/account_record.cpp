@@ -66,7 +66,7 @@ namespace bts { namespace blockchain {
     share_type account_record::delegate_pay_rate()const
     {
         if( is_delegate() ) return delegate_info->pay_rate;
-        return 0;
+        return -1;
     }
 
 }} // bts::blockchain
