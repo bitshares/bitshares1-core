@@ -13,6 +13,11 @@ target_include_directories( bts_wallet
 
 configure_file( "${CMAKE_CURRENT_SOURCE_DIR}/include/bts/wallet/url.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/include/bts/wallet/url.hpp" )
 
+
+if(MSVC)
+  set_source_files_properties(wallet.cpp PROPERTIES COMPILE_FLAGS "/bigobj")
+endif()
+
 if (USE_PCH)
   set_target_properties(bts_wallet PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
   cotire(bts_wallet)
