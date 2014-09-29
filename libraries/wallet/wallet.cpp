@@ -133,6 +133,8 @@ namespace bts { namespace wallet {
             bool scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec );
             bool scan_issue_asset( const issue_asset_operation& op, wallet_transaction_record& trx_rec );
 
+            bool scan_update_feed(const update_feed_operation& op, wallet_transaction_record& trx_rec );
+
             bool scan_bid( const bid_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_ask( const ask_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
             bool scan_short( const short_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
@@ -1078,7 +1080,6 @@ namespace bts { namespace wallet {
                   case update_account_op_type:
                       store_record |= scan_update_account( op.as<update_account_operation>(), *transaction_record );
                       break;
-
                   case create_asset_op_type:
                       store_record |= scan_create_asset( op.as<create_asset_operation>(), *transaction_record );
                       break;
@@ -1088,7 +1089,9 @@ namespace bts { namespace wallet {
                   case issue_asset_op_type:
                       store_record |= scan_issue_asset( op.as<issue_asset_operation>(), *transaction_record );
                       break;
-
+                  case update_feed_op_type:
+                      store_record |= scan_update_feed( op.as<update_feed_operation>(), *transaction_record );
+                      break;
                   default:
                       break;
               }
@@ -1368,6 +1371,24 @@ namespace bts { namespace wallet {
                      return true;
                  }
              }
+         }
+         return false;
+      }
+
+      bool wallet_impl::scan_update_feed( const update_feed_operation& op, wallet_transaction_record& trx_rec )
+      {
+         for( auto& entry : trx_rec.ledger_entries )
+         {
+            if( entry.from_account.valid() )
+            {
+               const auto opt_key_rec = _wallet_db.lookup_key( *entry.from_account );
+               if( opt_key_rec.valid() && opt_key_rec->has_private_key() )
+               {
+                  entry.memo = "update feeds for " + self->get_key_label(*entry.from_account);
+                  entry.to_account = entry.from_account;
+                  return true;
+               }
+            }
          }
          return false;
       }
