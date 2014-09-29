@@ -29,7 +29,7 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->apply_changes();
   }
 
-  void market_engine::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+  bool market_engine::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
   {
       try
       {
@@ -429,6 +429,7 @@ namespace bts { namespace blockchain { namespace detail {
           idump( (_current_bid)(_current_ask) );
 
           _pending_state->apply_changes();
+          return true;
     }
     catch( const fc::exception& e )
     {
@@ -439,6 +440,7 @@ namespace bts { namespace blockchain { namespace detail {
         market_state->last_error = e;
         _prior_state->store_market_status( *market_state );
     }
+    return false;
   } // execute(...)
 
   void market_engine::push_market_transaction( const market_transaction& mtrx )

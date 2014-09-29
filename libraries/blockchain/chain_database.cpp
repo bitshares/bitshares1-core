@@ -620,8 +620,10 @@ namespace bts { namespace blockchain {
         {
            FC_ASSERT( market_pair.first > market_pair.second );
            market_engine engine( pending_state, *this );
-           engine.execute( market_pair.first, market_pair.second, timestamp );
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+           {
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
         }
 
         pending_state->set_market_transactions( std::move( market_transactions ) );

@@ -6,7 +6,8 @@ namespace bts { namespace blockchain { namespace detail {
   {
   public:
     market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi );
-    void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp );
+    /** return true if execute was successful and applied */
+    bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp );
 
   private:
     void cancel_all_shorts();
