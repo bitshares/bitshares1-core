@@ -1,4 +1,4 @@
-#include "chain_database_impl.hpp"
+#include <bts/blockchain/chain_database_impl.hpp>
 
 namespace bts { namespace blockchain { namespace detail {
 
@@ -34,7 +34,7 @@ namespace bts { namespace blockchain { namespace detail {
                                 const price& closing_price,
                                 const omarket_status& market_stat,
                                 const fc::time_point_sec& timestamp );
-      
+
 
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;

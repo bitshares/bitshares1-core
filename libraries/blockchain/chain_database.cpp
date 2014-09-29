@@ -26,8 +26,8 @@
 #include <iostream>
 
 // the definition of detail::chain_database_impl is moved to a separate file so it can be shared by the market_engine(s)
-#include "chain_database_impl.hpp"
-#include "market_engine.hpp"
+#include <bts/blockchain/chain_database_impl.hpp>
+#include <bts/blockchain/market_engine.hpp>
 
 namespace bts { namespace blockchain {
 
