@@ -17,7 +17,7 @@ namespace bts { namespace blockchain {
 
    bool register_account_operation::is_delegate()const
    {
-       return delegate_pay_rate != 0;
+       return delegate_pay_rate >= 0;
    }
 
    void register_account_operation::evaluate( transaction_evaluation_state& eval_state )
@@ -58,7 +58,6 @@ namespace bts { namespace blockchain {
       new_record.set_active_key( now, this->active_key );
       if( this->is_delegate() )
       {
-          FC_ASSERT( this->delegate_pay_rate >= 0 );
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
           const share_type reg_fee = eval_state._current_state->get_delegate_registration_fee( delegate_pay_rate );
@@ -71,7 +70,7 @@ namespace bts { namespace blockchain {
 
    bool update_account_operation::is_delegate()const
    {
-       return delegate_pay_rate != 0;
+       return delegate_pay_rate >= 0;
    }
 
    void update_account_operation::evaluate( transaction_evaluation_state& eval_state )
@@ -154,11 +153,17 @@ namespace bts { namespace blockchain {
          current_record->public_data  = *this->public_data;
       }
 
+      if( current_record->is_delegate() )
+      {
+          // Delegates accounts cannot revert to a normal account
+          FC_ASSERT( this->is_delegate() );
+      }
+
       if( this->is_delegate() )
       {
-         FC_ASSERT( this->delegate_pay_rate >= 0 );
          if( current_record->is_delegate() )
          {
+            // Delegates cannot increase their pay rate
             FC_ASSERT( current_record->delegate_info->pay_rate >= this->delegate_pay_rate );
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
          }

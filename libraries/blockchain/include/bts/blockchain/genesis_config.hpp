@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
   {
      std::string        name;
      public_key_type    owner;
-     share_type         delegate_pay_rate = 0;
+     share_type         delegate_pay_rate = -1;
   };
 
   struct asset_config // these are all market-issued assets
