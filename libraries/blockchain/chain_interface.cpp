@@ -174,7 +174,22 @@ namespace bts{ namespace blockchain {
          fraction_string.erase(0, 1);
       }
       return asset(whole > 0? whole + fraction : whole - fraction, record->id);
-   } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
+       } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
+
+   price chain_interface::to_ugly_price(const std::string& price_string,
+                                        const std::string& base_symbol,
+                                        const std::string& quote_symbol) const
+   { try {
+      auto base_record = get_asset_record(base_symbol);
+      auto quote_record = get_asset_record(quote_symbol);
+      if( !base_record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (base_symbol) );
+      if( !quote_record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quote_symbol) );
+
+      price ugly_price(price_string + " " + std::to_string(quote_record->id) + " / " + std::to_string(base_record->id));
+      ugly_price.ratio *= quote_record->get_precision();
+      ugly_price.ratio /= base_record->get_precision();
+      return ugly_price;
+   } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol) ) }
 
    string chain_interface::to_pretty_asset( const asset& a )const
    {
