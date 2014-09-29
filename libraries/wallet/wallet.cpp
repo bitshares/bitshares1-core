@@ -5030,11 +5030,11 @@ namespace bts { namespace wallet {
          }
          case short_order:
          {
-            FC_ASSERT(args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
-            //args: from_account_name, short_quantity, short_symbol, collateral_ratio, price_limit[, sign]
+            FC_ASSERT(args.size() == 4 || args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
+            //args: from_account_name, short_quantity, short_symbol, collateral_ratio[, price_limit[, sign]]
             price collateral_ratio = my->_blockchain->to_ugly_price(args[3], args[2], BTS_BLOCKCHAIN_SYMBOL);
             oprice price_limit;
-            if( atof(args[4].c_str()) > 0 )
+            if( args.size() > 4 && atof(args[4].c_str()) > 0 )
                price_limit = my->_blockchain->to_ugly_price(args[4], BTS_BLOCKCHAIN_SYMBOL, args[2]);
 
             builder.submit_short(get_account(args[0]), quantity, collateral_ratio, price_limit);
