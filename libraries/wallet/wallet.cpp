@@ -1406,16 +1406,9 @@ namespace bts { namespace wallet {
           if( okey_rec.valid() && okey_rec->has_private_key() )
           {
              /* Restore key label */
-             const auto order = _blockchain->get_market_bid( op.bid_index );
-             if( order.valid() )
-             {
-                 okey_rec->memo = order->get_small_id();
-                 _wallet_db.store_key( *okey_rec );
-             }
-             else
-             {
-                 elog( "Unknown index in bid operation: ${op}", ("op",op) );
-             }
+             const market_order order( bid_order, op.bid_index, op.amount );
+             okey_rec->memo = order.get_small_id();
+             _wallet_db.store_key( *okey_rec );
 
              for( auto& entry : trx_rec.ledger_entries )
              {
@@ -1468,16 +1461,9 @@ namespace bts { namespace wallet {
           if( okey_rec.valid() && okey_rec->has_private_key() )
           {
              /* Restore key label */
-             const auto order = _blockchain->get_market_ask( op.ask_index );
-             if( order.valid() )
-             {
-                 okey_rec->memo = order->get_small_id();
-                 _wallet_db.store_key( *okey_rec );
-             }
-             else
-             {
-                 elog( "Unknown index in ask operation: ${op}", ("op",op) );
-             }
+             const market_order order( ask_order, op.ask_index, op.amount );
+             okey_rec->memo = order.get_small_id();
+             _wallet_db.store_key( *okey_rec );
 
              for( auto& entry : trx_rec.ledger_entries )
              {
@@ -1530,16 +1516,9 @@ namespace bts { namespace wallet {
           if( okey_rec.valid() && okey_rec->has_private_key() )
           {
              /* Restore key label */
-             const auto order = _blockchain->get_market_short( op.short_index );
-             if( order.valid() )
-             {
-                 okey_rec->memo = order->get_small_id();
-                 _wallet_db.store_key( *okey_rec );
-             }
-             else
-             {
-                 elog( "Unknown index in short operation: ${op}", ("op",op) );
-             }
+             const market_order order( short_order, op.short_index, op.amount );
+             okey_rec->memo = order.get_small_id();
+             _wallet_db.store_key( *okey_rec );
 
              for( auto& entry : trx_rec.ledger_entries )
              {
@@ -3608,7 +3587,7 @@ namespace bts { namespace wallet {
       {
          if ( item.second.is_my_account )
          {
-            for( uint32_t i = item.second.last_used_gen_sequence; i < count; ++i )
+            for( uint32_t i = 0; i < count; ++i )
                my->_wallet_db.new_private_key( my->_wallet_password, item.second.account_address, true );
          }
       }
