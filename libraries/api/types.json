@@ -334,6 +334,16 @@
          "contained_type" : "order_id"
       },
       {
+         "type_name" : "order_description",
+         "cpp_return_type" : "bts::wallet::order_description",
+         "cpp_include_file" : "bts/wallet/wallet.hpp"
+      },
+      {
+         "type_name" : "order_descriptions",
+         "container_type" : "array",
+         "contained_type" : "order_description"
+      },
+      {
          "type_name" : "market_order_map",
          "cpp_return_type" : "std::map<bts::blockchain::order_id_type, bts::blockchain::market_order>"
       },
