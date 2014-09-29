@@ -24,6 +24,7 @@ namespace bts { namespace blockchain { namespace detail {
     bool get_next_bid();
 
     bool get_next_ask();
+    bool get_next_ask_v1();
 
     /**
       *  This method should not affect market execution or validation and
