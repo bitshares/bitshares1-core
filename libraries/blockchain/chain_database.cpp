@@ -2407,10 +2407,12 @@ namespace bts { namespace blockchain {
           if( key.order_price.quote_asset_id == quote_asset_id &&
               key.order_price.base_asset_id == base_asset_id  )
           {
+             auto collat_record = market_itr.value();
              results.push_back( {cover_order,
                                  key,
-                                 order_record(market_itr.value().payoff_balance),
-                                 market_itr.value().collateral_balance } );
+                                 order_record(collat_record.payoff_balance),
+                                 collat_record.collateral_balance,
+                                 collat_record.expiration } );
           }
           else
           {
