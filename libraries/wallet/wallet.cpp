@@ -5516,6 +5516,8 @@ namespace bts { namespace wallet {
        if( NOT base_asset_record )
           FC_CAPTURE_AND_THROW( unknown_asset_symbol, (collateral_symbol) );
 
+       FC_ASSERT( base_asset_record->id == asset_id_type( 0 ), "You can only use BTSX as collateral!" );
+
        auto from_account_key = get_account_public_key( from_account_name );
        //auto& to_account_key = from_account_key;
 
