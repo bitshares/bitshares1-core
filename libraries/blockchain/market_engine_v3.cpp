@@ -11,7 +11,7 @@ namespace bts { namespace blockchain { namespace detail {
           _prior_state = ps;
       }
 
-      void market_engine_v3::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+      bool market_engine_v3::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try {
              const auto pending_block_num = _pending_state->get_head_block_num();
@@ -441,6 +441,7 @@ namespace bts { namespace blockchain { namespace detail {
 
              wlog( "done matching orders" );
              _pending_state->apply_changes();
+             return true;
         }
         catch( const fc::exception& e )
         {
@@ -451,6 +452,7 @@ namespace bts { namespace blockchain { namespace detail {
            market_state->last_error = e;
            _prior_state->store_market_status( *market_state );
         }
+        return false;
       } // execute(...)
 
       void market_engine_v3::push_market_transaction( const market_transaction& mtrx )

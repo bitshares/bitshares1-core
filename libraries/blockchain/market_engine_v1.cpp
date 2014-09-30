@@ -9,7 +9,7 @@ namespace bts { namespace blockchain { namespace detail {
           _prior_state = ps;
       }
 
-      void market_engine_v1::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+      bool market_engine_v1::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try {
              _quote_id = quote_id;
@@ -18,7 +18,7 @@ namespace bts { namespace blockchain { namespace detail {
 
              // DISABLE MARKET ISSUED ASSETS
              if( quote_asset->is_market_issued() )
-                return; // don't execute anything.
+                return false; // don't execute anything.
 
              // the order book is soreted from low to high price, so to get the last item (highest bid), we need to go to the first item in the
              // next market class and then back up one
@@ -309,6 +309,7 @@ namespace bts { namespace blockchain { namespace detail {
 
              wlog( "done matching orders" );
              _pending_state->apply_changes();
+             return true;
         }
         catch( const fc::exception& e )
         {
@@ -319,6 +320,7 @@ namespace bts { namespace blockchain { namespace detail {
            market_state->last_error = e;
            _prior_state->store_market_status( *market_state );
         }
+        return false;
       } // execute(...)
 
       bool market_engine_v1::get_next_bid()

@@ -183,11 +183,11 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.ask_received   = usd_exchanged;
                    mtrx.ask_paid       = usd_exchanged * mtrx.bid_price;
                    mtrx.bid_received   = usd_exchanged * mtrx.ask_price;
-                   mtrx.bid_collateral = _current_bid->get_balance(); 
+                   mtrx.bid_collateral = _current_bid->get_balance();
                 }
 
                 // Because different collateral amounts create different orders, this prevents cover orders that
-                // are too small to bother covering.  
+                // are too small to bother covering.
                 if( (_current_bid->get_balance() - *mtrx.bid_collateral).amount < BTS_BLOCKCHAIN_PRECISION*10 )
                 {
                     if( _current_bid->get_balance() > *mtrx.bid_collateral )
@@ -319,7 +319,7 @@ namespace bts { namespace blockchain { namespace detail {
                 }
 
                 // Because different collateral amounts create different orders, this prevents cover orders that
-                // are too small to bother covering.  
+                // are too small to bother covering.
                 if( (_current_bid->get_balance() - *mtrx.bid_collateral).amount < BTS_BLOCKCHAIN_PRECISION*10 )
                 {
                     if( _current_bid->get_balance() > *mtrx.bid_collateral )
