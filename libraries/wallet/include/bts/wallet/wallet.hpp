@@ -429,11 +429,10 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 10 / 600.34 XTS + fees
           */
-         wallet_transaction_record submit_short(
-                 const string& from_account_name,
+         wallet_transaction_record submit_short(const string& from_account_name,
                  double real_quantity_usd,
                  const string& quote_symbol,
-                 double collateral_per_usd,
+                 double collateral_per_usd, const string& collateral_symbol,
                  double price_limit = 0,
                  bool sign = true
                  );

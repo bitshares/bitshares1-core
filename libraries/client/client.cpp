@@ -3470,9 +3470,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
            double quantity,
            const string& quote_symbol,
            double collateral_ratio,
+           const string& collateral_symbol,
            double short_price_limit )
    {
-      const auto record = _wallet->submit_short( from_account, quantity, quote_symbol, collateral_ratio, short_price_limit );
+      const auto record = _wallet->submit_short( from_account,
+                                                 quantity,
+                                                 quote_symbol,
+                                                 collateral_ratio,
+                                                 collateral_symbol,
+                                                 short_price_limit );
       network_broadcast_transaction( record.trx );
       return record;
    }
