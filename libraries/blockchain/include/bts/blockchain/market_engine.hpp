@@ -43,7 +43,7 @@ namespace bts { namespace blockchain { namespace detail {
 
     optional<market_order>        _current_bid;
     optional<market_order>        _current_ask;
-    share_type                    _current_payoff_balance = 0;
+    collateral_record             _current_collat_record;
     asset_id_type                 _quote_id;
     asset_id_type                 _base_id;
     market_status                 _market_stat;

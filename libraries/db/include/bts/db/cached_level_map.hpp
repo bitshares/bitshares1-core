@@ -142,6 +142,8 @@ namespace bts { namespace db {
                 return backup;
              }
 
+             void reset() { _it = _end; }
+
            protected:
              friend class cached_level_map;
              iterator( typename CacheType::const_iterator it, typename CacheType::const_iterator begin, typename CacheType::const_iterator end )

@@ -132,7 +132,7 @@ namespace bts { namespace blockchain { namespace detail {
                   continue;
                 }
 
-                if( mtrx.ask_price < mtrx.bid_price ) // The call price has not been reached
+                if( mtrx.ask_price < mtrx.bid_price && _pending_state->now() <= _current_collat_record.expiration ) // The call price has not been reached
                   break;
 
                 if( _current_bid->state.short_price_limit.valid() )
@@ -205,7 +205,8 @@ namespace bts { namespace blockchain { namespace detail {
             else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
             {
                 FC_ASSERT( quote_asset->is_market_issued()  );
-                if( mtrx.ask_price < mtrx.bid_price ) // The call price has not been reached
+
+                if( mtrx.ask_price < mtrx.bid_price && _pending_state->now() <= _current_collat_record.expiration ) // The call price has not been reached
                   break;
 
                 /**
@@ -527,6 +528,7 @@ namespace bts { namespace blockchain { namespace detail {
 
       ocover_record->collateral_balance += collateral.amount;
       ocover_record->payoff_balance += mtrx.bid_paid.amount;
+      ocover_record->expiration = fc::time_point(_pending_state->now()) + fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
 
       FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
       FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));
@@ -600,15 +602,22 @@ namespace bts { namespace blockchain { namespace detail {
 
             auto left_over_collateral = (*_current_ask->collateral);
 
-            /** charge 5% fee for having a margin call */
-            auto fee = (left_over_collateral * 5000 )/100000;
-            left_over_collateral -= fee;
-            // when executing a cover order, it always takes the exact price of the
-            // highest bid, so there should be no fees paid *except* this.
-            FC_ASSERT( mtrx.fees_collected.amount == 0 );
+            if( _current_collat_record.expiration >= _pending_state->now() )
+            {
+               /** charge 5% fee for having a margin call */
+               auto fee = (left_over_collateral * 5000 )/100000;
+               left_over_collateral -= fee;
+               // when executing a cover order, it always takes the exact price of the
+               // highest bid, so there should be no fees paid *except* this.
+               FC_ASSERT( mtrx.fees_collected.amount == 0 );
 
-            // these go to the network... as dividends..
-            mtrx.fees_collected += asset( fee, _base_id );
+               // these go to the network... as dividends..
+               mtrx.fees_collected += asset( fee, _base_id );
+            }
+            else
+            {
+               mtrx.fees_collected += asset( 0, _base_id );
+            }
 
             ask_payout->balance += left_over_collateral;
             ask_payout->last_update = _pending_state->now();
@@ -725,15 +734,17 @@ namespace bts { namespace blockchain { namespace detail {
         if( cover_ask.get_price().quote_asset_id == _quote_id &&
             cover_ask.get_price().base_asset_id == _base_id )
         {
+            _current_collat_record =  _collateral_itr.value();
             // don't cover unless the price is below margin...
-            if( _market_stat.center_price  < cover_ask.get_price() )
+            if( _market_stat.center_price  < cover_ask.get_price() ||
+                _current_collat_record.expiration > _pending_state->now() )
             {
                 _current_ask = cover_ask;
-                _current_payoff_balance = _collateral_itr.value().payoff_balance;
                 --_collateral_itr;
                 return _current_ask.valid();
             }
         }
+        _collateral_itr.reset();
         break;
       }
 
