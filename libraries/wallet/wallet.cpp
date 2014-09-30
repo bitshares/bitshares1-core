@@ -5187,17 +5187,24 @@ namespace bts { namespace wallet {
       for( const auto& order_description : new_orders)
       {
          const auto& args = order_description.second;
+         FC_ASSERT( args.size() > 3 );
          //args always starts with the account name and a quantity
-         if( !is_receive_account(args[0]) )
+         const string& account_name = args[0];
+         const string& quantity_string = args[1];
+         const string& quantity_symbol = args[2];
+         //first_price is only valid for bids, asks and shorts; covers don't have a price here.
+         const string& first_price = args[3];
+
+         if( !is_receive_account(account_name) )
             FC_CAPTURE_AND_THROW( unknown_receive_account, (args[0]) );
-         asset quantity = my->_blockchain->to_ugly_asset(args[1], args[2]);
+         asset quantity = my->_blockchain->to_ugly_asset(quantity_string, quantity_symbol);
          if( quantity.amount < 0 )
             FC_CAPTURE_AND_THROW( invalid_asset_amount, (quantity) );
          if( quantity.amount == 0 && order_description.first != cover_order )
             FC_CAPTURE_AND_THROW( invalid_asset_amount, (quantity) );
          //args[3] is a price for all but covers
-         if( order_description.first != cover_order && atof(args[3].c_str()) <= 0 )
-           FC_CAPTURE_AND_THROW( invalid_price, (args[3]) );
+         if( order_description.first != cover_order && atof(first_price.c_str()) <= 0 )
+           FC_CAPTURE_AND_THROW( invalid_price, (first_price) );
 
          switch(order_description.first)
          {
@@ -5205,26 +5212,28 @@ namespace bts { namespace wallet {
          case bid_order:
          case ask_order:
          {
-            FC_ASSERT(args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
+            FC_ASSERT(args.size() >= 5, "Incorrect number of arguments");
             //args: from_account_name, real_quantity, quantity_symbol, quote_price, quote_symbol[, sign]
-            price quote_price = my->_blockchain->to_ugly_price(args[3], args[2], args[4]);
+            price quote_price = my->_blockchain->to_ugly_price(first_price, quantity_symbol, args[4]);
 
             if( order_description.first == bid_order )
-               builder.submit_bid(get_account(args[0]), quantity, quote_price);
+               builder.submit_bid(get_account(account_name), quantity, quote_price);
             else
-               builder.submit_ask(get_account(args[0]), quantity, quote_price);
+               builder.submit_ask(get_account(account_name), quantity, quote_price);
             break;
          }
          case short_order:
          {
             FC_ASSERT(args.size() == 4 || args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
-            //args: from_account_name, short_quantity, short_symbol, collateral_ratio[, price_limit[, sign]]
-            price collateral_ratio = my->_blockchain->to_ugly_price(args[3], args[2], BTS_BLOCKCHAIN_SYMBOL);
-            oprice price_limit;
-            if( args.size() > 4 && atof(args[4].c_str()) > 0 )
-               price_limit = my->_blockchain->to_ugly_price(args[4], BTS_BLOCKCHAIN_SYMBOL, args[2]);
+            const string& collateral_symbol = args[4];
+            //args: from_account_name, short_quantity, short_symbol, collateral_ratio, collateral_symbol[, price_limit[, sign]]
+            price collateral_ratio = my->_blockchain->to_ugly_price(first_price, quantity_symbol, collateral_symbol);
 
-            builder.submit_short(get_account(args[0]), quantity, collateral_ratio, price_limit);
+            oprice price_limit;
+            if( args.size() > 5 && atof(args[5].c_str()) > 0 )
+               price_limit = my->_blockchain->to_ugly_price(args[5], collateral_symbol, quantity_symbol);
+
+            builder.submit_short(get_account(account_name), quantity, collateral_ratio, price_limit);
             break;
          }
          case cover_order:
@@ -5486,6 +5495,7 @@ namespace bts { namespace wallet {
            double real_quantity,
            const string& quote_symbol,
            double collateral_per_usd,
+           const string& collateral_symbol,
            double price_limit,
            bool sign )
    { try {
@@ -5499,10 +5509,12 @@ namespace bts { namespace wallet {
           FC_CAPTURE_AND_THROW( invalid_price, (collateral_per_usd) );
 
        auto quote_asset_record = my->_blockchain->get_asset_record( quote_symbol );
-       auto base_asset_record  = my->_blockchain->get_asset_record( asset_id_type(0) );
+       auto base_asset_record  = my->_blockchain->get_asset_record( collateral_symbol );
 
        if( NOT quote_asset_record )
           FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quote_symbol) );
+       if( NOT base_asset_record )
+          FC_CAPTURE_AND_THROW( unknown_asset_symbol, (collateral_symbol) );
 
        auto from_account_key = get_account_public_key( from_account_name );
        //auto& to_account_key = from_account_key;
@@ -5526,13 +5538,19 @@ namespace bts { namespace wallet {
        private_key_type from_private_key  = get_active_private_key( from_account_name );
        address          from_address( from_private_key.get_public_key() );
 
-       auto required_fees = get_transaction_fee();
+       auto required_fees = get_transaction_fee(cost_shares.asset_id);
 
-       idump( (cost_shares)(required_fees) );
-       my->withdraw_to_transaction( cost_shares + required_fees,
-                                    from_account_name,
-                                    trx,
-                                    required_signatures );
+       //get_transaction_fee will not return a fee in the asset we specified, if fees cannot be paid in that asset.
+       if( required_fees.asset_id == cost_shares.asset_id )
+          my->withdraw_to_transaction( cost_shares + required_fees,
+                                       from_account_name,
+                                       trx,
+                                       required_signatures );
+       else
+       {
+          my->withdraw_to_transaction( required_fees, from_account_name, trx, required_signatures );
+          my->withdraw_to_transaction( cost_shares, from_account_name, trx, required_signatures );
+       }
 
        optional<price> short_price_limit;
        if( price_limit > 0 )

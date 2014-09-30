@@ -1233,6 +1233,11 @@
                "description" : "the ratio XTS per USD that your USD will be collateralized at (ie: XTS / USD)"
             },
             {
+               "name" : "collateral_symbol",
+               "type" : "asset_symbol",
+               "description" : "the asset to use to collateralize this short sale (ie XTS)"
+            },
+            {
                "name" : "short_price_limit",
                "type" : "real_amount",
                "description" : "maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied",
