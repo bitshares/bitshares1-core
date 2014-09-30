@@ -68,46 +68,14 @@ namespace bts { namespace blockchain {
 
   price::price( const std::string& s )
   { try {
-     
-     std::stringstream ss(s);
+     int pos = set_ratio_from_string( s );
+     std::stringstream ss( s.substr( pos ) );
+
      char div;
-     int quote_int;
-     int base_int;
-     char dot;
-     int64_t int_part = 0;
-     std::string fraction_part = "0";
-
-     //Skip any junk at the beginning; we want to start with a digit or decimal point.
-     while( !isdigit(ss.peek()) && ss.peek() != '.' )
-        ss.get();
-     if( ss.peek() == '.' )
-        //Number is formatted like .5
-        ss >> dot >> fraction_part;
-     else
-     {
-        ss >> int_part;
-        if( ss.peek() == '.' )
-           ss.get();
-        if( isdigit(ss.peek()) )
-           //Number is formatted like 1.5
-           ss >> dot >> fraction_part;
-     }
-
-     ss >> quote_int >> div >> base_int;
-
-     std::string fract_str( fc::uint128( BTS_PRICE_PRECISION ) );
-     for( uint32_t i =0 ; i < fraction_part.size(); ++i )
-     {
-        fract_str[i+1] = fraction_part[i];
-     }
-     
-     ratio = fc::uint128(int_part) * BTS_PRICE_PRECISION + fc::uint128(fract_str) - BTS_PRICE_PRECISION;
-
-     quote_asset_id = quote_int;
-     base_asset_id  = base_int;
+     ss >> quote_asset_id.value >> div >> base_asset_id.value;
   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-  void price::set_ratio_from_string( const std::string& ratio_str )
+  int price::set_ratio_from_string( const std::string& ratio_str )
   {
     const char* c = ratio_str.c_str();
     int digit = *c - '0';
@@ -153,6 +121,8 @@ namespace bts { namespace blockchain {
         ratio += fc::uint128(frac_part) * (BTS_PRICE_PRECISION / frac_magnitude);
       }
     }
+
+    return c - ratio_str.c_str();
   }
 
   price::price( double a, asset_id_type q, asset_id_type b )

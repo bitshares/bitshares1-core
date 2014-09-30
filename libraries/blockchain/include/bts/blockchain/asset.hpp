@@ -54,7 +54,7 @@ namespace bts { namespace blockchain {
 
       price( const std::string& s );
       price( double a, asset_id_type quote, asset_id_type base );
-      void set_ratio_from_string( const std::string& ratio_str );
+      int set_ratio_from_string( const std::string& ratio_str );
       std::string ratio_string()const;
       operator std::string()const;
       explicit operator double()const;
