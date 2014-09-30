@@ -7016,43 +7016,21 @@ namespace bts { namespace wallet {
             outstanding_balance.second -= required_fee.amount;
             return;
          }
-      else if( withdraw_fee() ) return;
-
-      FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
-   } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
-
-   bool transaction_builder::withdraw_fee()
-   {
-      //Shake down every owner with a balance until you find one who can pay a fee
-      std::unordered_set<blockchain::address> checked_accounts;
-      for( auto itr = outstanding_balances.begin(); itr != outstanding_balances.end(); ++itr )
+      else
       {
-         if( checked_accounts.find(itr->first.first) != checked_accounts.end() ) continue;
-         checked_accounts.insert(itr->first.first);
-
-         auto account_rec = _wimpl->_wallet_db.lookup_account(itr->first.first);
-         if( !account_rec || !account_rec->is_my_account ) continue;
-         account_balance_summary_type balances = _wimpl->self->get_account_balances(account_rec->name);
-         if( balances.empty() ) continue;
-
-         for( auto balance_itr : balances.begin()->second )
+         //charge the fee to the first balance that's an asset we can pay fees in
+         for( auto& outstanding_balance : outstanding_balances )
          {
-            asset balance(balance_itr.second, balance_itr.first);
-            asset fee = _wimpl->self->get_transaction_fee(balance.asset_id);
-            if( fee.asset_id == balance.asset_id && balance >= fee )
-            {
-               transaction_record.fee = _wimpl->self->get_transaction_fee(balance.asset_id);
-               _wimpl->withdraw_to_transaction(transaction_record.fee,
-                                               account_rec->name,
-                                               trx,
-                                               required_signatures);
-               return true;
+            asset fee = _wimpl->self->get_transaction_fee(outstanding_balance.first.second);
+            if( fee.asset_id == outstanding_balance.first.second ) {
+                outstanding_balance.second -= fee.amount;
+                return;
             }
          }
       }
 
-      return false;
-   }
+      FC_THROW( "Unable to pay fee; there are no balances in this transaction in an asset which can pay fees!" );
+   } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
 
    /********  END  TRANSACTION BUILDER IMPLEMENTATION ********/
 
