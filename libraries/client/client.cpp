@@ -3784,6 +3784,18 @@ config load_config( const fc::path& datadir, bool enable_ulog )
           return _chain_db->get_block_signee( std::stoi( block ) ).name;
    }
 
+   bool client_impl::blockchain_verify_signature(const string& signing_account, const fc::sha256& hash, const fc::ecc::compact_signature& signature) const
+   {
+      oaccount_record rec = blockchain_get_account(signing_account);
+      if (!rec.valid())
+        return false;
+
+      // logic shamelessly copy-pasted from signed_block_header::validate_signee()
+      // NB LHS of == operator is bts::blockchain::public_key_type and RHS is fc::ecc::public_key,
+      //   the opposite order won't compile (look at operator== prototype in public_key_type class declaration)
+      return rec->active_key() == fc::ecc::public_key(signature, hash);
+   }
+
    void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
    {
      bts::blockchain::start_simulated_time(starting_time);

@@ -3797,7 +3797,10 @@ namespace bts { namespace wallet {
          if ( item.second.is_my_account )
          {
             for( uint32_t i = 0; i < count; ++i )
+            {
                my->_wallet_db.new_private_key( my->_wallet_password, item.second.account_address, true );
+               ++regenerated_keys;
+            }
          }
       }
 
