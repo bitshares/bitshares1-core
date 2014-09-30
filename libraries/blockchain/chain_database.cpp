@@ -422,9 +422,10 @@ namespace bts { namespace blockchain {
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
 
-            // FIXME: Fix this check -- signed integer overflow is undefined behaviour
-            if( base_asset_record->current_share_supply + pay_per_block > base_asset_record->maximum_share_supply ||
-                base_asset_record->current_share_supply + pay_per_block < base_asset_record->current_share_supply /* overflow */)
+            //Check for signed integer overflow conditions, then check that the pay won't exceed the max share supply
+            if( (base_asset_record->current_share_supply > 0 && (pay_per_block > (INT64_MAX - base_asset_record->current_share_supply))) ||
+                (base_asset_record->current_share_supply < 0 && (pay_per_block < (INT64_MIN - base_asset_record->current_share_supply))) ||
+                (base_asset_record->current_share_supply + pay_per_block > base_asset_record->maximum_share_supply) )
             {
                pay_per_block = 0;
             }
