@@ -1585,16 +1585,9 @@ namespace bts { namespace wallet {
           if( okey_rec.valid() && okey_rec->has_private_key() )
           {
              /* Restore key label */
-             const auto order = _blockchain->get_market_short( op.short_index );
-             if( order.valid() )
-             {
-                 okey_rec->memo = order->get_small_id();
-                 _wallet_db.store_key( *okey_rec );
-             }
-             else
-             {
-                 elog( "Unknown index in short operation: ${op}", ("op",op) );
-             }
+             const market_order order( short_order, op.short_index, op.amount );
+             okey_rec->memo = order.get_small_id();
+             _wallet_db.store_key( *okey_rec );
 
              for( auto& entry : trx_rec.ledger_entries )
              {
