@@ -30,6 +30,7 @@
 #include <bts/blockchain/market_engine.hpp>
 
 #include <bts/blockchain/fork_blocks.hpp>
+#include <bts/blockchain/market_engine_v5.hpp>
 #include <bts/blockchain/market_engine_v4.hpp>
 #include <bts/blockchain/market_engine_v3.hpp>
 #include <bts/blockchain/market_engine_v2.hpp>
@@ -638,9 +639,15 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num > BTSX_MARKET_FORK_8_BLOCK_NUM )
+           if( pending_block_num >= BTSX_MARKET_FORK_10_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
+              engine.execute( market_pair.first, market_pair.second, timestamp );
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+           }
+           else if( pending_block_num > BTSX_MARKET_FORK_8_BLOCK_NUM )
+           {
+              market_engine_v5 engine( pending_state, *this );
               engine.execute( market_pair.first, market_pair.second, timestamp );
               market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }

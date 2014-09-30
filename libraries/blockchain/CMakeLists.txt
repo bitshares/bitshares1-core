@@ -70,6 +70,7 @@ add_library( bts_blockchain
              market_engine_v2.cpp
              market_engine_v3.cpp
              market_engine_v4.cpp
+             market_engine_v5.cpp
              market_engine.cpp
              chain_database.cpp
              ${generated_genesis_file}
