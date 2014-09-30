@@ -477,7 +477,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             fc::file_appender::config file_appender_config = appender.args.as<fc::file_appender::config>();
             if (file_appender_config.filename.is_relative())
             {
-              file_appender_config.filename = fc::canonical(datadir / file_appender_config.filename);
+              file_appender_config.filename = fc::absolute(datadir / file_appender_config.filename);
               appender.args = fc::variant(file_appender_config);
             }
           }
@@ -3473,10 +3473,26 @@ config load_config( const fc::path& datadir, bool enable_ulog )
            double quantity,
            const string& quote_symbol,
            double collateral_ratio,
+           const string& collateral_symbol,
            double short_price_limit )
    {
-      const auto record = _wallet->submit_short( from_account, quantity, quote_symbol, collateral_ratio, short_price_limit );
+      const auto record = _wallet->submit_short( from_account,
+                                                 quantity,
+                                                 quote_symbol,
+                                                 collateral_ratio,
+                                                 collateral_symbol,
+                                                 short_price_limit );
       network_broadcast_transaction( record.trx );
+      return record;
+   }
+
+   wallet_transaction_record client_impl::wallet_market_batch_update(const std::vector<order_id_type> &cancel_order_ids,
+                                                                     const std::vector<order_description> &new_orders,
+                                                                     bool sign)
+   {
+      const auto record = _wallet->batch_market_update(cancel_order_ids, new_orders, sign);
+      if( sign )
+         network_broadcast_transaction( record.trx );
       return record;
    }
 
@@ -3510,6 +3526,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    asset client_impl::wallet_get_transaction_fee( const string& fee_symbol )
    {
+      if( fee_symbol.empty() )
+         return _wallet->get_transaction_fee( _chain_db->get_asset_id( BTS_BLOCKCHAIN_SYMBOL ) );
       return _wallet->get_transaction_fee( _chain_db->get_asset_id( fee_symbol ) );
    }
 
@@ -3770,6 +3788,18 @@ config load_config( const fc::path& datadir, bool enable_ulog )
           return _chain_db->get_block_signee( block_id_type( block ) ).name;
       else
           return _chain_db->get_block_signee( std::stoi( block ) ).name;
+   }
+
+   bool client_impl::blockchain_verify_signature(const string& signing_account, const fc::sha256& hash, const fc::ecc::compact_signature& signature) const
+   {
+      oaccount_record rec = blockchain_get_account(signing_account);
+      if (!rec.valid())
+        return false;
+
+      // logic shamelessly copy-pasted from signed_block_header::validate_signee()
+      // NB LHS of == operator is bts::blockchain::public_key_type and RHS is fc::ecc::public_key,
+      //   the opposite order won't compile (look at operator== prototype in public_key_type class declaration)
+      return rec->active_key() == fc::ecc::public_key(signature, hash);
    }
 
    void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)

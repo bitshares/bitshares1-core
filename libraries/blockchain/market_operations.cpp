@@ -1,7 +1,8 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
-#include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/market_operations.hpp>
+
+#include <bts/blockchain/fork_blocks.hpp>
 
 namespace bts { namespace blockchain {
 

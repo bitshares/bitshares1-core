@@ -9,8 +9,7 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type;
 
-      register_account_operation()
-      :delegate_pay_rate(255){}
+      register_account_operation(){}
 
       register_account_operation( const std::string& n,
                                   const fc::variant& d,
@@ -27,7 +26,7 @@ namespace bts { namespace blockchain {
       bool                        is_delegate()const;
 
       // 0-100% of the transaction fees to be paid to delegate
-      uint8_t                     delegate_pay_rate;
+      uint8_t                     delegate_pay_rate = 255;
 
       /**
        *  Meta information is used by clients to evaluate
@@ -56,7 +55,7 @@ namespace bts { namespace blockchain {
       // 0-100% of the transaction fees to be paid to delegate
       // this value can only be reduced, never increased from
       // the prior value.
-      uint8_t                           delegate_pay_rate;
+      uint8_t                           delegate_pay_rate = 255;
 
       bool is_delegate()const;
       void evaluate( transaction_evaluation_state& eval_state );

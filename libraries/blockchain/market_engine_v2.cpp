@@ -1,42 +1,42 @@
-/** This file is designed to be included in detail::chain_database_impl, but is pulled into a separate file for
- * ease of maintenance and upgrade.
- */
-// This is used to save & restore the _current_ask with its previous value, required to
-// reproduce some quirky behavior in pre-BTSX_MARKET_FORK_4_BLOCK_NUM blocks.
-struct save_and_restore_ask
-{
-  fc::optional<market_order>& _current_ask_to_swap;
-  bool _swapped;
-  fc::optional<market_order> _original_current_ask;
-  save_and_restore_ask(fc::optional<market_order>& current_ask, const fc::optional<market_order>& backup_ask) :
-    _current_ask_to_swap(current_ask),
-    _swapped(false)
-  {
-    if (!_current_ask_to_swap)
-      {
-      _swapped = true;
-      _original_current_ask = _current_ask_to_swap;
-      _current_ask_to_swap = backup_ask ? *backup_ask : market_order();
-      }
-  }
-  ~save_and_restore_ask()
-  {
-    if (_swapped)
-      _current_ask_to_swap = _original_current_ask;
-  }
-};
+#include <bts/blockchain/market_engine_v2.hpp>
 
-class market_engine_v2
-{
-   public:
-      market_engine_v2( pending_chain_state_ptr ps, chain_database_impl& cdi )
+#include <bts/blockchain/fork_blocks.hpp>
+
+namespace bts { namespace blockchain { namespace detail {
+
+      // This is used to save & restore the _current_ask with its previous value, required to
+      // reproduce some quirky behavior in pre-BTSX_MARKET_FORK_4_BLOCK_NUM blocks.
+      struct save_and_restore_ask
+      {
+        fc::optional<market_order>& _current_ask_to_swap;
+        bool _swapped;
+        fc::optional<market_order> _original_current_ask;
+        save_and_restore_ask(fc::optional<market_order>& current_ask, const fc::optional<market_order>& backup_ask) :
+          _current_ask_to_swap(current_ask),
+          _swapped(false)
+        {
+          if (!_current_ask_to_swap)
+            {
+            _swapped = true;
+            _original_current_ask = _current_ask_to_swap;
+            _current_ask_to_swap = backup_ask ? *backup_ask : market_order();
+            }
+        }
+        ~save_and_restore_ask()
+        {
+          if (_swapped)
+            _current_ask_to_swap = _original_current_ask;
+        }
+      };
+
+      market_engine_v2::market_engine_v2( pending_chain_state_ptr ps, chain_database_impl& cdi )
       :_pending_state(ps),_db_impl(cdi),_orders_filled(0)
       {
           _pending_state = std::make_shared<pending_chain_state>( ps );
           _prior_state = ps;
       }
 
-      void execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+      bool market_engine_v2::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
       {
          try {
              const auto pending_block_num = _pending_state->get_head_block_num();
@@ -585,6 +585,7 @@ class market_engine_v2
 
              wlog( "done matching orders" );
              _pending_state->apply_changes();
+             return true;
         }
         catch( const fc::exception& e )
         {
@@ -595,8 +596,10 @@ class market_engine_v2
            market_state->last_error = e;
            _prior_state->store_market_status( *market_state );
         }
+        return false;
       } // execute(...)
-      void push_market_transaction( const market_transaction& mtrx )
+
+      void market_engine_v2::push_market_transaction( const market_transaction& mtrx )
       { try {
           FC_ASSERT( mtrx.bid_paid.amount >= 0 );
           FC_ASSERT( mtrx.ask_paid.amount >= 0 );
@@ -611,7 +614,7 @@ class market_engine_v2
           _market_transactions.push_back(mtrx);
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_short(const market_transaction& mtrx, const asset& xts_paid_by_short, asset_record& quote_asset  )
+      void market_engine_v2::pay_current_short(const market_transaction& mtrx, const asset& xts_paid_by_short, asset_record& quote_asset )
       { try {
           FC_ASSERT( _current_bid->type == short_order );
           FC_ASSERT( mtrx.bid_type == short_order );
@@ -658,7 +661,7 @@ class market_engine_v2
           _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
       } FC_CAPTURE_AND_RETHROW( (mtrx)  ) }
 
-      void pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset )
+      void market_engine_v2::pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset )
       { try {
           FC_ASSERT( _current_bid->type == bid_order );
           FC_ASSERT( mtrx.bid_type == bid_order );
@@ -685,7 +688,7 @@ class market_engine_v2
           _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset, asset_record& base_asset )
+      void market_engine_v2::pay_current_cover( market_transaction& mtrx, asset_record& quote_asset, asset_record& base_asset )
       { try {
           FC_ASSERT( _current_ask->type == cover_order );
           FC_ASSERT( mtrx.ask_type == cover_order );
@@ -750,7 +753,7 @@ class market_engine_v2
                                                                       _current_ask->state.balance ) );
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-      void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
+      void market_engine_v2::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
       { try {
           FC_ASSERT( _current_ask->type == ask_order ); // update ask + payout
 
@@ -778,7 +781,7 @@ class market_engine_v2
 
       } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
-      bool get_next_bid()
+      bool market_engine_v2::get_next_bid()
       { try {
          if( _current_bid && _current_bid->get_quantity().amount > 0 )
             return _current_bid.valid();
@@ -818,7 +821,7 @@ class market_engine_v2
          return _current_bid.valid();
       } FC_CAPTURE_AND_RETHROW() }
 
-      bool get_next_ask()
+      bool market_engine_v2::get_next_ask()
       { try {
          if( _current_ask && _current_ask->state.balance > 0 )
          {
@@ -900,7 +903,7 @@ class market_engine_v2
        *  This method should not affect market execution or validation and
        *  is for historical purposes only.
        */
-      void update_market_history( const asset& trading_volume,
+      void market_engine_v2::update_market_history( const asset& trading_volume,
                                   const price& opening_price,
                                   const price& closing_price,
                                   const omarket_status& market_stat,
@@ -978,7 +981,8 @@ class market_engine_v2
                  _pending_state->market_history[old_key] = new_record;
              }
       }
-      void reset_current_ask()
+
+      void market_engine_v2::reset_current_ask()
       {
         if (_current_ask)
         {
@@ -989,23 +993,4 @@ class market_engine_v2
          /* does not reset _current_ask_backup */
       }
 
-      pending_chain_state_ptr     _pending_state;
-      pending_chain_state_ptr     _prior_state;
-      chain_database_impl&        _db_impl;
-
-      optional<market_order>      _current_bid;
-      optional<market_order>      _current_ask;
-      optional<market_order>      _current_ask_backup; // used to allow us to validate blocks before BTSX_MARKET_FORK_4_BLOCK_NUM
-      share_type                  _current_payoff_balance;
-      asset_id_type               _quote_id;
-      asset_id_type               _base_id;
-
-      int                         _orders_filled;
-
-      vector<market_transaction>  _market_transactions;
-
-      bts::db::cached_level_map< market_index_key, order_record >::iterator       _bid_itr;
-      bts::db::cached_level_map< market_index_key, order_record >::iterator       _ask_itr;
-      bts::db::cached_level_map< market_index_key, order_record >::iterator       _short_itr;
-      bts::db::cached_level_map< market_index_key, collateral_record >::iterator  _collateral_itr;
-};
+} } } // end namespace bts::blockchain::detail

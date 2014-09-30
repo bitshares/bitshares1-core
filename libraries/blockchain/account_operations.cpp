@@ -58,6 +58,7 @@ namespace bts { namespace blockchain {
       new_record.set_active_key( now, this->active_key );
       if( this->is_delegate() )
       {
+          FC_ASSERT( this->delegate_pay_rate >= 0 );
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
           auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
@@ -155,6 +156,7 @@ namespace bts { namespace blockchain {
 
       if( this->is_delegate() )
       {
+         FC_ASSERT( this->delegate_pay_rate >= 0 );
          if( current_record->is_delegate() )
          {
             FC_ASSERT( current_record->delegate_info->pay_rate >= this->delegate_pay_rate );

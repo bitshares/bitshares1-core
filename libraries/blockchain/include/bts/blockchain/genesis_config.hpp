@@ -7,11 +7,9 @@ namespace bts { namespace blockchain {
 
   struct name_config
   {
-     name_config():delegate_pay_rate(255){}
-
      std::string        name;
      public_key_type    owner;
-     int                delegate_pay_rate;
+     int                delegate_pay_rate = 255;
   };
 
   struct asset_config // these are all market-issued assets
@@ -25,10 +23,10 @@ namespace bts { namespace blockchain {
       * which means 1 XTS = min_price USD, considered the precision of assets
       * for max_price which means the max price of 1 XTS in this asset is max_price USD, 1 XTS = max_price USD
       */
-     double            min_price;
-     double            max_price;
+     double            min_price = 0;
+     double            max_price = 0;
   };
-  
+
   struct genesis_block_config
   {
      fc::time_point_sec                         timestamp;

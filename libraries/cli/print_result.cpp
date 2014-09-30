@@ -108,8 +108,14 @@ namespace bts { namespace cli {
 
     _command_to_function["wallet_market_order_list"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      const auto& market_orders = result.as<map<order_id_type, market_order>>();
-      out << pretty_order_list( market_orders, client );
+      const auto& order_map = result.as<map<order_id_type, market_order>>();
+
+      vector<std::pair<order_id_type, market_order>> order_list;
+      order_list.reserve( order_map.size() );
+      for( const auto& order_item : order_map )
+          order_list.push_back( std::make_pair( order_item.first, order_item.second ) );
+
+      out << pretty_order_list( order_list, client );
     };
 
     _command_to_function["blockchain_market_list_asks"] = &f_blockchain_market_list;
@@ -268,7 +274,7 @@ namespace bts { namespace cli {
 
     out << std::left;
     out << std::setw( 30 ) << "AMOUNT";
-    out << std::setw( 30 ) << "COLLATERAL RATIO"; // XTS per USD (BitAsset) held as collateral 
+    out << std::setw( 30 ) << "COLLATERAL RATIO"; // XTS per USD (BitAsset) held as collateral
     out << std::setw( 30 ) << "COLLATERAL";
     out << std::setw( 30 ) << "PRICE LIMIT";
     out << std::setw( 40 ) << "ID";
@@ -293,11 +299,14 @@ namespace bts { namespace cli {
 
   void print_result::f_blockchain_market_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
-    const auto& market_orders = result.as<vector<market_order>>();
-    map<order_id_type, market_order> order_map;
-    for( const auto& order : market_orders )
-        order_map[ order.get_id() ] = order;
-    out << pretty_order_list( order_map, client );
+    const auto& order_map = result.as<vector<market_order>>();
+
+    vector<std::pair<order_id_type, market_order>> order_list;
+    order_list.reserve( order_map.size() );
+    for( const auto& order_item : order_map )
+        order_list.push_back( std::make_pair( order_item.get_id(), order_item ) );
+
+    out << pretty_order_list( order_list, client );
   }
 
   void print_result::f_wallet_list_my_accounts(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
@@ -732,10 +741,13 @@ namespace bts { namespace cli {
     auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->center_price;
 
     vector<market_order> shorts;
-    if (arguments.size() <= 2)
-        shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
-    else
-        shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
+    if( base_id == 0 )
+    {
+       if (arguments.size() <= 2)
+           shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
+       else
+           shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
+    }
 
     std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&max_short_price](const market_order& order) -> bool {
         return order.state.short_price_limit && *order.state.short_price_limit < max_short_price;
@@ -743,8 +755,7 @@ namespace bts { namespace cli {
 
     shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&max_short_price](const market_order& short_order) -> bool {
       //Filter out if insufficient collateral (i.e. XTS/USD < 1/max_short_price) or if price limit (i.e. USD/XTS) is less than short execution price
-      return short_order.get_price() > max_short_price || (short_order.state.short_price_limit.valid()?
-                                                               *short_order.state.short_price_limit < max_short_price : false);
+      return (short_order.state.short_price_limit.valid() ?  *short_order.state.short_price_limit < max_short_price : false);
     }), shorts.end());
 
     if (base_id == 0 && quote_asset_record->is_market_issued())
@@ -754,7 +765,13 @@ namespace bts { namespace cli {
       short_wall.state.balance = 0;
       short_wall.market_index.order_price = recent_average_price;
       for (auto order : shorts)
-        short_wall.state.balance += order.get_quote_quantity().amount;
+      {
+         if( order.get_price() >= max_short_price )
+           short_wall.state.balance += ((order.get_quantity() * max_short_price)).amount;
+         else
+           short_wall.state.balance += (order.get_quantity() * order.get_price()).amount;
+      }
+
       auto pos = std::lower_bound(bids_asks.first.begin(), bids_asks.first.end(), short_wall, [](const market_order& a, const market_order& b) -> bool {
         return !(a.market_index == b.market_index) && !(a.market_index < b.market_index);
       });
@@ -832,9 +849,18 @@ namespace bts { namespace cli {
           if(bid_itr != shorts.end())
           {
             double ratio = (1/client->get_chain()->to_pretty_price_double(bid_itr->get_price()));
-            asset quantity(bid_itr->get_quote_quantity() * max_short_price);
-            out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity())
-              << std::setw(20) << client->get_chain()->to_pretty_asset(quantity)
+            asset quantity_usd(bid_itr->get_quantity() * max_short_price); //, bid_itr->get_price()) );
+            asset quantity_xts = bid_itr->get_quantity(); //quantity_usd * max_short_price;
+
+            if( bid_itr->get_price() >= max_short_price )
+              quantity_usd = ((bid_itr->get_quantity() * max_short_price));
+            else
+              quantity_usd = (bid_itr->get_quantity() * bid_itr->get_price());
+
+            quantity_xts = quantity_usd * max_short_price;
+
+            out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(quantity_usd)
+              << std::setw(20) << client->get_chain()->to_pretty_asset(quantity_xts)
               << std::right << std::setw(30) << std::fixed << std::setprecision(2) << ratio;
 
             ++bid_itr;

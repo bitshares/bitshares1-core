@@ -16,6 +16,7 @@ namespace bts { namespace wallet {
    typedef map<string, vector<balance_id_type>> account_balance_id_summary_type;
    typedef map<string, map<asset_id_type, share_type>> account_balance_summary_type;
    typedef map<string, int64_t> account_vote_summary_type;
+   typedef std::pair<order_type_enum, vector<string>> order_description;
 
    enum delegate_status_flags
    {
@@ -428,11 +429,10 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 10 / 600.34 XTS + fees
           */
-         wallet_transaction_record submit_short(
-                 const string& from_account_name,
+         wallet_transaction_record submit_short(const string& from_account_name,
                  double real_quantity_usd,
                  const string& quote_symbol,
-                 double collateral_per_usd,
+                 double collateral_per_usd, const string& collateral_symbol,
                  double price_limit = 0,
                  bool sign = true
                  );
