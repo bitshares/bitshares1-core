@@ -230,20 +230,13 @@ namespace bts { namespace blockchain {
          return avg;
        }
 
+       // TODO: Remove these 3; no longer used. Infact remove above two member functions also.
+       // XXX: They must remain in BTSX for old market engines though
+       // XXX: We need a new is_null if removed
        share_type               bid_depth;
        share_type               ask_depth;
-       /**
-        *  Calculated as the average of the highest bid and lowest ask
-        *  every time the market executes.  The new is weighted against
-        *  the old value with a factor of 1:BLOCKS_PER_DAY.  In a very
-        *  active market this will be a 24 hour moving average, in
-        *  less active markets this will be a longer window.
-        *
-        *  No shorts or covers will execute at prices more 30% +/- this
-        *  number which serves as a natural rate limitor on price movement
-        *  and thus limits the potential manipulation.
-        */
        price                    center_price;
+
        optional<fc::exception>  last_error;
    };
    typedef optional<market_status> omarket_status;

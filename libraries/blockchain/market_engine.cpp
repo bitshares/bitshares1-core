@@ -98,6 +98,7 @@ namespace bts { namespace blockchain { namespace detail {
             mtrx.bid_owner = _current_bid->get_owner();
             mtrx.ask_owner = _current_ask->get_owner();
             // Always execute shorts at the center price
+            // TODO: Move this below next to the short price limit check
             mtrx.bid_price = (_current_bid->type != short_order) ? _current_bid->get_price() : _market_stat.center_price;
             mtrx.ask_price = _current_ask->get_price();
             mtrx.bid_type  = _current_bid->type;

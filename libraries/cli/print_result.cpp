@@ -900,8 +900,6 @@ namespace bts { namespace cli {
           << client->get_chain()->to_pretty_price(max_short_price)
           << "     ";
 
-        out << "Bid Depth: " << client->get_chain()->to_pretty_asset(asset(status->bid_depth, base_id)) << "     ";
-        out << "Ask Depth: " << client->get_chain()->to_pretty_asset(asset(status->ask_depth, base_id)) << "     ";
         if(status->last_error)
         {
           out << "Last Error:  ";
