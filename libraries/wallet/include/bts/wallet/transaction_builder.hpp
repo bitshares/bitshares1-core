@@ -175,7 +175,6 @@ namespace bts { namespace wallet {
          return balances;
       }
       void pay_fees();
-      bool withdraw_fee();
    };
 } } //namespace bts::wallet
 
