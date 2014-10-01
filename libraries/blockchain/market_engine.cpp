@@ -132,7 +132,7 @@ namespace bts { namespace blockchain { namespace detail {
                   continue;
                 }
 
-                if( mtrx.ask_price < mtrx.bid_price && _pending_state->now() <= _current_collat_record.expiration ) // The call price has not been reached
+                if( mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now() ) // The call price has not been reached
                   break;
 
                 if( _current_bid->state.short_price_limit.valid() )
@@ -206,7 +206,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 FC_ASSERT( quote_asset->is_market_issued()  );
 
-                if( mtrx.ask_price < mtrx.bid_price && _pending_state->now() <= _current_collat_record.expiration ) // The call price has not been reached
+                if( mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now() ) // The call price has not been reached
                   break;
 
                 /**
@@ -602,7 +602,7 @@ namespace bts { namespace blockchain { namespace detail {
 
             auto left_over_collateral = (*_current_ask->collateral);
 
-            if( _current_collat_record.expiration >= _pending_state->now() )
+            if( _current_collat_record.expiration > _pending_state->now() )
             {
                /** charge 5% fee for having a margin call */
                auto fee = (left_over_collateral * 5000 )/100000;
@@ -735,9 +735,9 @@ namespace bts { namespace blockchain { namespace detail {
             cover_ask.get_price().base_asset_id == _base_id )
         {
             _current_collat_record =  _collateral_itr.value();
-            // don't cover unless the price is below margin...
-            if( _market_stat.center_price  < cover_ask.get_price() ||
-                _current_collat_record.expiration > _pending_state->now() )
+            // don't cover unless the price is below center price or margin position is expired...
+            if( cover_ask.get_price() > _market_stat.center_price ||
+                _current_collat_record.expiration <= _pending_state->now() )
             {
                 _current_ask = cover_ask;
                 --_collateral_itr;
