@@ -162,7 +162,7 @@ namespace bts { namespace blockchain {
       market_index_key                          market_index;
       order_record                              state;
       optional<share_type>                      collateral;
-      optional<time_point>                      expiration;
+      optional<time_point_sec>                  expiration;
    };
 
    struct market_transaction

@@ -72,12 +72,12 @@ namespace bts { namespace blockchain { namespace detail {
 
           const oprice median_feed_price = _db_impl.self->get_median_delegate_price( quote_id, base_id );
           // If bootstrapping market for the very first time
-          if( quote_asset->is_market_issued() && 
-              _market_stat.center_price.ratio == fc::uint128_t() && 
-              !median_feed_price.valid() 
+          if( quote_asset->is_market_issued() &&
+              _market_stat.center_price.ratio == fc::uint128_t() &&
+              !median_feed_price.valid()
             ) {  FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) ); }
 
-          if( median_feed_price.valid() ) 
+          if( median_feed_price.valid() )
              _market_stat.center_price = *median_feed_price;
 
           int last_orders_filled = -1;
@@ -127,9 +127,8 @@ namespace bts { namespace blockchain { namespace detail {
                 *  the minimum ask, this could lead to an attack where someone
                 *  walks the whole book to steal the collateral.
                 */
-                if( (mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now()) || 
-                    mtrx.bid_price < _market_stat.minimum_ask() 
-                  )
+                if( (mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now()) ||
+                    mtrx.bid_price < _market_stat.minimum_ask() )
                 {
                    _current_ask.reset(); continue;
                 }
@@ -141,7 +140,7 @@ namespace bts { namespace blockchain { namespace detail {
             //// The ask price hasn't been reached
             else if( mtrx.bid_price < mtrx.ask_price ) break;
 
-            if( _current_ask->type == cover_order && _current_bid->type == short_order ) 
+            if( _current_ask->type == cover_order && _current_bid->type == short_order )
             {
                 price collateral_rate                = std::min(_current_bid->get_price(), _market_stat.center_price);
                 const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
@@ -217,7 +216,7 @@ namespace bts { namespace blockchain { namespace detail {
                 else // filled the complete ask
                 {
                    mtrx.ask_paid       = _current_ask->get_balance();
-                   mtrx.bid_collateral = usd_exchanged * collateral_rate; 
+                   mtrx.bid_collateral = usd_exchanged * collateral_rate;
                 }
 
                 mtrx.bid_received   = mtrx.ask_paid;
@@ -388,7 +387,7 @@ namespace bts { namespace blockchain { namespace detail {
 
       ocover_record->collateral_balance += collateral.amount;
       ocover_record->payoff_balance += mtrx.bid_paid.amount;
-      ocover_record->expiration = fc::time_point(_pending_state->now()) + fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
+      ocover_record->expiration = _pending_state->now() + BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
 
       FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
       FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));
