@@ -599,6 +599,9 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               _last_sync_status_head_block(0),
               _remaining_items_to_sync(0),
               _sync_speed_accumulator(boost::accumulators::tag::rolling_window::window_size = 5),
+              _connection_count_notification_interval(fc::minutes(5)),
+              _connection_count_always_notify_threshold(5),
+              _connection_count_last_value_displayed(0),
               _blockchain_synopsis_size_limit((unsigned)(log2(BTS_BLOCKCHAIN_BLOCKS_PER_YEAR * 20)))
             {
             try
@@ -728,6 +731,13 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             uint32_t                                                _last_sync_status_head_block;
             uint32_t                                                _remaining_items_to_sync;
             boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > _sync_speed_accumulator;
+
+            fc::time_point                                          _last_connection_count_message_time;
+            /** display messages about the connection count changing at most once every _connection_count_notification_interval */
+            fc::microseconds                                        _connection_count_notification_interval;
+            /** exception: if you have fewer than _connection_count_always_notify_threshold connections, notify any time the count changes */
+            uint32_t                                                _connection_count_always_notify_threshold;
+            uint32_t                                                _connection_count_last_value_displayed;
 
             config                                                  _config;
             logging_exception_db                                    _exception_db;
@@ -1558,9 +1568,17 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
        void client_impl::connection_count_changed(uint32_t new_connection_count)
        {
-         std::ostringstream message;
-         message << "--- there are now " << new_connection_count << " active connections to the p2p network";
-         ulog( message.str() );
+         fc::time_point now(fc::time_point::now());
+         if (new_connection_count != _connection_count_last_value_displayed &&
+             (new_connection_count < _connection_count_always_notify_threshold ||
+              now > _last_connection_count_message_time + _connection_count_notification_interval))
+         {
+           _last_connection_count_message_time = now;
+           _connection_count_last_value_displayed = new_connection_count;
+           std::ostringstream message;
+           message << "--- there are now " << new_connection_count << " active connections to the p2p network";
+           ulog( message.str() );
+         }
          if (_notifier)
            _notifier->notify_connection_count_changed(new_connection_count);
        }
