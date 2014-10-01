@@ -106,7 +106,7 @@ namespace bts { namespace blockchain {
                 const address& owner );
 
       void short_sell( const asset& quantity,
-                const price& collateal_per_usd,
+                const price& interest_rate,
                 const address& owner,
                 const optional<price>& limit_price = optional<price>() );
 

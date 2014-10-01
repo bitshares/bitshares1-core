@@ -5021,8 +5021,8 @@ namespace bts { namespace wallet {
          {
             FC_ASSERT(args.size() == 4 || args.size() == 5 || args.size() == 6, "Incorrect number of arguments");
             const string& collateral_symbol = args[4];
-            //args: from_account_name, short_quantity, short_symbol, collateral_ratio, collateral_symbol[, price_limit[, sign]]
-            price collateral_ratio = my->_blockchain->to_ugly_price(first_price, quantity_symbol, collateral_symbol);
+            //args: from_account_name, short_quantity, short_symbol, interest_rate, base_symbol [, price_limit[, sign]]
+            price interest_rate = my->_blockchain->to_ugly_price(interest_rate, quantity_symbol, collateral_symbol);
 
             oprice price_limit;
             if( args.size() > 5 && atof(args[5].c_str()) > 0 )
@@ -6823,38 +6823,38 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (from_account.name)(cost)(quote_price) ) }
 
    transaction_builder& transaction_builder::submit_short(const wallet_account_record& from_account,
-                                                          const asset& short_amount,
-                                                          const price& collateral_rate,
+                                                          const asset& short_collateral_amount,
+                                                          const price& interest_rate, // percent apr
                                                           const oprice& price_limit)
    { try {
       //collateral_rate has the asset IDs swapped
-      validate_market(collateral_rate.base_asset_id, collateral_rate.quote_asset_id);
-      FC_ASSERT(!price_limit || collateral_rate.quote_asset_id == price_limit->base_asset_id &&
-                collateral_rate.base_asset_id == price_limit->quote_asset_id,
-                "Collateral rate ${rate} and price limit ${limit} do not correspond correctly.",
-                ("rate", collateral_rate)("limit", price_limit));
+      validate_market(interest_rate.quote_asset_id, interest_rate.base_asset_id);
+      FC_ASSERT(!price_limit || 
+                interest_rate.quote_asset_id == price_limit->quote_asset_id &&
+                interest_rate.base_asset_id == price_limit->base_asset_id,
+                "Interest rate ${rate} and price limit ${limit} do not have compatible units.",
+                ("rate", interest_rate)("limit", price_limit));
 
-      asset cost = short_amount * collateral_rate;
-      FC_ASSERT(cost.asset_id == collateral_rate.quote_asset_id);
+      asset cost = short_collateral_amount;
 
       auto order_key = order_key_for_account(from_account.account_address);
 
       outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
-      trx.short_sell(cost, short_amount / cost, order_key, price_limit);
+      trx.short_sell(cost, interest_rate, order_key, price_limit);
 
       auto entry = ledger_entry();
       entry.from_account = from_account.owner_key;
       entry.to_account = order_key;
       entry.amount = cost;
-      entry.memo = "short " + _wimpl->_blockchain->get_asset_symbol(short_amount.asset_id) +
-                   " @ " + _wimpl->_blockchain->to_pretty_price(short_amount / cost);
+      entry.memo = "short " + _wimpl->_blockchain->get_asset_symbol(interest_rate.quote_asset_id) +
+                   " @ " + interest_rate.ratio_string() + "% APR";
 
       transaction_record.is_market = true;
       transaction_record.ledger_entries.push_back(entry);
 
       required_signatures.insert(order_key);
       return *this;
-   } FC_CAPTURE_AND_RETHROW( (from_account.name)(short_amount)(collateral_rate)(price_limit) ) }
+   } FC_CAPTURE_AND_RETHROW( (from_account.name)(short_amount)(interest_rate)(price_limit) ) }
 
    transaction_builder& transaction_builder::submit_cover(const wallet_account_record& from_account,
                                                           asset cover_amount,

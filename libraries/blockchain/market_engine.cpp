@@ -44,7 +44,7 @@ namespace bts { namespace blockchain { namespace detail {
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
           _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
           _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _short_itr      = _db_impl._short_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
+          _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
           _collateral_itr = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
           if( !_ask_itr.valid() )
@@ -58,6 +58,9 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( _collateral_itr.valid() )   --_collateral_itr;
           else _collateral_itr = _db_impl._collateral_db.last();
+
+          if( _short_itr.valid() )   --_short_itr;
+          else _short_itr = _db_impl._short_db.last();
 
           asset trading_volume(0, base_id);
 
@@ -143,11 +146,12 @@ namespace bts { namespace blockchain { namespace detail {
 
             if( _current_ask->type == cover_order && _current_bid->type == short_order ) 
             {
-                price collateral_rate                = std::min(_current_bid->get_price(), _market_stat.center_price);
+                price collateral_rate                = _market_stat.center_price;
+                collateral_rate.ratio               /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
                 const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
                 const asset cover_debt               = _current_ask->get_balance();
-                const asset usd_for_short_sale       = _current_bid->get_quote_quantity();
+                const asset usd_for_short_sale       = _current_bid->get_balance() * collateral_rate; //_current_bid->get_quote_quantity();
 
                 //Actual quote to purchase is the minimum of what's for sale, what can I possibly buy, and what I owe
                 const asset usd_exchanged = std::min( {usd_for_short_sale, max_usd_cover_can_afford, cover_debt} );
@@ -201,7 +205,8 @@ namespace bts { namespace blockchain { namespace detail {
             else if( _current_ask->type == ask_order && _current_bid->type == short_order )
             {
                 // Bound collateral ratio (maximizes collateral of new margin position)
-                price collateral_rate          = std::min(_current_bid->get_price(), _market_stat.center_price);
+                price collateral_rate          = _market_stat.center_price;
+                collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset ask_quantity_usd   = _current_ask->get_quote_quantity();
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
@@ -535,7 +540,7 @@ namespace bts { namespace blockchain { namespace detail {
         if( bid.get_price().quote_asset_id == _quote_id &&
             bid.get_price().base_asset_id == _base_id )
         {
-            ++_short_itr;
+            --_short_itr;
             _current_bid = bid;
             return _current_bid.valid();
         }
