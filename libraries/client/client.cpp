@@ -2452,9 +2452,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     void detail::client_impl::network_add_node(const string& node, const string& command)
     {
-      if (_p2p_node)
-        if (command == "add")
-          _self->connect_to_peer(node);
+      if (command == "add")
+        _self->connect_to_peer(node);
+      else
+        FC_THROW_EXCEPTION(fc::invalid_arg_exception, "unsupported command argument \"${command}\", valid commands are: \"add\"", ("command", command));
     }
 
     void detail::client_impl::stop()
