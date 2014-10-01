@@ -263,6 +263,7 @@ namespace bts { namespace net { namespace detail {
                                    (get_block_number) \
                                    (get_block_time) \
                                    (get_blockchain_now) \
+                                   (get_head_block_id) \
                                    (error_encountered)
 
 #define DECLARE_ACCUMULATOR(r, data, method_name) \
@@ -359,6 +360,7 @@ namespace bts { namespace net { namespace detail {
       uint32_t get_block_number(const item_hash_t& block_id) override;
       fc::time_point_sec get_block_time(const item_hash_t& block_id) override;
       fc::time_point_sec get_blockchain_now() override;
+      item_hash_t get_head_block_id() const override;
       void error_encountered(const std::string& message, const fc::oexception& error) override;
     };
 
@@ -1650,6 +1652,11 @@ namespace bts { namespace net { namespace detail {
 
       user_data["node_id"] = _node_id;
 
+      item_hash_t head_block_id = _delegate->get_head_block_id();
+      user_data["last_known_block_hash"] = head_block_id;
+      user_data["last_known_block_number"] = _delegate->get_block_number(head_block_id);
+      user_data["last_known_block_time"] = _delegate->get_block_time(head_block_id);
+
       return user_data;
     }
     void node_impl::parse_hello_user_data_for_peer(peer_connection* originating_peer, const fc::variant_object& user_data)
@@ -2783,30 +2790,37 @@ namespace bts { namespace net { namespace detail {
         // we don't know they're the same (for the peer in normal operation, it has only told us the
         // message id, for the peer in the sync case we only known the block_id).
         fc::time_point message_validated_time;
-        if( std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
-                      block_message_to_process.block_id ) == _most_recent_blocks_accepted.end() )
+        if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
+                      block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
         {
-          _delegate->handle_message( block_message_to_process, false );
+          _delegate->handle_message(block_message_to_process, false);
           message_validated_time = fc::time_point::now();
-          _most_recent_blocks_accepted.push_back( block_message_to_process.block_id );
+          _most_recent_blocks_accepted.push_back(block_message_to_process.block_id);
         }
         else
           dlog( "Already received and accepted this block (presumably through sync mechanism), treating it as accepted" );
 
         dlog( "client validated the block, advertising it to other peers" );
 
-        for( const peer_connection_ptr& peer : _active_connections )
+        for (const peer_connection_ptr& peer : _active_connections)
         {
-          item_id block_message_item_id( bts::client::message_type_enum::block_message_type, message_hash );
-          auto iter = peer->inventory_peer_advertised_to_us.find( block_message_item_id );
-          if( iter != peer->inventory_peer_advertised_to_us.end() )
+          item_id block_message_item_id(bts::client::message_type_enum::block_message_type, message_hash);
+
+          uint32_t block_number = _delegate->get_block_number(block_message_to_process.block_id);;
+          fc::time_point_sec block_time = _delegate->get_block_time(block_message_to_process.block_id);
+
+          auto iter = peer->inventory_peer_advertised_to_us.find(block_message_item_id);
+          if (iter != peer->inventory_peer_advertised_to_us.end())
           {
             // this peer offered us the item; remove it from the list of items they offered us, and
             // add it to the list of items we've offered them.  That will prevent us from offering them
             // the same item back (no reason to do that; we already know they have it)
-            peer->inventory_peer_advertised_to_us.erase( iter );
+            peer->inventory_peer_advertised_to_us.erase(iter);
             peer->clear_old_inventory_advertised_to_peer();
-            peer->inventory_advertised_to_peer.insert( peer_connection::timestamped_item_id(block_message_item_id, fc::time_point::now()) );
+            peer->inventory_advertised_to_peer.insert(peer_connection::timestamped_item_id(block_message_item_id, fc::time_point::now()));
+            peer->last_block_delegate_has_seen = block_message_to_process.block_id;
+            peer->last_block_number_delegate_has_seen = block_number;
+            peer->last_block_time_delegate_has_seen = block_time;
           }
         }
         message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
@@ -2971,6 +2985,11 @@ namespace bts { namespace net { namespace detail {
         if (peer->bitness)
           user_data["bitness"] = *peer->bitness;
         user_data["user_agent"] = peer->user_agent;
+
+        user_data["last_known_block_hash"] = peer->last_block_delegate_has_seen;
+        user_data["last_known_block_number"] = peer->last_block_number_delegate_has_seen;
+        user_data["last_known_block_time"] = peer->last_block_time_delegate_has_seen;
+
         data_for_this_peer.user_data = user_data;
         reply.current_connections.emplace_back(data_for_this_peer);
       }
@@ -3877,16 +3896,16 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       std::vector<peer_status> statuses;
-      for( const peer_connection_ptr& peer : _active_connections )
+      for (const peer_connection_ptr& peer : _active_connections)
       {
         peer_status this_peer_status;
         this_peer_status.version = 0; // TODO
         fc::optional<fc::ip::endpoint> endpoint = peer->get_remote_endpoint();
-        if( endpoint )
+        if (endpoint)
           this_peer_status.host = *endpoint;
         fc::mutable_variant_object peer_details;
-        peer_details["addr"] = endpoint ? ( std::string )*endpoint : std::string();
-        peer_details["addrlocal"] = ( std::string )peer->get_local_endpoint();
+        peer_details["addr"] = endpoint ? (std::string)*endpoint : std::string();
+        peer_details["addrlocal"] = (std::string)peer->get_local_endpoint();
         peer_details["services"] = "00000001"; // TODO: assign meaning, right now this just prints what bitcoin prints
         peer_details["lastsend"] = peer->get_last_message_sent_time().sec_since_epoch();
         peer_details["lastrecv"] = peer->get_last_message_received_time().sec_since_epoch();
@@ -3903,57 +3922,64 @@ namespace bts { namespace net { namespace detail {
         peer_details["banscore"] = ""; // TODO: fill me for bitcoin compatibility
         peer_details["syncnode"] = ""; // TODO: fill me for bitcoin compatibility
 
-        if( peer->bitshares_git_revision_sha )
+        if (peer->bitshares_git_revision_sha)
         {
           std::string revision_string = *peer->bitshares_git_revision_sha;
-          if( *peer->bitshares_git_revision_sha == bts::utilities::git_revision_sha )
+          if (*peer->bitshares_git_revision_sha == bts::utilities::git_revision_sha)
             revision_string += " (same as ours)";
           else
             revision_string += " (different from ours)";
           peer_details["bitshares_git_revision_sha"] = revision_string;
 
         }
-        if( peer->bitshares_git_revision_unix_timestamp )
+        if (peer->bitshares_git_revision_unix_timestamp)
         {
           peer_details["bitshares_git_revision_unix_timestamp"] = *peer->bitshares_git_revision_unix_timestamp;
-          std::string age_string = fc::get_approximate_relative_time_string( *peer->bitshares_git_revision_unix_timestamp );
-          if( *peer->bitshares_git_revision_unix_timestamp == fc::time_point_sec(bts::utilities::git_revision_unix_timestamp ) )
+          std::string age_string = fc::get_approximate_relative_time_string(*peer->bitshares_git_revision_unix_timestamp);
+          if (*peer->bitshares_git_revision_unix_timestamp == fc::time_point_sec(bts::utilities::git_revision_unix_timestamp))
             age_string += " (same as ours)";
-          else if( *peer->bitshares_git_revision_unix_timestamp > fc::time_point_sec(bts::utilities::git_revision_unix_timestamp ) )
+          else if (*peer->bitshares_git_revision_unix_timestamp > fc::time_point_sec(bts::utilities::git_revision_unix_timestamp))
             age_string += " (newer than ours)";
           else
             age_string += " (older than ours)";
           peer_details["bitshares_git_revision_age"] = age_string;
         }
 
-        if( peer->fc_git_revision_sha )
+        if (peer->fc_git_revision_sha)
         {
           std::string revision_string = *peer->fc_git_revision_sha;
-          if( *peer->fc_git_revision_sha == fc::git_revision_sha )
+          if (*peer->fc_git_revision_sha == fc::git_revision_sha)
             revision_string += " (same as ours)";
           else
             revision_string += " (different from ours)";
           peer_details["fc_git_revision_sha"] = revision_string;
 
         }
-        if( peer->fc_git_revision_unix_timestamp )
+        if (peer->fc_git_revision_unix_timestamp)
         {
           peer_details["fc_git_revision_unix_timestamp"] = *peer->fc_git_revision_unix_timestamp;
-          std::string age_string = fc::get_approximate_relative_time_string( *peer->fc_git_revision_unix_timestamp );
-          if( *peer->fc_git_revision_unix_timestamp == fc::time_point_sec(fc::git_revision_unix_timestamp ) )
+          std::string age_string = fc::get_approximate_relative_time_string( *peer->fc_git_revision_unix_timestamp);
+          if (*peer->fc_git_revision_unix_timestamp == fc::time_point_sec(fc::git_revision_unix_timestamp))
             age_string += " (same as ours)";
-          else if( *peer->fc_git_revision_unix_timestamp > fc::time_point_sec(fc::git_revision_unix_timestamp ) )
+          else if (*peer->fc_git_revision_unix_timestamp > fc::time_point_sec(fc::git_revision_unix_timestamp))
             age_string += " (newer than ours)";
           else
             age_string += " (older than ours)";
           peer_details["fc_git_revision_age"] = age_string;
         }
 
-        if( peer->platform )
+        if (peer->platform)
           peer_details["platform"] = *peer->platform;
+        
+        // provide these for debugging
+        // warning: these are just approximations, if the peer is "downstream" of us, they may
+        // have received blocks from other peers that we are unaware of
+        peer_details["current_head_block_number"] = peer->last_block_number_delegate_has_seen;
+        peer_details["current_head_block"] = peer->last_block_delegate_has_seen;
+        peer_details["current_head_block_time"] = peer->last_block_time_delegate_has_seen;
 
         this_peer_status.info = peer_details;
-        statuses.push_back( this_peer_status );
+        statuses.push_back(this_peer_status);
       }
       return statuses;
     }
@@ -4486,6 +4512,11 @@ namespace bts { namespace net { namespace detail {
     fc::time_point_sec statistics_gathering_node_delegate_wrapper::get_blockchain_now()
     {
       INVOKE_AND_COLLECT_STATISTICS(get_blockchain_now);
+    }
+
+    item_hash_t statistics_gathering_node_delegate_wrapper::get_head_block_id() const
+    {
+      INVOKE_AND_COLLECT_STATISTICS(get_head_block_id);
     }
 
     void statistics_gathering_node_delegate_wrapper::error_encountered(const std::string& message, const fc::oexception& error)

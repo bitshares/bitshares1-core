@@ -109,13 +109,15 @@ namespace bts { namespace net {
          virtual uint32_t get_block_number(const item_hash_t& block_id) = 0;
 
          /** 
-          * Returns the time a block was produced (if block_id = 0, returns gensis time).  
+          * Returns the time a block was produced (if block_id = 0, returns genesis time).  
           * If we don't know about the block, returns time_point_sec::min()
           */
          virtual fc::time_point_sec get_block_time(const item_hash_t& block_id) = 0;
 
          /** returns bts::blockchain::now() */
          virtual fc::time_point_sec get_blockchain_now() = 0;
+
+         virtual item_hash_t get_head_block_id() const = 0;
 
          virtual void error_encountered(const std::string& message, const fc::oexception& error) = 0;
    };
