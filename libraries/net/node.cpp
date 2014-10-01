@@ -360,7 +360,7 @@ namespace bts { namespace net { namespace detail {
       uint32_t get_block_number(const item_hash_t& block_id) override;
       fc::time_point_sec get_block_time(const item_hash_t& block_id) override;
       fc::time_point_sec get_blockchain_now() override;
-      item_hash_t statistics_gathering_node_delegate_wrapper::get_head_block_id() const override;
+      item_hash_t get_head_block_id() const override;
       void error_encountered(const std::string& message, const fc::oexception& error) override;
     };
 
