@@ -113,60 +113,7 @@ namespace bts { namespace blockchain { namespace detail {
                   {
                       _current_bid.reset(); continue; // skip shorts that are over the price limit.
                   }
-<<<<<<< HEAD
-                  mtrx.bid_price = *_current_bid->state.short_price_limit;
-                }
-
-                mtrx.ask_price = mtrx.bid_price;
-
-                // Bound collateral ratio
-                price collateral_rate = _current_bid->get_price();
-                if( collateral_rate > _market_stat.center_price )
-                  collateral_rate = _market_stat.center_price;
-
-                const asset max_usd_purchase = asset( *_current_ask->collateral, _base_id ) * mtrx.bid_price;
-                asset usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
-
-                // Bound quote asset amount exchanged
-                const asset required_usd_purchase = _current_ask->get_balance();
-                if( required_usd_purchase < usd_exchanged )
-                   usd_exchanged = required_usd_purchase;
-
-
-                if( usd_exchanged == max_usd_purchase )
-                { // cover collateral was completely consumed without paying off all USD
-                   mtrx.ask_paid       = asset(*_current_ask->collateral,_base_id);
-                   mtrx.bid_paid       = usd_exchanged;
-                   mtrx.ask_received   = mtrx.bid_paid;
-                   mtrx.bid_received   = mtrx.ask_paid;
-                   mtrx.bid_collateral = mtrx.bid_paid * collateral_rate;
-                }
-                else if( usd_exchanged == required_usd_purchase )
-                { // cover balance was completely paid off
-                   mtrx.bid_paid       = required_usd_purchase;
-                   mtrx.ask_received   = required_usd_purchase;
-                   mtrx.ask_paid       = mtrx.ask_received * mtrx.bid_price;
-                   mtrx.bid_received   = mtrx.ask_paid;
-                   mtrx.bid_collateral = mtrx.bid_paid * collateral_rate;
-                }
-                else
-                { // the bid was completely consumed
-                   mtrx.bid_paid       = usd_exchanged;
-                   mtrx.ask_received   = usd_exchanged;
-                   mtrx.ask_paid       = usd_exchanged * mtrx.bid_price;
-                   mtrx.bid_received   = usd_exchanged * mtrx.ask_price;
-                   mtrx.bid_collateral = _current_bid->get_balance();
-                }
-
-                // Because different collateral amounts create different orders, this prevents cover orders that
-                // are too small to bother covering.
-                if( (_current_bid->get_balance() - *mtrx.bid_collateral).amount < BTS_BLOCKCHAIN_PRECISION*10 )
-                {
-                    if( _current_bid->get_balance() > *mtrx.bid_collateral )
-                       *mtrx.bid_collateral  += (_current_bid->get_balance() - *mtrx.bid_collateral);
-=======
                   mtrx.bid_price = std::min( *_current_bid->state.short_price_limit, _market_stat.center_price );
->>>>>>> dryrun-19
                 }
             }
 
@@ -273,18 +220,8 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.bid_collateral = usd_exchanged * collateral_rate; 
                 }
 
-<<<<<<< HEAD
-                // Because different collateral amounts create different orders, this prevents cover orders that
-                // are too small to bother covering.
-                if( (_current_bid->get_balance() - *mtrx.bid_collateral).amount < BTS_BLOCKCHAIN_PRECISION*10 )
-                {
-                    if( _current_bid->get_balance() > *mtrx.bid_collateral )
-                       *mtrx.bid_collateral  += (_current_bid->get_balance() - *mtrx.bid_collateral);
-                }
-=======
                 mtrx.bid_received   = mtrx.ask_paid;
                 mtrx.bid_paid       = mtrx.ask_received;
->>>>>>> dryrun-19
 
                 pay_current_short( mtrx, *quote_asset, *base_asset );
                 pay_current_ask( mtrx, *quote_asset );
