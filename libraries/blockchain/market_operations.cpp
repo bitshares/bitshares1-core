@@ -53,13 +53,6 @@ namespace bts { namespace blockchain {
       current_bid->last_update = eval_state._current_state->now();
       current_bid->balance     += this->amount;
 
-      // bids do not count toward depth... they can set any price they like and create arbitrary depth
-      //auto market_stat = eval_state._current_state->get_market_status( bid_index.order_price.quote_asset_id, bid_index.order_price.base_asset_id );
-      //if( !market_stat )
-      //   market_stat = market_status(0,0);
-      // market_stat->bid_depth += (delta_amount * bid_index.order_price).amount;
-      //eval_state._current_state->store_market_status( *market_stat );
-
       eval_state._current_state->store_bid_record( this->bid_index, *current_bid );
 
       //auto check   = eval_state._current_state->get_bid_record( this->bid_index );
@@ -111,17 +104,7 @@ namespace bts { namespace blockchain {
       current_ask->balance     += this->amount;
       FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
-      auto market_stat = eval_state._current_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
-
-      if( !market_stat )
-         market_stat = market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id, 0, 0 );
-      market_stat->ask_depth += delta_amount.amount;
-
-      eval_state._current_state->store_market_status( *market_stat );
-
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
-
-      //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
@@ -180,14 +163,6 @@ namespace bts { namespace blockchain {
       current_short->last_update = eval_state._current_state->now();
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
-
-      auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
-      if( !market_stat )
-         market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0, 0 );
-
-      market_stat->bid_depth += delta_amount.amount;
-
-      eval_state._current_state->store_market_status( *market_stat );
 
       eval_state._current_state->store_short_record( this->short_index, *current_short );
    }
@@ -256,12 +231,6 @@ namespace bts { namespace blockchain {
       else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
       {
          eval_state.add_balance( asset( current_cover->collateral_balance, cover_index.order_price.base_asset_id ) );
-
-         auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
-         FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
-         market_stat->ask_depth -= current_cover->collateral_balance;
-
-         eval_state._current_state->store_market_status( *market_stat );
       }
    }
 
@@ -295,12 +264,6 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
-
-      auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
-      FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
-      market_stat->ask_depth += delta_amount.amount;
-
-      eval_state._current_state->store_market_status( *market_stat );
    }
 
    void remove_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
