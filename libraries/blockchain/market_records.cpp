@@ -34,10 +34,10 @@ asset market_order::get_balance()const
         asset_id = market_index.order_price.base_asset_id;
         break;
      case short_order:
-        asset_id = 0; // always base shares for shorts.
+        asset_id = market_index.order_price.base_asset_id;
         break;
      case cover_order:
-        asset_id = market_index.order_price.quote_asset_id; // always base shares for shorts.
+        asset_id = market_index.order_price.quote_asset_id;
         break;
      default:
         FC_ASSERT( false, "Not Implemented" );
