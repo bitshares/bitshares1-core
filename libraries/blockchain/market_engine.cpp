@@ -103,17 +103,10 @@ namespace bts { namespace blockchain { namespace detail {
             mtrx.bid_type  = _current_bid->type;
             mtrx.ask_type  = _current_ask->type;
 
-            if( _current_ask->type == cover_order || _current_bid->type == short_order)
-            {
-                FC_ASSERT( quote_asset->is_market_issued() );
-                /** don't allow new shorts to execute unless there is a feed, all other
-                * trades are still valid. (we shouldn't stop the market)
-                */
-                if( !median_feed_price.valid() ) { _current_bid.reset(); continue; }
-            }
-
             if( _current_bid->type == short_order )
             {
+                FC_ASSERT( quote_asset->is_market_issued() );
+                if( !median_feed_price.valid() ) { _current_bid.reset(); continue; }
                 if( _current_bid->state.short_price_limit.valid() )
                 {
                   if( *_current_bid->state.short_price_limit < mtrx.ask_price )
@@ -126,6 +119,8 @@ namespace bts { namespace blockchain { namespace detail {
 
             if( _current_ask->type == cover_order )
             {
+                FC_ASSERT( quote_asset->is_market_issued() );
+                if( !median_feed_price.valid() ) { _current_ask.reset(); continue; }
                 //If call price is not reached AND cover has not expired, he lives to fight another day.
                 /**
                 *  Don't allow margin calls to be executed too far below
