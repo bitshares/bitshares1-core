@@ -13,17 +13,16 @@ namespace bts { namespace blockchain { namespace detail {
     void cancel_all_shorts();
 
     void push_market_transaction( const market_transaction& mtrx );
+
     void cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id );
 
     void pay_current_short( const market_transaction& mtrx, asset_record& quote_asset );
     void pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset );
-
     void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset );
-
     void pay_current_ask( const market_transaction& mtrx, asset_record& base_asset );
+
     bool get_next_short();
     bool get_next_bid();
-
     bool get_next_ask();
 
     /**
@@ -43,7 +42,7 @@ namespace bts { namespace blockchain { namespace detail {
 
     optional<market_order>        _current_bid;
     optional<market_order>        _current_ask;
-    share_type                    _current_payoff_balance = 0;
+    collateral_record             _current_collat_record;
     asset_id_type                 _quote_id;
     asset_id_type                 _base_id;
     market_status                 _market_stat;

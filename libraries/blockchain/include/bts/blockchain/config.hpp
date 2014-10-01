@@ -5,13 +5,13 @@
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
 
-#define BTS_TEST_NETWORK_VERSION                            31
+#define BTS_TEST_NETWORK_VERSION                            32
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     143
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     144
 
 /**
  *  The address prepended to string representation of
@@ -30,6 +30,7 @@
 #define BTS_BLOCKCHAIN_MIN_BURN_FEE                         BTS_BLOCKCHAIN_PRECISION * 1 // 1 XTS
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
+#define BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC                 (30*24*60*60) // 30 days * 24 hours * 60 minutes * 60 seconds = 1 month
 
 /**
  * The number of delegates that the blockchain is designed to support

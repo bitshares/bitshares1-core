@@ -505,6 +505,7 @@ namespace bts { namespace blockchain { namespace detail {
 
           ocover_record->collateral_balance += collateral.amount;
           ocover_record->payoff_balance += mtrx.bid_paid.amount;
+          ocover_record->expiration = fc::time_point( _pending_state->now() ) + fc::days( 365 );
 
           FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
           FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));

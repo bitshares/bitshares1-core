@@ -173,16 +173,18 @@ namespace bts { namespace wallet {
    {
        transaction_id_type                          id;
        uint32_t                                     block_num = -1;
-       time_point_sec                               timestamp;
+       time_point_sec                               timestamp = time_point_sec( -1 );
 
+       // e.g. { name, INCOME-name, ISSUER-name, GENESIS, {ASK,BID,SHORT,MARGIN}-id, FEE }
        map<string, map<asset_id_type, share_type>>  delta_amounts;
-       // e.g. { name, INCOME-name, GENESIS, {ASK,BID,SHORT,COVER}-id, NETWORK, ANONYMOUS, UNKNOWN }
-       map<address, string>                         address_labels;
+
+       optional<transaction_id_type>                transaction_id;
+
+       // only used for titan deposits
+       map<uint16_t, string>                        delta_labels;
 
        // either memo_data for a titan transfer or string otherwise
        map<uint16_t, variant>                       operation_details;
-
-       optional<transaction_id_type>                transaction_id;
 
        bool is_confirmed()const { return block_num != -1; }
        bool is_virtual()const   { return !transaction_id.valid(); }
@@ -330,9 +332,9 @@ FC_REFLECT( bts::wallet::transaction_ledger_entry,
         (block_num)
         (timestamp)
         (delta_amounts)
-        (address_labels)
-        (operation_details)
         (transaction_id)
+        (delta_labels)
+        (operation_details)
         )
 
 /**
