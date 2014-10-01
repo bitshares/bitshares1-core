@@ -15,7 +15,9 @@ namespace bts { namespace blockchain { namespace detail {
     void push_market_transaction( const market_transaction& mtrx );
     void cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id );
 
-    void pay_current_short(market_transaction& mtrx, asset_record& quote_asset );
+    void pay_current_short(market_transaction& mtrx, 
+                           asset_record& quote_asset, 
+                           asset_record& base_asset );
     void pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset );
 
     void pay_current_cover( market_transaction& mtrx, asset_record& quote_asset );
