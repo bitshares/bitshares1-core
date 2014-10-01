@@ -692,6 +692,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             virtual uint32_t get_block_number(const bts::net::item_hash_t& block_id) override;
             virtual fc::time_point_sec get_block_time(const bts::net::item_hash_t& block_id) override;
             virtual fc::time_point_sec get_blockchain_now() override;
+            virtual bts::net::item_hash_t get_head_block_id() const;
             virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
 
@@ -1615,9 +1616,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
            return fc::time_point_sec::min();
          }
        }
+
        fc::time_point_sec client_impl::get_blockchain_now()
        {
          return bts::blockchain::now();
+       }
+
+       bts::net::item_hash_t client_impl::get_head_block_id() const
+       {
+         return _chain_db->get_head_block_id();
        }
 
       void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
