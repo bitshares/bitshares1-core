@@ -2424,16 +2424,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->get_assets( first, limit );
     }
 
-    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool not_firewalled )const
+    std::vector<fc::variant_object> detail::client_impl::network_get_peer_info( bool hide_firewalled_nodes )const
     {
       std::vector<fc::variant_object> results;
-      vector<bts::net::peer_status> peer_statuses = _p2p_node->get_connected_peers();
+      std::vector<bts::net::peer_status> peer_statuses = _p2p_node->get_connected_peers();
       for (const bts::net::peer_status& peer_status : peer_statuses)
-      {
-        const auto& info = peer_status.info;
-        if( not_firewalled && ( info["firewall_status"].as_string() != "not_firewalled" ) ) continue;
-        results.push_back( info );
-      }
+        if(!hide_firewalled_nodes ||
+           peer_status.info["firewall_status"].as_string() == "not_firewalled")
+          results.push_back(peer_status.info);
       return results;
     }
 

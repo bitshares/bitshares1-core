@@ -3970,8 +3970,13 @@ namespace bts { namespace net { namespace detail {
 
         if (peer->platform)
           peer_details["platform"] = *peer->platform;
-
         
+        // provide these for debugging
+        // warning: these are just approximations, if the peer is "downstream" of us, they may
+        // have received blocks from other peers that we are unaware of
+        peer_details["current_head_block_number"] = peer->last_block_number_delegate_has_seen;
+        peer_details["current_head_block"] = peer->last_block_delegate_has_seen;
+        peer_details["current_head_block_time"] = peer->last_block_time_delegate_has_seen;
 
         this_peer_status.info = peer_details;
         statuses.push_back(this_peer_status);
