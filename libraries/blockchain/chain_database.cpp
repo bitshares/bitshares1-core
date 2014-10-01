@@ -1171,9 +1171,10 @@ namespace bts { namespace blockchain {
       }
       return result;
    }
+
    digest_block chain_database::get_block_digest( const block_id_type& block_id )const
    {
-      return my->_block_id_to_block_record_db.fetch(block_id);
+      return my->_block_id_to_block_record_db.fetch( block_id );
    }
 
    digest_block chain_database::get_block_digest( uint32_t block_num )const

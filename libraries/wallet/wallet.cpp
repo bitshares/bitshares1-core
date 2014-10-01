@@ -116,10 +116,16 @@ namespace bts { namespace wallet {
                     bool overwrite_existing = false
                     );
 
-            void scan_transaction_experimental( const signed_transaction& transaction,
-                                                const block_header& block,
-                                                const vector<private_key_type>& keys,
-                                                const map<address, string> address_labels,
+            void scan_block_experimental( uint32_t block_num,
+                                          const vector<private_key_type>& account_keys,
+                                          const map<address, string>& account_balances,
+                                          const std::set<string>& account_names );
+
+            void scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                const vector<private_key_type>& account_keys,
+                                                const map<address, string>& account_balances,
+                                                const std::set<string>& account_names,
+                                                transaction_ledger_entry& record,
                                                 bool overwrite_existing = false );
 
             bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee, public_key_type& from_pub_key );
@@ -581,264 +587,276 @@ namespace bts { namespace wallet {
             scan_market_transaction( market_trx, block_num, block.timestamp, received_time );
       }
 
-      void wallet_impl::scan_transaction_experimental( const signed_transaction& transaction,
-                                                       const block_header& block,
-                                                       const vector<private_key_type>& keys,
-                                                       map<address, string> address_labels,
+      void wallet_impl::scan_block_experimental( uint32_t block_num,
+                                                 const vector<private_key_type>& account_keys,
+                                                 const map<address, string>& account_balances,
+                                                 const std::set<string>& account_names )
+      {
+          const signed_block_header block_header = _blockchain->get_block_header( block_num );
+          const vector<transaction_record> transaction_records = _blockchain->get_transactions_for_block( block_header.id() );
+          for( const transaction_evaluation_state& eval_state : transaction_records )
+          {
+              // TODO: Split this loop into a separate fcn so can easily scan individual trxs
+
+              const transaction_id_type record_id = eval_state.trx.permanent_id();
+
+              // TODO check for an existing record in wallet_db first
+
+              transaction_ledger_entry record;
+              record.id = record_id;
+              record.block_num = block_num;
+              record.timestamp = std::min<time_point_sec>( record.timestamp, block_header.timestamp );
+              record.delta_amounts.clear();
+              record.transaction_id = eval_state.trx.id();
+
+              scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record );
+          }
+      }
+
+      void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                       const vector<private_key_type>& account_keys,
+                                                       const map<address, string>& account_balances,
+                                                       const std::set<string>& account_names,
+                                                       transaction_ledger_entry& record,
                                                        bool overwrite_existing )
       { try {
-          const auto record_id = transaction.permanent_id();
-
-          //auto transaction_record = _wallet_db.lookup_transaction( record_id );
-
-          //const auto already_exists = transaction_record.valid();
-          //if( !already_exists )
-          //{
-          transaction_ledger_entry record;
-          record.id = record_id;
-          record.block_num = block.block_num;
-          record.timestamp = std::min<time_point_sec>( record.timestamp, block.timestamp );
-          record.transaction_id = transaction.id();
-
-          const otransaction_record eval_state = _blockchain->get_transaction( *record.transaction_id, true );
-          if( !eval_state.valid() ) return;
-
-
-          // TODO
-          map<address, map<asset_id_type, share_type>> deltas;
-          // keys should be a map from account_name -> key then we won't need this
-          const auto my_accounts = self->list_my_accounts();
           uint16_t op_index = 0;
 
-          // TODO: Check that we don't overwrite existing address labels
-
+          const auto collect_balance = [&]( const balance_id_type& balance_id, const asset& delta_amount ) -> bool
+          {
+              if( account_balances.count( balance_id ) > 0 )
+              {
+                  const string& delta_label = account_balances.at( balance_id );
+                  record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+                  return true;
+              }
+              else if( record.delta_labels.count( op_index ) > 0 )
+              {
+                  const string& delta_label = record.delta_labels.at( op_index );
+                  record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+                  return account_names.count( delta_label ) > 0;
+              }
+              else
+              {
+                  const string delta_label = string( balance_id );
+                  record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
+                  return false;
+              }
+          };
 
           const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
           {
-              const asset delta = eval_state->deltas.at( op_index );
-              deltas[ op.balance_id ][ delta.asset_id ] += delta.amount;
-
-              if( address_labels.count( op.balance_id ) > 0 )
-              {
-                  record.address_labels[ op.balance_id ] = address_labels.at( op.balance_id );
-                  return true;
-              }
-              return false;
+              return collect_balance( op.balance_id, eval_state.deltas.at( op_index ) );
           };
 
           // TODO: Recipient address label needs to be saved at time of creation
+          // make a wrapper around trx.deposit_to_account just like my->withdraw_to_transaction
           const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
           {
               const balance_id_type balance_id = op.balance_id();
-              const asset delta = eval_state->deltas.at( op_index );
-              deltas[ balance_id ][ delta.asset_id ] += delta.amount;
+              const asset& delta_amount = eval_state.deltas.at( op_index );
 
-              const auto scan_withdraw_with_signature = [&]( const withdraw_with_signature& condition ) -> void
+              const auto scan_withdraw_with_signature = [&]( const withdraw_with_signature& condition ) -> bool
               {
                   if( condition.memo.valid() ) // if titan
                   {
-                      for( const auto& key : keys )
+                      if( record.delta_labels.count( op_index ) == 0 )
                       {
-                          omemo_status status = condition.decrypt_memo_data( key );
-                          if( status.valid() )
+                          for( const auto& key : account_keys )
                           {
-                              // cache memo and sync balance
-                              // add balance to address_labels from account->key map
+                              const omemo_status status = condition.decrypt_memo_data( key );
+                              if( status.valid() )
+                              {
+                                  // cache memo and sync balance
 
+                                  //FC_ASSERT( status->memo_flags == from_memo );
 
-                              //FC_ASSERT( status->memo_flags == from_memo );
-                              record.operation_details[ op_index ] = *status;
-                              return;
+                                  // TODO:: account_keys should be a map from account_name -> key
+                                  // add balance to address_labels from account->key map
+                                  const string delta_label = "MY ACCOUNT NAME";
+                                  record.delta_labels[ op_index ] = delta_label;
+                                  record.operation_details[ op_index ] = *status;
+                                  break;
+                              }
                           }
                       }
+
+                      return collect_balance( balance_id, delta_amount );
                   }
                   else
                   {
                       // TODO check owner address in label map
-                      // ?? or is still balance_id
+                      // ~~?? or is still balance_id~~
+                      //
+                      //
+                      // it is the condition owner which should be in account_balances
+                      // above it is the owner of the key
+                      //
+                      // lookup owner account key like at the end of scan_ask
                   }
+
+                  return false;
               };
 
               switch( withdraw_condition_types( op.condition.type ) )
               {
                   case withdraw_signature_type:
-                      scan_withdraw_with_signature( op.condition.as<withdraw_with_signature>() );
-                      break;
+                      return scan_withdraw_with_signature( op.condition.as<withdraw_with_signature>() );
                   default:
                       break;
               }
 
-              if( address_labels.count( balance_id ) > 0 )
-              {
-                  record.address_labels[ balance_id ] = address_labels.at( balance_id );
-                  return true;
-              }
               return false;
           };
 
           const auto scan_register_account = [&]( const register_account_operation& op ) -> bool
           {
-              record.operation_details[ op_index ] = string( "register account: " + op.name );
-              for( const auto& rec : my_accounts )
+              const string& account_name = op.name;
+
+              if( record.operation_details.count( op_index ) == 0 )
               {
-                  if( rec.name == op.name )
-                      return true;
+                  const string description = "register account " + account_name;
+                  record.operation_details[ op_index ] = description;
               }
-              return false;
+
+              return account_names.count( account_name ) > 0;
           };
 
           const auto scan_update_account = [&]( const update_account_operation& op ) -> bool
           {
-              const auto account_rec = _blockchain->get_account_record( op.account_id );
-              if( !account_rec.valid() ) // This should never happen
-                  return false;
+              const oaccount_record account_record = _blockchain->get_account_record( op.account_id );
+              FC_ASSERT( account_record.valid() );
+              const string& account_name = account_record->name;
 
-              record.operation_details[ op_index ] = string( "update account: " + account_rec->name );
-              for( const auto& rec : my_accounts )
+              if( record.operation_details.count( op_index ) == 0 )
               {
-                  if( rec.name == account_rec->name )
-                      return true;
+                  const string description = "update account " + account_name;
+                  record.operation_details[ op_index ] = description;
               }
-              return false;
+
+              return account_names.count( account_name ) > 0;
           };
 
           const auto scan_withdraw_pay = [&]( const withdraw_pay_operation& op ) -> bool
           {
-              const asset delta = eval_state->deltas.at( op_index );
+              const oaccount_record account_record = _blockchain->get_account_record( op.account_id );
+              FC_ASSERT( account_record.valid() );
+              const string& account_name = account_record->name;
 
-              const auto account_rec = _blockchain->get_account_record( op.account_id );
-              if( !account_rec.valid() ) // This should never happen
-              {
-                  record.delta_amounts[ "INCOME-" + std::to_string( op.account_id ) ][ delta.asset_id ] += delta.amount;
-                  return false;
-              }
+              const string delta_label = "INCOME-" + account_name;
+              const asset& delta_amount = eval_state.deltas.at( op_index );
+              record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
-              const address balance_id = address( account_rec->owner_key );
-              deltas[ balance_id ][ delta.asset_id ] += delta.amount;
-              record.address_labels[ balance_id ] = "INCOME-" + account_rec->name;
-
-              for( const auto& rec : my_accounts )
-              {
-                  if( rec.name == account_rec->name )
-                      return true;
-              }
-              return false;
+              return account_names.count( account_name ) > 0;
           };
 
           const auto scan_create_asset = [&]( const create_asset_operation& op ) -> bool
           {
-              record.operation_details[ op_index ] = string( "create asset: " + op.symbol );
+              const oaccount_record account_record = _blockchain->get_account_record( op.issuer_account_id );
+              FC_ASSERT( account_record.valid() );
+              const string& account_name = account_record->name;
 
-              const auto account_rec = _blockchain->get_account_record( op.issuer_account_id );
-              if( !account_rec.valid() ) // This should never happen
-                  return false;
-
-              for( const auto& rec : my_accounts )
+              if( record.operation_details.count( op_index ) == 0 )
               {
-                  if( rec.name == account_rec->name )
-                      return true;
+                  const string description = account_name + " created asset " + op.symbol;
+                  record.operation_details[ op_index ] = description;
               }
-              return false;
+
+              return account_names.count( account_name ) > 0;
           };
 
-          // TODO: Recipient address label needs to be saved at time of creation
           const auto scan_issue_asset = [&]( const issue_asset_operation& op ) -> bool
           {
-              const asset delta = eval_state->deltas.at( op_index );
-              record.delta_amounts[ "NETWORK" ][ delta.asset_id ] += delta.amount;
+              const asset& delta_amount = eval_state.deltas.at( op_index );
+              const oasset_record asset_record = _blockchain->get_asset_record( delta_amount.asset_id );
+              FC_ASSERT( asset_record.valid() );
 
-              const auto asset_rec = _blockchain->get_asset_record( delta.asset_id );
-              if( !asset_rec.valid() ) // This should never happen
-                  return false;
+              const oaccount_record account_record = _blockchain->get_account_record( asset_record->issuer_account_id );
+              FC_ASSERT( account_record.valid() );
+              const string& account_name = account_record->name;
 
-              record.operation_details[ op_index ] = string( "issue asset: " + asset_rec->symbol );
+              const string delta_label = "ISSUER-" + account_name;
+              record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
-              const auto account_rec = _blockchain->get_account_record( asset_rec->issuer_account_id );
-              if( !account_rec.valid() ) // This should never happen
-                  return false;
-
-              for( const auto& rec : my_accounts )
-              {
-                  if( rec.name == account_rec->name )
-                      return true;
-              }
-              return false;
+              return account_names.count( account_name ) > 0;
           };
 
           const auto scan_ask = [&]( const ask_operation& op ) -> bool
           {
-              const asset delta = eval_state->deltas.at( op_index );
-              deltas[ op.ask_index.owner ][ delta.asset_id ] += delta.amount;
-
               const market_order order( ask_order, op.ask_index, op.amount );
-              const string market_id = order.get_small_id();
-              record.address_labels[ op.ask_index.owner ] = market_id;
+              const string delta_label = order.get_small_id();
+              const asset& delta_amount = eval_state.deltas.at( op_index );
+              record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
-              string details;
-              if( op.amount >= 0 )
+              if( record.operation_details.count( op_index ) == 0 )
               {
-                  const auto base_record = _blockchain->get_asset_record( op.ask_index.order_price.base_asset_id );
-                  if( base_record.valid() )
+                  string description;
+
+                  if( op.amount >= 0 )
                   {
-                      std::stringstream memo;
-                      memo << "sell " << base_record->symbol << " @ " << _blockchain->to_pretty_price( op.ask_index.order_price );
-                      details = memo.str();
+                      const oasset_record asset_record = _blockchain->get_asset_record( op.ask_index.order_price.base_asset_id );
+                      FC_ASSERT( asset_record.valid() );
+                      description = "sell " + asset_record->symbol + " @ " + _blockchain->to_pretty_price( op.ask_index.order_price );
                   }
-              }
-              else
-              {
-                  details = "cancel " + market_id;
-              }
-              record.operation_details[ op_index ] = details;
+                  else
+                  {
+                      description = "cancel " + delta_label;
+                  }
 
-              const auto okey_rec = _wallet_db.lookup_key( op.ask_index.owner );
-              return okey_rec.valid() && okey_rec->has_private_key();
+                  record.operation_details[ op_index ] = description;
+              }
+
+              const owallet_key_record key_record = _wallet_db.lookup_key( op.ask_index.owner );
+              return key_record.valid() && key_record->has_private_key();
           };
 
           const auto scan_update_feed = [&]( const update_feed_operation& op ) -> bool
           {
-              const auto asset_rec = _blockchain->get_asset_record( op.feed.feed_id );
-              if( !asset_rec.valid() ) // This should never happen
-                  return false;
+              const oasset_record asset_record = _blockchain->get_asset_record( op.feed.feed_id );
+              FC_ASSERT( asset_record.valid() );
 
-              const auto account_rec = _blockchain->get_account_record( op.feed.delegate_id );
-              if( !account_rec.valid() ) // This should never happen
-                  return false;
+              const oaccount_record account_record = _blockchain->get_account_record( op.feed.delegate_id );
+              FC_ASSERT( account_record.valid() );
+              const string& account_name = account_record->name;
 
-              // TODO: Include price string
-              record.operation_details[ op_index ] = string( "update price feed: " + asset_rec->symbol + " / " + account_rec->name );
-
-              for( const auto& rec : my_accounts )
+              if( record.operation_details.count( op_index ) == 0 )
               {
-                  if( rec.name == account_rec->name )
-                      return true;
+                  const string description = "update " + account_name + "'s price feed for " + asset_record->symbol;
+                  record.operation_details[ op_index ] = description;
               }
-              return false;
+
+              return account_names.count( account_name ) > 0;
           };
 
           const auto scan_burn = [&]( const burn_operation& op ) -> bool
           {
-              record.delta_amounts[ "INCINERATOR" ][ op.amount.asset_id ] += op.amount.amount;
+              const string delta_label = "INCINERATOR";
+              const asset& delta_amount = op.amount;
+              record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
-              const auto account_rec = _blockchain->get_account_record( abs( op.account_id ) );
+              const account_id_type& account_id = op.account_id;
+              const oaccount_record account_record = _blockchain->get_account_record( abs( account_id ) );
 
-              // TODO: Include info about for or against and who
-              record.operation_details[ op_index ] = string( "burn" );
-
-              if( account_rec.valid() )
+              if( account_record.valid() )
               {
-                  for( const auto& rec : my_accounts )
+                  const string& account_name = account_record->name;
+
+                  if( record.operation_details.count( op_index ) == 0 )
                   {
-                      if( rec.name == account_rec->name )
-                          return true;
+                      string description = "burn ";
+                      description += ( account_id > 0 ) ? " for " : " against ";
+                      description += account_name;
+                      record.operation_details[ op_index ] = description;
                   }
+
+                  return account_names.count( account_name ) > 0;
               }
+
               return false;
           };
 
-          // TODO: Only check operations if we need to store record if we don't yet know
           bool store_record = false;
-          for( const auto& op : transaction.operations )
+          for( const auto& op : eval_state.trx.operations )
           {
               switch( operation_type_enum( op.type ) )
               {
@@ -893,26 +911,12 @@ namespace bts { namespace wallet {
                   default:
                       break;
               }
+
               ++op_index;
           }
 
-          for( const auto& item : deltas )
-          {
-              for( const auto& d : item.second )
-              {
-                  if( record.address_labels.count( item.first ) > 0 )
-                  {
-                      record.delta_amounts[ record.address_labels[ item.first ] ][ d.first ] += d.second;
-                  }
-                  else
-                  {
-                      record.delta_amounts[ string( item.first ) ][ d.first ] += d.second;
-                  }
-              }
-          }
-
-          for( const auto& delta_item : eval_state->balance )
-              record.delta_amounts[ "NETWORK" ][ delta_item.first ] += delta_item.second;
+          for( const auto& delta_item : eval_state.balance )
+              record.delta_amounts[ "FEE" ][ delta_item.first ] += delta_item.second;
 
           if( store_record )
               ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
@@ -2813,9 +2817,22 @@ namespace bts { namespace wallet {
               address_labels[ id ] = item.first;
       }
 
+      std::set<string> account_names;
+      const auto accounts = list_my_accounts();
+      for( const auto& account : accounts )
+          account_names.insert( account.name );
+
+      // TODO: temporary
+              transaction_ledger_entry record;
+              record.id = transaction_record->trx.permanent_id();
+              record.block_num = block_num;
+              record.timestamp = std::min<time_point_sec>( record.timestamp, block.timestamp );
+              record.delta_amounts.clear();
+              record.transaction_id = transaction_record->trx.id();
+
       try
       {
-          my->scan_transaction_experimental( transaction_record->trx, block, keys, address_labels, overwrite_existing );
+          my->scan_transaction_experimental( *transaction_record, keys, address_labels, account_names, record, overwrite_existing );
       }
       catch( ... )
       {

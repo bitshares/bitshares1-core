@@ -66,8 +66,8 @@ add_library( bts_blockchain
              market_records.cpp
              chain_interface.cpp
              pending_chain_state.cpp
-             chain_database.cpp
              market_engine.cpp
+             chain_database.cpp
              ${generated_genesis_file}
              ${genesis_json}
              ${HEADERS}
