@@ -2334,6 +2334,8 @@ namespace bts { namespace net { namespace detail {
            ( "type", fetch_items_message_received.item_type )
            ( "endpoint", originating_peer->get_remote_endpoint() ) );
 
+      fc::optional<message> last_block_message_sent;
+
       std::list<message> reply_messages;
       for( const item_hash_t& item_hash : fetch_items_message_received.items_to_fetch )
       {
@@ -2344,6 +2346,8 @@ namespace bts { namespace net { namespace detail {
                ( "endpoint", originating_peer->get_remote_endpoint() )
                ( "id", requested_message.id() ) );
           reply_messages.push_back( requested_message );
+          if (fetch_items_message_received.item_type == block_message_type)
+            last_block_message_sent = requested_message;
           continue;
         }
         catch ( fc::key_not_found_exception& )
@@ -2360,6 +2364,8 @@ namespace bts { namespace net { namespace detail {
                ( "size", requested_message.size )
                ( "endpoint", originating_peer->get_remote_endpoint() ) );
           reply_messages.push_back( requested_message );
+          if (fetch_items_message_received.item_type == block_message_type)
+            last_block_message_sent = requested_message;
           continue;
         }
         catch ( fc::key_not_found_exception& )
@@ -2369,6 +2375,16 @@ namespace bts { namespace net { namespace detail {
                ( "endpoint", originating_peer->get_remote_endpoint() ) );
         }
       }
+
+      // if we sent them a block, update our record of the last block they've seen accordingly
+      if (last_block_message_sent)
+      {
+        bts::client::block_message block = last_block_message_sent->as<bts::client::block_message>();
+        originating_peer->last_block_delegate_has_seen = block.block_id;
+        originating_peer->last_block_number_delegate_has_seen = _delegate->get_block_number(block.block_id);
+        originating_peer->last_block_time_delegate_has_seen = _delegate->get_block_time(block.block_id);
+      }
+
       for( const message& reply : reply_messages )
         originating_peer->send_message( reply );
     }
