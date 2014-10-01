@@ -90,7 +90,6 @@ namespace bts { namespace blockchain { namespace detail {
           }
 
           int last_orders_filled = -1;
-
           bool order_did_execute = false;
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
@@ -104,11 +103,6 @@ namespace bts { namespace blockchain { namespace detail {
             FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop" );
             last_orders_filled = _orders_filled;
 
-            const asset bid_quantity_xts = _current_bid->get_quantity();
-            const asset ask_quantity_xts = _current_ask->get_quantity();
-
-            asset current_bid_balance = _current_bid->get_balance();
-
             // Initialize the market transaction
             market_transaction mtrx;
             mtrx.bid_owner = _current_bid->get_owner();
@@ -119,7 +113,7 @@ namespace bts { namespace blockchain { namespace detail {
             mtrx.bid_type  = _current_bid->type;
             mtrx.ask_type  = _current_ask->type;
 
-            if( _current_ask->type == cover_order && _current_bid->type == short_order )
+            if( _current_ask->type == cover_order || _current_bid->type == short_order)
             {
                 FC_ASSERT( quote_asset->is_market_issued() );
 
@@ -131,10 +125,11 @@ namespace bts { namespace blockchain { namespace detail {
                   _current_bid.reset();
                   continue;
                 }
+            }
 
-                if( mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now() ) // The call price has not been reached
-                  break;
 
+            if( _current_bid->type == short_order )
+            {
                 if( _current_bid->state.short_price_limit.valid() )
                 {
                   if( *_current_bid->state.short_price_limit < mtrx.ask_price )
@@ -142,72 +137,18 @@ namespace bts { namespace blockchain { namespace detail {
                       _current_bid.reset();
                       continue; // skip shorts that are over the price limit.
                   }
-                  mtrx.bid_price = *_current_bid->state.short_price_limit;
+                  mtrx.bid_price = std::min( *_current_bid->state.short_price_limit, _market_stat.center_price );
                 }
-
-                mtrx.ask_price = mtrx.bid_price;
-
-                // Bound collateral ratio
-                price collateral_rate = _current_bid->get_price();
-                if( collateral_rate > _market_stat.center_price )
-                  collateral_rate = _market_stat.center_price;
-
-                const asset max_usd_purchase = asset( *_current_ask->collateral, _base_id ) * mtrx.bid_price;
-                asset usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
-
-                // Bound quote asset amount exchanged
-                const asset required_usd_purchase = _current_ask->get_balance();
-                if( required_usd_purchase < usd_exchanged )
-                   usd_exchanged = required_usd_purchase;
-
-
-                if( usd_exchanged == max_usd_purchase )
-                { // cover collateral was completely consumed without paying off all USD
-                   mtrx.ask_paid       = asset(*_current_ask->collateral,_base_id);
-                   mtrx.bid_paid       = usd_exchanged;
-                   mtrx.ask_received   = mtrx.bid_paid;
-                   mtrx.bid_received   = mtrx.ask_paid;
-                   mtrx.bid_collateral = mtrx.bid_paid * collateral_rate;
-                }
-                else if( usd_exchanged == required_usd_purchase )
-                { // cover balance was completely paid off
-                   mtrx.bid_paid       = required_usd_purchase;
-                   mtrx.ask_received   = required_usd_purchase;
-                   mtrx.ask_paid       = mtrx.ask_received * mtrx.bid_price;
-                   mtrx.bid_received   = mtrx.ask_paid;
-                   mtrx.bid_collateral = mtrx.bid_paid * collateral_rate;
-                }
-                else
-                { // the bid was completely consumed
-                   mtrx.bid_paid       = usd_exchanged;
-                   mtrx.ask_received   = usd_exchanged;
-                   mtrx.ask_paid       = usd_exchanged * mtrx.bid_price;
-                   mtrx.bid_received   = usd_exchanged * mtrx.ask_price;
-                   mtrx.bid_collateral = _current_bid->get_balance(); 
-                }
-
-                // Because different collateral amounts create different orders, this prevents cover orders that
-                // are too small to bother covering.  
-                if( (_current_bid->get_balance() - *mtrx.bid_collateral).amount < BTS_BLOCKCHAIN_PRECISION*10 )
-                {
-                    if( _current_bid->get_balance() > *mtrx.bid_collateral )
-                       *mtrx.bid_collateral  += (_current_bid->get_balance() - *mtrx.bid_collateral);
-                }
-
-                pay_current_short( mtrx, *quote_asset );
-                pay_current_cover( mtrx, *quote_asset );
-
-                _market_stat.bid_depth -= mtrx.bid_collateral->amount;
-                _market_stat.ask_depth += mtrx.bid_collateral->amount;
-
-                order_did_execute = true;
             }
-            else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
-            {
-                FC_ASSERT( quote_asset->is_market_issued()  );
 
-                if( mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now() ) // The call price has not been reached
-                  break;
+            if( _current_ask->type == cover_order )
+            {
+                //If call price is not reached AND cover has not expired, he lives to fight another day.
+                if( mtrx.ask_price < mtrx.bid_price && _current_collat_record.expiration > _pending_state->now() )
+                {
+                   _current_ask.reset();
+                   continue;
+                }
 
                 /**
                 *  Don't allow margin calls to be executed too far below
@@ -220,10 +161,64 @@ namespace bts { namespace blockchain { namespace detail {
                   continue;
                 }
 
+                //This is a forced cover. He's gonna sell at whatever price a buyer wants. No choice.
                 mtrx.ask_price = mtrx.bid_price;
+            }
+            else
+            {
+                // get_next_ask() will return all covers first after checking expiration... which means
+                // if it is not a cover then we can stop matching orders as soon as there exists a spread
+                if( mtrx.bid_price < mtrx.ask_price ) // The ask price hasn't been reached
+                  break;
+            }
 
+            if( _current_ask->type == cover_order && _current_bid->type == short_order )
+            {
+                // Bound collateral ratio (maximizes collateral of new margin position)
+                price collateral_rate = std::min(_current_bid->get_price(), _market_stat.center_price);
+
+                const asset cover_collateral = asset( *_current_ask->collateral, _base_id );
+                //Is this correct? How much USD is actually up for grabs here?
+                const asset usd_for_sale = _current_bid->get_quote_quantity();
+                const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
+                const asset usd_debt = _current_ask->get_balance();
+                //Actual quote to purchase is the minimum of what's for sale, what can I possibly buy, and what I owe
+                const asset usd_exchanged = std::min( {usd_for_sale, max_usd_cover_can_afford, usd_debt} );
+
+                //Fill in the transaction balances, depending on exactly how the bid and ask interact
+                if( usd_exchanged == usd_debt )
+                { // cover balance was completely paid off
+                   mtrx.ask_received   = usd_debt;
+                   mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
+                   mtrx.bid_received   = mtrx.ask_paid;
+                   mtrx.bid_paid       = mtrx.ask_received;
+                   mtrx.bid_collateral = mtrx.bid_paid * collateral_rate;
+                }
+                else if( usd_exchanged == max_usd_cover_can_afford )
+                { // cover collateral was completely consumed without paying off all USD
+                   mtrx.ask_received   = max_usd_cover_can_afford;
+                   mtrx.ask_paid       = cover_collateral;
+                   mtrx.bid_received   = mtrx.ask_paid;
+                   mtrx.bid_paid       = mtrx.ask_received;
+                   mtrx.bid_collateral = mtrx.bid_paid * collateral_rate;
+                }
+                else if( usd_exchanged == usd_for_sale )
+                { // the short was completely consumed
+                   mtrx.ask_received   = usd_for_sale;
+                   mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
+                   mtrx.bid_received   = mtrx.ask_paid;
+                   mtrx.bid_paid       = mtrx.ask_received;
+                   mtrx.bid_collateral = _current_bid->get_balance();
+                }
+                else FC_ASSERT( false, "Market has entered an inconsistent state. Refusing to continue." );
+
+                pay_current_short( mtrx, *quote_asset );
+                pay_current_cover( mtrx, *quote_asset );
+            }
+            else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
+            {
                 const asset max_usd_purchase = asset( *_current_ask->collateral, _base_id ) * mtrx.bid_price;
-                asset usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
+                asset usd_exchanged = std::min( _current_bid->get_balance(), max_usd_purchase );
 
                 // Bound quote asset amount exchanged
                 const asset required_usd_purchase = _current_ask->get_balance();
@@ -254,43 +249,11 @@ namespace bts { namespace blockchain { namespace detail {
 
                 pay_current_bid( mtrx, *quote_asset );
                 pay_current_cover( mtrx, *quote_asset );
-
-                // TODO: Do we need to decrease bid depth as well?
-                _market_stat.ask_depth -= mtrx.ask_paid.amount;
-
-                order_did_execute = true;
             }
             else if( _current_ask->type == ask_order && _current_bid->type == short_order )
             {
-                FC_ASSERT( quote_asset->is_market_issued() );
-
-                /** don't allow new shorts to execute unless there is a feed, all other
-                * trades are still valid.
-                */
-                if( !median_feed_price.valid() )
-                {
-                  _current_bid.reset();
-                  continue;
-                }
-
-                if( mtrx.bid_price < mtrx.ask_price ) // The ask price hasn't been reached
-                  break;
-
-                if( _current_bid->state.short_price_limit.valid() )
-                {
-                  if( *_current_bid->state.short_price_limit < mtrx.ask_price )
-                  {
-                      elog( "short price limit < bid price" );
-                      _current_bid.reset();
-                      continue; // skip shorts that are over the price limit.
-                  }
-                  mtrx.bid_price = *_current_bid->state.short_price_limit;
-                }
-
-                // Bound collateral ratio
-                price collateral_rate = _current_bid->get_price();
-                if( collateral_rate > _market_stat.center_price )
-                  collateral_rate =   _market_stat.center_price;
+                // Bound collateral ratio (maximizes collateral of new margin position)
+                price collateral_rate = std::min(_current_bid->get_price(), _market_stat.center_price);
 
                 const asset ask_quantity_usd = _current_ask->get_quote_quantity();
                 const asset short_quantity_usd = _current_bid->get_balance() / collateral_rate;
@@ -302,44 +265,26 @@ namespace bts { namespace blockchain { namespace detail {
                 {
                    mtrx.ask_received   = trade_quantity_usd;
                    mtrx.bid_paid       = mtrx.ask_received;
-
                    mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
                    mtrx.bid_received   = mtrx.ask_paid;
-
                    mtrx.bid_collateral = _current_bid->get_balance();
                 }
                 else // filled the complete ask
                 {
                    mtrx.ask_received   = trade_quantity_usd;
                    mtrx.bid_paid       = mtrx.ask_received;
-
                    mtrx.ask_paid       = _current_ask->get_balance();
                    mtrx.bid_received   = mtrx.ask_paid;
-
                    mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
-                }
-
-                // Because different collateral amounts create different orders, this prevents cover orders that
-                // are too small to bother covering.  
-                if( (_current_bid->get_balance() - *mtrx.bid_collateral).amount < BTS_BLOCKCHAIN_PRECISION*10 )
-                {
-                    if( _current_bid->get_balance() > *mtrx.bid_collateral )
-                       *mtrx.bid_collateral  += (_current_bid->get_balance() - *mtrx.bid_collateral);
                 }
 
                 pay_current_short( mtrx, *quote_asset );
                 pay_current_ask( mtrx, *quote_asset );
-
-                _market_stat.bid_depth -= mtrx.bid_collateral->amount;
-                _market_stat.ask_depth += mtrx.bid_collateral->amount;
-
-                order_did_execute = true;
             }
             else if( _current_ask->type == ask_order && _current_bid->type == bid_order )
             {
-                if( mtrx.bid_price < mtrx.ask_price ) // The ask price hasn't been reached
-                  break;
-
+                const asset bid_quantity_xts = _current_bid->get_quantity();
+                const asset ask_quantity_xts = _current_ask->get_quantity();
                 const asset quantity_xts = std::min( bid_quantity_xts, ask_quantity_xts );
 
                 // Everyone gets the price they asked for
@@ -359,13 +304,9 @@ namespace bts { namespace blockchain { namespace detail {
 
                 pay_current_bid( mtrx, *quote_asset );
                 pay_current_ask( mtrx, *base_asset );
-
-                // TODO: Do we need to decrease bid depth as well?
-                _market_stat.ask_depth -= mtrx.ask_paid.amount;
-
-                order_did_execute = true;
             }
 
+            order_did_execute = true;
             push_market_transaction( mtrx );
 
             if( mtrx.ask_received.asset_id == 0 )
@@ -497,10 +438,18 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
   }
 
-  void market_engine::pay_current_short( const market_transaction& mtrx, asset_record& quote_asset )
+  void market_engine::pay_current_short( market_transaction& mtrx, asset_record& quote_asset )
   { try {
       FC_ASSERT( _current_bid->type == short_order );
       FC_ASSERT( mtrx.bid_type == short_order );
+
+      // Because different collateral amounts create different orders, this prevents cover orders that
+      // are too small to bother covering.
+      if( (_current_bid->get_balance() - *mtrx.bid_collateral).amount < BTS_BLOCKCHAIN_PRECISION*10 )
+      {
+          if( _current_bid->get_balance() > *mtrx.bid_collateral )
+             *mtrx.bid_collateral  += (_current_bid->get_balance() - *mtrx.bid_collateral);
+      }
 
       quote_asset.current_share_supply += mtrx.bid_paid.amount;
 
