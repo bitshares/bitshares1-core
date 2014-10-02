@@ -2412,6 +2412,7 @@ namespace bts { namespace blockchain {
                                  key,
                                  order_record(collat_record.payoff_balance),
                                  collat_record.collateral_balance,
+                                 collat_record.interest_rate,
                                  collat_record.expiration } );
           }
           else

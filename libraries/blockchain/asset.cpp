@@ -74,7 +74,7 @@ namespace bts { namespace blockchain {
      char div;
      ss >> quote_asset_id.value >> div >> base_asset_id.value;
 
-     FC_ASSERT( quote_asset_id > base_asset_id, "${quote} > ${base}", ("quote",q)("base",b) );
+     FC_ASSERT( quote_asset_id > base_asset_id, "${quote} > ${base}", ("quote",quote_asset_id)("base",base_asset_id) );
   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
   int price::set_ratio_from_string( const std::string& ratio_str )
