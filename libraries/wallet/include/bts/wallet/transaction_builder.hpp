@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/wallet/wallet_records.hpp>
 
 #include <vector>
@@ -176,6 +177,8 @@ namespace bts { namespace wallet {
       }
       void pay_fees();
    };
+
+   typedef std::shared_ptr<transaction_builder> transaction_builder_ptr;
 } } //namespace bts::wallet
 
 FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances) )

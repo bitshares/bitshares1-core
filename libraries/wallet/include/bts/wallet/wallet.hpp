@@ -1,10 +1,12 @@
 #pragma once
 
+
 #include <bts/blockchain/chain_database.hpp>
 #include <bts/blockchain/config.hpp>
 #include <bts/mail/message.hpp>
 #include <bts/wallet/pretty.hpp>
 #include <bts/wallet/wallet_db.hpp>
+#include <bts/wallet/transaction_builder.hpp>
 #include <fc/signals.hpp>
 
 namespace bts { namespace wallet {
@@ -219,6 +221,11 @@ namespace bts { namespace wallet {
          vector<wallet_account_record> list_favorite_accounts()const;
          vector<wallet_account_record> list_unregistered_accounts()const;
          vector<wallet_account_record> list_my_accounts()const;
+
+         std::shared_ptr<transaction_builder> create_transaction_builder()
+         {
+            return std::make_shared<transaction_builder>(my.get());
+         }
 
          uint32_t import_bitcoin_wallet(
                  const path& wallet_dat,

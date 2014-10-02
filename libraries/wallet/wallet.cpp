@@ -162,7 +162,7 @@ namespace bts { namespace wallet {
             void upgrade_version_unlocked();
 
             void apply_order_to_builder(order_type_enum order_type,
-                                        transaction_builder& builder,
+                                        transaction_builder_ptr builder,
                                         const string& account_name,
                                         const string& balance,
                                         const string& order_price,
@@ -1944,7 +1944,7 @@ namespace bts { namespace wallet {
       }
 
       void wallet_impl::apply_order_to_builder(order_type_enum order_type,
-                                               transaction_builder& builder,
+                                               transaction_builder_ptr builder,
                                                const string& account_name,
                                                const string& balance,
                                                const string& order_price,
@@ -1973,13 +1973,13 @@ namespace bts { namespace wallet {
             price_limit = _blockchain->to_ugly_price(short_price_limit, base_symbol, quote_symbol);
 
          if( order_type == bid_order )
-            builder.submit_bid(self->get_account(account_name), quantity, price_arg);
+            builder->submit_bid(self->get_account(account_name), quantity, price_arg);
          else if( order_type == ask_order )
-            builder.submit_ask(self->get_account(account_name), quantity, price_arg);
+            builder->submit_ask(self->get_account(account_name), quantity, price_arg);
          else if( order_type == short_order )
          {
             price_arg.ratio /= 100;
-            builder.submit_short(self->get_account(account_name), quantity, price_arg, price_limit);
+            builder->submit_short(self->get_account(account_name), quantity, price_arg, price_limit);
          }
          else
             FC_THROW_EXCEPTION( invalid_operation, "This function only supports bids, asks and shorts." );
@@ -4894,15 +4894,15 @@ namespace bts { namespace wallet {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-      transaction_builder builder(my.get());
+      transaction_builder_ptr builder = create_transaction_builder();
 
       for( const auto& order_id : order_ids )
-         builder.cancel_market_order(order_id);
-      builder.finalize();
+         builder->cancel_market_order(order_id);
+      builder->finalize();
 
       if( sign )
-         return builder.sign();
-      return builder.transaction_record;
+         return builder->sign();
+      return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (order_ids) ) }
 
    wallet_transaction_record wallet::batch_market_update(const vector<order_id_type>& cancel_order_ids,
@@ -4913,10 +4913,10 @@ namespace bts { namespace wallet {
       if( !is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( !is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-      transaction_builder builder(my.get());
+      transaction_builder_ptr builder = create_transaction_builder();
 
       for( const auto& id : cancel_order_ids )
-         builder.cancel_market_order(id);
+         builder->cancel_market_order(id);
 
       for( const auto& order_description : new_orders)
       {
@@ -4927,7 +4927,7 @@ namespace bts { namespace wallet {
          case cover_order:
             FC_ASSERT(args.size() > 3, "Incorrect number of arguments.");
             //args: from_account_name, quantity, symbol, ID
-            builder.submit_cover(get_account(args[0]),
+            builder->submit_cover(get_account(args[0]),
                                  my->_blockchain->to_ugly_asset(args[1], args[2]),
                                  fc::ripemd160(args[3]));
             break;
@@ -4949,11 +4949,11 @@ namespace bts { namespace wallet {
          }
       }
 
-      builder.finalize();
+      builder->finalize();
 
       if( sign )
-         return builder.sign();
-      return builder.transaction_record;
+         return builder->sign();
+      return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (cancel_order_ids)(new_orders) ) }
 
    wallet_transaction_record wallet::submit_bid(
@@ -4967,8 +4967,7 @@ namespace bts { namespace wallet {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-
-      transaction_builder builder(my.get());
+      transaction_builder_ptr builder = create_transaction_builder();
       my->apply_order_to_builder(bid_order,
                                  builder,
                                  from_account_name,
@@ -4976,11 +4975,11 @@ namespace bts { namespace wallet {
                                  quote_price,
                                  quantity_symbol,
                                  quote_symbol);
-      builder.finalize();
+      builder->finalize();
 
       if( sign )
-         return builder.sign();
-      return builder.transaction_record;
+         return builder->sign();
+      return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
@@ -4993,22 +4992,22 @@ namespace bts { namespace wallet {
            const string& quote_symbol,
            bool sign )
    { try {
-       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
-       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-       transaction_builder builder(my.get());
-       my->apply_order_to_builder(ask_order,
-                                  builder,
-                                  from_account_name,
-                                  real_quantity,
-                                  quote_price,
-                                  quantity_symbol,
-                                  quote_symbol);
-       builder.finalize();
+      transaction_builder_ptr builder = create_transaction_builder();
+      my->apply_order_to_builder(ask_order,
+                                 builder,
+                                 from_account_name,
+                                 real_quantity,
+                                 quote_price,
+                                 quantity_symbol,
+                                 quote_symbol);
+      builder->finalize();
 
-       if( sign )
-          return builder.sign();
-       return builder.transaction_record;
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
 
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
@@ -5023,23 +5022,23 @@ namespace bts { namespace wallet {
            const string& price_limit,
            bool sign )
    { try {
-       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
-       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( login_required );
 
-       transaction_builder builder(my.get());
-       my->apply_order_to_builder(short_order,
-                                  builder,
-                                  from_account_name,
-                                  real_quantity,
-                                  interest_rate,
-                                  base_symbol,
-                                  quote_symbol,
-                                  price_limit);
-       builder.finalize();
+      transaction_builder_ptr builder = create_transaction_builder();
+      my->apply_order_to_builder(short_order,
+                                 builder,
+                                 from_account_name,
+                                 real_quantity,
+                                 interest_rate,
+                                 base_symbol,
+                                 quote_symbol,
+                                 price_limit);
+      builder->finalize();
 
-       if( sign )
-          return builder.sign();
-       return builder.transaction_record;
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quote_symbol)
                              (interest_rate)(base_symbol)
