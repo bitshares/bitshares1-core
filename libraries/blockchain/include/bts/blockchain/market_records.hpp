@@ -144,6 +144,9 @@ namespace bts { namespace blockchain {
       market_order( order_type_enum t, market_index_key k, order_record s, share_type c )
       :type(t),market_index(k),state(s),collateral(c){}
 
+      market_order( order_type_enum t, market_index_key k, order_record s, share_type c, price interest )
+      :type(t),market_index(k),state(s),collateral(c),interest_rate(interest){}
+
       market_order( order_type_enum t, market_index_key k, order_record s, share_type c, price interest, time_point_sec exp )
       :type(t),market_index(k),state(s),collateral(c),interest_rate(interest),expiration(exp){}
 
