@@ -22,7 +22,7 @@ Returns:
   blockchain_transaction_record_map
 default (unlocked) >>> blockchain_get_block_transactions 2
 [[
-    "890f9c50aff9c204fc44652c2707d149bd23facb",{
+    "93259386719fcbba91543f7d141b666e87f74328",{
       "trx": {
         "expiration": "20140620T154750",
         "delegate_slate_id": null,
@@ -53,7 +53,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
           }
         ],
         "signatures": [
-          "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c54274e96517fb33b1e2824e6b0d7cb0a2747b20dbea9390495f70f2e46959177"
+          "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c27b70509bf063ad1eee9cae56a8f72db63134f76859be659693632728a3060ac"
         ]
       },
       "signed_keys": [
@@ -87,6 +87,18 @@ default (unlocked) >>> blockchain_get_block_transactions 2
         ]
       ],
       "yield": [],
+      "deltas": [[
+          0,{
+            "amount": -10050000,
+            "asset_id": 0
+          }
+        ],[
+          1,{
+            "amount": 10000000,
+            "asset_id": 0
+          }
+        ]
+      ],
       "required_fees": {
         "amount": 0,
         "asset_id": 0
