@@ -66,12 +66,12 @@
 
 #include <openssl/opensslv.h>
 
-#include <iostream>
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <set>
 
-#include <boost/lexical_cast.hpp>
 using namespace boost;
 using std::string;
 
@@ -3307,6 +3307,11 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
 #endif
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
+
+    set<transaction_ledger_entry> client_impl::wallet_transaction_history_experimental( const string& account_name )const
+    { try {
+       return _wallet->transaction_history_experimental( account_name );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
     wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
     { try {

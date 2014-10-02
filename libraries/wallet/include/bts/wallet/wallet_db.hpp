@@ -106,6 +106,8 @@ namespace bts { namespace wallet {
             return keys;
          }
 
+         map<transaction_id_type, transaction_ledger_entry> experimental_transactions;
+
       private:
          optional<wallet_master_key_record>                               wallet_master_key;
          /** maps wallet_record_index to accounts */

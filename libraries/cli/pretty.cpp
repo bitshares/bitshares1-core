@@ -522,6 +522,102 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     return out.str();
 }
 
+string pretty_experimental_transaction_list( const set<transaction_ledger_entry>& transactions, cptr client )
+{
+    if( transactions.empty() ) return "No transactions found.\n";
+    FC_ASSERT( client != nullptr );
+
+    std::stringstream out;
+    out << std::left;
+
+    out << std::setw( 20 ) << "TIMESTAMP";
+    out << std::setw( 10 ) << "BLOCK";
+    out << std::setw( 60 ) << "DELTA";
+    //out << std::setw( 40 ) << "FROM";
+    //out << std::setw( 40 ) << "TO";
+    //out << std::setw( 40 ) << "DETAILS";
+    out << std::setw(  8 ) << "ID";
+    out << "\n";
+
+    const auto line_size = 98;
+    out << pretty_line( line_size ) << "\n";
+
+    for( const auto& transaction : transactions )
+    {
+        auto count = 0;
+
+        if( count == 0 )
+        {
+            out << std::setw( 20 ) << pretty_timestamp( transaction.timestamp );
+
+            out << std::setw( 10 );
+            if( transaction.is_confirmed() )
+            {
+                out << transaction.block_num;
+            }
+            /*
+            else if( transaction.error.valid() )
+            {
+                auto name = string( transaction.error->name() );
+                name = name.substr( 0, name.find( "_" ) );
+                boost::to_upper( name );
+                out << name.substr( 0, 9 );
+            }
+            */
+            else
+            {
+                out << "PENDING";
+            }
+        }
+
+        for( const auto& item : transaction.delta_amounts )
+        {
+            const auto& label = item.first;
+            for( const auto& delta_item : item.second )
+            {
+                ++count;
+
+                if( count > 1 )
+                {
+                    out << std::setw( 20 ) << "";
+                    out << std::setw( 10 ) << "";
+                }
+
+                string delta;
+
+                const asset delta_amount( delta_item.second, delta_item.first );
+                if( delta_amount.amount < 0 )
+                    delta = label + " => " + client->get_chain()->to_pretty_asset( -delta_amount );
+                else
+                    delta = client->get_chain()->to_pretty_asset( delta_amount ) + " => " + label;
+
+                out << std::setw( 60 ) << delta;
+
+                out << std::setw( 8 );
+                if( count == 1 )
+                {
+                    if( FILTER_OUTPUT_FOR_TESTS )
+                        out << "[redacted]";
+                    else if( transaction.is_virtual() )
+                        out << "VIRTUAL";
+                    else
+                        out << string( *transaction.transaction_id ).substr( 0, 8 );
+                }
+                else
+                {
+                    out << "";
+                }
+
+                out << "\n";
+            }
+        }
+
+        out << pretty_line( line_size, '-' ) << "\n";
+    }
+
+    return out.str();
+}
+
 string pretty_asset_list( const vector<asset_record>& asset_records, cptr client )
 {
     if( asset_records.empty() ) return "No assets found.\n";

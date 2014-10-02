@@ -119,14 +119,21 @@ namespace bts { namespace wallet {
             void scan_block_experimental( uint32_t block_num,
                                           const map<private_key_type, string>& account_keys,
                                           const map<address, string>& account_balances,
-                                          const std::set<string>& account_names );
+                                          const set<string>& account_names );
+
+            void scan_transaction_experimental( const signed_block_header& block_header,
+                                                const transaction_evaluation_state& eval_state,
+                                                const map<private_key_type, string>& account_keys,
+                                                const map<address, string>& account_balances,
+                                                const set<string>& account_names,
+                                                bool overwrite_existing = false );
 
             void scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                 const map<private_key_type, string>& account_keys,
                                                 const map<address, string>& account_balances,
-                                                const std::set<string>& account_names,
+                                                const set<string>& account_names,
                                                 transaction_ledger_entry& record,
-                                                bool overwrite_existing = false );
+                                                bool store_record );
 
             bool scan_withdraw( const withdraw_operation& op, wallet_transaction_record& trx_rec, asset& total_fee, public_key_type& from_pub_key );
             bool scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee );
@@ -590,35 +597,47 @@ namespace bts { namespace wallet {
       void wallet_impl::scan_block_experimental( uint32_t block_num,
                                                  const map<private_key_type, string>& account_keys,
                                                  const map<address, string>& account_balances,
-                                                 const std::set<string>& account_names )
+                                                 const set<string>& account_names )
       {
           const signed_block_header block_header = _blockchain->get_block_header( block_num );
           const vector<transaction_record> transaction_records = _blockchain->get_transactions_for_block( block_header.id() );
           for( const transaction_evaluation_state& eval_state : transaction_records )
+              scan_transaction_experimental( block_header, eval_state, account_keys, account_balances, account_names );
+      }
+
+      void wallet_impl::scan_transaction_experimental( const signed_block_header& block_header,
+                                                       const transaction_evaluation_state& eval_state,
+                                                       const map<private_key_type, string>& account_keys,
+                                                       const map<address, string>& account_balances,
+                                                       const set<string>& account_names,
+                                                       bool overwrite_existing )
+      {
+          transaction_ledger_entry record;
+
+          const transaction_id_type record_id = eval_state.trx.permanent_id();
+          const bool existing_record = _wallet_db.experimental_transactions.count( record_id ) > 0;
+          if( existing_record )
           {
-              // TODO: Split this loop into a separate fcn so can easily scan individual trxs
-
-              const transaction_id_type record_id = eval_state.trx.permanent_id();
-
-              // TODO check for an existing record in wallet_db first
-
-              transaction_ledger_entry record;
-              record.id = record_id;
-              record.block_num = block_num;
-              record.timestamp = std::min<time_point_sec>( record.timestamp, block_header.timestamp );
-              record.delta_amounts.clear();
-              record.transaction_id = eval_state.trx.id();
-
-              scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record );
+              ulog( "Existing record found" );
+              record = _wallet_db.experimental_transactions.at( record_id );
           }
+
+          record.id = record_id;
+          record.block_num = block_header.block_num;
+          record.timestamp = std::min<time_point_sec>( record.timestamp, block_header.timestamp );
+          record.delta_amounts.clear();
+          record.transaction_id = eval_state.trx.id();
+
+          scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record,
+                                         overwrite_existing || !existing_record );
       }
 
       void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                        const map<private_key_type, string>& account_keys,
                                                        const map<address, string>& account_balances,
-                                                       const std::set<string>& account_names,
+                                                       const set<string>& account_names,
                                                        transaction_ledger_entry& record,
-                                                       bool overwrite_existing )
+                                                       bool store_record )
       { try {
           uint16_t op_index = 0;
 
@@ -858,40 +877,40 @@ namespace bts { namespace wallet {
               return false;
           };
 
-          bool store_record = false;
+          bool my_transaction = false;
           for( const auto& op : eval_state.trx.operations )
           {
               switch( operation_type_enum( op.type ) )
               {
                   case withdraw_op_type:
-                      store_record |= scan_withdraw( op.as<withdraw_operation>() );
+                      my_transaction |= scan_withdraw( op.as<withdraw_operation>() );
                       break;
                   case deposit_op_type:
-                      store_record |= scan_deposit( op.as<deposit_operation>() );
+                      my_transaction |= scan_deposit( op.as<deposit_operation>() );
                       break;
                   case register_account_op_type:
-                      store_record |= scan_register_account( op.as<register_account_operation>() );
+                      my_transaction |= scan_register_account( op.as<register_account_operation>() );
                       break;
                   case update_account_op_type:
-                      store_record |= scan_update_account( op.as<update_account_operation>() );
+                      my_transaction |= scan_update_account( op.as<update_account_operation>() );
                       break;
                   case withdraw_pay_op_type:
-                      store_record |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
+                      my_transaction |= scan_withdraw_pay( op.as<withdraw_pay_operation>() );
                       break;
                   case create_asset_op_type:
-                      store_record |= scan_create_asset( op.as<create_asset_operation>() );
+                      my_transaction |= scan_create_asset( op.as<create_asset_operation>() );
                       break;
                   case update_asset_op_type:
                       // Not yet exposed to users
                       break;
                   case issue_asset_op_type:
-                      store_record |= scan_issue_asset( op.as<issue_asset_operation>() );
+                      my_transaction |= scan_issue_asset( op.as<issue_asset_operation>() );
                       break;
                   case bid_op_type:
                       // TODO
                       break;
                   case ask_op_type:
-                      store_record |= scan_ask( op.as<ask_operation>() );
+                      my_transaction |= scan_ask( op.as<ask_operation>() );
                       break;
                   case short_op_type:
                       // TODO
@@ -903,10 +922,10 @@ namespace bts { namespace wallet {
                       // Don't care; do nothing
                       break;
                   case update_feed_op_type:
-                      store_record |= scan_update_feed( op.as<update_feed_operation>() );
+                      my_transaction |= scan_update_feed( op.as<update_feed_operation>() );
                       break;
                   case burn_op_type:
-                      store_record |= scan_burn( op.as<burn_operation>() );
+                      my_transaction |= scan_burn( op.as<burn_operation>() );
                       break;
                   case link_account_op_type:
                       // Future feature
@@ -924,8 +943,13 @@ namespace bts { namespace wallet {
               record.delta_amounts[ "FEE" ][ delta_amount.asset_id ] += delta_amount.amount;
           }
 
-          if( store_record )
-              ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
+          if( my_transaction && store_record )
+          {
+              ulog( "Storing record" );
+              _wallet_db.experimental_transactions[ record.id ] = record;
+          }
+
+          ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
 
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -2832,26 +2856,29 @@ namespace bts { namespace wallet {
               address_labels[ id ] = item.first;
       }
 
-      std::set<string> account_names;
+      set<string> account_names;
       const auto accounts = list_my_accounts();
       for( const auto& account : accounts )
           account_names.insert( account.name );
 
-      // TODO: temporary
-              transaction_ledger_entry record;
-              record.id = transaction_record->trx.permanent_id();
-              record.block_num = block_num;
-              record.timestamp = std::min<time_point_sec>( record.timestamp, block.timestamp );
-              record.delta_amounts.clear();
-              record.transaction_id = transaction_record->trx.id();
-
       try
       {
-          my->scan_transaction_experimental( *transaction_record, keys, address_labels, account_names, record, overwrite_existing );
+          my->scan_transaction_experimental( block, *transaction_record, keys, address_labels, account_names, overwrite_existing );
       }
       catch( ... )
       {
       }
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   set<transaction_ledger_entry> wallet::transaction_history_experimental( const string& account_name )
+   { try {
+      FC_ASSERT( is_open() );
+      set<transaction_ledger_entry> history;
+      for( const auto& item : my->_wallet_db.experimental_transactions )
+      {
+          history.insert( item.second );
+      }
+      return history;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    vector<wallet_transaction_record> wallet::get_transactions( const string& transaction_id_prefix )

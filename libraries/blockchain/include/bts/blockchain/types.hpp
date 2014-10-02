@@ -39,6 +39,7 @@ namespace bts { namespace blockchain {
    using fc::optional;
    using std::map;
    using std::unordered_map;
+   using std::set;
    using std::unordered_set;
    using std::vector;
    using fc::path;
