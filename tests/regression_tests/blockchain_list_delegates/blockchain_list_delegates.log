@@ -14,49 +14,49 @@ aliases: blockchain_get_delegates
 (wallet closed) >>> blockchain_list_delegates 10
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-10    delegate9                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-11    delegate10                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-12    delegate11                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-13    delegate12                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-14    delegate13                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-15    delegate14                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-16    delegate15                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-17    delegate16                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-18    delegate17                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-19    delegate18                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-20    delegate19                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-21    delegate20                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-22    delegate21                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-23    delegate22                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-24    delegate23                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-25    delegate24                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-26    delegate25                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-27    delegate26                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-28    delegate27                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-29    delegate28                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+10    delegate9                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+11    delegate10                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+12    delegate11                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+13    delegate12                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+14    delegate13                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+15    delegate14                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+16    delegate15                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+17    delegate16                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+18    delegate17                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+19    delegate18                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+20    delegate19                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+21    delegate20                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+22    delegate21                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+23    delegate22                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+24    delegate23                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+25    delegate24                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+26    delegate25                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+27    delegate26                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+28    delegate27                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+29    delegate28                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_delegates 0           
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-3     delegate2                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-4     delegate3                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-5     delegate4                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-6     delegate5                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-7     delegate6                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-8     delegate7                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-9     delegate8                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-10    delegate9                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-11    delegate10                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-12    delegate11                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-13    delegate12                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-14    delegate13                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-15    delegate14                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-16    delegate15                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-17    delegate16                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-18    delegate17                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-19    delegate18                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-20    delegate19                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+1     delegate0                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+2     delegate1                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+3     delegate2                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+4     delegate3                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+5     delegate4                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+6     delegate5                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+7     delegate6                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+8     delegate7                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+9     delegate8                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+10    delegate9                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+11    delegate10                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+12    delegate11                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+13    delegate12                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+14    delegate13                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+15    delegate14                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+16    delegate15                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+17    delegate16                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+18    delegate17                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+19    delegate18                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+20    delegate19                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_delegates 0 0
 No delegates found.
 (wallet closed) >>> blockchain_list_delegates -1 10000
@@ -68,119 +68,119 @@ No delegates found.
 (wallet closed) >>> blockchain_list_delegates 0 100
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-3     delegate2                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-4     delegate3                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-5     delegate4                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-6     delegate5                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-7     delegate6                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-8     delegate7                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-9     delegate8                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-10    delegate9                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-11    delegate10                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-12    delegate11                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-13    delegate12                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-14    delegate13                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-15    delegate14                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-16    delegate15                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-17    delegate16                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-18    delegate17                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-19    delegate18                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-20    delegate19                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-21    delegate20                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-22    delegate21                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-23    delegate22                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-24    delegate23                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-25    delegate24                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-26    delegate25                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-27    delegate26                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-28    delegate27                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-29    delegate28                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-30    delegate29                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-31    delegate30                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-32    delegate31                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-33    delegate32                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-34    delegate33                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-35    delegate34                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-36    delegate35                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-37    delegate36                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-38    delegate37                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-39    delegate38                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-40    delegate39                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-41    delegate40                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-42    delegate41                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-43    delegate42 *                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-44    delegate43                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-45    delegate44                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-46    delegate45                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-47    delegate46                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-48    delegate47                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-49    delegate48                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-50    delegate49                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-51    delegate50                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-52    delegate51                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-53    delegate52                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-54    delegate53                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-55    delegate54                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-56    delegate55                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-57    delegate56                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-58    delegate57                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-59    delegate58                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-60    delegate59                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-61    delegate60                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-62    delegate61                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-63    delegate62                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-64    delegate63                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-65    delegate64                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-66    delegate65                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-67    delegate66                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-68    delegate67                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-69    delegate68                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-70    delegate69                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-71    delegate70                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-72    delegate71                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-73    delegate72                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-74    delegate73                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-75    delegate74                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-76    delegate75                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-77    delegate76                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-78    delegate77                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-79    delegate78                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-80    delegate79                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-81    delegate80                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-82    delegate81                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-83    delegate82                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-84    delegate83                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-85    delegate84                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-86    delegate85                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-87    delegate86                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-88    delegate87                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-89    delegate88                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-90    delegate89                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-91    delegate90                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-92    delegate91                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-93    delegate92                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-94    delegate93                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-95    delegate94                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-96    delegate95                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-97    delegate96                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-98    delegate97                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-99    delegate98                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-100   delegate99                      0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+1     delegate0                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+2     delegate1                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+3     delegate2                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+4     delegate3                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+5     delegate4                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+6     delegate5                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+7     delegate6                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+8     delegate7                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+9     delegate8                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+10    delegate9                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+11    delegate10                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+12    delegate11                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+13    delegate12                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+14    delegate13                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+15    delegate14                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+16    delegate15                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+17    delegate16                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+18    delegate17                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+19    delegate18                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+20    delegate19                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+21    delegate20                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+22    delegate21                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+23    delegate22                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+24    delegate23                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+25    delegate24                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+26    delegate25                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+27    delegate26                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+28    delegate27                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+29    delegate28                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+30    delegate29                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+31    delegate30                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+32    delegate31                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+33    delegate32                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+34    delegate33                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+35    delegate34                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+36    delegate35                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+37    delegate36                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+38    delegate37                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+39    delegate38                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+40    delegate39                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+41    delegate40                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+42    delegate41                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+43    delegate42 *                    0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+44    delegate43                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+45    delegate44                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+46    delegate45                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+47    delegate46                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+48    delegate47                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+49    delegate48                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+50    delegate49                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+51    delegate50                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+52    delegate51                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+53    delegate52                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+54    delegate53                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+55    delegate54                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+56    delegate55                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+57    delegate56                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+58    delegate57                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+59    delegate58                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+60    delegate59                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+61    delegate60                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+62    delegate61                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+63    delegate62                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+64    delegate63                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+65    delegate64                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+66    delegate65                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+67    delegate66                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+68    delegate67                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+69    delegate68                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+70    delegate69                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+71    delegate70                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+72    delegate71                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+73    delegate72                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+74    delegate73                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+75    delegate74                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+76    delegate75                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+77    delegate76                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+78    delegate77                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+79    delegate78                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+80    delegate79                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+81    delegate80                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+82    delegate81                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+83    delegate82                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+84    delegate83                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+85    delegate84                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+86    delegate85                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+87    delegate86                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+88    delegate87                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+89    delegate88                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+90    delegate89                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+91    delegate90                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+92    delegate91                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+93    delegate92                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+94    delegate93                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+95    delegate94                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+96    delegate95                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+97    delegate96                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+98    delegate97                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+99    delegate98                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+100   delegate99                      0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_delegates 0 0
 No delegates found.
 (wallet closed) >>> blockchain_list_delegates 0 1
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+1     delegate0                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_delegates 1 2
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
-2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+1     delegate0                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
+2     delegate1                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 (wallet closed) >>> blockchain_list_delegates 1 1
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+1     delegate0                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 (wallet closed) >>> quit
