@@ -12,7 +12,7 @@ Returns:
 aliases: getconfig, get_config, config, blockchain_get_config
 (wallet closed) >>> blockchain_get_info
 {
-  "blockchain_id": "3622ad3cbd09f839b921bace52bf4432b91f636d625f53401bbf6b6cb01f754c",
+  "blockchain_id": "8ea6170509689e518d19db28026aafe428987edebddf59d360ecca736126ed7f",
   "symbol": "XTS",
   "name": "BitShares XTS",
   "version": 109,
@@ -25,13 +25,12 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "inactivity_fee_apr": "0.00010 XTS",
   "relay_fee": "0.10000 XTS",
   "delegate_num": 101,
-  "delegate_reg_fee": "0.00000 XTS",
   "name_size_max": 63,
   "memo_size_max": 19,
   "data_size_max": 65536,
   "symbol_size_max": 5,
   "symbol_size_min": 3,
-  "asset_reg_fee": "0.00000 XTS",
+  "asset_reg_fee": "1.20960 XTS",
   "asset_shares_max": 1000000000000000,
   "max_pending_queue_size": 10,
   "max_trx_per_second": 1,
