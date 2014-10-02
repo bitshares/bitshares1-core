@@ -1963,9 +1963,9 @@ namespace bts { namespace wallet {
            FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
 
          price price_arg = _blockchain->to_ugly_price(order_price,
-                                                          base_symbol,
-                                                          quote_symbol,
-                                                          order_type != short_order);
+                                                      base_symbol,
+                                                      quote_symbol,
+                                                      order_type != short_order);
 
          //This affects shorts only.
          oprice price_limit;
@@ -1977,7 +1977,10 @@ namespace bts { namespace wallet {
          else if( order_type == ask_order )
             builder.submit_ask(self->get_account(account_name), quantity, price_arg);
          else if( order_type == short_order )
+         {
+            price_arg.ratio /= 100;
             builder.submit_short(self->get_account(account_name), quantity, price_arg, price_limit);
+         }
          else
             FC_THROW_EXCEPTION( invalid_operation, "This function only supports bids, asks and shorts." );
       }
