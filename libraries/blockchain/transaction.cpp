@@ -85,13 +85,13 @@ namespace bts { namespace blockchain {
    }
 
    void transaction::short_sell( const asset& quantity,
-                          const price& price_per_unit,
-                          const address& owner,
-                          const optional<price>& limit_price )
+                                 const price& interest_rate,
+                                 const address& owner,
+                                 const optional<price>& limit_price )
    {
       short_operation op;
       op.amount = quantity.amount;
-      op.short_index.order_price = price_per_unit;
+      op.short_index.order_price = interest_rate;
       op.short_index.owner = owner;
       op.short_price_limit = limit_price;
 

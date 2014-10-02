@@ -270,12 +270,11 @@ namespace bts { namespace cli {
   void print_result::f_blockchain_market_short_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     const auto& market_orders = result.as<vector<market_order>>();
-    map<order_id_type, market_order> order_map;
 
     out << std::left;
     out << std::setw( 30 ) << "AMOUNT";
-    out << std::setw( 30 ) << "COLLATERAL RATIO"; // XTS per USD (BitAsset) held as collateral
     out << std::setw( 30 ) << "COLLATERAL";
+    out << std::setw( 30 ) << "INTEREST RATE";
     out << std::setw( 30 ) << "PRICE LIMIT";
     out << std::setw( 40 ) << "ID";
     out << "\n";
@@ -285,8 +284,8 @@ namespace bts { namespace cli {
     for( const auto& order : market_orders )
     {
        out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() / order.get_price() );
-       out << std::setw( 30 ) <<  (1.0 / client->get_chain()->to_pretty_price_double( order.get_price() ));
        out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() );
+       out << std::setw( 30 ) <<  std::to_string(100 * atof(order.interest_rate->ratio_string().c_str())) + " %";
        if( order.state.short_price_limit.valid() )
           out << std::setw( 30 ) <<  client->get_chain()->to_pretty_price( *order.state.short_price_limit );
        else
