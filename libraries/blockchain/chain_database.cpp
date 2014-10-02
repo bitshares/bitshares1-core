@@ -2371,6 +2371,7 @@ namespace bts { namespace blockchain {
        //We dance around like this because the database sorts the shorts backwards, so we must iterate it backwards.
        const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
        auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
+
        if( market_itr.valid() )   --market_itr;
        else market_itr = my->_short_db.last();
 
