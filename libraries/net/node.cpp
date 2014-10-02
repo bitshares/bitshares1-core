@@ -2818,13 +2818,12 @@ namespace bts { namespace net { namespace detail {
 
         dlog( "client validated the block, advertising it to other peers" );
 
+        item_id block_message_item_id(bts::client::message_type_enum::block_message_type, message_hash);
+        uint32_t block_number = _delegate->get_block_number(block_message_to_process.block_id);;
+        fc::time_point_sec block_time = _delegate->get_block_time(block_message_to_process.block_id);
+
         for (const peer_connection_ptr& peer : _active_connections)
         {
-          item_id block_message_item_id(bts::client::message_type_enum::block_message_type, message_hash);
-
-          uint32_t block_number = _delegate->get_block_number(block_message_to_process.block_id);;
-          fc::time_point_sec block_time = _delegate->get_block_time(block_message_to_process.block_id);
-
           auto iter = peer->inventory_peer_advertised_to_us.find(block_message_item_id);
           if (iter != peer->inventory_peer_advertised_to_us.end())
           {
