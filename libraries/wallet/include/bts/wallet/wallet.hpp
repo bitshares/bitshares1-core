@@ -403,11 +403,10 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 6003.4 USD
           */
-         wallet_transaction_record submit_bid(
-                 const string& from_account_name,
-                 double real_quantity,
+         wallet_transaction_record submit_bid(const string& from_account_name,
+                 const string& real_quantity,
                  const string& quantity_symbol,
-                 double price_per_unit,
+                 const string& price_per_unit,
                  const string& quote_symbol,
                  bool sign = true
                  );
@@ -416,11 +415,10 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 10 BTC + fees
           */
-         wallet_transaction_record submit_ask(
-                 const string& from_account_name,
-                 double real_quantity,
+         wallet_transaction_record submit_ask(const string& from_account_name,
+                 const string& real_quantity,
                  const string& quantity_symbol,
-                 double price_per_unit,
+                 const string& price_per_unit,
                  const string& quote_symbol,
                  bool sign = true
                  );
@@ -430,15 +428,15 @@ namespace bts { namespace wallet {
           *  Requires the user have 10 / 600.34 XTS + fees
           */
          wallet_transaction_record submit_short(const string& from_account_name,
-                 double real_quantity_usd,
+                 const string& real_quantity_usd,
                  const string& quote_symbol,
-                 double collateral_per_usd, const string& collateral_symbol,
-                 double price_limit = 0,
+                 const string& collateral_per_usd, const string& collateral_symbol,
+                 const string& price_limit = 0,
                  bool sign = true
                  );
          wallet_transaction_record cover_short(
                  const string& from_account_name,
-                 double real_quantity_usd,
+                 const string& real_quantity_usd,
                  const string& quote_symbol,
                  const order_id_type& short_id,
                  bool sign = true

@@ -179,7 +179,8 @@ namespace bts{ namespace blockchain {
 
    price chain_interface::to_ugly_price(const std::string& price_string,
                                         const std::string& base_symbol,
-                                        const std::string& quote_symbol) const
+                                        const std::string& quote_symbol,
+                                        bool do_precision_dance) const
    { try {
       auto base_record = get_asset_record(base_symbol);
       auto quote_record = get_asset_record(quote_symbol);
@@ -187,8 +188,11 @@ namespace bts{ namespace blockchain {
       if( !quote_record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quote_symbol) );
 
       price ugly_price(price_string + " " + std::to_string(quote_record->id) + " / " + std::to_string(base_record->id));
-      ugly_price.ratio *= quote_record->get_precision();
-      ugly_price.ratio /= base_record->get_precision();
+      if( do_precision_dance )
+      {
+         ugly_price.ratio *= quote_record->get_precision();
+         ugly_price.ratio /= base_record->get_precision();
+      }
       return ugly_price;
    } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol) ) }
 

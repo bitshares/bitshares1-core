@@ -3425,9 +3425,9 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    wallet_transaction_record client_impl::wallet_market_submit_bid(
            const string& from_account,
-           double quantity,
+           const string& quantity,
            const string& quantity_symbol,
-           double quote_price,
+           const string& quote_price,
            const string& quote_symbol,
            bool allow_stupid_bid )
    {
@@ -3446,9 +3446,9 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    wallet_transaction_record client_impl::wallet_market_submit_ask(
                const string& from_account,
-               double quantity,
+               const string& quantity,
                const string& quantity_symbol,
-               double quote_price,
+               const string& quote_price,
                const string& quote_symbol,
                bool allow_stupid_ask )
    {
@@ -3467,11 +3467,11 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    wallet_transaction_record client_impl::wallet_market_submit_short(
            const string& from_account,
-           double quantity,
+           const string& quantity,
            const string& quote_symbol,
-           double collateral_ratio,
+           const string& collateral_ratio,
            const string& collateral_symbol,
-           double short_price_limit )
+           const string& short_price_limit )
    {
       const auto record = _wallet->submit_short( from_account,
                                                  quantity,
@@ -3495,7 +3495,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    wallet_transaction_record client_impl::wallet_market_cover(
            const string& from_account,
-           double quantity,
+           const string& quantity,
            const string& quantity_symbol,
            const order_id_type& cover_id )
    {
