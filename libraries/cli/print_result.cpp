@@ -701,12 +701,6 @@ namespace bts { namespace cli {
   {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
 
-    if(bids_asks.first.size() == 0 && bids_asks.second.size() == 0)
-    {
-      out << "No Orders\n";
-      return;
-    }
-
     out << std::string(18, ' ') << "BIDS (* Short)"
       << std::string(39, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
@@ -723,6 +717,20 @@ namespace bts { namespace cli {
     vector<market_order>::iterator bid_itr = bids_asks.first.begin();
     auto ask_itr = bids_asks.second.begin();
 
+    vector<market_order> shorts;
+    if( base_id == 0 )
+    {
+       if (arguments.size() <= 2)
+           shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
+       else
+           shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
+    }
+
+    if(!shorts.empty())
+    {
+      quote_id = shorts.front().get_price().quote_asset_id;
+      base_id = shorts.front().get_price().base_asset_id;
+    }
     if(bid_itr != bids_asks.first.end())
     {
       quote_id = bid_itr->get_price().quote_asset_id;
@@ -736,37 +744,35 @@ namespace bts { namespace cli {
 
     auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     auto status = client->get_chain()->get_market_status(quote_id, base_id);
-    auto max_short_price = status ? status->center_price : price(0, quote_id, base_id);
+    auto short_execution_price = status ? status->center_price : price(0, quote_id, base_id);
     auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->center_price;
 
-    vector<market_order> shorts;
-    if( base_id == 0 )
-    {
-       if (arguments.size() <= 2)
-           shorts = client->blockchain_market_list_shorts(arguments[0].as_string());
-       else
-           shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
-    }
-
-    std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&max_short_price](const market_order& order) -> bool {
-        return order.state.short_price_limit && *order.state.short_price_limit < max_short_price;
+    std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&short_execution_price](const market_order& order) -> bool {
+        return order.state.short_price_limit && *order.state.short_price_limit < short_execution_price;
     });
 
-    shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&max_short_price](const market_order& short_order) -> bool {
-      //Filter out if insufficient collateral (i.e. XTS/USD < 1/max_short_price) or if price limit (i.e. USD/XTS) is less than short execution price
-      return (short_order.state.short_price_limit.valid() ?  *short_order.state.short_price_limit < max_short_price : false);
+    shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&short_execution_price](const market_order& short_order) -> bool {
+      //Remove if the short execution price is past the price limit
+      return (short_order.state.short_price_limit.valid() ?
+                  *short_order.state.short_price_limit < short_execution_price : false);
     }), shorts.end());
+
+    if(bids_asks.first.empty() && bids_asks.second.empty() && shorts.empty())
+    {
+      out << "No Orders\n";
+      return;
+    }
 
     if (base_id == 0 && quote_asset_record->is_market_issued())
     {
       market_order short_wall;
       short_wall.type = blockchain::bid_order;
       short_wall.state.balance = 0;
-      short_wall.market_index.order_price = recent_average_price;
+      short_wall.market_index.order_price = short_execution_price;
       for (auto order : shorts)
       {
-         if( order.get_price() >= max_short_price )
-           short_wall.state.balance += ((order.get_quantity() * max_short_price)).amount;
+         if( order.get_price() >= short_execution_price )
+           short_wall.state.balance += ((order.get_quantity() * short_execution_price)).amount;
          else
            short_wall.state.balance += (order.get_quantity() * order.get_price()).amount;
       }
@@ -836,7 +842,7 @@ namespace bts { namespace cli {
         << std::string(34, ' ') << "\n"
         << std::left << std::setw(26) << "TOTAL"
         << std::setw(20) << "QUANTITY"
-        << std::right << std::setw(30) << "COLLATERAL RATIO"
+        << std::right << std::setw(30) << "INTEREST RATE (APR)"
         << " | " << std::left << std::setw(30) << "CALL PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" << "   COLLATERAL    EXPIRES" << "\n"
         << std::string(175, '-') << "\n";
 
@@ -847,20 +853,21 @@ namespace bts { namespace cli {
         {
           if(bid_itr != shorts.end())
           {
-            double ratio = (1/client->get_chain()->to_pretty_price_double(bid_itr->get_price()));
-            asset quantity_usd(bid_itr->get_quantity() * max_short_price); //, bid_itr->get_price()) );
+            double ratio = atof(bid_itr->get_price().ratio_string().c_str());
+            ratio *= 100;
+            asset quantity_usd(bid_itr->get_quantity() * short_execution_price); //, bid_itr->get_price()) );
             asset quantity_xts = bid_itr->get_quantity(); //quantity_usd * max_short_price;
 
-            if( bid_itr->get_price() >= max_short_price )
-              quantity_usd = ((bid_itr->get_quantity() * max_short_price));
+            if( bid_itr->get_price() >= short_execution_price )
+              quantity_usd = ((bid_itr->get_quantity() * short_execution_price));
             else
               quantity_usd = (bid_itr->get_quantity() * bid_itr->get_price());
 
-            quantity_xts = quantity_usd * max_short_price;
+            quantity_xts = quantity_usd * short_execution_price;
 
             out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(quantity_usd)
               << std::setw(20) << client->get_chain()->to_pretty_asset(quantity_xts)
-              << std::right << std::setw(30) << std::fixed << std::setprecision(2) << ratio;
+              << std::right << std::setw(30) << std::fixed << std::setprecision(2) << std::to_string(ratio) + " %";
 
             ++bid_itr;
           } else {
@@ -896,7 +903,7 @@ namespace bts { namespace cli {
       if(status)
       {
         out << "Maximum Short Price: "
-          << client->get_chain()->to_pretty_price(max_short_price)
+          << client->get_chain()->to_pretty_price(short_execution_price)
           << "     ";
 
         out << "Bid Depth: " << client->get_chain()->to_pretty_asset(asset(status->bid_depth, base_id)) << "     ";
