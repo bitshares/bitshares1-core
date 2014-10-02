@@ -50,8 +50,8 @@ namespace bts { namespace wallet {
 
          owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
-         vector<private_key_type>   get_account_private_keys( const fc::sha512& password )const;
-         string                     get_account_name( const address& account_address )const;
+         map<private_key_type, string> get_account_private_keys( const fc::sha512& password )const;
+         string                        get_account_name( const address& account_address )const;
 
          owallet_account_record lookup_account( const address& address_of_public_key )const;
          owallet_account_record lookup_account( const string& account_name )const;

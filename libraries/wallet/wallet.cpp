@@ -117,12 +117,12 @@ namespace bts { namespace wallet {
                     );
 
             void scan_block_experimental( uint32_t block_num,
-                                          const vector<private_key_type>& account_keys,
+                                          const map<private_key_type, string>& account_keys,
                                           const map<address, string>& account_balances,
                                           const std::set<string>& account_names );
 
             void scan_transaction_experimental( const transaction_evaluation_state& eval_state,
-                                                const vector<private_key_type>& account_keys,
+                                                const map<private_key_type, string>& account_keys,
                                                 const map<address, string>& account_balances,
                                                 const std::set<string>& account_names,
                                                 transaction_ledger_entry& record,
@@ -588,7 +588,7 @@ namespace bts { namespace wallet {
       }
 
       void wallet_impl::scan_block_experimental( uint32_t block_num,
-                                                 const vector<private_key_type>& account_keys,
+                                                 const map<private_key_type, string>& account_keys,
                                                  const map<address, string>& account_balances,
                                                  const std::set<string>& account_names )
       {
@@ -614,7 +614,7 @@ namespace bts { namespace wallet {
       }
 
       void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
-                                                       const vector<private_key_type>& account_keys,
+                                                       const map<private_key_type, string>& account_keys,
                                                        const map<address, string>& account_balances,
                                                        const std::set<string>& account_names,
                                                        transaction_ledger_entry& record,
@@ -650,7 +650,7 @@ namespace bts { namespace wallet {
           };
 
           // TODO: Recipient address label needs to be saved at time of creation
-          // make a wrapper around trx.deposit_to_account just like my->withdraw_to_transaction
+          // to do this make a wrapper around trx.deposit_to_account just like my->withdraw_to_transaction
           const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
           {
               const balance_id_type balance_id = op.balance_id();
@@ -658,12 +658,15 @@ namespace bts { namespace wallet {
 
               const auto scan_withdraw_with_signature = [&]( const withdraw_with_signature& condition ) -> bool
               {
-                  if( condition.memo.valid() ) // if titan
+                  if( condition.memo.valid() ) // titan
                   {
                       if( record.delta_labels.count( op_index ) == 0 )
                       {
-                          for( const auto& key : account_keys )
+                          for( const auto& key_item : account_keys )
                           {
+                              const private_key_type& key = key_item.first;
+                              const string& account_name = key_item.second;
+
                               const omemo_status status = condition.decrypt_memo_data( key );
                               if( status.valid() )
                               {
@@ -671,11 +674,11 @@ namespace bts { namespace wallet {
 
                                   //FC_ASSERT( status->memo_flags == from_memo );
 
-                                  // TODO:: account_keys should be a map from account_name -> key
-                                  // add balance to address_labels from account->key map
-                                  const string delta_label = "MY ACCOUNT NAME";
+                                  const string& delta_label = account_name;
                                   record.delta_labels[ op_index ] = delta_label;
-                                  record.operation_details[ op_index ] = *status;
+
+                                  const memo_data& memo = *status;
+                                  record.operation_details[ op_index ] = memo;
                                   break;
                               }
                           }
@@ -683,7 +686,7 @@ namespace bts { namespace wallet {
 
                       return collect_balance( balance_id, delta_amount );
                   }
-                  else
+                  else // e.g. market cancel or cover proceeds
                   {
                       // TODO check owner address in label map
                       // ~~?? or is still balance_id~~
@@ -916,7 +919,10 @@ namespace bts { namespace wallet {
           }
 
           for( const auto& delta_item : eval_state.balance )
-              record.delta_amounts[ "FEE" ][ delta_item.first ] += delta_item.second;
+          {
+              const asset delta_amount( delta_item.second, delta_item.first );
+              record.delta_amounts[ "FEE" ][ delta_amount.asset_id ] += delta_amount.amount;
+          }
 
           if( store_record )
               ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
@@ -1803,16 +1809,21 @@ namespace bts { namespace wallet {
 
          try
          {
-           _scan_progress = 0;
-           const auto account_priv_keys = _wallet_db.get_account_private_keys( _wallet_password );
            const auto now = blockchain::now();
+           _scan_progress = 0;
+
+           const auto account_private_keys = _wallet_db.get_account_private_keys( _wallet_password );
+           vector<private_key_type> private_keys;
+           private_keys.reserve( account_private_keys.size() );
+           for( const auto& item : account_private_keys )
+               private_keys.push_back( item.first );
 
            if( min_end > start + 1 )
                ulog( "Beginning scan at block ${n}...", ("n",start) );
 
            for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
-              scan_block( block_num, account_priv_keys, now );
+              scan_block( block_num, private_keys, now );
               _scan_progress = float(block_num-start)/(min_end-start+1);
               self->set_last_scanned_block_number( block_num );
 
@@ -2788,8 +2799,12 @@ namespace bts { namespace wallet {
       const auto block_num = transaction_record->chain_location.block_num;
       const auto block = my->_blockchain->get_block_header( block_num );
       const auto keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+      vector<private_key_type> private_keys;
+      private_keys.reserve( keys.size() );
+      for( const auto& item : keys )
+          private_keys.push_back( item.first );
       const auto now = blockchain::now();
-      return my->scan_transaction( transaction_record->trx, block_num, block.timestamp, keys, now, overwrite_existing );
+      return my->scan_transaction( transaction_record->trx, block_num, block.timestamp, private_keys, now, overwrite_existing );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing )
@@ -3716,7 +3731,7 @@ namespace bts { namespace wallet {
        }
        else
        {
-           const auto check_account = [&]( const account_record& record ) -> void
+           const auto check_account = [&]( const account_record& record )
            {
                try
                {
@@ -6315,7 +6330,7 @@ namespace bts { namespace wallet {
       map<string, vector<balance_record>> balance_records;
       const auto pending_state = my->_blockchain->get_pending_state();
 
-      const auto scan_balance = [&]( const balance_record& record ) -> void
+      const auto scan_balance = [&]( const balance_record& record )
       {
           const auto key_record = my->_wallet_db.lookup_key( record.owner() );
           if( !key_record.valid() || !key_record->has_private_key() ) return;

@@ -488,44 +488,39 @@ namespace bts { namespace wallet {
       store_key( data );
    }
 
-   vector<private_key_type> wallet_db::get_account_private_keys( const fc::sha512& password )const
+   map<private_key_type, string> wallet_db::get_account_private_keys( const fc::sha512& password )const
    { try {
-       vector<public_key_type> public_keys;
-       vector<private_key_type> private_keys;
-
-       public_keys.reserve( accounts.size() );
-       private_keys.reserve( accounts.size() );
-
-       const auto insert_key = [&]( const owallet_key_record& key_record )
+       map<public_key_type, string> public_keys;
+       for( const auto& account_item : accounts )
        {
+           const auto& account = account_item.second;
+           public_keys[ account.owner_key ] = account.name;
+           for( const auto& active_key_item : account.active_key_history )
+           {
+               const auto& active_key = active_key_item.second;
+               public_keys[ active_key ] = account.name;
+           }
+       }
+
+       map<private_key_type, string> private_keys;
+       for( const auto& public_key_item : public_keys )
+       {
+           const auto& public_key = public_key_item.first;
+           const auto& account_name = public_key_item.second;
+
+           const auto key_record = lookup_key( public_key );
            if( !key_record.valid() || !key_record->has_private_key() )
-               return;
+               continue;
 
-           if( std::find( public_keys.begin(), public_keys.end(), key_record->public_key ) != public_keys.end() )
-               return;
-
-           private_key_type key;
            try
            {
-               key = key_record->decrypt_private_key( password );
+               private_keys[ key_record->decrypt_private_key( password ) ] = account_name;
            }
            catch( const fc::exception& e )
            {
                elog( "error decrypting private key: ${e}", ("e",e.to_detail_string()) );
-               return;
            }
-
-           private_keys.push_back( key );
-           public_keys.push_back( key_record->public_key );
-       };
-
-       for( const auto& account_item : accounts )
-       {
-          insert_key( lookup_key( account_item.second.account_address ) );
-          for( const auto& key_item : account_item.second.active_key_history )
-            insert_key( lookup_key( key_item.second ) );
        }
-
        return private_keys;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -556,7 +551,6 @@ namespace bts { namespace wallet {
        }
        return ret;
    }
-
 
    owallet_key_record wallet_db::lookup_key( const address& address )const
    {
