@@ -5,7 +5,7 @@
 /* Comment out this line for a non-test network */
 #define BTS_TEST_NETWORK
 
-#define BTS_TEST_NETWORK_VERSION                            32
+#define BTS_TEST_NETWORK_VERSION                            33
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
