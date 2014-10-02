@@ -11,7 +11,7 @@ OK
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" null 5000000 100
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_list_blocks
@@ -27,7 +27,7 @@ default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.00 %    0.00 XMO                    
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.50101 XTS     
 default (unlocked) >>> wallet_asset_issue 10000 XMO testaccount1 "Sending some assets"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -38,16 +38,16 @@ default (unlocked) >>> blockchain_list_assets XMO
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,997.29341 XTS     
 default (unlocked) >>> blockchain_list_assets XTS
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,997.29341 XTS     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,997.29341 XTS     
 default (unlocked) >>> wallet_account_balance testaccount1
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -62,13 +62,13 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
 [redacted]          1         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
-[redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
+[redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
 [redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_list_assets 
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,997.29341 XTS     
 default (unlocked) >>> help wallet_market_submit_bid 
 Usage:
 wallet_market_submit_bid <from_account_name> <quantity> <quantity_symbol> <base_price> <base_symbol> [allow_stupid_bid]   Used to place a request to buy a quantity of assets at a price specified in another asset
@@ -111,15 +111,15 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
 [redacted]          1         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
-[redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
+[redacted]          2         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
 [redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
 [redacted]          5         testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 default (unlocked) >>> quit

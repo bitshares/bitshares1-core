@@ -9,7 +9,7 @@ xts:testaccount2:XTS68E5e9RDpCmkKMs9uwBmcaPBrg3XcJS3hgYBzj69wJ5b4zh1fd
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "AN ASSET" null 5000000 100
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
+[redacted]          PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 testaccount1
@@ -20,17 +20,17 @@ default (unlocked) >>> wallet_transfer 10000 XTS delegate0 testaccount2
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 [redacted]          PENDING   delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
-default (unlocked) >>> debug_wait_for_block_by_number 1 relative
+default (unlocked) >>> debug_wait_for_block_by_number 2 relative
 OK
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.00 %    0.00 XMO                    
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,997.29241 XTS     
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,791,878.69801 XTS        
+delegate0                       19,791,877.48841 XTS        
 delegate1                       19,801,980.19801 XTS        
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
@@ -51,15 +51,15 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
-[redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
-[redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+[redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
-[redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
+[redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+[redacted]          4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        delegate0                       0.20 %    10,000.00 XMO               
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,997.29341 XTS     
 default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -69,7 +69,7 @@ OK
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,791,878.19801 XTS        
+delegate0                       19,791,876.98841 XTS        
 delegate1                       19,801,980.19801 XTS        
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
@@ -85,14 +85,14 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
 [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
-[redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
-[redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+[redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
 [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
-[redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
-[redacted]          4         testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+[redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+[redacted]          4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
+[redacted]          5         testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 2.9 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
@@ -101,16 +101,16 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 ask_order   100.00000 XTS       2.9 XMO / XTS                 100.00000 XTS       290.00 XMO          N/A                 573e6f1b4c85bd1007704a9dabc80846068e69fc
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   500.00000 XTS       3. XMO / XTS                  1,500.00 XMO        1,500.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 ask_order   100.00000 XTS       2.9 XMO / XTS                 100.00000 XTS       290.00 XMO          N/A                 573e6f1b4c85bd1007704a9dabc80846068e69fc
 default (unlocked) >>> blockchain_market_order_book XMO XTS
@@ -123,7 +123,7 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "quote_id": 1,
   "base_id": 0,
   "bid_depth": 0,
-  "ask_depth": 10000000,
+  "ask_depth": 0,
   "center_price": 0,
   "last_error": null
 }
@@ -132,7 +132,7 @@ OK
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,791,878.19801 XTS        
+delegate0                       19,791,876.98841 XTS        
 delegate1                       19,801,980.19801 XTS        
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
@@ -149,28 +149,28 @@ default (unlocked) >>> history
  [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
  [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
  [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
- [redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
- [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+ [redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
  [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
- [redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
- [redacted]          4         testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
- [redacted]          5         testaccount2        ASK-573e6f1b        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         [redacted]
+ [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+ [redacted]          4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
+ [redacted]          5         testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+ [redacted]          6         testaccount2        ASK-573e6f1b        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         [redacted]
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|[redacted]          6         BID-00992b6d        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         [redacted]|
+|[redacted]          7         BID-00992b6d        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         [redacted]|
 |                              BID-00992b6d        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|[redacted]          6         ASK-573e6f1b        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         [redacted]|
+|[redacted]          7         ASK-573e6f1b        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         [redacted]|
 |                              ASK-573e6f1b        testaccount2        290.00 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
 No market orders found.
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 default (unlocked) >>> blockchain_market_order_book XMO XTS
                   BIDS (* Short)                                        |                                   ASKS                                  
@@ -193,16 +193,16 @@ TIMESTAMP           BLOCK     FROM                TO                  AMOUNT    
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_market_list_bids XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 default (unlocked) >>> blockchain_market_list_asks XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 ask_order   100.00000 XTS       3.1 XMO / XTS                 100.00000 XTS       310.00 XMO          N/A                 736523c114a81d03a38c339b599576a80cf0b68a
 default (unlocked) >>> wallet_market_order_list XMO XTS
-TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                  
-================================================================================================================================
+TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
+==================================================================================================================================================================
 bid_order   400.00000 XTS       3. XMO / XTS                  1,200.00 XMO        1,200.00 XMO        N/A                 00992b6d85b62605da57f50ded2fc891ad5adffd
 ask_order   100.00000 XTS       3.1 XMO / XTS                 100.00000 XTS       310.00 XMO          N/A                 736523c114a81d03a38c339b599576a80cf0b68a
 default (unlocked) >>> blockchain_market_order_book XMO XTS
@@ -215,7 +215,7 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "quote_id": 1,
   "base_id": 0,
   "bid_depth": 0,
-  "ask_depth": 10000000,
+  "ask_depth": 0,
   "center_price": 0,
   "last_error": null
 }
@@ -224,7 +224,7 @@ OK
 default (unlocked) >>> balance
 ACCOUNT                         BALANCE                     
 ============================================================
-delegate0                       19,791,878.19801 XTS        
+delegate0                       19,791,876.98841 XTS        
 delegate1                       19,801,980.19801 XTS        
 delegate2                       19,801,980.19801 XTS        
 delegate3                       19,801,980.19801 XTS        
@@ -241,18 +241,18 @@ default (unlocked) >>> history
  [redacted]          0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         [redacted]
  [redacted]          0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         [redacted]
  [redacted]          0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         [redacted]
- [redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         [redacted]
- [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+ [redacted]          1         delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                1.70960 XTS         [redacted]
  [redacted]          2         delegate0           testaccount1        100.00000 XTS                                                       0.50000 XTS         [redacted]
- [redacted]          3         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
- [redacted]          4         testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
- [redacted]          5         testaccount2        ASK-573e6f1b        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         [redacted]
+ [redacted]          2         delegate0           testaccount2        10,000.00000 XTS                                                    0.50000 XTS         [redacted]
+ [redacted]          4         delegate0           testaccount1        10,000.00 XMO           issue 10,000.00 XMO                         0.50000 XTS         [redacted]
+ [redacted]          5         testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+ [redacted]          6         testaccount2        ASK-573e6f1b        100.00000 XTS           sell XTS @ 2.9 XMO / XTS                    0.50000 XTS         [redacted]
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|[redacted]          6         BID-00992b6d        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         [redacted]|
+|[redacted]          7         BID-00992b6d        MARKET              300.00 XMO              pay bid @ 3. XMO / XTS                      0.00000 XTS         [redacted]|
 |                              BID-00992b6d        testaccount1        100.00000 XTS           bid proceeds @ 3. XMO / XTS                                             |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|[redacted]          6         ASK-573e6f1b        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         [redacted]|
+|[redacted]          7         ASK-573e6f1b        MARKET              100.00000 XTS           fill ask @ 2.9 XMO / XTS                    0.00000 XTS         [redacted]|
 |                              ASK-573e6f1b        testaccount2        290.00 XMO              ask proceeds @ 2.9 XMO / XTS                                            |
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- [redacted]          7         testaccount2        ASK-736523c1        100.00000 XTS           sell XTS @ 3.1 XMO / XTS                    0.50000 XTS         [redacted]
+ [redacted]          8         testaccount2        ASK-736523c1        100.00000 XTS           sell XTS @ 3.1 XMO / XTS                    0.50000 XTS         [redacted]
 default (unlocked) >>> quit

@@ -20,7 +20,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-1     delegate0                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+1     delegate0                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 
 (wallet closed) >>> blockchain_get_account delegate1
 Name: delegate1
@@ -32,7 +32,7 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-2     delegate1                       0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+2     delegate1                       0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 
 (wallet closed) >>> blockchain_get_account deleg
 No account found.
