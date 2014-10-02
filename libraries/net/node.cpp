@@ -84,6 +84,13 @@
       } \
     } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
 
+//log these messages even at warn level when operating on the test network
+#ifdef BTS_TEST_NETWORK
+#define testnetlog wlog
+#else
+#define testnetlog(...) do {} while (0)
+#endif
+
 namespace bts { namespace net {
 
   FC_REGISTER_EXCEPTIONS( (net_exception)
@@ -1136,6 +1143,8 @@ namespace bts { namespace net { namespace detail {
                 peer->clear_old_inventory_advertised_to_peer();
                 peer->inventory_advertised_to_peer.insert( peer_connection::timestamped_item_id(item_to_advertise, fc::time_point::now()) );
                 ++total_items_to_send_to_this_peer;
+                if (item_to_advertise.item_type == trx_message_type)
+                  testnetlog( "advertising transaction ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash )("endpoint", peer->get_remote_endpoint() ));
                 dlog( "advertising item ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash )("endpoint", peer->get_remote_endpoint() ) );
               }
               dlog( "advertising ${count} new item(s ) of ${types} type(s ) to peer ${endpoint}",

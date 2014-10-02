@@ -1098,8 +1098,10 @@ namespace bts { namespace blockchain {
       trx_eval_state->evaluate( trx );
       auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
+      {
+        wlog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
          FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
-
+      }
       // apply changes from this transaction to _pending_trx_state
       pend_state->apply_changes();
 
