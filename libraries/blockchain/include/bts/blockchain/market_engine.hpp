@@ -27,6 +27,8 @@ namespace bts { namespace blockchain { namespace detail {
     bool get_next_bid();
 
     bool get_next_ask();
+    asset get_current_cover_debt()const;
+    asset get_cover_interest( const asset& principle )const;
 
     /**
       *  This method should not affect market execution or validation and
