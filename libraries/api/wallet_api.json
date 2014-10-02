@@ -1230,7 +1230,7 @@
             {
                "name" : "interest_rate",
                "type" : "string",
-               "description" : "the APR you wish to pay interest at (0.0 to 100.0%)"
+               "description" : "the APR you wish to pay interest at (0.0% to 1000.0%)"
             },
             {
                "name" : "base_symbol",
