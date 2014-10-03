@@ -1099,10 +1099,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
           }
           else
           {
-            wlog( " rebroadcasting..." );
             try
             {
               signed_transactions pending = blockchain_list_pending_transactions();
+              wlog( "rebroadcasting ${trx_count}", ("trx_count",pending.size()) );
               for( auto trx : pending )
               {
                 network_broadcast_transaction( trx );
