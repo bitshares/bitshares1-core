@@ -757,22 +757,9 @@ namespace bts { namespace wallet {
                               }
                           }
                       }
-
-                      return collect_balance( balance_id, delta_amount );
-                  }
-                  else // e.g. market cancel or cover proceeds
-                  {
-                      // TODO check owner address in label map
-                      // ~~?? or is still balance_id~~
-                      //
-                      //
-                      // it is the condition owner which should be in account_balances
-                      // above it is the owner of the key
-                      //
-                      // lookup owner account key like at the end of scan_ask
                   }
 
-                  return false;
+                  return collect_balance( balance_id, delta_amount );
               };
 
               switch( withdraw_condition_types( op.condition.type ) )
