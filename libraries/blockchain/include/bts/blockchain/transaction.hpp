@@ -52,6 +52,10 @@ namespace bts { namespace blockchain {
                     const asset& amount,
                     slate_id_type delegate_id );
 
+      void deposit_multisig( const multisig_meta_info& info,
+                             const asset& amount,
+                             slate_id_type delegate_id );
+
       void deposit_to_account( fc::ecc::public_key receiver_key,
                                 asset amount,
                                 fc::ecc::private_key from_key,

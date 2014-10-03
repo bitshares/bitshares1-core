@@ -119,6 +119,17 @@ namespace bts { namespace blockchain {
       FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
       operations.push_back( deposit_operation( owner, amount, slate_id ) );
    }
+   void transaction::deposit_multisig( const multisig_meta_info& multsig_info,
+                              const asset&    amount,
+                              slate_id_type   slate_id )
+   {
+      FC_ASSERT( amount.amount > 0, "amount: ${amount}", ("amount",amount) );
+      deposit_operation op;
+      op.amount = amount.amount;
+      op.condition = withdraw_condition( withdraw_with_multi_sig{multsig_info.required,multsig_info.owners}, amount.asset_id, slate_id );
+      operations.push_back( op );
+   }
+
 
    void transaction::deposit_to_account( fc::ecc::public_key receiver_key,
                                          asset amount,

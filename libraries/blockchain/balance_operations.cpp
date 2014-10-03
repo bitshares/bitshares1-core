@@ -18,7 +18,7 @@ namespace bts { namespace blockchain {
             fc::uint128 amount_withdrawn( amount );
             amount_withdrawn *= 1000000;
 
-            fc::uint128 current_supply( share_supply );
+            fc::uint128 current_supply( share_supply - yield_pool );
             fc::uint128 fee_fund( yield_pool );
 
             auto yield = (amount_withdrawn * fee_fund) / current_supply;
