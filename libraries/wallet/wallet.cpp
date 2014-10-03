@@ -697,7 +697,7 @@ namespace bts { namespace wallet {
               return collect_balance( op.balance_id, eval_state.deltas.at( op_index ) );
           };
 
-          // TODO: Recipient address label and memo message needs to be saved at time of creation
+          // TODO: Recipient address label and memo message needs to be saved at time of creation by sender
           // to do this make a wrapper around trx.deposit_to_account just like my->withdraw_to_transaction
           const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
           {
@@ -710,28 +710,50 @@ namespace bts { namespace wallet {
                   {
                       if( record.delta_labels.count( op_index ) == 0 )
                       {
+                          vector<fc::future<void>> decrypt_memo_futures;
+                          decrypt_memo_futures.resize( account_keys.size() );
+                          uint32_t key_index = 0;
+
                           for( const auto& key_item : account_keys )
                           {
                               const private_key_type& key = key_item.first;
                               const string& account_name = key_item.second;
 
-                              omemo_status status = condition.decrypt_memo_data( key );
-                              if( status.valid() )
+                              decrypt_memo_futures[ key_index ] = fc::async( [&, key_index]()
                               {
-                                  titan_memos.push_back( *status );
+                                  omemo_status status;
+                                  _scanner_threads[ key_index % BTS_WALLET_NUM_SCANNING_THREADS ]->async( [&]()
+                                  {
+                                      status = condition.decrypt_memo_data( key );
+                                  }, "decrypt memo" ).wait();
 
-                                  // cache memo and sync balance
-                                  _wallet_db.cache_memo( *status, key, _wallet_password );
+                                  if( status.valid() )
+                                  {
+                                      _wallet_db.cache_memo( *status, key, _wallet_password );
 
-                                  // save memo for later checking if pure titan
+                                      titan_memos.push_back( *status );
 
-                                  const string& delta_label = account_name;
-                                  record.delta_labels[ op_index ] = delta_label;
+                                      const string& delta_label = account_name;
+                                      record.delta_labels[ op_index ] = delta_label;
 
-                                  const string memo = status->get_message();
-                                  if( !memo.empty() )
-                                      record.operation_notes[ op_index ] = memo;
-                                  break;
+                                      const string memo = status->get_message();
+                                      if( !memo.empty() )
+                                          record.operation_notes[ op_index ] = memo;
+                                  }
+                              } );
+
+                              ++key_index;
+                          }
+
+                          for( auto& decrypt_memo_future : decrypt_memo_futures )
+                          {
+                              try
+                              {
+                                  decrypt_memo_future.wait();
+                              }
+                              catch( const fc::exception& e )
+                              {
+                                  elog( "unexpected exception waiting on memo decryption task ${e}", ("e",e.to_detail_string()) );
                               }
                           }
                       }
