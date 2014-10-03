@@ -530,6 +530,8 @@ namespace bts { namespace net { namespace detail {
 
       bool _node_is_shutting_down; // set to true when we begin our destructor, used to prevent us from starting new tasks while we're shutting down
 
+      std::list<fc::future<void> > _handle_message_calls_in_progress;
+
       node_impl(const std::string& user_agent);
       virtual ~node_impl();
 
@@ -628,6 +630,7 @@ namespace bts { namespace net { namespace detail {
 
       void on_connection_closed( peer_connection* originating_peer ) override;
 
+      void send_sync_block_to_node_delegate(const bts::client::block_message& block_message_to_send);
       void process_backlog_of_sync_blocks();
       void trigger_process_backlog_of_sync_blocks();
       void process_block_during_sync( peer_connection* originating_peer, const bts::client::block_message& block_message, const message_hash_type& message_hash );
@@ -762,7 +765,7 @@ namespace bts { namespace net { namespace detail {
       _node_is_shutting_down(false)
     {
       _rate_limiter.set_actual_rate_time_constant(fc::seconds(2));
-      fc::rand_pseudo_bytes(&_node_id.data[0], _node_id.size());
+      fc::rand_pseudo_bytes(&_node_id.data[0], (int)_node_id.size());
     }
 
     node_impl::~node_impl()
@@ -944,7 +947,7 @@ namespace bts { namespace net { namespace detail {
     {
       VERIFY_CORRECT_THREAD();
       dlog( "requesting ${item_count} item(s) ${items_to_request} from peer ${endpoint}",
-            ("items_to_request", items_to_request.size())("items_to_request", items_to_request)("endpoint", peer->get_remote_endpoint()) );
+            ("item_count", items_to_request.size())("items_to_request", items_to_request)("endpoint", peer->get_remote_endpoint()) );
       for (const item_hash_t& item_to_request : items_to_request)
       {
         _active_sync_requests.insert( active_sync_requests_map::value_type(item_to_request, fc::time_point::now() ) );
@@ -2572,9 +2575,168 @@ namespace bts { namespace net { namespace detail {
       schedule_peer_for_deletion(originating_peer_ptr);
     }
 
+    void node_impl::send_sync_block_to_node_delegate(const bts::client::block_message& block_message_to_send)
+    {
+      dlog("in send_sync_block_to_node_delegate()");
+      bool client_accepted_block = false;
+      bool discontinue_fetching_blocks_from_peer = false;
+
+              fc::oexception handle_message_exception;
+
+              try
+              {
+        _delegate->handle_message(block_message_to_send, true);
+        _most_recent_blocks_accepted.push_back(block_message_to_send.block_id);
+
+                client_accepted_block = true;
+              }
+      catch (const block_older_than_undo_history& e)
+              {
+        wlog("sync: block is on a fork older than our undo history would allow us to switch to.  We'll stay connected to this client to provide it blocks, but we won't fetch any more blocks from them");
+                handle_message_exception = e;
+                discontinue_fetching_blocks_from_peer = true;
+              }
+              catch (const fc::canceled_exception&)
+              {
+                throw;
+              }
+      catch (const fc::exception& e)
+              {
+        wlog("sync: client rejected sync block sent by peer");
+                handle_message_exception = e;
+              }
+
+      // build up lists for any potentially-blocking operations we need to do, then do them
+      // at the end of this function
+      std::set<peer_connection_ptr> peers_with_newly_empty_item_lists;
+      std::set<peer_connection_ptr> peers_we_need_to_sync_to;
+      std::map<peer_connection_ptr, fc::oexception> peers_with_rejected_block;
+
+              if( client_accepted_block )
+              {
+                --_total_number_of_unfetched_items;
+        dlog("sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync",
+              ("count", _total_number_of_unfetched_items));
+        for (const peer_connection_ptr& peer : _active_connections)
+                {
+          ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
+          if (peer->ids_of_items_to_get.empty() && peer->ids_of_items_being_processed.empty())
+                  {
+                    dlog( "Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint() ) );
+                    // we don't know for sure that this peer has the item we just received.
+                    // If peer is still syncing to us, we know they will ask us for
+                    // sync item ids at least one more time and we'll notify them about
+                    // the item then, so there's no need to do anything.  If we still need items
+                    // from them, we'll be asking them for more items at some point, and
+                    // that will clue them in that they are out of sync.  If we're fully in sync
+                    // we need to kick off another round of synchronization with them so they can
+                    // find out about the new item.
+            if (!peer->peer_needs_sync_items_from_us && !peer->we_need_sync_items_from_peer)
+                    {
+              dlog("We will be restarting synchronization with peer ${peer}", ("peer", peer->get_remote_endpoint()));
+              peers_we_need_to_sync_to.insert(peer);
+                    }
+                  }
+                  else
+                  {
+            auto items_being_processed_iter = peer->ids_of_items_being_processed.find(block_message_to_send.block_id);
+            if (items_being_processed_iter != peer->ids_of_items_being_processed.end())
+                    {
+              peer->last_block_delegate_has_seen = block_message_to_send.block_id;
+              peer->last_block_number_delegate_has_seen = block_message_to_send.block.block_num;
+              peer->last_block_time_delegate_has_seen = block_message_to_send.block.timestamp;
+
+              peer->ids_of_items_being_processed.erase(items_being_processed_iter);
+              dlog("Removed item from ${endpoint}'s list of items being processed, still processing ${len} blocks",
+                   ("endpoint", peer->get_remote_endpoint())("len", peer->ids_of_items_being_processed.size()));
+
+                      // if we just received the last item in our list from this peer, we will want to
+                      // send another request to find out if we are in sync, but we can't do this yet
+                      // (we don't want to allow a fiber swap in the middle of popping items off the list)
+              if (peer->ids_of_items_to_get.empty() && 
+                  peer->number_of_unfetched_item_ids == 0 &&
+                  peer->ids_of_items_being_processed.empty())
+                peers_with_newly_empty_item_lists.insert(peer);
+
+                      // in this case, we know the peer was offering us this exact item, no need to
+                      // try to inform them of its existence
+                    }
+                    }
+                  }
+                }
+              else
+              {
+                // invalid message received
+        for (const peer_connection_ptr& peer : _active_connections)
+                {
+          ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
+
+          if (peer->ids_of_items_being_processed.find(block_message_to_send.block_id) != peer->ids_of_items_being_processed.end())
+          {
+                  if (discontinue_fetching_blocks_from_peer)
+                  {
+              wlog("inhibiting fetching sync blocks from peer ${endpoint} because it is on a fork that's too old", ("endpoint", peer->get_remote_endpoint()));
+                    peer->inhibit_fetching_sync_blocks = true;
+                  }
+            else
+                    peers_with_rejected_block[peer] = handle_message_exception;
+                }
+              }
+          }
+
+      for( auto& peer_with_rejected_block : peers_with_rejected_block )
+      {
+        peer_connection_ptr peer_to_disconnect;
+        fc::oexception reason_for_disconnect;
+        std::tie(peer_to_disconnect, reason_for_disconnect) = peer_with_rejected_block;
+        wlog( "disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer_to_disconnect->get_remote_endpoint() ) );
+        disconnect_from_peer( peer_to_disconnect.get(), "You offered us a block that we reject as invalid", true, reason_for_disconnect );
+      }
+      for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
+        fetch_next_batch_of_item_ids_from_peer(peer.get());
+
+      for (const peer_connection_ptr& peer : peers_we_need_to_sync_to)
+        start_synchronizing_with_peer(peer);
+
+        dlog("Leaving send_sync_block_to_node_delegate");
+
+      if (_suspend_fetching_sync_blocks &&
+          !_node_is_shutting_down &&
+          (!_process_backlog_of_sync_blocks_done.valid() || _process_backlog_of_sync_blocks_done.ready()))
+        _process_backlog_of_sync_blocks_done = fc::async([=](){ process_backlog_of_sync_blocks(); }, 
+                                                         "process_backlog_of_sync_blocks");
+    }
+
     void node_impl::process_backlog_of_sync_blocks()
     {
       VERIFY_CORRECT_THREAD();
+      // garbage-collect the list of async tasks here for lack of a better place
+      for (auto calls_iter = _handle_message_calls_in_progress.begin();
+            calls_iter != _handle_message_calls_in_progress.end();)
+      {
+        if (calls_iter->ready())
+          calls_iter = _handle_message_calls_in_progress.erase(calls_iter);
+        else
+          ++calls_iter;
+      }
+
+      dlog("in process_backlog_of_sync_blocks");
+#define MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME 100
+      if (_handle_message_calls_in_progress.size() >= MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
+      {
+        dlog("leaving process_backlog_of_sync_blocks because we're already processing too many blocks");
+        return; // we will be rescheduled when the next block finishes its processing
+      }
+      dlog("currently ${count} blocks in the process of being handled", ("count", _handle_message_calls_in_progress.size()));
+
+
+      if (_suspend_fetching_sync_blocks)
+      {
+        dlog("resuming processing sync block backlog because we only ${count} blocks in progress", 
+             ("count", _handle_message_calls_in_progress.size()));
+        _suspend_fetching_sync_blocks = false;
+      }
+
 
       // when syncing with multiple peers, it's possible that we'll have hundreds of blocks ready to push
       // to the client at once.  This can be slow, and we need to limit the number we push at any given
@@ -2589,191 +2751,73 @@ namespace bts { namespace net { namespace detail {
       std::set<peer_connection_ptr> peers_we_need_to_sync_to;
       std::map<peer_connection_ptr, fc::oexception> peers_with_rejected_block;
 
-        _suspend_fetching_sync_blocks = false;
-        do
-        {
+      do
+      {
         std::copy(std::make_move_iterator(_new_received_sync_items.begin()),
                   std::make_move_iterator(_new_received_sync_items.end()),
                   std::front_inserter(_received_sync_items));
         _new_received_sync_items.clear();
+        dlog("currently ${count} sync items to consider", ("count", _received_sync_items.size()));
 
-          block_processed_this_iteration = false;
-          for( auto received_block_iter = _received_sync_items.begin();
-               received_block_iter != _received_sync_items.end();
-               ++received_block_iter )
+        block_processed_this_iteration = false;
+        for (auto received_block_iter = _received_sync_items.begin();
+             received_block_iter != _received_sync_items.end();
+             ++received_block_iter)
+        {
+
+          // find out if this block is the next block on the active chain or one of the forks
+          bool potential_first_block = false;
+          for (const peer_connection_ptr& peer : _active_connections)
           {
-            // find out if this block is the next block on one the active chain or one of the forks
-            bool potential_first_block = false;
-            for( const peer_connection_ptr& peer : _active_connections )
-              if( !peer->ids_of_items_to_get.empty() &&
-                  peer->ids_of_items_to_get.front() == received_block_iter->block_id )
-              {
-                potential_first_block = true;
-                break;
-              }
-
-            // if it is, process it, remove it from all sync peers lists
-            if( potential_first_block )
+            ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
+            if (!peer->ids_of_items_to_get.empty() &&
+                peer->ids_of_items_to_get.front() == received_block_iter->block_id)
             {
-              bts::client::block_message block_message_to_process = *received_block_iter;
-              _received_sync_items.erase( received_block_iter );
-
-              fc::oexception handle_message_exception;
-              bool discontinue_fetching_blocks_from_peer = false;
-
-              bool client_accepted_block = false;
-              try
-              {
-                dlog( "sync: this block is a potential first block, passing it to the client" );
-
-                // we can get into an intersting situation near the end of synchronization.  We can be in
-                // sync with one peer who is sending us the last block on the chain via a regular inventory
-                // message, while at the same time still be synchronizing with a peer who is sending us the
-                // block through the sync mechanism.  Further, we must request both blocks because
-                // we don't know they're the same (for the peer in normal operation, it has only told us the
-                // message id, for the peer in the sync case we only known the block_id).
-                if( std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
-                              block_message_to_process.block_id ) == _most_recent_blocks_accepted.end() )
-                {
-                  _delegate->handle_message( block_message_to_process, true );
-                  _most_recent_blocks_accepted.push_back( block_message_to_process.block_id );
-                    ++blocks_processed;
-                }
-                else
-                  dlog( "Already received and accepted this block (presumably through normal inventory mechanism), treating it as accepted" );
-
-                client_accepted_block = true;
-              }
-              catch ( const block_older_than_undo_history& e)
-              {
-                wlog( "sync: block is on a fork older than our undo history would allow us to switch to.  We'll stay connected to this client to provide it blocks, but we won't fetch any more blocks from them" );
-                handle_message_exception = e;
-                discontinue_fetching_blocks_from_peer = true;
-              }
-              catch (const fc::canceled_exception&)
-              {
-                throw;
-              }
-              catch ( const fc::exception& e )
-              {
-                wlog( "sync: client rejected sync block sent by peer" );
-                handle_message_exception = e;
-              }
-
-              if( client_accepted_block )
-              {
-                --_total_number_of_unfetched_items;
-                block_processed_this_iteration = true;
-                dlog( "sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync",
-                      ("count", _total_number_of_unfetched_items ) );
-                for( const peer_connection_ptr& peer : _active_connections )
-                {
-                  if( peer->ids_of_items_to_get.empty() )
-                  {
-                    dlog( "Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint() ) );
-                    // we don't know for sure that this peer has the item we just received.
-                    // If peer is still syncing to us, we know they will ask us for
-                    // sync item ids at least one more time and we'll notify them about
-                    // the item then, so there's no need to do anything.  If we still need items
-                    // from them, we'll be asking them for more items at some point, and
-                    // that will clue them in that they are out of sync.  If we're fully in sync
-                    // we need to kick off another round of synchronization with them so they can
-                    // find out about the new item.
-                    if( !peer->peer_needs_sync_items_from_us && !peer->we_need_sync_items_from_peer )
-                    {
-                      dlog( "We will be restarting synchronization with peer ${peer}", ("peer", peer->get_remote_endpoint() ) );
-                      peers_we_need_to_sync_to.insert( peer );
-                    }
-                  }
-                  else
-                  {
-                    if( peer->ids_of_items_to_get.front() == block_message_to_process.block_id )
-                    {
-                      peer->last_block_delegate_has_seen = block_message_to_process.block_id;
-                      ++peer->last_block_number_delegate_has_seen;
-                      peer->last_block_time_delegate_has_seen = block_message_to_process.block.timestamp;
-
-                      peer->ids_of_items_to_get.pop_front();
-                      dlog( "Popped item from front of ${endpoint}'s sync list, new list length is ${len}",
-                            ("endpoint", peer->get_remote_endpoint() )("len", peer->ids_of_items_to_get.size() ) );
-
-                      // if we just received the last item in our list from this peer, we will want to
-                      // send another request to find out if we are in sync, but we can't do this yet
-                      // (we don't want to allow a fiber swap in the middle of popping items off the list)
-                      if( peer->ids_of_items_to_get.empty() && peer->number_of_unfetched_item_ids == 0 )
-                        peers_with_newly_empty_item_lists.insert( peer );
-
-                      // in this case, we know the peer was offering us this exact item, no need to
-                      // try to inform them of its existence
-                    }
-                    else
-                    {
-                      // the peer's list of sync items is nonempty, and its first item doesn't match
-                      // the one we just accepted.  This happens when we're synchronizing with
-                      // peers on two different forks.
-                      dlog( "Cannot pop first element off peer ${peer}'s list, its first is ${hash}",
-                            ("peer", peer->get_remote_endpoint() )("hash", peer->ids_of_items_to_get.front() ) );
-                    }
-                  }
-                }
-              }
-              else
-              {
-                // invalid message received
-                for( const peer_connection_ptr& peer : _active_connections )
-                  if( !peer->ids_of_items_to_get.empty() &&
-                      peer->ids_of_items_to_get.front() == block_message_to_process.block_id )
-                {
-                  if (discontinue_fetching_blocks_from_peer)
-                  {
-                    wlog( "inhibiting fetching sync blocks from peer ${endpoint} because it is on a fork that's too old", ("endpoint", peer->get_remote_endpoint() ) );
-                    peer->inhibit_fetching_sync_blocks = true;
-                  }
-                  else if (peers_with_rejected_block.find(peer) == peers_with_rejected_block.end())
-                    peers_with_rejected_block[peer] = handle_message_exception;
-                }
-              }
-              break; // start iterating _received_sync_items from the beginning
-            } // end if potential_first_block
-          } // end for each block in _received_sync_items
-
-          if (fc::time_point::now() >= when_we_should_yield)
-          {
-            _suspend_fetching_sync_blocks = true;
-            break;
+              potential_first_block = true;
+              peer->ids_of_items_to_get.pop_front();
+              peer->ids_of_items_being_processed.insert(received_block_iter->block_id);
+            }
           }
+
+          // if it is, process it, remove it from all sync peers lists
+          if (potential_first_block)
+          {
+              // we can get into an intersting situation near the end of synchronization.  We can be in
+              // sync with one peer who is sending us the last block on the chain via a regular inventory
+              // message, while at the same time still be synchronizing with a peer who is sending us the
+              // block through the sync mechanism.  Further, we must request both blocks because
+              // we don't know they're the same (for the peer in normal operation, it has only told us the
+              // message id, for the peer in the sync case we only known the block_id).
+              if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
+                            received_block_iter->block_id) == _most_recent_blocks_accepted.end())
+              {
+                bts::client::block_message block_message_to_process = *received_block_iter;
+                _received_sync_items.erase(received_block_iter);
+                _handle_message_calls_in_progress.emplace_back(fc::async([this, block_message_to_process](){ 
+                  send_sync_block_to_node_delegate(block_message_to_process);
+                }, "send_sync_block_to_node_delegate"));
+                ++blocks_processed;
+                block_processed_this_iteration = true;
+              }
+      else
+                dlog("Already received and accepted this block (presumably through normal inventory mechanism), treating it as accepted");
+
+            break; // start iterating _received_sync_items from the beginning
+          } // end if potential_first_block
+        } // end for each block in _received_sync_items
+
+        if (_handle_message_calls_in_progress.size() >= MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
+        {
+          dlog("stopping processing sync block backlog because we have ${count} blocks in progress", 
+               ("count", _handle_message_calls_in_progress.size()));
+          _suspend_fetching_sync_blocks = true;
+          break;
+        }
       } while (block_processed_this_iteration);
 
-      for( auto& peer_with_rejected_block : peers_with_rejected_block )
-      {
-        peer_connection_ptr peer_to_disconnect;
-        fc::oexception reason_for_disconnect;
-        std::tie(peer_to_disconnect, reason_for_disconnect) = peer_with_rejected_block;
-        wlog( "disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer_to_disconnect->get_remote_endpoint() ) );
-        disconnect_from_peer( peer_to_disconnect.get(), "You offered us a block that we reject as invalid", true, reason_for_disconnect );
-      }
+      dlog("leaving process_backlog_of_sync_blocks, ${count} processed", ("count", blocks_processed));
 
-      for( const peer_connection_ptr& peer : peers_with_newly_empty_item_lists )
-        fetch_next_batch_of_item_ids_from_peer( peer.get() );
-
-      for( const peer_connection_ptr& peer : peers_we_need_to_sync_to )
-        start_synchronizing_with_peer( peer );
-
-      fc::time_point end_time = fc::time_point::now();
-      fc::microseconds call_duration = end_time - start_time;
-      dlog( "backlog took ${duration}us to process (${processed} blocks).  Remaining backlog is ${count} blocks", 
-           ("duration", call_duration.count())
-           ("processed", blocks_processed)
-           ("count", _received_sync_items.size()) );
-      if (_suspend_fetching_sync_blocks)
-      {
-        dlog("we stopped processing the backlog because it was taking too long, rescheduling");
-        if (!_node_is_shutting_down)
-          _process_backlog_of_sync_blocks_done = fc::schedule([=](){ process_backlog_of_sync_blocks(); }, 
-                                                              fc::time_point::now() + fc::milliseconds(400), 
-                                                              "process_backlog_of_sync_blocks");
-      }
-      else
+      if (!_suspend_fetching_sync_blocks)
         trigger_fetch_sync_items_loop();
     }
 
@@ -2833,6 +2877,8 @@ namespace bts { namespace net { namespace detail {
 
         for (const peer_connection_ptr& peer : _active_connections)
         {
+          ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
+
           auto iter = peer->inventory_peer_advertised_to_us.find(block_message_item_id);
           if (iter != peer->inventory_peer_advertised_to_us.end())
           {
@@ -2986,6 +3032,8 @@ namespace bts { namespace net { namespace detail {
       fc::time_point now = fc::time_point::now();
       for (const peer_connection_ptr& peer : _active_connections)
       {
+        ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
+
         current_connection_data data_for_this_peer;
         data_for_this_peer.connection_duration = now.sec_since_epoch() - peer->connection_initiation_time.sec_since_epoch();
         if (peer->get_remote_endpoint()) // should always be set for anyone we're actively connected to
@@ -3922,6 +3970,8 @@ namespace bts { namespace net { namespace detail {
       std::vector<peer_status> statuses;
       for (const peer_connection_ptr& peer : _active_connections)
       {
+        ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
+
         peer_status this_peer_status;
         this_peer_status.version = 0; // TODO
         fc::optional<fc::ip::endpoint> endpoint = peer->get_remote_endpoint();
