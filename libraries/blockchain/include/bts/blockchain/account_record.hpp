@@ -10,8 +10,17 @@ namespace bts { namespace blockchain {
 
    enum account_type
    {
-      titan_account  = 0,
-      public_account = 1
+      titan_account    = 0,
+      public_account   = 1,
+      multisig_account = 2
+   };
+
+   struct multisig_meta_info
+   {
+      static const account_type type = multisig_account;
+
+      uint32_t                required;
+      std::vector<address>    owners;
    };
 
    struct account_meta_info
@@ -129,5 +138,7 @@ FC_REFLECT( bts::blockchain::delegate_stats,
 FC_REFLECT( bts::blockchain::burn_record_key,   (account_id)(transaction_id) )
 FC_REFLECT( bts::blockchain::burn_record_value, (amount)(message)(signer) )
 FC_REFLECT_DERIVED( bts::blockchain::burn_record, (bts::blockchain::burn_record_key)(bts::blockchain::burn_record_value), BOOST_PP_SEQ_NIL )
-FC_REFLECT_ENUM( bts::blockchain::account_type, (titan_account)(public_account) )
+FC_REFLECT_ENUM( bts::blockchain::account_type, (titan_account)(public_account)(multisig_account) )
+FC_REFLECT( bts::blockchain::multisig_meta_info, (required)(owners) )
+
 

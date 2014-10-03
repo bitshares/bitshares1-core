@@ -44,7 +44,7 @@ namespace bts { namespace blockchain { namespace detail {
           const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
           _bid_itr        = _db_impl._bid_db.lower_bound( market_index_key( next_pair ) );
           _ask_itr        = _db_impl._ask_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
-          _short_itr      = _db_impl._short_db.lower_bound( market_index_key( price( 0, quote_id, base_id) ) );
+          _short_itr      = _db_impl._short_db.lower_bound( market_index_key( next_pair ) );
           _collateral_itr = _db_impl._collateral_db.lower_bound( market_index_key( next_pair ) );
 
           if( !_ask_itr.valid() )
@@ -58,6 +58,9 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( _collateral_itr.valid() )   --_collateral_itr;
           else _collateral_itr = _db_impl._collateral_db.last();
+
+          if( _short_itr.valid() )   --_short_itr;
+          else _short_itr = _db_impl._short_db.last();
 
           asset trading_volume(0, base_id);
 
@@ -143,11 +146,12 @@ namespace bts { namespace blockchain { namespace detail {
 
             if( _current_ask->type == cover_order && _current_bid->type == short_order )
             {
-                price collateral_rate                = std::min(_current_bid->get_price(), _market_stat.center_price);
+                price collateral_rate                = _market_stat.center_price;
+                collateral_rate.ratio               /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset cover_collateral         = asset( *_current_ask->collateral, _base_id );
                 const asset max_usd_cover_can_afford = cover_collateral * mtrx.bid_price;
-                const asset cover_debt               = _current_ask->get_balance();
-                const asset usd_for_short_sale       = _current_bid->get_quote_quantity();
+                const asset cover_debt               = get_current_cover_debt();
+                const asset usd_for_short_sale       = _current_bid->get_balance() * collateral_rate; //_current_bid->get_quote_quantity();
 
                 //Actual quote to purchase is the minimum of what's for sale, what can I possibly buy, and what I owe
                 const asset usd_exchanged = std::min( {usd_for_short_sale, max_usd_cover_can_afford, cover_debt} );
@@ -178,7 +182,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 const asset cover_collateral          = asset( *_current_ask->collateral, _base_id );
                 const asset max_usd_cover_can_afford  = cover_collateral * mtrx.bid_price;
-                const asset cover_debt                = _current_ask->get_balance();
+                const asset cover_debt                = get_current_cover_debt();
                 const asset usd_for_sale              = _current_bid->get_balance();
 
                 asset usd_exchanged = std::min( {usd_for_sale, max_usd_cover_can_afford, cover_debt} );
@@ -201,7 +205,8 @@ namespace bts { namespace blockchain { namespace detail {
             else if( _current_ask->type == ask_order && _current_bid->type == short_order )
             {
                 // Bound collateral ratio (maximizes collateral of new margin position)
-                price collateral_rate          = std::min(_current_bid->get_price(), _market_stat.center_price);
+                price collateral_rate          = _market_stat.center_price;
+                collateral_rate.ratio          /= 2; // 2x from short, 1 x from long == 3x default collateral
                 const asset ask_quantity_usd   = _current_ask->get_quote_quantity();
                 const asset short_quantity_usd = _current_bid->get_balance() * collateral_rate;
                 const asset usd_exchanged      = std::min( short_quantity_usd, ask_quantity_usd );
@@ -435,14 +440,22 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == cover_order );
       FC_ASSERT( mtrx.ask_type == cover_order );
 
+      auto interest_paid = std::min( get_cover_interest( _current_ask->get_balance() ),
+                                     get_cover_interest( mtrx.ask_received ) );
+
+      auto amount_covered = mtrx.ask_received.amount - interest_paid.amount;
+      FC_ASSERT( amount_covered >= 0 );
+
       // we are in the margin call range...
-      _current_ask->state.balance  -= mtrx.bid_paid.amount;
+      _current_ask->state.balance  -= amount_covered;
       *(_current_ask->collateral)  -= mtrx.ask_paid.amount;
 
       FC_ASSERT( _current_ask->state.balance >= 0 );
-      FC_ASSERT( *_current_ask->collateral >= 0, "", ("mtrx",mtrx)("_current_ask", _current_ask)  );
+      FC_ASSERT( *_current_ask->collateral >= 0, "", 
+                 ("mtrx",mtrx)("_current_ask", _current_ask)("interest_paid",interest_paid)  );
 
-      quote_asset.current_share_supply -= mtrx.ask_received.amount;
+      quote_asset.current_share_supply -= amount_covered;
+      quote_asset.collected_fees       += interest_paid.amount;
       if( *_current_ask->collateral == 0 )
       {
           quote_asset.collected_fees -= _current_ask->state.balance;
@@ -535,7 +548,7 @@ namespace bts { namespace blockchain { namespace detail {
         if( bid.get_price().quote_asset_id == _quote_id &&
             bid.get_price().base_asset_id == _base_id )
         {
-            ++_short_itr;
+            --_short_itr;
             _current_bid = bid;
             return _current_bid.valid();
         }
@@ -699,6 +712,26 @@ namespace bts { namespace blockchain { namespace detail {
             else
               _pending_state->market_history[old_key] = new_record;
           }
+  }
+
+  asset market_engine::get_cover_interest( const asset& principle  ) const
+  {
+     asset annual_interest    = principle * _current_collat_record.interest_rate;
+     annual_interest.asset_id = principle.asset_id;
+
+     auto ellapsed_sec  = BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - 
+                         (_pending_state->now() - _current_collat_record.expiration).to_seconds();
+     if( ellapsed_sec < 0 ) ellapsed_sec = 0;
+
+     annual_interest.amount *= ellapsed_sec;
+     annual_interest.amount /= (365 * 24 * 60 * 60); // seconds per year
+
+     return annual_interest;
+  }
+
+  asset market_engine::get_current_cover_debt() const
+  {
+     return get_cover_interest( _current_ask->get_balance() ) + _current_ask->get_balance();
   }
 
 } } } // end namespace bts::blockchain::detail

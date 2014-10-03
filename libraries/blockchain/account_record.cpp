@@ -4,6 +4,8 @@
 
 namespace bts { namespace blockchain {
 
+    //account_type multisig_meta_info::type = multisig_account;
+
     bool account_record::is_null()const
     {
         return owner_key == public_key_type();

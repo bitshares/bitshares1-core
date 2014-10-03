@@ -176,6 +176,7 @@ namespace bts { namespace blockchain {
       if( !eval_state.check_signature( cover_index.owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
 
+
       // subtract this from the transaction
       eval_state.sub_balance( address(), delta_amount );
 
@@ -185,7 +186,24 @@ namespace bts { namespace blockchain {
 
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
-      asset_to_cover->current_share_supply -= delta_amount.amount;
+
+      // calculate interest due on delta_amount
+      asset interest_due = delta_amount * current_cover->interest_rate;
+      auto ellapsed_sec  = BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (eval_state._current_state->now() - current_cover->expiration).to_seconds();
+
+      if( ellapsed_sec < 0 ) ellapsed_sec = 0;
+
+      fc::uint128 due = interest_due.amount;
+      due *= ellapsed_sec;
+      due /= (365 * 24 * 60 * 60); // seconds per year
+
+      asset amount_paid = delta_amount;
+      amount_paid.amount -= due.to_uint64();
+
+      // subtract interest due from amount paid to cover, add it to amount paid to fees
+
+      asset_to_cover->current_share_supply -= amount_paid.amount; //delta_amount.amount;
+      asset_to_cover->collected_fees += due.to_uint64();
       eval_state._current_state->store_asset_record( *asset_to_cover );
 
       current_cover->payoff_balance -= delta_amount.amount;
