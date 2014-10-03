@@ -770,6 +770,12 @@
                   "type" : "share_type",
                   "description" : "Negative for non-delegates; otherwise the number of shares to be issued per produced block",
                   "default_value" : -1
+               },
+               {
+                  "name" : "account_type",
+                  "type" : "string",
+                  "description" : "titan_account | public_account - public accounts do not receive memos and all payments are made to the active key", 
+                  "default_value" : "titan_account"
                }
             ],
          "prerequisites" : ["wallet_unlocked"],

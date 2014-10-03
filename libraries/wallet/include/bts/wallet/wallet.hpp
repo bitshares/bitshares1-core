@@ -345,8 +345,10 @@ namespace bts { namespace wallet {
                  const variant& json_data,
                  share_type delegate_pay_rate,
                  const string& pay_with_account_name,
+                 bts::blockchain::account_type new_account_type = titan_account,
                  bool sign = true
                  );
+
          wallet_transaction_record update_registered_account(
                  const string& account_name,
                  const string& pay_from_account,
@@ -354,18 +356,21 @@ namespace bts { namespace wallet {
                  share_type delegate_pay_rate,
                  bool sign = true
                  );
+
          wallet_transaction_record update_active_key(
                  const std::string& account_to_update,
                  const std::string& pay_from_account,
                  const std::string& new_active_key,
                  bool sign = true
                  );
+
          wallet_transaction_record withdraw_delegate_pay(
                  const string& delegate_name,
                  double amount_to_withdraw,
                  const string& withdraw_to_account_name,
                  bool sign = true
                  );
+
          wallet_transaction_record publish_feeds(
                  const string& account,
                  map<string,double> amount_per_xts,

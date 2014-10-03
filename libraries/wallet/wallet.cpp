@@ -4388,15 +4388,23 @@ namespace bts { namespace wallet {
         sender_public_key = sender_private_key.get_public_key();
       }
 
-      trx.deposit_to_account( receiver_public_key,
-                              asset_to_transfer,
-                              sender_private_key,
-                              memo_message,
-                              slate_id,
-                              sender_public_key,
-                              my->create_one_time_key(),
-                              from_memo
-                              );
+      auto wallet_account = get_account( to_account_name );
+      if( wallet_account.meta_data.valid() && wallet_account.meta_data->type == public_account )
+      {
+         trx.deposit( wallet_account.active_address(), asset_to_transfer, slate_id );
+      }
+      else
+      {
+         trx.deposit_to_account( receiver_public_key,
+                                 asset_to_transfer,
+                                 sender_private_key,
+                                 memo_message,
+                                 slate_id,
+                                 sender_public_key,
+                                 my->create_one_time_key(),
+                                 from_memo
+                                 );
+      }
 
       auto entry = ledger_entry();
       entry.from_account = payer_public_key;
@@ -4426,6 +4434,7 @@ namespace bts { namespace wallet {
            const variant& public_data,
            share_type delegate_pay_rate,
            const string& pay_with_account_name,
+           account_type new_account_type,
            bool sign )
    { try {
       if( !is_valid_account_name( account_to_register ) )
@@ -4446,11 +4455,16 @@ namespace bts { namespace wallet {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
+      optional<account_meta_info> meta_info;
+      if( new_account_type == public_account )
+         meta_info = account_meta_info( public_account );
+
       trx.register_account( account_to_register,
                             public_data,
                             account_public_key, // master
                             account_public_key, // active
-                            delegate_pay_rate );
+                            delegate_pay_rate,
+                            meta_info );
 
       const auto pos = account_to_register.find( '.' );
       if( pos != string::npos )
