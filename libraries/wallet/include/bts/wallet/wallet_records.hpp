@@ -175,16 +175,15 @@ namespace bts { namespace wallet {
        uint32_t                                     block_num = -1;
        time_point_sec                               timestamp = time_point_sec( -1 );
 
-       // e.g. { name, INCOME-name, ISSUER-name, GENESIS, {ASK,BID,SHORT,MARGIN}-id, FEE }
+       // e.g. { name, INCOME-name, ISSUER-name, `snapshot address`, {ASK,BID,SHORT,MARGIN}-id, FEE }
        map<string, map<asset_id_type, share_type>>  delta_amounts;
 
        optional<transaction_id_type>                transaction_id;
 
-       // only used for titan deposits
+       // only really useful for titan transfers
        map<uint16_t, string>                        delta_labels;
 
-       // either memo_data for a titan transfer or string otherwise
-       map<uint16_t, variant>                       operation_details;
+       map<uint16_t, string>                        operation_notes;
 
        bool is_confirmed()const { return block_num != -1; }
        bool is_virtual()const   { return !transaction_id.valid(); }
@@ -192,9 +191,9 @@ namespace bts { namespace wallet {
        friend bool operator < ( const transaction_ledger_entry& a, const transaction_ledger_entry& b )
        {
            if( a.is_confirmed() == b.is_confirmed() )
-               return std::tie( a.block_num, a.timestamp, a.id ) > std::tie( b.block_num, b.timestamp, b.id );
+               return std::tie( a.block_num, a.timestamp, a.id ) < std::tie( b.block_num, b.timestamp, b.id );
            else
-               return std::tie( a.timestamp, a.id ) > std::tie( b.timestamp, b.id );
+               return std::tie( a.timestamp, a.id ) < std::tie( b.timestamp, b.id );
        }
    };
 
@@ -202,7 +201,7 @@ namespace bts { namespace wallet {
    {
        vector<std::pair<string, asset>> inputs;
        vector<std::pair<string, asset>> outputs;
-       vector<string>                   details;
+       vector<string>                   notes;
    };
 
 #if 0
@@ -349,13 +348,13 @@ FC_REFLECT( bts::wallet::transaction_ledger_entry,
         (delta_amounts)
         (transaction_id)
         (delta_labels)
-        (operation_details)
+        (operation_notes)
         )
 
 FC_REFLECT_DERIVED( bts::wallet::pretty_transaction_experimental, (bts::wallet::transaction_ledger_entry),
         (inputs)
         (outputs)
-        (details)
+        (notes)
         )
 
 /**

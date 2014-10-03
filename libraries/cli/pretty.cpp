@@ -533,7 +533,7 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
         { "block",      10 },
         { "inputs",     40 },
         { "outputs",    40 },
-        { "details",    24 },
+        { "notes",      32 },
         { "id",          8 }
     };
 
@@ -559,7 +559,7 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
 
         while( line_count < transaction.inputs.size()
                || line_count < transaction.outputs.size()
-               || line_count < transaction.details.size() )
+               || line_count < transaction.notes.size() )
         {
             out << std::setw( field_widths.at( "timestamp" ) );
             if( line_count == 0 )
@@ -623,10 +623,10 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
                 out << "";
             }
 
-            out << std::setw( field_widths.at( "details" ) );
-            if( line_count < transaction.details.size() )
+            out << std::setw( field_widths.at( "notes" ) );
+            if( line_count < transaction.notes.size() )
             {
-                out << pretty_shorten( transaction.details.at( line_count ), field_widths.at( "details" ) - 1 );
+                out << pretty_shorten( transaction.notes.at( line_count ), field_widths.at( "notes" ) - 1 );
             }
             else
             {

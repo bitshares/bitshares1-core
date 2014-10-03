@@ -618,7 +618,7 @@ namespace bts { namespace wallet {
               }
           }
 
-          record.operation_details[ 0 ] = "import snapshot keys";
+          record.operation_notes[ 0 ] = "import snapshot keys";
 
           _wallet_db.experimental_transactions[ record.id ] = record;
       }
@@ -666,6 +666,8 @@ namespace bts { namespace wallet {
                                                        bool store_record )
       { try {
           uint16_t op_index = 0;
+          uint16_t withdrawal_count = 0;
+          vector<memo_status> titan_memos;
 
           const auto collect_balance = [&]( const balance_id_type& balance_id, const asset& delta_amount ) -> bool
           {
@@ -691,10 +693,11 @@ namespace bts { namespace wallet {
 
           const auto scan_withdraw = [&]( const withdraw_operation& op ) -> bool
           {
+              ++withdrawal_count;
               return collect_balance( op.balance_id, eval_state.deltas.at( op_index ) );
           };
 
-          // TODO: Recipient address label needs to be saved at time of creation
+          // TODO: Recipient address label and memo message needs to be saved at time of creation
           // to do this make a wrapper around trx.deposit_to_account just like my->withdraw_to_transaction
           const auto scan_deposit = [&]( const deposit_operation& op ) -> bool
           {
@@ -712,18 +715,22 @@ namespace bts { namespace wallet {
                               const private_key_type& key = key_item.first;
                               const string& account_name = key_item.second;
 
-                              const omemo_status status = condition.decrypt_memo_data( key );
+                              omemo_status status = condition.decrypt_memo_data( key );
                               if( status.valid() )
                               {
-                                  // cache memo and sync balance
+                                  titan_memos.push_back( *status );
 
-                                  //FC_ASSERT( status->memo_flags == from_memo );
+                                  // cache memo and sync balance
+                                  _wallet_db.cache_memo( *status, key, _wallet_password );
+
+                                  // save memo for later checking if pure titan
 
                                   const string& delta_label = account_name;
                                   record.delta_labels[ op_index ] = delta_label;
 
-                                  const memo_data& memo = *status;
-                                  record.operation_details[ op_index ] = memo;
+                                  const string memo = status->get_message();
+                                  if( !memo.empty() )
+                                      record.operation_notes[ op_index ] = memo;
                                   break;
                               }
                           }
@@ -761,10 +768,10 @@ namespace bts { namespace wallet {
           {
               const string& account_name = op.name;
 
-              if( record.operation_details.count( op_index ) == 0 )
+              if( record.operation_notes.count( op_index ) == 0 )
               {
-                  const string description = "register account " + account_name;
-                  record.operation_details[ op_index ] = description;
+                  const string note = "register account " + account_name;
+                  record.operation_notes[ op_index ] = note;
               }
 
               return account_names.count( account_name ) > 0;
@@ -776,10 +783,10 @@ namespace bts { namespace wallet {
               FC_ASSERT( account_record.valid() );
               const string& account_name = account_record->name;
 
-              if( record.operation_details.count( op_index ) == 0 )
+              if( record.operation_notes.count( op_index ) == 0 )
               {
-                  const string description = "update account " + account_name;
-                  record.operation_details[ op_index ] = description;
+                  const string note = "update account " + account_name;
+                  record.operation_notes[ op_index ] = note;
               }
 
               return account_names.count( account_name ) > 0;
@@ -804,10 +811,10 @@ namespace bts { namespace wallet {
               FC_ASSERT( account_record.valid() );
               const string& account_name = account_record->name;
 
-              if( record.operation_details.count( op_index ) == 0 )
+              if( record.operation_notes.count( op_index ) == 0 )
               {
-                  const string description = account_name + " created asset " + op.symbol;
-                  record.operation_details[ op_index ] = description;
+                  const string note = account_name + " created asset " + op.symbol;
+                  record.operation_notes[ op_index ] = note;
               }
 
               return account_names.count( account_name ) > 0;
@@ -836,22 +843,22 @@ namespace bts { namespace wallet {
               const asset& delta_amount = eval_state.deltas.at( op_index );
               record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
 
-              if( record.operation_details.count( op_index ) == 0 )
+              if( record.operation_notes.count( op_index ) == 0 )
               {
-                  string description;
+                  string note;
 
                   if( op.amount >= 0 )
                   {
                       const oasset_record asset_record = _blockchain->get_asset_record( op.ask_index.order_price.base_asset_id );
                       FC_ASSERT( asset_record.valid() );
-                      description = "sell " + asset_record->symbol + " @ " + _blockchain->to_pretty_price( op.ask_index.order_price );
+                      note = "sell " + asset_record->symbol + " @ " + _blockchain->to_pretty_price( op.ask_index.order_price );
                   }
                   else
                   {
-                      description = "cancel " + delta_label;
+                      note = "cancel " + delta_label;
                   }
 
-                  record.operation_details[ op_index ] = description;
+                  record.operation_notes[ op_index ] = note;
               }
 
               const owallet_key_record key_record = _wallet_db.lookup_key( op.ask_index.owner );
@@ -867,10 +874,10 @@ namespace bts { namespace wallet {
               FC_ASSERT( account_record.valid() );
               const string& account_name = account_record->name;
 
-              if( record.operation_details.count( op_index ) == 0 )
+              if( record.operation_notes.count( op_index ) == 0 )
               {
-                  const string description = "update " + account_name + "'s price feed for " + asset_record->symbol;
-                  record.operation_details[ op_index ] = description;
+                  const string note = "update " + account_name + "'s price feed for " + asset_record->symbol;
+                  record.operation_notes[ op_index ] = note;
               }
 
               return account_names.count( account_name ) > 0;
@@ -889,12 +896,12 @@ namespace bts { namespace wallet {
               {
                   const string& account_name = account_record->name;
 
-                  if( record.operation_details.count( op_index ) == 0 )
+                  if( record.operation_notes.count( op_index ) == 0 )
                   {
-                      string description = "burn";
-                      description += ( account_id > 0 ) ? " for " : " against ";
-                      description += account_name;
-                      record.operation_details[ op_index ] = description;
+                      string note = "burn";
+                      note += ( account_id > 0 ) ? " for " : " against ";
+                      note += account_name;
+                      record.operation_notes[ op_index ] = note;
                   }
 
                   return account_names.count( account_name ) > 0;
@@ -961,6 +968,31 @@ namespace bts { namespace wallet {
               }
 
               ++op_index;
+          }
+
+          // Kludge for pretty incoming TITAN transfers
+          if( withdrawal_count + titan_memos.size() == eval_state.trx.operations.size()
+              && titan_memos.size() == 1
+              && record.delta_labels.size() == 1 )
+          {
+              // Assume vanilla TITAN transfer
+              const memo_status& memo = titan_memos.front();
+              if( memo.has_valid_signature )
+              {
+                  record.delta_amounts.clear();
+
+                  const oaccount_record account_record = _blockchain->get_account_record( address( memo.from ) );
+                  FC_ASSERT( account_record.valid() );
+
+                  for( uint16_t i = 0; i < eval_state.trx.operations.size(); ++i )
+                  {
+                      if( operation_type_enum( eval_state.trx.operations.at( i ).type ) == withdraw_op_type )
+                          record.delta_labels[ i ] = account_record->name;
+                  }
+
+                  scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record, store_record );
+                  return;
+              }
           }
 
           for( const auto& delta_item : eval_state.balance )
@@ -2940,24 +2972,35 @@ namespace bts { namespace wallet {
           }
       }
 
-      for( const auto& item : record.operation_details )
+      result.notes.reserve( record.operation_notes.size() );
+      for( const auto& item : record.operation_notes )
       {
-          const auto& detail = item.second;
-          if( detail.is_string() )
-          {
-              result.details.push_back( detail.as_string() );
-          }
-          else
-          {
-              try
-              {
-                  result.details.push_back( "TODO: TITAN info" );
-              }
-              catch( ... )
-              {
-              }
-          }
+          const auto& note = item.second;
+          result.notes.push_back( note );
       }
+
+      const auto delta_compare = []( const std::pair<string, asset>& a, const std::pair<string, asset>& b ) -> bool
+      {
+          const string& a_label = a.first;
+          const string& b_label = b.first;
+
+          const asset& a_amount = a.second;
+          const asset& b_amount = b.second;
+
+          if( a_label == b_label )
+              return a_amount.asset_id < b_amount.asset_id;
+
+          if( islower( a_label[0] ) != islower( b_label[0] ) )
+              return islower( a_label[0] );
+
+          if( (a_label.find( "FEE" ) == string::npos) != (b_label.find( "FEE" ) == string::npos) )
+              return a_label.find( "FEE" ) == string::npos;
+
+          return a < b;
+      };
+
+      std::sort( result.inputs.begin(), result.inputs.end(), delta_compare );
+      std::sort( result.outputs.begin(), result.outputs.end(), delta_compare );
 
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }

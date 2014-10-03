@@ -79,12 +79,6 @@ namespace bts { namespace blockchain {
    };
    typedef fc::optional<memo_data>         omemo_data;
 
-   struct titan_memo
-   {
-      public_key_type   one_time_key;
-      vector<char>      encrypted_memo_data;
-   };
-
    struct memo_status : public memo_data
    {
       memo_status():has_valid_signature(false){}
@@ -97,6 +91,12 @@ namespace bts { namespace blockchain {
       fc::ecc::private_key owner_private_key;
    };
    typedef fc::optional<memo_status> omemo_status;
+
+   struct titan_memo
+   {
+      public_key_type   one_time_key;
+      vector<char>      encrypted_memo_data;
+   };
 
    struct withdraw_with_signature
    {
