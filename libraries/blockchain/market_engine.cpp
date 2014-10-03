@@ -451,7 +451,7 @@ namespace bts { namespace blockchain { namespace detail {
       *(_current_ask->collateral)  -= mtrx.ask_paid.amount;
 
       FC_ASSERT( _current_ask->state.balance >= 0 );
-      FC_ASSERT( *_current_ask->collateral >= 0, "", 
+      FC_ASSERT( *_current_ask->collateral >= 0, "",
                  ("mtrx",mtrx)("_current_ask", _current_ask)("interest_paid",interest_paid)  );
 
       quote_asset.current_share_supply -= amount_covered;
@@ -719,7 +719,7 @@ namespace bts { namespace blockchain { namespace detail {
      asset annual_interest    = principle * _current_collat_record.interest_rate;
      annual_interest.asset_id = principle.asset_id;
 
-     auto ellapsed_sec  = BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - 
+     auto ellapsed_sec  = BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC -
                          (_pending_state->now() - _current_collat_record.expiration).to_seconds();
      if( ellapsed_sec < 0 ) ellapsed_sec = 0;
 

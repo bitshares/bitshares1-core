@@ -792,7 +792,7 @@
                {
                   "name" : "account_type",
                   "type" : "string",
-                  "description" : "titan_account | public_account - public accounts do not receive memos and all payments are made to the active key", 
+                  "description" : "titan_account | public_account - public accounts do not receive memos and all payments are made to the active key",
                   "default_value" : "titan_account"
                }
             ],

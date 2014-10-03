@@ -187,6 +187,9 @@ namespace bts { namespace blockchain {
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
+#ifndef WIN32
+#warning [HARDFORK] Change in cover evaluation will hardfork BTSX
+#endif
       // calculate interest due on delta_amount
       asset interest_due = delta_amount * current_cover->interest_rate;
       auto ellapsed_sec  = BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (eval_state._current_state->now() - current_cover->expiration).to_seconds();

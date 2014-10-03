@@ -6598,7 +6598,7 @@ namespace bts { namespace wallet {
                                                           const oprice& price_limit)
    { try {
       validate_market(interest_rate.quote_asset_id, interest_rate.base_asset_id);
-      FC_ASSERT(!price_limit || 
+      FC_ASSERT(!price_limit ||
                 interest_rate.quote_asset_id == price_limit->quote_asset_id &&
                 interest_rate.base_asset_id == price_limit->base_asset_id,
                 "Interest rate ${rate} and price limit ${limit} do not have compatible units.",

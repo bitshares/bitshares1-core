@@ -61,7 +61,7 @@ namespace bts { namespace blockchain {
       share_type        pay_rate = -1;
 
       /**
-       *  Delegate pay is held in escrow and may be siezed 
+       *  Delegate pay is held in escrow and may be siezed
        *  and returned to the shareholders if they are fired
        *  for provable cause.
        */
@@ -133,12 +133,10 @@ FC_REFLECT( bts::blockchain::account_meta_info, (type)(data) )
 
 FC_REFLECT( bts::blockchain::account_record,
             (id)(name)(public_data)(owner_key)(active_key_history)(registration_date)(last_update)(delegate_info)(meta_data) )
-FC_REFLECT( bts::blockchain::delegate_stats, 
+FC_REFLECT( bts::blockchain::delegate_stats,
             (votes_for)(blocks_produced)(blocks_missed)(pay_rate)(pay_balance)(next_secret_hash)(last_block_num_produced) )
 FC_REFLECT( bts::blockchain::burn_record_key,   (account_id)(transaction_id) )
 FC_REFLECT( bts::blockchain::burn_record_value, (amount)(message)(signer) )
 FC_REFLECT_DERIVED( bts::blockchain::burn_record, (bts::blockchain::burn_record_key)(bts::blockchain::burn_record_value), BOOST_PP_SEQ_NIL )
 FC_REFLECT_ENUM( bts::blockchain::account_type, (titan_account)(public_account)(multisig_account) )
 FC_REFLECT( bts::blockchain::multisig_meta_info, (required)(owners) )
-
-
