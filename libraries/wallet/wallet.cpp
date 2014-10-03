@@ -2704,11 +2704,12 @@ namespace bts { namespace wallet {
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
       auto local_account = my->_wallet_db.lookup_account( account_name );
-      if( !local_account.valid() )
-          FC_THROW_EXCEPTION( unknown_account, "Unknown local account name!", ("account_name",account_name) );
-
       auto chain_account = my->_blockchain->get_account_record( account_name );
-      if( chain_account )
+
+      if( !local_account.valid() && !chain_account.valid() )
+          FC_THROW_EXCEPTION( unknown_account, "Unknown account name!", ("account_name",account_name) );
+
+      if( local_account.valid() && chain_account.valid() )
       {
          if( local_account->owner_key == chain_account->owner_key )
          {
@@ -2722,6 +2723,13 @@ namespace bts { namespace wallet {
             wdump( (local_account)(chain_account) );
          }
       }
+      else if( !local_account.valid() )
+      {
+          local_account = wallet_account_record();
+          blockchain::account_record& bca = *local_account;
+          bca = *chain_account;
+      }
+
       return *local_account;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
