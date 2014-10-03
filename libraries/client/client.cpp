@@ -3303,13 +3303,17 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     void client_impl::wallet_scan_transaction_experimental( const string& transaction_id, bool overwrite_existing )
     { try {
-#ifdef BTS_TEST_NETWORK
-       _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
+#ifndef BTS_TEST_NETWORK
+       FC_ASSERT( !"This command is for developer testing only!" );
 #endif
+       _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
 
-    set<transaction_ledger_entry> client_impl::wallet_transaction_history_experimental( const string& account_name )const
+    set<pretty_transaction_experimental> client_impl::wallet_transaction_history_experimental( const string& account_name )const
     { try {
+#ifndef BTS_TEST_NETWORK
+       FC_ASSERT( !"This command is for developer testing only!" );
+#endif
        return _wallet->transaction_history_experimental( account_name );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 

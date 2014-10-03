@@ -522,97 +522,137 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
     return out.str();
 }
 
-string pretty_experimental_transaction_list( const set<transaction_ledger_entry>& transactions, cptr client )
+string pretty_experimental_transaction_list( const set<pretty_transaction_experimental>& transactions, cptr client )
 {
     if( transactions.empty() ) return "No transactions found.\n";
     FC_ASSERT( client != nullptr );
 
+    const vector<std::pair<string, int>> fields
+    {
+        { "timestamp",  20 },
+        { "block",      10 },
+        { "inputs",     40 },
+        { "outputs",    40 },
+        { "details",    24 },
+        { "id",          8 }
+    };
+
     std::stringstream out;
     out << std::left;
 
-    out << std::setw( 20 ) << "TIMESTAMP";
-    out << std::setw( 10 ) << "BLOCK";
-    out << std::setw( 60 ) << "DELTA";
-    //out << std::setw( 40 ) << "FROM";
-    //out << std::setw( 40 ) << "TO";
-    //out << std::setw( 40 ) << "DETAILS";
-    out << std::setw(  8 ) << "ID";
+    map<string, int> field_widths;
+    int total_width = 0;
+    for( const auto& item : fields )
+    {
+        out << std::setw( item.second ) << boost::to_upper_copy( item.first );
+        field_widths[ item.first ] = item.second;
+        total_width += item.second;
+    }
+
     out << "\n";
 
-    const auto line_size = 98;
-    out << pretty_line( line_size ) << "\n";
+    out << pretty_line( total_width ) << "\n";
 
     for( const auto& transaction : transactions )
     {
-        auto count = 0;
+        auto line_count = 0;
 
-        if( count == 0 )
+        while( line_count < transaction.inputs.size()
+               || line_count < transaction.outputs.size()
+               || line_count < transaction.details.size() )
         {
-            out << std::setw( 20 ) << pretty_timestamp( transaction.timestamp );
+            out << std::setw( field_widths.at( "timestamp" ) );
+            if( line_count == 0 )
+                out << pretty_timestamp( transaction.timestamp );
+            else
+                out << "";
 
-            out << std::setw( 10 );
-            if( transaction.is_confirmed() )
+            out << std::setw( field_widths.at( "block" ) );
+            if( line_count == 0 )
             {
-                out << transaction.block_num;
+                if( transaction.is_confirmed() )
+                {
+                    out << transaction.block_num;
+                }
+                /*
+                else if( transaction.error.valid() )
+                {
+                    auto name = string( transaction.error->name() );
+                    name = name.substr( 0, name.find( "_" ) );
+                    boost::to_upper( name );
+                    out << name.substr( 0, 9 );
+                }
+                */
+                else
+                {
+                    out << "PENDING";
+                }
             }
-            /*
-            else if( transaction.error.valid() )
-            {
-                auto name = string( transaction.error->name() );
-                name = name.substr( 0, name.find( "_" ) );
-                boost::to_upper( name );
-                out << name.substr( 0, 9 );
-            }
-            */
             else
             {
-                out << "PENDING";
+                out << "";
             }
-        }
 
-        for( const auto& item : transaction.delta_amounts )
-        {
-            const auto& label = item.first;
-            for( const auto& delta_item : item.second )
+            out << std::setw( field_widths.at( "inputs" ) );
+            if( line_count < transaction.inputs.size() )
             {
-                ++count;
-
-                if( count > 1 )
-                {
-                    out << std::setw( 20 ) << "";
-                    out << std::setw( 10 ) << "";
-                }
-
-                string delta;
-
-                const asset delta_amount( delta_item.second, delta_item.first );
-                if( delta_amount.amount < 0 )
-                    delta = label + " => " + client->get_chain()->to_pretty_asset( -delta_amount );
-                else
-                    delta = client->get_chain()->to_pretty_asset( delta_amount ) + " => " + label;
-
-                out << std::setw( 60 ) << delta;
-
-                out << std::setw( 8 );
-                if( count == 1 )
-                {
-                    if( FILTER_OUTPUT_FOR_TESTS )
-                        out << "[redacted]";
-                    else if( transaction.is_virtual() )
-                        out << "VIRTUAL";
-                    else
-                        out << string( *transaction.transaction_id ).substr( 0, 8 );
-                }
-                else
-                {
-                    out << "";
-                }
-
-                out << "\n";
+                const auto& item = transaction.inputs.at( line_count );
+                const string& label = item.first;
+                const asset& delta = item.second;
+                string input = " => " + client->get_chain()->to_pretty_asset( delta );
+                input = pretty_shorten( label, field_widths.at( "inputs" ) - input.size() - 1 ) + input;
+                out << input;
             }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "outputs" ) );
+            if( line_count < transaction.outputs.size() )
+            {
+                const auto& item = transaction.outputs.at( line_count );
+                const string& label = item.first;
+                const asset& delta = item.second;
+                string output = client->get_chain()->to_pretty_asset( delta ) + " => ";
+                output = output + pretty_shorten( label, field_widths.at( "outputs" ) - output.size() - 1 );
+                out << output;
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "details" ) );
+            if( line_count < transaction.details.size() )
+            {
+                out << pretty_shorten( transaction.details.at( line_count ), field_widths.at( "details" ) - 1 );
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "id" ) );
+            if( line_count == 0 )
+            {
+                if( FILTER_OUTPUT_FOR_TESTS )
+                    out << "[redacted]";
+                else if( transaction.is_virtual() )
+                    out << "VIRTUAL";
+                else
+                    out << string( *transaction.transaction_id ).substr( 0, field_widths.at( "id" ) );
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << "\n";
+            ++line_count;
         }
 
-        out << pretty_line( line_size, '-' ) << "\n";
+        out << pretty_line( total_width, '-' ) << "\n";
     }
 
     return out.str();

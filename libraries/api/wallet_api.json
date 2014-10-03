@@ -354,7 +354,7 @@
               "default_value" : ""
             }
         ],
-        "prerequisites" : ["wallet_open"],
+        "prerequisites" : ["wallet_unlocked"],
         "is_const": true,
         "aliases" : ["hx"]
       },

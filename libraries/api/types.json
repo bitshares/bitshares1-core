@@ -309,7 +309,7 @@
       },
       {
         "type_name" : "experimental_transactions",
-        "cpp_return_type" : "std::set<bts::wallet::transaction_ledger_entry>"
+        "cpp_return_type" : "std::set<bts::wallet::pretty_transaction_experimental>"
       },
       {
          "type_name" : "account_balance_summary_type",

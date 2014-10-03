@@ -108,7 +108,7 @@ namespace bts { namespace cli {
 
     _command_to_function["wallet_transaction_history_experimental"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
-      const auto& transactions = result.as<set<transaction_ledger_entry>>();
+      const auto& transactions = result.as<set<pretty_transaction_experimental>>();
       out << pretty_experimental_transaction_list( transactions, client );
     };
 

@@ -157,7 +157,8 @@ namespace bts { namespace wallet {
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
          void                              scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
 
-         set<transaction_ledger_entry> transaction_history_experimental( const string& account_name );
+         set<pretty_transaction_experimental> transaction_history_experimental( const string& account_name );
+         pretty_transaction_experimental to_pretty_transaction_experimental( const transaction_ledger_entry& record );
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 

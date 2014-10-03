@@ -192,10 +192,17 @@ namespace bts { namespace wallet {
        friend bool operator < ( const transaction_ledger_entry& a, const transaction_ledger_entry& b )
        {
            if( a.is_confirmed() == b.is_confirmed() )
-               return std::tie( a.block_num, a.timestamp, a.id ) < std::tie( b.block_num, b.timestamp, b.id );
+               return std::tie( a.block_num, a.timestamp, a.id ) > std::tie( b.block_num, b.timestamp, b.id );
            else
-               return std::tie( a.timestamp, a.id ) < std::tie( b.timestamp, b.id );
+               return std::tie( a.timestamp, a.id ) > std::tie( b.timestamp, b.id );
        }
+   };
+
+   struct pretty_transaction_experimental : transaction_ledger_entry
+   {
+       vector<std::pair<string, asset>> inputs;
+       vector<std::pair<string, asset>> outputs;
+       vector<string>                   details;
    };
 
 #if 0
@@ -343,6 +350,12 @@ FC_REFLECT( bts::wallet::transaction_ledger_entry,
         (transaction_id)
         (delta_labels)
         (operation_details)
+        )
+
+FC_REFLECT_DERIVED( bts::wallet::pretty_transaction_experimental, (bts::wallet::transaction_ledger_entry),
+        (inputs)
+        (outputs)
+        (details)
         )
 
 /**
