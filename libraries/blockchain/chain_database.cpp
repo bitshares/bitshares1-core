@@ -3018,5 +3018,28 @@ namespace bts { namespace blockchain {
       return results;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
+   vector<asset> chain_database::get_balance_for_key( const address& owner_address )const
+   {
+      map<asset_id_type,share_type> result;
+      auto itr = my->_balance_db.begin();
+      while( itr.valid() )
+      {
+         auto value = itr.value();
+         if( value.owner() == owner_address )
+         {
+            auto balance = value.get_balance();
+            result[balance.asset_id] += balance.amount;
+         }
+         ++itr;
+      }
+      vector<asset> asset_result;
+      asset_result.reserve(result.size());
+      for( auto item : result )
+      {
+         asset_result.push_back( asset(item.second,item.first) );
+      }
+      return asset_result;
+   }
+
 } } // bts::blockchain
 
