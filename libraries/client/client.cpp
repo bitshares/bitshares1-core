@@ -1619,7 +1619,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
        fc::time_point_sec client_impl::get_blockchain_now()
        {
-         return bts::blockchain::now();
+         // this function is called by the p2p network code in the p2p thread, since there is no reason to 
+         // proxy this to the 
+         ASSERT_TASK_NOT_PREEMPTED();
+         return bts::blockchain::nonblocking_now();
        }
 
        bts::net::item_hash_t client_impl::get_head_block_id() const
