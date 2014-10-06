@@ -3239,6 +3239,30 @@ namespace bts { namespace net { namespace detail {
         wlog( "Exception thrown while terminating Process backlog of sync items task, ignoring" );
       }
 
+      unsigned handle_message_call_count = 0;
+      for (fc::future<void>& handle_message_call : _handle_message_calls_in_progress)
+      {
+        ++handle_message_call_count;
+        try
+        {
+          handle_message_call.cancel_and_wait("node_impl::close()");
+          dlog("handle_message call #${count} task terminated", ("count", handle_message_call_count));
+        }
+        catch ( const fc::canceled_exception& )
+        {
+          dlog("handle_message call #${count} task terminated", ("count", handle_message_call_count));
+        }
+        catch ( const fc::exception& e )
+        {
+          wlog("Exception thrown while terminating handle_message call #${count} task, ignoring: ${e}", ("e",e)("count", handle_message_call_count));
+        }
+        catch (...)
+        {
+          wlog("Exception thrown while terminating handle_message call #${count} task, ignoring",("count", handle_message_call_count));
+        }
+      }
+      _handle_message_calls_in_progress.clear();
+
       try
       {
         _fetch_sync_items_loop_done.cancel("node_impl::close()");
