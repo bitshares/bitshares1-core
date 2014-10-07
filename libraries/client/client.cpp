@@ -2525,7 +2525,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     void detail::client_impl::ntp_update_time()
     {
-      FC_ASSERT(blockchain::ntp_time());
+      blockchain::ntp_time(); // this is just called to ensure the NTP time service is running
       blockchain::update_ntp_time();
     }
 
