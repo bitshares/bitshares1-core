@@ -6776,6 +6776,8 @@ namespace bts { namespace wallet {
          }
 
       if( required_fee.asset_id != -1 )
+      {
+         transaction_record.fee = required_fee;
          //outstanding_balance is pair<pair<account address, asset ID>, share_type>
          for( auto& outstanding_balance : outstanding_balances )
          {
@@ -6793,21 +6795,53 @@ namespace bts { namespace wallet {
             outstanding_balance.second -= required_fee.amount;
             return;
          }
-      else
+      }
+      else if( withdraw_fee() ) return;
+
+      FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
+   } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
+
+   bool transaction_builder::withdraw_fee()
+   {
+      //Shake down every owner with a balance until you find one who can pay a fee
+      std::unordered_set<blockchain::address> checked_accounts;
+      //At this point, we'll require XTS.
+      asset final_fee= _wimpl->self->get_transaction_fee();
+      address bag_holder;
+
+      for( auto itr = outstanding_balances.begin(); itr != outstanding_balances.end(); ++itr )
       {
-         //charge the fee to the first balance that's an asset we can pay fees in
-         for( auto& outstanding_balance : outstanding_balances )
-         {
-            asset fee = _wimpl->self->get_transaction_fee(outstanding_balance.first.second);
-            if( fee.asset_id == outstanding_balance.first.second ) {
-                outstanding_balance.second -= fee.amount;
-                return;
-            }
-         }
+         address potential_bag_holder = itr->first.first;
+
+         //Have we already vetted this potential bag holder?
+         if( checked_accounts.find(potential_bag_holder) != checked_accounts.end() ) continue;
+         checked_accounts.insert(potential_bag_holder);
+
+         //Am I allowed to take money from this potential bag holder?
+         auto account_rec = _wimpl->_wallet_db.lookup_account(potential_bag_holder);
+         if( !account_rec || !account_rec->is_my_account ) continue;
+
+         //Does this potential bag holder have any money I can take?
+         account_balance_summary_type balances = _wimpl->self->get_account_balances(account_rec->name);
+         if( balances.empty() ) continue;
+
+         //Does this potential bag holder have enough XTS?
+         auto balance_map = balances.begin()->second;
+         if( balance_map.find(0) == balance_map.end() || balance_map[0] < final_fee.amount ) continue;
+
+         //Let this potential bag holder be THE bag holder.
+         bag_holder = potential_bag_holder;
+         break;
       }
 
-      FC_THROW( "Unable to pay fee; there are no balances in this transaction in an asset which can pay fees!" );
-   } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
+      if( bag_holder != address() )
+      {
+         outstanding_balances[std::make_pair(bag_holder, final_fee.asset_id)] -= final_fee.amount;
+         transaction_record.fee = final_fee;
+         return true;
+      }
+      return false;
+   }
 
    /********  END  TRANSACTION BUILDER IMPLEMENTATION ********/
 

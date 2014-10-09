@@ -134,7 +134,7 @@ namespace bts { namespace wallet {
        * sufficiently positive balances are available. A single slate is chosen using vote_recommended for all deposits.
        *
        * This function should be called only once, at the end of the builder function calls. Calling it multiple times
-       * shouldn't break anything, but I make no promises.
+       * may cause attempts to over-withdraw balances.
        */
       transaction_builder& finalize();
       /// @}
@@ -176,6 +176,7 @@ namespace bts { namespace wallet {
          return balances;
       }
       void pay_fees();
+      bool withdraw_fee();
    };
 
    typedef std::shared_ptr<transaction_builder> transaction_builder_ptr;
