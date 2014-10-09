@@ -119,6 +119,8 @@ namespace bts { namespace net {
 
          virtual item_hash_t get_head_block_id() const = 0;
 
+         virtual uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const = 0;
+
          virtual void error_encountered(const std::string& message, const fc::oexception& error) = 0;
    };
 
@@ -217,7 +219,7 @@ namespace bts { namespace net {
          *  Node starts the process of fetching all items after item_id of the
          *  given item_type.   During this process messages are not broadcast.
          */
-        virtual void      sync_from( const item_id& );
+        virtual void      sync_from(const item_id& current_head_block, const std::vector<uint32_t>& hard_fork_block_numbers);
 
         bool      is_connected() const;
 
@@ -258,7 +260,7 @@ namespace bts { namespace net {
 
       fc::ip::endpoint get_actual_listening_endpoint() const override { return fc::ip::endpoint(); }
 
-      void      sync_from( const item_id& ) override {}
+      void      sync_from(const item_id& current_head_block, const std::vector<uint32_t>& hard_fork_block_numbers) override {}
       void      broadcast(const message& item_to_broadcast) override;
       void      add_node_delegate(node_delegate* node_delegate_to_add);
 

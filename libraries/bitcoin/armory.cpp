@@ -11,7 +11,7 @@ namespace bts { namespace bitcoin {
 std::vector<fc::ecc::private_key> import_armory_wallet( const fc::path& wallet_dat, const std::string& passphrase )
 {
     if( !fc::exists( wallet_dat ) )
-        FC_THROW( ("Unable to open wallet: file \"" + wallet_dat.to_native_ansi_path() + "\" not found!").c_str() );
+        FC_THROW( ("Unable to open wallet: file \"" + wallet_dat.preferred_string() + "\" not found!").c_str() );
 
     std::vector<fc::ecc::private_key> output;
 
