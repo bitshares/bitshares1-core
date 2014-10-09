@@ -102,6 +102,14 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+#ifndef WIN32
+#warning [FUBAR] This needs to be updated to reflect the new short operation interest semantics
+#endif
+#ifndef BTS_TEST_NETWORK
+#error Don't even try it
+   /* BTSX now needs to have this as short_operation_v3 and all short_v2's need to get canceled
+    * there are reports of funds disappearing during the last cancellation which also must be addressed first */
+#endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       if( this->short_index.order_price == price() )
