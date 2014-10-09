@@ -30,7 +30,8 @@ namespace bts { namespace net
       we_need_sync_items_from_peer(true),
       last_block_number_delegate_has_seen(0),
       inhibit_fetching_sync_blocks(false),
-      transaction_fetching_inhibited_until(fc::time_point::min())
+      transaction_fetching_inhibited_until(fc::time_point::min()),
+      last_known_fork_block_number(0)
 #ifndef NDEBUG
       ,_thread(&fc::thread::current()),
       _send_message_queue_tasks_running(0)

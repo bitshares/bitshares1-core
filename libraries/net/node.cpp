@@ -57,6 +57,8 @@
 #include <bts/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
+//#define ENABLE_DEBUG_ULOGS
+
 #ifdef DEFAULT_LOGGER
 # undef DEFAULT_LOGGER
 #endif
@@ -270,6 +272,7 @@ namespace bts { namespace net { namespace detail {
                                    (get_block_number) \
                                    (get_block_time) \
                                    (get_head_block_id) \
+                                   (estimate_last_known_fork_from_git_revision_timestamp) \
                                    (error_encountered)
 
 #define DECLARE_ACCUMULATOR(r, data, method_name) \
@@ -367,6 +370,7 @@ namespace bts { namespace net { namespace detail {
       fc::time_point_sec get_block_time(const item_hash_t& block_id) override;
       fc::time_point_sec get_blockchain_now() override;
       item_hash_t get_head_block_id() const override;
+      uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const;
       void error_encountered(const std::string& message, const fc::oexception& error) override;
     };
 
@@ -483,6 +487,7 @@ namespace bts { namespace net { namespace detail {
 
       uint32_t _sync_item_type;
       uint32_t _total_number_of_unfetched_items; /// the number of items we still need to fetch while syncing
+      std::vector<uint32_t> _hard_fork_block_numbers; /// list of all block numbers where there are hard forks
 
       blockchain_tied_message_cache _message_cache; /// cache message we have received and might be required to provide to other peers via inventory requests
 
@@ -682,9 +687,9 @@ namespace bts { namespace net { namespace detail {
       std::vector<peer_status> get_connected_peers() const;
       uint32_t                 get_connection_count() const;
 
-      void broadcast( const message& item_to_broadcast, const message_propagation_data& propagation_data );
-      void broadcast( const message& item_to_broadcast );
-      void sync_from( const item_id& );
+      void broadcast(const message& item_to_broadcast, const message_propagation_data& propagation_data);
+      void broadcast(const message& item_to_broadcast);
+      void sync_from(const item_id& current_head_block, const std::vector<uint32_t>& hard_fork_block_numbers);
       bool is_connected() const;
       std::vector<potential_peer_record> get_potential_peers() const;
       void set_advanced_node_parameters( const fc::variant_object& params );
@@ -702,6 +707,9 @@ namespace bts { namespace net { namespace detail {
 
       fc::variant_object         network_get_info() const;
       fc::variant_object         network_get_usage_stats() const;
+
+      bool is_hard_fork_block(uint32_t block_number) const;
+      uint32_t get_next_known_hard_fork_block_number(uint32_t block_number) const;
     }; // end class node_impl
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1668,6 +1676,9 @@ namespace bts { namespace net { namespace detail {
       user_data["last_known_block_number"] = _delegate->get_block_number(head_block_id);
       user_data["last_known_block_time"] = _delegate->get_block_time(head_block_id);
 
+      if (!_hard_fork_block_numbers.empty())
+        user_data["last_known_fork_block_number"] = _hard_fork_block_numbers.back();
+
       return user_data;
     }
     void node_impl::parse_hello_user_data_for_peer(peer_connection* originating_peer, const fc::variant_object& user_data)
@@ -1688,6 +1699,8 @@ namespace bts { namespace net { namespace detail {
         originating_peer->bitness = user_data["bitness"].as<uint32_t>();
       if (user_data.contains("node_id"))
         originating_peer->node_id = user_data["node_id"].as<node_id_t>();
+      if (user_data.contains("last_known_fork_block_number"))
+        originating_peer->last_known_fork_block_number = user_data["last_known_fork_block_number"].as<uint32_t>();
     }
 
     void node_impl::on_hello_message( peer_connection* originating_peer, const hello_message& hello_message_received )
@@ -1722,6 +1735,14 @@ namespace bts { namespace net { namespace detail {
 
       parse_hello_user_data_for_peer(originating_peer, hello_message_received.user_data);
 
+      // if they didn't provide a last known fork, try to guess it
+      if (originating_peer->last_known_fork_block_number == 0 &&
+          originating_peer->bitshares_git_revision_unix_timestamp)
+      {
+        uint32_t unix_timestamp = originating_peer->bitshares_git_revision_unix_timestamp->sec_since_epoch();
+        originating_peer->last_known_fork_block_number = _delegate->estimate_last_known_fork_from_git_revision_timestamp(unix_timestamp);
+      }
+
       // now decide what to do with it
       if (originating_peer->their_state == peer_connection::their_connection_state::just_connected)
       {
@@ -1742,22 +1763,54 @@ namespace bts { namespace net { namespace detail {
         }
         if (hello_message_received.chain_id != _chain_id)
         {
-          wlog( "Received hello message from peer on a different chain: ${message}", ("message", hello_message_received ) );
+          wlog("Received hello message from peer on a different chain: ${message}", ("message", hello_message_received));
           std::ostringstream rejection_message;
           rejection_message << "You're on a different chain than I am.  I'm on " << _chain_id.str() <<
                               " and you're on " << hello_message_received.chain_id.str();
-          connection_rejected_message connection_rejected( _user_agent_string, core_protocol_version,
+          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version,
                                                           originating_peer->get_socket().remote_endpoint(),
                                                           rejection_reason_code::different_chain,
-                                                          rejection_message.str() );
+                                                          rejection_message.str());
 
           originating_peer->their_state = peer_connection::their_connection_state::connection_rejected;
-          originating_peer->send_message( message(connection_rejected ) );
+          originating_peer->send_message(message(connection_rejected));
           // for this type of message, we're immediately disconnecting this peer, instead of trying to
           // allowing her to ask us for peers (any of our peers will be on the same chain as us, so there's no
           // benefit of sharing them)
           disconnect_from_peer(originating_peer, "You are on a different chain from me");
           return;
+        }
+        if (originating_peer->last_known_fork_block_number != 0)
+        {
+          uint32_t next_fork_block_number = get_next_known_hard_fork_block_number(originating_peer->last_known_fork_block_number);
+          if (next_fork_block_number != 0)
+          {
+            // we know about a fork they don't.  See if we've already passed that block.  If we have, don't let them
+            // connect because we won't be able to give them anything useful
+            uint32_t head_block_num = _delegate->get_block_number(_delegate->get_head_block_id());
+            if (next_fork_block_number < head_block_num)
+            {
+#ifdef ENABLE_DEBUG_ULOGS
+              ulog("Rejecting connection from peer because their version is too old.  Their version date: ${date}", ("date", originating_peer->bitshares_git_revision_unix_timestamp));
+#endif
+              wlog("Received hello message from peer running a version of that can only understand blocks up to #${their_hard_fork}, but I'm at head block number #${my_block_number}",
+                   ("their_hard_fork", next_fork_block_number)("my_block_number", head_block_num));
+              std::ostringstream rejection_message;
+              rejection_message << "Your client is outdated -- you can only understand blocks up to #" << next_fork_block_number << ", but I'm already on block #" << head_block_num;
+              connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version,
+                                                              originating_peer->get_socket().remote_endpoint(),
+                                                              rejection_reason_code::unspecified,
+                                                              rejection_message.str() );
+
+              originating_peer->their_state = peer_connection::their_connection_state::connection_rejected;
+              originating_peer->send_message(message(connection_rejected));
+              // for this type of message, we're immediately disconnecting this peer, instead of trying to
+              // allowing her to ask us for peers (any of our peers will be on the same chain as us, so there's no
+              // benefit of sharing them)
+              disconnect_from_peer(originating_peer, "Your client is too old, please upgrade");
+              return;
+            }
+          }
         }
         if (already_connected_to_this_peer)
         {
@@ -1783,10 +1836,10 @@ namespace bts { namespace net { namespace detail {
         else if(!_allowed_peers.empty() &&
                 _allowed_peers.find(originating_peer->node_id) == _allowed_peers.end())
         {
-          connection_rejected_message connection_rejected( _user_agent_string, core_protocol_version,
+          connection_rejected_message connection_rejected(_user_agent_string, core_protocol_version,
                                                           originating_peer->get_socket().remote_endpoint(),
                                                           rejection_reason_code::blocked,
-                                                          "you are not in my allowed_peers list" );
+                                                          "you are not in my allowed_peers list");
           originating_peer->their_state = peer_connection::their_connection_state::connection_rejected;
           originating_peer->send_message( message(connection_rejected ) );
           dlog( "Received a hello_message from peer ${peer} who isn't in my allowed_peers list, rejection", ("peer", originating_peer->get_remote_endpoint() ) );
@@ -2101,7 +2154,7 @@ namespace bts { namespace net { namespace detail {
       // This is pretty expensive, we should find a better way to do this
       std::unique_ptr<std::vector<item_hash_t> > original_ids_of_items_to_get(new std::vector<item_hash_t>(peer->ids_of_items_to_get.begin(), peer->ids_of_items_to_get.end()));
 
-      std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis( _sync_item_type, reference_point, number_of_blocks_after_reference_point );
+      std::vector<item_hash_t> synopsis = _delegate->get_blockchain_synopsis(_sync_item_type, reference_point, number_of_blocks_after_reference_point);
       assert(reference_point == item_hash_t() || !synopsis.empty());
 
       // if we passed in a reference point, we believe it is one the client has already accepted and should
@@ -2619,17 +2672,42 @@ namespace bts { namespace net { namespace detail {
       // at the end of this function
       std::set<peer_connection_ptr> peers_with_newly_empty_item_lists;
       std::set<peer_connection_ptr> peers_we_need_to_sync_to;
-      std::map<peer_connection_ptr, fc::oexception> peers_with_rejected_block;
+      std::map<peer_connection_ptr, std::pair<std::string, fc::oexception> > peers_to_disconnect; // map peer -> pair<reason_string, exception>
 
       if( client_accepted_block )
       {
         --_total_number_of_unfetched_items;
         dlog("sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync",
               ("count", _total_number_of_unfetched_items));
+        bool is_fork_block = is_hard_fork_block(block_message_to_send.block.block_num);
         for (const peer_connection_ptr& peer : _active_connections)
         {
           ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
-          if (peer->ids_of_items_to_get.empty() && peer->ids_of_items_being_processed.empty())
+          bool disconnecting_this_peer = false;
+          if (is_fork_block)
+          {
+            // we just pushed a hard fork block.  Find out if this peer is running a client
+            // that will be unable to process future blocks
+            if (peer->last_known_fork_block_number != 0)
+            {
+              uint32_t next_fork_block_number = get_next_known_hard_fork_block_number(peer->last_known_fork_block_number);
+              if (next_fork_block_number != 0 &&
+                  next_fork_block_number <= block_message_to_send.block.block_num)
+              {
+                std::ostringstream disconnect_reason_stream;
+                disconnect_reason_stream << "You need to upgrade your client due to hard fork at block " << block_message_to_send.block.block_num;
+                peers_to_disconnect[peer] = std::make_pair(disconnect_reason_stream.str(), 
+                                                           fc::oexception(fc::exception(FC_LOG_MESSAGE(error, "You need to upgrade your client due to hard fork at block ${block_number}", 
+                                                                                                       ("block_number", block_message_to_send.block.block_num)))));
+#ifdef ENABLE_DEBUG_ULOGS
+                ulog("Disconnecting from peer during sync because their version is too old.  Their version date: ${date}", ("date", peer->bitshares_git_revision_unix_timestamp));
+#endif
+                disconnecting_this_peer = true;
+              }
+            }
+          }
+          if (!disconnecting_this_peer && 
+              peer->ids_of_items_to_get.empty() && peer->ids_of_items_being_processed.empty())
           {
             dlog( "Cannot pop first element off peer ${peer}'s list, its list is empty", ("peer", peer->get_remote_endpoint() ) );
             // we don't know for sure that this peer has the item we just received.
@@ -2646,7 +2724,7 @@ namespace bts { namespace net { namespace detail {
               peers_we_need_to_sync_to.insert(peer);
             }
           }
-          else
+          else if (!disconnecting_this_peer)
           {
             auto items_being_processed_iter = peer->ids_of_items_being_processed.find(block_message_to_send.block_id);
             if (items_being_processed_iter != peer->ids_of_items_being_processed.end())
@@ -2689,19 +2767,20 @@ namespace bts { namespace net { namespace detail {
               peer->inhibit_fetching_sync_blocks = true;
             }
             else
-              peers_with_rejected_block[peer] = handle_message_exception;
+              peers_to_disconnect[peer] = std::make_pair(std::string("You offered us a block that we reject as invalid"), fc::oexception(handle_message_exception));
           }
         }
       }
 
-      for (auto& peer_with_rejected_block : peers_with_rejected_block)
+      for (auto& peer_to_disconnect : peers_to_disconnect)
       {
-        peer_connection_ptr peer_to_disconnect;
-        fc::oexception reason_for_disconnect;
-        std::tie(peer_to_disconnect, reason_for_disconnect) = peer_with_rejected_block;
+        const peer_connection_ptr& peer = peer_to_disconnect.first;
+        std::string reason_string;
+        fc::oexception reason_exception;
+        std::tie(reason_string, reason_exception) = peer_to_disconnect.second;
         wlog("disconnecting client ${endpoint} because it offered us the rejected block", 
-             ("endpoint", peer_to_disconnect->get_remote_endpoint()));
-        disconnect_from_peer(peer_to_disconnect.get(), "You offered us a block that we reject as invalid", true, reason_for_disconnect);
+             ("endpoint", peer->get_remote_endpoint()));
+        disconnect_from_peer(peer.get(), reason_string, true, reason_exception);
       }
       for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
         fetch_next_batch_of_item_ids_from_peer(peer.get());
@@ -2859,7 +2938,8 @@ namespace bts { namespace net { namespace detail {
 
       dlog( "received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint() ) );
       std::list<peer_connection_ptr> peers_to_disconnect;
-      fc::oexception bad_block_exception;
+      std::string disconnect_reason;
+      fc::oexception disconnect_exception;
 
       try
       {
@@ -2886,8 +2966,8 @@ namespace bts { namespace net { namespace detail {
         dlog( "client validated the block, advertising it to other peers" );
 
         item_id block_message_item_id(bts::client::message_type_enum::block_message_type, message_hash);
-        uint32_t block_number = _delegate->get_block_number(block_message_to_process.block_id);;
-        fc::time_point_sec block_time = _delegate->get_block_time(block_message_to_process.block_id);
+        uint32_t block_number = block_message_to_process.block.block_num;
+        fc::time_point_sec block_time = block_message_to_process.block.timestamp;
 
         for (const peer_connection_ptr& peer : _active_connections)
         {
@@ -2910,6 +2990,35 @@ namespace bts { namespace net { namespace detail {
         message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
         broadcast( block_message_to_process, propagation_data );
         _message_cache.block_accepted();
+
+        if (is_hard_fork_block(block_number))
+        {
+          // we just pushed a hard fork block.  Find out if any of our peers are running clients
+          // that will be unable to process future blocks
+          for (const peer_connection_ptr& peer : _active_connections)
+          {
+            if (peer->last_known_fork_block_number != 0)
+            {
+              uint32_t next_fork_block_number = get_next_known_hard_fork_block_number(peer->last_known_fork_block_number);
+              if (next_fork_block_number != 0 &&
+                  next_fork_block_number <= block_number)
+              {
+                peers_to_disconnect.push_back(peer);
+#ifdef ENABLE_DEBUG_ULOGS
+                ulog("Disconnecting from peer because their version is too old.  Their version date: ${date}", ("date", peer->bitshares_git_revision_unix_timestamp));
+#endif
+              }
+            }
+          }
+          if (!peers_to_disconnect.empty())
+          {
+            std::ostringstream disconnect_reason_stream;
+            disconnect_reason_stream << "You need to upgrade your client due to hard fork at block " << block_number;
+            disconnect_reason = disconnect_reason_stream.str();
+            disconnect_exception = fc::exception(FC_LOG_MESSAGE(error, "You need to upgrade your client due to hard fork at block ${block_number}", 
+                                                                ("block_number", block_number)));
+          }
+        }
       }
       catch (const fc::canceled_exception&)
       {
@@ -2922,16 +3031,17 @@ namespace bts { namespace net { namespace detail {
               ("num", block_message_to_process.block.block_num)
               ("id", block_message_to_process.block_id));
 
-        bad_block_exception = e;
-        for( const peer_connection_ptr& peer : _active_connections )
-          if( !peer->ids_of_items_to_get.empty() &&
-              peer->ids_of_items_to_get.front() == block_message_to_process.block_id )
-            peers_to_disconnect.push_back( peer );
+        disconnect_exception = e;
+        disconnect_reason = "You offered me a block that I have deemed to be invalid";
+        for (const peer_connection_ptr& peer : _active_connections)
+          if (!peer->ids_of_items_to_get.empty() &&
+              peer->ids_of_items_to_get.front() == block_message_to_process.block_id)
+            peers_to_disconnect.push_back(peer);
       }
-      for( const peer_connection_ptr& peer : peers_to_disconnect )
+      for (const peer_connection_ptr& peer : peers_to_disconnect)
       {
-        wlog( "disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint() ) );
-        disconnect_from_peer( peer.get(), "You offered me a block that I have deemed to be invalid", true, *bad_block_exception );
+        wlog("disconnecting client ${endpoint} because it offered us the rejected block", ("endpoint", peer->get_remote_endpoint()));
+        disconnect_from_peer(peer.get(), disconnect_reason, true, *disconnect_exception);
       }
     }
     void node_impl::process_block_message( peer_connection* originating_peer,
@@ -4136,12 +4246,13 @@ namespace bts { namespace net { namespace detail {
       broadcast( item_to_broadcast, propagation_data );
     }
 
-    void node_impl::sync_from( const item_id& last_item_id_seen )
+    void node_impl::sync_from(const item_id& current_head_block, const std::vector<uint32_t>& hard_fork_block_numbers)
     {
       VERIFY_CORRECT_THREAD();
       _most_recent_blocks_accepted.clear();
-      _sync_item_type = last_item_id_seen.item_type;
-      _most_recent_blocks_accepted.push_back( last_item_id_seen.item_hash );
+      _sync_item_type = current_head_block.item_type;
+      _most_recent_blocks_accepted.push_back(current_head_block.item_hash);
+      _hard_fork_block_numbers = hard_fork_block_numbers;
     }
 
     bool node_impl::is_connected() const
@@ -4285,6 +4396,17 @@ namespace bts { namespace net { namespace detail {
       return result;
     }
 
+    bool node_impl::is_hard_fork_block(uint32_t block_number) const
+    {
+      return std::binary_search(_hard_fork_block_numbers.begin(), _hard_fork_block_numbers.end(), block_number);
+    }
+    uint32_t node_impl::get_next_known_hard_fork_block_number(uint32_t block_number) const
+    {
+      auto iter = std::upper_bound(_hard_fork_block_numbers.begin(), _hard_fork_block_numbers.end(),
+                                   block_number);
+      return iter != _hard_fork_block_numbers.end() ? *iter : 0;
+    }
+
   }  // end namespace detail
 
 
@@ -4375,9 +4497,9 @@ namespace bts { namespace net { namespace detail {
     INVOKE_IN_IMPL(broadcast, msg);
   }
 
-  void node::sync_from( const item_id& id )
+  void node::sync_from(const item_id& current_head_block, const std::vector<uint32_t>& hard_fork_block_numbers)
   {
-    INVOKE_IN_IMPL(sync_from, id);
+    INVOKE_IN_IMPL(sync_from, current_head_block, hard_fork_block_numbers);
   }
 
   bool node::is_connected() const
@@ -4634,6 +4756,11 @@ namespace bts { namespace net { namespace detail {
     item_hash_t statistics_gathering_node_delegate_wrapper::get_head_block_id() const
     {
       INVOKE_AND_COLLECT_STATISTICS(get_head_block_id);
+    }
+
+    uint32_t statistics_gathering_node_delegate_wrapper::estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const
+    {
+      INVOKE_AND_COLLECT_STATISTICS(estimate_last_known_fork_from_git_revision_timestamp, unix_timestamp);
     }
 
     void statistics_gathering_node_delegate_wrapper::error_encountered(const std::string& message, const fc::oexception& error)
