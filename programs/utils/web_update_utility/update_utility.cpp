@@ -3,8 +3,10 @@
 #include <fc/io/raw.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/fstream.hpp>
-#include<fc/compress/lzma.hpp>
+#include <fc/compress/lzma.hpp>
 #include <fc/reflect/variant.hpp>
+
+#include <boost/filesystem/fstream.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -42,7 +44,7 @@ void update_utility::pack_web(fc::path path, string output_file)
 
         ++packed_file_count;
         cout << relative_path << endl;
-        ifstream infile((*itr).to_native_ansi_path());
+        boost::filesystem::ifstream infile(*itr);
         vector<char> file;
         file.reserve(fc::file_size(*itr));
 
@@ -68,7 +70,7 @@ void update_utility::pack_web(fc::path path, string output_file)
 void update_utility::sign_update(WebUpdateManifest::UpdateDetails& update, fc::path update_package, bts::blockchain::private_key_type signing_key)
 {
     fc::sha256::encoder enc;
-    ifstream infile(update_package.to_native_ansi_path());
+    boost::filesystem::ifstream infile(update_package);
     char c = infile.get();
     while (infile)
     {
