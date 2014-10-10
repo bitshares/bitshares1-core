@@ -13,27 +13,28 @@ bool FILTER_OUTPUT_FOR_TESTS = false;
 
 string pretty_line( int size, char c )
 {
-    std::stringstream ss;
-    for( int i = 0; i < size; ++i ) ss << c;
-    return ss.str();
+  return string(size, c);
 }
 
 string pretty_shorten( const string& str, size_t max_size )
 {
-    if( str.size() > max_size ) return str.substr( 0, max_size - 3 ) + "...";
-    return str;
+  if( str.size() > max_size ) 
+    return str.substr( 0, max_size - 3 ) + "...";
+  return str;
 }
 
 string pretty_timestamp( const time_point_sec& timestamp )
 {
-    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    return timestamp.to_iso_extended_string();
+  if( FILTER_OUTPUT_FOR_TESTS ) 
+    return "[redacted]";
+  return timestamp.to_iso_extended_string();
 }
 
 string pretty_path( const path& file_path )
 {
-    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    return file_path.string();
+  if( FILTER_OUTPUT_FOR_TESTS ) 
+    return "[redacted]";
+  return file_path.generic_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
