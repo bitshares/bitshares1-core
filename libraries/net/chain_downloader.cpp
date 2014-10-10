@@ -47,7 +47,7 @@ namespace bts { namespace net {
               }
           } FC_RETHROW_EXCEPTIONS(error, "") }
 
-          void get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
+          void get_all_blocks(std::function<void (const blockchain::full_block&, uint32_t)> new_block_callback,
                               uint32_t first_block_number)
           { try {
               if (!new_block_callback)
@@ -75,7 +75,7 @@ namespace bts { namespace net {
                   blockchain::full_block block;
                   fc::raw::unpack(*_client_socket, block);
 
-                  new_block_callback(block);
+                  new_block_callback(block, blocks_to_retrieve);
                   --blocks_to_retrieve;
                   ++blocks_in;
 
@@ -124,7 +124,9 @@ namespace bts { namespace net {
         my->_chain_servers.shrink_to_fit();
     }
 
-    fc::future<void> chain_downloader::get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
+    fc::future<void> chain_downloader::get_all_blocks(std::function<void(const blockchain::full_block&,
+                                                                         uint32_t)>
+                                                               new_block_callback,
                                                       uint32_t first_block_number)
     {
         return fc::async([=]{my->get_all_blocks(new_block_callback, first_block_number);}, "get_all_blocks");
