@@ -15,6 +15,7 @@
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/account_operations.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/utilities/git_revision.hpp>
 #include <bts/rpc/rpc_client.hpp>
@@ -1643,7 +1644,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
       uint32_t client_impl::estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const
       {
-        return 0; // there are no forks in the test net
+        return bts::blockchain::estimate_last_known_fork_from_git_revision_timestamp(unix_timestamp);
       }
 
       void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
@@ -3087,7 +3088,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         head_item_id.item_hash = bts::net::item_hash_t();
       else
         head_item_id.item_hash = my->_chain_db->get_head_block_id();
-      my->_p2p_node->sync_from(head_item_id, std::vector<uint32_t>());
+      my->_p2p_node->sync_from(head_item_id, bts::blockchain::get_list_of_fork_block_numbers());
       my->_p2p_node->connect_to_p2p_network();
     }
 
