@@ -21,6 +21,8 @@
 #include <bts/utilities/git_revision.hpp>
 #include <bts/utilities/key_conversion.hpp>
 
+#include <thread>
+
 namespace bts { namespace wallet {
 
    FC_REGISTER_EXCEPTIONS( (wallet_exception)
@@ -45,6 +47,7 @@ namespace bts { namespace wallet {
              fc::future<void>                           _relocker_done;
              fc::future<void>                           _scan_in_progress;
 
+             unsigned                                   _num_scanner_threads = 1;
              vector<std::unique_ptr<fc::thread>>        _scanner_threads;
              float                                      _scan_progress = 0;
 
@@ -64,9 +67,7 @@ namespace bts { namespace wallet {
              ~wallet_impl();
 
              void reschedule_relocker();
-         private:
              void relocker();
-         public:
 
              private_key_type create_one_time_key();
 
@@ -175,11 +176,11 @@ namespace bts { namespace wallet {
 
       wallet_impl::wallet_impl()
       {
-          _scanner_threads.reserve( BTS_WALLET_NUM_SCANNING_THREADS );
-          for( uint32_t i = 0; i < BTS_WALLET_NUM_SCANNING_THREADS; ++i )
-          {
+          _num_scanner_threads = std::max( _num_scanner_threads, std::thread::hardware_concurrency() );
+
+          _scanner_threads.reserve( _num_scanner_threads );
+          for( uint32_t i = 0; i < _num_scanner_threads; ++i )
               _scanner_threads.push_back( std::unique_ptr<fc::thread>( new fc::thread( "wallet_scanner_" + std::to_string( i ) ) ) );
-          }
       }
 
       wallet_impl::~wallet_impl()
@@ -718,7 +719,7 @@ namespace bts { namespace wallet {
                               decrypt_memo_futures[ key_index ] = fc::async( [&, key_index]()
                               {
                                   omemo_status status;
-                                  _scanner_threads[ key_index % BTS_WALLET_NUM_SCANNING_THREADS ]->async( [&]()
+                                  _scanner_threads[ key_index % _num_scanner_threads ]->async( [&]()
                                   {
                                       status = condition.decrypt_memo_data( key );
                                   }, "decrypt memo" ).wait();
@@ -1700,7 +1701,7 @@ namespace bts { namespace wallet {
                       const auto& key = keys[i];
                       scan_key_progress[i] = fc::async([&,i](){
                          omemo_status status;
-                         _scanner_threads[ i % BTS_WALLET_NUM_SCANNING_THREADS ]->async( [&]()
+                         _scanner_threads[ i % _num_scanner_threads ]->async( [&]()
                              { status =  deposit.decrypt_memo_data( key ); }, "decrypt memo" ).wait();
                          if( status.valid() ) /* If I've successfully decrypted then it's for me */
                          {
@@ -6264,6 +6265,7 @@ namespace bts { namespace wallet {
        auto info = fc::mutable_variant_object();
 
        info["data_dir"]                                 = fc::absolute( my->_data_directory );
+       info["num_scanning_threads"]                     = my->_num_scanner_threads;
 
        const auto is_open                               = this->is_open();
        info["open"]                                     = is_open;
