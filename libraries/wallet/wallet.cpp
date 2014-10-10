@@ -1,39 +1,25 @@
 #include <bts/blockchain/account_operations.hpp>
 #include <bts/blockchain/asset_operations.hpp>
 #include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/config.hpp>
 #include <bts/blockchain/market_operations.hpp>
 #include <bts/blockchain/time.hpp>
-
-#include <bts/bitcoin/armory.hpp>
-#include <bts/bitcoin/bitcoin.hpp>
-#include <bts/bitcoin/electrum.hpp>
-#include <bts/bitcoin/multibit.hpp>
-
-#include <bts/client/client.hpp>
-#include <bts/cli/pretty.hpp>
-#include <bts/keyhotee/import_keyhotee_id.hpp>
-
-#include <bts/utilities/git_revision.hpp>
-#include <bts/utilities/key_conversion.hpp>
 
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/url.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_db.hpp>
-#include <bts/wallet/transaction_builder.hpp>
 
-#include <fc/crypto/base58.hpp>
-#include <fc/filesystem.hpp>
-#include <fc/io/json.hpp>
-#include <fc/thread/thread.hpp>
-#include <fc/time.hpp>
-#include <fc/variant.hpp>
+#include <bts/bitcoin/armory.hpp>
+#include <bts/bitcoin/bitcoin.hpp>
+#include <bts/bitcoin/electrum.hpp>
+#include <bts/bitcoin/multibit.hpp>
+#include <bts/keyhotee/import_keyhotee_id.hpp>
 
-#include <algorithm>
-#include <iostream>
-#include <sstream>
+#include <bts/cli/pretty.hpp>
+#include <bts/utilities/git_revision.hpp>
+#include <bts/utilities/key_conversion.hpp>
 
 namespace bts { namespace wallet {
 
@@ -2961,6 +2947,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
+      // TODO: Separate this finding logic
       if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
           FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
 
@@ -3000,6 +2987,7 @@ namespace bts { namespace wallet {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
+      // TODO: Separate this finding logic
       if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
           FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
 

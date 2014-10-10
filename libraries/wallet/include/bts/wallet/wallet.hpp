@@ -1,15 +1,14 @@
 #pragma once
 
-
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/config.hpp>
 #include <bts/mail/message.hpp>
 #include <bts/wallet/pretty.hpp>
-#include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/transaction_builder.hpp>
+
 #include <fc/signals.hpp>
 
 namespace bts { namespace wallet {
+
    using namespace bts::blockchain;
 
    namespace detail { class wallet_impl; }
@@ -44,7 +43,7 @@ namespace bts { namespace wallet {
    class wallet
    {
       public:
-         wallet(chain_database_ptr chain, bool enabled = true);
+         wallet( chain_database_ptr chain, bool enabled = true );
          virtual ~wallet();
 
          //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
