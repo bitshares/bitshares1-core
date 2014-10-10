@@ -607,7 +607,7 @@ namespace bts { namespace wallet {
       }
 
       void wallet_impl::scan_genesis_experimental( const account_balance_record_summary_type& account_balances )
-      {
+      { try {
           transaction_ledger_entry record;
           record.id = fc::ripemd160::hash( string( "GENESIS" ) );
           record.block_num = 0;
@@ -631,18 +631,18 @@ namespace bts { namespace wallet {
           record.operation_notes[ 0 ] = "import snapshot keys";
 
           _wallet_db.experimental_transactions[ record.id ] = record;
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       void wallet_impl::scan_block_experimental( uint32_t block_num,
                                                  const map<private_key_type, string>& account_keys,
                                                  const map<address, string>& account_balances,
                                                  const set<string>& account_names )
-      {
+      { try {
           const signed_block_header block_header = _blockchain->get_block_header( block_num );
           const vector<transaction_record> transaction_records = _blockchain->get_transactions_for_block( block_header.id() );
           for( const transaction_evaluation_state& eval_state : transaction_records )
               scan_transaction_experimental( block_header, eval_state, account_keys, account_balances, account_names );
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       void wallet_impl::scan_transaction_experimental( const signed_block_header& block_header,
                                                        const transaction_evaluation_state& eval_state,
@@ -650,7 +650,7 @@ namespace bts { namespace wallet {
                                                        const map<address, string>& account_balances,
                                                        const set<string>& account_names,
                                                        bool overwrite_existing )
-      {
+      { try {
           transaction_ledger_entry record;
 
           const transaction_id_type record_id = eval_state.trx.permanent_id();
@@ -666,7 +666,7 @@ namespace bts { namespace wallet {
 
           scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record,
                                          overwrite_existing || !existing_record );
-      }
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                        const map<private_key_type, string>& account_keys,
@@ -2082,7 +2082,7 @@ namespace bts { namespace wallet {
          else if( order_type == short_order )
          {
             price_arg.ratio /= 100;
-            FC_ASSERT( price_arg.ratio <= 10, "APR must be no greater than 1000%" );
+            FC_ASSERT( price_arg.ratio <= fc::uint128( 10, 0 ), "APR must be no greater than 1000%" );
             builder->submit_short(self->get_account(account_name), quantity, price_arg, price_limit);
          }
          else
@@ -2995,6 +2995,33 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   void wallet::add_transaction_note_experimental( const string& transaction_id_prefix, const string& note )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+
+      if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+          FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+
+      const auto transaction_id = variant( transaction_id_prefix ).as<transaction_id_type>();
+      const auto transaction_record = my->_blockchain->get_transaction( transaction_id, false );
+      if( !transaction_record.valid() )
+          FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
+
+      // TODO: Allow referencing by external and internal id
+      const auto record_id = transaction_record->trx.permanent_id();
+      if( my->_wallet_db.experimental_transactions.count( record_id ) == 0 )
+          FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
+
+      auto record = my->_wallet_db.experimental_transactions[ record_id ];
+      if( !note.empty() )
+          record.operation_notes[ transaction_record->trx.operations.size() ] = note;
+      else
+          record.operation_notes.erase( transaction_record->trx.operations.size() );
+      my->_wallet_db.experimental_transactions[ record_id ] = record;
+
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
    set<pretty_transaction_experimental> wallet::transaction_history_experimental( const string& account_name )
    { try {
       FC_ASSERT( is_open() );
@@ -3020,6 +3047,41 @@ namespace bts { namespace wallet {
       {
           history.insert( to_pretty_transaction_experimental( item.second ) );
       }
+
+      const auto account_records = list_my_accounts();
+      // TODO: Merge this into to_pretty_trx
+      map<string, map<asset_id_type, share_type>> balances;
+      for( const auto& record : history )
+      {
+          for( const auto& item : record.delta_amounts )
+          {
+              const string& label = item.first;
+              const auto has_label = [&]( const wallet_account_record& account_record )
+              {
+                  return account_record.name == label;
+              };
+
+              if( !std::any_of( account_records.begin(), account_records.end(), has_label ) )
+                  continue;
+
+              for( const auto& delta_item : item.second )
+              {
+                  const asset delta_amount( delta_item.second, delta_item.first );
+                  balances[ label ][ delta_amount.asset_id ] += delta_amount.amount;
+              }
+          }
+
+          for( const auto& item : balances )
+          {
+              const string& label = item.first;
+              for( const auto& balance_item : item.second )
+              {
+                  const asset balance_amount( balance_item.second, balance_item.first );
+                  record.balances.push_back( std::make_pair( label, balance_amount ) );
+              }
+          }
+      }
+
       return history;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 

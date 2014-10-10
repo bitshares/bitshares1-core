@@ -76,9 +76,9 @@ Used to place a request to buy a quantity of assets at a price specified in anot
 
 Parameters:
   from_account_name (account_name, required): the account that will provide funds for the bid
-  quantity (real_amount, required): the quantity of items you would like to buy
+  quantity (string, required): the quantity of items you would like to buy
   quantity_symbol (asset_symbol, required): the type of items you would like to buy
-  base_price (real_amount, required): the price you would like to pay
+  base_price (string, required): the price you would like to pay
   base_symbol (asset_symbol, required): the type of asset you would like to pay with
   allow_stupid_bid (bool, optional, defaults to "false"): Allow user to place bid at more than 5% above the current sell price.
 
@@ -94,7 +94,7 @@ testaccount1                    100.00000 XTS
 default (unlocked) >>> wallet_market_submit_bid testaccount1 500 XTS 3 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   testaccount1        BID-00992b6d        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
+[redacted]          PENDING   testaccount1        testaccount1        1,500.00 XMO            buy XTS @ 3. XMO / XTS                      0.50000 XTS         [redacted]
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> balance testaccount1
