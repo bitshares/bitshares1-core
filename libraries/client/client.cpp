@@ -64,6 +64,8 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/version.hpp>
 
+#include <boost/filesystem/fstream.hpp>
+
 #include <openssl/opensslv.h>
 
 #include <algorithm>
@@ -216,7 +218,7 @@ string extract_commands_from_log_file(fc::path test_file)
     FC_THROW( ("Unable to input-log-file: \"" + test_file.string() + "\" not found!").c_str() );
   else
     ulog("Extracting commands from input log file: ${log}",("log",test_file.string() ) );
-  std::ifstream test_input(test_file.string());
+  boost::filesystem::ifstream test_input(test_file);
   return extract_commands_from_log_stream(test_input);
 }
 
@@ -692,7 +694,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             virtual uint32_t get_block_number(const bts::net::item_hash_t& block_id) override;
             virtual fc::time_point_sec get_block_time(const bts::net::item_hash_t& block_id) override;
             virtual fc::time_point_sec get_blockchain_now() override;
-            virtual bts::net::item_hash_t get_head_block_id() const;
+            virtual bts::net::item_hash_t get_head_block_id() const override;
+            virtual uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const override;
             virtual void error_encountered(const std::string& message, const fc::oexception& error) override;
             /// @}
 
@@ -1619,16 +1622,21 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
        fc::time_point_sec client_impl::get_blockchain_now()
        {
-         // this function is called by the p2p network code in the p2p thread, since there is no reason to 
-         // proxy this to the 
+         // this function is called by the p2p network code in the p2p thread, since there is no reason to
+         // proxy this to the
          ASSERT_TASK_NOT_PREEMPTED();
          return bts::blockchain::nonblocking_now();
        }
 
-       bts::net::item_hash_t client_impl::get_head_block_id() const
-       {
-         return _chain_db->get_head_block_id();
-       }
+      bts::net::item_hash_t client_impl::get_head_block_id() const
+      {
+        return _chain_db->get_head_block_id();
+      }
+
+      uint32_t client_impl::estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const
+      {
+        return 0; // there are no forks in the test net
+      }
 
       void client_impl::error_encountered(const std::string& message, const fc::oexception& error)
       {
@@ -3019,7 +3027,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         head_item_id.item_hash = bts::net::item_hash_t();
       else
         head_item_id.item_hash = my->_chain_db->get_head_block_id();
-      my->_p2p_node->sync_from(head_item_id);
+      my->_p2p_node->sync_from(head_item_id, std::vector<uint32_t>());
       my->_p2p_node->connect_to_p2p_network();
     }
 
@@ -3311,6 +3319,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 #endif
        _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
+
+    void client_impl::wallet_add_transaction_note_experimental( const string& transaction_id, const string& note )
+    { try {
+#ifndef BTS_TEST_NETWORK
+       FC_ASSERT( !"This command is for developer testing only!" );
+#endif
+       _wallet->add_transaction_note_experimental( transaction_id, note );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("note",note) ) }
 
     set<pretty_transaction_experimental> client_impl::wallet_transaction_history_experimental( const string& account_name )const
     { try {

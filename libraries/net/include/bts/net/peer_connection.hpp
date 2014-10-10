@@ -181,7 +181,8 @@ namespace bts { namespace net
       // blockchain catch up
       fc::time_point transaction_fetching_inhibited_until;
 
-      //
+      uint32_t last_known_fork_block_number;
+
       fc::future<void> accept_or_connect_task_done;
 
 #ifndef NDEBUG

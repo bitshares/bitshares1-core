@@ -184,7 +184,8 @@ namespace bts { namespace net {
                                      connected_to_self,
                                      not_accepting_connections,
                                      blocked,
-                                     invalid_hello_message };
+                                     invalid_hello_message,
+                                     client_too_old };
 
   struct connection_rejected_message
   {
@@ -401,7 +402,8 @@ FC_REFLECT_ENUM(bts::net::rejection_reason_code, (unspecified)
                                                  (connected_to_self)
                                                  (not_accepting_connections)
                                                  (blocked)
-                                                 (invalid_hello_message))
+                                                 (invalid_hello_message)
+                                                 (client_too_old))
 FC_REFLECT( bts::net::connection_rejected_message, (user_agent)
                                                    (core_protocol_version)
                                                    (remote_endpoint)
