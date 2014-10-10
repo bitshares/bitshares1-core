@@ -1622,8 +1622,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
        fc::time_point_sec client_impl::get_blockchain_now()
        {
-         // this function is called by the p2p network code in the p2p thread, since there is no reason to 
-         // proxy this to the 
+         // this function is called by the p2p network code in the p2p thread, since there is no reason to
+         // proxy this to the
          ASSERT_TASK_NOT_PREEMPTED();
          return bts::blockchain::nonblocking_now();
        }
@@ -3319,6 +3319,14 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 #endif
        _wallet->scan_transaction_experimental( transaction_id, overwrite_existing );
     } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("overwrite_existing",overwrite_existing) ) }
+
+    void client_impl::wallet_add_transaction_note_experimental( const string& transaction_id, const string& note )
+    { try {
+#ifndef BTS_TEST_NETWORK
+       FC_ASSERT( !"This command is for developer testing only!" );
+#endif
+       _wallet->add_transaction_note_experimental( transaction_id, note );
+    } FC_RETHROW_EXCEPTIONS( warn, "", ("transaction_id",transaction_id)("note",note) ) }
 
     set<pretty_transaction_experimental> client_impl::wallet_transaction_history_experimental( const string& account_name )const
     { try {

@@ -748,6 +748,26 @@
         "aliases" : ["sx"]
       },
       {
+        "method_name": "wallet_add_transaction_note_experimental",
+        "description": "Adds a custom note to the specified transaction",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "transaction_id",
+              "type" : "string",
+              "description" : "the id (or id prefix) of the transaction"
+            },
+            {
+              "name" : "note",
+              "type" : "string",
+              "description" : "note to add"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["nx"]
+      },
+      {
         "method_name": "wallet_rebroadcast_transaction",
         "description": "Rebroadcasts the specified transaction",
         "return_type": "void",
