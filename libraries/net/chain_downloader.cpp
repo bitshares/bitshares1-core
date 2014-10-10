@@ -18,13 +18,15 @@ namespace bts { namespace net {
 
           void connect_to_chain_server()
           { try {
-              auto next_server = _chain_servers.begin();
               _client_socket = std::unique_ptr<fc::tcp_socket>(new fc::tcp_socket);
-              while(!_client_socket->is_open() && next_server != _chain_servers.end()) {
+              while(!_client_socket->is_open() && !_chain_servers.empty()) {
+                  auto next_server = _chain_servers.back();
+                  _chain_servers.pop_back();
                   _client_socket = std::unique_ptr<fc::tcp_socket>(new fc::tcp_socket);
                   try
                   {
-                      _client_socket->connect_to(*(next_server++));
+                      ilog("Attempting to connect to chain server ${s}", ("s",next_server));
+                      _client_socket->connect_to(next_server);
                   }
                   catch ( const fc::canceled_exception& )
                   {
@@ -53,61 +55,63 @@ namespace bts { namespace net {
               if (!new_block_callback)
                   return;
 
-              fc::time_point checkpoint = fc::time_point::now();
+              while(!_chain_servers.empty()) { try {
+                 fc::time_point checkpoint = fc::time_point::now();
 
-              auto work_future = fc::async([&]{
-                 connect_to_chain_server();
-                 checkpoint = fc::time_point::now();
-                 FC_ASSERT(_client_socket->is_open(), "unable to connect to any chain server");
-                 ilog("Connected to ${remote}; requesting blocks after ${num}",
-                      ("remote", _client_socket->remote_endpoint())("num", first_block_number));
+                 auto work_future = fc::async([&]{
+                    connect_to_chain_server();
+                    checkpoint = fc::time_point::now();
+                    FC_ASSERT(_client_socket->is_open(), "unable to connect to any chain server");
+                    ilog("Connected to ${remote}; requesting blocks after ${num}",
+                         ("remote", _client_socket->remote_endpoint())("num", first_block_number));
 
-                 ulog("Starting fast-sync of blocks from ${num}", ("num", first_block_number));
-                 auto start_time = fc::time_point::now();
+                    ulog("Starting fast-sync of blocks from ${num}", ("num", first_block_number));
+                    auto start_time = fc::time_point::now();
 
-                 fc::raw::pack(*_client_socket, get_blocks_from_number);
-                 fc::raw::pack(*_client_socket, first_block_number);
+                    fc::raw::pack(*_client_socket, get_blocks_from_number);
+                    fc::raw::pack(*_client_socket, first_block_number);
 
-                 uint32_t blocks_to_retrieve = 0;
-                 uint32_t blocks_in = 0;
-                 fc::raw::unpack(*_client_socket, blocks_to_retrieve);
-                 ilog("Server at ${remote} is sending us ${num} blocks.",
-                      ("remote", _client_socket->remote_endpoint())("num", blocks_to_retrieve));
+                    uint32_t blocks_to_retrieve = 0;
+                    uint32_t blocks_in = 0;
+                    fc::raw::unpack(*_client_socket, blocks_to_retrieve);
+                    ilog("Server at ${remote} is sending us ${num} blocks.",
+                         ("remote", _client_socket->remote_endpoint())("num", blocks_to_retrieve));
 
-                 while(blocks_to_retrieve > 0)
-                 {
-                     checkpoint = fc::time_point::now();
-                     blockchain::full_block block;
-                     fc::raw::unpack(*_client_socket, block);
+                    while(blocks_to_retrieve > 0)
+                    {
+                        checkpoint = fc::time_point::now();
+                        blockchain::full_block block;
+                        fc::raw::unpack(*_client_socket, block);
 
-                     new_block_callback(block, blocks_to_retrieve);
-                     --blocks_to_retrieve;
-                     ++blocks_in;
+                        new_block_callback(block, blocks_to_retrieve);
+                        --blocks_to_retrieve;
+                        ++blocks_in;
 
-                     if(blocks_to_retrieve == 0) {
-                         fc::raw::unpack(*_client_socket, blocks_to_retrieve);
-                         if(blocks_to_retrieve > 0)
-                             ilog("Server at ${remote} is sending us ${num} blocks.",
-                                  ("remote", _client_socket->remote_endpoint())("num", blocks_to_retrieve));
+                        if(blocks_to_retrieve == 0) {
+                            fc::raw::unpack(*_client_socket, blocks_to_retrieve);
+                            if(blocks_to_retrieve > 0)
+                                ilog("Server at ${remote} is sending us ${num} blocks.",
+                                     ("remote", _client_socket->remote_endpoint())("num", blocks_to_retrieve));
+                        }
+                    }
+                    checkpoint = fc::time_point::now();
+
+                    ulog("Finished fast-syncing ${num} blocks at ${rate} blocks/sec.",
+                         ("num", blocks_in)("rate", blocks_in/((fc::time_point::now() - start_time).count() / 1000000.0)));
+                    wlog("Finished getting ${num} blocks from ${remote} at ${rate} blocks/sec.",
+                         ("num", blocks_in)("remote", _client_socket->remote_endpoint())
+                         ("rate", blocks_in/((fc::time_point::now() - start_time).count() / 1000000.0)));
+                    fc::raw::pack(*_client_socket, finish);
+                 }, "get_all_blocks worker");
+
+                 while(!work_future.ready()) {
+                     if(fc::time_point::now() - checkpoint > fc::seconds(1)) {
+                         work_future.cancel_and_wait("Timed out");
+                         FC_THROW("Timed out");
                      }
+                     fc::sleep_until(fc::time_point::now() + fc::milliseconds(500));
                  }
-                 checkpoint = fc::time_point::now();
-
-                 ulog("Finished fast-syncing ${num} blocks at ${rate} blocks/sec.",
-                      ("num", blocks_in)("rate", blocks_in/((fc::time_point::now() - start_time).count() / 1000000.0)));
-                 wlog("Finished getting ${num} blocks from ${remote} at ${rate} blocks/sec.",
-                      ("num", blocks_in)("remote", _client_socket->remote_endpoint())
-                      ("rate", blocks_in/((fc::time_point::now() - start_time).count() / 1000000.0)));
-                 fc::raw::pack(*_client_socket, finish);
-              }, "get_all_blocks worker");
-
-              while(!work_future.ready()) {
-                  if(fc::time_point::now() - checkpoint > fc::seconds(1)) {
-                      work_future.cancel_and_wait("Timed out");
-                      FC_THROW("Timed out");
-                  }
-                  fc::sleep_until(fc::time_point::now() + fc::milliseconds(500));
-              }
+              } FC_CAPTURE_AND_LOG((_client_socket->remote_endpoint())) }
           } FC_RETHROW_EXCEPTIONS(error, "", ("first_block_number", first_block_number)) }
       };
     } //namespace detail
