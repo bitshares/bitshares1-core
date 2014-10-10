@@ -201,6 +201,7 @@ namespace bts { namespace wallet {
    {
        vector<std::pair<string, asset>> inputs;
        vector<std::pair<string, asset>> outputs;
+       mutable vector<std::pair<string, asset>> balances;
        vector<string>                   notes;
    };
 
@@ -354,6 +355,7 @@ FC_REFLECT( bts::wallet::transaction_ledger_entry,
 FC_REFLECT_DERIVED( bts::wallet::pretty_transaction_experimental, (bts::wallet::transaction_ledger_entry),
         (inputs)
         (outputs)
+        (balances)
         (notes)
         )
 

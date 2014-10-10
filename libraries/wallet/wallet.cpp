@@ -3020,6 +3020,41 @@ namespace bts { namespace wallet {
       {
           history.insert( to_pretty_transaction_experimental( item.second ) );
       }
+
+      const auto account_records = list_my_accounts();
+      // TODO: Merge this into to_pretty_trx
+      map<string, map<asset_id_type, share_type>> balances;
+      for( const auto& record : history )
+      {
+          for( const auto& item : record.delta_amounts )
+          {
+              const string& label = item.first;
+              const auto has_label = [&]( const wallet_account_record& account_record )
+              {
+                  return account_record.name == label;
+              };
+
+              if( !std::any_of( account_records.begin(), account_records.end(), has_label ) )
+                  continue;
+
+              for( const auto& delta_item : item.second )
+              {
+                  const asset delta_amount( delta_item.second, delta_item.first );
+                  balances[ label ][ delta_amount.asset_id ] += delta_amount.amount;
+              }
+          }
+
+          for( const auto& item : balances )
+          {
+              const string& label = item.first;
+              for( const auto& balance_item : item.second )
+              {
+                  const asset balance_amount( balance_item.second, balance_item.first );
+                  record.balances.push_back( std::make_pair( label, balance_amount ) );
+              }
+          }
+      }
+
       return history;
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 

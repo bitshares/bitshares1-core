@@ -107,8 +107,9 @@ namespace bts { namespace blockchain {
 #endif
 #ifndef BTS_TEST_NETWORK
 #error Don't even try it
-   /* BTSX now needs to have this as short_operation_v3 and all short_v2's need to get canceled
-    * there are reports of funds disappearing during the last cancellation which also must be addressed first */
+   /* BTSX now needs to have this as short_operation_v3 and all short_v2's need to get canceled.
+    * We also need to set existing margin positions to 0% interest rate.
+    * There are also reports of funds disappearing during the last cancellation which must be addressed first */
 #endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
