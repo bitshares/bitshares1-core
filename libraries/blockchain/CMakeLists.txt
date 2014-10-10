@@ -78,6 +78,12 @@ if(MSVC)
   set_source_files_properties(chain_database.cpp PROPERTIES COMPILE_FLAGS "/bigobj")
 else()
   set_source_files_properties(${generated_genesis_file} PROPERTIES COMPILE_FLAGS "-O0")
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # compiling this file with optimizations enabled causes internal compiler error in gcc 4.9 - 4.9.1
+	# see https://github.com/BitShares/bitshares_toolkit/issues/774, remove this when
+	# the bug in gcc is fixed
+    set_source_files_properties(chain_database.cpp PROPERTIES COMPILE_FLAGS "-O0")
+  endif()  
 endif()
 
 target_link_libraries( bts_blockchain fc bts_db leveldb )
