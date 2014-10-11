@@ -1,3 +1,6 @@
+// TODO: Everything in this file needs to be rewritten in transaction_ledger_experimental.cpp
+// When GitHub issue #845 is done, then this file can be deleted
+
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
