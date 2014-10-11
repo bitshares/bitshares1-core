@@ -156,7 +156,7 @@ namespace bts { namespace wallet {
          void      scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
-         void                              scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
+         transaction_ledger_entry          scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
 
          void add_transaction_note_experimental( const string& transaction_id_prefix, const string& note );
          set<pretty_transaction_experimental> transaction_history_experimental( const string& account_name );
@@ -552,7 +552,9 @@ namespace bts { namespace wallet {
 
          /** signs transaction with the specified keys for the specified addresses */
          void sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const;
-         void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record );
+         void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction = true );
+
+         transaction_ledger_entry apply_transaction_experimental( const signed_transaction& transaction );
 
          vote_summary get_vote_proportion( const string& account_name );
          slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );

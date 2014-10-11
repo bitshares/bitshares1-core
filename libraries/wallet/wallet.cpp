@@ -110,12 +110,18 @@ namespace bts { namespace wallet {
                                           const map<address, string>& account_balances,
                                           const set<string>& account_names );
 
-            void scan_transaction_experimental( const signed_block_header& block_header,
-                                                const transaction_evaluation_state& eval_state,
-                                                const map<private_key_type, string>& account_keys,
-                                                const map<address, string>& account_balances,
-                                                const set<string>& account_names,
-                                                bool overwrite_existing = false );
+            transaction_ledger_entry scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                                    uint32_t block_num,
+                                                                    const time_point_sec& timestamp,
+                                                                    bool overwrite_existing );
+
+            transaction_ledger_entry scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                                    uint32_t block_num,
+                                                                    const time_point_sec& timestamp,
+                                                                    const map<private_key_type, string>& account_keys,
+                                                                    const map<address, string>& account_balances,
+                                                                    const set<string>& account_names,
+                                                                    bool overwrite_existing );
 
             void scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                 const map<private_key_type, string>& account_keys,
@@ -417,6 +423,7 @@ namespace bts { namespace wallet {
           return _wallet_db.get_pending_transactions();
       }
 
+      // TODO: No longer needed with scan_genesis_experimental and get_account_balance_records
       void wallet_impl::scan_balances()
       {
          /* Delete ledger entries for any genesis balances before we can reconstruct them */
@@ -628,15 +635,44 @@ namespace bts { namespace wallet {
           const signed_block_header block_header = _blockchain->get_block_header( block_num );
           const vector<transaction_record> transaction_records = _blockchain->get_transactions_for_block( block_header.id() );
           for( const transaction_evaluation_state& eval_state : transaction_records )
-              scan_transaction_experimental( block_header, eval_state, account_keys, account_balances, account_names );
+          {
+              scan_transaction_experimental( eval_state, block_num, block_header.timestamp,
+                                             account_keys, account_balances, account_names, true );
+          }
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-      void wallet_impl::scan_transaction_experimental( const signed_block_header& block_header,
-                                                       const transaction_evaluation_state& eval_state,
-                                                       const map<private_key_type, string>& account_keys,
-                                                       const map<address, string>& account_balances,
-                                                       const set<string>& account_names,
-                                                       bool overwrite_existing )
+      transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                                           uint32_t block_num,
+                                                                           const time_point_sec& timestamp,
+                                                                           bool overwrite_existing )
+      { try {
+          const map<private_key_type, string> account_keys = _wallet_db.get_account_private_keys( _wallet_password );
+
+          map<address, string> account_balances;
+          const account_balance_id_summary_type balance_id_summary = self->get_account_balance_ids();
+          for( const auto& balance_item : balance_id_summary )
+          {
+              const string& account_name = balance_item.first;
+              for( const auto& balance_id : balance_item.second )
+                  account_balances[ balance_id ] = account_name;
+          }
+
+          set<string> account_names;
+          const vector<wallet_account_record> accounts = self->list_my_accounts();
+          for( const wallet_account_record& account : accounts )
+              account_names.insert( account.name );
+
+          return scan_transaction_experimental( eval_state, block_num, timestamp, account_keys,
+                                                account_balances, account_names, overwrite_existing );
+      } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+      transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
+                                                                           uint32_t block_num,
+                                                                           const time_point_sec& timestamp,
+                                                                           const map<private_key_type, string>& account_keys,
+                                                                           const map<address, string>& account_balances,
+                                                                           const set<string>& account_names,
+                                                                           bool overwrite_existing )
       { try {
           transaction_ledger_entry record;
 
@@ -646,13 +682,15 @@ namespace bts { namespace wallet {
               record = _wallet_db.experimental_transactions.at( record_id );
 
           record.id = record_id;
-          record.block_num = block_header.block_num;
-          record.timestamp = std::min<time_point_sec>( record.timestamp, block_header.timestamp );
+          record.block_num = block_num;
+          record.timestamp = std::min( record.timestamp, timestamp );
           record.delta_amounts.clear();
           record.transaction_id = eval_state.trx.id();
 
           scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record,
                                          overwrite_existing || !existing_record );
+
+          return record;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
       void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
@@ -976,30 +1014,42 @@ namespace bts { namespace wallet {
               ++op_index;
           }
 
-          // Kludge for pretty incoming TITAN transfers
-          if( withdrawal_count + titan_memos.size() == eval_state.trx.operations.size()
-              && titan_memos.size() == 1
-              && record.delta_labels.size() == 1 )
+          // Kludge to build pretty incoming TITAN transfers
+          // We only support such transfers when all operations are withdrawals plus a single deposit
+          const auto rescan_with_titan_info = [&]() -> bool
           {
-              // Assume vanilla TITAN transfer
+              if( withdrawal_count + titan_memos.size() != eval_state.trx.operations.size() )
+                  return false;
+
+              if( titan_memos.size() != 1 )
+                  return false;
+
+              if( record.delta_labels.size() != 1 )
+                  return false;
+
               const memo_status& memo = titan_memos.front();
-              if( memo.has_valid_signature )
+              if( !memo.has_valid_signature )
+                  return false;
+
+              // TODO: Also allow unregistered contact accounts
+              const oaccount_record account_record = _blockchain->get_account_record( address( memo.from ) );
+              if( !account_record.valid() )
+                  return false;
+
+              record.delta_amounts.clear();
+
+              for( uint16_t i = 0; i < eval_state.trx.operations.size(); ++i )
               {
-                  record.delta_amounts.clear();
-
-                  const oaccount_record account_record = _blockchain->get_account_record( address( memo.from ) );
-                  FC_ASSERT( account_record.valid() );
-
-                  for( uint16_t i = 0; i < eval_state.trx.operations.size(); ++i )
-                  {
-                      if( operation_type_enum( eval_state.trx.operations.at( i ).type ) == withdraw_op_type )
-                          record.delta_labels[ i ] = account_record->name;
-                  }
-
-                  scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record, store_record );
-                  return;
+                  if( operation_type_enum( eval_state.trx.operations.at( i ).type ) == withdraw_op_type )
+                      record.delta_labels[ i ] = account_record->name;
               }
-          }
+
+              scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record, store_record );
+              return true;
+          };
+
+          if( rescan_with_titan_info() )
+              return;
 
           for( const auto& delta_item : eval_state.balance )
           {
@@ -1897,11 +1947,28 @@ namespace bts { namespace wallet {
            const auto now = blockchain::now();
            _scan_progress = 0;
 
-           const auto account_private_keys = _wallet_db.get_account_private_keys( _wallet_password );
+           // Collect private keys
+           const auto account_keys = _wallet_db.get_account_private_keys( _wallet_password );
            vector<private_key_type> private_keys;
-           private_keys.reserve( account_private_keys.size() );
-           for( const auto& item : account_private_keys )
+           private_keys.reserve( account_keys.size() );
+           for( const auto& item : account_keys )
                private_keys.push_back( item.first );
+
+            // Collect balances
+           map<address, string> account_balances;
+           const account_balance_id_summary_type balance_id_summary = self->get_account_balance_ids();
+           for( const auto& balance_item : balance_id_summary )
+           {
+               const string& account_name = balance_item.first;
+               for( const auto& balance_id : balance_item.second )
+                   account_balances[ balance_id ] = account_name;
+           }
+
+           // Collect accounts
+           set<string> account_names;
+           const vector<wallet_account_record> accounts = self->list_my_accounts();
+           for( const wallet_account_record& account : accounts )
+               account_names.insert( account.name );
 
            if( min_end > start + 1 )
                ulog( "Beginning scan at block ${n}...", ("n",start) );
@@ -1909,6 +1976,7 @@ namespace bts { namespace wallet {
            for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
            {
               scan_block( block_num, private_keys, now );
+              scan_block_experimental( block_num, account_keys, account_balances, account_names );
               _scan_progress = float(block_num-start)/(min_end-start+1);
               self->set_last_scanned_block_number( block_num );
 
@@ -1922,17 +1990,21 @@ namespace bts { namespace wallet {
               }
            }
 
-           const auto accounts = _wallet_db.get_accounts();
-           for( auto acct : accounts )
+           // Update local accounts
            {
-              auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.id );
-              if( blockchain_acct_rec.valid() )
-              {
-                  blockchain::account_record& brec = acct.second;
-                  brec = *blockchain_acct_rec;
-                  _wallet_db.cache_account( acct.second );
-              }
+               const auto accounts = _wallet_db.get_accounts();
+               for( auto acct : accounts )
+               {
+                  auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.id );
+                  if( blockchain_acct_rec.valid() )
+                  {
+                      blockchain::account_record& brec = acct.second;
+                      brec = *blockchain_acct_rec;
+                      _wallet_db.cache_account( acct.second );
+                  }
+               }
            }
+
            _scan_progress = 1;
            if( min_end > start + 1 )
                ulog( "Scan completed." );
@@ -2895,6 +2967,7 @@ namespace bts { namespace wallet {
       if( start == 0 )
       {
          scan_state();
+         my->scan_genesis_experimental( get_account_balance_records() );
          ++start;
       }
 
@@ -2943,7 +3016,7 @@ namespace bts { namespace wallet {
       return my->scan_transaction( transaction_record->trx, block_num, block.timestamp, private_keys, now, overwrite_existing );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing )
+   transaction_ledger_entry wallet::scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -2959,28 +3032,8 @@ namespace bts { namespace wallet {
 
       const auto block_num = transaction_record->chain_location.block_num;
       const auto block = my->_blockchain->get_block_header( block_num );
-      const auto keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
 
-      map<address, string> address_labels;
-      const account_balance_id_summary_type balance_id_summary = get_account_balance_ids();
-      for( const auto& item : balance_id_summary )
-      {
-          for( const auto& id : item.second )
-              address_labels[ id ] = item.first;
-      }
-
-      set<string> account_names;
-      const auto accounts = list_my_accounts();
-      for( const auto& account : accounts )
-          account_names.insert( account.name );
-
-      try
-      {
-          my->scan_transaction_experimental( block, *transaction_record, keys, address_labels, account_names, overwrite_existing );
-      }
-      catch( ... )
-      {
-      }
+      return my->scan_transaction_experimental( *transaction_record, block_num, block.timestamp, overwrite_existing );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    void wallet::add_transaction_note_experimental( const string& transaction_id_prefix, const string& note )
@@ -3152,9 +3205,10 @@ namespace bts { namespace wallet {
           transaction.sign( get_private_key( addr ), chain_id );
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
-   void wallet::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record )
+   void wallet::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction )
    { try {
-      my->_blockchain->store_pending_transaction( transaction, true );
+      if( apply_transaction ) // Should only be false when apply_transaction_experimental is used
+          my->_blockchain->store_pending_transaction( transaction, true );
 
       record.record_id = transaction.id();
       record.trx = transaction;
@@ -3169,6 +3223,18 @@ namespace bts { namespace wallet {
       }
    } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+   transaction_ledger_entry wallet::apply_transaction_experimental( const signed_transaction& transaction )
+   { try {
+      const transaction_evaluation_state_ptr eval_state = my->_blockchain->store_pending_transaction( transaction, true );
+
+      for( const auto& op : transaction.operations )
+      {
+          if( operation_type_enum( op.type ) == withdraw_op_type )
+              my->sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
+      }
+
+      return my->scan_transaction_experimental( *eval_state, -1, blockchain::now(), true );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
    vote_summary wallet::get_vote_proportion( const string& account_name )
    {
@@ -3943,6 +4009,7 @@ namespace bts { namespace wallet {
      return recoveries;
    }
 
+   // TODO: Rename to recover_titan_transaction_info
    wallet_transaction_record wallet::recover_transaction( const string& transaction_id_prefix, const string& recipient_account )
    { try {
        FC_ASSERT( is_open() );
@@ -4670,7 +4737,8 @@ namespace bts { namespace wallet {
       record.fee = required_fees;
 
       if( sign ) sign_transaction( trx, required_signatures );
-      cache_transaction( trx, record );
+      cache_transaction( trx, record, false ); // Do not apply because we are testing apply_transaction_experimental
+      apply_transaction_experimental( trx );
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)
