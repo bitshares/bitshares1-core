@@ -1,5 +1,11 @@
+#include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
+
+#include <bts/blockchain/time.hpp>
+
+// TODO: Temporary
+#include <fc/io/json.hpp>
 
 using namespace bts::wallet;
 using namespace bts::wallet::detail;

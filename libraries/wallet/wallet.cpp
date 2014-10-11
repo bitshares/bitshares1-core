@@ -1,16 +1,10 @@
-#include <bts/blockchain/account_operations.hpp>
-#include <bts/blockchain/asset_operations.hpp>
-#include <bts/blockchain/balance_operations.hpp>
-#include <bts/blockchain/config.hpp>
-#include <bts/blockchain/market_operations.hpp>
-#include <bts/blockchain/time.hpp>
-
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/url.hpp>
 #include <bts/wallet/wallet.hpp>
-#include <bts/wallet/wallet_db.hpp>
 #include <bts/wallet/wallet_impl.hpp>
+
+#include <bts/blockchain/time.hpp>
 
 #include <bts/bitcoin/armory.hpp>
 #include <bts/bitcoin/bitcoin.hpp>
