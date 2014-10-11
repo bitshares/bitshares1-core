@@ -3,6 +3,7 @@ file(GLOB HEADERS "include/bts/wallet/*.hpp")
 add_library( bts_wallet
              wallet_records.cpp
              wallet_db.cpp
+             transaction_ledger.cpp
              transaction_ledger_experimental.cpp
              wallet.cpp
              ${HEADERS}
