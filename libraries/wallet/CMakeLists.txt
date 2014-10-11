@@ -8,6 +8,7 @@ add_library( bts_wallet
              transaction_ledger.cpp
              transaction_ledger_experimental.cpp
              mail.cpp
+             login.cpp
              wallet.cpp
              ${HEADERS}
            )

@@ -30,7 +30,8 @@ namespace bts { namespace rpc {
    using namespace client;
    FC_REGISTER_EXCEPTIONS( (rpc_exception)
                            (missing_parameter)
-                           (unknown_method) )
+                           (unknown_method)
+                           (login_required) )
 
   namespace detail
   {
@@ -441,7 +442,7 @@ namespace bts { namespace rpc {
           // ilog( "arguments: ${params}", ("params",arguments) );
           if ((method_data.prerequisites & bts::api::json_authenticated) &&
               _authenticated_connection_set.find(con) == _authenticated_connection_set.end())
-            FC_THROW_EXCEPTION( bts::wallet::login_required, "not logged in");
+            FC_THROW_EXCEPTION( login_required, "not logged in");
           return dispatch_authenticated_method(method_data, arguments);
         }
 
