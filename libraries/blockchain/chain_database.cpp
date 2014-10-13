@@ -1066,7 +1066,8 @@ namespace bts { namespace blockchain {
 
              //During reindexing we implement stop-and-copy garbage collection on the raw chain
              decltype(my->_block_id_to_block_data_db) id_to_data_orig;
-             id_to_data_orig.open(data_dir / "raw_chain/id_to_data_orig");
+             id_to_data_orig.open( data_dir / "raw_chain/id_to_data_orig" );
+             auto orig_chain_size = fc::directory_size( data_dir / "raw_chain/id_to_data_orig" );
 
              my->open_database( data_dir );
 
@@ -1138,9 +1139,13 @@ namespace bts { namespace blockchain {
 
              id_to_data_orig.close();
              fc::remove_all( data_dir / "raw_chain/id_to_data_orig" );
+             auto final_chain_size = fc::directory_size( data_dir / "raw_chain/block_id_to_block_data_db" );
 
              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in "
-                       << (blockchain::now() - start_time).to_seconds() << " seconds.                     \n" << std::flush;
+                       << (blockchain::now() - start_time).to_seconds() << " seconds.                          "
+                                                                           "\nBlockchain size changed from "
+                       << orig_chain_size / 1024 / 1024 << "MiB to "
+                       << final_chain_size / 1024 / 1024 << "MiB.\n" << std::flush;
           }
           const auto db_chain_id = get_property( bts::blockchain::chain_id ).as<digest_type>();
           const auto genesis_chain_id = my->initialize_genesis( genesis_file, true );
