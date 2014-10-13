@@ -3300,7 +3300,7 @@ namespace detail {
        fc::directory_iterator end_itr; // constructs terminator
        for( fc::directory_iterator itr( path ); itr != end_itr; ++itr)
        {
-          if (fc::is_directory( *itr ))
+          if (!itr->stem().string().empty() && fc::is_directory( *itr ))
           {
               wallets.push_back( (*itr).stem().string() );
           }
