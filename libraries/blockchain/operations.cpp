@@ -12,6 +12,7 @@
 
 namespace bts { namespace blockchain {
    const operation_type_enum withdraw_operation::type               = withdraw_op_type;
+   const operation_type_enum withdraw_all_operation::type           = withdraw_all_op_type;
    const operation_type_enum deposit_operation::type                = deposit_op_type;
 
    const operation_type_enum register_account_operation::type       = register_account_op_type;
@@ -44,6 +45,7 @@ namespace bts { namespace blockchain {
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_all_operation>();
       bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
       bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();

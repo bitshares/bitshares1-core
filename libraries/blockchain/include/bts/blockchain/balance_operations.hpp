@@ -45,6 +45,28 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /** withdraws all funds including any yield 
+    * balance making them available for deposit, this is used
+    * to prevent leaving dust behind.
+    */
+   struct withdraw_all_operation
+   {
+       static const operation_type_enum type;
+
+       withdraw_all_operation(){}
+
+       withdraw_all_operation( const balance_id_type& id )
+       :balance_id(id){} 
+
+       /** the account to withdraw from */
+       balance_id_type    balance_id;
+
+       /** any data required by the claim_condition */
+       std::vector<char>  claim_input_data;
+
+       void evaluate( transaction_evaluation_state& eval_state );
+   };
+
    /**
     *  The first time a deposit is made to a new address
     *  the condition under which it may be spent must be
@@ -102,3 +124,4 @@ FC_REFLECT( bts::blockchain::define_delegate_slate_operation, (slate) )
 FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_input_data) )
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::burn_operation, (amount)(account_id)(message)(message_signature) )
+FC_REFLECT( bts::blockchain::withdraw_all_operation, (balance_id)(claim_input_data) )
