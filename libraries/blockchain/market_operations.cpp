@@ -113,22 +113,14 @@ namespace bts { namespace blockchain {
 #endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( this->short_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
-
       auto owner = this->short_index.owner;
 
       asset delta_amount  = this->get_amount();
-      asset delta_quote   = delta_amount * this->short_index.order_price;
-
-      /** if the USD amount of the order is effectively then don't bother */
-      FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-      FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
