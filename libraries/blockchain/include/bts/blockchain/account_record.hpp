@@ -117,6 +117,8 @@ namespace bts { namespace blockchain {
       asset                    amount;
       string                   message;
       optional<signature_type> signer;
+
+      public_key_type signer_key()const;
    };
 
    struct burn_record : public burn_record_key, public burn_record_value

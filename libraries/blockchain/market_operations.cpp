@@ -201,12 +201,13 @@ namespace bts { namespace blockchain {
 #endif
       // calculate interest due on delta_amount
       asset interest_due = delta_amount * current_cover->interest_rate;
-      auto ellapsed_sec  = BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (eval_state._current_state->now() - current_cover->expiration).to_seconds();
+      const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
+      auto elapsed_sec = ( eval_state._current_state->now() - start_time ).to_seconds();
 
-      if( ellapsed_sec < 0 ) ellapsed_sec = 0;
+      if( elapsed_sec < 0 ) elapsed_sec = 0;
 
       fc::uint128 due = interest_due.amount;
-      due *= ellapsed_sec;
+      due *= elapsed_sec;
       due /= (365 * 24 * 60 * 60); // seconds per year
 
       asset amount_paid = delta_amount;
