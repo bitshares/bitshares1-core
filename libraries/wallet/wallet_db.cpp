@@ -2,10 +2,7 @@
 #include <bts/db/level_map.hpp>
 #include <bts/wallet/wallet_db.hpp>
 
-#include <fc/crypto/aes.hpp>
 #include <fc/io/json.hpp>
-#include <fc/log/logger.hpp>
-
 #include <fstream>
 
 namespace bts { namespace wallet {

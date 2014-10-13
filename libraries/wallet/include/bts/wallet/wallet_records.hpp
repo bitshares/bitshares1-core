@@ -1,14 +1,17 @@
 /* NOTE: Avoid renaming any record members because there will be no way to
- * unserialize everyone's existing wallet */
+ * unserialize existing downstream wallets */
 
 #pragma once
 
-#include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/account_record.hpp>
+#include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/extended_address.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/io/json.hpp>
+#include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/types.hpp>
+
 #include <fc/io/raw_variant.hpp>
+#include <fc/optional.hpp>
+#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
