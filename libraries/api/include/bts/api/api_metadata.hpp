@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fc/io/json.hpp>
+#include <functional>
 
 namespace bts { namespace api {
 

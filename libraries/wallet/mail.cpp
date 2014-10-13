@@ -1,6 +1,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
+#include <bts/mail/message.hpp>
 
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
@@ -8,7 +9,7 @@ using namespace bts::wallet::detail;
 bts::mail::message wallet::mail_create(const string& sender,
                                        const string& subject,
                                        const string& body,
-                                       const mail::message_id_type& reply_to)
+                                       const bts::mail::message_id_type& reply_to)
 {
     FC_ASSERT(is_open());
     FC_ASSERT(is_unlocked());
@@ -26,7 +27,7 @@ bts::mail::message wallet::mail_create(const string& sender,
     return plaintext;
 }
 
-bts::mail::message wallet::mail_encrypt(const public_key_type& recipient, const mail::message& plaintext)
+bts::mail::message wallet::mail_encrypt(const public_key_type& recipient, const bts::mail::message& plaintext)
 {
     FC_ASSERT(is_open());
     FC_ASSERT(is_unlocked());
@@ -35,7 +36,7 @@ bts::mail::message wallet::mail_encrypt(const public_key_type& recipient, const 
     return mail::message(plaintext).encrypt(one_time_key, recipient);
 }
 
-bts::mail::message wallet::mail_open(const address& recipient, const mail::message& ciphertext)
+bts::mail::message wallet::mail_open(const address& recipient, const bts::mail::message& ciphertext)
 {
     FC_ASSERT(is_open());
     FC_ASSERT(is_unlocked());
@@ -48,7 +49,7 @@ bts::mail::message wallet::mail_open(const address& recipient, const mail::messa
     return ciphertext.as<mail::encrypted_message>().decrypt(recipient_key);
 }
 
-bts::mail::message wallet::mail_decrypt(const address& recipient, const mail::message& ciphertext)
+bts::mail::message wallet::mail_decrypt(const address& recipient, const bts::mail::message& ciphertext)
 {
     FC_ASSERT(is_open());
     FC_ASSERT(is_unlocked());
