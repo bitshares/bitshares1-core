@@ -395,7 +395,7 @@ namespace detail {
       else if( order_type == short_order )
       {
          price_arg.ratio /= 100;
-         FC_ASSERT( price_arg.ratio <= fc::uint128( 10, 0 ), "APR must be no greater than 1000%" );
+         FC_ASSERT( price_arg.ratio < fc::uint128( 10, 0 ), "APR must be less than 1000%" );
          builder->submit_short(self->get_account(account_name), quantity, price_arg, price_limit);
       }
       else

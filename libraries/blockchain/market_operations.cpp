@@ -107,17 +107,14 @@ namespace bts { namespace blockchain {
 #endif
 #ifndef BTS_TEST_NETWORK
 #error Reinterpreting ops
-   /* BTSX now needs to have this as short_operation_v3 and all short_v2's need to get canceled.
-    * We also need to set existing margin positions to 0% interest rate.
-    * There are also reports of funds disappearing during the last cancellation which must be addressed first 
+   /* All existing shorts in BTSX need to be canceled.
     * We also need to set existing margin positions to 0% interest rate.
     **/
 #endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       auto owner = this->short_index.owner;
-      FC_ASSERT( short_index.order_price.ratio < fc::uint128(10,0), "Interest rate must be less than 1000% APR" );
-      //// price( "10.0", short_index.order_price.base_asset_id, short_index.order_price.quote_asset_id) );
+      FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
 
       asset delta_amount  = this->get_amount();
 
