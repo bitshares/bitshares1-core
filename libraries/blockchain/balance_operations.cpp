@@ -294,7 +294,7 @@ namespace bts { namespace blockchain {
     *  TODO: Document rules for Withdraws
     */
 #ifndef WIN32
-#warning [UNTESTED] Disable in BTSX until properly implemented on wallet and working on testnet
+#warning [UNTESTED] Disable in BTSX until properly implemented in wallet and working on testnet
 #endif
    void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
