@@ -80,8 +80,8 @@ void wallet_impl::scan_market_transaction(
                     auto entry = ledger_entry();
                     entry.from_account = okey_bid->public_key;
                     entry.to_account = okey_bid->public_key;
-                    if( mtrx.bid_collateral.valid() )
-                        entry.amount = *mtrx.bid_collateral;
+                    if( mtrx.short_collateral.valid() )
+                        entry.amount = *mtrx.short_collateral;
                     else
                         entry.amount = mtrx.bid_received;
                     entry.memo = "add collateral";
@@ -188,13 +188,13 @@ void wallet_impl::scan_market_transaction(
                 entry.memo = "payoff debt @ " + _blockchain->to_pretty_price( mtrx.ask_price );
                 record.ledger_entries.push_back( entry );
             }
-            if( mtrx.fees_collected.amount > 0 )
+            if( mtrx.returned_collateral.valid() )
             {
                 auto entry = ledger_entry();
                 entry.from_account = okey_ask->public_key;
                 entry.to_account = ask_account_key->public_key;
-                entry.amount = mtrx.fees_collected * 19;
-                entry.memo = "cover proceeds - 5% margin call fee";
+                entry.amount = *mtrx.returned_collateral;
+                entry.memo = "cover proceeds";
                 record.ledger_entries.push_back( entry );
                 self->wallet_claimed_transaction( entry );
                 record.fee = mtrx.fees_collected;

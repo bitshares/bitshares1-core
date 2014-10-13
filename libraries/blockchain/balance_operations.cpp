@@ -85,6 +85,9 @@ namespace bts { namespace blockchain {
    { try {
       auto slate_id = this->slate.id();
 
+#ifndef WIN32
+#warning [HARDFORK] Change in max slate size will hardfork BTSX
+#endif
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
@@ -290,6 +293,9 @@ namespace bts { namespace blockchain {
    /**
     *  TODO: Document rules for Withdraws
     */
+#ifndef WIN32
+#warning [UNTESTED] Disable in BTSX until properly implemented on wallet and working on testnet
+#endif
    void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
