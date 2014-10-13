@@ -178,9 +178,11 @@ namespace bts { namespace blockchain {
       asset                                     bid_paid;
       asset                                     bid_received;
       /** if bid_type == short, then collateral will be paid from short to cover positon */
-      optional<asset>                           bid_collateral;
+      optional<asset>                           short_collateral;
       asset                                     ask_paid;
       asset                                     ask_received;
+      /** any leftover collateral returned to owner after a cover */
+      optional<asset>                           returned_collateral;
       fc::enum_type<uint8_t, order_type_enum>   bid_type = null_order;
       fc::enum_type<uint8_t, order_type_enum>   ask_type = null_order;
       asset                                     fees_collected;
@@ -275,9 +277,10 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (ask_price)
             (bid_paid)
             (bid_received)
-            (bid_collateral)
+            (short_collateral)
             (ask_paid)
             (ask_received)
+            (returned_collateral)
             (bid_type)
             (ask_type)
             (fees_collected)
