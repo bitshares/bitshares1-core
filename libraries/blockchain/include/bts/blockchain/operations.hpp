@@ -54,6 +54,7 @@ namespace bts { namespace blockchain {
       update_feed_op_type           = 19,
       burn_op_type                  = 20,
       link_account_op_type          = 21,
+      withdraw_all_op_type          = 22
 
       short_op_v2_type              = 34
    };

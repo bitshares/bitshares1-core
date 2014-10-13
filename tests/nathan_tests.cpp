@@ -191,6 +191,30 @@ BOOST_FIXTURE_TEST_CASE( to_ugly_asset, nathan_fixture )
     BOOST_CHECK(chain->to_ugly_asset("-100.0000001", "XTS") == asset(-10000000));
 } FC_LOG_AND_RETHROW() }
 
+BOOST_FIXTURE_TEST_CASE( market_stuff, nathan_fixture )
+{ try {
+   transaction_builder_ptr a_builder = clienta->get_wallet()->create_transaction_builder();
+   transaction_builder_ptr b_builder = clientb->get_wallet()->create_transaction_builder();
+
+   wallet_account_record record_21 = clienta->get_wallet()->get_account("delegate21");
+   wallet_account_record record_22 = clientb->get_wallet()->get_account("delegate22");
+
+   asset_id_type usd = clienta->get_chain()->get_asset_id("USD");
+   asset_id_type xts = 0;
+
+   auto trx = a_builder->submit_short(record_21, asset(1000000, xts), price(.015, usd, xts))
+                        .submit_short(record_21, asset(20000000, xts), price(.01, usd, xts))
+                        .finalize().sign().trx;
+
+   edump((fc::json::to_pretty_string(trx)));
+   clienta->network_broadcast_transaction(trx);
+
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_list_shorts USD");
+   produce_block(clienta);
+   exec(clienta, "blockchain_market_order_book USD XTS");
+} FC_LOG_AND_RETHROW() }
+
 /*
 BOOST_FIXTURE_TEST_CASE( simultaneous_cancel_buy, nathan_fixture )
 { try {

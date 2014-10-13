@@ -1,13 +1,14 @@
 #pragma once
 
 #include <bts/blockchain/chain_database.hpp>
-#include <bts/blockchain/config.hpp>
 #include <bts/mail/message.hpp>
 #include <bts/wallet/pretty.hpp>
-#include <bts/wallet/wallet_db.hpp>
+#include <bts/wallet/transaction_builder.hpp>
+
 #include <fc/signals.hpp>
 
 namespace bts { namespace wallet {
+
    using namespace bts::blockchain;
 
    namespace detail { class wallet_impl; }
@@ -42,7 +43,7 @@ namespace bts { namespace wallet {
    class wallet
    {
       public:
-         wallet(chain_database_ptr chain, bool enabled = true);
+         wallet( chain_database_ptr chain, bool enabled = true );
          virtual ~wallet();
 
          //Emitted when wallet is locked or unlocked. Argument is true if wallet is now locked; false otherwise.
@@ -155,7 +156,11 @@ namespace bts { namespace wallet {
          void      scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
-         void                              scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
+         transaction_ledger_entry          scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
+
+         void add_transaction_note_experimental( const string& transaction_id_prefix, const string& note );
+         set<pretty_transaction_experimental> transaction_history_experimental( const string& account_name );
+         pretty_transaction_experimental to_pretty_transaction_experimental( const transaction_ledger_entry& record );
 
          vector<wallet_transaction_record> get_transactions( const string& transaction_id_prefix );
 
@@ -219,6 +224,11 @@ namespace bts { namespace wallet {
          vector<wallet_account_record> list_favorite_accounts()const;
          vector<wallet_account_record> list_unregistered_accounts()const;
          vector<wallet_account_record> list_my_accounts()const;
+
+         std::shared_ptr<transaction_builder> create_transaction_builder()
+         {
+            return std::make_shared<transaction_builder>(my.get());
+         }
 
          uint32_t import_bitcoin_wallet(
                  const path& wallet_dat,
@@ -338,8 +348,10 @@ namespace bts { namespace wallet {
                  const variant& json_data,
                  uint8_t delegate_pay_rate,
                  const string& pay_with_account_name,
+                 bts::blockchain::account_type new_account_type = titan_account,
                  bool sign = true
                  );
+
          wallet_transaction_record update_registered_account(
                  const string& account_name,
                  const string& pay_from_account,
@@ -347,18 +359,21 @@ namespace bts { namespace wallet {
                  uint8_t delegate_pay_rate = 255,
                  bool sign = true
                  );
+
          wallet_transaction_record update_active_key(
                  const std::string& account_to_update,
                  const std::string& pay_from_account,
                  const std::string& new_active_key,
                  bool sign = true
                  );
+
          wallet_transaction_record withdraw_delegate_pay(
                  const string& delegate_name,
                  double amount_to_withdraw,
                  const string& withdraw_to_account_name,
                  bool sign = true
                  );
+
          wallet_transaction_record publish_feeds(
                  const string& account,
                  map<string,double> amount_per_xts,
@@ -403,11 +418,10 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 6003.4 USD
           */
-         wallet_transaction_record submit_bid(
-                 const string& from_account_name,
-                 double real_quantity,
+         wallet_transaction_record submit_bid(const string& from_account_name,
+                 const string& real_quantity,
                  const string& quantity_symbol,
-                 double price_per_unit,
+                 const string& price_per_unit,
                  const string& quote_symbol,
                  bool sign = true
                  );
@@ -416,11 +430,10 @@ namespace bts { namespace wallet {
           *
           *  Requires the user have 10 BTC + fees
           */
-         wallet_transaction_record submit_ask(
-                 const string& from_account_name,
-                 double real_quantity,
+         wallet_transaction_record submit_ask(const string& from_account_name,
+                 const string& real_quantity,
                  const string& quantity_symbol,
-                 double price_per_unit,
+                 const string& price_per_unit,
                  const string& quote_symbol,
                  bool sign = true
                  );
@@ -430,15 +443,15 @@ namespace bts { namespace wallet {
           *  Requires the user have 10 / 600.34 XTS + fees
           */
          wallet_transaction_record submit_short(const string& from_account_name,
-                 double real_quantity_usd,
+                 const string& real_quantity_usd,
                  const string& quote_symbol,
-                 double collateral_per_usd, const string& collateral_symbol,
-                 double price_limit = 0,
+                 const string& collateral_per_usd, const string& collateral_symbol,
+                 const string& price_limit = 0,
                  bool sign = true
                  );
          wallet_transaction_record cover_short(
                  const string& from_account_name,
-                 double real_quantity_usd,
+                 const string& real_quantity_usd,
                  const string& quote_symbol,
                  const order_id_type& short_id,
                  bool sign = true
@@ -539,7 +552,9 @@ namespace bts { namespace wallet {
 
          /** signs transaction with the specified keys for the specified addresses */
          void sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const;
-         void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record );
+         void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction = true );
+
+         transaction_ledger_entry apply_transaction_experimental( const signed_transaction& transaction );
 
          vote_summary get_vote_proportion( const string& account_name );
          slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );

@@ -47,9 +47,9 @@ Used to place a request to sell a quantity of assets at a price specified in ano
 
 Parameters:
   from_account_name (account_name, required): the account that will provide funds for the ask
-  sell_quantity (real_amount, required): the quantity of items you would like to sell
+  sell_quantity (string, required): the quantity of items you would like to sell
   sell_quantity_symbol (asset_symbol, required): the type of items you would like to sell
-  ask_price (real_amount, required): the price per unit sold.
+  ask_price (string, required): the price per unit sold.
   ask_price_symbol (asset_symbol, required): the type of asset you would like to be paid
   allow_stupid_ask (bool, optional, defaults to "false"): Allow user to place ask at more than 5% below the current buy price.
 
@@ -60,7 +60,7 @@ aliases: ask
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 4 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   testaccount2        ASK-c779e48b        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
+[redacted]          PENDING   testaccount2        testaccount2        100.00000 XTS           sell XTS @ 4. XMO / XTS                     0.50000 XTS         [redacted]
 default (unlocked) >>> balance testaccount2
 ACCOUNT                         BALANCE                     
 ============================================================

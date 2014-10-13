@@ -30,16 +30,16 @@ ID    SYMBOL NAME                    DESCRIPTION                                
 0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.50101 XTS     
 default (unlocked) >>> help wallet_market_submit_short
 Usage:
-wallet_market_submit_short <from_account_name> <short_quantity> <short_symbol> <collateral_ratio> <collateral_symbol> [short_price_limit]   Used to place a request to short sell a quantity of assets at a price specified
+wallet_market_submit_short <from_account_name> <short_quantity> <short_symbol> <interest_rate> <base_symbol> [short_price_limit]   Used to place a request to short sell a quantity of assets at a price specified
 Used to place a request to short sell a quantity of assets at a price specified
 
 Parameters:
   from_account_name (account_name, required): the account that will provide funds for the ask
-  short_quantity (real_amount, required): the quantity of items you would like to short sell (USD you would like to sell)
+  short_quantity (string, required): the quantity of items you would like to short sell (USD you would like to sell)
   short_symbol (asset_symbol, required): the type of asset you would like to short, ie: USD
-  collateral_ratio (real_amount, required): the ratio XTS per USD that your USD will be collateralized at (ie: XTS / USD)
-  collateral_symbol (asset_symbol, required): the asset to use to collateralize this short sale (ie XTS)
-  short_price_limit (real_amount, optional, defaults to 0): maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied
+  interest_rate (string, required): the APR you wish to pay interest at (0.0% to 1000.0%)
+  base_symbol (asset_symbol, required): the asset to use to collateralize this short sale (ie XTS)
+  short_price_limit (string, optional, defaults to 0): maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied
 
 Returns:
   transaction_record

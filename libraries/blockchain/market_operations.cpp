@@ -124,31 +124,26 @@ namespace bts { namespace blockchain {
       //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+#ifndef WIN32
+#warning [HARDFORK] Change in short evaluation will hardfork BTSX
+#endif
+#ifndef BTS_TEST_NETWORK
+#error Reinterpreting ops
+   /* All existing shorts in BTSX need to be canceled.
+    * We also need to set existing margin positions to 0% interest rate.
+    **/
+#endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( this->short_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
-
       auto owner = this->short_index.owner;
+      FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
 
       asset delta_amount  = this->get_amount();
-      asset delta_quote   = delta_amount * this->short_index.order_price;
-
-      // Only allow using BTSX as collateral
-      FC_ASSERT( delta_amount.asset_id == 0 );
-
-      /** if the USD amount of the order is effectively then don't bother */
-      FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-
-      if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_8_BLOCK_NUM )
-      {
-          FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
-      }
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
@@ -224,6 +219,7 @@ namespace bts { namespace blockchain {
       if( !eval_state.check_signature( cover_index.owner ) )
          FC_CAPTURE_AND_THROW( missing_signature, (cover_index.owner) );
 
+
       // subtract this from the transaction
       eval_state.sub_balance( address(), delta_amount );
 
@@ -233,7 +229,28 @@ namespace bts { namespace blockchain {
 
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
-      asset_to_cover->current_share_supply -= delta_amount.amount;
+
+#ifndef WIN32
+#warning [HARDFORK] Change in cover evaluation will hardfork BTSX
+#endif
+      // calculate interest due on delta_amount
+      asset interest_due = delta_amount * current_cover->interest_rate;
+      const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
+      auto elapsed_sec = ( eval_state._current_state->now() - start_time ).to_seconds();
+
+      if( elapsed_sec < 0 ) elapsed_sec = 0;
+
+      fc::uint128 due = interest_due.amount;
+      due *= elapsed_sec;
+      due /= (365 * 24 * 60 * 60); // seconds per year
+
+      asset amount_paid = delta_amount;
+      amount_paid.amount -= due.to_uint64();
+
+      // subtract interest due from amount paid to cover, add it to amount paid to fees
+
+      asset_to_cover->current_share_supply -= amount_paid.amount; //delta_amount.amount;
+      asset_to_cover->collected_fees += due.to_uint64();
       eval_state._current_state->store_asset_record( *asset_to_cover );
 
       current_cover->payoff_balance -= delta_amount.amount;

@@ -116,29 +116,6 @@
         "prerequisites" : ["wallet_unlocked"]
       },
       {
-        "method_name": "wallet_import_armory",
-        "description": "Imports an Armory wallet",
-        "return_type": "uint32_t",
-        "parameters" : [
-           {
-              "name" : "wallet_filename",
-              "type" : "filename",
-              "description" : "the Armory wallet file path"
-           },
-           {
-              "name" : "passphrase",
-              "type" : "passphrase",
-              "description" : "the imported wallet's password"
-           },
-           {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the account to receive the contents of the wallet"
-           }
-        ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
         "method_name": "wallet_import_electrum",
         "description": "Imports an Electrum wallet",
         "return_type": "uint32_t",
@@ -147,29 +124,6 @@
               "name" : "wallet_filename",
               "type" : "filename",
               "description" : "the Electrum wallet file path"
-           },
-           {
-              "name" : "passphrase",
-              "type" : "passphrase",
-              "description" : "the imported wallet's password"
-           },
-           {
-              "name" : "account_name",
-              "type" : "account_name",
-              "description" : "the account to receive the contents of the wallet"
-           }
-        ],
-        "prerequisites" : ["wallet_unlocked"]
-      },
-      {
-        "method_name": "wallet_import_multibit",
-        "description": "Imports a Multibit wallet",
-        "return_type": "uint32_t",
-        "parameters" : [
-           {
-              "name" : "wallet_filename",
-              "type" : "filename",
-              "description" : "the Multibit wallet file path"
            },
            {
               "name" : "passphrase",
@@ -339,6 +293,24 @@
         "prerequisites" : ["wallet_open"],
         "is_const": true,
         "aliases" : ["history", "listtransactions"]
+      },
+      {
+        "method_name": "wallet_transaction_history_experimental",
+        "description": "",
+        "return_type": "experimental_transactions",
+        "parameters" :
+          [
+            {
+              "name" : "account_name",
+              "type" : "string",
+              "description" : "the name of the account for which the transaction history will be returned, \"\" for all accounts",
+              "example" : "alice",
+              "default_value" : ""
+            }
+        ],
+        "prerequisites" : ["wallet_unlocked"],
+        "is_const": true,
+        "aliases" : ["hx"]
       },
       {
         "method_name": "wallet_remove_transaction",
@@ -727,7 +699,27 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["scanx", "st"]
+        "aliases" : ["sx"]
+      },
+      {
+        "method_name": "wallet_add_transaction_note_experimental",
+        "description": "Adds a custom note to the specified transaction",
+        "return_type": "void",
+        "parameters" :
+          [
+            {
+              "name" : "transaction_id",
+              "type" : "string",
+              "description" : "the id (or id prefix) of the transaction"
+            },
+            {
+              "name" : "note",
+              "type" : "string",
+              "description" : "note to add"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["nx"]
       },
       {
         "method_name": "wallet_rebroadcast_transaction",
@@ -769,7 +761,13 @@
                   "name" : "delegate_pay_rate",
                   "type" : "uint8_t",
                   "description" : "A value between 0 and 100 for delegates, 255 for non delegates",
-                  "default_value" : 255
+                  "default_value" : -1
+               },
+               {
+                  "name" : "account_type",
+                  "type" : "string",
+                  "description" : "titan_account | public_account - public accounts do not receive memos and all payments are made to the active key",
+                  "default_value" : "titan_account"
                }
             ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1139,7 +1137,7 @@
             },
             {
                "name" : "quantity",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the quantity of items you would like to buy"
             },
             {
@@ -1149,7 +1147,7 @@
             },
             {
                "name" : "base_price",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the price you would like to pay"
             },
             {
@@ -1179,7 +1177,7 @@
             },
             {
                "name" : "sell_quantity",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the quantity of items you would like to sell"
             },
             {
@@ -1189,7 +1187,7 @@
             },
             {
                "name" : "ask_price",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the price per unit sold."
             },
             {
@@ -1219,7 +1217,7 @@
             },
             {
                "name" : "short_quantity",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the quantity of items you would like to short sell (USD you would like to sell)"
             },
             {
@@ -1228,18 +1226,18 @@
                "description" : "the type of asset you would like to short, ie: USD"
             },
             {
-               "name" : "collateral_ratio",
-               "type" : "real_amount",
-               "description" : "the ratio XTS per USD that your USD will be collateralized at (ie: XTS / USD)"
+               "name" : "interest_rate",
+               "type" : "string",
+               "description" : "the APR you wish to pay interest at (0.0% to 1000.0%)"
             },
             {
-               "name" : "collateral_symbol",
+               "name" : "base_symbol",
                "type" : "asset_symbol",
                "description" : "the asset to use to collateralize this short sale (ie XTS)"
             },
             {
                "name" : "short_price_limit",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "maximim price (USD per XTS) that the short will execute at, if 0 then no limit will be applied",
                "default_value" : 0
             }
@@ -1259,7 +1257,7 @@
             },
             {
                "name" : "quantity",
-               "type" : "real_amount",
+               "type" : "string",
                "description" : "the quantity of items you would like to cover"
             },
             {
