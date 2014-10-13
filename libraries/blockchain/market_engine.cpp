@@ -1,9 +1,5 @@
 #include <bts/blockchain/market_engine.hpp>
 
-#ifndef WIN32
-#warning [HARDFORK] Obviously this whole file will now hardfork BTSX
-#endif
-
 namespace bts { namespace blockchain { namespace detail {
 
   market_engine::market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )

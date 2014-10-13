@@ -102,15 +102,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] Change in short evaluation will hardfork BTSX
-#endif
-#ifndef BTS_TEST_NETWORK
-#error Reinterpreting ops
-   /* All existing shorts in BTSX need to be canceled.
-    * We also need to set existing margin positions to 0% interest rate.
-    **/
-#endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       auto owner = this->short_index.owner;
@@ -189,9 +180,6 @@ namespace bts { namespace blockchain {
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
-#ifndef WIN32
-#warning [HARDFORK] Change in cover evaluation will hardfork BTSX
-#endif
       // calculate interest due on delta_amount
       asset interest_due = delta_amount * current_cover->interest_rate;
       const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );

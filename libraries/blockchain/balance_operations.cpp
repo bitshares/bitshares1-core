@@ -18,10 +18,6 @@ namespace bts { namespace blockchain {
             fc::uint128 amount_withdrawn( amount );
             amount_withdrawn *= 1000000;
 
-#ifndef WIN32
-#warning [HARDFORK] Change in yield calculation will hardfork BTSX
-#endif
-            //fc::uint128 current_supply( share_supply );
             fc::uint128 current_supply( share_supply - yield_pool );
             fc::uint128 fee_fund( yield_pool );
 
@@ -85,9 +81,6 @@ namespace bts { namespace blockchain {
    { try {
       auto slate_id = this->slate.id();
 
-#ifndef WIN32
-#warning [HARDFORK] Change in max slate size will hardfork BTSX
-#endif
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
@@ -294,7 +287,7 @@ namespace bts { namespace blockchain {
     *  TODO: Document rules for Withdraws
     */
 #ifndef WIN32
-#warning [UNTESTED] Disable in BTSX until properly implemented in wallet and working on testnet
+#warning [UNTESTED] Needs to be tested and implemented in wallet
 #endif
    void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
@@ -419,7 +412,7 @@ namespace bts { namespace blockchain {
          if( yield.amount > 0 )
          {
             asset_rec->collected_fees       -= yield.amount;
-            eval_state.add_balance( yield ); 
+            eval_state.add_balance( yield );
             current_balance_record->deposit_date = eval_state._current_state->now();
             eval_state.yield[current_balance_record->condition.asset_id] += yield.amount;
             eval_state._current_state->store_asset_record( *asset_rec );
@@ -428,7 +421,7 @@ namespace bts { namespace blockchain {
 
       eval_state.add_balance( asset(current_balance_record->balance, current_balance_record->condition.asset_id) );
 
-      current_balance_record->balance = 0; 
+      current_balance_record->balance = 0;
       current_balance_record->last_update = eval_state._current_state->now();
       eval_state._current_state->store_balance_record( *current_balance_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
