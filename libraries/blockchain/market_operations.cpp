@@ -103,32 +103,28 @@ namespace bts { namespace blockchain {
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 #ifndef WIN32
-#warning [FUBAR] This needs to be updated to reflect the new short operation interest semantics
+#warning [HARDFORK] Change in short evaluation will hardfork BTSX
 #endif
 #ifndef BTS_TEST_NETWORK
-#error Don't even try it
+#error Reinterpreting ops
    /* BTSX now needs to have this as short_operation_v3 and all short_v2's need to get canceled.
     * We also need to set existing margin positions to 0% interest rate.
-    * There are also reports of funds disappearing during the last cancellation which must be addressed first */
+    * There are also reports of funds disappearing during the last cancellation which must be addressed first 
+    * We also need to set existing margin positions to 0% interest rate.
+    **/
 #endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( this->short_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
-
       auto owner = this->short_index.owner;
+      FC_ASSERT( short_index.order_price.ratio < fc::uint128(10,0), "Interest rate must be less than 1000% APR" );
+      //// price( "10.0", short_index.order_price.base_asset_id, short_index.order_price.quote_asset_id) );
 
       asset delta_amount  = this->get_amount();
-      asset delta_quote   = delta_amount * this->short_index.order_price;
-
-      /** if the USD amount of the order is effectively then don't bother */
-      FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-      FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
