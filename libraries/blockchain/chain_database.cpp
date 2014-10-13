@@ -1062,6 +1062,12 @@ namespace bts { namespace blockchain {
              close();
              fc::remove_all( data_dir / "index" );
              fc::create_directories( data_dir / "index");
+             fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/id_to_data_orig" );
+
+             //During reindexing we implement stop-and-copy garbage collection on the raw chain
+             decltype(my->_block_id_to_block_data_db) id_to_data_orig;
+             id_to_data_orig.open(data_dir / "raw_chain/id_to_data_orig");
+
              my->open_database( data_dir );
 
              // TODO: This was causing sync failures after re-indexing
@@ -1108,7 +1114,7 @@ namespace bts { namespace blockchain {
              };
 
              if (num_to_id.empty()) {
-                 auto block_itr = my->_block_id_to_block_data_db.begin();
+                 auto block_itr = id_to_data_orig.begin();
                  while( block_itr.valid() ) {
                      insert_block(block_itr.value());
                      ++block_itr;
@@ -1117,7 +1123,7 @@ namespace bts { namespace blockchain {
              else
              {
                  for (const auto& num_id : num_to_id) {
-                     auto oblock = my->_block_id_to_block_data_db.fetch_optional(num_id.second);
+                     auto oblock = id_to_data_orig.fetch_optional(num_id.second);
                      if (oblock)
                          insert_block(*oblock);
                  }
@@ -1129,6 +1135,9 @@ namespace bts { namespace blockchain {
              //my->_address_to_account_db.set_flush_on_store( true );
              //my->_account_index_db.set_flush_on_store( true );
              //my->_delegate_vote_index_db.set_flush_on_store( true );
+
+             id_to_data_orig.close();
+             fc::remove_all( data_dir / "raw_chain/id_to_data_orig" );
 
              std::cout << "\rSuccessfully re-indexed " << blocks_indexed << " blocks in "
                        << (blockchain::now() - start_time).to_seconds() << " seconds.                     \n" << std::flush;
