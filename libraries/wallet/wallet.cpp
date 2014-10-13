@@ -3558,7 +3558,6 @@ namespace detail {
       if( selection_method == vote_none )
          return delegate_slate();
 
-      FC_ASSERT( BTS_BLOCKCHAIN_MAX_SLATE_SIZE <= BTS_BLOCKCHAIN_NUM_DELEGATES );
       vector<account_id_type> for_candidates;
 
       const auto account_items = my->_wallet_db.get_accounts();
