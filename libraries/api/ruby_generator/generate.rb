@@ -22,7 +22,8 @@ private
   # helper methods used in erb templates
   def js_method_params(method)
     param_names = method['parameters'].map{ |p| p['name'] }
-    return '' if param_names.empty?
+    #return '' if param_names.empty?
+    param_names << 'error_handler = null'
     '(' + param_names.join(', ') + ')'
   end
 

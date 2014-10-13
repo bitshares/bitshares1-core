@@ -35,7 +35,7 @@ Not a delegate.
 default (unlocked) >>> wallet_account_update_registration test test null 100
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   test                test                0.00000 XTS             update test                                 0.50000 XTS         [redacted]
+[redacted]          PENDING   test                test                0.00000 XTS             update test                                 0.60100 XTS         [redacted]
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -50,6 +50,6 @@ Active Key History:
 
 ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILITY   PAY RATE PAY BALANCE         LAST BLOCK  VERSION     
 ==========================================================================================================================================
-102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
+102   test                            0.00000000 %   0        0        N/A           0.00100 XTS0.00000 XTS         NONE                    
 
 default (unlocked) >>> quit

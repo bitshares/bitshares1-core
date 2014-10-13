@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/wallet/wallet_records.hpp>
 
 #include <vector>
@@ -111,9 +112,9 @@ namespace bts { namespace wallet {
        * The prices' quote and base IDs are expected to be registered with the blockchain.
        */
       transaction_builder& submit_short(const wallet_account_record& from_account,
-                                        const asset& short_amount,
-                                        const price& collateral_rate,
-                                        const oprice& price_limit);
+                                        const asset& short_collateral_amount,
+                                        const price& interest_rate,
+                                        const oprice& price_limit = oprice());
       /**
        * @brief Cover or partially cover a short position
        * @param from_account The account with the short position
@@ -133,7 +134,7 @@ namespace bts { namespace wallet {
        * sufficiently positive balances are available. A single slate is chosen using vote_recommended for all deposits.
        *
        * This function should be called only once, at the end of the builder function calls. Calling it multiple times
-       * shouldn't break anything, but I make no promises.
+       * may cause attempts to over-withdraw balances.
        */
       transaction_builder& finalize();
       /// @}
@@ -177,6 +178,8 @@ namespace bts { namespace wallet {
       void pay_fees();
       bool withdraw_fee();
    };
+
+   typedef std::shared_ptr<transaction_builder> transaction_builder_ptr;
 } } //namespace bts::wallet
 
 FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances) )

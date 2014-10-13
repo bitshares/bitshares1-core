@@ -9,6 +9,10 @@ add_library( bts_client
              ${HEADERS}
              "${CMAKE_CURRENT_BINARY_DIR}/include/bts/client/build_info.hpp" )
 
+if(MSVC)
+  set_source_files_properties(client.cpp PROPERTIES COMPILE_FLAGS "/bigobj")
+endif(MSVC)
+
 target_link_libraries( bts_client  
                        PRIVATE bts_db bts_blockchain bitcoin fc leveldb
                        PUBLIC bts_api bts_net bts_wallet bts_cli bts_rpc bts_rpc_stubs bts_mail )

@@ -4,6 +4,7 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/proposal_record.hpp>
 #include <bts/blockchain/withdraw_types.hpp>
+#include <bts/blockchain/account_record.hpp>
 
 #include <fc/reflect/variant.hpp>
 
@@ -51,6 +52,10 @@ namespace bts { namespace blockchain {
                     const asset& amount,
                     slate_id_type delegate_id );
 
+      void deposit_multisig( const multisig_meta_info& info,
+                             const asset& amount,
+                             slate_id_type delegate_id );
+
       void deposit_to_account( fc::ecc::public_key receiver_key,
                                 asset amount,
                                 fc::ecc::private_key from_key,
@@ -65,7 +70,8 @@ namespace bts { namespace blockchain {
                              const variant& public_data,
                              const public_key_type& master,
                              const public_key_type& active,
-                             share_type pay_rate );
+                             share_type pay_rate,
+                             optional<account_meta_info> info = optional<account_meta_info>());
 
       void update_account( account_id_type account_id,
                         share_type delegate_pay_rate,
@@ -106,7 +112,7 @@ namespace bts { namespace blockchain {
                 const address& owner );
 
       void short_sell( const asset& quantity,
-                const price& collateal_per_usd,
+                const price& interest_rate,
                 const address& owner,
                 const optional<price>& limit_price = optional<price>() );
 

@@ -11,6 +11,8 @@
 #include <fc/io/fstream.hpp>
 #include <fc/io/raw.hpp>
 
+#include <boost/filesystem/fstream.hpp>
+
 using std::string;
 using std::vector;
 using std::cout;
@@ -39,7 +41,7 @@ int main(int argc, char** argv) {
     }
 
     fc::path pack_dir(argv[1]);
-    cout << "Now packing " << pack_dir.to_native_ansi_path()
+    cout << "Now packing " << pack_dir.preferred_string()
          << " and signing. Signature may be verified with public key " << signing_key.get_public_key().to_base58() << endl;
 
     vector<pair<string, vector<char>>> packed_files;
@@ -55,7 +57,7 @@ int main(int argc, char** argv) {
 
         ++packed_file_count;
         cout << relative_path << endl;
-        std::ifstream infile((*itr).to_native_ansi_path());
+        boost::filesystem::ifstream infile(*itr);
         vector<char> file;
         file.reserve(fc::file_size(*itr));
 

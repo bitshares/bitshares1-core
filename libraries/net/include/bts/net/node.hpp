@@ -109,13 +109,17 @@ namespace bts { namespace net {
          virtual uint32_t get_block_number(const item_hash_t& block_id) = 0;
 
          /** 
-          * Returns the time a block was produced (if block_id = 0, returns gensis time).  
+          * Returns the time a block was produced (if block_id = 0, returns genesis time).  
           * If we don't know about the block, returns time_point_sec::min()
           */
          virtual fc::time_point_sec get_block_time(const item_hash_t& block_id) = 0;
 
          /** returns bts::blockchain::now() */
          virtual fc::time_point_sec get_blockchain_now() = 0;
+
+         virtual item_hash_t get_head_block_id() const = 0;
+
+         virtual uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const = 0;
 
          virtual void error_encountered(const std::string& message, const fc::oexception& error) = 0;
    };
@@ -215,7 +219,7 @@ namespace bts { namespace net {
          *  Node starts the process of fetching all items after item_id of the
          *  given item_type.   During this process messages are not broadcast.
          */
-        virtual void      sync_from( const item_id& );
+        virtual void      sync_from(const item_id& current_head_block, const std::vector<uint32_t>& hard_fork_block_numbers);
 
         bool      is_connected() const;
 
@@ -256,7 +260,7 @@ namespace bts { namespace net {
 
       fc::ip::endpoint get_actual_listening_endpoint() const override { return fc::ip::endpoint(); }
 
-      void      sync_from( const item_id& ) override {}
+      void      sync_from(const item_id& current_head_block, const std::vector<uint32_t>& hard_fork_block_numbers) override {}
       void      broadcast(const message& item_to_broadcast) override;
       void      add_node_delegate(node_delegate* node_delegate_to_add);
 

@@ -4,7 +4,7 @@
 #include <boost/filesystem.hpp>
 #include <fstream>
 #include <boost/regex.hpp>
-
+#include <boost/filesystem/fstream.hpp>
 
 namespace bts { namespace db {
     FC_REGISTER_EXCEPTIONS( (db_exception)(db_in_use_exception) )
@@ -54,7 +54,7 @@ namespace bts { namespace db {
       }
       else //read record type from file
       {
-        std::ifstream is(record_type_filename.to_native_ansi_path());
+        boost::filesystem::ifstream is(record_type_filename);
         char buffer[120];
         is.getline(buffer,120);
         old_record_type = buffer;
@@ -66,11 +66,11 @@ namespace bts { namespace db {
         auto upgrade_function_itr = upgrade_db_mapper::instance()._upgrade_db_function_registry.find( old_record_type );
         if (upgrade_function_itr != upgrade_db_mapper::instance()._upgrade_db_function_registry.end())
         {
-          ilog("Upgrading database ${db} from ${old} to ${new}",("db",dir.to_native_ansi_path())
+          ilog("Upgrading database ${db} from ${old} to ${new}",("db",dir.preferred_string())
                                                                 ("old",old_record_type)
                                                                 ("new",record_type));
           //update database's RECORD_TYPE to new record type name
-          std::ofstream os(record_type_filename.to_native_ansi_path());
+          boost::filesystem::ofstream os(record_type_filename);
           os << record_type << std::endl;
           os << record_type_size;
           //upgrade the database using upgrade function
@@ -79,19 +79,19 @@ namespace bts { namespace db {
         else
         {
           elog("In ${db}, record types ${old} and ${new} do not match, but no upgrade function found!",
-                   ("db",dir.to_native_ansi_path())("old",old_record_type)("new",record_type));
+                   ("db",dir.preferred_string())("old",old_record_type)("new",record_type));
         }
       }
       else if (old_record_type_size == 0) //if record type file never created, create it now
       {
-        std::ofstream os(record_type_filename.to_native_ansi_path());
+        boost::filesystem::ofstream os(record_type_filename);
           os << record_type << std::endl;
           os << record_type_size;
       }
       else if (old_record_type_size != record_type_size)
       {
         elog("In ${db}, record type matches ${new}, but record sizes do not match!",
-                 ("db",dir.to_native_ansi_path())("new",record_type));
+                 ("db",dir.preferred_string())("new",record_type));
 
       }
     }

@@ -1,14 +1,17 @@
 /* NOTE: Avoid renaming any record members because there will be no way to
- * unserialize everyone's existing wallet */
+ * unserialize existing downstream wallets */
 
 #pragma once
 
-#include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/account_record.hpp>
+#include <bts/blockchain/balance_record.hpp>
 #include <bts/blockchain/extended_address.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
-#include <fc/reflect/variant.hpp>
-#include <fc/io/json.hpp>
+#include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/types.hpp>
+
 #include <fc/io/raw_variant.hpp>
+#include <fc/optional.hpp>
+#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
@@ -173,19 +176,36 @@ namespace bts { namespace wallet {
    {
        transaction_id_type                          id;
        uint32_t                                     block_num = -1;
-       time_point_sec                               timestamp;
+       time_point_sec                               timestamp = time_point_sec( -1 );
 
+       // e.g. { name, INCOME-name, ISSUER-name, `snapshot address`, {ASK,BID,SHORT,MARGIN}-id, FEE }
        map<string, map<asset_id_type, share_type>>  delta_amounts;
-       // e.g. { name, INCOME-name, GENESIS, {ASK,BID,SHORT,COVER}-id, NETWORK, ANONYMOUS, UNKNOWN }
-       map<address, string>                         address_labels;
-
-       // either memo_data for a titan transfer or string otherwise
-       map<uint16_t, variant>                       operation_details;
 
        optional<transaction_id_type>                transaction_id;
 
+       // only really useful for titan transfers
+       map<uint16_t, string>                        delta_labels;
+
+       map<uint16_t, string>                        operation_notes;
+
        bool is_confirmed()const { return block_num != -1; }
        bool is_virtual()const   { return !transaction_id.valid(); }
+
+       friend bool operator < ( const transaction_ledger_entry& a, const transaction_ledger_entry& b )
+       {
+           if( a.is_confirmed() == b.is_confirmed() )
+               return std::tie( a.block_num, a.timestamp, a.id ) < std::tie( b.block_num, b.timestamp, b.id );
+           else
+               return std::tie( a.timestamp, a.id ) < std::tie( b.timestamp, b.id );
+       }
+   };
+
+   struct pretty_transaction_experimental : transaction_ledger_entry
+   {
+       vector<std::pair<string, asset>> inputs;
+       vector<std::pair<string, asset>> outputs;
+       mutable vector<std::pair<string, asset>> balances;
+       vector<string>                   notes;
    };
 
 #if 0
@@ -330,9 +350,16 @@ FC_REFLECT( bts::wallet::transaction_ledger_entry,
         (block_num)
         (timestamp)
         (delta_amounts)
-        (address_labels)
-        (operation_details)
         (transaction_id)
+        (delta_labels)
+        (operation_notes)
+        )
+
+FC_REFLECT_DERIVED( bts::wallet::pretty_transaction_experimental, (bts::wallet::transaction_ledger_entry),
+        (inputs)
+        (outputs)
+        (balances)
+        (notes)
         )
 
 /**

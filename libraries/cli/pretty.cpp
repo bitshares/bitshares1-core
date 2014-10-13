@@ -13,27 +13,28 @@ bool FILTER_OUTPUT_FOR_TESTS = false;
 
 string pretty_line( int size, char c )
 {
-    std::stringstream ss;
-    for( int i = 0; i < size; ++i ) ss << c;
-    return ss.str();
+  return string(size, c);
 }
 
 string pretty_shorten( const string& str, size_t max_size )
 {
-    if( str.size() > max_size ) return str.substr( 0, max_size - 3 ) + "...";
-    return str;
+  if( str.size() > max_size ) 
+    return str.substr( 0, max_size - 3 ) + "...";
+  return str;
 }
 
 string pretty_timestamp( const time_point_sec& timestamp )
 {
-    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    return timestamp.to_iso_extended_string();
+  if( FILTER_OUTPUT_FOR_TESTS ) 
+    return "[redacted]";
+  return timestamp.to_iso_extended_string();
 }
 
 string pretty_path( const path& file_path )
 {
-    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    return file_path.string();
+  if( FILTER_OUTPUT_FOR_TESTS ) 
+    return "[redacted]";
+  return file_path.generic_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
@@ -517,6 +518,142 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         }
 
         if( group ) out << pretty_line( line_size + 2, '-' ) << "\n";
+    }
+
+    return out.str();
+}
+
+string pretty_experimental_transaction_list( const set<pretty_transaction_experimental>& transactions, cptr client )
+{
+    if( transactions.empty() ) return "No transactions found.\n";
+    FC_ASSERT( client != nullptr );
+
+    const vector<std::pair<string, int>> fields
+    {
+        { "timestamp",  20 },
+        { "block",      10 },
+        { "inputs",     40 },
+        { "outputs",    40 },
+        { "notes",      32 },
+        { "id",          8 }
+    };
+
+    std::stringstream out;
+    out << std::left;
+
+    map<string, int> field_widths;
+    int total_width = 0;
+    for( const auto& item : fields )
+    {
+        out << std::setw( item.second ) << boost::to_upper_copy( item.first );
+        field_widths[ item.first ] = item.second;
+        total_width += item.second;
+    }
+
+    out << "\n";
+
+    out << pretty_line( total_width ) << "\n";
+
+    for( const auto& transaction : transactions )
+    {
+        auto line_count = 0;
+
+        while( line_count < transaction.inputs.size()
+               || line_count < transaction.outputs.size()
+               || line_count < transaction.notes.size() )
+        {
+            out << std::setw( field_widths.at( "timestamp" ) );
+            if( line_count == 0 )
+                out << pretty_timestamp( transaction.timestamp );
+            else
+                out << "";
+
+            out << std::setw( field_widths.at( "block" ) );
+            if( line_count == 0 )
+            {
+                if( transaction.is_confirmed() )
+                {
+                    out << transaction.block_num;
+                }
+                /*
+                else if( transaction.error.valid() )
+                {
+                    auto name = string( transaction.error->name() );
+                    name = name.substr( 0, name.find( "_" ) );
+                    boost::to_upper( name );
+                    out << name.substr( 0, 9 );
+                }
+                */
+                else
+                {
+                    out << "PENDING";
+                }
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "inputs" ) );
+            if( line_count < transaction.inputs.size() )
+            {
+                const auto& item = transaction.inputs.at( line_count );
+                const string& label = item.first;
+                const asset& delta = item.second;
+                string input = " => " + client->get_chain()->to_pretty_asset( delta );
+                input = pretty_shorten( label, field_widths.at( "inputs" ) - input.size() - 1 ) + input;
+                out << input;
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "outputs" ) );
+            if( line_count < transaction.outputs.size() )
+            {
+                const auto& item = transaction.outputs.at( line_count );
+                const string& label = item.first;
+                const asset& delta = item.second;
+                string output = client->get_chain()->to_pretty_asset( delta ) + " => ";
+                output = output + pretty_shorten( label, field_widths.at( "outputs" ) - output.size() - 1 );
+                out << output;
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "notes" ) );
+            if( line_count < transaction.notes.size() )
+            {
+                out << pretty_shorten( transaction.notes.at( line_count ), field_widths.at( "notes" ) - 1 );
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "id" ) );
+            if( line_count == 0 )
+            {
+                if( FILTER_OUTPUT_FOR_TESTS )
+                    out << "[redacted]";
+                else if( transaction.is_virtual() )
+                    out << "VIRTUAL";
+                else
+                    out << string( *transaction.transaction_id ).substr( 0, field_widths.at( "id" ) );
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << "\n";
+            ++line_count;
+        }
+
+        out << pretty_line( total_width, '-' ) << "\n";
     }
 
     return out.str();

@@ -1098,8 +1098,10 @@ namespace bts { namespace blockchain {
       trx_eval_state->evaluate( trx );
       auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
+      {
+        wlog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
          FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
-
+      }
       // apply changes from this transaction to _pending_trx_state
       pend_state->apply_changes();
 
@@ -1171,9 +1173,10 @@ namespace bts { namespace blockchain {
       }
       return result;
    }
+
    digest_block chain_database::get_block_digest( const block_id_type& block_id )const
    {
-      return my->_block_id_to_block_record_db.fetch(block_id);
+      return my->_block_id_to_block_record_db.fetch( block_id );
    }
 
    digest_block chain_database::get_block_digest( uint32_t block_num )const
@@ -2362,21 +2365,26 @@ namespace bts { namespace blockchain {
    vector<market_order> chain_database::get_market_shorts( const string& quote_symbol,
                                                           uint32_t limit  )
    { try {
-       auto quote_asset_id = get_asset_id( quote_symbol );
-       auto base_asset_id  = 0;
-       if( base_asset_id >= quote_asset_id )
-          FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
+       auto quote_id = get_asset_id( quote_symbol );
+       auto base_id  = 0;
+       if( base_id >= quote_id )
+          FC_CAPTURE_AND_THROW( invalid_market, (quote_id)(base_id) );
 
        vector<market_order> results;
+       //We dance around like this because the database sorts the shorts backwards, so we must iterate it backwards.
+       const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
+       auto market_itr = my->_short_db.lower_bound( market_index_key( next_pair ) );
+       if( market_itr.valid() )   --market_itr;
+       else market_itr = my->_short_db.last();
 
-       auto market_itr  = my->_short_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
        while( market_itr.valid() )
        {
           auto key = market_itr.key();
-          if( key.order_price.quote_asset_id == quote_asset_id &&
-              key.order_price.base_asset_id == base_asset_id  )
+          if( key.order_price.quote_asset_id == quote_id &&
+              key.order_price.base_asset_id == base_id  )
           {
-             results.push_back( {short_order, key, market_itr.value()} );
+             order_record value = market_itr.value();
+             results.push_back( {short_order, key, value, value.balance, key.order_price} );
           }
           else
           {
@@ -2386,7 +2394,7 @@ namespace bts { namespace blockchain {
           if( results.size() == limit )
              return results;
 
-          ++market_itr;
+          --market_itr;
        }
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(limit) ) }
@@ -2412,6 +2420,7 @@ namespace bts { namespace blockchain {
                                  key,
                                  order_record(collat_record.payoff_balance),
                                  collat_record.collateral_balance,
+                                 collat_record.interest_rate,
                                  collat_record.expiration } );
           }
           else
@@ -3016,6 +3025,29 @@ namespace bts { namespace blockchain {
       }
       return results;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+   vector<asset> chain_database::get_balance_for_key( const address& owner_address )const
+   {
+      map<asset_id_type,share_type> result;
+      auto itr = my->_balance_db.begin();
+      while( itr.valid() )
+      {
+         auto value = itr.value();
+         if( value.owner() == owner_address )
+         {
+            auto balance = value.get_balance();
+            result[balance.asset_id] += balance.amount;
+         }
+         ++itr;
+      }
+      vector<asset> asset_result;
+      asset_result.reserve(result.size());
+      for( auto item : result )
+      {
+         asset_result.push_back( asset(item.second,item.first) );
+      }
+      return asset_result;
+   }
 
 } } // bts::blockchain
 

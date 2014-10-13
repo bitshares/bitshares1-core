@@ -10,7 +10,7 @@ class NetworkAPI
   # parameters: <%= js_params_doc(m, 2) %>
   # return_type: `<%= m['return_type'] %>`
   <%= m['method_name'].gsub('network_', '') %>: <%= js_method_params(m) %> ->
-    @rpc.request('<%= m['method_name'] %>'<%= js_pass_params(m) %>).then (response) ->
+    @rpc.request('<%= m['method_name'] %>'<%= js_pass_params(m) %>, error_handler).then (response) ->
       response.result
 <% end %>
 
