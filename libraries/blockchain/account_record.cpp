@@ -68,7 +68,7 @@ namespace bts { namespace blockchain {
     uint8_t account_record::delegate_pay_rate()const
     {
         if( is_delegate() ) return delegate_info->pay_rate;
-        return 255;
+        return -1;
     }
 
     public_key_type burn_record_value::signer_key()const

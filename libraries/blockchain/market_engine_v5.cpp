@@ -165,18 +165,18 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
                 mtrx.bid_received   = mtrx.ask_paid;
 
-                mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
+                mtrx.short_collateral = mtrx.bid_paid / collateral_rate;
 
                 // Handle rounding errors
-                if( ((_current_bid->get_balance() - *mtrx.bid_collateral).amount < 100 ) &&
-                    (_current_bid->get_balance() > *mtrx.bid_collateral) )
-                    mtrx.bid_collateral = _current_bid->get_balance();
+                if( ((_current_bid->get_balance() - *mtrx.short_collateral).amount < 100 ) &&
+                    (_current_bid->get_balance() > *mtrx.short_collateral) )
+                    mtrx.short_collateral = _current_bid->get_balance();
 
                 pay_current_short( mtrx, *quote_asset );
                 pay_current_cover( mtrx, *quote_asset );
 
-                _market_stat.bid_depth -= mtrx.bid_collateral->amount;
-                _market_stat.ask_depth += mtrx.bid_collateral->amount;
+                _market_stat.bid_depth -= mtrx.short_collateral->amount;
+                _market_stat.ask_depth += mtrx.short_collateral->amount;
 
                 order_did_execute = true;
             }
@@ -269,18 +269,18 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
                 mtrx.bid_received   = mtrx.ask_paid;
 
-                mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
+                mtrx.short_collateral = mtrx.bid_paid / collateral_rate;
 
                 // Handle rounding errors
-                if( ((_current_bid->get_balance() - *mtrx.bid_collateral).amount < 100 ) &&
-                    (_current_bid->get_balance() > *mtrx.bid_collateral) )
-                    mtrx.bid_collateral = _current_bid->get_balance();
+                if( ((_current_bid->get_balance() - *mtrx.short_collateral).amount < 100 ) &&
+                    (_current_bid->get_balance() > *mtrx.short_collateral) )
+                    mtrx.short_collateral = _current_bid->get_balance();
 
                 pay_current_short( mtrx, *quote_asset );
                 pay_current_ask( mtrx, *quote_asset );
 
-                _market_stat.bid_depth -= mtrx.bid_collateral->amount;
-                _market_stat.ask_depth += mtrx.bid_collateral->amount;
+                _market_stat.bid_depth -= mtrx.short_collateral->amount;
+                _market_stat.ask_depth += mtrx.short_collateral->amount;
 
                 order_did_execute = true;
             }
@@ -426,7 +426,7 @@ namespace bts { namespace blockchain { namespace detail {
       mtrx.ask_received   = asset( 0, quote_asset_id );
       mtrx.bid_received   = _current_bid->get_balance();
       mtrx.bid_paid       = asset( 0, quote_asset_id );
-      mtrx.bid_collateral.reset();
+      mtrx.short_collateral.reset();
 
       // Fund refund balance record
       const balance_id_type id = withdraw_condition( withdraw_with_signature( mtrx.bid_owner ), 0 ).get_address();
@@ -451,11 +451,11 @@ namespace bts { namespace blockchain { namespace detail {
 
       quote_asset.current_share_supply += mtrx.bid_paid.amount;
 
-      auto collateral  = *mtrx.bid_collateral + mtrx.ask_paid;
+      auto collateral  = *mtrx.short_collateral + mtrx.ask_paid;
       if( mtrx.bid_paid.amount <= 0 ) // WHY is this ever negative??
       {
           FC_ASSERT( mtrx.bid_paid.amount >= 0 );
-          _current_bid->state.balance -= mtrx.bid_collateral->amount;
+          _current_bid->state.balance -= mtrx.short_collateral->amount;
           return;
       }
 
@@ -480,7 +480,7 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
       FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));
 
-      _current_bid->state.balance -= mtrx.bid_collateral->amount;
+      _current_bid->state.balance -= mtrx.short_collateral->amount;
       FC_ASSERT( _current_bid->state.balance >= 0 );
 
       _pending_state->store_collateral_record( cover_index, *ocover_record );
@@ -561,6 +561,8 @@ namespace bts { namespace blockchain { namespace detail {
             ask_payout->balance += left_over_collateral;
             ask_payout->last_update = _pending_state->now();
             ask_payout->deposit_date = _pending_state->now();
+
+            mtrx.returned_collateral = left_over_collateral;
 
             _pending_state->store_balance_record( *ask_payout );
             _current_ask->collateral = 0;

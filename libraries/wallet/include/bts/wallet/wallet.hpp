@@ -356,7 +356,7 @@ namespace bts { namespace wallet {
                  const string& account_name,
                  const string& pay_from_account,
                  optional<variant> public_data,
-                 uint8_t delegate_pay_rate = 255,
+                 uint8_t delegate_pay_rate = -1,
                  bool sign = true
                  );
 

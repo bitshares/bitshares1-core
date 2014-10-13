@@ -154,11 +154,18 @@ namespace bts { namespace blockchain {
          current_record->public_data  = *this->public_data;
       }
 
+      if( current_record->is_delegate() )
+      {
+          // Delegates accounts cannot revert to a normal account
+          FC_ASSERT( this->is_delegate() );
+      }
+
       if( this->is_delegate() )
       {
          FC_ASSERT( this->delegate_pay_rate >= 0 );
          if( current_record->is_delegate() )
          {
+            // Delegates cannot increase their pay rate
             FC_ASSERT( current_record->delegate_info->pay_rate >= this->delegate_pay_rate );
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
          }

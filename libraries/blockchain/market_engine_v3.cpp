@@ -594,6 +594,8 @@ namespace bts { namespace blockchain { namespace detail {
                 ask_payout->last_update = _pending_state->now();
                 ask_payout->deposit_date = _pending_state->now();
 
+                mtrx.returned_collateral = left_over_collateral;
+
                 _pending_state->store_balance_record( *ask_payout );
                 _current_ask->collateral = 0;
           }

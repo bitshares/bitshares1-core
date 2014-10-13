@@ -6,6 +6,7 @@
 
 namespace bts { namespace blockchain {
 
+   #include "market_operations_v3.cpp"
    #include "market_operations_v2.cpp"
    #include "market_operations_v1.cpp"
 
@@ -53,13 +54,6 @@ namespace bts { namespace blockchain {
       current_bid->last_update = eval_state._current_state->now();
       current_bid->balance     += this->amount;
 
-      // bids do not count toward depth... they can set any price they like and create arbitrary depth
-      //auto market_stat = eval_state._current_state->get_market_status( bid_index.order_price.quote_asset_id, bid_index.order_price.base_asset_id );
-      //if( !market_stat )
-      //   market_stat = market_status(0,0);
-      // market_stat->bid_depth += (delta_amount * bid_index.order_price).amount;
-      //eval_state._current_state->store_market_status( *market_stat );
-
       eval_state._current_state->store_bid_record( this->bid_index, *current_bid );
 
       //auto check   = eval_state._current_state->get_bid_record( this->bid_index );
@@ -73,6 +67,12 @@ namespace bts { namespace blockchain {
     */
    void ask_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      {
+         evaluate_v1( eval_state );
+         return;
+      }
+
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
 
@@ -111,30 +111,17 @@ namespace bts { namespace blockchain {
       current_ask->balance     += this->amount;
       FC_ASSERT( current_ask->balance >= 0, "", ("current_ask",current_ask)  );
 
-      auto market_stat = eval_state._current_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
-
-      if( !market_stat )
-         market_stat = market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id, 0, 0 );
-      market_stat->ask_depth += delta_amount.amount;
-
-      eval_state._current_state->store_market_status( *market_stat );
-
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
-
-      //auto check   = eval_state._current_state->get_ask_record( this->ask_index );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] Change in short evaluation will hardfork BTSX
-#endif
-#ifndef BTS_TEST_NETWORK
-#error Reinterpreting ops
-   /* All existing shorts in BTSX need to be canceled.
-    * We also need to set existing margin positions to 0% interest rate.
-    **/
-#endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      {
+         evaluate_v1( eval_state );
+         return;
+      }
+
       auto owner = this->short_index.owner;
       FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
 
@@ -176,14 +163,6 @@ namespace bts { namespace blockchain {
       current_short->balance     += this->amount;
       FC_ASSERT( current_short->balance >= 0 );
 
-      auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
-      if( !market_stat )
-         market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, 0, 0 );
-
-      market_stat->bid_depth += delta_amount.amount;
-
-      eval_state._current_state->store_market_status( *market_stat );
-
       eval_state._current_state->store_short_record( this->short_index, *current_short );
    }
 
@@ -202,6 +181,11 @@ namespace bts { namespace blockchain {
       else if( eval_state._current_state->get_head_block_num() < BTSX_SUPPLY_FORK_2_BLOCK_NUM )
       {
          evaluate_v2( eval_state );
+         return;
+      }
+      else if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      {
+         evaluate_v3( eval_state );
          return;
       }
 
@@ -230,9 +214,6 @@ namespace bts { namespace blockchain {
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
-#ifndef WIN32
-#warning [HARDFORK] Change in cover evaluation will hardfork BTSX
-#endif
       // calculate interest due on delta_amount
       asset interest_due = delta_amount * current_cover->interest_rate;
       const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
@@ -273,17 +254,17 @@ namespace bts { namespace blockchain {
       else // withdraw the collateral to the transaction to be deposited at owners discretion / cover fees
       {
          eval_state.add_balance( asset( current_cover->collateral_balance, cover_index.order_price.base_asset_id ) );
-
-         auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
-         FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
-         market_stat->ask_depth -= current_cover->collateral_balance;
-
-         eval_state._current_state->store_market_status( *market_stat );
       }
    }
 
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      {
+         evaluate_v1( eval_state );
+         return;
+      }
+
       if( this->cover_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 
@@ -312,12 +293,6 @@ namespace bts { namespace blockchain {
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );
-
-      auto market_stat = eval_state._current_state->get_market_status( cover_index.order_price.quote_asset_id, cover_index.order_price.base_asset_id );
-      FC_ASSERT( market_stat, "this should be valid for there to even be a position to cover" );
-      market_stat->ask_depth += delta_amount.amount;
-
-      eval_state._current_state->store_market_status( *market_stat );
    }
 
    void remove_collateral_operation::evaluate( transaction_evaluation_state& eval_state )

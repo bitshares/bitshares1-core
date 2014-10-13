@@ -30,6 +30,7 @@
 #include <bts/blockchain/market_engine.hpp>
 
 #include <bts/blockchain/fork_blocks.hpp>
+#include <bts/blockchain/market_engine_v6.hpp>
 #include <bts/blockchain/market_engine_v5.hpp>
 #include <bts/blockchain/market_engine_v4.hpp>
 #include <bts/blockchain/market_engine_v3.hpp>
@@ -818,14 +819,32 @@ namespace bts { namespace blockchain {
            engine.cancel_all_shorts( self->get_block_header( BTSX_MARKET_FORK_7_BLOCK_NUM ).timestamp );
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
         }
+        else if( pending_block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
+        {
+           market_engine_v6 engine( pending_state, *this );
+           engine.cancel_all_shorts();
+           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+        }
 
         const auto dirty_markets = self->get_dirty_markets();
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num >= BTSX_MARKET_FORK_10_BLOCK_NUM )
+           if( pending_block_num > BTSX_MARKET_FORK_11_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
+              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
+              {
+                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
+              }
+           }
+           else if( pending_block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
+           {
+               // Cancel all shorts before BTSX_MARKET_FORK_11_BLOCK_NUM -- see above
+           }
+           else if( pending_block_num >= BTSX_MARKET_FORK_10_BLOCK_NUM )
+           {
+              market_engine_v6 engine( pending_state, *this );
               if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
               {
                  market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );

@@ -30,6 +30,7 @@ namespace bts { namespace blockchain {
         market_index_key  ask_index;
 
         void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate_v1( transaction_evaluation_state& eval_state );
    };
 
    struct short_operation
@@ -44,6 +45,7 @@ namespace bts { namespace blockchain {
         optional<price>  short_price_limit;
 
         void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate_v1( transaction_evaluation_state& eval_state );
    };
 
    struct cover_operation
@@ -59,6 +61,7 @@ namespace bts { namespace blockchain {
         fc::optional<price> new_cover_price;
 
         void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate_v3( transaction_evaluation_state& eval_state );
         void evaluate_v2( transaction_evaluation_state& eval_state );
         void evaluate_v1( transaction_evaluation_state& eval_state );
    };
@@ -74,6 +77,7 @@ namespace bts { namespace blockchain {
         market_index_key cover_index;
 
         void evaluate( transaction_evaluation_state& eval_state );
+        void evaluate_v1( transaction_evaluation_state& eval_state );
    };
 
    struct remove_collateral_operation
