@@ -246,7 +246,9 @@ namespace detail {
         for( auto block_num = start; !_scan_in_progress.canceled() && block_num <= min_end; ++block_num )
         {
            scan_block( block_num, private_keys, now );
+#ifdef BTS_TEST_NETWORK
            scan_block_experimental( block_num, account_keys, account_balances, account_names );
+#endif
            _scan_progress = float(block_num-start)/(min_end-start+1);
            self->set_last_scanned_block_number( block_num );
 
@@ -1221,7 +1223,9 @@ namespace detail {
       if( start == 0 )
       {
          scan_state();
+#ifdef BTS_TEST_NETWORK
          my->scan_genesis_experimental( get_account_balance_records() );
+#endif
          ++start;
       }
 
@@ -2477,8 +2481,12 @@ namespace detail {
       record.fee = required_fees;
 
       if( sign ) sign_transaction( trx, required_signatures );
+#ifdef BTS_TEST_NETWORK
       cache_transaction( trx, record, false ); // Do not apply because we are testing apply_transaction_experimental
       apply_transaction_experimental( trx );
+#else
+      cache_transaction( trx, record );
+#endif
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)
