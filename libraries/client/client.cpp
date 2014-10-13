@@ -2521,6 +2521,30 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       blockchain::update_ntp_time();
     }
 
+    variant detail::client_impl::get_database_sizes() const
+    {
+      fc::mutable_variant_object sizes;
+      fc::mutable_variant_object scratch;
+
+      scratch["Raw Blockchain"] = fc::directory_size(_data_dir / "chain/raw_chain");
+      scratch["Current DAC State"] = fc::directory_size(_data_dir / "chain/index");
+      sizes["Blockchain"] = scratch;
+
+      scratch = fc::mutable_variant_object();
+      for (string wallet_name : _wallet->list())
+        scratch[wallet_name] = fc::directory_size(_data_dir / "wallets" / wallet_name);
+      if (fc::is_directory(_data_dir / "wallets/.backups"))
+        scratch["Backups"] = fc::directory_size(_data_dir / "wallets/.backups");
+      sizes["Wallets"] = scratch;
+
+      if (fc::is_directory(_data_dir / "mail"))
+         sizes["Mail Server Storage"] = fc::directory_size(_data_dir / "mail");
+
+      sizes["Mail Client Storage"] = fc::directory_size(_data_dir / "mail_client");
+
+      return sizes;
+    }
+
     void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
