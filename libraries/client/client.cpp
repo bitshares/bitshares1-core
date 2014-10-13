@@ -3984,7 +3984,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       auto brec = _chain_db->get_asset_record(base);
       FC_ASSERT( qrec && brec );
       auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
-      FC_ASSERT( oresult );
+      FC_ASSERT( oresult, "The ${q}/${b} market has not yet been initialized.", ("q", quote)("b", base));
 
       api_market_status result(*oresult);
       if( oresult->center_price.ratio == fc::uint128() )
