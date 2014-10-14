@@ -370,7 +370,7 @@ namespace bts { namespace blockchain { namespace detail {
       quote_asset.current_share_supply += mtrx.bid_paid.amount;
 
       auto collateral  = *mtrx.short_collateral + mtrx.ask_paid;
-      if( mtrx.bid_paid.amount <= 0 ) // WHY is this ever negative??
+      if( mtrx.bid_paid.amount <= 0 )
       {
           FC_ASSERT( mtrx.bid_paid.amount >= 0 );
           _current_bid->state.balance -= mtrx.short_collateral->amount;
@@ -393,6 +393,7 @@ namespace bts { namespace blockchain { namespace detail {
 
       ocover_record->collateral_balance += collateral.amount;
       ocover_record->payoff_balance += mtrx.bid_paid.amount;
+      ocover_record->interest_rate = _current_bid->market_index.order_price;
       ocover_record->expiration = _pending_state->now() + BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
 
       FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
