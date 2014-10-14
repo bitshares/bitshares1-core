@@ -1414,7 +1414,7 @@
              }
          ],
          "prerequisites" : ["wallet_unlocked"],
-         "aliases" : [ "dump_private_key, dumpprivkey" ]
+         "aliases" : [ "dump_private_key", "dumpprivkey" ]
       },
       {
          "method_name" : "wallet_account_vote_summary",
