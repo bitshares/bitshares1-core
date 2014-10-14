@@ -15,6 +15,71 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
    return order_key;
 }
 
+transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
+                                                                      optional<variant> public_data,
+                                                                      optional<bts::blockchain::private_key_type> active_key,
+                                                                      optional<share_type> delegate_pay,
+                                                                      optional<wallet_account_record> paying_account)
+{
+   FC_ASSERT( public_data || delegate_pay, "Nothing to do!" );
+
+   //Check at the beginning that we actually have the keys required to sign this thing.
+   //Work on a copy so if we fail later, we haven't changed required_signatures.
+   auto working_required_signatures = required_signatures;
+   _wimpl->authorize_update(required_signatures, account, active_key.valid());
+
+   if( delegate_pay )
+   {
+      FC_ASSERT( account.is_delegate(), "Cannot promote existing account to delegate!" );
+      FC_ASSERT( *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
+
+      if( account.is_delegate() && !paying_account )
+         paying_account = account;
+      if( !paying_account->is_my_account )
+         FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
+
+      asset fee(_wimpl->_blockchain->get_delegate_registration_fee(*delegate_pay));
+      deduct_balance(paying_account->account_address, fee);
+
+      ledger_entry entry;
+      entry.from_account = paying_account->owner_key;
+      entry.to_account = account.owner_key;
+      entry.amount = fee;
+      entry.memo = "Fee to update " + account.name + "'s delegate pay";
+      transaction_record.ledger_entries.push_back(entry);
+   } else delegate_pay = account.delegate_pay_rate();
+
+   if( active_key )
+   {
+      auto active_public_key = active_key->get_public_key();
+      if( _wimpl->_blockchain->get_account_record(active_public_key).valid() ||
+          _wimpl->_wallet_db.lookup_account(active_public_key).valid() )
+         FC_THROW_EXCEPTION( key_already_registered, "Key already belongs to another account!", ("new_public_key", active_public_key));
+
+      key_data new_key;
+      new_key.encrypt_private_key(_wimpl->_wallet_password, *active_key);
+      new_key.account_address = account.account_address;
+      _wimpl->_wallet_db.store_key(new_key);
+
+      ledger_entry entry;
+      entry.from_account = paying_account->owner_key;
+      entry.to_account = account.owner_key;
+      entry.memo = "Update " + account.name + "'s active key";
+      transaction_record.ledger_entries.push_back(entry);
+   }
+
+   trx.update_account(account.id, *delegate_pay, public_data, active_key->get_public_key());
+
+   ledger_entry entry;
+   entry.from_account = paying_account->owner_key;
+   entry.to_account = account.owner_key;
+   entry.memo = "Update " + account.name + "'s account record";
+   transaction_record.ledger_entries.push_back(entry);
+
+   required_signatures = working_required_signatures;
+   return *this;
+}
+
 transaction_builder& transaction_builder::cancel_market_order(const order_id_type& order_id)
 { try {
    const auto order = _wimpl->_blockchain->get_market_order( order_id );
@@ -52,7 +117,7 @@ transaction_builder& transaction_builder::cancel_market_order(const order_id_typ
    }
 
    //Credit this account the cancel proceeds
-   outstanding_balances[std::make_pair(account_record->account_address, balance.asset_id)] += balance.amount;
+   credit_balance(account_record->account_address, balance);
    //Set order key for this account if not already set
    if( order_keys.find(account_record->account_address) == order_keys.end() )
       order_keys[account_record->account_address] = owner_key_record->public_key;
@@ -82,7 +147,7 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
    auto order_key = order_key_for_account(from_account.account_address);
 
    //Charge this account for the bid
-   outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
+   deduct_balance(from_account.account_address, cost);
    trx.bid(cost, quote_price, order_key);
 
    auto entry = ledger_entry();
@@ -109,7 +174,7 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    auto order_key = order_key_for_account(from_account.account_address);
 
    //Charge this account for the ask
-   outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
+   deduct_balance(from_account.account_address, cost);
    trx.ask(cost, quote_price, order_key);
 
    auto entry = ledger_entry();
@@ -142,7 +207,7 @@ transaction_builder& transaction_builder::submit_short(const wallet_account_reco
 
    auto order_key = order_key_for_account(from_account.account_address);
 
-   outstanding_balances[std::make_pair(from_account.account_address, cost.asset_id)] -= cost.amount;
+   deduct_balance(from_account.account_address, cost);
    trx.short_sell(cost, interest_rate, order_key, price_limit);
 
    auto entry = ledger_entry();
@@ -217,7 +282,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    {
       //If cover consumes short position, recover the collateral
       asset collateral(*order->collateral);
-      outstanding_balances[std::make_pair(from_account.account_address, collateral.asset_id)] += collateral.amount;
+      credit_balance(from_account.account_address, collateral);
 
       auto entry = ledger_entry();
       entry.from_account = owner_key_record->public_key;
@@ -228,7 +293,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    }
 
    //Commit the cover to transaction and charge the account.
-   outstanding_balances[std::make_pair(from_account.account_address, cover_amount.asset_id)] -= cover_amount.amount;
+   deduct_balance(from_account.account_address, cover_amount);
    trx.cover(cover_amount, order->market_index);
 
    auto entry = ledger_entry();
@@ -362,7 +427,7 @@ bool transaction_builder::withdraw_fee()
 
    if( bag_holder != address() )
    {
-      outstanding_balances[std::make_pair(bag_holder, final_fee.asset_id)] -= final_fee.amount;
+      deduct_balance(bag_holder, final_fee);
       transaction_record.fee = final_fee;
       return true;
    }
