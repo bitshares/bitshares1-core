@@ -441,8 +441,13 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == cover_order );
       FC_ASSERT( mtrx.ask_type == cover_order );
 
-      auto interest_paid = std::min( get_cover_interest( _current_ask->get_balance() ),
-                                     get_cover_interest( mtrx.ask_received ) );
+      auto cover_age = get_current_cover_age();
+      auto interest_paid = std::min( get_cover_interest( _current_ask->get_balance(),
+                                                         _current_collat_record.interest_rate,
+                                                         cover_age ),
+                                     get_cover_interest( mtrx.ask_received,
+                                                         _current_collat_record.interest_rate,
+                                                         cover_age ) );
 
       auto amount_covered = mtrx.ask_received.amount - interest_paid.amount;
       FC_ASSERT( amount_covered >= 0 );
@@ -717,17 +722,11 @@ namespace bts { namespace blockchain { namespace detail {
           }
   }
 
-  asset market_engine::get_cover_interest( const asset& principle  ) const
+  asset market_engine::get_cover_interest(const asset& principle, const price& apr, uint32_t age_seconds)
   {
-     asset annual_interest    = principle * _current_collat_record.interest_rate;
+     asset annual_interest = principle * apr;
      annual_interest.asset_id = principle.asset_id;
-
-     const auto start_time = _current_collat_record.expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
-     auto elapsed_sec = ( _pending_state->now() - start_time ).to_seconds();
-
-     if( elapsed_sec < 0 ) elapsed_sec = 0;
-
-     annual_interest.amount *= elapsed_sec;
+     annual_interest.amount *= age_seconds;
      annual_interest.amount /= (365 * 24 * 60 * 60); // seconds per year
 
      return annual_interest;
@@ -735,7 +734,9 @@ namespace bts { namespace blockchain { namespace detail {
 
   asset market_engine::get_current_cover_debt() const
   {
-     return get_cover_interest( _current_ask->get_balance() ) + _current_ask->get_balance();
+     return get_cover_interest( _current_ask->get_balance(),
+                                _current_collat_record.interest_rate,
+                                get_current_cover_age() ) + _current_ask->get_balance();
   }
 
 } } } // end namespace bts::blockchain::detail

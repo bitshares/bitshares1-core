@@ -11,6 +11,8 @@ namespace bts { namespace blockchain { namespace detail {
 
     void cancel_all_shorts();
 
+    static asset get_cover_interest(const asset& principle, const price& apr, uint32_t age_seconds );
+
   private:
     void push_market_transaction( const market_transaction& mtrx );
 
@@ -25,7 +27,11 @@ namespace bts { namespace blockchain { namespace detail {
     bool get_next_bid();
     bool get_next_ask();
     asset get_current_cover_debt()const;
-    asset get_cover_interest( const asset& principle )const;
+    uint32_t get_current_cover_age()const
+    {
+        //Total lifetime minus remaining lifetime
+        return BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (*_current_ask->expiration - _pending_state->now()).to_seconds();
+    }
 
     /**
       *  This method should not affect market execution or validation and
