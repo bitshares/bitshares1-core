@@ -2521,28 +2521,47 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       blockchain::update_ntp_time();
     }
 
-    variant detail::client_impl::get_database_sizes() const
+    variant detail::client_impl::disk_usage()const
     {
-      fc::mutable_variant_object sizes;
-      fc::mutable_variant_object scratch;
+      fc::mutable_variant_object usage;
 
-      scratch["Raw Blockchain"] = fc::directory_size(_data_dir / "chain/raw_chain");
-      scratch["Current DAC State"] = fc::directory_size(_data_dir / "chain/index");
-      sizes["Blockchain"] = scratch;
+      usage["automatic_backups"] = variant();
+      usage["blockchain"] = variant();
+      usage["dac_state"] = variant();
+      usage["logs"] = variant();
+      usage["mail_client"] = variant();
+      usage["mail_server"] = variant();
+      usage["network_peers"] = variant();
+      usage["wallets"] = variant();
 
-      scratch = fc::mutable_variant_object();
-      for (string wallet_name : _wallet->list())
-        scratch[wallet_name] = fc::directory_size(_data_dir / "wallets" / wallet_name);
-      if (fc::is_directory(_data_dir / "wallets/.backups"))
-        scratch["Backups"] = fc::directory_size(_data_dir / "wallets/.backups");
-      sizes["Wallets"] = scratch;
+      const fc::path automatic_backups = _data_dir / "wallets" / ".backups";
+      usage["automatic_backups"] = fc::is_directory( automatic_backups ) ? fc::directory_size( automatic_backups ) : variant();
 
-      if (fc::is_directory(_data_dir / "mail"))
-         sizes["Mail Server Storage"] = fc::directory_size(_data_dir / "mail");
+      const fc::path blockchain = _data_dir / "chain" / "raw_chain";
+      usage["blockchain"] = fc::is_directory( blockchain ) ? fc::directory_size( blockchain ) : variant();
 
-      sizes["Mail Client Storage"] = fc::directory_size(_data_dir / "mail_client");
+      const fc::path dac_state = _data_dir / "chain" / "index";
+      usage["dac_state"] = fc::is_directory( dac_state ) ? fc::directory_size( dac_state ) : variant();
 
-      return sizes;
+      const fc::path logs = _data_dir / "logs";
+      usage["logs"] = fc::is_directory( logs ) ? fc::directory_size( logs ) : variant();
+
+      const fc::path mail_client = _data_dir / "mail_client";
+      usage["mail_client"] = fc::is_directory( mail_client ) ? fc::directory_size( mail_client ) : variant();
+
+      const fc::path mail_server = _data_dir / "mail";
+      usage["mail_server"] = fc::is_directory( mail_server ) ? fc::directory_size( mail_server ) : variant();
+
+      const fc::path network_peers = _data_dir / "peers.leveldb";
+      usage["network_peers"] = fc::is_directory( network_peers ) ? fc::directory_size( network_peers ) : variant();
+
+      fc::mutable_variant_object wallet_sizes;
+      const fc::path wallets = _data_dir / "wallets";
+      for( const string& wallet_name : _wallet->list() )
+          wallet_sizes[wallet_name] = fc::directory_size( wallets / wallet_name );
+      usage["wallets"] = wallet_sizes;
+
+      return usage;
     }
 
     void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)

@@ -18,21 +18,21 @@ string pretty_line( int size, char c )
 
 string pretty_shorten( const string& str, size_t max_size )
 {
-  if( str.size() > max_size ) 
+  if( str.size() > max_size )
     return str.substr( 0, max_size - 3 ) + "...";
   return str;
 }
 
 string pretty_timestamp( const time_point_sec& timestamp )
 {
-  if( FILTER_OUTPUT_FOR_TESTS ) 
+  if( FILTER_OUTPUT_FOR_TESTS )
     return "[redacted]";
   return timestamp.to_iso_extended_string();
 }
 
 string pretty_path( const path& file_path )
 {
-  if( FILTER_OUTPUT_FOR_TESTS ) 
+  if( FILTER_OUTPUT_FOR_TESTS )
     return "[redacted]";
   return file_path.generic_string();
 }
@@ -234,6 +234,24 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
         info["version"] = "[redacted]";
 
     out << fc::json::to_pretty_string( info ) << "\n";
+    return out.str();
+}
+
+// TODO
+string pretty_usage( fc::mutable_variant_object usage )
+{
+    std::stringstream out;
+    out << std::left;
+
+    /*
+    if( !usage["automatic_backups"].is_null() )
+    {
+        const auto size = usage["automatic_backups"].as_uint64();
+        usage["automatic_backups"] = "hello";
+    }
+    */
+
+    out << fc::json::to_pretty_string( usage ) << "\n";
     return out.str();
 }
 
