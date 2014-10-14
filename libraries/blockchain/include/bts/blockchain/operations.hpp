@@ -129,6 +129,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (update_feed_op_type)
                  (burn_op_type)
                  (link_account_op_type)
+                 (withdraw_all_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

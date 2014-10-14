@@ -102,22 +102,10 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] Change in short evaluation will hardfork BTSX
-#endif
-#ifndef BTS_TEST_NETWORK
-#error Reinterpreting ops
-   /* BTSX now needs to have this as short_operation_v3 and all short_v2's need to get canceled.
-    * We also need to set existing margin positions to 0% interest rate.
-    * There are also reports of funds disappearing during the last cancellation which must be addressed first 
-    * We also need to set existing margin positions to 0% interest rate.
-    **/
-#endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
       auto owner = this->short_index.owner;
-      FC_ASSERT( short_index.order_price.ratio < fc::uint128(10,0), "Interest rate must be less than 1000% APR" );
-      //// price( "10.0", short_index.order_price.base_asset_id, short_index.order_price.quote_asset_id) );
+      FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
 
       asset delta_amount  = this->get_amount();
 
@@ -192,9 +180,6 @@ namespace bts { namespace blockchain {
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
-#ifndef WIN32
-#warning [HARDFORK] Change in cover evaluation will hardfork BTSX
-#endif
       // calculate interest due on delta_amount
       asset interest_due = delta_amount * current_cover->interest_rate;
       const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
