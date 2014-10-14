@@ -95,11 +95,6 @@
 
 namespace bts { namespace net {
 
-  FC_REGISTER_EXCEPTIONS( (net_exception)
-                          (send_queue_overflow)
-                          (insufficient_relay_fee)
-                          (already_connected_to_requested_peer) )
-
   namespace detail
   {
     namespace bmi = boost::multi_index;

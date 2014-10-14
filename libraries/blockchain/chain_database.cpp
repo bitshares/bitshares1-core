@@ -31,16 +31,6 @@
 
 namespace bts { namespace blockchain {
 
-   // register exceptions here so it doesn't get optimized out by the linker
-   FC_REGISTER_EXCEPTIONS(
-           (blockchain_exception)
-           (invalid_pts_address)
-           (addition_overflow)
-           (subtraction_overflow)
-           (asset_type_mismatch)
-           (unsupported_chain_operation)
-           )
-
    namespace detail
    {
       void chain_database_impl::revalidate_pending()

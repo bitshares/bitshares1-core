@@ -7,7 +7,6 @@
 #include <boost/filesystem/fstream.hpp>
 
 namespace bts { namespace db {
-    FC_REGISTER_EXCEPTIONS( (db_exception)(db_in_use_exception) )
 
     upgrade_db_mapper& upgrade_db_mapper::instance()
     {
