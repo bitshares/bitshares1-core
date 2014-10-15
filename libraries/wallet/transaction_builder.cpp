@@ -22,32 +22,42 @@ transaction_builder& transaction_builder::update_account_registration(const wall
                                                                       optional<share_type> delegate_pay,
                                                                       optional<wallet_account_record> paying_account)
 {
-   FC_ASSERT( public_data || delegate_pay, "Nothing to do!" );
+   FC_ASSERT( public_data || active_key || delegate_pay, "Nothing to do!" );
 
    //Check at the beginning that we actually have the keys required to sign this thing.
    //Work on a copy so if we fail later, we haven't changed required_signatures.
    auto working_required_signatures = required_signatures;
-   _wimpl->authorize_update(required_signatures, account, active_key.valid());
+   _wimpl->authorize_update(working_required_signatures, account, active_key.valid());
+
+   if( !paying_account )
+      paying_account = account;
 
    if( delegate_pay )
    {
       FC_ASSERT( account.is_delegate(), "Cannot promote existing account to delegate!" );
       FC_ASSERT( *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
 
-      if( account.is_delegate() && !paying_account )
-         paying_account = account;
-      if( !paying_account->is_my_account )
-         FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
+      if( *delegate_pay != account.delegate_pay_rate() )
+      {
+         if( !paying_account->is_my_account )
+            FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
 
-      asset fee(_wimpl->_blockchain->get_delegate_registration_fee(*delegate_pay));
-      deduct_balance(paying_account->account_address, fee);
+         asset fee(_wimpl->_blockchain->get_delegate_registration_fee(*delegate_pay));
+         if( paying_account->is_delegate() && paying_account->delegate_pay_balance() >= fee.amount )
+         {
+            //Withdraw into trx, but don't record it in outstanding_balances because it's a fee
+            trx.withdraw_pay(paying_account->id, fee.amount);
+            working_required_signatures.insert(paying_account->active_key());
+         } else
+            deduct_balance(paying_account->account_address, fee);
 
-      ledger_entry entry;
-      entry.from_account = paying_account->owner_key;
-      entry.to_account = account.owner_key;
-      entry.amount = fee;
-      entry.memo = "Fee to update " + account.name + "'s delegate pay";
-      transaction_record.ledger_entries.push_back(entry);
+         ledger_entry entry;
+         entry.from_account = paying_account->owner_key;
+         entry.to_account = account.owner_key;
+         entry.amount = fee;
+         entry.memo = "Fee to update " + account.name + "'s delegate pay";
+         transaction_record.ledger_entries.push_back(entry);
+      }
    } else delegate_pay = account.delegate_pay_rate();
 
    if( active_key )
