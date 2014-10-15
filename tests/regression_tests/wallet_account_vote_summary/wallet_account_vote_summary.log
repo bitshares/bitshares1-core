@@ -19,7 +19,7 @@ xts:test:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test my_message vote_all
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         [redacted]
+<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -55,7 +55,7 @@ default (unlocked) >>> wallet_account_set_approval delegate50 1
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test my_message vote_all
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         [redacted]
+<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -81,7 +81,7 @@ delegate50                      100.00000 XTS           
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test my_message vote_random
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         [redacted]
+<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4
@@ -119,11 +119,11 @@ default (unlocked) >>> wallet_account_set_approval delegate50 0
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test my_message vote_all
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         [redacted]
+<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS           my_message                                  0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> blockchain_list_pending_transactions
     TXN ID      SIZE          OPERATION COUNT          SIGNATURE COUNT
 ----------------------------------------------------------------------
-[redacted]       252                        3                        1
+   <d-ign></d-ign>       252                        3                        1
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 4

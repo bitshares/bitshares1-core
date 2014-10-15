@@ -25,34 +25,36 @@ string pretty_shorten( const string& str, size_t max_size )
 
 string pretty_timestamp( const time_point_sec& timestamp )
 {
-  if( FILTER_OUTPUT_FOR_TESTS ) 
-    return "[redacted]";
+    if( FILTER_OUTPUT_FOR_TESTS )
+      return "<d-ign>" + timestamp.to_iso_extended_string() + "</d-ign>";
   return timestamp.to_iso_extended_string();
 }
 
 string pretty_path( const path& file_path )
 {
-  if( FILTER_OUTPUT_FOR_TESTS ) 
-    return "[redacted]";
-  return file_path.generic_string();
+    if( FILTER_OUTPUT_FOR_TESTS )
+      return "<d-ign>" + file_path.generic_string() + "</d-ign>";
+    return file_path.generic_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
 {
-    if( FILTER_OUTPUT_FOR_TESTS )
-    {
-        return "[redacted]";
-    }
-    else if( from_now )
+    string str;
+
+    if(from_now)
     {
         const auto now = blockchain::now();
         if( suffix.empty() )
-            return fc::get_approximate_relative_time_string( timestamp, now );
+            str = fc::get_approximate_relative_time_string(timestamp, now);
         else
-            return fc::get_approximate_relative_time_string( timestamp, now, " " + suffix );
+            str = fc::get_approximate_relative_time_string(timestamp, now, " " + suffix);
     }
-
-    return fc::get_approximate_relative_time_string( timestamp );
+    else
+        str = fc::get_approximate_relative_time_string(timestamp);
+    if(FILTER_OUTPUT_FOR_TESTS)
+        return "<d-ign>" + str + "</d-ign>";
+    else
+        return str;
 }
 
 string pretty_percent( double part, double whole, int precision )
@@ -112,7 +114,7 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     info["client_data_dir"] = pretty_path( data_dir );
 
     if( !info["client_version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-        info["client_version"] = "[redacted]";
+      info["client_version"] = "<d-ign>" + info["client_version"].as_string() + "</d-ign>";
 
     if( !info["ntp_time"].is_null() )
     {
@@ -120,7 +122,7 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         info["ntp_time"] = pretty_timestamp( ntp_time );
 
         if( !info["ntp_time_error"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-            info["ntp_time_error"] = "[redacted]";
+          info["ntp_time_error"] = "<d-ign>" + info["ntp_time_error"].as_string() + "</d-ign>";
     }
 
     if( !info["wallet_unlocked_until_timestamp"].is_null() )
@@ -172,7 +174,7 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     out << std::left;
 
     if( !info["db_version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-        info["db_version"] = "[redacted]";
+      info["db_version"] = "<d-ign>" + info["db_version"].as_string() + "</d-ign>";
 
     const auto timestamp = info["genesis_timestamp"].as<time_point_sec>();
     info["genesis_timestamp"] = pretty_timestamp( timestamp );
@@ -203,6 +205,9 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
     const auto data_dir = info["data_dir"].as<path>();
     info["data_dir"] = pretty_path( data_dir );
 
+    if(!info["num_scanning_threads"].is_null() && FILTER_OUTPUT_FOR_TESTS)
+      info["num_scanning_threads"] = "<d-ign>" + info["num_scanning_threads"].as_string() + "</d-ign>";
+
     if( !info["unlocked_until_timestamp"].is_null() )
     {
         const auto unlocked_until_timestamp = info["unlocked_until_timestamp"].as<time_point_sec>();
@@ -231,7 +236,7 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
     }
 
     if( !info["version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-        info["version"] = "[redacted]";
+      info["version"] = "<d-ign>" + info["version"].as_string() + "</d-ign>";
 
     out << fc::json::to_pretty_string( info ) << "\n";
     return out.str();
@@ -369,7 +374,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         const auto& delegate_name = client->blockchain_get_block_signee( std::to_string( block_record.block_num ) );
 
         out << std::setw( 32 );
-        if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+        if(FILTER_OUTPUT_FOR_TESTS) out << "<d-ign>" << delegate_name << "</d-ign>";
         else out << pretty_shorten( delegate_name, 31 );
 
         out << std::setw(  8 ) << block_record.user_transaction_ids.size();
@@ -377,8 +382,8 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
         if( FILTER_OUTPUT_FOR_TESTS )
         {
-            out << std::setw(  8 ) << "[redacted]";
-            out << std::setw( 15 ) << "[redacted]";
+            out << std::setw(  8 ) << "<d-ign>" << block_record.latency.to_seconds() << "</d-ign>";
+            out << std::setw( 15 ) << "<d-ign>" << block_record.processing_time.count() / double(1000000) << "</d-ign>";
         }
         else
         {
@@ -492,20 +497,15 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 out << client->get_chain()->to_pretty_asset( transaction.fee );
 
                 out << std::setw( 8 );
-                if( FILTER_OUTPUT_FOR_TESTS )
-                {
-                    out << "[redacted]";
-                }
-                else if( transaction.is_virtual )
-                {
-                    std::stringstream ss;
-                    ss << "[" << string( transaction.trx_id ).substr( 0, 6 ) << "]";
-                    out << ss.str();
-                }
+                string str;
+                if( transaction.is_virtual )
+                  str = "[" + string(transaction.trx_id).substr(0, 6) + "]";
                 else
-                {
-                    out << string( transaction.trx_id ).substr( 0, 8 );
-                }
+                  str = string(transaction.trx_id).substr(0, 8);
+                if( FILTER_OUTPUT_FOR_TESTS )
+                    out << "<d-ign>" << str << "</d-ign>";
+                else
+                    out << str;
             }
             else
             {
@@ -642,7 +642,12 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
                 else if( transaction.is_virtual() )
                     out << "VIRTUAL";
                 else
+                {
+                  if(FILTER_OUTPUT_FOR_TESTS)
+                    out << "<d-ign>" << string(*transaction.transaction_id).substr(0, field_widths.at("id")) << "</d-ign>";
+                  else
                     out << string( *transaction.transaction_id ).substr( 0, field_widths.at( "id" ) );
+                }
             }
             else
             {

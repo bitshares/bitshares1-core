@@ -281,6 +281,8 @@ public:
          : _result_file(result_file), _expected_result_file(expected_result_file), client_done(done) {}
 
   bool compare_files(); //compare two files, return true if the files match
+  bool compare_files_2();
+  void prepare_string(std::string &str);
 
   fc::future<void> client_done;
 };
@@ -300,6 +302,53 @@ bool test_file::compare_files()
 
   typedef std::istreambuf_iterator<char> istreambuf_iterator;
   return std::equal( istreambuf_iterator(lhs),  istreambuf_iterator(), istreambuf_iterator(rhs));
+}
+
+bool test_file::compare_files_2()
+{
+  std::ifstream lhs(_result_file.string().c_str());
+  std::ifstream rhs(_expected_result_file.string().c_str());
+
+  std::string l_line;
+  std::string r_line;
+
+  while(!lhs.eof() || !rhs.eof())
+  {
+    std::getline(lhs, l_line);
+    std::getline(rhs, r_line);
+
+    prepare_string(l_line);
+    prepare_string(r_line);
+
+    if(l_line.compare(r_line) != 0)
+      return false;
+  }
+
+  return true;
+}
+
+void test_file::prepare_string(std::string &str)
+{
+  for(;;)
+  {
+    std::size_t found_start = str.find("<d-ign>");
+    std::size_t found_stop = str.find("</d-ign>");
+
+    if(found_start == std::string::npos && found_stop == std::string::npos)
+      return;
+
+    if(found_start == std::string::npos)
+      str.erase(0, found_stop);
+    else if(found_stop == std::string::npos)
+      str.erase(str.begin() + found_start, str.end());
+    else if(found_start < found_stop)
+      str.erase(found_start, found_stop - found_start + string("</d-ign>").size());
+    else
+    {
+      str.erase(str.begin() + found_start, str.end());
+      str.erase(0, found_stop);
+    }
+  }
 }
 
 #ifdef WIN32
@@ -570,7 +619,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
     {
       //current_test.compare_files();
       current_test.client_done.wait();
-      BOOST_CHECK_MESSAGE(current_test.compare_files(), "Results mismatch with golden reference log");
+      BOOST_CHECK_MESSAGE(current_test.compare_files_2(), "Results mismatch with golden reference log");
     }
   } 
   catch ( const fc::exception& e )
