@@ -42,7 +42,7 @@ transaction_builder& transaction_builder::update_account_registration(const wall
          if( !paying_account->is_my_account )
             FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
 
-         asset fee(_wimpl->_blockchain->get_delegate_registration_fee(*delegate_pay));
+         asset fee(_wimpl->_blockchain->get_delegate_registration_fee());
          if( paying_account->is_delegate() && paying_account->delegate_pay_balance() >= fee.amount )
          {
             //Withdraw into trx, but don't record it in outstanding_balances because it's a fee

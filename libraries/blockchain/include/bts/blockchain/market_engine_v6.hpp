@@ -32,7 +32,6 @@ namespace bts { namespace blockchain { namespace detail {
     void update_market_history( const asset& trading_volume,
                                 const price& opening_price,
                                 const price& closing_price,
-                                const omarket_status& market_stat,
                                 const fc::time_point_sec& timestamp );
 
     void cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id );
