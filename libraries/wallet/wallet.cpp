@@ -377,7 +377,9 @@ namespace detail {
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (balance) );
       if( quantity.amount == 0 && order_type != cover_order )
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (balance) );
-      if( order_type != cover_order && atof(order_price.c_str()) <= 0 )
+      if( order_type != cover_order && atof(order_price.c_str()) < 0 )
+        FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
+      if( (order_type == bid_order || order_type == ask_order) && atof(order_price.c_str()) == 0 )
         FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
 
       price price_arg = _blockchain->to_ugly_price(order_price,
