@@ -26,6 +26,8 @@ default (unlocked) >>> get_info
   "client_version": "<d-ign></d-ign>",
   "network_num_connections": 8,
   "network_num_connections_max": 200,
+  "network_chain_downloader_running": false,
+  "network_chain_downloader_blocks_remaining": null,
   "ntp_time": "<d-ign></d-ign>",
   "ntp_time_error": "<d-ign></d-ign>",
   "wallet_open": true,

@@ -5,6 +5,7 @@ xts:test:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
 default (unlocked) >>> wallet_get_info
 {
   "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -12,7 +13,7 @@ default (unlocked) >>> wallet_get_info
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "<d-ign></d-ign>",
   "transaction_fee": "0.50000 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": true,
   "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": "<d-ign></d-ign>",
@@ -40,6 +41,7 @@ default (unlocked) >>> wallet_set_transaction_fee 0.00001
 default (unlocked) >>> wallet_get_info
 {
   "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -47,7 +49,7 @@ default (unlocked) >>> wallet_get_info
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "<d-ign></d-ign>",
   "transaction_fee": "0.00001 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": true,
   "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": "<d-ign></d-ign>",
@@ -69,6 +71,7 @@ default (unlocked) >>> wallet_set_transaction_fee 123.456
 default (unlocked) >>> wallet_get_info
 {
   "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -76,7 +79,7 @@ default (unlocked) >>> wallet_get_info
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "<d-ign></d-ign>",
   "transaction_fee": "123.45600 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": true,
   "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": "<d-ign></d-ign>",
@@ -92,6 +95,7 @@ default (unlocked) >>> wallet_set_transaction_fee 0.1
 default (unlocked) >>> wallet_get_info
 {
   "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -99,7 +103,7 @@ default (unlocked) >>> wallet_get_info
   "last_scanned_block_num": 1,
   "last_scanned_block_timestamp": "<d-ign></d-ign>",
   "transaction_fee": "0.10000 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": true,
   "unlocked_until": "<d-ign></d-ign>",
   "unlocked_until_timestamp": "<d-ign></d-ign>",

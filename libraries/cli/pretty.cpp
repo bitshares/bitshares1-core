@@ -205,6 +205,9 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
     const auto data_dir = info["data_dir"].as<path>();
     info["data_dir"] = pretty_path( data_dir );
 
+    if(!info["num_scanning_threads"].is_null() && FILTER_OUTPUT_FOR_TESTS)
+      info["num_scanning_threads"] = "<d-ign>" + info["num_scanning_threads"].as_string() + "</d-ign>";
+
     if( !info["unlocked_until_timestamp"].is_null() )
     {
         const auto unlocked_until_timestamp = info["unlocked_until_timestamp"].as<time_point_sec>();
