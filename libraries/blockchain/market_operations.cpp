@@ -107,6 +107,8 @@ namespace bts { namespace blockchain {
    {
       auto owner = this->short_index.owner;
       FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
+      FC_ASSERT( short_index.order_price.quote_asset_id > short_index.order_price.base_asset_id,
+                 "Interest rate price must have valid base and quote IDs" );
 
       asset delta_amount  = this->get_amount();
 
@@ -202,6 +204,9 @@ namespace bts { namespace blockchain {
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
+
+      FC_ASSERT( current_cover->interest_rate.quote_asset_id > current_cover->interest_rate.base_asset_id,
+                 "Somehow an evil cover has snuck its way past our defenses.", ("cover", *current_cover) );
 
       if( current_cover->payoff_balance > 0 )
       {
