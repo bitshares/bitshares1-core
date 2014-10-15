@@ -2,6 +2,7 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
 
+#include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
 using namespace bts::wallet;
@@ -272,6 +273,11 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    FC_ASSERT( order_balance.asset_id == cover_amount.asset_id,
               "Asset types of cover amount ${c} and short position ${s} do not match.",
               ("c", cover_amount.asset_id)("s", order_balance.asset_id) );
+   //Add interest to the balance
+   auto age_at_transaction_expiration = _wimpl->_blockchain->now() + _wimpl->self->get_transaction_expiration() -
+                     (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
+   order_balance += blockchain::detail::market_engine
+           ::get_cover_interest(order_balance, order->get_price(), age_at_transaction_expiration.to_seconds());
 
    //Don't over-cover the short position
    if( cover_amount > order_balance || cover_amount.amount == 0 )

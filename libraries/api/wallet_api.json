@@ -1216,14 +1216,14 @@
                "description" : "the account that will provide funds for the ask"
             },
             {
-               "name" : "short_quantity",
+               "name" : "short_collateral",
                "type" : "string",
-               "description" : "the quantity of items you would like to short sell (USD you would like to sell)"
+               "description" : "the amount of collateral you wish to fund this short with"
             },
             {
-               "name" : "short_symbol",
+               "name" : "collateral_symbol",
                "type" : "asset_symbol",
-               "description" : "the type of asset you would like to short, ie: USD"
+               "description" : "the type of asset collateralizing this short (i.e. XTS)"
             },
             {
                "name" : "interest_rate",
@@ -1231,9 +1231,9 @@
                "description" : "the APR you wish to pay interest at (0.0% to 1000.0%)"
             },
             {
-               "name" : "base_symbol",
+               "name" : "quote_symbol",
                "type" : "asset_symbol",
-               "description" : "the asset to use to collateralize this short sale (ie XTS)"
+               "description" : "the asset to short sell (i.e. USD)"
             },
             {
                "name" : "short_price_limit",
@@ -1258,7 +1258,7 @@
             {
                "name" : "quantity",
                "type" : "string",
-               "description" : "the quantity of items you would like to cover"
+               "description" : "the quantity of asset you would like to cover"
             },
             {
                "name" : "quantity_symbol",
@@ -1272,7 +1272,7 @@
             }
          ],
          "prerequisites" : ["wallet_unlocked"],
-         "aliases" : []
+         "aliases" : ["cover"]
       },
       {
          "method_name" : "wallet_market_batch_update",

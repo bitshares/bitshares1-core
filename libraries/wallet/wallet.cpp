@@ -3015,16 +3015,13 @@ namespace detail {
             break;
          case bid_order:
          case ask_order:
-            //args: account_name, quantity, base_symbol, price, quote_symbol
-            FC_ASSERT(args.size() > 4, "Incorrect number of arguments.");
-            my->apply_order_to_builder(order_description.first, builder,
-                                       args[0], args[1], args[3], args[2], args[4]);
-            break;
          case short_order:
-            //args: account_name, quantity, quote_symbol, price, base_symbol
+            //args: account_name, quantity, base_symbol, price, quote_symbol[, price_limit (for shorts)]
             FC_ASSERT(args.size() > 4, "Incorrect number of arguments.");
             my->apply_order_to_builder(order_description.first, builder,
-                                       args[0], args[1], args[3], args[4], args[2]);
+                                       args[0], args[1], args[3], args[2], args[4],
+                                       //For shorts:
+                                       args.size() > 5? args[5] : string());
             break;
          default:
             FC_THROW_EXCEPTION( invalid_operation, "Unknown operation type ${op}", ("op", order_description.first) );
@@ -3095,14 +3092,13 @@ namespace detail {
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
 
-   wallet_transaction_record wallet::submit_short(
-           const string& from_account_name,
-           const string& real_quantity,
-           const string& quote_symbol,
-           const string& interest_rate,
-           const string& base_symbol,
-           const string& price_limit,
-           bool sign )
+   wallet_transaction_record wallet::submit_short(const string& from_account_name,
+                                                  const string& real_quantity_xts,
+                                                  const string& collateral_symbol,
+                                                  const string& apr,
+                                                  const string& quote_symbol,
+                                                  const string& price_limit,
+                                                  bool sign)
    { try {
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
@@ -3111,9 +3107,9 @@ namespace detail {
       my->apply_order_to_builder(short_order,
                                  builder,
                                  from_account_name,
-                                 real_quantity,
-                                 interest_rate,
-                                 base_symbol,
+                                 real_quantity_xts,
+                                 apr,
+                                 collateral_symbol,
                                  quote_symbol,
                                  price_limit);
       builder->finalize();
@@ -3122,8 +3118,8 @@ namespace detail {
          return builder->sign();
       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
-                             (real_quantity)(quote_symbol)
-                             (interest_rate)(base_symbol)
+                             (real_quantity_xts)(quote_symbol)
+                             (apr)(collateral_symbol)
                              (price_limit)(sign) ) }
 
    wallet_transaction_record wallet::add_collateral(

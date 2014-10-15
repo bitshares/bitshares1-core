@@ -3541,16 +3541,16 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    wallet_transaction_record client_impl::wallet_market_submit_short(
            const string& from_account,
            const string& quantity,
-           const string& quote_symbol,
-           const string& collateral_ratio,
            const string& collateral_symbol,
+           const string& apr,
+           const string& quote_symbol,
            const string& short_price_limit )
    {
       const auto record = _wallet->submit_short( from_account,
                                                  quantity,
-                                                 quote_symbol,
-                                                 collateral_ratio,
                                                  collateral_symbol,
+                                                 apr,
+                                                 quote_symbol,
                                                  short_price_limit );
       network_broadcast_transaction( record.trx );
       return record;
