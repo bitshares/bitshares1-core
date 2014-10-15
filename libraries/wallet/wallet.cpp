@@ -377,7 +377,9 @@ namespace detail {
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (balance) );
       if( quantity.amount == 0 && order_type != cover_order )
          FC_CAPTURE_AND_THROW( invalid_asset_amount, (balance) );
-      if( order_type != cover_order && atof(order_price.c_str()) <= 0 )
+      if( order_type != cover_order && atof(order_price.c_str()) < 0 )
+        FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
+      if( (order_type == bid_order || order_type == ask_order) && atof(order_price.c_str()) == 0 )
         FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
 
       price price_arg = _blockchain->to_ugly_price(order_price,
@@ -2798,67 +2800,28 @@ namespace detail {
            const std::string& new_active_key,
            bool sign )
    { try {
-      if( !is_valid_account_name( account_to_update ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_update",account_to_update) );
-      if( !is_valid_account_name( pay_from_account ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("pay_from_account",pay_from_account) );
-
-      FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      signed_transaction trx;
-      unordered_set<address> required_signatures;
-      auto payer_public_key = get_account_public_key( pay_from_account );
+      auto account = get_account(account_to_update);
+      owallet_account_record payer;
+      if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
 
-      owallet_account_record account = my->_wallet_db.lookup_account( account_to_update );
-      if( !account.valid() )
-        FC_THROW_EXCEPTION( unknown_account, "Unknown account!", ("account_to_update",account_to_update) );
-
-      public_key_type account_public_key;
+      private_key_type new_private_key;
       if( new_active_key.empty() )
-        account_public_key = my->_wallet_db.new_private_key(my->_wallet_password, account->account_address).get_public_key();
+        new_private_key = my->_wallet_db.new_private_key(my->_wallet_password, account.account_address, false);
       else
       {
-        auto new_private_key = utilities::wif_to_key(new_active_key);
-        FC_ASSERT(new_private_key.valid(), "Unable to parse new active key.");
-
-        account_public_key = new_private_key->get_public_key();
-
-        if( my->_blockchain->get_account_record(account_public_key).valid() ||
-            my->_wallet_db.lookup_account(account_public_key).valid() )
-          FC_THROW_EXCEPTION( key_already_registered, "Key already belongs to another account!", ("new_public_key", account_public_key));
-
-        key_data new_key;
-        new_key.encrypt_private_key(my->_wallet_password, *new_private_key);
-        new_key.account_address = account->account_address;
-        my->_wallet_db.store_key(new_key);
+        auto key = utilities::wif_to_key(new_active_key);
+        FC_ASSERT(key.valid(), "Unable to parse new active key.");
+        new_private_key = *key;
       }
 
-      auto required_fees = get_transaction_fee();
-
-      my->withdraw_to_transaction( required_fees,
-                                   pay_from_account,
-                                   trx,
-                                   required_signatures );
-
-      //Either this account (owner key only) or any parent may authorize this action. Find a key that can do it.
-      my->authorize_update( required_signatures, account, true );
-
-      trx.update_account( account->id, account->delegate_pay_rate(), optional<variant>(), account_public_key );
-
-      auto entry = ledger_entry();
-      entry.from_account = payer_public_key;
-      entry.to_account = account_public_key;
-      entry.memo = "update " + account_to_update + " active key";
-
-      auto record = wallet_transaction_record();
-      record.ledger_entries.push_back( entry );
-      record.fee = required_fees;
-
-      if( sign ) sign_transaction( trx, required_signatures );
-      cache_transaction( trx, record );
-
-      return record;
+      auto builder = create_transaction_builder()->
+              update_account_registration(account, optional<variant>(), new_private_key, optional<share_type>(), payer).
+              finalize();
+      if( sign )
+         return builder.sign();
+      return builder.transaction_record;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
                                       ("pay_from_account",pay_from_account)
                                       ("sign",sign) ) }
