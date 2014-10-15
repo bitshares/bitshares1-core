@@ -136,6 +136,7 @@ namespace bts { namespace blockchain {
       address                 sender;
       address                 receiver;
       address                 escrow;
+      digest_type             agreement_digest;
       optional<titan_memo>    memo;
    };
 
@@ -208,4 +209,5 @@ FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_fla
 FC_REFLECT_DERIVED( bts::blockchain::memo_status,
                     (bts::blockchain::memo_data),
                     (has_valid_signature)(owner_private_key) )
-FC_REFLECT( bts::blockchain::withdraw_with_escrow, (sender)(receiver)(escrow)(memo) )
+FC_REFLECT( bts::blockchain::withdraw_with_escrow, (sender)(receiver)(escrow)(agreement_digest)(memo) )
+

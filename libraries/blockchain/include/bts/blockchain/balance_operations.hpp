@@ -117,6 +117,18 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   struct release_escrow_operation
+   {
+      static const operation_type_enum type;
+
+      balance_id_type  escrow_id;
+      address          released_by;
+      share_type       amount_to_receiver = 0;  
+      share_type       amount_to_sender   = 0; 
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
 
 } } // bts::blockchain
 
@@ -125,3 +137,5 @@ FC_REFLECT( bts::blockchain::withdraw_operation, (balance_id)(amount)(claim_inpu
 FC_REFLECT( bts::blockchain::deposit_operation, (amount)(condition) )
 FC_REFLECT( bts::blockchain::burn_operation, (amount)(account_id)(message)(message_signature) )
 FC_REFLECT( bts::blockchain::withdraw_all_operation, (balance_id)(claim_input_data) )
+FC_REFLECT( bts::blockchain::release_escrow_operation, (escrow_id)(released_by)(amount_to_receiver)(amount_to_sender) )
+
