@@ -19,6 +19,9 @@
 #include <fc/thread/thread.hpp>
 #include <fc/git_revision.hpp>
 
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/scoped_lock.hpp>
+
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -30,7 +33,8 @@ namespace bts { namespace rpc {
    using namespace client;
    FC_REGISTER_EXCEPTIONS( (rpc_exception)
                            (missing_parameter)
-                           (unknown_method) )
+                           (unknown_method)
+                           (login_required) )
 
   namespace detail
   {
@@ -47,6 +51,7 @@ namespace bts { namespace rpc {
          fc::thread*                                       _thread;
          http_callback_type                                _http_file_callback;
          std::unordered_set<fc::rpc::json_connection_ptr>  _open_json_connections;
+         fc::mutex                                         _rpc_mutex; // locked to prevent executing two rpc calls at once
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -441,13 +446,15 @@ namespace bts { namespace rpc {
           // ilog( "arguments: ${params}", ("params",arguments) );
           if ((method_data.prerequisites & bts::api::json_authenticated) &&
               _authenticated_connection_set.find(con) == _authenticated_connection_set.end())
-            FC_THROW_EXCEPTION( bts::wallet::login_required, "not logged in");
+            FC_THROW_EXCEPTION( login_required, "not logged in");
           return dispatch_authenticated_method(method_data, arguments);
         }
 
         fc::variant dispatch_authenticated_method(const bts::api::method_data& method_data,
                                                   const fc::variants& arguments_from_caller)
         {
+          fc::scoped_lock<fc::mutex> lock(_rpc_mutex);
+
           if (!method_data.method)
           {
             // then this is a method using our new generated code

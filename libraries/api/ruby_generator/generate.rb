@@ -55,6 +55,7 @@ private
 end
 
 generator = Generator.new
+Dir.mkdir 'output' unless Dir.exists? 'output'
 
 Dir['./templates/*.tmpl'].each do |template_file|
   unless template_file =~ /templates\/(.+)\.tmpl$/

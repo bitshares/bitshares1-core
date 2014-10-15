@@ -1,5 +1,6 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/market_operations.hpp>
 
 namespace bts { namespace blockchain {
@@ -102,33 +103,17 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_ask_record( this->ask_index, *current_ask );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [FUBAR] This needs to be updated to reflect the new short operation interest semantics
-#endif
-#ifndef BTS_TEST_NETWORK
-#error Don't even try it
-   /* BTSX now needs to have this as short_operation_v3 and all short_v2's need to get canceled.
-    * We also need to set existing margin positions to 0% interest rate.
-    * There are also reports of funds disappearing during the last cancellation which must be addressed first */
-#endif
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( this->short_index.order_price == price() )
-         FC_CAPTURE_AND_THROW( zero_price, (short_index.order_price) );
-
       auto owner = this->short_index.owner;
+      FC_ASSERT( short_index.order_price.ratio < fc::uint128( 10, 0 ), "Interest rate must be less than 1000% APR" );
 
       asset delta_amount  = this->get_amount();
-      asset delta_quote   = delta_amount * this->short_index.order_price;
-
-      /** if the USD amount of the order is effectively then don't bother */
-      FC_ASSERT( llabs( delta_quote.amount ) > 0, "", ("delta_quote",delta_quote)("order",*this));
 
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
       FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
-      FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
 
       auto current_short   = eval_state._current_state->get_short_record( this->short_index );
       //if( current_short ) wdump( (current_short) );
@@ -196,29 +181,24 @@ namespace bts { namespace blockchain {
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
-#ifndef WIN32
-#warning [HARDFORK] Change in cover evaluation will hardfork BTSX
-#endif
-      // calculate interest due on delta_amount
-      asset interest_due = delta_amount * current_cover->interest_rate;
-      auto ellapsed_sec  = BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (eval_state._current_state->now() - current_cover->expiration).to_seconds();
+      const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
+      auto elapsed_sec = ( eval_state._current_state->now() - start_time ).to_seconds();
+      if( elapsed_sec < 0 ) elapsed_sec = 0;
 
-      if( ellapsed_sec < 0 ) ellapsed_sec = 0;
+      //If delta_amount exceeds the total principle due, we only take interest on the principle
+      auto interest_due = detail::market_engine::get_cover_interest(std::min(delta_amount,
+                                                                             asset(current_cover->payoff_balance,
+                                                                                   delta_amount.asset_id)),
+                                                                    current_cover->interest_rate,
+                                                                    elapsed_sec);
+      asset principle_paid = delta_amount - interest_due;
 
-      fc::uint128 due = interest_due.amount;
-      due *= ellapsed_sec;
-      due /= (365 * 24 * 60 * 60); // seconds per year
-
-      asset amount_paid = delta_amount;
-      amount_paid.amount -= due.to_uint64();
-
-      // subtract interest due from amount paid to cover, add it to amount paid to fees
-
-      asset_to_cover->current_share_supply -= amount_paid.amount; //delta_amount.amount;
-      asset_to_cover->collected_fees += due.to_uint64();
+      //Covered asset is destroyed, interest pays to fees
+      asset_to_cover->current_share_supply -= principle_paid.amount;
+      asset_to_cover->collected_fees += interest_due.amount;
       eval_state._current_state->store_asset_record( *asset_to_cover );
 
-      current_cover->payoff_balance -= delta_amount.amount;
+      current_cover->payoff_balance -= principle_paid.amount;
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );

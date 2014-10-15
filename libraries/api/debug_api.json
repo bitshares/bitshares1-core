@@ -149,7 +149,7 @@
         ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["errors, list_errors"]
+        "aliases" : ["errors", "list_errors"]
       },
       {
           "method_name" : "debug_list_errors_brief",
@@ -176,7 +176,7 @@
                } ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["list_errors_brief, errors_brief"]
+        "aliases" : ["list_errors_brief", "errors_brief"]
       },
       {
           "method_name" : "debug_write_errors_to_file",
@@ -198,7 +198,7 @@
         ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
-        "aliases" : ["write_errors_to_file, write_errors"]
+        "aliases" : ["write_errors_to_file", "write_errors"]
       },
       {
         "method_name" : "debug_clear_errors",

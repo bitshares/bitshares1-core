@@ -81,6 +81,7 @@ namespace bts { namespace cli {
     _command_to_function["wallet_account_create"] = &f_wallet_account_create;
 
     _command_to_function["debug_list_errors"] = &f_debug_list_errors;
+    _command_to_function["blockchain_get_account_wall"] = &f_blockchain_get_account_wall;
 
     _command_to_function["get_info"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
     {
@@ -240,6 +241,38 @@ namespace bts { namespace cli {
     _command_to_function["mail_get_messages_from"] = &f_mail_header_list;
     _command_to_function["mail_get_messages_to"] = &f_mail_header_list;
     _command_to_function["mail_get_messages_in_conversation"] = &f_mail_header_list;
+  }
+
+  void print_result::f_blockchain_get_account_wall( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+  {
+     out << std::left;
+     out << std::setw( 30 )  << "AMOUNT";
+     out << std::setw( 100 ) << "MESSAGE"; 
+     out << std::setw( 30 )  << "SIGNER";
+     out << "\n";
+     out << pretty_line( 160 );
+     out << "\n";
+     auto burn_records = result.as< vector<burn_record> >();
+     for( auto record : burn_records )
+     {
+        out << std::left;
+        out << std::setw( 30 )  << client->get_chain()->to_pretty_asset( record.amount );
+        out << std::setw( 100 ) << record.message;
+        if( record.signer )
+        {
+            auto signer_key = record.signer_key();
+            auto oaccount_rec = client->get_chain()->get_account_record( signer_key );
+            if( oaccount_rec )
+               out << std::setw( 30 )  << oaccount_rec->name;
+            else
+               out << std::setw( 30 )  << variant(public_key_type(signer_key)).as_string();
+        }
+        else
+        {
+           out << std::setw( 30 )  << "ANONYMOUS";
+        }
+        out << "\n";
+     }
   }
 
   void print_result::f_wallet_account_create( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )

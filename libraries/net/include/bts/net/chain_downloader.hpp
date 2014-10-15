@@ -42,7 +42,7 @@ namespace bts { namespace net {
 
         /**
          * @brief Asynchronously retrieve all new blocks from one of the available chain_server nodes
-         * @param new_block_callback Callback function to pass new blocks from server to
+         * @param new_block_callback Callback function taking the newly downloaded block and the count of blocks remaining
          * @param first_block_number The first block number to download. Defaults to 0, which means to download all
          * blocks in chain.
          * @return A future monitoring the function downloading blocks. When this future completes, all blocks have
@@ -51,7 +51,7 @@ namespace bts { namespace net {
          * If new_block_callback is unset, a valid future is still returned, but nothing will be done and the
          * function monitored by the future will return immediately.
          */
-        fc::future<void> get_all_blocks(std::function<void (const blockchain::full_block&)> new_block_callback,
+        fc::future<void> get_all_blocks(std::function<void (const blockchain::full_block&, uint32_t)> new_block_callback,
                                         uint32_t first_block_number);
     };
 } } //namespace bts::net

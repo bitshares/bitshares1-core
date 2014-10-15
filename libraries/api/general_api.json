@@ -190,6 +190,14 @@
         "parameters"  : [],
         "is_const"   : false,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name" : "get_database_sizes",
+        "description" : "Tally up and report the sizes of all databases",
+        "return_type" : "variant",
+        "parameters"  : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

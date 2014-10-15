@@ -624,6 +624,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             {
               cancel_blocks_too_old_monitor_task();
               cancel_rebroadcast_pending_loop();
+              if( _chain_downloader_future.valid() && !_chain_downloader_future.ready() )
+                 _chain_downloader_future.cancel_and_wait(__FUNCTION__);
               _p2p_node.reset();
               delete _cli;
             }
@@ -735,6 +737,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             uint32_t                                                _last_sync_status_head_block;
             uint32_t                                                _remaining_items_to_sync;
             boost::accumulators::accumulator_set<double, boost::accumulators::stats<boost::accumulators::tag::rolling_mean> > _sync_speed_accumulator;
+
+            fc::future<void>                                        _chain_downloader_future;
+            bool                                                    _chain_downloader_running = false;
+            uint32_t                                                _chain_downloader_blocks_remaining = 0;
 
             fc::time_point                                          _last_connection_count_message_time;
             /** display messages about the connection count changing at most once every _connection_count_notification_interval */
@@ -2292,17 +2298,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return count;
     }
 
-    uint32_t detail::client_impl::wallet_import_multibit(
-            const fc::path& filename,
-            const string& passphrase,
-            const string& account_name
-            )
-    {
-      const auto count = _wallet->import_multibit_wallet(filename, passphrase, account_name);
-      _wallet->auto_backup( "multibit_import" );
-      return count;
-    }
-
     uint32_t detail::client_impl::wallet_import_electrum(
             const fc::path& filename,
             const string& passphrase,
@@ -2311,17 +2306,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     {
       const auto count = _wallet->import_electrum_wallet(filename, passphrase, account_name);
       _wallet->auto_backup( "electrum_import" );
-      return count;
-    }
-
-    uint32_t detail::client_impl::wallet_import_armory(
-            const fc::path& filename,
-            const string& passphrase,
-            const string& account_name
-            )
-    {
-      const auto count = _wallet->import_armory_wallet(filename, passphrase, account_name);
-      _wallet->auto_backup( "armory_import" );
       return count;
     }
 
@@ -2537,6 +2521,30 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       blockchain::update_ntp_time();
     }
 
+    variant detail::client_impl::get_database_sizes() const
+    {
+      fc::mutable_variant_object sizes;
+      fc::mutable_variant_object scratch;
+
+      scratch["Raw Blockchain"] = fc::directory_size(_data_dir / "chain/raw_chain");
+      scratch["Current DAC State"] = fc::directory_size(_data_dir / "chain/index");
+      sizes["Blockchain"] = scratch;
+
+      scratch = fc::mutable_variant_object();
+      for (string wallet_name : _wallet->list())
+        scratch[wallet_name] = fc::directory_size(_data_dir / "wallets" / wallet_name);
+      if (fc::is_directory(_data_dir / "wallets/.backups"))
+        scratch["Backups"] = fc::directory_size(_data_dir / "wallets/.backups");
+      sizes["Wallets"] = scratch;
+
+      if (fc::is_directory(_data_dir / "mail"))
+         sizes["Mail Server Storage"] = fc::directory_size(_data_dir / "mail");
+
+      sizes["Mail Client Storage"] = fc::directory_size(_data_dir / "mail_client");
+
+      return sizes;
+    }
+
     void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
@@ -2648,12 +2656,20 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         bts::net::chain_downloader* chain_downloader = new bts::net::chain_downloader();
         for( const auto& server : my->_config.chain_servers )
           chain_downloader->add_chain_server(fc::ip::endpoint::from_string(server));
-        auto download_future = chain_downloader->get_all_blocks([this](const full_block& new_block) {
+        my->_chain_downloader_running = true;
+        my->_chain_downloader_future = chain_downloader->get_all_blocks([this](const full_block& new_block, uint32_t blocks_left) {
           my->_chain_db->push_block(new_block);
+          my->_chain_downloader_blocks_remaining = blocks_left;
         }, my->_chain_db->get_head_block_num() + 1);
-        download_future.on_complete([this,chain_downloader,network_started_callback](const fc::exception_ptr& e) {
+        my->_chain_downloader_future.on_complete([this,chain_downloader,network_started_callback](const fc::exception_ptr& e) {
+          if( e->code() == fc::canceled_exception::code_value )
+          {
+            delete chain_downloader;
+            return;
+          }
           if( e )
             elog("chain_downloader failed with exception: ${e}", ("e", e->to_detail_string()));
+          my->_chain_downloader_running = false;
           delete chain_downloader;
           connect_to_p2p_network();
           if( network_started_callback ) network_started_callback();
@@ -3212,6 +3228,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       info["network_num_connections"]                           = network_get_connection_count();
       fc::variant_object advanced_params                        = network_get_advanced_node_parameters();
       info["network_num_connections_max"]                       = advanced_params["maximum_number_of_connections"];
+      info["network_chain_downloader_running"]                  = _chain_downloader_running;
+      info["network_chain_downloader_blocks_remaining"]         = _chain_downloader_running?
+                                                                        _chain_downloader_blocks_remaining :
+                                                                        variant();
 
       /* NTP */
       info["ntp_time"]                                          = variant();
@@ -3521,16 +3541,16 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    wallet_transaction_record client_impl::wallet_market_submit_short(
            const string& from_account,
            const string& quantity,
-           const string& quote_symbol,
-           const string& collateral_ratio,
            const string& collateral_symbol,
+           const string& apr,
+           const string& quote_symbol,
            const string& short_price_limit )
    {
       const auto record = _wallet->submit_short( from_account,
                                                  quantity,
-                                                 quote_symbol,
-                                                 collateral_ratio,
                                                  collateral_symbol,
+                                                 apr,
+                                                 quote_symbol,
                                                  short_price_limit );
       network_broadcast_transaction( record.trx );
       return record;
@@ -3966,7 +3986,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       auto brec = _chain_db->get_asset_record(base);
       FC_ASSERT( qrec && brec );
       auto oresult = _chain_db->get_market_status( qrec->id, brec->id );
-      FC_ASSERT( oresult );
+      FC_ASSERT( oresult, "The ${q}/${b} market has not yet been initialized.", ("q", quote)("b", base));
 
       api_market_status result(*oresult);
       if( oresult->center_price.ratio == fc::uint128() )

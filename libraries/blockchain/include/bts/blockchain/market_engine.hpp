@@ -9,6 +9,10 @@ namespace bts { namespace blockchain { namespace detail {
     /** return true if execute was successful and applied */
     bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp );
 
+    void cancel_all_shorts();
+
+    static asset get_cover_interest(const asset& principle, const price& apr, uint32_t age_seconds );
+
   private:
     void push_market_transaction( const market_transaction& mtrx );
 
@@ -23,7 +27,11 @@ namespace bts { namespace blockchain { namespace detail {
     bool get_next_bid();
     bool get_next_ask();
     asset get_current_cover_debt()const;
-    asset get_cover_interest( const asset& principle )const;
+    uint32_t get_current_cover_age()const
+    {
+        //Total lifetime minus remaining lifetime
+        return BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (*_current_ask->expiration - _pending_state->now()).to_seconds();
+    }
 
     /**
       *  This method should not affect market execution or validation and
@@ -36,7 +44,6 @@ namespace bts { namespace blockchain { namespace detail {
                                 const fc::time_point_sec& timestamp );
 
     void cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id );
-    void cancel_all_shorts();
 
     pending_chain_state_ptr       _pending_state;
     pending_chain_state_ptr       _prior_state;
@@ -62,4 +69,3 @@ namespace bts { namespace blockchain { namespace detail {
   };
 
 } } } // end namespace bts::blockchain::detail
-

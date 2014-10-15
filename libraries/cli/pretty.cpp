@@ -13,29 +13,28 @@ bool FILTER_OUTPUT_FOR_TESTS = false;
 
 string pretty_line( int size, char c )
 {
-    std::stringstream ss;
-    for( int i = 0; i < size; ++i ) ss << c;
-    return ss.str();
+  return string(size, c);
 }
 
 string pretty_shorten( const string& str, size_t max_size )
 {
-    if( str.size() > max_size ) return str.substr( 0, max_size - 3 ) + "...";
-    return str;
+  if( str.size() > max_size ) 
+    return str.substr( 0, max_size - 3 ) + "...";
+  return str;
 }
 
 string pretty_timestamp( const time_point_sec& timestamp )
 {
     if( FILTER_OUTPUT_FOR_TESTS )
       return "<d-ign>" + timestamp.to_iso_extended_string() + "</d-ign>";
-    return timestamp.to_iso_extended_string();
+  return timestamp.to_iso_extended_string();
 }
 
 string pretty_path( const path& file_path )
 {
     if( FILTER_OUTPUT_FOR_TESTS )
-      return "<d-ign>" + file_path.string() + "</d-ign>";
-    return file_path.string();
+      return "<d-ign>" + file_path.generic_string() + "</d-ign>";
+    return file_path.generic_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
@@ -45,14 +44,13 @@ string pretty_age( const time_point_sec& timestamp, bool from_now, const string&
     if(from_now)
     {
         const auto now = blockchain::now();
-        if(suffix.empty())
+        if( suffix.empty() )
             str = fc::get_approximate_relative_time_string(timestamp, now);
         else
             str = fc::get_approximate_relative_time_string(timestamp, now, " " + suffix);
     }
     else
         str = fc::get_approximate_relative_time_string(timestamp);
-
     if(FILTER_OUTPUT_FOR_TESTS)
         return "<d-ign>" + str + "</d-ign>";
     else
@@ -496,14 +494,12 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 out << client->get_chain()->to_pretty_asset( transaction.fee );
 
                 out << std::setw( 8 );
-
                 string str;
                 if( transaction.is_virtual )
                   str = "[" + string(transaction.trx_id).substr(0, 6) + "]";
                 else
                   str = string(transaction.trx_id).substr(0, 8);
-
-                if(FILTER_OUTPUT_FOR_TESTS)
+                if( FILTER_OUTPUT_FOR_TESTS )
                     out << "<d-ign>" << str << "</d-ign>";
                 else
                     out << str;
@@ -638,14 +634,16 @@ string pretty_experimental_transaction_list( const set<pretty_transaction_experi
             out << std::setw( field_widths.at( "id" ) );
             if( line_count == 0 )
             {
-                if( transaction.is_virtual() )
+                if( FILTER_OUTPUT_FOR_TESTS )
+                    out << "[redacted]";
+                else if( transaction.is_virtual() )
                     out << "VIRTUAL";
                 else
                 {
                   if(FILTER_OUTPUT_FOR_TESTS)
                     out << "<d-ign>" << string(*transaction.transaction_id).substr(0, field_widths.at("id")) << "</d-ign>";
                   else
-                    out << string(*transaction.transaction_id).substr(0, field_widths.at("id"));
+                    out << string( *transaction.transaction_id ).substr( 0, field_widths.at( "id" ) );
                 }
             }
             else

@@ -4,8 +4,9 @@
 #include <bts/db/cached_level_map.hpp>
 #include <bts/blockchain/time.hpp>
 
-#include <fc/network/tcp_socket.hpp>
 #include <fc/io/buffered_iostream.hpp>
+#include <fc/io/json.hpp>
+#include <fc/network/tcp_socket.hpp>
 
 #include <queue>
 
@@ -264,8 +265,19 @@ public:
     }
 
     std::unordered_set<fc::ip::endpoint> get_mail_servers_for_recipient(string recipient) {
-        //TODO: Check recipient's account on blockchain for his mail server
-        return std::unordered_set<fc::ip::endpoint>({ip::endpoint(ip::address("127.0.0.1"), 3000)});
+        oaccount_record recipient_account = _chain->get_account_record(recipient);
+        if (!recipient_account)
+            return std::unordered_set<fc::ip::endpoint>();
+
+        try {
+            return recipient_account->public_data.as<variant_object>()["mail_servers"]
+                                                 .as<std::unordered_set<ip::endpoint>>();
+        } catch (fc::exception& e) {
+            elog("Error while getting mail servers for ${r}: ${e}", ("r", recipient)("e", e.to_detail_string()));
+        }
+        ilog("It appears that ${r} has not published his preferred mail servers. Using defaults.",
+             ("r", recipient));
+        return BTS_MAIL_DEFAULT_MAIL_SERVERS;
     }
 
     void get_proof_of_work_target(const message_id_type& message_id) {
@@ -306,7 +318,8 @@ public:
     }
 
     void schedule_proof_of_work(const message_id_type& message_id) {
-        schedule_generic_task<message_id_type>(_proof_of_work_jobs, _proof_of_work_worker, message_id, [this](message_id_type message_id){
+        schedule_generic_task<message_id_type>(_proof_of_work_jobs, _proof_of_work_worker, message_id,
+                                               [this](message_id_type message_id){
             //Use a unique_ptr to ensure deletion, but a raw pointer to copy into the worker thread
             std::unique_ptr<mail_record> email_uptr(new mail_record(_processing_db.fetch(message_id)));
             mail_record* email = email_uptr.get();
@@ -352,7 +365,8 @@ public:
     }
 
     void schedule_transmit_message(message_id_type message_id) {
-        schedule_generic_task<message_id_type>(_transmit_message_jobs, _transmit_message_worker, message_id, [this](message_id_type message_id){
+        schedule_generic_task<message_id_type>(_transmit_message_jobs, _transmit_message_worker, message_id,
+                                               [this](message_id_type message_id){
             mail_record email = _processing_db.fetch(message_id);
             if (email.mail_servers.empty()) {
                 email.status = client::failed;
@@ -375,7 +389,8 @@ public:
                     mutable_variant_object request;
                     request["id"] = 0;
                     request["method"] = "mail_store_message";
-                    request["params"] = vector<variant>({variant(address(email.recipient_key)), variant(email.content)});
+                    request["params"] = vector<variant>({variant(address(email.recipient_key)),
+                                                         variant(email.content)});
 
                     fc::json::to_stream(sock, variant_object(request));
                     string raw_response;
@@ -383,12 +398,16 @@ public:
                     variant_object response = fc::json::from_string(raw_response).as<variant_object>();
 
                     if (response["id"].as_int64() != 0)
-                        wlog("Server response has wrong ID... attempting to press on. Expected: 0; got: ${r}", ("r", response["id"]));
+                        wlog("Server response has wrong ID... attempting to press on. Expected: 0; got: ${r}",
+                             ("r", response["id"]));
                     if (response.contains("error")) {
                         email.status = client::failed;
-                        email.failure_reason = response["error"].as<variant_object>()["data"].as<variant_object>()["message"].as_string();
+                        email.failure_reason = response["error"].as<variant_object>()["data"]
+                                                                .as<variant_object>()["message"]
+                                                                .as_string();
                         _processing_db.store(message_id, email);
-                        elog("Storing message with server ${server} failed: ${error}", ("server", server)("error", response["error"])("request", request));
+                        elog("Storing message with server ${server} failed: ${error}",
+                             ("server", server)("error", response["error"])("request", request));
                         sock.close();
                         return;
                     }
@@ -402,12 +421,15 @@ public:
                     response = fc::json::from_string(raw_response).as<variant_object>();
 
                     if (response["id"].as_int64() != 1)
-                        wlog("Server response has wrong ID... attempting to press on. Expected: 1; got: ${r}", ("r", response["id"]));
+                        wlog("Server response has wrong ID... attempting to press on. Expected: 1; got: ${r}",
+                             ("r", response["id"]));
                     if (response["result"].as<message>().id() != email.content.id()) {
                         email.status = client::failed;
-                        email.failure_reason = "Message saved to server, but server responded with another message when we requested it.";
+                        email.failure_reason = "Message saved to server, but server responded with "
+                                               "another message when we requested it.";
                         _processing_db.store(message_id, email);
-                        elog("Storing message with server ${server} failed because server gave back wrong message.", ("server", server));
+                        elog("Storing message with server ${server} failed because server gave back wrong message.",
+                             ("server", server));
                         sock.close();
                         return;
                     }
@@ -444,7 +466,8 @@ public:
 
     void finalize_message(message_id_type message_id) {
         mail_record email = _processing_db.fetch(message_id);
-        ulog("Email ${id} sent successfully, and is now known as ${newid}.", ("id", message_id)("newid", email.content.id()));
+        ulog("Email ${id} sent successfully, and is now known as ${newid}.",
+             ("id", message_id)("newid", email.content.id()));
         email.id = email.content.id();
         email.status = client::accepted;
         _mail_index.insert(email_header(email));
@@ -550,7 +573,8 @@ public:
                     //TODO: This whole design needs to be rethought. This is just a simplistic first effort.
                     //Right now we get the inventory, then download and store ALL of it locally.
                     //Downloading is done synchronously, with one message downloaded before the next starts.
-                    //No deduplication of effort is done; i.e. if a given message is on three servers, we'll download it three times.
+                    //No deduplication of effort is done; i.e. if a given message is on three servers, we'll download
+                    //it three times.
                     tcp_socket sock;
                     sock.connect_to(server);
 
@@ -569,9 +593,11 @@ public:
                         variant_object response = fc::json::from_string(raw_response).as<variant_object>();
 
                         if (response["id"].as_int64() != 0)
-                            wlog("Server response has wrong ID... attempting to press on. Expected: 0; got: ${r}", ("r", response["id"]));
+                            wlog("Server response has wrong ID... attempting to press on. Expected: 0; got: ${r}",
+                                 ("r", response["id"]));
                         if (response.contains("error")) {
-                            elog("Server ${server} gave error ${error} on request ${request}", ("server", server)("error", response["error"])("request", request));
+                            elog("Server ${server} gave error ${error} on request ${request}",
+                                 ("server", server)("error", response["error"])("request", request));
                             sock.close();
                             return;
                         }
@@ -589,9 +615,11 @@ public:
                             response = fc::json::from_string(raw_response).as<variant_object>();
 
                             if (response["id"].as_int64() != 1)
-                                wlog("Server response has wrong ID... attempting to press on. Expected: 1; got: ${r}", ("r", response["id"]));
+                                wlog("Server response has wrong ID... attempting to press on. Expected: 1; got: ${r}",
+                                     ("r", response["id"]));
                             if (response.contains("error")) {
-                                elog("Server ${server} gave error ${error} on request ${request}", ("server", server)("error", response["error"])("request", request));
+                                elog("Server ${server} gave error ${error} on request ${request}",
+                                     ("server", server)("error", response["error"])("request", request));
                                 sock.close();
                                 return;
                             }
@@ -721,7 +749,11 @@ email_record client::get_message(message_id_type message_id) {
     return my->get_message(message_id);
 }
 
-message_id_type client::send_email(const string &from, const string &to, const string &subject, const string &body, const message_id_type& reply_to) {
+message_id_type client::send_email(const string &from,
+                                   const string &to,
+                                   const string &subject,
+                                   const string &body,
+                                   const message_id_type& reply_to) {
     FC_ASSERT(my->_wallet->is_open());
     FC_ASSERT(my->_wallet->is_unlocked());
     FC_ASSERT(my->is_open());
@@ -734,7 +766,11 @@ message_id_type client::send_email(const string &from, const string &to, const s
     detail::mail_record email(from,
                               to,
                               recipient->owner_key,
-                              my->_wallet->mail_encrypt(recipient->active_key(), my->_wallet->mail_create(from, subject, body, reply_to)));
+                              my->_wallet->mail_encrypt(recipient->active_key(),
+                                                        my->_wallet->mail_create(from,
+                                                                                 subject,
+                                                                                 body,
+                                                                                 reply_to)));
     my->process_outgoing_mail(email);
 
     return email.id;
@@ -820,5 +856,7 @@ email_record::email_record(const detail::mail_archive_record& archive_record)
 }
 }
 
-FC_REFLECT(bts::mail::detail::mail_record, (id)(status)(sender)(recipient)(recipient_key)(content)(mail_servers)(proof_of_work_target))
-FC_REFLECT(bts::mail::detail::mail_archive_record, (id)(status)(sender)(recipient)(recipient_address)(content)(mail_servers))
+FC_REFLECT(bts::mail::detail::mail_record, (id)(status)(sender)(recipient)
+           (recipient_key)(content)(mail_servers)(proof_of_work_target))
+FC_REFLECT(bts::mail::detail::mail_archive_record, (id)(status)(sender)
+           (recipient)(recipient_address)(content)(mail_servers))

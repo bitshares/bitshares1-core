@@ -23,6 +23,7 @@ namespace bts { namespace cli {
   private:
     void initialize();
 
+    static void f_blockchain_get_account_wall( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_wallet_account_create( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_debug_list_errors( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );
     static void f_blockchain_market_list( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client );

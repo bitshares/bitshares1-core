@@ -1,13 +1,6 @@
 #pragma once
 
-#include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/extended_address.hpp>
-#include <bts/blockchain/withdraw_types.hpp>
 #include <bts/wallet/wallet_records.hpp>
-
-#include <fc/io/json.hpp>
-#include <fc/io/raw_variant.hpp>
-#include <fc/reflect/variant.hpp>
 
 namespace bts { namespace wallet {
 
