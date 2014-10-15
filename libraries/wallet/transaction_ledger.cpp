@@ -1155,29 +1155,29 @@ vector<wallet_transaction_record> wallet::get_transactions( const string& transa
    return transactions;
 } FC_CAPTURE_AND_RETHROW() }
 
-void wallet::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
+void wallet_impl::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
 { try {
-   transaction.expiration = blockchain::now() + get_transaction_expiration();
-   const auto chain_id = my->_blockchain->chain_id();
+   transaction.expiration = blockchain::now() + self->get_transaction_expiration();
+   const auto chain_id = _blockchain->chain_id();
    for( const auto& addr : required_signatures )
-       transaction.sign( get_private_key( addr ), chain_id );
+       transaction.sign( self->get_private_key( addr ), chain_id );
 } FC_CAPTURE_AND_RETHROW() }
 
-void wallet::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction )
+void wallet_impl::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction )
 { try {
    if( apply_transaction ) // Should only be false when apply_transaction_experimental is used
-       my->_blockchain->store_pending_transaction( transaction, true );
+       _blockchain->store_pending_transaction( transaction, true );
 
    record.record_id = transaction.id();
    record.trx = transaction;
    record.created_time = blockchain::now();
    record.received_time = record.created_time;
-   my->_wallet_db.store_transaction( record );
+   _wallet_db.store_transaction( record );
 
    for( const auto& op : transaction.operations )
    {
        if( operation_type_enum( op.type ) == withdraw_op_type )
-           my->sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
+           sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
    }
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -1377,28 +1377,6 @@ void wallet::remove_transaction_record( const string& record_id )
            return;
        }
     }
-}
-
-wallet_transaction_record wallet::edit_transaction( const string& transaction_id_prefix, const string& recipient_account,
-                                                    const string& memo_message )
-{
-    FC_ASSERT( !recipient_account.empty() || !memo_message.empty() );
-    auto transaction_record = get_transaction( transaction_id_prefix );
-
-    /* Only support standard transfers for now */
-    FC_ASSERT( transaction_record.ledger_entries.size() == 1 );
-    auto ledger_entry = transaction_record.ledger_entries.front();
-
-    if( !recipient_account.empty() )
-        ledger_entry.to_account = get_account_public_key( recipient_account );
-
-    if( !memo_message.empty() )
-        ledger_entry.memo = memo_message;
-
-    transaction_record.ledger_entries[ 0 ] = ledger_entry;
-    my->_wallet_db.store_transaction( transaction_record );
-
-    return transaction_record;
 }
 
 pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_rec ) const

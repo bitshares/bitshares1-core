@@ -11,6 +11,9 @@
 
 namespace bts { namespace blockchain {
 
+   bool is_valid_account_name( const string& name );
+   bool is_valid_symbol_name( const string& name );
+
    enum chain_property_enum
    {
       last_asset_id            = 0,
@@ -56,9 +59,6 @@ namespace bts { namespace blockchain {
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type& id )const;
-
-         virtual bool                       is_valid_symbol_name( const string& name ) const;
-         virtual bool                       is_valid_account_name( const string& name ) const;
 
          /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;

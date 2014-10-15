@@ -13,7 +13,7 @@ bts::mail::message wallet::mail_create(const string& sender,
 {
     FC_ASSERT(is_open());
     FC_ASSERT(is_unlocked());
-    if(!is_receive_account(sender))
+    if(!my->is_receive_account(sender))
         FC_THROW_EXCEPTION(unknown_account, "Unknown sending account name!", ("sender",sender));
 
     mail::signed_email_message plaintext;

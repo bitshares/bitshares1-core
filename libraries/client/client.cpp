@@ -1992,12 +1992,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
     }
 
-    wallet_transaction_record detail::client_impl::wallet_edit_transaction(
-            const string& transaction_id_prefix, const string& recipient_account, const string& memo_message )
-    {
-        return _wallet->edit_transaction( transaction_id_prefix, recipient_account, memo_message );
-    }
-
     wallet_transaction_record detail::client_impl::wallet_transfer(
             double amount_to_transfer,
             const string& asset_symbol,
@@ -3733,7 +3727,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )const
    {
-      if( !account_name.empty() && !_chain_db->is_valid_account_name( account_name ) )
+      if( !account_name.empty() && !blockchain::is_valid_account_name( account_name ) )
           FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
       return _wallet->get_account_vote_summary( account_name );
