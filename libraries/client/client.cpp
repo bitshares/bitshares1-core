@@ -3993,13 +3993,46 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _wallet->login_finish(server_key, client_key, client_signature);
    }
 
+   vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets()const
+   {
+       const vector<pair<asset_id_type, asset_id_type>> pairs = _chain_db->get_market_pairs();
+
+       vector<bts::blockchain::api_market_status> statuses;
+       statuses.reserve( pairs.size() );
+
+       for( const auto& pair : pairs )
+       {
+           const auto quote_record = _chain_db->get_asset_record( pair.first );
+           const auto base_record = _chain_db->get_asset_record( pair.second );
+           FC_ASSERT( quote_record.valid() && base_record.valid() );
+           const auto status = _chain_db->get_market_status( quote_record->id, base_record->id );
+           FC_ASSERT( status.valid() );
+
+           api_market_status api_status( *status );
+           price current_feed_price;
+           price last_feed_price;
+
+           if( status->current_feed_price.valid() )
+               current_feed_price = *status->current_feed_price;
+           if( status->last_feed_price.valid() )
+               last_feed_price = *status->last_feed_price;
+
+           api_status.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
+           api_status.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
+
+           statuses.push_back( api_status );
+       }
+
+       return statuses;
+   }
+
    vector<bts::blockchain::market_transaction> client_impl::blockchain_list_market_transactions( uint32_t block_num )const
    {
       return _chain_db->get_market_transactions( block_num );
    }
 
    bts::blockchain::api_market_status client_impl::blockchain_market_status( const std::string& quote,
-                                                                         const std::string& base )const
+                                                                             const std::string& base )const
    {
       auto qrec = _chain_db->get_asset_record(quote);
       auto brec = _chain_db->get_asset_record(base);

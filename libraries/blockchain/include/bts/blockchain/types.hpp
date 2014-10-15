@@ -42,6 +42,7 @@ namespace bts { namespace blockchain {
    using std::set;
    using std::unordered_set;
    using std::vector;
+   using std::pair;
    using fc::path;
    using fc::sha512;
    using fc::sha256;

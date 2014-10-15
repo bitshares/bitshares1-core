@@ -176,7 +176,7 @@ namespace bts { namespace blockchain {
          oblock_record               get_block_record( const block_id_type& block_id )const;
          oblock_record               get_block_record( uint32_t block_num )const;
 
-         /** 
+         /**
           *  searches all balances for a given owner, used for block explorers.
           */
          vector<asset> get_balance_for_key( const address& owner_address )const;
@@ -330,6 +330,8 @@ namespace bts { namespace blockchain {
 
          virtual void                       set_market_transactions( vector<market_transaction> trxs )override;
          vector<market_transaction>         get_market_transactions( uint32_t block_num  )const;
+
+         vector<pair<asset_id_type, asset_id_type>> get_market_pairs()const;
 
          vector<order_history_record>       market_order_history(asset_id_type quote,
                                                                   asset_id_type base,

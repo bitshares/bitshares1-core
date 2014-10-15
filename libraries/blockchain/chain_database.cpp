@@ -2634,6 +2634,14 @@ namespace bts { namespace blockchain {
      return my->_market_history_db.fetch_optional( key );
    }
 
+   vector<pair<asset_id_type, asset_id_type>> chain_database::get_market_pairs()const
+   {
+       vector<pair<asset_id_type, asset_id_type>> pairs;
+       for( auto iter = my->_market_status_db.begin(); iter.valid(); ++iter )
+           pairs.push_back( iter.key() );
+       return pairs;
+   }
+
    omarket_status chain_database::get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )
    {
       return my->_market_status_db.fetch_optional( std::make_pair(quote_id,base_id) );
