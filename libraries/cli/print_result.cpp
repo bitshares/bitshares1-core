@@ -78,8 +78,6 @@ namespace bts { namespace cli {
       out << pretty_vote_summary(votes, client);
     };
 
-    _command_to_function["wallet_account_create"] = &f_wallet_account_create;
-
     _command_to_function["debug_list_errors"] = &f_debug_list_errors;
     _command_to_function["blockchain_get_account_wall"] = &f_blockchain_get_account_wall;
 
@@ -241,13 +239,19 @@ namespace bts { namespace cli {
     _command_to_function["mail_get_messages_from"] = &f_mail_header_list;
     _command_to_function["mail_get_messages_to"] = &f_mail_header_list;
     _command_to_function["mail_get_messages_in_conversation"] = &f_mail_header_list;
+
+    _command_to_function["disk_usage"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      const auto& usage = result.as<fc::mutable_variant_object>();
+      out << pretty_disk_usage( usage );
+    };
   }
 
   void print_result::f_blockchain_get_account_wall( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
      out << std::left;
      out << std::setw( 30 )  << "AMOUNT";
-     out << std::setw( 100 ) << "MESSAGE"; 
+     out << std::setw( 100 ) << "MESSAGE";
      out << std::setw( 30 )  << "SIGNER";
      out << "\n";
      out << pretty_line( 160 );
@@ -273,23 +277,6 @@ namespace bts { namespace cli {
         }
         out << "\n";
      }
-  }
-
-  void print_result::f_wallet_account_create( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
-  {
-    const auto account_key = result.as<public_key_type>();
-    const auto account_record = client->get_wallet()->get_account_for_address( address( account_key ) );
-
-    if( account_record.valid() )
-    {
-      out << "\nAccount created successfully. You may give the following link to others"
-      " to allow them to add you as a contact and send you funds:\n" CUSTOM_URL_SCHEME ":"
-      << account_record->name << ':' << string( account_key ) << '\n';
-    }
-    else
-    {
-      out << "Sorry, something went wrong when adding your account.\n";
-    }
   }
 
   void print_result::f_debug_list_errors(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
@@ -694,7 +681,7 @@ namespace bts { namespace cli {
       for(const auto& transaction : transactions)
       {
         if(FILTER_OUTPUT_FOR_TESTS)
-          out << std::setw(10) << "[redacted]";
+          out << std::setw(10) << "<d-ign>" << transaction.id().str().substr(0, 8) << "</d-ign>";
         else
           out << std::setw(10) << transaction.id().str().substr(0, 8);
 
@@ -740,7 +727,7 @@ namespace bts { namespace cli {
   {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
 
-    out << std::string(18, ' ') << "BIDS (* Short)"
+    out << std::string(23, ' ') << "BIDS (* Short)"
       << std::string(39, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
       << std::string(34, ' ') << "\n"
@@ -783,8 +770,9 @@ namespace bts { namespace cli {
 
     auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     auto status = client->get_chain()->get_market_status(quote_id, base_id);
-    auto short_execution_price = status ? status->center_price : price(0, quote_id, base_id);
-    auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->center_price;
+    price short_execution_price( 0, quote_id, base_id );
+    if( status.valid() && status->current_feed_price.valid() )
+        short_execution_price = *status->current_feed_price;
 
     std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&short_execution_price](const market_order& order) -> bool {
         return order.state.short_price_limit && *order.state.short_price_limit < short_execution_price;
@@ -934,10 +922,6 @@ namespace bts { namespace cli {
         }
       }
 
-      out << "Center Price: "
-        << client->get_chain()->to_pretty_price(recent_average_price)
-        << "     ";
-
       auto status = client->get_chain()->get_market_status(quote_id, base_id);
       if(status)
       {
@@ -1032,10 +1016,9 @@ namespace bts { namespace cli {
       << std::setw(20) << "OPENING PRICE"
       << std::setw(20) << "CLOSING PRICE"
       << std::setw(20) << "TRADING VOLUME"
-      << std::setw(20) << "AVERAGE PRICE"
-      << "\n" << std::string(140, '-') << "\n";
+      << "\n" << std::string(120, '-') << "\n";
 
-    for(auto point : points)
+    for(const auto& point : points)
     {
       out << std::setw(20) << pretty_timestamp(point.timestamp)
         << std::setw(20) << point.highest_bid
@@ -1043,10 +1026,6 @@ namespace bts { namespace cli {
         << std::setw(20) << point.opening_price
         << std::setw(20) << point.closing_price
         << std::setw(20) << client->get_chain()->to_pretty_asset(asset(point.volume));
-      if(point.recent_average_price)
-        out << std::setw(20) << *point.recent_average_price;
-      else
-        out << std::setw(20) << "N/A";
       out << "\n";
     }
   }

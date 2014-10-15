@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
    { try {
       auto now = eval_state._current_state->now();
 
-      if( !eval_state._current_state->is_valid_account_name( this->name ) )
+      if( !blockchain::is_valid_account_name( this->name ) )
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
 
       auto current_account = eval_state._current_state->get_account_record( this->name );

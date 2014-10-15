@@ -1,7 +1,5 @@
 add_subdirectory( client )
-#add_subdirectory( dns )
 add_subdirectory( utils )
-#add_subdirectory( kids )
 
 # the following includes QT Wallet into the build (optional)
 set(INCLUDE_QT_WALLET FALSE CACHE BOOL "Include QT Wallet")

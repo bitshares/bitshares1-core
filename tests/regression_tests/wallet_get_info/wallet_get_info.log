@@ -10,7 +10,8 @@ Returns:
   json_object
 default (unlocked) >>> wallet_get_info
 {
-  "data_dir": "[redacted]",
+  "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -18,11 +19,11 @@ default (unlocked) >>> wallet_get_info
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": true,
-  "unlocked_until": "[redacted]",
-  "unlocked_until_timestamp": "[redacted]",
+  "unlocked_until": "<d-ign></d-ign>",
+  "unlocked_until_timestamp": "<d-ign></d-ign>",
   "scan_progress": "0.00 %",
-  "version": "[redacted]"
+  "version": "<d-ign></d-ign>"
 }
 default (unlocked) >>> quit

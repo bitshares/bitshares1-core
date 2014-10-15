@@ -24,8 +24,6 @@ namespace bts { namespace blockchain {
     */
    struct transaction
    {
-      transaction(){}
-
       digest_type                 digest( const digest_type& chain_id )const;
 
       fc::time_point_sec          expiration;

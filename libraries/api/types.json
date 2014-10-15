@@ -634,6 +634,11 @@
         "cpp_return_type" : "bts::blockchain::api_market_status"
       },
       {
+        "type_name" : "market_status_array",
+        "container_type": "array",
+        "contained_type": "market_status"
+      },
+      {
         "type_name" : "vote_selection_method",
         "cpp_return_type" : "bts::wallet::vote_selection_method"
       },

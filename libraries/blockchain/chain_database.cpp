@@ -39,16 +39,6 @@
 
 namespace bts { namespace blockchain {
 
-   // register exceptions here so it doesn't get optimized out by the linker
-   FC_REGISTER_EXCEPTIONS(
-           (blockchain_exception)
-           (invalid_pts_address)
-           (addition_overflow)
-           (subtraction_overflow)
-           (asset_type_mismatch)
-           (unsupported_chain_operation)
-           )
-
    namespace detail
    {
       void chain_database_impl::revalidate_pending()
@@ -353,7 +343,7 @@ namespace bts { namespace blockchain {
          return current_blocks;
       }
 
-      void chain_database_impl::clear_pending(  const full_block& blk )
+      void chain_database_impl::clear_pending( const full_block& blk )
       {
          std::unordered_set<transaction_id_type> confirmed_trx_ids;
 
@@ -1430,8 +1420,8 @@ namespace bts { namespace blockchain {
       auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
       if( fees < required_fees )
       {
-        wlog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
-         FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
+          wlog("Transaction ${id} needed relay fee ${required_fees} but only had ${fees}", ("id", trx.id())("required_fees",required_fees)("fees",fees));
+          FC_CAPTURE_AND_THROW( insufficient_relay_fee, (fees)(required_fees) );
       }
       // apply changes from this transaction to _pending_trx_state
       pend_state->apply_changes();
@@ -2778,6 +2768,14 @@ namespace bts { namespace blockchain {
      return my->_market_history_db.fetch_optional( key );
    }
 
+   vector<pair<asset_id_type, asset_id_type>> chain_database::get_market_pairs()const
+   {
+       vector<pair<asset_id_type, asset_id_type>> pairs;
+       for( auto iter = my->_market_status_db.begin(); iter.valid(); ++iter )
+           pairs.push_back( iter.key() );
+       return pairs;
+   }
+
    omarket_status chain_database::get_market_status( const asset_id_type& quote_id, const asset_id_type& base_id )
    {
       return my->_market_status_db.fetch_optional( std::make_pair(quote_id,base_id) );
@@ -2821,8 +2819,7 @@ namespace bts { namespace blockchain {
                              fc::variant(string(record_itr.value().lowest_ask.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              fc::variant(string(record_itr.value().opening_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
                              fc::variant(string(record_itr.value().closing_price.ratio * base->precision / quote->precision)).as_double() / (BTS_BLOCKCHAIN_MAX_SHARES*1000),
-                             record_itr.value().volume,
-                             record_itr.value().recent_average_price? to_pretty_price_double(*record_itr.value().recent_average_price) : fc::optional<double>()
+                             record_itr.value().volume
                            } );
         ++record_itr;
       }

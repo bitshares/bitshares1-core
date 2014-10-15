@@ -5,13 +5,13 @@
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
 
-#define BTS_TEST_NETWORK_VERSION                            35
+#define BTS_TEST_NETWORK_VERSION                            36
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     147
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     148
 
 /**
  *  The address prepended to string representation of

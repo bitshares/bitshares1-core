@@ -58,6 +58,31 @@ namespace bts { namespace wallet {
       public_key_type order_key_for_account(const blockchain::address& account_address);
 
       /**
+       * \defgroup<charge_functions> Low-Level Balance Manipulation Functions
+       *
+       * These functions are used to manually tweak an account's balance in this transaction. This can be used to pay
+       * additional fees or facilitate a public transfer between two accounts which is not validated by the normal
+       * rules of the transfer functions. Generally these function should not be called directly, but they are exposed
+       * in case they are useful.
+       *
+       * Note that calling these functions naively may result in a broken transaction, i.e. if credit_balance is called
+       * without an opposing call to deduct_balance, then the transaction will attempt to pay more money to
+       * account_to_credit than exists in the transaction, which will cause it to be rejected by the blockchain.
+       */
+      /// @{
+      void deduct_balance(const blockchain::address& account_to_charge, const blockchain::asset& amount)
+      {
+         FC_ASSERT( amount.amount >= 0, "Don't deduct a negative amount. Call credit_balance instead." );
+         outstanding_balances[std::make_pair(account_to_charge, amount.asset_id)] -= amount.amount;
+      }
+      void credit_balance(const blockchain::address& account_to_credit, const blockchain::asset& amount)
+      {
+         FC_ASSERT( amount.amount >= 0, "Don't credit a negative amount. Call deduct_balance instead." );
+         outstanding_balances[std::make_pair(account_to_credit, amount.asset_id)] += amount.amount;
+      }
+      /// @}
+
+      /**
        * \defgroup<builders> Builder Functions
        * These functions each add one operation to the transaction. They all return
        * a reference to the builder, so they can be chained together in standard
@@ -69,6 +94,24 @@ namespace bts { namespace wallet {
        * @endcode
        */
       /// @{
+      /**
+       * @brief Update a specified account on the blockchain
+       * @param account The account to update
+       * @param public_data The public data to set on the account
+       * @param active_key The new active key to set
+       * @param delegate_pay The pay this delegate requests
+       * @param paying_accout The account to pay the extra fee; only required if delegate_pay is changed.
+       *
+       * If account is a delegate and his pay rate is reduced, paying_account must be set and is expected to be a
+       * receive account. If paying_account is a delegate and his delegate pay balance is sufficient to cover the fee,
+       * then the fee will be withdrawn from his pay. Otherwise, the fee will be charged to the balance for that account
+       * in this transaction.
+       */
+      transaction_builder& update_account_registration(const wallet_account_record& account,
+                                                       optional<variant> public_data,
+                                                       optional<private_key_type> active_key,
+                                                       optional<share_type> delegate_pay,
+                                                       optional<wallet_account_record> paying_account);
       /**
        * @brief Cancel a single order
        * @param order_id

@@ -42,6 +42,12 @@ class wallet_impl : public chain_observer
        wallet_impl();
        ~wallet_impl();
 
+       void create_file( const path& wallet_file_name,
+                         const string& password,
+                         const string& brainkey = string() );
+
+       void open_file( const path& wallet_filename );
+
        void reschedule_relocker();
        void relocker();
 
@@ -67,6 +73,8 @@ class wallet_impl : public chain_observer
 
       secret_hash_type get_secret( uint32_t block_num,
                                    const private_key_type& delegate_key )const;
+
+      void scan_state();
 
       void scan_block( uint32_t block_num, const vector<private_key_type>& keys, const time_point_sec& received_time );
 
@@ -145,6 +153,21 @@ class wallet_impl : public chain_observer
 
       void upgrade_version();
       void upgrade_version_unlocked();
+
+      delegate_slate select_delegate_vote( vote_selection_method selection = vote_random );
+      slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );
+
+      bool is_receive_account( const string& account_name )const;
+      bool is_valid_account( const string& account_name )const;
+      bool is_unique_account( const string& account_name )const;
+
+      address get_new_address( const string& account_name );
+      public_key_type  get_new_public_key( const string& account_name );
+
+      void sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const;
+      void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction = true );
+
+      transaction_ledger_entry apply_transaction_experimental( const signed_transaction& transaction );
 
       void apply_order_to_builder(order_type_enum order_type,
                                   transaction_builder_ptr builder,

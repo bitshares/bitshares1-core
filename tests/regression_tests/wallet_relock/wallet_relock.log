@@ -2,7 +2,8 @@ default (unlocked) >>> wallet_lock
 OK
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "[redacted]",
+  "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -10,12 +11,12 @@ default (locked) >>> wallet_get_info
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": "[redacted]"
+  "version": "<d-ign></d-ign>"
 }
 default (locked) >>> help wallet_unlock
 Usage:
@@ -53,7 +54,8 @@ Invalid password!
 
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "[redacted]",
+  "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -61,18 +63,19 @@ default (locked) >>> wallet_get_info
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": "[redacted]"
+  "version": "<d-ign></d-ign>"
 }
 default (locked) >>> debug_wait 6
 OK
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "[redacted]",
+  "data_dir": "<d-ign></d-ign>",
+  "num_scanning_threads": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -80,11 +83,11 @@ default (locked) >>> wallet_get_info
   "last_scanned_block_num": null,
   "last_scanned_block_timestamp": null,
   "transaction_fee": "0.50000 XTS",
-  "transaction_expiration_secs": 4040,
+  "transaction_expiration_secs": 3600,
   "unlocked": false,
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": "[redacted]"
+  "version": "<d-ign></d-ign>"
 }
 default (locked) >>> quit

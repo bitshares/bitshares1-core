@@ -1992,12 +1992,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
     }
 
-    wallet_transaction_record detail::client_impl::wallet_edit_transaction(
-            const string& transaction_id_prefix, const string& recipient_account, const string& memo_message )
-    {
-        return _wallet->edit_transaction( transaction_id_prefix, recipient_account, memo_message );
-    }
-
     wallet_transaction_record detail::client_impl::wallet_transfer(
             double amount_to_transfer,
             const string& asset_symbol,
@@ -2521,28 +2515,53 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       blockchain::update_ntp_time();
     }
 
-    variant detail::client_impl::get_database_sizes() const
+    variant detail::client_impl::disk_usage()const
     {
-      fc::mutable_variant_object sizes;
-      fc::mutable_variant_object scratch;
+      fc::mutable_variant_object usage;
 
-      scratch["Raw Blockchain"] = fc::directory_size(_data_dir / "chain/raw_chain");
-      scratch["Current DAC State"] = fc::directory_size(_data_dir / "chain/index");
-      sizes["Blockchain"] = scratch;
+      usage["blockchain"] = variant();
+      usage["dac_state"] = variant();
+      usage["logs"] = variant();
+      usage["mail_client"] = variant();
+      usage["mail_server"] = variant();
+      usage["network_peers"] = variant();
+      usage["wallets"] = variant();
+      usage["total"] = variant();
 
-      scratch = fc::mutable_variant_object();
-      for (string wallet_name : _wallet->list())
-        scratch[wallet_name] = fc::directory_size(_data_dir / "wallets" / wallet_name);
-      if (fc::is_directory(_data_dir / "wallets/.backups"))
-        scratch["Backups"] = fc::directory_size(_data_dir / "wallets/.backups");
-      sizes["Wallets"] = scratch;
+      const fc::path blockchain = _data_dir / "chain" / "raw_chain";
+      usage["blockchain"] = fc::is_directory( blockchain ) ? fc::directory_size( blockchain ) : variant();
 
-      if (fc::is_directory(_data_dir / "mail"))
-         sizes["Mail Server Storage"] = fc::directory_size(_data_dir / "mail");
+      const fc::path dac_state = _data_dir / "chain" / "index";
+      usage["dac_state"] = fc::is_directory( dac_state ) ? fc::directory_size( dac_state ) : variant();
 
-      sizes["Mail Client Storage"] = fc::directory_size(_data_dir / "mail_client");
+      const fc::path logs = _data_dir / "logs";
+      usage["logs"] = fc::is_directory( logs ) ? fc::directory_size( logs ) : variant();
 
-      return sizes;
+      const fc::path mail_client = _data_dir / "mail_client";
+      usage["mail_client"] = fc::is_directory( mail_client ) ? fc::directory_size( mail_client ) : variant();
+
+      const fc::path mail_server = _data_dir / "mail";
+      usage["mail_server"] = fc::is_directory( mail_server ) ? fc::directory_size( mail_server ) : variant();
+
+      const fc::path network_peers = _data_dir / "peers.leveldb";
+      usage["network_peers"] = fc::is_directory( network_peers ) ? fc::directory_size( network_peers ) : variant();
+
+      fc::mutable_variant_object wallet_sizes;
+
+      const fc::path wallets = _data_dir / "wallets";
+
+      const fc::path backups = wallets / ".backups";
+      if( fc::is_directory( backups ) )
+          wallet_sizes[".backups"] = fc::directory_size( backups );
+
+      for( const string& wallet_name : _wallet->list() )
+          wallet_sizes[wallet_name] = fc::directory_size( wallets / wallet_name );
+
+      usage["wallets"] = wallet_sizes;
+
+      usage["total"] = fc::is_directory( _data_dir ) ? fc::directory_size( _data_dir ) : variant();
+
+      return usage;
     }
 
     void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
@@ -3544,16 +3563,16 @@ config load_config( const fc::path& datadir, bool enable_ulog )
    wallet_transaction_record client_impl::wallet_market_submit_short(
            const string& from_account,
            const string& quantity,
-           const string& quote_symbol,
-           const string& collateral_ratio,
            const string& collateral_symbol,
+           const string& apr,
+           const string& quote_symbol,
            const string& short_price_limit )
    {
       const auto record = _wallet->submit_short( from_account,
                                                  quantity,
-                                                 quote_symbol,
-                                                 collateral_ratio,
                                                  collateral_symbol,
+                                                 apr,
+                                                 quote_symbol,
                                                  short_price_limit );
       network_broadcast_transaction( record.trx );
       return record;
@@ -3717,7 +3736,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    account_vote_summary_type client_impl::wallet_account_vote_summary( const string& account_name )const
    {
-      if( !account_name.empty() && !_chain_db->is_valid_account_name( account_name ) )
+      if( !account_name.empty() && !blockchain::is_valid_account_name( account_name ) )
           FC_CAPTURE_AND_THROW( invalid_account_name, (account_name) );
 
       return _wallet->get_account_vote_summary( account_name );
@@ -3977,13 +3996,46 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _wallet->login_finish(server_key, client_key, client_signature);
    }
 
+   vector<bts::blockchain::api_market_status> client_impl::blockchain_list_markets()const
+   {
+       const vector<pair<asset_id_type, asset_id_type>> pairs = _chain_db->get_market_pairs();
+
+       vector<bts::blockchain::api_market_status> statuses;
+       statuses.reserve( pairs.size() );
+
+       for( const auto& pair : pairs )
+       {
+           const auto quote_record = _chain_db->get_asset_record( pair.first );
+           const auto base_record = _chain_db->get_asset_record( pair.second );
+           FC_ASSERT( quote_record.valid() && base_record.valid() );
+           const auto status = _chain_db->get_market_status( quote_record->id, base_record->id );
+           FC_ASSERT( status.valid() );
+
+           api_market_status api_status( *status );
+           price current_feed_price;
+           price last_feed_price;
+
+           if( status->current_feed_price.valid() )
+               current_feed_price = *status->current_feed_price;
+           if( status->last_feed_price.valid() )
+               last_feed_price = *status->last_feed_price;
+
+           api_status.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
+           api_status.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
+
+           statuses.push_back( api_status );
+       }
+
+       return statuses;
+   }
+
    vector<bts::blockchain::market_transaction> client_impl::blockchain_list_market_transactions( uint32_t block_num )const
    {
       return _chain_db->get_market_transactions( block_num );
    }
 
    bts::blockchain::api_market_status client_impl::blockchain_market_status( const std::string& quote,
-                                                                         const std::string& base )const
+                                                                             const std::string& base )const
    {
       auto qrec = _chain_db->get_asset_record(quote);
       auto brec = _chain_db->get_asset_record(base);
@@ -3992,13 +4044,16 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       FC_ASSERT( oresult, "The ${q}/${b} market has not yet been initialized.", ("q", quote)("b", base));
 
       api_market_status result(*oresult);
-      if( oresult->center_price.ratio == fc::uint128() )
-      {
-        oprice median_delegate_price = _chain_db->get_median_delegate_price(qrec->id);
-        result.center_price = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
-      }
-      else
-        result.center_price = _chain_db->to_pretty_price_double(oresult->center_price);
+      price current_feed_price;
+      price last_feed_price;
+
+      if( oresult->current_feed_price.valid() )
+          current_feed_price = *oresult->current_feed_price;
+      if( oresult->last_feed_price.valid() )
+          last_feed_price = *oresult->last_feed_price;
+
+      result.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
+      result.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
       return result;
    }
 

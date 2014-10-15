@@ -11,6 +11,8 @@ namespace bts { namespace blockchain { namespace detail {
 
     void cancel_all_shorts();
 
+    static asset get_cover_interest(const asset& principle, const price& apr, uint32_t age_seconds );
+
   private:
     void push_market_transaction( const market_transaction& mtrx );
 
@@ -25,7 +27,20 @@ namespace bts { namespace blockchain { namespace detail {
     bool get_next_bid();
     bool get_next_ask();
     asset get_current_cover_debt()const;
-    asset get_cover_interest( const asset& principle )const;
+    uint32_t get_current_cover_age()const
+    {
+        //Total lifetime minus remaining lifetime
+        return BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC - (*_current_ask->expiration - _pending_state->now()).to_seconds();
+    }
+
+    price minimum_ask()const
+    {
+        FC_ASSERT( _feed_price.valid() );
+        price min_ask = *_feed_price;
+        min_ask.ratio *= 9;
+        min_ask.ratio /= 10;
+        return min_ask;
+    }
 
     /**
       *  This method should not affect market execution or validation and
@@ -34,7 +49,6 @@ namespace bts { namespace blockchain { namespace detail {
     void update_market_history( const asset& trading_volume,
                                 const price& opening_price,
                                 const price& closing_price,
-                                const omarket_status& market_stat,
                                 const fc::time_point_sec& timestamp );
 
     void cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id );
@@ -46,9 +60,10 @@ namespace bts { namespace blockchain { namespace detail {
     optional<market_order>        _current_bid;
     optional<market_order>        _current_ask;
     collateral_record             _current_collat_record;
+
     asset_id_type                 _quote_id;
     asset_id_type                 _base_id;
-    market_status                 _market_stat;
+    oprice                        _feed_price;
 
     int                           _orders_filled = 0;
 
