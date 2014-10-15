@@ -78,8 +78,6 @@ namespace bts { namespace cli {
       out << pretty_vote_summary(votes, client);
     };
 
-    _command_to_function["wallet_account_create"] = &f_wallet_account_create;
-
     _command_to_function["debug_list_errors"] = &f_debug_list_errors;
     _command_to_function["blockchain_get_account_wall"] = &f_blockchain_get_account_wall;
 
@@ -279,23 +277,6 @@ namespace bts { namespace cli {
         }
         out << "\n";
      }
-  }
-
-  void print_result::f_wallet_account_create( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
-  {
-    const auto account_key = result.as<public_key_type>();
-    const auto account_record = client->get_wallet()->get_account_for_address( address( account_key ) );
-
-    if( account_record.valid() )
-    {
-      out << "\nAccount created successfully. You may give the following link to others"
-      " to allow them to add you as a contact and send you funds:\n" CUSTOM_URL_SCHEME ":"
-      << account_record->name << ':' << string( account_key ) << '\n';
-    }
-    else
-    {
-      out << "Sorry, something went wrong when adding your account.\n";
-    }
   }
 
   void print_result::f_debug_list_errors(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
