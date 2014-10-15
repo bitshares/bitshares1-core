@@ -80,6 +80,8 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
 
          case withdraw_multi_sig_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
             uint32_t valid_signatures = 0;
             for( auto sig : multi_sig.owners )
@@ -91,6 +93,8 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
 
          case withdraw_password_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
             try {
                if( password_condition.timeout < eval_state._current_state->now() )
@@ -117,6 +121,8 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
 
          case withdraw_option_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto option = current_balance_record->condition.as<withdraw_option>();
             try {
                if( eval_state._current_state->now() > option.date )
