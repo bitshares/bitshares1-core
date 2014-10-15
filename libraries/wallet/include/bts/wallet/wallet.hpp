@@ -89,6 +89,9 @@ namespace bts { namespace wallet {
           */
          ///@{
 
+         void                   set_version( uint32_t v );
+         uint32_t               get_version()const;
+
          void                   set_automatic_backups( bool enabled );
          bool                   get_automatic_backups()const;
 

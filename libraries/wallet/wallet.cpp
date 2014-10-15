@@ -291,9 +291,8 @@ namespace detail {
 
    void wallet_impl::upgrade_version()
    {
-       if( _wallet_db.get_property( version ).is_null() ) _wallet_db.set_property( version, variant( 0 ) );
-       const auto current_version = _wallet_db.get_property( version ).as<uint32_t>();
-       if ( current_version > BTS_WALLET_VERSION )
+       const uint32_t current_version = self->get_version();
+       if( current_version > BTS_WALLET_VERSION )
        {
            FC_THROW_EXCEPTION( unsupported_version, "Wallet version newer than client supports!",
                                ("wallet_version",current_version)("supported_version",BTS_WALLET_VERSION) );
@@ -307,7 +306,7 @@ namespace detail {
        std::exception_ptr upgrade_failure_exception;
        try
        {
-           /*
+           /* Example
            if( current_version < 101 )
            {
                // Upgrade here
@@ -316,7 +315,7 @@ namespace detail {
 
            if( _unlocked_upgrade_tasks.empty() )
            {
-               _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
+               self->set_version( BTS_WALLET_VERSION );
                ulog( "Wallet successfully upgraded." );
            }
            else
@@ -346,7 +345,7 @@ namespace detail {
        {
            for( const auto& task : _unlocked_upgrade_tasks ) task();
            _unlocked_upgrade_tasks.clear();
-           _wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
+           self->set_version( BTS_WALLET_VERSION );
            ulog( "Wallet successfully upgraded." );
        }
        catch( ... )
@@ -507,7 +506,7 @@ namespace detail {
 
           my->_wallet_db.set_master_key( epk, my->_wallet_password);
 
-          my->_wallet_db.set_property( version, variant( BTS_WALLET_VERSION ) );
+          set_version( BTS_WALLET_VERSION );
           set_automatic_backups( true );
           set_transaction_scanning( true );
           set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
@@ -559,7 +558,7 @@ namespace detail {
           close();
           std::rethrow_exception(open_file_failure);
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("wallet_name",wallet_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (wallet_name) ) }
 
    void wallet::open_file( const path& wallet_file_path )
    { try {
@@ -628,7 +627,7 @@ namespace detail {
 
       my->_wallet_db.close();
       my->_current_wallet_path = fc::path();
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    bool wallet::is_enabled() const
    {
@@ -657,7 +656,7 @@ namespace detail {
 
       FC_ASSERT( is_open() );
       my->_wallet_db.export_to_json( filename );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
+   } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
    void wallet::create_from_json( const path& filename, const string& wallet_name, const string& passphrase )
    { try {
@@ -673,7 +672,7 @@ namespace detail {
       std::exception_ptr import_failure;
       try
       {
-          my->_wallet_db.set_property( version, variant( 0 ) );
+          set_version( 0 );
           my->_wallet_db.import_from_json( filename );
           close();
           open( wallet_name );
@@ -691,7 +690,7 @@ namespace detail {
           fc::remove_all( wallet_file_path );
           std::rethrow_exception(import_failure);
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename)("wallet_name",wallet_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (filename)(wallet_name) ) }
 
    void wallet::auto_backup( const string& reason )const
    { try {
@@ -713,35 +712,68 @@ namespace detail {
       }
       export_to_json( backup_path );
       ulog( "Wallet automatically backed up to: ${f}", ("f",backup_path) );
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
+
+   void wallet::set_version( uint32_t v )
+   { try {
+       FC_ASSERT( is_open() );
+       my->_wallet_db.set_property( version, variant( v ) );
+   } FC_CAPTURE_AND_RETHROW() }
+
+   uint32_t wallet::get_version()const
+   { try {
+       FC_ASSERT( is_open() );
+       try
+       {
+           return my->_wallet_db.get_property( version ).as<uint32_t>();
+       }
+       catch( ... )
+       {
+       }
+       return 0;
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::set_automatic_backups( bool enabled )
-   {
+   { try {
        FC_ASSERT( is_open() );
        my->_wallet_db.set_property( automatic_backups, variant( enabled ) );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    bool wallet::get_automatic_backups()const
-   {
+   { try {
        FC_ASSERT( is_open() );
-       return my->_wallet_db.get_property( automatic_backups ).as<bool>();
-   }
+       try
+       {
+           return my->_wallet_db.get_property( automatic_backups ).as<bool>();
+       }
+       catch( ... )
+       {
+       }
+       return true;
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::set_transaction_scanning( bool enabled )
-   {
+   { try {
        FC_ASSERT( is_open() );
        my->_wallet_db.set_property( transaction_scanning, variant( enabled ) );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    bool wallet::get_transaction_scanning()const
-   {
+   { try {
        FC_ASSERT( is_open() );
 
        if( list_my_accounts().empty() )
            return false;
 
-       return my->_wallet_db.get_property( transaction_scanning ).as<bool>();
-   }
+       try
+       {
+           return my->_wallet_db.get_property( transaction_scanning ).as<bool>();
+       }
+       catch( ... )
+       {
+       }
+       return true;
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::unlock( const string& password, uint32_t timeout_seconds )
    { try {
@@ -788,7 +820,7 @@ namespace detail {
           lock();
           std::rethrow_exception(unlock_error);
       }
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("timeout_seconds", timeout_seconds) ) }
+   } FC_CAPTURE_AND_RETHROW( (timeout_seconds) ) }
 
    void wallet::lock()
    {
@@ -878,7 +910,7 @@ namespace detail {
           set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
 
       return new_pub_key;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void wallet::account_set_favorite( const string& account_name,
                                       const bool is_favorite )
@@ -897,7 +929,7 @@ namespace detail {
        }
        judged_account->is_favorite = is_favorite;
        my->_wallet_db.cache_account( *judged_account );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("is_favorite",is_favorite) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(is_favorite) ) }
 
    /**
     *  Creates a new private key under the specified account. This key
@@ -917,7 +949,7 @@ namespace detail {
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password,
                                                           current_account->account_address );
       return new_priv_key.get_public_key();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    /**
     *  Creates a new private key under the specified account. This key
@@ -937,7 +969,7 @@ namespace detail {
       auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password,
                                                           current_account->account_address );
       return new_priv_key.get_public_key();
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    /**
     *  A contact is an account for which this wallet does not have the private
@@ -1048,7 +1080,7 @@ namespace detail {
       }
 
       return *local_account;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::remove_contact_account( const string& account_name )
    { try {
@@ -1064,7 +1096,7 @@ namespace detail {
           FC_THROW_EXCEPTION( not_contact_account, "You can only remove contact accounts!", ("account_name",account_name) );
 
       my->_wallet_db.remove_contact_account( account_name );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name", account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void wallet::rename_account( const string& old_account_name,
                                  const string& new_account_name )
@@ -1109,9 +1141,7 @@ namespace detail {
       FC_ASSERT( !new_account.valid() );
 
       my->_wallet_db.rename_account( old_key, new_account_name );
-   } FC_RETHROW_EXCEPTIONS( warn, "",
-                ("old_account_name",old_account_name)
-                ("new_account_name",new_account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (old_account_name)(new_account_name) ) }
 
    /**
     *  If we already have a key record for key, then set the private key.
@@ -1196,7 +1226,7 @@ namespace detail {
       my->_wallet_db.store_key( new_key_data );
 
       return pub_key;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    public_key_type wallet::import_wif_private_key( const string& wif_key,
                                                    const string& account_name,
@@ -1214,7 +1244,7 @@ namespace detail {
 
       FC_ASSERT( false, "Error parsing WIF private key" );
 
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void wallet::scan_chain( uint32_t start, uint32_t end, bool fast_scan )
    { try {
@@ -1250,7 +1280,7 @@ namespace detail {
 
       my->_scan_in_progress = fc::async( [=](){ my->scan_chain_task( start, end, fast_scan ); }, "scan_chain_task" );
       my->_scan_in_progress.on_complete([](fc::exception_ptr ep){if (ep) elog( "Error during chain scan: ${e}", ("e", ep->to_detail_string()));});
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("start",start)("end",end) ) }
+   } FC_CAPTURE_AND_RETHROW( (start)(end) ) }
 
    vote_summary wallet::get_vote_proportion( const string& account_name )
    {
@@ -1301,7 +1331,7 @@ namespace detail {
       FC_ASSERT( key.valid() );
       FC_ASSERT( key->has_private_key() );
       return key->decrypt_private_key( my->_wallet_password );
-     } FC_RETHROW_EXCEPTIONS( warn, "", ("addr",addr) ) }
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
    void wallet::set_delegate_block_production( const string& delegate_name, bool enabled )
    {
@@ -1396,7 +1426,7 @@ namespace detail {
 
       header.sign( delegate_key );
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("header",header) ) }
+   } FC_CAPTURE_AND_RETHROW( (header) ) }
 
    wallet_transaction_record wallet::publish_feeds(
            const string& account_to_publish_under,
@@ -1700,7 +1730,7 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t count )
-   {
+   { try {
       uint32_t regenerated_keys = 0;
       for( uint32_t i = 0; i < count; ++i )
       {
@@ -1753,7 +1783,7 @@ namespace detail {
      if( regenerated_keys )
        scan_chain( 0, -1, true );
       return regenerated_keys;
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    int32_t wallet::recover_accounts( int32_t number_of_accounts, int32_t max_number_of_attempts )
    {
@@ -1876,7 +1906,7 @@ namespace detail {
        my->_wallet_db.store_transaction( transaction_record );
 
        return transaction_record;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    /**
     *  This method assumes that fees can be paid in the same asset type as the
@@ -2065,13 +2095,7 @@ namespace detail {
        }
 
        return trxs;
-
-   } FC_RETHROW_EXCEPTIONS( warn, "",
-         ("amount_to_transfer",real_amount_to_transfer)
-         ("amount_to_transfer_symbol",amount_to_transfer_symbol)
-         ("from_account_name",from_account_name)
-         ("to_account_name",to_account_name)
-         ("memo_message",memo_message) ) }
+   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_account_name)(memo_message) ) }
 
    wallet_transaction_record wallet::withdraw_delegate_pay(
            const string& delegate_name,
@@ -2134,8 +2158,7 @@ namespace detail {
        cache_transaction( trx, record );
 
        return record;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("delegate_name",delegate_name)
-                                      ("amount_to_withdraw",real_amount_to_withdraw ) ) }
+   } FC_CAPTURE_AND_RETHROW( (delegate_name)(real_amount_to_withdraw) ) }
 
    wallet_transaction_record wallet::burn_asset(
            double real_amount_to_transfer,
@@ -2295,12 +2318,7 @@ namespace detail {
       cache_transaction( trx, record );
 
       return record;
-   } FC_RETHROW_EXCEPTIONS( warn, "",
-                            ("real_amount_to_transfer",real_amount_to_transfer)
-                            ("amount_to_transfer_symbol",amount_to_transfer_symbol)
-                            ("from_account_name",from_account_name)
-                            ("to_address",to_address)
-                            ("memo_message",memo_message) ) }
+   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
 
    wallet_transaction_record wallet::transfer_asset_to_many_address(
            const string& amount_to_transfer_symbol,
@@ -2308,8 +2326,7 @@ namespace detail {
            const std::unordered_map<address, double>& to_address_amounts,
            const string& memo_message,
            bool sign )
-   {
-      try {
+   { try {
          FC_ASSERT( is_open() );
          FC_ASSERT( is_unlocked() );
          FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
@@ -2368,11 +2385,7 @@ namespace detail {
          cache_transaction( trx, record );
 
          return record;
-      } FC_RETHROW_EXCEPTIONS( warn, "",
-                              ("amount_to_transfer_symbol",amount_to_transfer_symbol)
-                              ("from_account_name",from_account_name)
-                              ("to_address_amounts",to_address_amounts)
-                              ("memo_message",memo_message) ) }
+   } FC_CAPTURE_AND_RETHROW( (amount_to_transfer_symbol)(from_account_name)(to_address_amounts)(memo_message) ) }
 
    wallet_transaction_record wallet::transfer_asset(
            double real_amount_to_transfer,
@@ -2579,10 +2592,7 @@ namespace detail {
       cache_transaction( trx, record );
 
       return record;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_register",account_to_register)
-                                      ("public_data",public_data)
-                                      ("pay_with_account_name",pay_with_account_name)
-                                      ("delegate_pay_rate",delegate_pay_rate) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_to_register)(public_data)(pay_with_account_name)(delegate_pay_rate) ) }
 
    wallet_transaction_record wallet::create_asset(
            const string& symbol,
@@ -2649,10 +2659,7 @@ namespace detail {
       cache_transaction( trx, record );
 
       return record;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("symbol",symbol)
-                                      ("name", asset_name )
-                                      ("description", description)
-                                      ( "issuer_account", issuer_account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (symbol)(asset_name)(description)(issuer_account_name) ) }
 
    wallet_transaction_record wallet::issue_asset(
            double amount_to_issue,
@@ -2718,7 +2725,7 @@ namespace detail {
       cache_transaction( trx, record );
 
       return record;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::update_account_private_data( const string& account_to_update,
                                              const variant& private_data )
@@ -2789,10 +2796,7 @@ namespace detail {
       cache_transaction( trx, record );
 
       return record;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
-                                      ("pay_from_account",pay_from_account)
-                                      ("public_data",public_data)
-                                      ("sign",sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(public_data)(sign) ) }
 
    wallet_transaction_record wallet::update_active_key(
            const std::string& account_to_update,
@@ -2822,9 +2826,7 @@ namespace detail {
       if( sign )
          return builder.sign();
       return builder.transaction_record;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_to_update",account_to_update)
-                                      ("pay_from_account",pay_from_account)
-                                      ("sign",sign) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(sign) ) }
 
 #if 0
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
@@ -3173,7 +3175,14 @@ namespace detail {
       FC_ASSERT( is_open() );
       // TODO: support price conversion using price from blockchain
 
-      auto xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
+      asset xts_fee( BTS_WALLET_DEFAULT_TRANSACTION_FEE, 0 );
+      try
+      {
+          xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
+      }
+      catch( ... )
+      {
+      }
 
       if( desired_fee_asset_id != 0 )
       {
@@ -3195,38 +3204,45 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::set_last_scanned_block_number( uint32_t block_num )
-   {
+   { try {
        FC_ASSERT( is_open() );
        my->_wallet_db.set_property( last_unlocked_scanned_block_number, fc::variant( block_num ) );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    uint32_t wallet::get_last_scanned_block_number()const
-   {
+   { try {
        FC_ASSERT( is_open() );
-       return my->_wallet_db.get_property( last_unlocked_scanned_block_number ).as<uint32_t>();
-   }
+       try
+       {
+           return my->_wallet_db.get_property( last_unlocked_scanned_block_number ).as<uint32_t>();
+       }
+       catch( ... )
+       {
+       }
+       return my->_blockchain->get_head_block_num();
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet::set_transaction_expiration( uint32_t secs )
-   {
+   { try {
        FC_ASSERT( is_open() );
 
        if( secs > BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC )
           FC_THROW_EXCEPTION( invalid_expiration_time, "Invalid expiration time!", ("secs",secs) );
 
        my->_wallet_db.set_property( transaction_expiration_sec, fc::variant( secs ) );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    uint32_t wallet::get_transaction_expiration()const
-   {
+   { try {
        FC_ASSERT( is_open() );
        return my->_wallet_db.get_property( transaction_expiration_sec ).as<uint32_t>();
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    float wallet::get_scan_progress()const
-   {
+   { try {
        FC_ASSERT( is_open() );
        return my->_scan_progress;
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    string wallet::get_key_label( const public_key_type& key )const
    { try {
@@ -3396,7 +3412,7 @@ namespace detail {
       ilog( "WALLET: Scanning blockchain state" );
       my->scan_balances();
       my->scan_registered_accounts();
-   } FC_RETHROW_EXCEPTIONS( warn, "" )  }
+   } FC_CAPTURE_AND_RETHROW() }
 
    /**
     *  A valid account is any named account registered in the blockchain or
@@ -3450,7 +3466,7 @@ namespace detail {
 
       FC_ASSERT( opt_key->has_private_key() );
       return opt_key->decrypt_private_key( my->_wallet_password );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    bool wallet::is_unique_account( const string& account_name )const
    {
@@ -3505,7 +3521,7 @@ namespace detail {
                 ("name",account_name) );
 
       return opt_key->public_key;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    /**
     *  Select a slate of delegates from those approved by this wallet. Specify
@@ -3636,7 +3652,7 @@ namespace detail {
 
       add_contact_account( account_name, account_record->owner_key );
       set_account_approval( account_name, approval );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name)("approval", approval) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(approval) ) }
 
    int8_t wallet::get_account_approval( const string& account_name )const
    { try {
@@ -3649,13 +3665,13 @@ namespace detail {
 
       if( !war.valid() ) return 0;
       return war->approved;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    owallet_account_record wallet::get_account_record( const address& addr)const
    { try {
       FC_ASSERT( is_open() );
       return my->_wallet_db.lookup_account( addr );
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    owallet_account_record wallet::get_account_for_address( address addr_in_account )const
    { try {
@@ -3663,7 +3679,7 @@ namespace detail {
       const auto okey = my->_wallet_db.lookup_key( addr_in_account );
       if ( !okey.valid() ) return owallet_account_record();
       return get_account_record( okey->account_address );
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name )const
    { try {
@@ -3695,7 +3711,7 @@ namespace detail {
       my->_blockchain->scan_balances( scan_balance );
 
       return balance_records;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name )const
    { try {
@@ -3712,7 +3728,7 @@ namespace detail {
       }
 
       return balance_ids;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_balance_summary_type wallet::get_account_balances( const string& account_name )const
    { try {
@@ -3732,7 +3748,7 @@ namespace detail {
       }
 
       return balances;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_balance_summary_type wallet::get_account_yield( const string& account_name )const
    { try {
@@ -3759,7 +3775,7 @@ namespace detail {
       }
 
       return yield_summary;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    { try {
@@ -3803,7 +3819,7 @@ namespace detail {
       }
 
       return result;
-   } FC_RETHROW_EXCEPTIONS(warn,"") }
+   } FC_CAPTURE_AND_RETHROW() }
 
    variant wallet::get_info()const
    {
@@ -3865,7 +3881,7 @@ namespace detail {
            info["scan_progress"]                        = get_scan_progress();
          }
 
-         info["version"]                                = my->_wallet_db.get_property( version ).as<uint32_t>();
+         info["version"]                                = get_version();
        }
 
        return info;

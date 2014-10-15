@@ -503,7 +503,7 @@ wallet_transaction_record wallet_impl::scan_transaction(
         _wallet_db.store_transaction( *transaction_record );
 
     return *transaction_record;
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
 bool wallet_impl::scan_withdraw( const withdraw_operation& op,
@@ -558,7 +558,7 @@ bool wallet_impl::scan_withdraw( const withdraw_operation& op,
        return true;
    }
    return false;
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 // TODO: Refactor scan_withdraw{_pay}; almost exactly the same
 bool wallet_impl::scan_withdraw_pay( const withdraw_pay_operation& op, wallet_transaction_record& trx_rec, asset& total_fee )
@@ -611,7 +611,7 @@ bool wallet_impl::scan_withdraw_pay( const withdraw_pay_operation& op, wallet_tr
        return true;
    }
    return false;
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 bool wallet_impl::scan_register_account( const register_account_operation& op, wallet_transaction_record& trx_rec )
 {
@@ -696,7 +696,7 @@ bool wallet_impl::scan_update_account( const update_account_operation& op, walle
     }
 
     return true;
-} FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 bool wallet_impl::scan_create_asset( const create_asset_operation& op, wallet_transaction_record& trx_rec )
 {
@@ -1111,7 +1111,7 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
       sync_balance_with_blockchain( op.balance_id() );
 
   return cache_deposit;
-} FC_RETHROW_EXCEPTIONS( warn, "", ("op",op) ) } // wallet_impl::scan_deposit
+} FC_CAPTURE_AND_RETHROW() }
 
 wallet_transaction_record wallet::scan_transaction( const string& transaction_id_prefix, bool overwrite_existing )
 { try {
@@ -1135,7 +1135,7 @@ wallet_transaction_record wallet::scan_transaction( const string& transaction_id
        private_keys.push_back( item.first );
    const auto now = blockchain::now();
    return my->scan_transaction( transaction_record->trx, block_num, block.timestamp, private_keys, now, overwrite_existing );
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 vector<wallet_transaction_record> wallet::get_transactions( const string& transaction_id_prefix )
 { try {
@@ -1153,7 +1153,7 @@ vector<wallet_transaction_record> wallet::get_transactions( const string& transa
        transactions.push_back( record.second );
    }
    return transactions;
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 void wallet::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
 { try {
@@ -1161,7 +1161,7 @@ void wallet::sign_transaction( signed_transaction& transaction, const unordered_
    const auto chain_id = my->_blockchain->chain_id();
    for( const auto& addr : required_signatures )
        transaction.sign( get_private_key( addr ), chain_id );
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 void wallet::cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction )
 { try {
@@ -1179,7 +1179,7 @@ void wallet::cache_transaction( const signed_transaction& transaction, wallet_tr
        if( operation_type_enum( op.type ) == withdraw_op_type )
            my->sync_balance_with_blockchain( op.as<withdraw_operation>().balance_id );
    }
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 /**
  * @return the list of all transactions related to this wallet
@@ -1250,7 +1250,7 @@ vector<wallet_transaction_record> wallet::get_transaction_history( const string&
    }
 
    return history_records;
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 vector<pretty_transaction> wallet::get_pretty_transaction_history( const string& account_name,
                                                                    uint32_t start_block_num,
@@ -1364,7 +1364,7 @@ vector<pretty_transaction> wallet::get_pretty_transaction_history( const string&
     }
 
     return pretties;
-} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+} FC_CAPTURE_AND_RETHROW() }
 
 void wallet::remove_transaction_record( const string& record_id )
 {
