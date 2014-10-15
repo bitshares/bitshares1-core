@@ -694,7 +694,7 @@ namespace bts { namespace cli {
       for(const auto& transaction : transactions)
       {
         if(FILTER_OUTPUT_FOR_TESTS)
-          out << std::setw(10) << "[redacted]";
+          out << std::setw(10) << "<d-ign>" << transaction.id().str().substr(0, 8) << "</d-ign>";
         else
           out << std::setw(10) << transaction.id().str().substr(0, 8);
 
@@ -740,7 +740,7 @@ namespace bts { namespace cli {
   {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
 
-    out << std::string(18, ' ') << "BIDS (* Short)"
+    out << std::string(23, ' ') << "BIDS (* Short)"
       << std::string(39, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
       << std::string(34, ' ') << "\n"
