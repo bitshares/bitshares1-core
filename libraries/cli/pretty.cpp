@@ -70,6 +70,21 @@ string pretty_percent( double part, double whole, int precision )
     return ss.str();
 }
 
+string pretty_size( uint64_t bytes )
+{
+    static const vector<string> suffixes{ "B", "KiB", "MiB", "GiB" };
+    uint8_t suffix_pos = 0;
+    double count = bytes;
+    while( count >= 1024 && suffix_pos < suffixes.size() )
+    {
+        count /= 1024;
+        ++suffix_pos;
+    }
+    uint64_t size = round( count );
+
+    return std::to_string( size ) + " " + suffixes.at( suffix_pos );
+}
+
 string pretty_info( fc::mutable_variant_object info, cptr client )
 {
     FC_ASSERT( client != nullptr );
@@ -237,19 +252,35 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
     return out.str();
 }
 
-// TODO
-string pretty_usage( fc::mutable_variant_object usage )
+string pretty_disk_usage( fc::mutable_variant_object usage )
 {
     std::stringstream out;
     out << std::left;
 
-    /*
-    if( !usage["automatic_backups"].is_null() )
+    const auto format_size = []( fc::mutable_variant_object& dict, const string& key )
     {
-        const auto size = usage["automatic_backups"].as_uint64();
-        usage["automatic_backups"] = "hello";
+        if( !dict[ key ].is_null() )
+        {
+            const auto size = dict[ key ].as_uint64();
+            dict[ key ] = pretty_size( size );
+        }
+    };
+
+    format_size( usage, "automatic_backups" );
+    format_size( usage, "blockchain" );
+    format_size( usage, "dac_state" );
+    format_size( usage, "logs" );
+    format_size( usage, "mail_client" );
+    format_size( usage, "mail_server" );
+    format_size( usage, "network_peers" );
+
+    if( !usage[ "wallets" ].is_null() )
+    {
+        auto wallets = usage[ "wallets" ].as<fc::mutable_variant_object>();
+        for( const auto& item : wallets )
+            format_size( wallets, item.key() );
+        usage[ "wallets" ] = wallets;
     }
-    */
 
     out << fc::json::to_pretty_string( usage ) << "\n";
     return out.str();

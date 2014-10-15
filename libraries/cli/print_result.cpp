@@ -241,13 +241,19 @@ namespace bts { namespace cli {
     _command_to_function["mail_get_messages_from"] = &f_mail_header_list;
     _command_to_function["mail_get_messages_to"] = &f_mail_header_list;
     _command_to_function["mail_get_messages_in_conversation"] = &f_mail_header_list;
+
+    _command_to_function["disk_usage"] = []( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
+    {
+      const auto& usage = result.as<fc::mutable_variant_object>();
+      out << pretty_disk_usage( usage );
+    };
   }
 
   void print_result::f_blockchain_get_account_wall( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
      out << std::left;
      out << std::setw( 30 )  << "AMOUNT";
-     out << std::setw( 100 ) << "MESSAGE"; 
+     out << std::setw( 100 ) << "MESSAGE";
      out << std::setw( 30 )  << "SIGNER";
      out << "\n";
      out << pretty_line( 160 );
