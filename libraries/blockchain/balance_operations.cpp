@@ -452,4 +452,45 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_burn_record( burn_record( burn_record_key( {account_id, eval_state.trx.id()} ), burn_record_value( {amount,message,message_signature} ) ) );
    } FC_CAPTURE_AND_RETHROW( (eval_state) ) }
 
+   void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
+   { try {
+      auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
+      FC_ASSERT( escrow_balance_record.valid() );
+
+      if( !eval_state.check_signature( this->released_by ) ) 
+         FC_ASSERT( !"transaction not signed by releasor" );
+
+      auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();
+      auto total_released = amount_to_sender + amount_to_receiver;
+
+      FC_ASSERT( total_released <= escrow_balance_record->balance );
+      FC_ASSERT( total_released >= amount_to_sender ); // check for addition overflow
+
+      escrow_balance_record->balance -= total_released;
+
+      if( escrow_condition.sender == this->released_by )
+      {
+         FC_ASSERT( amount_to_sender == 0 );
+         // TODO: get a balance record for the receiver, create it if necessary and deposit funds
+      }
+      else if( escrow_condition.receiver == this->released_by )
+      {
+         FC_ASSERT( amount_to_receiver == 0 );
+         // TODO: get a balance record for the sender, create it if necessary and deposit funds
+      }
+      else if( escrow_condition.escrow == this->released_by )
+      {
+         // TODO: get a balance record for the receiver, create it if necessary and deposit funds
+         // TODO: get a balance record for the sender, create it if necessary and deposit funds
+      }
+      else
+      {
+          FC_ASSERT( !"not released by a party to the escrow transaction" );
+      }
+
+      eval_state._current_state->store_balance_record( *escrow_balance_record );
+
+   } FC_CAPTURE_AND_RETHROW( (eval_state) )}
+
+
 } } // bts::blockchain

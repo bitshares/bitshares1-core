@@ -17,7 +17,8 @@ namespace bts { namespace blockchain {
       withdraw_signature_type   = 1,
       withdraw_multi_sig_type   = 2,
       withdraw_password_type    = 3,
-      withdraw_option_type      = 4
+      withdraw_option_type      = 4,
+      withdraw_escrow_type      = 5
    };
 
    /**
@@ -128,6 +129,17 @@ namespace bts { namespace blockchain {
       optional<titan_memo>    memo;
    };
 
+   struct withdraw_with_escrow
+   {
+      static const uint8_t    type;
+
+      address                 sender;
+      address                 receiver;
+      address                 escrow;
+      digest_type             agreement_digest;
+      optional<titan_memo>    memo;
+   };
+
    struct withdraw_with_pts
    {
       public_key_type             new_key;
@@ -197,3 +209,5 @@ FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_fla
 FC_REFLECT_DERIVED( bts::blockchain::memo_status,
                     (bts::blockchain::memo_data),
                     (has_valid_signature)(owner_private_key) )
+FC_REFLECT( bts::blockchain::withdraw_with_escrow, (sender)(receiver)(escrow)(agreement_digest)(memo) )
+
