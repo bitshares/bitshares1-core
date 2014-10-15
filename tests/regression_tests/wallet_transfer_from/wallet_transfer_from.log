@@ -31,7 +31,7 @@ Returns:
 default (unlocked) >>> wallet_transfer_from 100 XTS delegate1 delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate1 as del... test                100.00000 XTS                                                       0.50000 XTS         [redacted]
+<d-ign></d-ign>PENDING   delegate1 as del... test                100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 5
@@ -39,7 +39,7 @@ OK
 default (unlocked) >>> history test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
-[redacted]          2         delegate1 as del... test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         [redacted]
+<d-ign></d-ign>2         delegate1 as del... test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         <d-ign></d-ign>
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================

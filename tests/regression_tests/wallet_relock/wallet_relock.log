@@ -2,7 +2,7 @@ default (unlocked) >>> wallet_lock
 OK
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "[redacted]",
+  "data_dir": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -15,7 +15,7 @@ default (locked) >>> wallet_get_info
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": "[redacted]"
+  "version": "<d-ign></d-ign>"
 }
 default (locked) >>> help wallet_unlock
 Usage:
@@ -53,7 +53,7 @@ Invalid password!
 
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "[redacted]",
+  "data_dir": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -66,13 +66,13 @@ default (locked) >>> wallet_get_info
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": "[redacted]"
+  "version": "<d-ign></d-ign>"
 }
 default (locked) >>> debug_wait 6
 OK
 default (locked) >>> wallet_get_info
 {
-  "data_dir": "[redacted]",
+  "data_dir": "<d-ign></d-ign>",
   "open": true,
   "name": "default",
   "automatic_backups": false,
@@ -85,6 +85,6 @@ default (locked) >>> wallet_get_info
   "unlocked_until": null,
   "unlocked_until_timestamp": null,
   "scan_progress": null,
-  "version": "[redacted]"
+  "version": "<d-ign></d-ign>"
 }
 default (locked) >>> quit
