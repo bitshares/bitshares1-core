@@ -2519,7 +2519,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     {
       fc::mutable_variant_object usage;
 
-      usage["automatic_backups"] = variant();
       usage["blockchain"] = variant();
       usage["dac_state"] = variant();
       usage["logs"] = variant();
@@ -2527,9 +2526,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       usage["mail_server"] = variant();
       usage["network_peers"] = variant();
       usage["wallets"] = variant();
-
-      const fc::path automatic_backups = _data_dir / "wallets" / ".backups";
-      usage["automatic_backups"] = fc::is_directory( automatic_backups ) ? fc::directory_size( automatic_backups ) : variant();
+      usage["total"] = variant();
 
       const fc::path blockchain = _data_dir / "chain" / "raw_chain";
       usage["blockchain"] = fc::is_directory( blockchain ) ? fc::directory_size( blockchain ) : variant();
@@ -2550,10 +2547,19 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       usage["network_peers"] = fc::is_directory( network_peers ) ? fc::directory_size( network_peers ) : variant();
 
       fc::mutable_variant_object wallet_sizes;
+
       const fc::path wallets = _data_dir / "wallets";
+
+      const fc::path backups = wallets / ".backups";
+      if( fc::is_directory( backups ) )
+          wallet_sizes[".backups"] = fc::directory_size( backups );
+
       for( const string& wallet_name : _wallet->list() )
           wallet_sizes[wallet_name] = fc::directory_size( wallets / wallet_name );
+
       usage["wallets"] = wallet_sizes;
+
+      usage["total"] = fc::is_directory( _data_dir ) ? fc::directory_size( _data_dir ) : variant();
 
       return usage;
     }

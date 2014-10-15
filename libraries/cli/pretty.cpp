@@ -271,7 +271,6 @@ string pretty_disk_usage( fc::mutable_variant_object usage )
         }
     };
 
-    format_size( usage, "automatic_backups" );
     format_size( usage, "blockchain" );
     format_size( usage, "dac_state" );
     format_size( usage, "logs" );
@@ -286,6 +285,8 @@ string pretty_disk_usage( fc::mutable_variant_object usage )
             format_size( wallets, item.key() );
         usage[ "wallets" ] = wallets;
     }
+
+    format_size( usage, "total" );
 
     out << fc::json::to_pretty_string( usage ) << "\n";
     return out.str();
