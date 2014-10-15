@@ -398,6 +398,8 @@ namespace bts { namespace blockchain { namespace detail {
 
       FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
       FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));
+      FC_ASSERT( ocover_record->interest_rate.quote_asset_id > ocover_record->interest_rate.base_asset_id,
+                 "", ("record",ocover_record));
 
       _current_bid->state.balance -= mtrx.short_collateral->amount;
 
@@ -507,17 +509,11 @@ namespace bts { namespace blockchain { namespace detail {
             _pending_state->store_balance_record( *ask_payout );
             _current_ask->collateral = 0;
       }
-      //ulog( "storing collateral ${c}", ("c",_current_ask) );
 
-      // the collateral position is now worse than before, if we don't update the market index then
-      // the index price will be "wrong"... ie: the call price should move up based upon the fact
-      // that we consumed more collateral than USD...
-      //
-      // If we leave it as is, then chances are we will end up covering the entire amount this time,
-      // but we cannot use the price on the call for anything other than a trigger.
+      _current_collat_record.collateral_balance = *_current_ask->collateral;
+      _current_collat_record.payoff_balance = _current_ask->state.balance;
       _pending_state->store_collateral_record( _current_ask->market_index,
-                                                collateral_record( *_current_ask->collateral,
-                                                                  _current_ask->state.balance ) );
+                                               _current_collat_record );
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
   void market_engine::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
@@ -552,7 +548,11 @@ namespace bts { namespace blockchain { namespace detail {
   {
       if( _short_itr.valid() )
       {
-        auto bid = market_order( short_order, _short_itr.key(), _short_itr.value() );
+        auto bid = market_order( short_order,
+                                 _short_itr.key(),
+                                 _short_itr.value(),
+                                 _short_itr.value().balance,
+                                 _short_itr.key().order_price );
         if( bid.get_price().quote_asset_id == _quote_id &&
             bid.get_price().base_asset_id == _base_id )
         {
@@ -608,14 +608,16 @@ namespace bts { namespace blockchain { namespace detail {
       while( _current_bid && _collateral_itr.valid() )
       {
         auto cover_ask = market_order( cover_order,
-                                  _collateral_itr.key(),
-                                  order_record(_collateral_itr.value().payoff_balance),
-                                  _collateral_itr.value().collateral_balance  );
+                                       _collateral_itr.key(),
+                                       order_record(_collateral_itr.value().payoff_balance),
+                                       _collateral_itr.value().collateral_balance,
+                                       _collateral_itr.value().interest_rate,
+                                       _collateral_itr.value().expiration);
 
         if( cover_ask.get_price().quote_asset_id == _quote_id &&
             cover_ask.get_price().base_asset_id == _base_id )
         {
-            _current_collat_record =  _collateral_itr.value();
+            _current_collat_record = _collateral_itr.value();
             // don't cover unless the price is below center price or margin position is expired...
             if( cover_ask.get_price() > _market_stat.center_price ||
                 _current_collat_record.expiration <= _pending_state->now() )
