@@ -770,8 +770,9 @@ namespace bts { namespace cli {
 
     auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     auto status = client->get_chain()->get_market_status(quote_id, base_id);
-    auto short_execution_price = status ? status->center_price : price(0, quote_id, base_id);
-    auto recent_average_price = client->get_chain()->get_market_status(quote_id, base_id)->center_price;
+    price short_execution_price( 0, quote_id, base_id );
+    if( status.valid() && status->current_feed_price.valid() )
+        short_execution_price = *status->current_feed_price;
 
     std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&short_execution_price](const market_order& order) -> bool {
         return order.state.short_price_limit && *order.state.short_price_limit < short_execution_price;
@@ -921,10 +922,6 @@ namespace bts { namespace cli {
         }
       }
 
-      out << "Center Price: "
-        << client->get_chain()->to_pretty_price(recent_average_price)
-        << "     ";
-
       auto status = client->get_chain()->get_market_status(quote_id, base_id);
       if(status)
       {
@@ -1019,10 +1016,9 @@ namespace bts { namespace cli {
       << std::setw(20) << "OPENING PRICE"
       << std::setw(20) << "CLOSING PRICE"
       << std::setw(20) << "TRADING VOLUME"
-      << std::setw(20) << "AVERAGE PRICE"
-      << "\n" << std::string(140, '-') << "\n";
+      << "\n" << std::string(120, '-') << "\n";
 
-    for(auto point : points)
+    for(const auto& point : points)
     {
       out << std::setw(20) << pretty_timestamp(point.timestamp)
         << std::setw(20) << point.highest_bid
@@ -1030,10 +1026,6 @@ namespace bts { namespace cli {
         << std::setw(20) << point.opening_price
         << std::setw(20) << point.closing_price
         << std::setw(20) << client->get_chain()->to_pretty_asset(asset(point.volume));
-      if(point.recent_average_price)
-        out << std::setw(20) << *point.recent_average_price;
-      else
-        out << std::setw(20) << "N/A";
       out << "\n";
     }
   }

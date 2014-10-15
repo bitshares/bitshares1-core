@@ -4008,13 +4008,16 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       FC_ASSERT( oresult, "The ${q}/${b} market has not yet been initialized.", ("q", quote)("b", base));
 
       api_market_status result(*oresult);
-      if( oresult->center_price.ratio == fc::uint128() )
-      {
-        oprice median_delegate_price = _chain_db->get_median_delegate_price(qrec->id);
-        result.center_price = _chain_db->to_pretty_price_double(median_delegate_price? *median_delegate_price : price());
-      }
-      else
-        result.center_price = _chain_db->to_pretty_price_double(oresult->center_price);
+      price current_feed_price;
+      price last_feed_price;
+
+      if( oresult->current_feed_price.valid() )
+          current_feed_price = *oresult->current_feed_price;
+      if( oresult->last_feed_price.valid() )
+          last_feed_price = *oresult->last_feed_price;
+
+      result.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
+      result.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
       return result;
    }
 
