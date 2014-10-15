@@ -661,7 +661,7 @@ namespace bts { namespace cli {
       for(const auto& transaction : transactions)
       {
         if(FILTER_OUTPUT_FOR_TESTS)
-          out << std::setw(10) << "[redacted]";
+          out << std::setw(10) << "<d-ign>" << transaction.id().str().substr(0, 8) << "</d-ign>";
         else
           out << std::setw(10) << transaction.id().str().substr(0, 8);
 
