@@ -2028,7 +2028,7 @@ namespace bts { namespace blockchain {
     {
         FC_ASSERT( count > 0 );
         if( start_block_num < 0 )
-            start_block_num = get_head_block_num() + start_block_num;
+            start_block_num = int64_t( get_head_block_num() ) + start_block_num;
         FC_ASSERT( start_block_num >= 1 );
 
         const signed_block_header block_header = get_block_header( start_block_num );
