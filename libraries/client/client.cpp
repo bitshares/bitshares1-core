@@ -4010,15 +4010,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
            api_market_status api_status( *status );
            price current_feed_price;
-           price last_feed_price;
+           price last_valid_feed_price;
 
            if( status->current_feed_price.valid() )
                current_feed_price = *status->current_feed_price;
-           if( status->last_feed_price.valid() )
-               last_feed_price = *status->last_feed_price;
+           if( status->last_valid_feed_price.valid() )
+               last_valid_feed_price = *status->last_valid_feed_price;
 
            api_status.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
-           api_status.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
+           api_status.last_valid_feed_price = _chain_db->to_pretty_price_double( last_valid_feed_price );
 
            statuses.push_back( api_status );
        }
@@ -4042,15 +4042,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
       api_market_status result(*oresult);
       price current_feed_price;
-      price last_feed_price;
+      price last_valid_feed_price;
 
       if( oresult->current_feed_price.valid() )
           current_feed_price = *oresult->current_feed_price;
-      if( oresult->last_feed_price.valid() )
-          last_feed_price = *oresult->last_feed_price;
+      if( oresult->last_valid_feed_price.valid() )
+          last_valid_feed_price = *oresult->last_valid_feed_price;
 
       result.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
-      result.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
+      result.last_valid_feed_price = _chain_db->to_pretty_price_double( last_valid_feed_price );
       return result;
    }
 

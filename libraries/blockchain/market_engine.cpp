@@ -72,7 +72,7 @@ namespace bts { namespace blockchain { namespace detail {
           if( quote_asset->is_market_issued() )
           {
               const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-              if( (!market_stat.valid() || !market_stat->last_feed_price.valid()) && !_feed_price.valid() )
+              if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                   FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
           }
 
@@ -84,7 +84,7 @@ namespace bts { namespace blockchain { namespace detail {
             idump( (_current_bid)(_current_ask) );
 
             // Make sure that at least one order was matched every time we enter the loop
-            FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop" );
+            FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop!" );
             last_orders_filled = _orders_filled;
 
             // Initialize the market transaction
@@ -275,7 +275,8 @@ namespace bts { namespace blockchain { namespace detail {
           // Update market status and market history
           {
               omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-              if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id, _feed_price );
+              if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+              market_stat->update_feed_price( _feed_price );
               market_stat->last_error.reset();
               _pending_state->store_market_status( *market_stat );
 
@@ -292,7 +293,8 @@ namespace bts { namespace blockchain { namespace detail {
     {
         wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
         omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
-        if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id, _feed_price );
+        if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+        market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
         _prior_state->store_market_status( *market_stat );
     }
