@@ -1983,13 +1983,18 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
-      return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
+      return _wallet->recover_accounts( accounts_to_recover, maximum_number_of_attempts );
     }
 
-    wallet_transaction_record detail::client_impl::wallet_recover_transaction(
-            const string& transaction_id_prefix, const string& recipient_account )
+    wallet_transaction_record detail::client_impl::wallet_recover_transaction( const string& transaction_id_prefix,
+                                                                               const string& recipient_account )
     {
         return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
+    }
+
+    optional<variant_object> detail::client_impl::wallet_verify_titan_deposit( const string& transaction_id_prefix )
+    {
+        return _wallet->verify_titan_deposit( transaction_id_prefix );
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer(
