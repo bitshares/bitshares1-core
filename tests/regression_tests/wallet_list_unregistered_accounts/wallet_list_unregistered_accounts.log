@@ -11,29 +11,17 @@ Returns:
 default (unlocked) >>> wallet_list_unregistered_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 default (unlocked) >>> wallet_account_create testaccount1
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount1:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
+"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
 default (unlocked) >>> wallet_account_create testaccount2
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount2:XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41
+"XTS8my3ctcuLgAhGP4TVoKe6twNcSqJQBrjCcY4qHsL7CR2utUL41"
 default (unlocked) >>> wallet_account_create testaccount3
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount3:XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4
+"XTS8mbyATjXztLhJvpxgrtYLELNgsQ48NkATL9svARwLvb49EPPk4"
 default (unlocked) >>> wallet_account_create testaccount4
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount4:XTS52aPLfCxir5QcsjCWa6qMg31YRjbBUr3sU8Jc2MdaVTFA31jVQ
+"XTS52aPLfCxir5QcsjCWa6qMg31YRjbBUr3sU8Jc2MdaVTFA31jVQ"
 default (unlocked) >>> wallet_account_create testaccount5
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount5:XTS6WQ7JXKq16jhS75JFmtGFCjKUvpb6meTc5bG3QVmtWhBhzRqdF
+"XTS6WQ7JXKq16jhS75JFmtGFCjKUvpb6meTc5bG3QVmtWhBhzRqdF"
 default (unlocked) >>> wallet_account_create testaccount6
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:testaccount6:XTS88H4iMw2FJSQZMGySpTxyWkKrzXqD7jJMA6ubqozhkoMGwepYy
+"XTS88H4iMw2FJSQZMGySpTxyWkKrzXqD7jJMA6ubqozhkoMGwepYy"
 default (unlocked) >>> wallet_list_unregistered_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
 testaccount1                       XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0         

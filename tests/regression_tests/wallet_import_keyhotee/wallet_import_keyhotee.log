@@ -38,14 +38,14 @@ tk1                                XTS5Vv5BDUdGhqxh7bsKt71QDpo5vFuJFM3nMu3izoMBG
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" tk1*
 Command failed with exception: invalid account name (20017)
 Invalid Keyhotee name!
-error creating private key using keyhotee info.
+
 
 
 
 default (unlocked) >>> wallet_import_keyhotee F M L "Hello World123$$$" t*
 Command failed with exception: invalid account name (20017)
 Invalid Keyhotee name!
-error creating private key using keyhotee info.
+
 
 
 
