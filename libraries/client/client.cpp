@@ -3508,12 +3508,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      return _wallet->get_account_balances( account_name );
+      return _wallet->get_account_balances( account_name, false );
    }
 
    account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
    {
-      return _wallet->get_account_balance_ids( account_name );
+      return _wallet->get_account_balance_ids( account_name, false );
    }
 
    account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const

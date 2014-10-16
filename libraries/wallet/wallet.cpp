@@ -3662,7 +3662,7 @@ namespace detail {
       return my->_wallet_db.lookup_account( okey->account_address );
    } FC_CAPTURE_AND_RETHROW() }
 
-   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name )const
+   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty )const
    { try {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
@@ -3683,6 +3683,7 @@ namespace detail {
           const auto balance_id = record.id();
           const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
+          if( !include_empty && pending_record->balance == 0 ) return;
           balance_records[ name ].push_back( *pending_record );
 
           /* Re-cache the pending balance just in case */
@@ -3694,11 +3695,11 @@ namespace detail {
       return balance_records;
    } FC_CAPTURE_AND_RETHROW() }
 
-   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name )const
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -3711,11 +3712,11 @@ namespace detail {
       return balance_ids;
    } FC_CAPTURE_AND_RETHROW() }
 
-   account_balance_summary_type wallet::get_account_balances( const string& account_name )const
+   account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
