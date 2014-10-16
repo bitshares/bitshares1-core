@@ -529,6 +529,10 @@ namespace bts { namespace net { namespace detail {
 
       bool _node_is_shutting_down; // set to true when we begin our destructor, used to prevent us from starting new tasks while we're shutting down
 
+      unsigned _maximum_number_of_blocks_to_handle_at_one_time;
+      unsigned _maximum_number_of_sync_blocks_to_prefetch;
+      unsigned _maximum_blocks_per_peer_during_syncing;
+
       std::list<fc::future<void> > _handle_message_calls_in_progress;
 
       node_impl(const std::string& user_agent);
@@ -736,6 +740,9 @@ namespace bts { namespace net { namespace detail {
 # define VERIFY_CORRECT_THREAD() do {} while (0)
 #endif
 
+#define MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME 200
+#define MAXIMUM_NUMBER_OF_BLOCKS_TO_PREFETCH (10 * MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
+
     node_impl::node_impl(const std::string& user_agent) :
 #ifdef P2P_IN_DEDICATED_THREAD
       _thread(std::make_shared<fc::thread>("p2p")),
@@ -764,7 +771,10 @@ namespace bts { namespace net { namespace detail {
       _average_network_write_speed_hours(72),
       _average_network_usage_second_counter(0),
       _average_network_usage_minute_counter(0),
-      _node_is_shutting_down(false)
+      _node_is_shutting_down(false),
+      _maximum_number_of_blocks_to_handle_at_one_time(MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME),
+      _maximum_number_of_sync_blocks_to_prefetch(MAXIMUM_NUMBER_OF_BLOCKS_TO_PREFETCH),
+      _maximum_blocks_per_peer_during_syncing(BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
     {
       _rate_limiter.set_actual_rate_time_constant(fc::seconds(2));
       fc::rand_pseudo_bytes(&_node_id.data[0], (int)_node_id.size());
@@ -996,7 +1006,7 @@ namespace bts { namespace net { namespace detail {
                       // then schedule a request from this peer
                       sync_item_requests_to_send[peer].push_back(item_to_potentially_request);
                       sync_items_to_request.insert( item_to_potentially_request );
-                      if (sync_item_requests_to_send[peer].size() >= BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
+                      if (sync_item_requests_to_send[peer].size() >= _maximum_blocks_per_peer_during_syncing)
                         break;
                     }
                   }
@@ -2785,7 +2795,7 @@ namespace bts { namespace net { namespace detail {
 
       dlog("Leaving send_sync_block_to_node_delegate");
 
-      if (_suspend_fetching_sync_blocks &&
+      if (// _suspend_fetching_sync_blocks && <-- you can use this if "maximum_number_of_blocks_to_handle_at_one_time" == "maximum_number_of_sync_blocks_to_prefetch"
           !_node_is_shutting_down &&
           (!_process_backlog_of_sync_blocks_done.valid() || _process_backlog_of_sync_blocks_done.ready()))
         _process_backlog_of_sync_blocks_done = fc::async([=](){ process_backlog_of_sync_blocks(); }, 
@@ -2806,8 +2816,7 @@ namespace bts { namespace net { namespace detail {
       }
 
       dlog("in process_backlog_of_sync_blocks");
-#define MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME 100
-      if (_handle_message_calls_in_progress.size() >= MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
+      if (_handle_message_calls_in_progress.size() >= _maximum_number_of_blocks_to_handle_at_one_time)
       {
         dlog("leaving process_backlog_of_sync_blocks because we're already processing too many blocks");
         return; // we will be rescheduled when the next block finishes its processing
@@ -2891,11 +2900,14 @@ namespace bts { namespace net { namespace detail {
           } // end if potential_first_block
         } // end for each block in _received_sync_items
 
-        if (_handle_message_calls_in_progress.size() >= MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
+        if (_handle_message_calls_in_progress.size() >= _maximum_number_of_blocks_to_handle_at_one_time)
         {
           dlog("stopping processing sync block backlog because we have ${count} blocks in progress", 
                ("count", _handle_message_calls_in_progress.size()));
-          _suspend_fetching_sync_blocks = true;
+          //ulog("stopping processing sync block backlog because we have ${count} blocks in progress, total on hand: ${received}",
+          //     ("count", _handle_message_calls_in_progress.size())("received", _received_sync_items.size()));
+          if (_received_sync_items.size() >= _maximum_number_of_sync_blocks_to_prefetch)
+            _suspend_fetching_sync_blocks = true;
           break;
         }
       } while (block_processed_this_iteration);
@@ -4266,21 +4278,27 @@ namespace bts { namespace net { namespace detail {
       return result;
     }
 
-    void node_impl::set_advanced_node_parameters( const fc::variant_object& params )
+    void node_impl::set_advanced_node_parameters(const fc::variant_object& params)
     {
       VERIFY_CORRECT_THREAD();
-      if( params.contains("peer_connection_retry_timeout" ) )
-        _peer_connection_retry_timeout = ( uint32_t )params["peer_connection_retry_timeout"].as_uint64();
-      if( params.contains("desired_number_of_connections" ) )
-        _desired_number_of_connections = ( uint32_t )params["desired_number_of_connections"].as_uint64();
-      if( params.contains("maximum_number_of_connections" ) )
-        _maximum_number_of_connections = ( uint32_t )params["maximum_number_of_connections"].as_uint64();
+      if (params.contains("peer_connection_retry_timeout"))
+        _peer_connection_retry_timeout = params["peer_connection_retry_timeout"].as<uint32_t>();
+      if (params.contains("desired_number_of_connections"))
+        _desired_number_of_connections = params["desired_number_of_connections"].as<uint32_t>();
+      if (params.contains("maximum_number_of_connections"))
+        _maximum_number_of_connections = params["maximum_number_of_connections"].as<uint32_t>();
+      if (params.contains("maximum_number_of_blocks_to_handle_at_one_time"))
+        _maximum_number_of_blocks_to_handle_at_one_time = params["maximum_number_of_blocks_to_handle_at_one_time"].as<uint32_t>();
+      if (params.contains("maximum_number_of_sync_blocks_to_prefetch"))
+        _maximum_number_of_sync_blocks_to_prefetch = params["maximum_number_of_sync_blocks_to_prefetch"].as<uint32_t>();
+      if (params.contains("maximum_blocks_per_peer_during_syncing"))
+        _maximum_blocks_per_peer_during_syncing = params["maximum_blocks_per_peer_during_syncing"].as<uint32_t>();
 
-      _desired_number_of_connections = std::min( _desired_number_of_connections, _maximum_number_of_connections );
+      _desired_number_of_connections = std::min(_desired_number_of_connections, _maximum_number_of_connections);
 
-      while ( _active_connections.size() > _maximum_number_of_connections )
-        disconnect_from_peer( _active_connections.begin()->get(),
-                             "I have too many connections open" );
+      while (_active_connections.size() > _maximum_number_of_connections)
+        disconnect_from_peer(_active_connections.begin()->get(),
+                             "I have too many connections open");
       trigger_p2p_network_connect_loop();
     }
 
@@ -4291,6 +4309,12 @@ namespace bts { namespace net { namespace detail {
       result["peer_connection_retry_timeout"] = _peer_connection_retry_timeout;
       result["desired_number_of_connections"] = _desired_number_of_connections;
       result["maximum_number_of_connections"] = _maximum_number_of_connections;
+      if (_maximum_number_of_blocks_to_handle_at_one_time != MAXIMUM_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
+        result["maximum_number_of_blocks_to_handle_at_one_time"] = _maximum_number_of_blocks_to_handle_at_one_time;
+      if (_maximum_number_of_sync_blocks_to_prefetch != MAXIMUM_NUMBER_OF_BLOCKS_TO_PREFETCH)
+        result["maximum_number_of_sync_blocks_to_prefetch"] = _maximum_number_of_sync_blocks_to_prefetch;
+      if (_maximum_blocks_per_peer_during_syncing != BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING)
+      result["maximum_blocks_per_peer_during_syncing"] = _maximum_blocks_per_peer_during_syncing;
       return result;
     }
 
