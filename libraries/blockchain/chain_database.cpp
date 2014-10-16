@@ -2022,15 +2022,31 @@ namespace bts { namespace blockchain {
         return fork_blocks;
     }
 
-    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type& delegate_id )const
+    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type& delegate_id,
+                                                                   int64_t start_block_num, uint32_t count )const
     {
+        FC_ASSERT( count > 0 );
+        if( start_block_num < 0 )
+            start_block_num = get_head_block_num() + start_block_num;
+        FC_ASSERT( start_block_num >= 1 );
+
+        const signed_block_header block_header = get_block_header( start_block_num );
+        const time_point_sec& min_timestamp = block_header.timestamp;
+
         vector<slot_record> slot_records;
+        slot_records.reserve( count );
+
         for( auto iter = my->_slot_record_db.begin(); iter.valid(); ++iter )
         {
             const auto slot_record = iter.value();
-            if( slot_record.block_producer_id == delegate_id )
-                slot_records.push_back( slot_record );
+            if( slot_record.start_time < min_timestamp || slot_record.block_producer_id != delegate_id )
+                continue;
+
+            slot_records.push_back( slot_record );
+            if( slot_records.size() >= count )
+                break;
         }
+
         return slot_records;
     }
 

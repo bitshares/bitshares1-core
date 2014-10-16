@@ -3875,11 +3875,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->get_forks_list();
    }
 
-   vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name )const
+   vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name,
+                                                                          int64_t start_block_num, uint32_t count )const
    {
-      auto delegate_record = _chain_db->get_account_record( delegate_name );
+      const auto delegate_record = _chain_db->get_account_record( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
-      return _chain_db->get_delegate_slot_records( delegate_record->id );
+      return _chain_db->get_delegate_slot_records( delegate_record->id, start_block_num, count );
    }
 
    string client_impl::blockchain_get_block_signee( const string& block )const

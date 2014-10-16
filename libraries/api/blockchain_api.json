@@ -630,6 +630,18 @@
               "name" : "delegate_name",
               "type" : "string",
               "description" : "Delegate whose block production slot records to query"
+            },
+            {
+              "name" : "start_block_num",
+              "type" : "int64_t",
+              "description" : "Only return slot records after the specified block's timestamp; negative to start backwards from the current head block",
+              "default_value" : "-1000"
+            },
+            {
+              "name" : "count",
+              "type" : "uint32_t",
+              "description" : "Return at most count slot records",
+              "default_value" : "10"
             }
         ],
         "is_const" : true,
