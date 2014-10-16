@@ -31,8 +31,7 @@ namespace bts { namespace mail {
           void open( const fc::path& data_dir );
           void close();
           
-          void store( const bts::blockchain::address& owner, 
-                      const message& msg );
+          void store(const message& msg );
 
           inventory_type fetch_inventory( const bts::blockchain::address& owner, 
                                           const fc::time_point& start, 
