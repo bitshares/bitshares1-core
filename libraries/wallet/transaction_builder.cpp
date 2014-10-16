@@ -34,10 +34,10 @@ transaction_builder& transaction_builder::update_account_registration(const wall
 
    if( delegate_pay )
    {
-      FC_ASSERT( account.is_delegate(), "Cannot promote existing account to delegate!" );
-      FC_ASSERT( *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
+      FC_ASSERT( !account.is_delegate() ||
+                 *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
 
-      if( *delegate_pay != account.delegate_pay_rate() )
+      if( !account.is_delegate() || *delegate_pay != account.delegate_pay_rate() )
       {
          if( !paying_account->is_my_account )
             FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
@@ -55,7 +55,10 @@ transaction_builder& transaction_builder::update_account_registration(const wall
          entry.from_account = paying_account->owner_key;
          entry.to_account = account.owner_key;
          entry.amount = fee;
-         entry.memo = "Fee to update " + account.name + "'s delegate pay";
+         if( account.is_delegate() )
+            entry.memo = "Fee to update " + account.name + "'s delegate pay";
+         else
+            entry.memo = "Fee to promote " + account.name + " to a delegate";
          transaction_record.ledger_entries.push_back(entry);
       }
    } else delegate_pay = account.delegate_pay_rate();
