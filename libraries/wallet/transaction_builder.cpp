@@ -289,9 +289,20 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    order_balance += blockchain::detail::market_engine
            ::get_cover_interest(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
 
+   //What's the account's actual balance? We can't pay more than that.
+   auto account_balances = _wimpl->self->get_account_balances(from_account.name);
+   FC_ASSERT( !account_balances.empty(), "Account has no balances! Cannot cover." );
+   const auto& balances = account_balances.begin()->second;
+   FC_ASSERT( balances.find(order_balance.asset_id) != balances.end(),
+              "Account has no balance in asset to cover!" );
+   asset max_cover_amount(balances.find(order_balance.asset_id)->second, order_balance.asset_id);
+
    //Don't over-cover the short position
    if( cover_amount > order_balance || cover_amount.amount == 0 )
        cover_amount = order_balance;
+
+   FC_ASSERT( cover_amount <= max_cover_amount, "Cannot cover by ${cover_amount} as account only has ${balance}",
+              ("cover_amount", cover_amount)("balance", max_cover_amount) );
 
    order_balance -= cover_amount;
    if( order_balance.amount == 0 )
