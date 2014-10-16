@@ -287,7 +287,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    auto age_at_transaction_expiration = _wimpl->_blockchain->now() + _wimpl->self->get_transaction_expiration() -
                      (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
    order_balance += blockchain::detail::market_engine
-           ::get_cover_interest(order_balance, order->get_price(), age_at_transaction_expiration.to_seconds());
+           ::get_cover_interest(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
 
    //Don't over-cover the short position
    if( cover_amount > order_balance || cover_amount.amount == 0 )

@@ -2567,13 +2567,17 @@ namespace bts { namespace blockchain {
            }
        }
 
-       if( type == null_order || type == cover_order )
-       {
+       if( type == null_order || type == cover_order ) {
            for( auto itr = my->_collateral_db.begin(); itr.valid(); ++itr )
            {
                const auto collateral_rec = itr.value();
                const auto order_rec = order_record( collateral_rec.payoff_balance );
-               const auto order = market_order( cover_order, itr.key(), order_rec, collateral_rec.collateral_balance );
+               const auto order = market_order( cover_order,
+                                                itr.key(),
+                                                order_rec,
+                                                collateral_rec.collateral_balance,
+                                                collateral_rec.interest_rate,
+                                                collateral_rec.expiration );
                if( filter( order ) )
                {
                    orders.push_back( order );
