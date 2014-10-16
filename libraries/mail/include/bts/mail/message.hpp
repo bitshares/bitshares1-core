@@ -44,8 +44,8 @@ namespace bts { namespace mail {
       digest_type            digest()const;
       string                 subject;
       string                 body;
-      vector< attachment >   attachments;
       message_id_type        reply_to;
+      vector< attachment >   attachments;
    };
 
    struct signed_email_message : public email_message
@@ -95,6 +95,7 @@ namespace bts { namespace mail {
       }
 
       fc::enum_type<int16_t, message_type>  type;
+      blockchain::address                   recipient;
       uint64_t                              nonce;
       fc::time_point_sec                    timestamp;
       vector<char>                          data;
@@ -104,9 +105,9 @@ namespace bts { namespace mail {
 
 FC_REFLECT_ENUM( bts::mail::message_type, (encrypted)(transaction_notice)(market_notice)(email) )
 FC_REFLECT( bts::mail::encrypted_message, (onetimekey)(data) )
-FC_REFLECT( bts::mail::message, (type)(nonce)(timestamp)(data) )
+FC_REFLECT( bts::mail::message, (type)(recipient)(nonce)(timestamp)(data) )
 FC_REFLECT( bts::mail::attachment, (name)(data) )
 FC_REFLECT( bts::mail::transaction_notice_message, (trx)(extended_memo) )
-FC_REFLECT( bts::mail::email_message, (subject)(body)(attachments)(reply_to) )
+FC_REFLECT( bts::mail::email_message, (subject)(body)(reply_to)(attachments) )
 FC_REFLECT_DERIVED( bts::mail::signed_email_message, (bts::mail::email_message), (from_signature) )
 

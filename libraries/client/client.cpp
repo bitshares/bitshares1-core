@@ -2569,10 +2569,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return usage;
     }
 
-    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
+    void detail::client_impl::mail_store_message(const mail::message& message)
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
-      _mail_server->store(owner, message);
+      _mail_server->store(message);
     }
 
     mail::inventory_type detail::client_impl::mail_fetch_inventory(const address &owner,

@@ -8,11 +8,6 @@
             "return_type": "void",
             "parameters" : [
                 {
-                    "name" : "owner",
-                    "type" : "address",
-                    "description" : "The address of the message's recipient."
-                },
-                {
                     "name" : "message",
                     "type" : "message",
                     "description" : "The message to store."

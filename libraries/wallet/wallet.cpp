@@ -2992,58 +2992,18 @@ namespace detail {
            share_type delegate_pay_rate,
            bool sign )
    { try {
-      if( !blockchain::is_valid_account_name( account_to_update ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_update",account_to_update) );
-      if( !blockchain::is_valid_account_name( pay_from_account ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("pay_from_account",pay_from_account) );
-
-      FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      signed_transaction trx;
-      unordered_set<address> required_signatures;
-      auto payer_public_key = get_account_public_key( pay_from_account );
+      auto account = get_account(account_to_update);
+      owallet_account_record payer;
+         if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
 
-      auto account = my->_blockchain->get_account_record( account_to_update );
-      if( !account.valid() )
-        FC_THROW_EXCEPTION( unknown_account, "Unknown account!", ("account_to_update",account_to_update) );
-
-      auto account_public_key = get_account_public_key( account_to_update );
-      auto required_fees = get_transaction_fee();
-
-      if( account->is_delegate() )
-      {
-         if( delegate_pay_rate > account->delegate_info->pay_rate )
-            FC_THROW_EXCEPTION( invalid_pay_rate, "Pay rate can only be decreased!", ("delegate_pay_rate",delegate_pay_rate) );
-      }
-      else if( delegate_pay_rate >= 0  )
-      {
-         required_fees += asset( my->_blockchain->get_delegate_registration_fee( delegate_pay_rate ), 0 );
-      }
-
-      my->withdraw_to_transaction( required_fees,
-                                   pay_from_account,
-                                   trx,
-                                   required_signatures );
-
-      //Either this account or any parent may authorize this action. Find a key that can do it.
-      my->authorize_update( required_signatures, account );
-
-      trx.update_account( account->id, delegate_pay_rate, public_data, optional<public_key_type>() );
-
-      auto entry = ledger_entry();
-      entry.from_account = payer_public_key;
-      entry.to_account = account_public_key;
-      entry.memo = "update " + account_to_update; // TODO: Note if upgrading to delegate
-
-      auto record = wallet_transaction_record();
-      record.ledger_entries.push_back( entry );
-      record.fee = required_fees;
-
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
-
-      return record;
+      auto builder = create_transaction_builder()->
+              update_account_registration(account, public_data, optional<private_key_type>(), delegate_pay_rate, payer).
+              finalize();
+      if( sign )
+         return builder.sign();
+      return builder.transaction_record;
    } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(public_data)(sign) ) }
 
    wallet_transaction_record wallet::update_active_key(
