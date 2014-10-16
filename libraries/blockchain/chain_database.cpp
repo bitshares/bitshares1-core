@@ -1052,7 +1052,8 @@ namespace bts { namespace blockchain {
              close();
              fc::remove_all( data_dir / "index" );
              fc::create_directories( data_dir / "index");
-             fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/id_to_data_orig" );
+             if( !fc::is_directory(data_dir / "raw_chain/id_to_data_orig") )
+                fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/id_to_data_orig" );
 
              //During reindexing we implement stop-and-copy garbage collection on the raw chain
              decltype(my->_block_id_to_block_data_db) id_to_data_orig;
