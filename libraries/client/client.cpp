@@ -2608,6 +2608,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       _mail_client->retry_message(message_id);
     }
 
+    void detail::client_impl::mail_cancel_message(const message_id_type &message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->cancel_message(message_id);
+    }
+
     void detail::client_impl::mail_remove_message(const message_id_type &message_id)
     {
       FC_ASSERT(_mail_client);

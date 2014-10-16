@@ -324,20 +324,23 @@ public:
             std::unique_ptr<mail_record> email_uptr(new mail_record(_processing_db.fetch(message_id)));
             mail_record* email = email_uptr.get();
 
-            if (email->proof_of_work_target != ripemd160()) {
+            if (email->status != client::canceled && email->proof_of_work_target != ripemd160()) {
                 email->status = client::proof_of_work;
                 _processing_db.store(email->id, *email);
             } else {
-                //Don't have a proof-of-work target; cannot continue
+                //Don't have a proof-of-work target or message canceled; cannot continue
                 email->status = client::failed;
-                email->failure_reason = "No proof of work target. Cannot do proof of work.";
+                email->failure_reason = (email->status == client::canceled?
+                                             "Canceled by user." :
+                                             "No proof of work target. Cannot do proof of work.");
                 _processing_db.store(email->id, *email);
                 return;
             }
 
             std::unique_ptr<fc::future<void>> slave_handle_uptr(new fc::future<void>());
             fc::future<void>* slave_handle = slave_handle_uptr.get();
-            while (email->content.id() > email->proof_of_work_target) {
+            while (_processing_db.fetch(message_id).status != client::canceled &&
+                   email->content.id() > email->proof_of_work_target) {
                 email->content.timestamp = blockchain::now();
                 _processing_db.store(email->id, *email);
 
@@ -356,6 +359,13 @@ public:
                     _proof_of_work_thread.quit();
                     throw;
                 }
+            }
+
+            if (_processing_db.fetch(message_id).status == client::canceled) {
+                email->status = client::failed;
+                email->failure_reason = "Canceled by user.";
+                _processing_db.store(message_id, *email);
+                return;
             }
 
             _processing_db.store(email->id, *email);
@@ -696,6 +706,18 @@ void client::retry_message(message_id_type message_id)
     FC_ASSERT(email.status == failed, "Message has not failed to send; cannot retry sending.");
     email.status = submitted;
     my->retry_message(email);
+}
+
+void client::cancel_message(message_id_type message_id)
+{
+    FC_ASSERT(my->is_open());
+    auto itr = my->_processing_db.find(message_id);
+    if (itr.valid()) {
+        FC_ASSERT(itr.value().status <= proof_of_work, "Cannot cancel message once it has been submitted to servers.");
+        detail::mail_record cancel_mail = itr.value();
+        cancel_mail.status = canceled;
+        my->_processing_db.store(message_id, cancel_mail);
+    }
 }
 
 void client::remove_message(message_id_type message_id)

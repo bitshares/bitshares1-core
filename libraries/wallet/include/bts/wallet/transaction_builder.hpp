@@ -72,12 +72,14 @@ namespace bts { namespace wallet {
       /// @{
       void deduct_balance(const blockchain::address& account_to_charge, const blockchain::asset& amount)
       {
-         FC_ASSERT( amount.amount >= 0, "Don't deduct a negative amount. Call credit_balance instead." );
+         FC_ASSERT( amount.amount >= 0, "Don't deduct a negative amount. Call credit_balance instead.",
+                    ("amount", amount) );
          outstanding_balances[std::make_pair(account_to_charge, amount.asset_id)] -= amount.amount;
       }
       void credit_balance(const blockchain::address& account_to_credit, const blockchain::asset& amount)
       {
-         FC_ASSERT( amount.amount >= 0, "Don't credit a negative amount. Call deduct_balance instead." );
+         FC_ASSERT( amount.amount >= 0, "Don't credit a negative amount. Call deduct_balance instead.",
+                    ("amount", amount) );
          outstanding_balances[std::make_pair(account_to_credit, amount.asset_id)] += amount.amount;
       }
       /// @}
