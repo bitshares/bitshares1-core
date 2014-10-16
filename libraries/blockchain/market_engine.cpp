@@ -1,4 +1,5 @@
 #include <bts/blockchain/market_engine.hpp>
+#include <fc/real128.hpp>
 
 namespace bts { namespace blockchain { namespace detail {
 
@@ -713,14 +714,32 @@ namespace bts { namespace blockchain { namespace detail {
           }
   }
 
-  asset market_engine::get_cover_interest(const asset& principle, const price& apr, uint32_t age_seconds)
+  asset market_engine::get_cover_interest(const asset& amount_paid, const price& apr, uint32_t age_seconds)
   {
+      // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
+      // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
+      // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE 
+      fc::real128 total_paid( amount_paid.amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+      fc::real128 iapr = apr_n / apr_d;
+      fc::real128 age_sec(age_seconds);
+      fc::real128 sec_per_year(365 * 24 * 60 * 60);
+      fc::real128 percent_of_year = age_sec / sec_per_year;
+
+      fc::real128 delta_principle = total_paid / ( fc::real128(1) + iapr * percent_of_year );
+      fc::real128 interest_paid   = total_paid - delta_principle;
+
+      return asset( interest_paid.to_uint64(), amount_paid.asset_id );
+
+      /*
      asset annual_interest = principle * apr;
      annual_interest.asset_id = principle.asset_id;
      annual_interest.amount *= age_seconds;
-     annual_interest.amount /= (365 * 24 * 60 * 60); // seconds per year
+     annual_interest.amount /= ; // seconds per year
 
      return annual_interest;
+     */
   }
 
   asset market_engine::get_current_cover_debt() const
