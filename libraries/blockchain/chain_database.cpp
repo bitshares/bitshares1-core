@@ -716,7 +716,7 @@ namespace bts { namespace blockchain {
           delegate_record->delegate_info->last_block_num_produced = produced_block.block_num;
           pending_state->store_account_record( *delegate_record );
 
-          auto slot = slot_record( produced_block.timestamp, delegate_id, true, produced_block.id() );
+          const slot_record slot( produced_block.timestamp, delegate_id, produced_block.id() );
           pending_state->store_slot_record( slot );
 
           /* Update production info for missing delegates */
@@ -2631,10 +2631,10 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_slot_record( const slot_record& r )
    {
-      if( !r.block_produced || (r.block_id != block_id_type()) ) /* If in valid state */
-         my->_slot_record_db.store( r.start_time, r );
-      else
-         my->_slot_record_db.remove( r.start_time );
+       if( r.is_null() )
+           my->_slot_record_db.remove( r.start_time );
+       else
+           my->_slot_record_db.store( r.start_time, r );
    }
 
    oslot_record chain_database::get_slot_record( const time_point_sec& start_time )const
