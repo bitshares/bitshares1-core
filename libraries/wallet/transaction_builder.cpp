@@ -32,6 +32,9 @@ transaction_builder& transaction_builder::update_account_registration(const wall
    if( !paying_account )
       paying_account = account;
 
+   //Add paying_account to the transactions set of balance holders; he may be liable for the transaction fee.
+   deduct_balance(paying_account->account_address, asset());
+
    if( delegate_pay )
    {
       FC_ASSERT( !account.is_delegate() ||
