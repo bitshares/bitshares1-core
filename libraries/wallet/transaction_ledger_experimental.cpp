@@ -119,6 +119,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         if( account_balances.count( balance_id ) > 0 )
         {
             const string& delta_label = account_balances.at( balance_id );
+            // TODO: Need to save balance labels locally before emptying them so they can be deleted from the chain
             record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return true;
         }
