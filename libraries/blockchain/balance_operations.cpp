@@ -286,9 +286,6 @@ namespace bts { namespace blockchain {
    /**
     *  TODO: Document rules for Withdraws
     */
-#ifndef WIN32
-#warning [UNTESTED] Needs to be tested and implemented in wallet
-#endif
    void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );

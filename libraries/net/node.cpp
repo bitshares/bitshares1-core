@@ -95,11 +95,6 @@
 
 namespace bts { namespace net {
 
-  FC_REGISTER_EXCEPTIONS( (net_exception)
-                          (send_queue_overflow)
-                          (insufficient_relay_fee)
-                          (already_connected_to_requested_peer) )
-
   namespace detail
   {
     namespace bmi = boost::multi_index;
@@ -2831,8 +2826,8 @@ namespace bts { namespace net { namespace detail {
       // when syncing with multiple peers, it's possible that we'll have hundreds of blocks ready to push
       // to the client at once.  This can be slow, and we need to limit the number we push at any given
       // time to allow network traffic to continue so we don't end up disconnecting from peers
-      fc::time_point start_time = fc::time_point::now();
-      fc::time_point when_we_should_yield = start_time + fc::seconds(1);
+      //fc::time_point start_time = fc::time_point::now();
+      //fc::time_point when_we_should_yield = start_time + fc::seconds(1);
 
       bool block_processed_this_iteration;
       unsigned blocks_processed = 0;

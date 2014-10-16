@@ -18,7 +18,7 @@ uint32_t wallet::import_bitcoin_wallet(
         const string& account_name
         )
 { try {
-   if( !is_valid_account_name( account_name ) )
+   if( !blockchain::is_valid_account_name( account_name ) )
        FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
    FC_ASSERT( is_open() );
@@ -31,8 +31,7 @@ uint32_t wallet::import_bitcoin_wallet(
    scan_chain( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
-} FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
-                         ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+} FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
 
 uint32_t wallet::import_multibit_wallet(
         const path& wallet_dat,
@@ -40,7 +39,7 @@ uint32_t wallet::import_multibit_wallet(
         const string& account_name
         )
 { try {
-   if( !is_valid_account_name( account_name ) )
+   if( !blockchain::is_valid_account_name( account_name ) )
        FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
    FC_ASSERT( is_open() );
@@ -54,8 +53,7 @@ uint32_t wallet::import_multibit_wallet(
    scan_chain( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
-} FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
-                         ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+} FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
 
 uint32_t wallet::import_electrum_wallet(
         const path& wallet_dat,
@@ -63,7 +61,7 @@ uint32_t wallet::import_electrum_wallet(
         const string& account_name
         )
 { try {
-   if( !is_valid_account_name( account_name ) )
+   if( !blockchain::is_valid_account_name( account_name ) )
        FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
    FC_ASSERT( is_open() );
@@ -77,8 +75,7 @@ uint32_t wallet::import_electrum_wallet(
    scan_chain( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
-} FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
-                         ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+} FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
 
 uint32_t wallet::import_armory_wallet(
         const path& wallet_dat,
@@ -86,7 +83,7 @@ uint32_t wallet::import_armory_wallet(
         const string& account_name
         )
 { try {
-   if( !is_valid_account_name( account_name ) )
+   if( !blockchain::is_valid_account_name( account_name ) )
        FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
    FC_ASSERT( is_open() );
@@ -100,8 +97,7 @@ uint32_t wallet::import_armory_wallet(
    scan_chain( 0, 1 );
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
-} FC_RETHROW_EXCEPTIONS( warn, "error importing bitcoin wallet ${wallet_dat}",
-                         ("wallet_dat",wallet_dat)("account_name",account_name) ) }
+} FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
 
 void wallet::import_keyhotee( const std::string& firstname,
                              const std::string& middlename,
@@ -109,7 +105,7 @@ void wallet::import_keyhotee( const std::string& firstname,
                              const std::string& brainkey,
                              const std::string& keyhoteeid )
 { try {
-  if( !is_valid_account_name( fc::to_lower( keyhoteeid ) ) )
+  if( !blockchain::is_valid_account_name( fc::to_lower( keyhoteeid ) ) )
       FC_THROW_EXCEPTION( invalid_name, "Invalid Keyhotee name!", ("keyhoteeid",keyhoteeid) );
 
     FC_ASSERT( is_open() );
@@ -124,5 +120,4 @@ void wallet::import_keyhotee( const std::string& firstname,
 
     scan_chain( 0, 1 );
     ulog( "Successfully imported Keyhotee private key.\n" );
-} FC_RETHROW_EXCEPTIONS( warn, "error creating private key using keyhotee info.",
-                        ("firstname",firstname)("middlename",middlename)("lastname",lastname)("brainkey",brainkey)("keyhoteeid",keyhoteeid) ) }
+} FC_CAPTURE_AND_RETHROW( (firstname)(middlename)(lastname)(brainkey)(keyhoteeid) ) }

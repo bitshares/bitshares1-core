@@ -142,12 +142,12 @@ namespace bts { namespace blockchain {
       reset();
       _skip_signature_check = skip_signature_check;
       try {
-        if( trx_arg.expiration < _current_state->now() )
+        if( _current_state->now() >= trx_arg.expiration )
         {
            const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
            FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
         }
-        if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )
+        if( (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) < trx_arg.expiration )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
         auto trx_id = trx_arg.id();

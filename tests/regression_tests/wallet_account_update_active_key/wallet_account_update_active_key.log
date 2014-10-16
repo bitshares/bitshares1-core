@@ -1,7 +1,5 @@
 default (unlocked) >>> wallet_account_create test
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:test:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
+"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -60,6 +58,18 @@ default (unlocked) >>> balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
 delegate0                       19,801,879.69801 XTS        
+default (unlocked) >>> help wallet_account_update_active_key
+Usage:
+wallet_account_update_active_key <account_to_update> <pay_from_account> [new_active_key]              Updates the specified account's active key and broadcasts the transaction.
+Updates the specified account's active key and broadcasts the transaction.
+
+Parameters:
+  account_to_update (account_name, required): The name of the account to update the active key of.
+  pay_from_account (account_name, required): The account from which fees will be paid.
+  new_active_key (string, optional, defaults to ""): WIF private key to update active key to. If empty, a new key will be generated.
+
+Returns:
+  transaction_record
 default (unlocked) >>> wallet_account_update_active_key test test 5KgPRATnTBkT4nfNAy9AHrDDmCQxEQPkSwCgtm8cpSyZnGHrnJn
 Command failed with exception: key belongs to other account (20032)
 Key already belongs to another account!

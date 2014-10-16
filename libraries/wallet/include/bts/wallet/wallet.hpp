@@ -63,20 +63,12 @@ namespace bts { namespace wallet {
          void    create( const string& wallet_name,
                          const string& password,
                          const string& brainkey = string() );
-
-         void    create_file( const path& wallet_file_name,
-                              const string& password,
-                              const string& brainkey = string() );
-
          void    open( const string& wallet_name );
-         void    open_file( const path& wallet_filename );
-
          void    close();
 
          bool    is_enabled()const;
          bool    is_open()const;
          string  get_wallet_name()const;
-         path    get_wallet_filename()const;
 
          void    export_to_json( const path& filename )const;
          void    create_from_json( const path& filename, const string& wallet_name, const string& passphrase );
@@ -88,6 +80,9 @@ namespace bts { namespace wallet {
           *  Properties
           */
          ///@{
+
+         void                   set_version( uint32_t v );
+         uint32_t               get_version()const;
 
          void                   set_automatic_backups( bool enabled );
          bool                   get_automatic_backups()const;
@@ -129,17 +124,6 @@ namespace bts { namespace wallet {
           *  @name Utility Methods
           */
          ///@{
-         delegate_slate select_delegate_vote( vote_selection_method selection = vote_random );
-
-         bool is_receive_account( const string& account_name )const;
-         bool is_valid_account( const string& account_name )const;
-         bool is_unique_account( const string& account_name )const;
-
-         /**
-          * Account names are limited the same way as domain names.
-          */
-         bool is_valid_account_name( const string& account_name )const;
-
          private_key_type get_active_private_key( const string& account_name )const;
          public_key_type  get_account_public_key( const string& account_name )const;
 
@@ -152,8 +136,7 @@ namespace bts { namespace wallet {
          vector<wallet_transaction_record>          get_pending_transactions()const;
          map<transaction_id_type, fc::exception>    get_pending_transaction_errors()const;
 
-         void      scan_state();
-         void      scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
+         void scan_chain( uint32_t start = 0, uint32_t end = -1, bool fast_scan = false );
 
          wallet_transaction_record         scan_transaction( const string& transaction_id_prefix, bool overwrite_existing );
          transaction_ledger_entry          scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing );
@@ -173,9 +156,6 @@ namespace bts { namespace wallet {
 
          void account_set_favorite ( const string& account_name,
                                      const bool is_favorite );
-
-         address          get_new_address( const string& account_name );
-         public_key_type  get_new_public_key( const string& account_name );
 
          wallet_account_record get_account( const string& account_name )const;
 
@@ -531,29 +511,8 @@ namespace bts { namespace wallet {
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
 
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
-         wallet_transaction_record          edit_transaction( const string& transaction_id_prefix, const string& recipient_account,
-                                                              const string& memo_message );
-
-         optional<wallet_account_record>    get_account_record( const address& addr)const;
-         /*
-         optional<address>                  get_owning_address( const balance_id_type& id )const;
-
-         unordered_map<transaction_id_type,wallet_transaction_record>  transactions( const string& account_name = string() )const;
-         */
-
-         /*
-         unordered_map<account_id_type,     wallet_name_record>         names( const string& account_name = "*" )const;
-         unordered_map<asset_id_type,       wallet_asset_record>        assets( const string& account_name = "*" )const;
-         */
-
-         /** signs transaction with the specified keys for the specified addresses */
-         void sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const;
-         void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction = true );
-
-         transaction_ledger_entry apply_transaction_experimental( const signed_transaction& transaction );
 
          vote_summary get_vote_proportion( const string& account_name );
-         slate_id_type select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id = asset_id_type( 0 ), vote_selection_method = vote_random );
 
          private_key_type get_private_key( const address& addr )const;
 

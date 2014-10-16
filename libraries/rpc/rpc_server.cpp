@@ -30,11 +30,7 @@
 
 namespace bts { namespace rpc {
 
-   using namespace client;
-   FC_REGISTER_EXCEPTIONS( (rpc_exception)
-                           (missing_parameter)
-                           (unknown_method)
-                           (login_required) )
+  using namespace client;
 
   namespace detail
   {

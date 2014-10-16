@@ -60,7 +60,7 @@ namespace bts { namespace wallet {
            { try {
               if( !overwrite) FC_ASSERT( !self->wallet_master_key.valid() );
               self->wallet_master_key = key;
-           } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+           } FC_CAPTURE_AND_RETHROW() }
 
            void load_account_record( const wallet_account_record& account_to_load, bool overwrite )
            { try {
@@ -103,14 +103,14 @@ namespace bts { namespace wallet {
               self->btc_to_bts_address[ address(pts_address(key,true,56) ) ] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,false,0) ) ] = bts_addr;
               self->btc_to_bts_address[ address(pts_address(key,true,0) )  ] = bts_addr;
-           } FC_RETHROW_EXCEPTIONS( warn, "", ("key_to_load",key_to_load) ) }
+           } FC_CAPTURE_AND_RETHROW( (key_to_load) ) }
 
            void load_transaction_record( const wallet_transaction_record& rec, bool overwrite )
            { try {
               auto itr = self->transactions.find( rec.record_id );
               if( !overwrite) FC_ASSERT( itr == self->transactions.end(), "Duplicate transaction found in wallet!" );
               self->transactions[ rec.record_id ] = rec;
-           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
+           } FC_CAPTURE_AND_RETHROW( (rec) ) }
 
            void load_balance_record( const wallet_balance_record& rec, bool overwrite )
            { try {
@@ -120,7 +120,7 @@ namespace bts { namespace wallet {
                   FC_ASSERT( itr == self->balances.end(), "Duplicate balance record" );
               }
               self->balances[ rec.id() ] = rec;
-           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec",rec) ) }
+           } FC_CAPTURE_AND_RETHROW( (rec) ) }
 
            void load_property_record( const wallet_property_record& property_rec, bool overwrite )
            { try {
@@ -130,12 +130,12 @@ namespace bts { namespace wallet {
                   FC_ASSERT( itr == self->properties.end(), "Duplicate Property Record" );
               }
               self->properties[property_rec.key] = property_rec;
-           } FC_RETHROW_EXCEPTIONS( warn, "", ("property_record",property_rec )) }
+           } FC_CAPTURE_AND_RETHROW( (property_rec) ) }
 
            void load_setting_record( const wallet_setting_record& rec, bool overwrite )
            { try {
               self->settings[rec.name] = rec;
-           } FC_RETHROW_EXCEPTIONS( warn, "", ("rec", rec) ) }
+           } FC_CAPTURE_AND_RETHROW( (rec) ) }
      };
 
    } // namespace detail
@@ -450,7 +450,7 @@ namespace bts { namespace wallet {
       }
 
       fs.write( "]", 1 );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
+   } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
    void wallet_db::import_from_json( const path& filename )
    { try {
@@ -460,17 +460,17 @@ namespace bts { namespace wallet {
       auto records = fc::json::from_file<std::vector<generic_wallet_record>>( filename );
       for( const auto& record : records )
          store_generic_record( record );
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("filename",filename) ) }
+   } FC_CAPTURE_AND_RETHROW( (filename) ) }
 
-   bool wallet_db::has_private_key( const address& a )const
+   bool wallet_db::has_private_key( const address& addr )const
    { try {
-      auto itr = keys.find(a);
+      auto itr = keys.find( addr );
       if( itr != keys.end() )
       {
          return itr->second.has_private_key();
       }
       return false;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("address",a) ) }
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
    void wallet_db::cache_memo( const memo_status& memo,
                                const private_key_type& account_key,
@@ -519,7 +519,7 @@ namespace bts { namespace wallet {
            }
        }
        return private_keys;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+   } FC_CAPTURE_AND_RETHROW() }
 
    owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )const
    {
@@ -752,7 +752,7 @@ namespace bts { namespace wallet {
       store_record( trx_to_store );
 
       transactions[ trx_to_store.record_id ] = trx_to_store;
-   } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_to_store",trx_to_store) ) }
+   } FC_CAPTURE_AND_RETHROW( (trx_to_store) ) }
 
    void wallet_db::cache_account( const wallet_account_record& war )
    {

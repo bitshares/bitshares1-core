@@ -13,7 +13,7 @@ namespace bts { namespace blockchain {
       if( NOT is_power_of_ten( this->precision ) )
          FC_CAPTURE_AND_THROW( invalid_precision, (precision) );
 
-      if( NOT eval_state._current_state->is_valid_symbol_name( this->symbol ) )
+      if( NOT blockchain::is_valid_symbol_name( this->symbol ) )
          FC_CAPTURE_AND_THROW( invalid_asset_symbol, (symbol) );
 
       if( this->maximum_share_supply <= 0 )

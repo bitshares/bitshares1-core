@@ -327,7 +327,7 @@ transaction_builder& transaction_builder::finalize()
 { try {
    FC_ASSERT( !trx.operations.empty(), "Cannot finalize empty transaction" );
 
-   auto slate = _wimpl->self->select_delegate_vote(vote_recommended);
+   auto slate = _wimpl->select_delegate_vote(vote_recommended);
    auto slate_id = slate.id();
    if( slate.supported_delegates.size() > 0 && !_wimpl->_blockchain->get_delegate_slate(slate_id) )
       trx.define_delegate_slate(slate);
@@ -364,7 +364,7 @@ wallet_transaction_record& transaction_builder::sign()
       } catch( ... ) {}
    }
 
-   _wimpl->self->cache_transaction(trx, transaction_record);
+   _wimpl->cache_transaction(trx, transaction_record);
    return transaction_record;
 }
 
