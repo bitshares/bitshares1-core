@@ -19,9 +19,6 @@
 #include <fc/thread/thread.hpp>
 #include <fc/git_revision.hpp>
 
-#include <fc/thread/mutex.hpp>
-#include <fc/thread/scoped_lock.hpp>
-
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -47,7 +44,6 @@ namespace bts { namespace rpc {
          fc::thread*                                       _thread;
          http_callback_type                                _http_file_callback;
          std::unordered_set<fc::rpc::json_connection_ptr>  _open_json_connections;
-         fc::mutex                                         _rpc_mutex; // locked to prevent executing two rpc calls at once
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -449,8 +445,6 @@ namespace bts { namespace rpc {
         fc::variant dispatch_authenticated_method(const bts::api::method_data& method_data,
                                                   const fc::variants& arguments_from_caller)
         {
-          fc::scoped_lock<fc::mutex> lock(_rpc_mutex);
-
           if (!method_data.method)
           {
             // then this is a method using our new generated code
