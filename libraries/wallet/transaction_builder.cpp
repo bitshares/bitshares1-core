@@ -22,6 +22,8 @@ transaction_builder& transaction_builder::update_account_registration(const wall
                                                                       optional<share_type> delegate_pay,
                                                                       optional<wallet_account_record> paying_account)
 {
+   if( account.registration_date == fc::time_point_sec() )
+      FC_THROW_EXCEPTION( unknown_account, "Account is not registered! Cannot update registration." );
    FC_ASSERT( public_data || active_key || delegate_pay, "Nothing to do!" );
 
    //Check at the beginning that we actually have the keys required to sign this thing.
@@ -88,11 +90,14 @@ transaction_builder& transaction_builder::update_account_registration(const wall
 
    trx.update_account(account.id, *delegate_pay, public_data, active_public_key);
 
-   ledger_entry entry;
-   entry.from_account = paying_account->owner_key;
-   entry.to_account = account.owner_key;
-   entry.memo = "Update " + account.name + "'s account record";
-   transaction_record.ledger_entries.push_back(entry);
+   if( public_data )
+   {
+      ledger_entry entry;
+      entry.from_account = paying_account->owner_key;
+      entry.to_account = account.owner_key;
+      entry.memo = "Update " + account.name + "'s public data";
+      transaction_record.ledger_entries.push_back(entry);
+   }
 
    required_signatures = working_required_signatures;
    return *this;

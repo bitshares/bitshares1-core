@@ -2920,12 +2920,12 @@ namespace detail {
       owallet_account_record payer;
          if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
 
-      auto builder = create_transaction_builder()->
-              update_account_registration(account, public_data, optional<private_key_type>(), delegate_pay_rate, payer).
-              finalize();
+      auto builder = create_transaction_builder();
+      builder->update_account_registration(account, public_data, optional<private_key_type>(), delegate_pay_rate, payer).
+               finalize();
       if( sign )
-         return builder.sign();
-      return builder.transaction_record;
+         return builder->sign();
+      return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(public_data)(sign) ) }
 
    wallet_transaction_record wallet::update_active_key(
@@ -2950,12 +2950,12 @@ namespace detail {
         new_private_key = *key;
       }
 
-      auto builder = create_transaction_builder()->
-              update_account_registration(account, optional<variant>(), new_private_key, optional<share_type>(), payer).
-              finalize();
+      auto builder = create_transaction_builder();
+      builder->update_account_registration(account, optional<variant>(), new_private_key, optional<share_type>(), payer).
+               finalize();
       if( sign )
-         return builder.sign();
-      return builder.transaction_record;
+         return builder->sign();
+      return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(sign) ) }
 
 #if 0
