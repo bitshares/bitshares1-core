@@ -32,16 +32,15 @@ namespace bts { namespace blockchain {
 
    struct slot_record
    {
-      slot_record( const time_point_sec& t, const account_id_type& d, bool p = false, const block_id_type& b = block_id_type() )
-      :start_time(t),block_producer_id(d),block_produced(p),block_id(b){}
+      slot_record(){} // Null case
+      slot_record( const time_point_sec& t, const account_id_type& d, const optional<block_id_type>& b = optional<block_id_type>() )
+      :start_time(t),block_producer_id(d),block_id(b){}
 
-      slot_record()
-      :block_produced(false){}
+      bool is_null()const { return start_time == time_point_sec(); }
 
-      time_point_sec  start_time;
-      account_id_type block_producer_id;
-      bool            block_produced;
-      block_id_type   block_id;
+      time_point_sec            start_time;
+      account_id_type           block_producer_id;
+      optional<block_id_type>   block_id;
    };
    typedef fc::optional<slot_record> oslot_record;
 
@@ -56,6 +55,9 @@ FC_REFLECT_DERIVED( bts::blockchain::block_record,
 
 FC_REFLECT_DERIVED( bts::blockchain::transaction_record,
                     (bts::blockchain::transaction_evaluation_state),
-                    (chain_location) );
+                    (chain_location) )
 
-FC_REFLECT( bts::blockchain::slot_record, (start_time)(block_producer_id)(block_produced)(block_id) )
+FC_REFLECT( bts::blockchain::slot_record,
+            (start_time)
+            (block_producer_id)
+            (block_id) )

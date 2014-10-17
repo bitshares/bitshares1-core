@@ -36,6 +36,7 @@ namespace bts { namespace blockchain {
    using std::function;
    using fc::variant;
    using fc::variant_object;
+   using fc::mutable_variant_object;
    using fc::optional;
    using std::map;
    using std::unordered_map;

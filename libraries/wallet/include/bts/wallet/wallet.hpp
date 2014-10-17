@@ -512,6 +512,7 @@ namespace bts { namespace wallet {
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
 
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
+         optional<variant_object>           verify_titan_deposit( const string& transaction_id_prefix );
 
          vote_summary get_vote_proportion( const string& account_name );
 

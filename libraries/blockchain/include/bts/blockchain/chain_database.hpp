@@ -211,7 +211,8 @@ namespace bts { namespace blockchain {
          vector<asset_record>    get_assets( const string& first_symbol,
                                              uint32_t limit )const;
 
-         std::vector<slot_record> get_delegate_slot_records( const account_id_type& delegate_id )const;
+         std::vector<slot_record> get_delegate_slot_records( const account_id_type& delegate_id,
+                                                             int64_t start_block_num, uint32_t count )const;
 
          std::map<uint32_t, std::vector<fork_record> > get_forks_list()const;
          std::string export_fork_graph( uint32_t start_block = 1, uint32_t end_block = -1, const fc::path& filename = "" )const;

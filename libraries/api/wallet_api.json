@@ -1639,6 +1639,19 @@
          "aliases" : ["recover_transaction"]
       },
       {
+         "method_name" : "wallet_verify_titan_deposit",
+         "description" : "Verify whether the specified transaction made a TITAN deposit to the current wallet; returns null if not",
+         "return_type" : "optional_variant_object",
+         "parameters"  : [
+            {
+                "name" : "transaction_id_prefix",
+                "type" : "string",
+                "description" : "the id (or id prefix) of the transaction record"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_publish_price_feed",
          "description" : "publishes a price feed for BitAssets, only active delegates may do this",
          "return_type" : "transaction_record",

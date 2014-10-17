@@ -119,7 +119,7 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "quote_id": 1,
   "base_id": 0,
   "current_feed_price": 0,
-  "last_feed_price": 0,
+  "last_valid_feed_price": 0,
   "last_error": null
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
@@ -177,7 +177,7 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "quote_id": 1,
   "base_id": 0,
   "current_feed_price": 0,
-  "last_feed_price": 0,
+  "last_valid_feed_price": 0,
   "last_error": null
 }
 default (unlocked) >>> wallet_market_submit_ask testaccount2 100 XTS 3.1 XMO
@@ -209,7 +209,7 @@ default (unlocked) >>> blockchain_market_status XMO XTS
   "quote_id": 1,
   "base_id": 0,
   "current_feed_price": 0,
-  "last_feed_price": 0,
+  "last_valid_feed_price": 0,
   "last_error": null
 }
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative

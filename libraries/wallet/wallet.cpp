@@ -2078,6 +2078,84 @@ namespace detail {
        return transaction_record;
    } FC_CAPTURE_AND_RETHROW() }
 
+   optional<variant_object> wallet::verify_titan_deposit( const string& transaction_id_prefix )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+
+       // TODO: Separate this finding logic
+       if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+           FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+
+       const transaction_id_type transaction_id = variant( transaction_id_prefix ).as<transaction_id_type>();
+       const otransaction_record transaction_record = my->_blockchain->get_transaction( transaction_id, false );
+       if( !transaction_record.valid() )
+           FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
+
+       /* Only support a single deposit */
+       deposit_operation deposit_op;
+       bool has_deposit = false;
+       for( const auto& op : transaction_record->trx.operations )
+       {
+           switch( operation_type_enum( op.type ) )
+           {
+               case deposit_op_type:
+                   FC_ASSERT( !has_deposit );
+                   deposit_op = op.as<deposit_operation>();
+                   has_deposit = true;
+                   break;
+               default:
+                   break;
+           }
+       }
+       FC_ASSERT( has_deposit );
+
+       /* Only support standard withdraw by signature condition with memo */
+       FC_ASSERT( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type );
+       const withdraw_with_signature withdraw_condition = deposit_op.condition.as<withdraw_with_signature>();
+       FC_ASSERT( withdraw_condition.memo.valid() );
+
+       omemo_status status;
+       const map<private_key_type, string> account_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+       for( const auto& key_item : account_keys )
+       {
+           const private_key_type& key = key_item.first;
+           const string& account_name = key_item.second;
+
+           status = withdraw_condition.decrypt_memo_data( key );
+           if( status.valid() )
+           {
+               my->_wallet_db.cache_memo( *status, key, my->_wallet_password );
+
+               mutable_variant_object info;
+               info[ "from" ] = variant();
+               info[ "to" ] = account_name;
+               info[ "amount" ] = asset( deposit_op.amount, deposit_op.condition.asset_id );
+               info[ "memo" ] = variant();
+
+               if( status->has_valid_signature )
+               {
+                   const address from_address( status->from );
+                   const oaccount_record chain_account_record = my->_blockchain->get_account_record( from_address );
+                   const owallet_account_record local_account_record = my->_wallet_db.lookup_account( from_address );
+
+                   if( chain_account_record.valid() )
+                       info[ "from" ] = chain_account_record->name;
+                   else if( local_account_record.valid() )
+                       info[ "from" ] = local_account_record->name;
+               }
+
+               const string memo = status->get_message();
+               if( !memo.empty() )
+                   info[ "memo" ] = memo;
+
+               return variant_object( info );
+           }
+       }
+
+       return optional<variant_object>();
+   } FC_CAPTURE_AND_RETHROW() }
+
    /**
     *  This method assumes that fees can be paid in the same asset type as the
     *  asset being transferred so that the account can be kept private and
@@ -3765,8 +3843,8 @@ namespace detail {
 
    variant wallet::get_info()const
    {
-       const auto now = blockchain::now();
-       auto info = fc::mutable_variant_object();
+       const time_point_sec now = blockchain::now();
+       mutable_variant_object info;
 
        info["data_dir"]                                 = fc::absolute( my->_data_directory );
        info["num_scanning_threads"]                     = my->_num_scanner_threads;

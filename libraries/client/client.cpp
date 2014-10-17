@@ -1983,13 +1983,18 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
-      return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
+      return _wallet->recover_accounts( accounts_to_recover, maximum_number_of_attempts );
     }
 
-    wallet_transaction_record detail::client_impl::wallet_recover_transaction(
-            const string& transaction_id_prefix, const string& recipient_account )
+    wallet_transaction_record detail::client_impl::wallet_recover_transaction( const string& transaction_id_prefix,
+                                                                               const string& recipient_account )
     {
         return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
+    }
+
+    optional<variant_object> detail::client_impl::wallet_verify_titan_deposit( const string& transaction_id_prefix )
+    {
+        return _wallet->verify_titan_deposit( transaction_id_prefix );
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer(
@@ -3870,11 +3875,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->get_forks_list();
    }
 
-   vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name )const
+   vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name,
+                                                                          int64_t start_block_num, uint32_t count )const
    {
-      auto delegate_record = _chain_db->get_account_record( delegate_name );
+      const auto delegate_record = _chain_db->get_account_record( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
-      return _chain_db->get_delegate_slot_records( delegate_record->id );
+      return _chain_db->get_delegate_slot_records( delegate_record->id, start_block_num, count );
    }
 
    string client_impl::blockchain_get_block_signee( const string& block )const
