@@ -174,6 +174,12 @@ namespace bts { namespace db {
            return iterator( _cache.lower_bound(key), _cache.begin(), _cache.end() );
         }
 
+        // TODO: Iterate over cache instead
+        void export_to_json( const fc::path& path )const
+        { try {
+            _db.export_to_json( path );
+        } FC_CAPTURE_AND_RETHROW( (path) ) }
+
       private:
         CacheType                _cache;
         std::set<Key>            _dirty;
