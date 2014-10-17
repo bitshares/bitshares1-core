@@ -66,11 +66,12 @@ transaction_builder& transaction_builder::update_account_registration(const wall
       }
    } else delegate_pay = account.delegate_pay_rate();
 
+   fc::optional<public_key_type> active_public_key;
    if( active_key )
    {
-      auto active_public_key = active_key->get_public_key();
-      if( _wimpl->_blockchain->get_account_record(active_public_key).valid() ||
-          _wimpl->_wallet_db.lookup_account(active_public_key).valid() )
+      active_public_key = active_key->get_public_key();
+      if( _wimpl->_blockchain->get_account_record(*active_public_key).valid() ||
+          _wimpl->_wallet_db.lookup_account(*active_public_key).valid() )
          FC_THROW_EXCEPTION( key_already_registered, "Key already belongs to another account!", ("new_public_key", active_public_key));
 
       key_data new_key;
@@ -85,7 +86,7 @@ transaction_builder& transaction_builder::update_account_registration(const wall
       transaction_record.ledger_entries.push_back(entry);
    }
 
-   trx.update_account(account.id, *delegate_pay, public_data, active_key->get_public_key());
+   trx.update_account(account.id, *delegate_pay, public_data, active_public_key);
 
    ledger_entry entry;
    entry.from_account = paying_account->owner_key;
