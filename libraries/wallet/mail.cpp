@@ -33,7 +33,7 @@ bts::mail::message wallet::mail_encrypt(const public_key_type& recipient, const 
     FC_ASSERT(is_unlocked());
 
     auto one_time_key = my->create_one_time_key();
-    return mail::message(plaintext).encrypt(one_time_key, recipient);
+    return plaintext.encrypt(one_time_key, recipient);
 }
 
 bts::mail::message wallet::mail_open(const address& recipient, const bts::mail::message& ciphertext)

@@ -1,4 +1,5 @@
 #include <bts/mail/client.hpp>
+#include <bts/mail/exceptions.hpp>
 #include <bts/mail/server.hpp>
 #include <bts/db/level_map.hpp>
 #include <bts/db/cached_level_map.hpp>
@@ -324,20 +325,23 @@ public:
             std::unique_ptr<mail_record> email_uptr(new mail_record(_processing_db.fetch(message_id)));
             mail_record* email = email_uptr.get();
 
-            if (email->proof_of_work_target != ripemd160()) {
+            if (email->status != client::canceled && email->proof_of_work_target != ripemd160()) {
                 email->status = client::proof_of_work;
                 _processing_db.store(email->id, *email);
             } else {
-                //Don't have a proof-of-work target; cannot continue
+                //Don't have a proof-of-work target or message canceled; cannot continue
                 email->status = client::failed;
-                email->failure_reason = "No proof of work target. Cannot do proof of work.";
+                email->failure_reason = (email->status == client::canceled?
+                                             "Canceled by user." :
+                                             "No proof of work target. Cannot do proof of work.");
                 _processing_db.store(email->id, *email);
                 return;
             }
 
             std::unique_ptr<fc::future<void>> slave_handle_uptr(new fc::future<void>());
             fc::future<void>* slave_handle = slave_handle_uptr.get();
-            while (email->content.id() > email->proof_of_work_target) {
+            while (_processing_db.fetch(message_id).status != client::canceled &&
+                   email->content.id() > email->proof_of_work_target) {
                 email->content.timestamp = blockchain::now();
                 _processing_db.store(email->id, *email);
 
@@ -356,6 +360,13 @@ public:
                     _proof_of_work_thread.quit();
                     throw;
                 }
+            }
+
+            if (_processing_db.fetch(message_id).status == client::canceled) {
+                email->status = client::failed;
+                email->failure_reason = "Canceled by user.";
+                _processing_db.store(message_id, *email);
+                return;
             }
 
             _processing_db.store(email->id, *email);
@@ -389,8 +400,7 @@ public:
                     mutable_variant_object request;
                     request["id"] = 0;
                     request["method"] = "mail_store_message";
-                    request["params"] = vector<variant>({variant(address(email.recipient_key)),
-                                                         variant(email.content)});
+                    request["params"] = vector<variant>({variant(email.content)});
 
                     fc::json::to_stream(sock, variant_object(request));
                     string raw_response;
@@ -405,6 +415,14 @@ public:
                         email.failure_reason = response["error"].as<variant_object>()["data"]
                                                                 .as<variant_object>()["message"]
                                                                 .as_string();
+                        if (email.failure_reason == message_already_stored().name())
+                            //Message is stored! Don't store email; there's no error. We're done.
+                            return;
+                        else if (email.failure_reason == timestamp_too_old().name()) {
+                            //Redo the proof-of-work
+                            email.status = client::proof_of_work;
+                            email.content.nonce++;
+                        }
                         _processing_db.store(message_id, email);
                         elog("Storing message with server ${server} failed: ${error}",
                              ("server", server)("error", response["error"])("request", request));
@@ -438,6 +456,8 @@ public:
 
             auto timeout_future = fc::schedule([=] {
                 auto email = _processing_db.fetch(message_id);
+                if (email.status == client::failed)
+                    return;
                 ulog("Email ${id}: Timeout when transmitting", ("id", email.id));
                 email.status = client::failed;
                 email.failure_reason = "Timed out while transmitting message.";
@@ -698,6 +718,18 @@ void client::retry_message(message_id_type message_id)
     my->retry_message(email);
 }
 
+void client::cancel_message(message_id_type message_id)
+{
+    FC_ASSERT(my->is_open());
+    auto itr = my->_processing_db.find(message_id);
+    if (itr.valid()) {
+        FC_ASSERT(itr.value().status <= proof_of_work, "Cannot cancel message once it has been submitted to servers.");
+        detail::mail_record cancel_mail = itr.value();
+        cancel_mail.status = canceled;
+        my->_processing_db.store(message_id, cancel_mail);
+    }
+}
+
 void client::remove_message(message_id_type message_id)
 {
     FC_ASSERT(my->is_open());
@@ -763,14 +795,11 @@ message_id_type client::send_email(const string &from,
     FC_ASSERT(recipient, "Could not find recipient account: ${name}", ("name", to));
 
     //All mail shall be addressed to the owner key, but encrypted with the active key.
-    detail::mail_record email(from,
-                              to,
-                              recipient->owner_key,
-                              my->_wallet->mail_encrypt(recipient->active_key(),
-                                                        my->_wallet->mail_create(from,
-                                                                                 subject,
-                                                                                 body,
-                                                                                 reply_to)));
+    message plaintext = my->_wallet->mail_create(from, subject, body, reply_to);
+    plaintext.recipient = recipient->owner_key;
+    detail::mail_record email(from, to, recipient->owner_key,
+                              my->_wallet->mail_encrypt(recipient->active_key(), plaintext));
+    email.content.recipient = plaintext.recipient;
     my->process_outgoing_mail(email);
 
     return email.id;

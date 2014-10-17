@@ -8,11 +8,6 @@
             "return_type": "void",
             "parameters" : [
                 {
-                    "name" : "owner",
-                    "type" : "address",
-                    "description" : "The address of the message's recipient."
-                },
-                {
                     "name" : "message",
                     "type" : "message",
                     "description" : "The message to store."
@@ -95,6 +90,19 @@
                     "name" : "message_id",
                     "type" : "message_id",
                     "description" : "ID of the failed message to retry sending."
+                }
+            ],
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "mail_cancel_message",
+            "description": "Cancels the outgoing message if it has not been transmitted yet.",
+            "return_type": "void",
+            "parameters" : [
+                {
+                    "name" : "message_id",
+                    "type" : "message_id",
+                    "description" : "ID of the message to cancel."
                 }
             ],
             "prerequisites" : ["json_authenticated"]

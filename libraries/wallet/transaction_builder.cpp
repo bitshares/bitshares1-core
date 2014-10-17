@@ -19,7 +19,7 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
 transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
                                                                       optional<variant> public_data,
                                                                       optional<bts::blockchain::private_key_type> active_key,
-                                                                      optional<share_type> delegate_pay,
+                                                                      optional<uint8_t> delegate_pay,
                                                                       optional<wallet_account_record> paying_account)
 {
    FC_ASSERT( public_data || active_key || delegate_pay, "Nothing to do!" );
@@ -32,12 +32,15 @@ transaction_builder& transaction_builder::update_account_registration(const wall
    if( !paying_account )
       paying_account = account;
 
+   //Add paying_account to the transactions set of balance holders; he may be liable for the transaction fee.
+   deduct_balance(paying_account->account_address, asset());
+
    if( delegate_pay )
    {
-      FC_ASSERT( account.is_delegate(), "Cannot promote existing account to delegate!" );
-      FC_ASSERT( *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
+      FC_ASSERT( !account.is_delegate() ||
+                 *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
 
-      if( *delegate_pay != account.delegate_pay_rate() )
+      if( !account.is_delegate() || *delegate_pay != account.delegate_pay_rate() )
       {
          if( !paying_account->is_my_account )
             FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
@@ -55,7 +58,10 @@ transaction_builder& transaction_builder::update_account_registration(const wall
          entry.from_account = paying_account->owner_key;
          entry.to_account = account.owner_key;
          entry.amount = fee;
-         entry.memo = "Fee to update " + account.name + "'s delegate pay";
+         if( account.is_delegate() )
+            entry.memo = "Fee to update " + account.name + "'s delegate pay";
+         else
+            entry.memo = "Fee to promote " + account.name + " to a delegate";
          transaction_record.ledger_entries.push_back(entry);
       }
    } else delegate_pay = account.delegate_pay_rate();
@@ -289,11 +295,22 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    auto age_at_transaction_expiration = _wimpl->_blockchain->now() + _wimpl->self->get_transaction_expiration() -
                      (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
    order_balance += blockchain::detail::market_engine
-           ::get_cover_interest(order_balance, order->get_price(), age_at_transaction_expiration.to_seconds());
+           ::get_cover_interest(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
+
+   //What's the account's actual balance? We can't pay more than that.
+   auto account_balances = _wimpl->self->get_account_balances(from_account.name);
+   FC_ASSERT( !account_balances.empty(), "Account has no balances! Cannot cover." );
+   const auto& balances = account_balances.begin()->second;
+   FC_ASSERT( balances.find(order_balance.asset_id) != balances.end(),
+              "Account has no balance in asset to cover!" );
+   asset max_cover_amount(balances.find(order_balance.asset_id)->second, order_balance.asset_id);
 
    //Don't over-cover the short position
    if( cover_amount > order_balance || cover_amount.amount == 0 )
        cover_amount = order_balance;
+
+   FC_ASSERT( cover_amount <= max_cover_amount, "Cannot cover by ${cover_amount} as account only has ${balance}",
+              ("cover_amount", cover_amount)("balance", max_cover_amount) );
 
    order_balance -= cover_amount;
    if( order_balance.amount == 0 )

@@ -184,7 +184,7 @@ namespace bts { namespace blockchain {
          fraction /= 10;
          fraction_string.erase(0, 1);
       }
-      return asset(whole > 0? whole + fraction : whole - fraction, record->id);
+      return asset(whole >= 0? whole + fraction : whole - fraction, record->id);
        } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
 
    price chain_interface::to_ugly_price(const std::string& price_string,

@@ -119,6 +119,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         if( account_balances.count( balance_id ) > 0 )
         {
             const string& delta_label = account_balances.at( balance_id );
+            // TODO: Need to save balance labels locally before emptying them so they can be deleted from the chain
             record.delta_amounts[ delta_label ][ delta_amount.asset_id ] += delta_amount.amount;
             return true;
         }
@@ -417,6 +418,12 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
             case link_account_op_type:
                 // Future feature
                 break;
+            case withdraw_all_op_type:
+                // Future feature
+                break;
+            case release_escrow_op_type:
+                // Future feature
+                break;
             default:
                 break;
         }
@@ -441,9 +448,15 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         if( !memo.has_valid_signature )
             return false;
 
-        // TODO: Also allow unregistered contact accounts
-        const oaccount_record account_record = _blockchain->get_account_record( address( memo.from ) );
-        if( !account_record.valid() )
+        string account_name;
+        const address from_address( memo.from );
+        const oaccount_record chain_account_record = _blockchain->get_account_record( from_address );
+        const owallet_account_record local_account_record = _wallet_db.lookup_account( from_address );
+        if( chain_account_record.valid() )
+            account_name = chain_account_record->name;
+        else if( local_account_record.valid() )
+            account_name = local_account_record->name;
+        else
             return false;
 
         record.delta_amounts.clear();
@@ -451,7 +464,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         for( uint16_t i = 0; i < eval_state.trx.operations.size(); ++i )
         {
             if( operation_type_enum( eval_state.trx.operations.at( i ).type ) == withdraw_op_type )
-                record.delta_labels[ i ] = account_record->name;
+                record.delta_labels[ i ] = account_name;
         }
 
         scan_transaction_experimental( eval_state, account_keys, account_balances, account_names, record, store_record );

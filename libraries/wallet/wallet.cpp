@@ -2210,6 +2210,84 @@ namespace detail {
        return transaction_record;
    } FC_CAPTURE_AND_RETHROW() }
 
+   optional<variant_object> wallet::verify_titan_deposit( const string& transaction_id_prefix )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+
+       // TODO: Separate this finding logic
+       if( transaction_id_prefix.size() < 8 || transaction_id_prefix.size() > string( transaction_id_type() ).size() )
+           FC_THROW_EXCEPTION( invalid_transaction_id, "Invalid transaction id!", ("transaction_id_prefix",transaction_id_prefix) );
+
+       const transaction_id_type transaction_id = variant( transaction_id_prefix ).as<transaction_id_type>();
+       const otransaction_record transaction_record = my->_blockchain->get_transaction( transaction_id, false );
+       if( !transaction_record.valid() )
+           FC_THROW_EXCEPTION( transaction_not_found, "Transaction not found!", ("transaction_id_prefix",transaction_id_prefix) );
+
+       /* Only support a single deposit */
+       deposit_operation deposit_op;
+       bool has_deposit = false;
+       for( const auto& op : transaction_record->trx.operations )
+       {
+           switch( operation_type_enum( op.type ) )
+           {
+               case deposit_op_type:
+                   FC_ASSERT( !has_deposit );
+                   deposit_op = op.as<deposit_operation>();
+                   has_deposit = true;
+                   break;
+               default:
+                   break;
+           }
+       }
+       FC_ASSERT( has_deposit );
+
+       /* Only support standard withdraw by signature condition with memo */
+       FC_ASSERT( withdraw_condition_types( deposit_op.condition.type ) == withdraw_signature_type );
+       const withdraw_with_signature withdraw_condition = deposit_op.condition.as<withdraw_with_signature>();
+       FC_ASSERT( withdraw_condition.memo.valid() );
+
+       omemo_status status;
+       const map<private_key_type, string> account_keys = my->_wallet_db.get_account_private_keys( my->_wallet_password );
+       for( const auto& key_item : account_keys )
+       {
+           const private_key_type& key = key_item.first;
+           const string& account_name = key_item.second;
+
+           status = withdraw_condition.decrypt_memo_data( key );
+           if( status.valid() )
+           {
+               my->_wallet_db.cache_memo( *status, key, my->_wallet_password );
+
+               mutable_variant_object info;
+               info[ "from" ] = variant();
+               info[ "to" ] = account_name;
+               info[ "amount" ] = asset( deposit_op.amount, deposit_op.condition.asset_id );
+               info[ "memo" ] = variant();
+
+               if( status->has_valid_signature )
+               {
+                   const address from_address( status->from );
+                   const oaccount_record chain_account_record = my->_blockchain->get_account_record( from_address );
+                   const owallet_account_record local_account_record = my->_wallet_db.lookup_account( from_address );
+
+                   if( chain_account_record.valid() )
+                       info[ "from" ] = chain_account_record->name;
+                   else if( local_account_record.valid() )
+                       info[ "from" ] = local_account_record->name;
+               }
+
+               const string memo = status->get_message();
+               if( !memo.empty() )
+                   info[ "memo" ] = memo;
+
+               return variant_object( info );
+           }
+       }
+
+       return optional<variant_object>();
+   } FC_CAPTURE_AND_RETHROW() }
+
    /**
     *  This method assumes that fees can be paid in the same asset type as the
     *  asset being transferred so that the account can be kept private and
@@ -3046,61 +3124,22 @@ namespace detail {
            uint8_t delegate_pay_rate,
            bool sign )
    { try {
-      if( !blockchain::is_valid_account_name( account_to_update ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_update",account_to_update) );
-      if( !blockchain::is_valid_account_name( pay_from_account ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("pay_from_account",pay_from_account) );
-
-      FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
 
-      signed_transaction trx;
-      unordered_set<address> required_signatures;
-      auto payer_public_key = get_account_public_key( pay_from_account );
+      auto account = get_account(account_to_update);
+      owallet_account_record payer;
+         if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
 
-      auto account = my->_blockchain->get_account_record( account_to_update );
-      if( !account.valid() )
-        FC_THROW_EXCEPTION( unknown_account, "Unknown account!", ("account_to_update",account_to_update) );
+      optional<uint8_t> pay;
+      if( delegate_pay_rate <= 100 )
+          pay = delegate_pay_rate;
 
-      auto account_public_key = get_account_public_key( account_to_update );
-      auto required_fees = get_transaction_fee();
-
-      if( account->is_delegate() )
-      {
-         if( delegate_pay_rate > account->delegate_info->pay_rate )
-            FC_THROW_EXCEPTION( invalid_pay_rate, "Pay rate can only be decreased!", ("delegate_pay_rate",delegate_pay_rate) );
-      }
-      else
-      {
-         if( delegate_pay_rate <= 100  )
-         {
-           required_fees += asset((delegate_pay_rate * my->_blockchain->get_delegate_registration_fee())/100,0);
-         }
-      }
-
-      my->withdraw_to_transaction( required_fees,
-                                   pay_from_account,
-                                   trx,
-                                   required_signatures );
-
-      //Either this account or any parent may authorize this action. Find a key that can do it.
-      my->authorize_update( required_signatures, account );
-
-      trx.update_account( account->id, delegate_pay_rate, public_data, optional<public_key_type>() );
-
-      auto entry = ledger_entry();
-      entry.from_account = payer_public_key;
-      entry.to_account = account_public_key;
-      entry.memo = "update " + account_to_update; // TODO: Note if upgrading to delegate
-
-      auto record = wallet_transaction_record();
-      record.ledger_entries.push_back( entry );
-      record.fee = required_fees;
-
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
-
-      return record;
+      auto builder = create_transaction_builder()->
+              update_account_registration(account, public_data, optional<private_key_type>(), pay, payer).
+              finalize();
+      if( sign )
+         return builder.sign();
+      return builder.transaction_record;
    } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(public_data)(sign) ) }
 
    wallet_transaction_record wallet::update_active_key(
@@ -3801,7 +3840,7 @@ namespace detail {
       return my->_wallet_db.lookup_account( okey->account_address );
    } FC_CAPTURE_AND_RETHROW() }
 
-   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name )const
+   account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty )const
    { try {
       FC_ASSERT( is_open() );
       if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
@@ -3822,6 +3861,7 @@ namespace detail {
           const auto balance_id = record.id();
           const auto pending_record = pending_state->get_balance_record( balance_id );
           if( !pending_record.valid() ) return;
+          if( !include_empty && pending_record->balance == 0 ) return;
           balance_records[ name ].push_back( *pending_record );
 
           /* Re-cache the pending balance just in case */
@@ -3833,11 +3873,11 @@ namespace detail {
       return balance_records;
    } FC_CAPTURE_AND_RETHROW() }
 
-   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name )const
+   account_balance_id_summary_type wallet::get_account_balance_ids( const string& account_name, bool include_empty )const
    { try {
       map<string, vector<balance_id_type>> balance_ids;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -3850,11 +3890,11 @@ namespace detail {
       return balance_ids;
    } FC_CAPTURE_AND_RETHROW() }
 
-   account_balance_summary_type wallet::get_account_balances( const string& account_name )const
+   account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
 
-      map<string, vector<balance_record>> items = get_account_balance_records( account_name );
+      map<string, vector<balance_record>> items = get_account_balance_records( account_name, include_empty );
       for( const auto& item : items )
       {
           const auto& name = item.first;
@@ -3943,8 +3983,8 @@ namespace detail {
 
    variant wallet::get_info()const
    {
-       const auto now = blockchain::now();
-       auto info = fc::mutable_variant_object();
+       const time_point_sec now = blockchain::now();
+       mutable_variant_object info;
 
        info["data_dir"]                                 = fc::absolute( my->_data_directory );
        info["num_scanning_threads"]                     = my->_num_scanner_threads;

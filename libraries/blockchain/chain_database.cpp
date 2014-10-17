@@ -728,7 +728,7 @@ namespace bts { namespace blockchain {
           delegate_record->delegate_info->last_block_num_produced = produced_block.block_num;
           pending_state->store_account_record( *delegate_record );
 
-          auto slot = slot_record( produced_block.timestamp, delegate_id, true, produced_block.id() );
+          const slot_record slot( produced_block.timestamp, delegate_id, produced_block.id() );
           pending_state->store_slot_record( slot );
 
           /* Update production info for missing delegates */
@@ -1185,7 +1185,8 @@ namespace bts { namespace blockchain {
              close();
              fc::remove_all( data_dir / "index" );
              fc::create_directories( data_dir / "index");
-             fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/id_to_data_orig" );
+             if( !fc::is_directory(data_dir / "raw_chain/id_to_data_orig") )
+                fc::rename( data_dir / "raw_chain/block_id_to_block_data_db", data_dir / "raw_chain/id_to_data_orig" );
 
              //During reindexing we implement stop-and-copy garbage collection on the raw chain
              decltype(my->_block_id_to_block_data_db) id_to_data_orig;
@@ -2156,15 +2157,31 @@ namespace bts { namespace blockchain {
         return fork_blocks;
     }
 
-    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type& delegate_id )const
+    vector<slot_record> chain_database::get_delegate_slot_records( const account_id_type& delegate_id,
+                                                                   int64_t start_block_num, uint32_t count )const
     {
+        FC_ASSERT( count > 0 );
+        if( start_block_num < 0 )
+            start_block_num = int64_t( get_head_block_num() ) + start_block_num;
+        FC_ASSERT( start_block_num >= 1 );
+
+        const signed_block_header block_header = get_block_header( start_block_num );
+        const time_point_sec& min_timestamp = block_header.timestamp;
+
         vector<slot_record> slot_records;
+        slot_records.reserve( count );
+
         for( auto iter = my->_slot_record_db.begin(); iter.valid(); ++iter )
         {
             const auto slot_record = iter.value();
-            if( slot_record.block_producer_id == delegate_id )
-                slot_records.push_back( slot_record );
+            if( slot_record.start_time < min_timestamp || slot_record.block_producer_id != delegate_id )
+                continue;
+
+            slot_records.push_back( slot_record );
+            if( slot_records.size() >= count )
+                break;
         }
+
         return slot_records;
     }
 
@@ -2691,13 +2708,17 @@ namespace bts { namespace blockchain {
            }
        }
 
-       if( type == null_order || type == cover_order )
-       {
+       if( type == null_order || type == cover_order ) {
            for( auto itr = my->_collateral_db.begin(); itr.valid(); ++itr )
            {
                const auto collateral_rec = itr.value();
                const auto order_rec = order_record( collateral_rec.payoff_balance );
-               const auto order = market_order( cover_order, itr.key(), order_rec, collateral_rec.collateral_balance );
+               const auto order = market_order( cover_order,
+                                                itr.key(),
+                                                order_rec,
+                                                collateral_rec.collateral_balance,
+                                                collateral_rec.interest_rate,
+                                                collateral_rec.expiration );
                if( filter( order ) )
                {
                    orders.push_back( order );
@@ -2744,10 +2765,10 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_slot_record( const slot_record& r )
    {
-      if( !r.block_produced || (r.block_id != block_id_type()) ) /* If in valid state */
-         my->_slot_record_db.store( r.start_time, r );
-      else
-         my->_slot_record_db.remove( r.start_time );
+       if( r.is_null() )
+           my->_slot_record_db.remove( r.start_time );
+       else
+           my->_slot_record_db.store( r.start_time, r );
    }
 
    oslot_record chain_database::get_slot_record( const time_point_sec& start_time )const

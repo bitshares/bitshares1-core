@@ -1,4 +1,5 @@
 #include <bts/blockchain/market_engine.hpp>
+#include <fc/real128.hpp>
 
 namespace bts { namespace blockchain { namespace detail {
 
@@ -72,7 +73,7 @@ namespace bts { namespace blockchain { namespace detail {
           if( quote_asset->is_market_issued() )
           {
               const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-              if( (!market_stat.valid() || !market_stat->last_feed_price.valid()) && !_feed_price.valid() )
+              if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
                   FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
           }
 
@@ -84,7 +85,7 @@ namespace bts { namespace blockchain { namespace detail {
             idump( (_current_bid)(_current_ask) );
 
             // Make sure that at least one order was matched every time we enter the loop
-            FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop" );
+            FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop!" );
             last_orders_filled = _orders_filled;
 
             // Initialize the market transaction
@@ -275,7 +276,8 @@ namespace bts { namespace blockchain { namespace detail {
           // Update market status and market history
           {
               omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-              if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id, _feed_price );
+              if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+              market_stat->update_feed_price( _feed_price );
               market_stat->last_error.reset();
               _pending_state->store_market_status( *market_stat );
 
@@ -292,7 +294,8 @@ namespace bts { namespace blockchain { namespace detail {
     {
         wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
         omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
-        if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id, _feed_price );
+        if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
+        market_stat->update_feed_price( _feed_price );
         market_stat->last_error = e;
         _prior_state->store_market_status( *market_stat );
     }
@@ -711,14 +714,32 @@ namespace bts { namespace blockchain { namespace detail {
           }
   }
 
-  asset market_engine::get_cover_interest(const asset& principle, const price& apr, uint32_t age_seconds)
+  asset market_engine::get_cover_interest(const asset& amount_paid, const price& apr, uint32_t age_seconds)
   {
+      // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
+      // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
+      // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE 
+      fc::real128 total_paid( amount_paid.amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+      fc::real128 iapr = apr_n / apr_d;
+      fc::real128 age_sec(age_seconds);
+      fc::real128 sec_per_year(365 * 24 * 60 * 60);
+      fc::real128 percent_of_year = age_sec / sec_per_year;
+
+      fc::real128 delta_principle = total_paid / ( fc::real128(1) + iapr * percent_of_year );
+      fc::real128 interest_paid   = total_paid - delta_principle;
+
+      return asset( interest_paid.to_uint64(), amount_paid.asset_id );
+
+      /*
      asset annual_interest = principle * apr;
      annual_interest.asset_id = principle.asset_id;
      annual_interest.amount *= age_seconds;
-     annual_interest.amount /= (365 * 24 * 60 * 60); // seconds per year
+     annual_interest.amount /= ; // seconds per year
 
      return annual_interest;
+     */
   }
 
   asset market_engine::get_current_cover_debt() const

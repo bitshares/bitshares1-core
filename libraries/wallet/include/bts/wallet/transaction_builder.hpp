@@ -72,12 +72,14 @@ namespace bts { namespace wallet {
       /// @{
       void deduct_balance(const blockchain::address& account_to_charge, const blockchain::asset& amount)
       {
-         FC_ASSERT( amount.amount >= 0, "Don't deduct a negative amount. Call credit_balance instead." );
+         FC_ASSERT( amount.amount >= 0, "Don't deduct a negative amount. Call credit_balance instead.",
+                    ("amount", amount) );
          outstanding_balances[std::make_pair(account_to_charge, amount.asset_id)] -= amount.amount;
       }
       void credit_balance(const blockchain::address& account_to_credit, const blockchain::asset& amount)
       {
-         FC_ASSERT( amount.amount >= 0, "Don't credit a negative amount. Call deduct_balance instead." );
+         FC_ASSERT( amount.amount >= 0, "Don't credit a negative amount. Call deduct_balance instead.",
+                    ("amount", amount) );
          outstanding_balances[std::make_pair(account_to_credit, amount.asset_id)] += amount.amount;
       }
       /// @}
@@ -110,7 +112,7 @@ namespace bts { namespace wallet {
       transaction_builder& update_account_registration(const wallet_account_record& account,
                                                        optional<variant> public_data,
                                                        optional<private_key_type> active_key,
-                                                       optional<share_type> delegate_pay,
+                                                       optional<uint8_t> delegate_pay,
                                                        optional<wallet_account_record> paying_account);
       /**
        * @brief Cancel a single order

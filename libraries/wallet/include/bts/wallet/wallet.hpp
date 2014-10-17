@@ -486,9 +486,10 @@ namespace bts { namespace wallet {
          bool                               is_sending_address( const address& addr )const;
          bool                               is_receive_address( const address& addr )const;
 
-         account_balance_record_summary_type get_account_balance_records( const string& account_name = "" )const;
-         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "" )const;
-         account_balance_summary_type       get_account_balances( const string& account_name = "" )const;
+         account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true )const;
+         account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true )const;
+         account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true )const;
+
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
@@ -511,6 +512,7 @@ namespace bts { namespace wallet {
          int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
 
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
+         optional<variant_object>           verify_titan_deposit( const string& transaction_id_prefix );
 
          vote_summary get_vote_proportion( const string& account_name );
 

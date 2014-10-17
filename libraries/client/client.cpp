@@ -1983,13 +1983,18 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
-      return _wallet->recover_accounts(accounts_to_recover, maximum_number_of_attempts);
+      return _wallet->recover_accounts( accounts_to_recover, maximum_number_of_attempts );
     }
 
-    wallet_transaction_record detail::client_impl::wallet_recover_transaction(
-            const string& transaction_id_prefix, const string& recipient_account )
+    wallet_transaction_record detail::client_impl::wallet_recover_transaction( const string& transaction_id_prefix,
+                                                                               const string& recipient_account )
     {
         return _wallet->recover_transaction( transaction_id_prefix, recipient_account );
+    }
+
+    optional<variant_object> detail::client_impl::wallet_verify_titan_deposit( const string& transaction_id_prefix )
+    {
+        return _wallet->verify_titan_deposit( transaction_id_prefix );
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer(
@@ -2564,10 +2569,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return usage;
     }
 
-    void detail::client_impl::mail_store_message(const address& owner, const mail::message& message)
+    void detail::client_impl::mail_store_message(const mail::message& message)
     {
       FC_ASSERT(_mail_server, "Mail server not enabled!");
-      _mail_server->store(owner, message);
+      _mail_server->store(message);
     }
 
     mail::inventory_type detail::client_impl::mail_fetch_inventory(const address &owner,
@@ -2606,6 +2611,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     {
       FC_ASSERT(_mail_client);
       _mail_client->retry_message(message_id);
+    }
+
+    void detail::client_impl::mail_cancel_message(const message_id_type &message_id)
+    {
+      FC_ASSERT(_mail_client);
+      _mail_client->cancel_message(message_id);
     }
 
     void detail::client_impl::mail_remove_message(const message_id_type &message_id)
@@ -3505,12 +3516,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
    account_balance_summary_type client_impl::wallet_account_balance( const string& account_name )const
    {
-      return _wallet->get_account_balances( account_name );
+      return _wallet->get_account_balances( account_name, false );
    }
 
    account_balance_id_summary_type client_impl::wallet_account_balance_ids( const string& account_name )const
    {
-      return _wallet->get_account_balance_ids( account_name );
+      return _wallet->get_account_balance_ids( account_name, false );
    }
 
    account_balance_summary_type client_impl::wallet_account_yield( const string& account_name )const
@@ -3867,11 +3878,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->get_forks_list();
    }
 
-   vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name )const
+   vector<slot_record> client_impl::blockchain_get_delegate_slot_records( const string& delegate_name,
+                                                                          int64_t start_block_num, uint32_t count )const
    {
-      auto delegate_record = _chain_db->get_account_record( delegate_name );
+      const auto delegate_record = _chain_db->get_account_record( delegate_name );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate(), "${n} is not a delegate!", ("n",delegate_name) );
-      return _chain_db->get_delegate_slot_records( delegate_record->id );
+      return _chain_db->get_delegate_slot_records( delegate_record->id, start_block_num, count );
    }
 
    string client_impl::blockchain_get_block_signee( const string& block )const
@@ -4013,15 +4025,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
            api_market_status api_status( *status );
            price current_feed_price;
-           price last_feed_price;
+           price last_valid_feed_price;
 
            if( status->current_feed_price.valid() )
                current_feed_price = *status->current_feed_price;
-           if( status->last_feed_price.valid() )
-               last_feed_price = *status->last_feed_price;
+           if( status->last_valid_feed_price.valid() )
+               last_valid_feed_price = *status->last_valid_feed_price;
 
            api_status.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
-           api_status.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
+           api_status.last_valid_feed_price = _chain_db->to_pretty_price_double( last_valid_feed_price );
 
            statuses.push_back( api_status );
        }
@@ -4045,15 +4057,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
       api_market_status result(*oresult);
       price current_feed_price;
-      price last_feed_price;
+      price last_valid_feed_price;
 
       if( oresult->current_feed_price.valid() )
           current_feed_price = *oresult->current_feed_price;
-      if( oresult->last_feed_price.valid() )
-          last_feed_price = *oresult->last_feed_price;
+      if( oresult->last_valid_feed_price.valid() )
+          last_valid_feed_price = *oresult->last_valid_feed_price;
 
       result.current_feed_price = _chain_db->to_pretty_price_double( current_feed_price );
-      result.last_feed_price = _chain_db->to_pretty_price_double( last_feed_price );
+      result.last_valid_feed_price = _chain_db->to_pretty_price_double( last_valid_feed_price );
       return result;
    }
 

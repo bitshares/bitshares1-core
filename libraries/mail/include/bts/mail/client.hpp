@@ -27,7 +27,8 @@ public:
 
         received,               //The message is an incoming message
 
-        failed                  //The message could not be processed
+        failed,                 //The message could not be processed
+        canceled                //The message was canceled by the user
     };
 
     client(wallet::wallet_ptr wallet, blockchain::chain_database_ptr chain);
@@ -36,6 +37,7 @@ public:
     void open(const fc::path& data_dir);
 
     void retry_message(message_id_type message_id);
+    void cancel_message(message_id_type message_id);
     void remove_message(message_id_type message_id);
     void archive_message(message_id_type message_id_type);
 
@@ -92,6 +94,7 @@ typedef std::shared_ptr<client> mail_client_ptr;
 }
 
 FC_REFLECT_TYPENAME(bts::mail::client::mail_status)
-FC_REFLECT_ENUM(bts::mail::client::mail_status, (submitted)(proof_of_work)(transmitting)(accepted)(received)(failed))
+FC_REFLECT_ENUM(bts::mail::client::mail_status, (submitted)(proof_of_work)
+                (transmitting)(accepted)(received)(failed)(canceled))
 FC_REFLECT(bts::mail::email_header, (id)(sender)(recipient)(subject)(timestamp))
 FC_REFLECT(bts::mail::email_record, (header)(content)(mail_servers)(failure_reason))

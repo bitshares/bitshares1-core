@@ -83,7 +83,7 @@ namespace bts { namespace blockchain {
     int digit = *c - '0';
     if (digit >= 0 && digit <= 9)
     {
-      int64_t int_part = digit;
+      uint64_t int_part = digit;
       ++c;
       digit = *c - '0';
       while (digit >= 0 && digit <= 9)
