@@ -58,10 +58,9 @@ namespace bts { namespace blockchain {
       new_record.set_active_key( now, this->active_key );
       if( this->is_delegate() )
       {
-          FC_ASSERT( this->delegate_pay_rate >= 0 );
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
+          const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
           eval_state.required_fees += asset( (max_reg_fee * delegate_pay_rate) / 100, 0 );
       }
       new_record.meta_data = this->meta_data;
@@ -162,7 +161,6 @@ namespace bts { namespace blockchain {
 
       if( this->is_delegate() )
       {
-         FC_ASSERT( this->delegate_pay_rate >= 0 );
          if( current_record->is_delegate() )
          {
             // Delegates cannot increase their pay rate
@@ -173,7 +171,7 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-            auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
+            const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
             eval_state.required_fees += asset( (max_reg_fee * this->delegate_pay_rate) / 100, 0 );
          }
       }
