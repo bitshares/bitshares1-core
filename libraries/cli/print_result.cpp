@@ -1072,7 +1072,11 @@ namespace bts { namespace cli {
           << "\nSubject:      " << content.subject
           << (content.reply_to != mail::message_id_type()? "\nIn Reply To:  " + content.reply_to.str() : std::string())
           << "\n\n"
-          << content.body << "\n";
+          << content.body << "\n\n"
+          << "===  End  Message ===\n\n";
+
+      if (email.failure_reason && !email.failure_reason->empty())
+        out << "Message Failed to Send: " << *email.failure_reason << "\n";
       break;
     default:
       out << fc::json::to_pretty_string(result);

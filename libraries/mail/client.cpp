@@ -657,9 +657,14 @@ public:
                             mail_archive_record record(std::move(ciphertext), header, account.account_address);
                             bool new_mail = false;
 
-                            if (auto optional_record = _archive.fetch_optional(email.second))
+                            if (auto optional_record = _archive.fetch_optional(email.second)) {
                                 record = *optional_record;
-                            else
+                                if (record.status == client::accepted) {
+                                    //We sent this message, but it's still newly received mail
+                                    new_mail = true;
+                                    record.status = client::received;
+                                }
+                            } else
                                 new_mail = true;
 
                             record.mail_servers.insert(server);
