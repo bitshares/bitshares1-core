@@ -68,7 +68,6 @@ upnp_service::~upnp_service()
   }
 }
 
-
 void upnp_service::map_port( uint16_t local_port )
 {
   std::string port = fc::variant(local_port).as_string();
