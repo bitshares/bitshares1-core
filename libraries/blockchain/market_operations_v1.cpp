@@ -41,7 +41,7 @@ void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )
    auto market_stat = eval_state._current_state->get_market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
 
    if( !market_stat )
-      market_stat = market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id, optional<price>() );
+      market_stat = market_status( ask_index.order_price.quote_asset_id, ask_index.order_price.base_asset_id );
    market_stat->ask_depth += delta_amount.amount;
 
    eval_state._current_state->store_market_status( *market_stat );
@@ -110,7 +110,7 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )
 
    auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
    if( !market_stat )
-      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, optional<price>() );
+      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
    market_stat->bid_depth += delta_amount.amount;
 
@@ -217,7 +217,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
 
    auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
    if( !market_stat )
-      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, optional<price>() );
+      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
    if( amount > 0 )
    {
@@ -268,7 +268,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
 
    auto market_stat = eval_state._current_state->get_market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
    if( !market_stat )
-      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id, optional<price>() );
+      market_stat = market_status( short_index.order_price.quote_asset_id, short_index.order_price.base_asset_id );
 
    if( market_stat->center_price.quote_asset_id != 0 )
    {

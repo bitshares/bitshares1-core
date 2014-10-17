@@ -47,7 +47,7 @@ namespace bts { namespace blockchain { namespace detail {
              asset trading_volume(0, base_id);
 
              omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-             if( !market_stat ) market_stat = market_status( quote_id, base_id, optional<price>() );
+             if( !market_stat ) market_stat = market_status( quote_id, base_id );
 
              price max_short_bid;
              price min_cover_ask;
@@ -448,7 +448,7 @@ namespace bts { namespace blockchain { namespace detail {
            wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
            auto market_state = _prior_state->get_market_status( quote_id, base_id );
            if( !market_state )
-              market_state = market_status( quote_id, base_id, optional<price>() );
+              market_state = market_status( quote_id, base_id );
            market_state->last_error = e;
            _prior_state->store_market_status( *market_state );
         }
