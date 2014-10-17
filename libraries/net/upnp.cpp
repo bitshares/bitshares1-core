@@ -57,7 +57,7 @@ upnp_service::~upnp_service()
       my->upnp_thread.quit();
       if( my->map_port_complete.valid() )
       {
-         my->map_port_complete.wait();
+         my->map_port_complete.cancel_and_wait();
       }
   } 
   catch ( const fc::canceled_exception& )
