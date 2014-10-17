@@ -347,6 +347,8 @@ namespace bts { namespace blockchain {
          asset                              calculate_debt( const asset_id_type& asset_id )const;
          asset                              unclaimed_genesis();
 
+         void                               dump_state( const fc::path& path )const;
+
          // TODO: Only call on pending chain state
          virtual void                       set_market_dirty( const asset_id_type& quote_id, const asset_id_type& base_id )override
          {

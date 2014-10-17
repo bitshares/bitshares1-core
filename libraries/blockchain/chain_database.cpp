@@ -3029,14 +3029,14 @@ namespace bts { namespace blockchain {
          my->_burn_db.store( br, br );
    }
 
-   oburn_record    chain_database::fetch_burn_record( const burn_record_key& key )const
+   oburn_record chain_database::fetch_burn_record( const burn_record_key& key )const
    {
       auto oval = my->_burn_db.fetch_optional( key );
       if( oval )
          return burn_record( key, *oval );
       return oburn_record();
    }
-   vector<burn_record>  chain_database::fetch_burn_records( const string& account_name )const
+   vector<burn_record> chain_database::fetch_burn_records( const string& account_name )const
    { try {
       vector<burn_record> results;
       auto opt_account_record = get_account_record( account_name );
@@ -3081,5 +3081,106 @@ namespace bts { namespace blockchain {
       return asset_result;
    }
 
-} } // bts::blockchain
+   void chain_database::dump_state( const fc::path& path )const
+   { try {
+       const auto dir = fc::absolute( path );
+       FC_ASSERT( !fc::exists( dir ) );
+       fc::create_directories( dir );
 
+       fc::path next_path;
+       ulog( "This will take a while..." );
+
+       next_path = dir / "_market_transactions_db.json";
+       my->_market_transactions_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_slate_db.json";
+       my->_slate_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_property_db.json";
+       my->_property_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_block_num_to_id_db.json";
+       my->_block_num_to_id_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_block_id_to_block_record_db.json";
+       my->_block_id_to_block_record_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_block_id_to_block_data_db.json";
+       my->_block_id_to_block_data_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_id_to_transaction_record_db.json";
+       my->_id_to_transaction_record_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_asset_db.json";
+       my->_asset_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_balance_db.json";
+       my->_balance_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_burn_db.json";
+       my->_burn_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_account_db.json";
+       my->_account_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_address_to_account_db.json";
+       my->_address_to_account_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_account_index_db.json";
+       my->_account_index_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_symbol_index_db.json";
+       my->_symbol_index_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_delegate_vote_index_db.json";
+       my->_delegate_vote_index_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_slot_record_db.json";
+       my->_slot_record_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_ask_db.json";
+       my->_ask_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_bid_db.json";
+       my->_bid_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_short_db.json";
+       my->_short_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_collateral_db.json";
+       my->_collateral_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_feed_db.json";
+       my->_feed_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_market_status_db.json";
+       my->_market_status_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_market_history_db.json";
+       my->_market_history_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+   } FC_CAPTURE_AND_RETHROW( (path) ) }
+
+} } // bts::blockchain

@@ -3903,6 +3903,11 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return rec->active_key() == fc::ecc::public_key(signature, hash);
    }
 
+   void client_impl::blockchain_dump_state( const string& path )const
+   {
+       _chain_db->dump_state( fc::path( path ) );
+   }
+
    void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)
    {
      bts::blockchain::start_simulated_time(starting_time);
