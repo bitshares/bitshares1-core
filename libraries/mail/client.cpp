@@ -681,7 +681,11 @@ public:
                             email_header header;
                             header.id = ciphertext.id();
                             if (plaintext.type == mail::email) {
-                                header.sender = _wallet->get_key_label(plaintext.as<signed_email_message>().from());
+                                try {
+                                   header.sender = _wallet->get_key_label(plaintext.as<signed_email_message>().from());
+                                } catch (fc::exception& e) {
+                                   header.sender = "INVALID SIGNATURE";
+                                }
                                 header.subject = plaintext.as<signed_email_message>().subject;
                             }
                             header.recipient = account.name;
