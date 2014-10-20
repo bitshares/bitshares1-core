@@ -391,11 +391,25 @@ public:
 
             vector<fc::future<void>> transmit_tasks;
             transmit_tasks.reserve(email.mail_servers.size());
+            std::unordered_set<ip::endpoint> successful_servers;
+
             for (ip::endpoint server : email.mail_servers) {
-                transmit_tasks.push_back(fc::async([=] {
+                transmit_tasks.push_back(fc::async([&] {
                     auto email = _processing_db.fetch(message_id);
                     tcp_socket sock;
-                    sock.connect_to(server);
+
+                    try {
+                        sock.connect_to(server);
+                    } catch (fc::exception& e) {
+                        if (successful_servers.empty()) {
+                            //Mark as failed only if no servers have succeeded yet.
+                            //If it later succeeds, the status will be updated accordingly.
+                            email.failure_reason = e.what();
+                            email.status = client::failed;
+                            _processing_db.store(message_id, email);
+                        }
+                        return;
+                    }
 
                     mutable_variant_object request;
                     request["id"] = 0;
@@ -411,14 +425,17 @@ public:
                         wlog("Server response has wrong ID... attempting to press on. Expected: 0; got: ${r}",
                              ("r", response["id"]));
                     if (response.contains("error")) {
+                        //Server actively rejects email. Something is definitely wrong; declare failure.
                         email.status = client::failed;
-                        email.failure_reason = response["error"].as<variant_object>()["data"]
-                                                                .as<variant_object>()["message"]
-                                                                .as_string();
-                        if (email.failure_reason == message_already_stored().name())
+                        fc::exception except = response["error"].as<fc::exception>();
+                        email.failure_reason = except.what();
+                        if (email.failure_reason == message_already_stored().what()) {
                             //Message is stored! Don't store email; there's no error. We're done.
+                            wlog("Message ${id} already stored on server ${server}.",
+                                 ("id", message_id)("server", server));
+                            successful_servers.insert(server);
                             return;
-                        else if (email.failure_reason == timestamp_too_old().name()) {
+                        } else if (email.failure_reason == timestamp_too_old().what()) {
                             //Redo the proof-of-work
                             email.status = client::proof_of_work;
                             email.content.nonce++;
@@ -442,6 +459,7 @@ public:
                         wlog("Server response has wrong ID... attempting to press on. Expected: 1; got: ${r}",
                              ("r", response["id"]));
                     if (response["result"].as<message>().id() != email.content.id()) {
+                        //This should only happen in case of ripemd160 collision, I think... Hopefully never.
                         email.status = client::failed;
                         email.failure_reason = "Message saved to server, but server responded with "
                                                "another message when we requested it.";
@@ -451,17 +469,21 @@ public:
                         sock.close();
                         return;
                     }
+
+                    successful_servers.insert(server);
                 }, "Mail client transmitter"));
             }
 
             auto timeout_future = fc::schedule([=] {
                 auto email = _processing_db.fetch(message_id);
-                if (email.status == client::failed)
-                    return;
-                ulog("Email ${id}: Timeout when transmitting", ("id", email.id));
-                email.status = client::failed;
-                email.failure_reason = "Timed out while transmitting message.";
-                _processing_db.store(email.id, email);
+                //Timed out. If any servers succeeded, we'll take the win. If no server succeeded
+                //and the email didn't already get pushed back in the pipeline, fail it.
+                if (successful_servers.empty() && email.status >= client::transmitting) {
+                   ulog("Email ${id}: Timeout when transmitting", ("id", email.id));
+                   email.status = client::failed;
+                   email.failure_reason = "Timed out while transmitting message.";
+                   _processing_db.store(email.id, email);
+                }
                 for (auto task_future : transmit_tasks)
                     task_future.cancel();
             }, fc::time_point::now() + fc::seconds(10), "Mail client transmitter timeout");
@@ -478,9 +500,11 @@ public:
             }
             timeout_future.cancel("Finished transmitting");
 
-            _processing_db.store(message_id, email);
-            if (email.status != client::failed)
+            if (!successful_servers.empty()) {
+                email.mail_servers = successful_servers;
+                _processing_db.store(message_id, email);
                 finalize_message(message_id);
+            }
         }, "Mail client transmit message");
     }
 
@@ -574,7 +598,7 @@ public:
             _inbox.remove(message_id);
     }
 
-    int check_new_mail() {
+    int check_new_mail(bool get_old_messages) {
         auto accounts = _wallet->list_my_accounts();
         _messages_in = 0;
 
@@ -585,7 +609,8 @@ public:
 
             auto last_check_time = account.registration_date;
             fc::time_point_sec check_time = _chain->now();
-            if (auto op = _property_db.fetch_optional("last_fetch/" + account.name))
+            fc::optional<variant> op;
+            if (!get_old_messages && (op = _property_db.fetch_optional("last_fetch/" + account.name)))
                 last_check_time = op->as<fc::time_point_sec>();
 
             for (ip::endpoint server : servers) {
@@ -596,7 +621,14 @@ public:
                     //No deduplication of effort is done; i.e. if a given message is on three servers, we'll download
                     //it three times.
                     tcp_socket sock;
-                    sock.connect_to(server);
+
+                    try {
+                        sock.connect_to(server);
+                    } catch (fc::exception& e) {
+                        elog("Failed to connect to mail server ${server}: ${e}",
+                             ("server", server)("e", e.to_detail_string()));
+                        return;
+                    }
 
                     int received = BTS_MAIL_CLIENT_MAX_INVENTORY_SIZE;
                     while (received == BTS_MAIL_CLIENT_MAX_INVENTORY_SIZE) {
@@ -755,10 +787,10 @@ void client::archive_message(message_id_type message_id_type)
     my->archive_message(message_id_type);
 }
 
-int client::check_new_messages()
+int client::check_new_messages(bool get_old_messages)
 {
     FC_ASSERT(my->is_open());
-    int new_messages = my->check_new_mail();
+    int new_messages = my->check_new_mail(get_old_messages);
     if (new_messages > 0)
         new_mail_notifier(new_messages);
     return new_messages;
@@ -871,13 +903,12 @@ email_header::email_header(const detail::mail_archive_record& archive_record)
 
 email_record::email_record(const detail::mail_record& processing_record)
     : header(processing_record),
-      content(processing_record.content)
+      content(processing_record.content),
+      mail_servers(processing_record.mail_servers)
 {
     header.id = processing_record.id;
     header.sender = processing_record.sender;
     header.recipient = processing_record.recipient;
-    if (processing_record.status >= client::proof_of_work && processing_record.status != client::failed)
-        mail_servers = processing_record.mail_servers;
     if (processing_record.status == client::failed)
         failure_reason = processing_record.failure_reason;
 }

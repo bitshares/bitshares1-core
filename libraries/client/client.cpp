@@ -2631,10 +2631,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       _mail_client->archive_message(message_id);
     }
 
-    int detail::client_impl::mail_check_new_messages()
+    int detail::client_impl::mail_check_new_messages(bool get_all)
     {
       FC_ASSERT(_mail_client);
-      return _mail_client->check_new_messages();
+      return _mail_client->check_new_messages(get_all);
     }
 
     mail::email_record detail::client_impl::mail_get_message(const mail::message_id_type& message_id) const

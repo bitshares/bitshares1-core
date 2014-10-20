@@ -41,7 +41,7 @@ public:
     void remove_message(message_id_type message_id);
     void archive_message(message_id_type message_id_type);
 
-    int check_new_messages();
+    int check_new_messages(bool get_old_messages = false);
 
     std::multimap<mail_status, message_id_type> get_processing_messages();
     std::multimap<mail_status, message_id_type> get_archive_messages();
