@@ -20,43 +20,41 @@ default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> help blockchain_get_delegate_slot_records
 Usage:
-blockchain_get_delegate_slot_records <delegate_name>                                                  Query the block production slot records for a particular delegate
+blockchain_get_delegate_slot_records <delegate_name> [start_block_num] [count]                        Query the block production slot records for a particular delegate
 Query the block production slot records for a particular delegate
 
 Parameters:
   delegate_name (string, required): Delegate whose block production slot records to query
+  start_block_num (int64_t, optional, defaults to "-1000"): Only return slot records after the specified block's timestamp; negative to start backwards from the current head block
+  count (uint32_t, optional, defaults to "10"): Return at most count slot records
 
 Returns:
   slot_records_list
-default (unlocked) >>> blockchain_get_delegate_slot_records delegate42
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate42 1
 [{
     "start_time": "20140620T144030",
     "block_producer_id": 43,
-    "block_produced": true,
     "block_id": "9dfe96a1e0e8be4a74270713104833d6c228c415"
   }
 ]
-default (unlocked) >>> blockchain_get_delegate_slot_records delegate43
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate43 1
 [{
     "start_time": "20140620T144040",
     "block_producer_id": 44,
-    "block_produced": true,
     "block_id": "fa34dd5da95c835f06328076dfbb3d0640c62aa3"
   }
 ]
-default (unlocked) >>> blockchain_get_delegate_slot_records delegate44
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate44 -1
 [{
     "start_time": "20140620T144050",
     "block_producer_id": 45,
-    "block_produced": true,
     "block_id": "22d4712b8bef986c00dd2679b471b40b6af024d1"
   }
 ]
-default (unlocked) >>> blockchain_get_delegate_slot_records delegate45
+default (unlocked) >>> blockchain_get_delegate_slot_records delegate45 4
 [{
     "start_time": "20140620T144100",
     "block_producer_id": 46,
-    "block_produced": true,
     "block_id": "ab2b59c1781df451e31d6bf89109e7f3fa242ffc"
   }
 ]
