@@ -1899,60 +1899,49 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
-   uint32_t wallet::regenerate_keys( const string& account_name, uint32_t count )
+   uint32_t wallet::regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate )
    { try {
-      uint32_t regenerated_keys = 0;
-      for( uint32_t i = 0; i < count; ++i )
-      {
-         fc::oexception regenerate_key_error;
-         try {
-            auto key = my->_wallet_db.get_private_key( my->_wallet_password, i );
-            auto addr = address( key.get_public_key() );
-            if( !my->_wallet_db.has_private_key( addr ) )
-            {
-               import_private_key( key, account_name );
-               ++regenerated_keys;
-            }
-         } catch ( const fc::exception& e )
-         {
-            regenerate_key_error = e;
-         }
+       // Update local account records with latest global state
+       my->scan_registered_accounts();
 
-         if (regenerate_key_error)
-            ulog( "${e}", ("e", regenerate_key_error->to_detail_string()) );
-      }
+       uint32_t total_regenerated_key_count = 0;
 
-      const auto& accs = my->_wallet_db.get_accounts();
+       ulog( "Regenerating wallet child keys and importing into account: ${name}", ("name",account_name) );
+       for( uint32_t key_index = 0; key_index < num_keys_to_regenerate; ++key_index )
+       {
+           fc::oexception regenerate_key_error;
+           try
+           {
+               const private_key_type private_key = my->_wallet_db.get_private_key( my->_wallet_password, key_index );
+               const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
+               bool added_new_key = !key_record.valid() || !key_record->has_private_key();
+               import_private_key( private_key, account_name );
+               if( added_new_key )
+                   ++total_regenerated_key_count;
+           }
+           catch( const fc::exception& e )
+           {
+               regenerate_key_error = e;
+           }
 
-      // generate count keys for each of our accounts.
-      for( const auto& item : accs )
-      {
-         if ( item.second.is_my_account )
-         {
-            for( uint32_t i = 0; i < count; ++i )
-            {
-               my->_wallet_db.new_private_key( my->_wallet_password, item.second.account_address, true );
-               ++regenerated_keys;
-            }
-         }
-      }
+           if( regenerate_key_error.valid() )
+               ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
+       }
 
-      auto next_child_idx = my->_wallet_db.get_property( next_child_key_index );
-      int32_t next_child_index = 0;
-      if( next_child_idx.is_null() )
-      {
-         next_child_index = 1;
-      }
-      else
-      {
-         next_child_index = next_child_idx.as<int32_t>();
-      }
-      if( next_child_index < count )
-         my->_wallet_db.set_property( property_enum::next_child_key_index, count );
+       const owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
+       FC_ASSERT( account_record.valid() && account_record->is_my_account );
 
-     if( regenerated_keys )
-       scan_chain( 0, -1, true );
-      return regenerated_keys;
+       ulog( "Regenerating account child keys for account: ${name}", ("name",account_name) );
+       for( uint32_t key_index = 0; key_index < num_keys_to_regenerate; ++key_index )
+       {
+           const bool added_new_key = my->_wallet_db.regenerate_account_child_key( my->_wallet_password,
+                                                                                   account_record->account_address, key_index );
+           if( added_new_key )
+               ++total_regenerated_key_count;
+       }
+
+       ulog( "Key regeneration may leave the wallet in an inconsistent state. It is recommended to create a new wallet and transfer all funds." );
+       return total_regenerated_key_count;
    } FC_CAPTURE_AND_RETHROW() }
 
    int32_t wallet::recover_accounts( int32_t number_of_accounts, int32_t max_number_of_attempts )

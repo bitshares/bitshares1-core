@@ -25,6 +25,10 @@ namespace bts { namespace wallet {
                                              const address& parent_account_address = address(),
                                              bool store_key = true );
 
+         bool               regenerate_account_child_key( const fc::sha512& password,
+                                                          const address& account_address,
+                                                          uint32_t key_index );
+
          void        set_property( property_enum property_id, const fc::variant& v );
          fc::variant get_property( property_enum property_id )const;
 

@@ -268,14 +268,19 @@ namespace bts { namespace wallet {
 
       const auto master_ext_priv_key = wallet_master_key->decrypt_key( password );
       const auto key_index = new_key_child_index( parent_account_address );
-      auto new_priv_key = master_ext_priv_key.child( key_index );
-      if( key_index >= 10000 )
+      private_key_type new_priv_key;
+      do
       {
-          fc::sha256::encoder enc;
-          fc::raw::pack( enc, parent_account_address );
-          fc::raw::pack( enc, key_index );
-          new_priv_key = master_ext_priv_key.child( enc.result() );
+          new_priv_key = master_ext_priv_key.child( key_index );
+          if( key_index >= 10000 )
+          {
+              fc::sha256::encoder enc;
+              fc::raw::pack( enc, parent_account_address );
+              fc::raw::pack( enc, key_index );
+              new_priv_key = master_ext_priv_key.child( enc.result() );
+          }
       }
+      while( lookup_key( address( new_priv_key.get_public_key() ) ).valid() );
 
       if( !store_key )
         return new_priv_key;
@@ -291,6 +296,36 @@ namespace bts { namespace wallet {
 
       this->store_key( new_key );
       return new_priv_key;
+   }
+
+   bool wallet_db::regenerate_account_child_key( const fc::sha512& password,
+                                                 const address& account_address,
+                                                 uint32_t key_index )
+   {
+      FC_ASSERT( wallet_master_key.valid() );
+      const extended_private_key master_private_key = wallet_master_key->decrypt_key( password );
+
+      fc::sha256::encoder enc;
+      fc::raw::pack( enc, account_address );
+      fc::raw::pack( enc, key_index );
+
+      const private_key_type new_private_key = master_private_key.child( enc.result() );
+      const public_key_type new_public_key = new_private_key.get_public_key();
+      const address new_key_address( new_public_key );
+
+      owallet_key_record key_record = lookup_key( new_key_address );
+      bool already_have_key = key_record.valid() && key_record->has_private_key();
+      if( !key_record.valid() )
+          key_record = key_data();
+
+      key_record->account_address = account_address;
+      key_record->public_key = new_public_key;
+      key_record->encrypt_private_key( password, new_private_key );
+      key_record->gen_seq_number = key_index;
+
+      store_key( *key_record );
+
+      return !already_have_key;
    }
 
    void wallet_db::set_property( property_enum property_id, const variant& v )
