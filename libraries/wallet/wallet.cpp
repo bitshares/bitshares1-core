@@ -241,7 +241,13 @@ namespace detail {
         {
            scan_block( block_num, private_keys, now );
 #ifdef BTS_TEST_NETWORK
-           scan_block_experimental( block_num, account_keys, account_balances, account_names );
+           try
+           {
+               scan_block_experimental( block_num, account_keys, account_balances, account_names );
+           }
+           catch( ... )
+           {
+           }
 #endif
            _scan_progress = float(block_num-start)/(min_end-start+1);
            self->set_last_scanned_block_number( block_num );
@@ -1908,6 +1914,7 @@ namespace detail {
        // Update local account records with latest global state
        my->scan_registered_accounts();
 
+       ulog( "This may take a while..." );
        uint32_t total_regenerated_key_count = 0;
 
        ulog( "Regenerating wallet child keys and importing into account: ${name}", ("name",account_name) );
