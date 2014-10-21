@@ -37,7 +37,7 @@ namespace bts { namespace wallet {
          void store_key( const key_data& k );
          void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );
-         void store_account( const wallet_account_record& );
+         void store_account( wallet_account_record& );
          void cache_memo( const memo_status& memo,
                           const private_key_type& account_key,
                           const fc::sha512& password );
@@ -117,18 +117,16 @@ namespace bts { namespace wallet {
          map< string, int32_t >                                           name_to_account_wallet_record_index;
 
          void remove_item( int32_t index );
-         /**
-          *  This is private
-          */
+
          template<typename T>
-         void store_record( T record_to_store, bool sync = false )
+         void store_record( T& record_to_store )
          {
             if( record_to_store.wallet_record_index == 0 )
                record_to_store.wallet_record_index = new_wallet_record_index();
-            store_generic_record( generic_wallet_record( record_to_store ), sync );
+            store_generic_record( generic_wallet_record( record_to_store ) );
          }
 
-        void store_generic_record( const generic_wallet_record& record, bool sync = false );
+        void store_generic_record( const generic_wallet_record& record );
 
         friend class detail::wallet_db_impl;
         unique_ptr<detail::wallet_db_impl> my;

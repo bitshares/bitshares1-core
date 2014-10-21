@@ -16,12 +16,12 @@ namespace bts { namespace wallet {
            wallet_db*                                        self;
            bts::db::level_map<int32_t,generic_wallet_record> _records;
 
-           void store_generic_record( const generic_wallet_record& record, bool sync )
+           void store_generic_record( const generic_wallet_record& record )
            { try {
                auto index = record.get_wallet_record_index();
                FC_ASSERT( index != 0 );
                FC_ASSERT( _records.is_open() );
-               _records.store( index, record, sync );
+               _records.store( index, record );
                load_generic_record( record );
            } FC_CAPTURE_AND_RETHROW( (record) ) }
 
@@ -206,10 +206,10 @@ namespace bts { namespace wallet {
        return my->_records.is_open() && wallet_master_key.valid();
    }
 
-   void wallet_db::store_generic_record( const generic_wallet_record& record, bool sync )
+   void wallet_db::store_generic_record( const generic_wallet_record& record )
    {
        FC_ASSERT( is_open() );
-       my->store_generic_record( record, sync );
+       my->store_generic_record( record );
    }
 
    int32_t wallet_db::new_wallet_record_index()
@@ -261,17 +261,30 @@ namespace bts { namespace wallet {
        owallet_account_record account_record = lookup_account( account_name );
        FC_ASSERT( !account_record.valid(), "Wallet already contains an account with that name!" );
 
-       const uint32_t key_index = get_last_wallet_child_key_index() + 1;
-       const private_key_type account_private_key = get_wallet_child_key( password, key_index );
-       const public_key_type account_public_key = account_private_key.get_public_key();
-       const address account_address = address( account_public_key );
+       uint32_t key_index = get_last_wallet_child_key_index();
+       private_key_type account_private_key;
+       public_key_type account_public_key;
+       address account_address;
+       owallet_key_record key_record;
+       while( true )
+       {
+           ++key_index;
+           FC_ASSERT( key_index != 0, "Overflow!" );
 
-       account_record = lookup_account( account_address );
-       FC_ASSERT( !account_record.valid(), "Wallet already contains an account with that name!" );
+           account_private_key = get_wallet_child_key( password, key_index );
+           account_public_key = account_private_key.get_public_key();
+           account_address = address( account_public_key );
 
-       owallet_key_record key_record = lookup_key( account_address );
-       FC_ASSERT( !key_record.valid(), "Wallet is in an inconsistent state! New key is already present!" );
+           account_record = lookup_account( account_address );
+           if( account_record.valid() ) continue;
 
+           key_record = lookup_key( account_address );
+           if( key_record.valid() ) continue;
+
+           break;
+       }
+
+       FC_ASSERT( !key_record.valid() );
        key_record = wallet_key_record();
        key_record->account_address = account_address;
        key_record->public_key = account_public_key;
@@ -280,6 +293,7 @@ namespace bts { namespace wallet {
 
        const time_point_sec now = blockchain::now();
 
+       FC_ASSERT( !account_record.valid() );
        account_record = wallet_account_record();
        account_record->id = 0;
        account_record->name = account_name;
@@ -301,14 +315,27 @@ namespace bts { namespace wallet {
    { try {
        FC_ASSERT( is_open() );
 
-       const uint32_t key_index = get_last_wallet_child_key_index() + 1;
-       const private_key_type one_time_private_key = get_wallet_child_key( password, key_index );
-       const public_key_type one_time_public_key = one_time_private_key.get_public_key();
-       const address one_time_address = address( one_time_public_key );
+       uint32_t key_index = get_last_wallet_child_key_index();
+       private_key_type one_time_private_key;
+       public_key_type one_time_public_key;
+       address one_time_address;
+       owallet_key_record key_record;
+       while( true )
+       {
+           ++key_index;
+           FC_ASSERT( key_index != 0, "Overflow!" );
 
-       owallet_key_record key_record = lookup_key( one_time_address );
-       FC_ASSERT( !key_record.valid(), "Wallet is in an inconsistent state! New key is already present!" );
+           one_time_private_key = get_wallet_child_key( password, key_index );
+           one_time_public_key = one_time_private_key.get_public_key();
+           one_time_address = address( one_time_public_key );
 
+           key_record = lookup_key( one_time_address );
+           if( key_record.valid() ) continue;
+
+           break;
+       }
+
+       FC_ASSERT( !key_record.valid() );
        key_record = wallet_key_record();
        key_record->account_address = one_time_address;
        key_record->public_key = one_time_public_key;
@@ -338,19 +365,31 @@ namespace bts { namespace wallet {
        owallet_account_record account_record = lookup_account( account_name );
        FC_ASSERT( account_record.valid(), "Account not found!" );
        FC_ASSERT( account_record->is_my_account, "Not my account!" );
-
        const address account_address = account_record->account_address;
-       const uint32_t seq_num = account_record->last_used_gen_sequence + 1;
 
-       const private_key_type account_child_private_key = get_account_child_key( password, account_address, seq_num );
-       const public_key_type account_child_public_key = account_child_private_key.get_public_key();
-       const address account_child_address = address( account_child_public_key );
+       uint32_t seq_num = account_record->last_used_gen_sequence;
+       private_key_type account_child_private_key;
+       public_key_type account_child_public_key;
+       address account_child_address;
+       owallet_key_record key_record;
+       while( true )
+       {
+           ++seq_num;
+           FC_ASSERT( seq_num != 0, "Overflow!" );
 
-       owallet_key_record key_record = lookup_key( account_child_address );
-       FC_ASSERT( !key_record.valid(), "Wallet is in an inconsistent state! New key is already present!" );
+           account_child_private_key = get_account_child_key( password, account_address, seq_num );
+           account_child_public_key = account_child_private_key.get_public_key();
+           account_child_address = address( account_child_public_key );
+
+           key_record = lookup_key( account_child_address );
+           if( key_record.valid() ) continue;
+
+           break;
+       }
 
        account_record->last_used_gen_sequence = seq_num;
 
+       FC_ASSERT( !key_record.valid() );
        key_record = wallet_key_record();
        key_record->account_address = account_address;
        key_record->public_key = account_child_public_key;
@@ -487,12 +526,12 @@ namespace bts { namespace wallet {
          }
          //ilog( "storing key" );
 
-         store_record( key_itr->second, true );
+         store_record( key_itr->second );
       }
       else
       {
          auto r = wallet_key_record( key_to_store, new_wallet_record_index() );
-         store_record( keys[ key_to_store.get_address() ] = r, true );
+         store_record( keys[ key_to_store.get_address() ] = r );
 
          auto key = key_to_store.public_key;
          auto bts_addr = key_to_store.get_address();
@@ -622,7 +661,6 @@ namespace bts { namespace wallet {
    {
        auto ret = vector<wallet_balance_record>();
        auto count = 0;
-       ulog("Balances.size(): ${size}", ("size", balances.size()));
        for( auto item : balances )
        {
            if (count == limit && limit != -1)
@@ -750,25 +788,20 @@ namespace bts { namespace wallet {
       store_record( acct );
    }
 
-   void wallet_db::store_transaction( wallet_transaction_record& trx_to_store )
+   void wallet_db::store_transaction( wallet_transaction_record& transaction_record )
    { try {
-      if( trx_to_store.wallet_record_index == 0 )
-         trx_to_store.wallet_record_index = new_wallet_record_index();
-      store_record( trx_to_store );
+       store_record( transaction_record );
+       transactions[ transaction_record.record_id ] = transaction_record;
+   } FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
-      transactions[ trx_to_store.record_id ] = trx_to_store;
-   } FC_CAPTURE_AND_RETHROW( (trx_to_store) ) }
-
-   void wallet_db::store_account( const wallet_account_record& war )
-   {
-      accounts[war.wallet_record_index] = war;
-      if( war.id != 0 )
-      {
-         account_id_to_wallet_record_index[war.id] = war.wallet_record_index;
-         name_to_account_wallet_record_index[war.name] = war.wallet_record_index;
-      }
-      store_record( war );
-   }
+   void wallet_db::store_account( wallet_account_record& account_record )
+   { try {
+       store_record( account_record );
+       accounts[ account_record.wallet_record_index ] = account_record;
+       name_to_account_wallet_record_index[ account_record.name ] = account_record.wallet_record_index;
+       if( account_record.id != 0 )
+           account_id_to_wallet_record_index[ account_record.id ] = account_record.wallet_record_index;
+   } FC_CAPTURE_AND_RETHROW( (account_record) ) }
 
    void wallet_db::remove_item( int32_t index )
    {
@@ -800,7 +833,7 @@ namespace bts { namespace wallet {
       master_key key;
       key.encrypt_key(new_password,extended_key);
       auto key_record = wallet_master_key_record( key, -1 );
-      store_record( key_record, true );
+      store_record( key_record );
    }
 
    void wallet_db::change_password( const fc::sha512& old_password,
@@ -817,7 +850,7 @@ namespace bts { namespace wallet {
          {
             auto priv_key = key.second.decrypt_private_key( old_password );
             key.second.encrypt_private_key( new_password, priv_key );
-            store_record( key.second, true );
+            store_record( key.second );
          }
       }
    } FC_CAPTURE_AND_RETHROW() }
