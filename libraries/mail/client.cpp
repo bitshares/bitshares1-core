@@ -846,6 +846,20 @@ message_id_type client::send_email(const string &from,
     return email.id;
 }
 
+message_id_type client::send_encrypted_message(message& ciphertext,
+                                               const string& from,
+                                               const string& to,
+                                               const public_key_type& recipient_key)
+{
+    FC_ASSERT(my->is_open());
+    FC_ASSERT(ciphertext.type == encrypted, "Refusing to send plaintext message");
+
+    detail::mail_record mail_rec(from, to, recipient_key, std::move(ciphertext));
+    my->process_outgoing_mail(mail_rec);
+
+    return mail_rec.id;
+}
+
 std::vector<email_header> client::get_messages_by_sender(std::string sender)
 {
     FC_ASSERT(my->is_open());

@@ -35,8 +35,9 @@ namespace bts { namespace mail {
    {
       static const message_type type;
 
-      bts::blockchain::signed_transaction trx;
-      string                              extended_memo;
+      bts::blockchain::signed_transaction               trx;
+      string                                            extended_memo;
+      fc::optional<bts::blockchain::public_key_type>    one_time_key;
    };
 
    struct email_message
@@ -107,7 +108,7 @@ FC_REFLECT_ENUM( bts::mail::message_type, (encrypted)(transaction_notice)(market
 FC_REFLECT( bts::mail::encrypted_message, (onetimekey)(data) )
 FC_REFLECT( bts::mail::message, (type)(recipient)(nonce)(timestamp)(data) )
 FC_REFLECT( bts::mail::attachment, (name)(data) )
-FC_REFLECT( bts::mail::transaction_notice_message, (trx)(extended_memo) )
+FC_REFLECT( bts::mail::transaction_notice_message, (trx)(extended_memo)(one_time_key) )
 FC_REFLECT( bts::mail::email_message, (subject)(body)(reply_to)(attachments) )
 FC_REFLECT_DERIVED( bts::mail::signed_email_message, (bts::mail::email_message), (from_signature) )
 

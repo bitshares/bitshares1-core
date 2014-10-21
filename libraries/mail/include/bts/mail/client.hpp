@@ -53,6 +53,10 @@ public:
                                const string& subject,
                                const string& body,
                                const message_id_type& reply_to = message_id_type());
+    message_id_type send_encrypted_message(message& ciphertext,
+                                           const string& from,
+                                           const string& to,
+                                           const blockchain::public_key_type& recipient_key);
 
     std::vector<email_header> get_messages_by_sender(string sender);
     std::vector<email_header> get_messages_by_recipient(string recipient);
