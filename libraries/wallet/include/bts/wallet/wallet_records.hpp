@@ -99,7 +99,7 @@ namespace bts { namespace wallet {
        int8_t   approved = 0;
        bool     is_favorite = false;
        bool     block_production_enabled = false;
-       uint32_t last_used_gen_sequence = 10000;
+       uint32_t last_used_gen_sequence = 0;
    };
 
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>

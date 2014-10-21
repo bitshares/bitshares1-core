@@ -201,7 +201,10 @@ namespace bts { namespace wallet {
       name_to_account_wallet_record_index.clear();
    }
 
-   bool wallet_db::is_open()const { return my->_records.is_open(); }
+   bool wallet_db::is_open()const
+   {
+       return my->_records.is_open() && wallet_master_key.valid();
+   }
 
    void wallet_db::store_generic_record( const generic_wallet_record& record, bool sync )
    {
@@ -231,7 +234,7 @@ namespace bts { namespace wallet {
       if( account_rec )
       {
           account_rec->last_used_gen_sequence++;
-          cache_account( *account_rec );
+          store_account( *account_rec );
           return account_rec->last_used_gen_sequence;
       }
 
@@ -249,17 +252,6 @@ namespace bts { namespace wallet {
       return next_child_index;
    }
 
-   private_key_type wallet_db::get_private_key( const fc::sha512& password,
-                                                int index )
-   {
-      FC_ASSERT( wallet_master_key.valid() );
-
-      const auto master_ext_priv_key = wallet_master_key->decrypt_key( password );
-      const auto new_priv_key = master_ext_priv_key.child( index );
-
-      return new_priv_key;
-   }
-
    private_key_type wallet_db::new_private_key( const fc::sha512& password,
                                                 const address& parent_account_address,
                                                 bool store_key )
@@ -269,18 +261,14 @@ namespace bts { namespace wallet {
       const auto master_ext_priv_key = wallet_master_key->decrypt_key( password );
       const auto key_index = new_key_child_index( parent_account_address );
       private_key_type new_priv_key;
-      do
+      new_priv_key = master_ext_priv_key.child( key_index );
+      if( key_index >= 10000 )
       {
-          new_priv_key = master_ext_priv_key.child( key_index );
-          if( key_index >= 10000 )
-          {
-              fc::sha256::encoder enc;
-              fc::raw::pack( enc, parent_account_address );
-              fc::raw::pack( enc, key_index );
-              new_priv_key = master_ext_priv_key.child( enc.result() );
-          }
+          fc::sha256::encoder enc;
+          fc::raw::pack( enc, parent_account_address );
+          fc::raw::pack( enc, key_index );
+          new_priv_key = master_ext_priv_key.child( enc.result() );
       }
-      while( lookup_key( address( new_priv_key.get_public_key() ) ).valid() );
 
       if( !store_key )
         return new_priv_key;
@@ -298,35 +286,124 @@ namespace bts { namespace wallet {
       return new_priv_key;
    }
 
-   bool wallet_db::regenerate_account_child_key( const fc::sha512& password,
-                                                 const address& account_address,
-                                                 uint32_t key_index )
-   {
-      FC_ASSERT( wallet_master_key.valid() );
-      const extended_private_key master_private_key = wallet_master_key->decrypt_key( password );
+   uint32_t wallet_db::get_last_wallet_child_key_index()const
+   { try {
+       FC_ASSERT( is_open() );
+       try
+       {
+           return get_property( next_child_key_index ).as<uint32_t>();
+       }
+       catch( ... )
+       {
+       }
+       return 0;
+   } FC_CAPTURE_AND_RETHROW() }
 
-      fc::sha256::encoder enc;
-      fc::raw::pack( enc, account_address );
-      fc::raw::pack( enc, key_index );
+   void wallet_db::set_last_wallet_child_key_index( uint32_t key_index )
+   { try {
+       FC_ASSERT( is_open() );
+       set_property( next_child_key_index, key_index );
+   } FC_CAPTURE_AND_RETHROW( (key_index) ) }
 
-      const private_key_type new_private_key = master_private_key.child( enc.result() );
-      const public_key_type new_public_key = new_private_key.get_public_key();
-      const address new_key_address( new_public_key );
+   private_key_type wallet_db::get_wallet_child_key( const fc::sha512& password, uint32_t key_index )const
+   { try {
+       FC_ASSERT( is_open() );
+       const extended_private_key master_private_key = wallet_master_key->decrypt_key( password );
+       return master_private_key.child( key_index );
+   } FC_CAPTURE_AND_RETHROW( (key_index) ) }
 
-      owallet_key_record key_record = lookup_key( new_key_address );
-      bool already_have_key = key_record.valid() && key_record->has_private_key();
-      if( !key_record.valid() )
-          key_record = key_data();
+   public_key_type wallet_db::generate_new_account( const fc::sha512& password, const string& account_name, const variant& private_data )
+   { try {
+       FC_ASSERT( is_open() );
+       owallet_account_record account_record = lookup_account( account_name );
+       FC_ASSERT( !account_record.valid(), "Wallet already contains an account with that name!" );
 
-      key_record->account_address = account_address;
-      key_record->public_key = new_public_key;
-      key_record->encrypt_private_key( password, new_private_key );
-      key_record->gen_seq_number = key_index;
+       const uint32_t key_index = get_last_wallet_child_key_index() + 1;
+       const private_key_type account_private_key = get_wallet_child_key( password, key_index );
+       const public_key_type account_public_key = account_private_key.get_public_key();
+       const address account_address = address( account_public_key );
 
-      store_key( *key_record );
+       account_record = lookup_account( account_address );
+       FC_ASSERT( !account_record.valid(), "Wallet already contains an account with that name!" );
 
-      return !already_have_key;
-   }
+       owallet_key_record key_record = lookup_key( account_address );
+       FC_ASSERT( !key_record.valid(), "Wallet is in an inconsistent state! New key is already present!" );
+
+       const time_point_sec now = blockchain::now();
+
+       account_record = wallet_account_record();
+       account_record->id = 0;
+       account_record->name = account_name;
+       account_record->owner_key = account_public_key;
+       account_record->set_active_key( now, account_public_key );
+       account_record->last_update = now;
+       account_record->account_address = account_address;
+       account_record->private_data = private_data;
+       account_record->is_my_account = true;
+
+       key_record = wallet_key_record();
+       key_record->account_address = account_address;
+       key_record->public_key = account_public_key;
+       key_record->gen_seq_number = key_index;
+
+       set_last_wallet_child_key_index( key_index );
+       store_key( *key_record );
+       store_account( *account_record );
+
+       return account_public_key;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+   private_key_type wallet_db::generate_new_one_time_key( const fc::sha512& password )
+   { try {
+       FC_ASSERT( is_open() );
+
+       const uint32_t key_index = get_last_wallet_child_key_index() + 1;
+       const private_key_type one_time_private_key = get_wallet_child_key( password, key_index );
+       const public_key_type one_time_public_key = one_time_private_key.get_public_key();
+       const address one_time_address = address( one_time_public_key );
+
+       owallet_key_record key_record = lookup_key( one_time_address );
+       FC_ASSERT( !key_record.valid(), "Wallet is in an inconsistent state! New key is already present!" );
+
+       key_record = wallet_key_record();
+       key_record->account_address = one_time_address;
+       key_record->public_key = one_time_public_key;
+       key_record->gen_seq_number = key_index;
+
+       set_last_wallet_child_key_index( key_index );
+       store_key( *key_record );
+
+       return one_time_private_key;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   private_key_type wallet_db::get_account_child_key( const fc::sha512& password, const address& account_address, uint32_t seq_num )const
+   { try {
+       FC_ASSERT( is_open() );
+       const extended_private_key master_private_key = wallet_master_key->decrypt_key( password );
+       fc::sha256::encoder enc;
+       fc::raw::pack( enc, account_address );
+       fc::raw::pack( enc, seq_num );
+       return master_private_key.child( enc.result() );
+   } FC_CAPTURE_AND_RETHROW( (account_address)(seq_num) ) }
+
+   void wallet_db::add_contact_account( const account_record& blockchain_account_record, const variant& private_data )
+   { try {
+       FC_ASSERT( is_open() );
+       owallet_account_record record = lookup_account( blockchain_account_record.name );
+       FC_ASSERT( !record.valid(), "Wallet already contains an account with that name!" );
+
+       const public_key_type account_address = blockchain_account_record.owner_key;
+       owallet_key_record key_record = lookup_key( account_address );
+       FC_ASSERT( !key_record.valid(), "Wallet already contains that key" );
+
+       record = wallet_account_record();
+       account_record& temp_record = *record;
+       temp_record = blockchain_account_record;
+       record->account_address = account_address;
+       record->private_data = private_data;
+
+       store_account( *record );
+   } FC_CAPTURE_AND_RETHROW( (blockchain_account_record) ) }
 
    void wallet_db::set_property( property_enum property_id, const variant& v )
    {
@@ -412,7 +489,7 @@ namespace bts { namespace wallet {
             {
               // FC_ASSERT(oacct.valid(), "expecting an account to existing at this point");
                oacct->is_my_account = true;
-               cache_account( *oacct );
+               store_account( *oacct );
                /*
                ilog( "WALLET: storing private key for ${key} under account '${account_name}' address: (${account})",
                      ("key",key_to_store.public_key)
@@ -605,91 +682,6 @@ namespace bts { namespace wallet {
       return owallet_setting_record();
    }
 
-   void wallet_db::add_account( const account_record& blockchain_account,
-                                const variant& private_data  )
-   { try {
-      wallet_account_record war;
-      account_record& tmp  = war;
-      tmp = blockchain_account;
-      war.private_data = private_data;
-      war.account_address = address(blockchain_account.owner_key);
-
-      war.wallet_record_index = new_wallet_record_index();
-      if (has_private_key(war.account_address))
-          war.is_my_account = true;
-      store_record( war );
-
-      auto current_key = lookup_key( blockchain_account.owner_key );
-      if( current_key.valid() )
-      {
-         current_key->account_address = address(blockchain_account.owner_key);
-         store_record( *current_key, true );
-      }
-      else
-      {
-         wallet_key_record new_key;
-         new_key.wallet_record_index = new_wallet_record_index();
-         new_key.account_address = address(blockchain_account.owner_key);
-         new_key.public_key = blockchain_account.owner_key;
-         my->load_key_record( new_key, false );
-         store_key( new_key );
-
-         for( const auto& active_key : blockchain_account.active_key_history )
-         {
-           if( active_key.second != blockchain_account.owner_key )
-           {
-             new_key.wallet_record_index = new_wallet_record_index();
-             new_key.public_key = active_key.second;
-             my->load_key_record( new_key, false );
-             store_key( new_key );
-           }
-         }
-      }
-   } FC_CAPTURE_AND_RETHROW( (blockchain_account) ) }
-
-   void wallet_db::add_account( const string& new_account_name,
-                                const public_key_type& new_account_key,
-                                const variant& private_data )
-   {
-      auto current_account_itr = name_to_account_wallet_record_index.find( new_account_name );
-      FC_ASSERT( current_account_itr == name_to_account_wallet_record_index.end(),
-                 "Account with name ${name} already exists",
-                 ("name",new_account_name) );
-      auto current_address_itr = address_to_account_wallet_record_index.find( new_account_key );
-      FC_ASSERT( current_address_itr == address_to_account_wallet_record_index.end(),
-                 "Account with address ${address} already exists",
-                 ("name",new_account_key) );
-
-      wallet_account_record war;
-      war.name = new_account_name;
-      war.id = 0;
-      war.account_address = address( new_account_key );
-      war.owner_key = new_account_key;
-      war.set_active_key( blockchain::now(), new_account_key );
-      war.private_data = private_data;
-
-      war.wallet_record_index = new_wallet_record_index();
-      if (has_private_key(war.account_address))
-          war.is_my_account = true;
-      store_record( war );
-
-      auto current_key = lookup_key( new_account_key );
-      if( current_key )
-      {
-         current_key->account_address = address(new_account_key);
-         store_record( *current_key, true );
-      }
-      else
-      {
-         wallet_key_record new_key;
-         new_key.wallet_record_index = new_wallet_record_index();
-         new_key.account_address = address(new_account_key);
-         new_key.public_key = new_account_key;
-         my->load_key_record( new_key, false );
-         store_key( new_key );
-      }
-   }
-
    owallet_account_record wallet_db::lookup_account( const address& address_of_public_key )const
    {
       auto address_index_itr = address_to_account_wallet_record_index.find( address_of_public_key );
@@ -789,7 +781,7 @@ namespace bts { namespace wallet {
       transactions[ trx_to_store.record_id ] = trx_to_store;
    } FC_CAPTURE_AND_RETHROW( (trx_to_store) ) }
 
-   void wallet_db::cache_account( const wallet_account_record& war )
+   void wallet_db::store_account( const wallet_account_record& war )
    {
       accounts[war.wallet_record_index] = war;
       if( war.id != 0 )

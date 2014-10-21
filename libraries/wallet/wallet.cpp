@@ -272,7 +272,7 @@ namespace detail {
                {
                    blockchain::account_record& brec = acct.second;
                    brec = *blockchain_acct_rec;
-                   _wallet_db.cache_account( acct.second );
+                   _wallet_db.store_account( acct.second );
                }
             }
         }
@@ -1125,15 +1125,12 @@ namespace detail {
       if( existing_registered_account.valid() )
           FC_THROW_EXCEPTION( invalid_name, "This name is already registered with the blockchain!" );
 
-      const auto new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password );
-      const auto new_pub_key  = new_priv_key.get_public_key();
-
-      my->_wallet_db.add_account( account_name, new_pub_key, private_data );
+      const public_key_type account_public_key = my->_wallet_db.generate_new_account( my->_wallet_password, account_name, private_data );
 
       if( num_accounts_before == 0 )
           set_last_scanned_block_number( my->_blockchain->get_head_block_num() );
 
-      return new_pub_key;
+      return account_public_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void wallet::account_set_favorite( const string& account_name,
@@ -1152,7 +1149,7 @@ namespace detail {
            return account_set_favorite( account_name, is_favorite );
        }
        judged_account->is_favorite = is_favorite;
-       my->_wallet_db.cache_account( *judged_account );
+       my->_wallet_db.store_account( *judged_account );
    } FC_CAPTURE_AND_RETHROW( (account_name)(is_favorite) ) }
 
    /**
@@ -1173,7 +1170,7 @@ namespace detail {
       if( !blockchain::is_valid_account_name( account_name ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
 
-      const auto current_registered_account = my->_blockchain->get_account_record( account_name );
+      auto current_registered_account = my->_blockchain->get_account_record( account_name );
       if( current_registered_account.valid() && current_registered_account->owner_key != key )
          FC_THROW_EXCEPTION( invalid_name,
                              "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
@@ -1195,7 +1192,7 @@ namespace detail {
          if( !private_data.is_null() )
             current_account->private_data = private_data;
 
-         my->_wallet_db.cache_account( *current_account );
+         my->_wallet_db.store_account( *current_account );
          return;
       }
       else
@@ -1217,14 +1214,21 @@ namespace detail {
              if( !private_data.is_null() )
                 current_account->private_data = private_data;
 
-             my->_wallet_db.cache_account( *current_account );
+             my->_wallet_db.store_account( *current_account );
              return;
          }
 
-         if( current_registered_account.valid() )
-            my->_wallet_db.add_account( *current_registered_account, private_data );
-         else
-            my->_wallet_db.add_account( account_name, key, private_data );
+         if( !current_registered_account.valid() )
+         {
+             const time_point_sec now = blockchain::now();
+             current_registered_account = account_record();
+             current_registered_account->name = account_name;
+             current_registered_account->owner_key = key;
+             current_registered_account->set_active_key( now, key );
+             current_registered_account->last_update = now;
+         }
+
+         my->_wallet_db.add_contact_account( *current_registered_account, private_data );
       }
    } FC_CAPTURE_AND_RETHROW( (account_name)(key) ) }
 
@@ -1248,7 +1252,7 @@ namespace detail {
          {
              blockchain::account_record& bca = *local_account;
              bca = *chain_account;
-             my->_wallet_db.cache_account( *local_account );
+             my->_wallet_db.store_account( *local_account );
          }
          else
          {
@@ -1528,7 +1532,7 @@ namespace detail {
       for( auto& delegate_record : delegate_records )
       {
           delegate_record.block_production_enabled = enabled;
-          my->_wallet_db.cache_account( delegate_record );
+          my->_wallet_db.store_account( delegate_record );
       }
 
       const auto empty_after = get_my_delegates( enabled_delegate_status ).empty();
@@ -1901,23 +1905,32 @@ namespace detail {
 
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate )
    { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( num_keys_to_regenerate > 0 );
+
+       owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
+       FC_ASSERT( account_record.valid() && account_record->is_my_account );
+
        // Update local account records with latest global state
        my->scan_registered_accounts();
 
        uint32_t total_regenerated_key_count = 0;
 
        ulog( "Regenerating wallet child keys and importing into account: ${name}", ("name",account_name) );
-       for( uint32_t key_index = 0; key_index < num_keys_to_regenerate; ++key_index )
+       uint32_t key_index = 0;
+       for( ; key_index < num_keys_to_regenerate; ++key_index )
        {
            fc::oexception regenerate_key_error;
            try
            {
-               const private_key_type private_key = my->_wallet_db.get_private_key( my->_wallet_password, key_index );
+               const private_key_type private_key = my->_wallet_db.get_wallet_child_key( my->_wallet_password, key_index );
                const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
-               bool added_new_key = !key_record.valid() || !key_record->has_private_key();
-               import_private_key( private_key, account_name );
-               if( added_new_key )
+               if( !key_record.valid() || !key_record->has_private_key() )
+               {
+                   import_private_key( private_key, account_name );
                    ++total_regenerated_key_count;
+               }
            }
            catch( const fc::exception& e )
            {
@@ -1927,20 +1940,38 @@ namespace detail {
            if( regenerate_key_error.valid() )
                ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
        }
-
-       const owallet_account_record account_record = my->_wallet_db.lookup_account( account_name );
-       FC_ASSERT( account_record.valid() && account_record->is_my_account );
+       my->_wallet_db.set_last_wallet_child_key_index( std::max( my->_wallet_db.get_last_wallet_child_key_index(), key_index - 1 ) );
 
        ulog( "Regenerating account child keys for account: ${name}", ("name",account_name) );
-       for( uint32_t key_index = 0; key_index < num_keys_to_regenerate; ++key_index )
+       uint32_t seq_num = 0;
+       for( ; seq_num < num_keys_to_regenerate; ++seq_num )
        {
-           const bool added_new_key = my->_wallet_db.regenerate_account_child_key( my->_wallet_password,
-                                                                                   account_record->account_address, key_index );
-           if( added_new_key )
-               ++total_regenerated_key_count;
-       }
+           fc::oexception regenerate_key_error;
+           try
+           {
+               const private_key_type private_key = my->_wallet_db.get_account_child_key( my->_wallet_password,
+                                                                                          account_record->account_address, seq_num );
+               const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
+               if( !key_record.valid() || !key_record->has_private_key() )
+               {
+                   import_private_key( private_key, account_name );
+                   ++total_regenerated_key_count;
+               }
+           }
+           catch( const fc::exception& e )
+           {
+               regenerate_key_error = e;
+           }
 
-       ulog( "Key regeneration may leave the wallet in an inconsistent state. It is recommended to create a new wallet and transfer all funds." );
+           if( regenerate_key_error.valid() )
+               ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
+       }
+       account_record->last_used_gen_sequence = std::max( account_record->last_used_gen_sequence, seq_num - 1 );
+       my->_wallet_db.store_account( *account_record );
+
+       ulog( "Successfully generated ${n} keys.", ("n",total_regenerated_key_count) );
+       ulog( "Key regeneration may leave the wallet in an inconsistent state." );
+       ulog( "It is recommended to create a new wallet and transfer all funds." );
        return total_regenerated_key_count;
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -2971,7 +3002,7 @@ namespace detail {
       auto oacct = my->_wallet_db.lookup_account( account_to_update );
       FC_ASSERT( oacct.valid() );
       oacct->private_data = private_data;
-      my->_wallet_db.cache_account( *oacct );
+      my->_wallet_db.store_account( *oacct );
    }
 
    wallet_transaction_record wallet::update_registered_account(
@@ -3641,11 +3672,7 @@ namespace detail {
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'",
                 ("name",account_name) );
 
-      auto opt_key = my->_wallet_db.lookup_key( opt_account->account_address );
-      FC_ASSERT( opt_key.valid(), "Unable to find key for account '${name}",
-                ("name",account_name) );
-
-      return opt_key->public_key;
+      return opt_account->owner_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void wallet::set_account_approval( const string& account_name, int8_t approval )
@@ -3660,7 +3687,7 @@ namespace detail {
       if( war.valid() )
       {
          war->approved = approval;
-         my->_wallet_db.cache_account( *war );
+         my->_wallet_db.store_account( *war );
          return;
       }
 

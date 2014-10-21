@@ -14,28 +14,36 @@ namespace bts { namespace wallet {
 
          void open( const fc::path& wallet_file );
          void close();
-
          bool is_open()const;
+
+         void        set_property( property_enum property_id, const fc::variant& v );
+         fc::variant get_property( property_enum property_id )const;
+
 
          int32_t            new_wallet_record_index();
          int32_t            new_key_child_index( const address& parent_account_address );
-         private_key_type   get_private_key( const fc::sha512& password, int index );
 
          private_key_type   new_private_key( const fc::sha512& password,
                                              const address& parent_account_address = address(),
                                              bool store_key = true );
 
-         bool               regenerate_account_child_key( const fc::sha512& password,
-                                                          const address& account_address,
-                                                          uint32_t key_index );
+         // Wallet child keys
+         uint32_t           get_last_wallet_child_key_index()const;
+         void               set_last_wallet_child_key_index( uint32_t key_index );
+         private_key_type   get_wallet_child_key( const fc::sha512& password, uint32_t key_index )const;
+         public_key_type    generate_new_account( const fc::sha512& password, const string& account_name, const variant& private_data );
+         private_key_type   generate_new_one_time_key( const fc::sha512& password );
 
-         void        set_property( property_enum property_id, const fc::variant& v );
-         fc::variant get_property( property_enum property_id )const;
+         // Account child keys
+         private_key_type   get_account_child_key( const fc::sha512& password, const address& account_address, uint32_t seq_num )const;
+         public_key_type    generate_new_account_key( const fc::sha512& password, const string& account_name );
+
+         void               add_contact_account( const account_record& blockchain_account_record, const variant& private_data );
 
          void store_key( const key_data& k );
          void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );
-         void cache_account( const wallet_account_record& );
+         void store_account( const wallet_account_record& );
          void cache_memo( const memo_status& memo,
                           const private_key_type& account_key,
                           const fc::sha512& password );
@@ -63,12 +71,6 @@ namespace bts { namespace wallet {
          void                     store_setting(const string& name, const variant& value);
 
          bool has_private_key( const address& a )const;
-
-         void add_account( const string& new_account_name,
-                           const public_key_type& new_account_key,
-                           const variant& private_data = variant() );
-         void add_account( const account_record& blockchain_account,
-                           const variant& private_data = variant() );
 
          void remove_contact_account( const string& account_name);
 
