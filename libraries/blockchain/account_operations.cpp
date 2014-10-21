@@ -2,6 +2,7 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
 #include <fc/time.hpp>
 
 namespace bts { namespace blockchain {
@@ -217,7 +218,6 @@ namespace bts { namespace blockchain {
 
    void link_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-#include <bts/blockchain/fork_blocks.hpp>
       if( eval_state._current_state->get_head_block_num() < BTSX_LINK_FORK_1_BLOCK_NUM )
           FC_ASSERT( !"Link account operation is not enabled yet!" );
 
