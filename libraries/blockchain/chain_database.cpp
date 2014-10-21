@@ -972,7 +972,7 @@ namespace bts { namespace blockchain {
                 base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
                 self->store_asset_record( *base_asset_record );
             }
-            else if( block_data.block_num == BTSX_SUPPLY_FORK_2_BLOCK_NUM )
+            else if( block_data.block_num == BTSX_SUPPLY_FORK_2_BLOCK_NUM || block_data.block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
             {
                 vector<asset_record> records;
                 records.reserve( 40 );
