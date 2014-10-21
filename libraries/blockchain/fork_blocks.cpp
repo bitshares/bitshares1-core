@@ -6,8 +6,10 @@
 #include <map>
 #include <algorithm>
 #include <assert.h>
+#include <string>
 
 namespace bts { namespace blockchain {
+
   namespace detail
   {
     struct fork_version_data
@@ -28,6 +30,7 @@ namespace bts { namespace blockchain {
       }
     }
   } // end namespace detail
+
   uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t revision_time)
   {
     detail::initialize_fork_version_data_if_necessary();
@@ -55,6 +58,4 @@ namespace bts { namespace blockchain {
     return fork_block_numbers;
   }
 
-
 } } // bts::blockchain
-
