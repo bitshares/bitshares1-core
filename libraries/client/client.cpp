@@ -626,8 +626,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               cancel_rebroadcast_pending_loop();
               if( _chain_downloader_future.valid() && !_chain_downloader_future.ready() )
                  _chain_downloader_future.cancel_and_wait(__FUNCTION__);
-              _p2p_node.reset();
+              _rpc_server.reset(); // this needs to shut down before the _p2p_node because several RPC requests will try to dereference _p2p_node.  Shutting down _rpc_server kills all active/pending requests
               delete _cli;
+              _cli = nullptr;
+              _p2p_node.reset();
             }
 
             void start()
@@ -1998,18 +2000,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer(
-            double amount_to_transfer,
+            const string& amount_to_transfer,
             const string& asset_symbol,
             const string& from_account_name,
             const string& to_account_name,
             const string& memo_message,
             const vote_selection_method& selection_method )
     {
-        const auto record = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                     from_account_name, from_account_name, to_account_name,
-                                                     memo_message, selection_method );
-        network_broadcast_transaction( record.trx );
-        return record;
+        return wallet_transfer_from(amount_to_transfer, asset_symbol, from_account_name, from_account_name,
+                                    to_account_name, memo_message, selection_method);
     }
     wallet_transaction_record detail::client_impl::wallet_burn(
             double amount_to_transfer,
@@ -2028,7 +2027,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer_from(
-            double amount_to_transfer,
+            const string& amount_to_transfer,
             const string& asset_symbol,
             const string& paying_account_name,
             const string& from_account_name,
@@ -2036,10 +2035,25 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             const string& memo_message,
             const vote_selection_method& selection_method )
     {
-        const auto record = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                     paying_account_name, from_account_name, to_account_name,
-                                                     memo_message, selection_method );
+        asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
+        auto sender = _wallet->get_account(from_account_name);
+        auto payer = _wallet->get_account(paying_account_name);
+        auto recipient = _chain_db->get_account_record(to_account_name);
+        if( !recipient )
+            FC_THROW_EXCEPTION( unknown_account_name, "Unknown recipient account: ${name}", ("name", to_account_name) );
+        transaction_builder_ptr builder = _wallet->create_transaction_builder();
+        auto record = builder->deposit_asset(payer, *recipient, amount,
+                                             memo_message, selection_method, sender.owner_key)
+                              .finalize()
+                              .sign();
+
         network_broadcast_transaction( record.trx );
+        for( auto&& notice : builder->encrypted_notifications() )
+            _mail_client->send_encrypted_message(std::move(notice),
+                                                 from_account_name,
+                                                 to_account_name,
+                                                 recipient->owner_key);
+
         return record;
     }
 
@@ -2631,10 +2645,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       _mail_client->archive_message(message_id);
     }
 
-    int detail::client_impl::mail_check_new_messages()
+    int detail::client_impl::mail_check_new_messages(bool get_all)
     {
       FC_ASSERT(_mail_client);
-      return _mail_client->check_new_messages();
+      return _mail_client->check_new_messages(get_all);
     }
 
     mail::email_record detail::client_impl::mail_get_message(const mail::message_id_type& message_id) const
@@ -3307,6 +3321,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               {
                   info["wallet_last_scanned_block_timestamp"]   = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
               }
+              catch (fc::canceled_exception&)
+              {
+                throw;
+              }
               catch( ... )
               {
               }
@@ -3904,6 +3922,11 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       // NB LHS of == operator is bts::blockchain::public_key_type and RHS is fc::ecc::public_key,
       //   the opposite order won't compile (look at operator== prototype in public_key_type class declaration)
       return rec->active_key() == fc::ecc::public_key(signature, hash);
+   }
+
+   void client_impl::blockchain_dump_state( const string& path )const
+   {
+       _chain_db->dump_state( fc::path( path ) );
    }
 
    void client_impl::debug_start_simulated_time(const fc::time_point& starting_time)

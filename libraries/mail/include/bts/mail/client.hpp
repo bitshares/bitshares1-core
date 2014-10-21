@@ -18,6 +18,7 @@ struct email_record;
 class client : public std::enable_shared_from_this<client> {
 public:
     boost::signals2::signal<void(int)> new_mail_notifier;
+    boost::signals2::signal<void(transaction_notice_message)> new_transaction_notifier;
 
     enum mail_status {
         submitted,              //The message has been submitted to the client for processing
@@ -41,7 +42,7 @@ public:
     void remove_message(message_id_type message_id);
     void archive_message(message_id_type message_id_type);
 
-    int check_new_messages();
+    int check_new_messages(bool get_old_messages = false);
 
     std::multimap<mail_status, message_id_type> get_processing_messages();
     std::multimap<mail_status, message_id_type> get_archive_messages();
@@ -53,6 +54,10 @@ public:
                                const string& subject,
                                const string& body,
                                const message_id_type& reply_to = message_id_type());
+    message_id_type send_encrypted_message(message&& ciphertext,
+                                           const string& from,
+                                           const string& to,
+                                           const blockchain::public_key_type& recipient_key);
 
     std::vector<email_header> get_messages_by_sender(string sender);
     std::vector<email_header> get_messages_by_recipient(string recipient);

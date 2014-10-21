@@ -13,6 +13,9 @@
 #include <fc/log/logger.hpp>
 
 #include <bts/db/upgrade_leveldb.hpp>
+#include <fc/io/json.hpp>
+
+#include <fstream>
 
 namespace bts { namespace db {
 
@@ -293,6 +296,25 @@ namespace bts { namespace db {
                FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
            }
         } FC_RETHROW_EXCEPTIONS( warn, "error removing ${key}", ("key",k) ); }
+
+        void export_to_json( const fc::path& path )const
+        { try {
+            FC_ASSERT( !fc::exists( path ) );
+
+            std::ofstream fs( path.string() );
+            fs.write( "[\n", 2 );
+
+            auto iter = begin();
+            while( iter.valid() )
+            {
+                auto str = fc::json::to_pretty_string( std::make_pair( iter.key(), iter.value() ) );
+                if( (++iter).valid() ) str += ",";
+                str += "\n";
+                fs.write( str.c_str(), str.size() );
+            }
+
+            fs.write( "]", 1 );
+        } FC_CAPTURE_AND_RETHROW( (path) ) }
 
      private:
         class key_compare : public leveldb::Comparator

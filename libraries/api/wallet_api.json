@@ -536,7 +536,7 @@
           [
             {
               "name" : "amount_to_transfer",
-              "type" : "real_amount",
+              "type" : "string",
               "description" : "the amount of shares to transfer"
             },
             {
@@ -578,7 +578,7 @@
           [
             {
               "name" : "amount_to_transfer",
-              "type" : "real_amount",
+              "type" : "string",
               "description" : "the amount of shares to transfer"
             },
             {
@@ -594,7 +594,7 @@
             {
               "name" : "from_account_name",
               "type" : "sending_account_name",
-              "description" : "the account to show the recipient as being the sender (requires account's private key to be in wallet). Leave empty to send anonymously."
+              "description" : "the account to show the recipient as being the sender (requires account's private key to be in wallet)."
             },
             {
               "name" : "to_account_name",
