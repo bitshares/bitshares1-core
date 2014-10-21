@@ -1,7 +1,9 @@
 #pragma once
 
 #include <bts/blockchain/transaction.hpp>
+#include <bts/blockchain/exceptions.hpp>
 #include <bts/wallet/wallet_records.hpp>
+#include <bts/mail/message.hpp>
 
 #include <vector>
 #include <map>
@@ -37,12 +39,14 @@ namespace bts { namespace wallet {
 
       wallet_transaction_record transaction_record;
       std::unordered_set<blockchain::address> required_signatures;
-      //Set of accounts with a cover order in this transaction (only one cover allowed per account per block)
+      ///Set of accounts with a cover order in this transaction (only one cover allowed per account per block)
       std::unordered_set<blockchain::address> accounts_with_covers;
       ///Map of <owning account address, asset ID> to that account's balance in that asset ID
       std::map<std::pair<blockchain::address, asset_id_type>, share_type> outstanding_balances;
       ///Map of account address to key owning that account's market transactions
       std::map<blockchain::address, public_key_type> order_keys;
+      ///List of partially-completed transaction notifications; these will be completed when sign() is called
+      std::vector<std::pair<mail::transaction_notice_message, public_key_type>> notices;
 
       /**
        * @brief Look up the market transaction owner key used for a particular account
@@ -57,6 +61,33 @@ namespace bts { namespace wallet {
       public_key_type order_key_for_account(const blockchain::address& account_address);
 
       /**
+       * \defgroup<charge_functions> Low-Level Balance Manipulation Functions
+       *
+       * These functions are used to manually tweak an account's balance in this transaction. This can be used to pay
+       * additional fees or facilitate a public transfer between two accounts which is not validated by the normal
+       * rules of the transfer functions. Generally these function should not be called directly, but they are exposed
+       * in case they are useful.
+       *
+       * Note that calling these functions naively may result in a broken transaction, i.e. if credit_balance is called
+       * without an opposing call to deduct_balance, then the transaction will attempt to pay more money to
+       * account_to_credit than exists in the transaction, which will cause it to be rejected by the blockchain.
+       */
+      /// @{
+      void deduct_balance(const blockchain::address& account_to_charge, const blockchain::asset& amount)
+      {
+         FC_ASSERT( amount.amount >= 0, "Don't deduct a negative amount. Call credit_balance instead.",
+                    ("amount", amount) );
+         outstanding_balances[std::make_pair(account_to_charge, amount.asset_id)] -= amount.amount;
+      }
+      void credit_balance(const blockchain::address& account_to_credit, const blockchain::asset& amount)
+      {
+         FC_ASSERT( amount.amount >= 0, "Don't credit a negative amount. Call deduct_balance instead.",
+                    ("amount", amount) );
+         outstanding_balances[std::make_pair(account_to_credit, amount.asset_id)] += amount.amount;
+      }
+      /// @}
+
+      /**
        * \defgroup<builders> Builder Functions
        * These functions each add one operation to the transaction. They all return
        * a reference to the builder, so they can be chained together in standard
@@ -68,6 +99,48 @@ namespace bts { namespace wallet {
        * @endcode
        */
       /// @{
+      /**
+       * @brief Update a specified account on the blockchain
+       * @param account The account to update
+       * @param public_data The public data to set on the account
+       * @param active_key The new active key to set
+       * @param delegate_pay The pay this delegate requests
+       * @param paying_accout The account to pay the extra fee; only required if delegate_pay is changed.
+       *
+       * If account is a delegate and his pay rate is reduced, paying_account must be set and is expected to be a
+       * receive account. If paying_account is a delegate and his delegate pay balance is sufficient to cover the fee,
+       * then the fee will be withdrawn from his pay. Otherwise, the fee will be charged to the balance for that account
+       * in this transaction.
+       */
+      transaction_builder& update_account_registration(const wallet_account_record& account,
+                                                       optional<variant> public_data,
+                                                       optional<private_key_type> active_key,
+                                                       optional<uint8_t> delegate_pay,
+                                                       optional<wallet_account_record> paying_account);
+      /**
+       * @brief Transfer funds from payer to recipient
+       * @param payer The account to charge
+       * @param recipient The account to credit
+       * @param amount The amount to credit
+       * @param memo The memo to attach to the transaction notification. May be arbitrarily long
+       * @param vote_method The method with which to select the delegate vote for the deposited asset
+       * @param memo_sender If valid, the recipient will see the transaction as being from this sender instead of the
+       * payer.
+       *
+       * payer is expected to be a receive account.
+       * If set, memo_sender is expected to be a receive account.
+       *
+       * If recipient is a public account, a public deposit will be made to his active address; otherwise, a TITAN
+       * transaction will be used.
+       *
+       * This method will create a transaction notice message, which will be completed after sign() is called.
+       */
+      transaction_builder& deposit_asset(const wallet_account_record& payer,
+                                         const account_record& recipient,
+                                         const asset& amount,
+                                         const string& memo,
+                                         vote_selection_method vote_method = vote_recommended,
+                                         fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
       /**
        * @brief Cancel a single order
        * @param order_id
@@ -111,9 +184,9 @@ namespace bts { namespace wallet {
        * The prices' quote and base IDs are expected to be registered with the blockchain.
        */
       transaction_builder& submit_short(const wallet_account_record& from_account,
-                                        const asset& short_amount,
-                                        const price& collateral_rate,
-                                        const oprice& price_limit);
+                                        const asset& short_collateral_amount,
+                                        const price& interest_rate,
+                                        const oprice& price_limit = oprice());
       /**
        * @brief Cover or partially cover a short position
        * @param from_account The account with the short position
@@ -133,7 +206,7 @@ namespace bts { namespace wallet {
        * sufficiently positive balances are available. A single slate is chosen using vote_recommended for all deposits.
        *
        * This function should be called only once, at the end of the builder function calls. Calling it multiple times
-       * shouldn't break anything, but I make no promises.
+       * may cause attempts to over-withdraw balances.
        */
       transaction_builder& finalize();
       /// @}
@@ -150,6 +223,11 @@ namespace bts { namespace wallet {
       {
          return required_signatures.size() == trx.signatures.size();
       }
+
+      /**
+       * @brief Encrypts and returns the transaction notifications for all deposits in this transaction
+       */
+      std::vector<mail::message> encrypted_notifications();
 
    private:
       detail::wallet_impl* _wimpl;
@@ -175,7 +253,10 @@ namespace bts { namespace wallet {
          return balances;
       }
       void pay_fees();
+      bool withdraw_fee();
    };
+
+   typedef std::shared_ptr<transaction_builder> transaction_builder_ptr;
 } } //namespace bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances) )
+FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances)(notices) )

@@ -3,15 +3,13 @@ ACCOUNT                         BALANCE
 ============================================================
 delegate0                       19,801,980.19801 XTS        
 default (unlocked) >>> wallet_account_create test
-
-Account created successfully. You may give the following link to others to allow them to add you as a contact and send you funds:
-xts:test:XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
+"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
 default (unlocked) >>> wallet_account_balance test
 No balances found.
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-[redacted]          PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         [redacted]
+<d-ign></d-ign>PENDING   delegate0           test                100.00000 XTS                                                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> wallet_account_balance delegate0
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -33,7 +31,7 @@ aliases: blockchain_get_pending_transactions, list_pending
 default (unlocked) >>> blockchain_list_pending_transactions
     TXN ID      SIZE          OPERATION COUNT          SIGNATURE COUNT
 ----------------------------------------------------------------------
-[redacted]       244                        2                        1
+   <d-ign></d-ign>       244                        2                        1
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 2
@@ -43,7 +41,7 @@ OK
 default (unlocked) >>> history test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        BALANCE                 FEE                 ID      
 ==============================================================================================================================================================================================
-[redacted]          2         delegate0           test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         [redacted]
+<d-ign></d-ign>2         delegate0           test                100.00000 XTS                                                       100.00000 XTS           0.00000 XTS         <d-ign></d-ign>
 default (unlocked) >>> blockchain_list_pending_transactions
 No pending transactions.
 default (unlocked) >>> wallet_account_balance delegate0

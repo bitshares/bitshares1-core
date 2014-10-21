@@ -281,6 +281,8 @@ public:
          : _result_file(result_file), _expected_result_file(expected_result_file), client_done(done) {}
 
   bool compare_files(); //compare two files, return true if the files match
+  bool compare_files_2();
+  void prepare_string(std::string &str);
 
   fc::future<void> client_done;
 };
@@ -300,6 +302,53 @@ bool test_file::compare_files()
 
   typedef std::istreambuf_iterator<char> istreambuf_iterator;
   return std::equal( istreambuf_iterator(lhs),  istreambuf_iterator(), istreambuf_iterator(rhs));
+}
+
+bool test_file::compare_files_2()
+{
+  std::ifstream lhs(_result_file.string().c_str());
+  std::ifstream rhs(_expected_result_file.string().c_str());
+
+  std::string l_line;
+  std::string r_line;
+
+  while(!lhs.eof() || !rhs.eof())
+  {
+    std::getline(lhs, l_line);
+    std::getline(rhs, r_line);
+
+    prepare_string(l_line);
+    prepare_string(r_line);
+
+    if(l_line.compare(r_line) != 0)
+      return false;
+  }
+
+  return true;
+}
+
+void test_file::prepare_string(std::string &str)
+{
+  for(;;)
+  {
+    std::size_t found_start = str.find("<d-ign>");
+    std::size_t found_stop = str.find("</d-ign>");
+
+    if(found_start == std::string::npos && found_stop == std::string::npos)
+      return;
+
+    if(found_start == std::string::npos)
+      str.erase(0, found_stop);
+    else if(found_stop == std::string::npos)
+      str.erase(str.begin() + found_start, str.end());
+    else if(found_start < found_stop)
+      str.erase(found_start, found_stop - found_start + string("</d-ign>").size());
+    else
+    {
+      str.erase(str.begin() + found_start, str.end());
+      str.erase(0, found_stop);
+    }
+  }
 }
 
 #ifdef WIN32
@@ -570,7 +619,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
     {
       //current_test.compare_files();
       current_test.client_done.wait();
-      BOOST_CHECK_MESSAGE(current_test.compare_files(), "Results mismatch with golden reference log");
+      BOOST_CHECK_MESSAGE(current_test.compare_files_2(), "Results mismatch with golden reference log");
     }
   } 
   catch ( const fc::exception& e )
@@ -591,7 +640,7 @@ BOOST_AUTO_TEST_CASE(replay_chain_database)
   fc::temp_directory client_dir;
   //auto sim_network = std::make_shared<bts::net::simulated_network>();
   bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
-  bts::client::client_ptr client = std::make_shared<bts::client::client>(sim_network);
+  bts::client::client_ptr client = std::make_shared<bts::client::client>("wallet_tests", sim_network);
   client->open( client_dir.path() );
   client->configure_from_command_line( 0, nullptr );
   fc::future<void> client_done = client->start();
@@ -600,7 +649,7 @@ BOOST_AUTO_TEST_CASE(replay_chain_database)
   fc::path test_net_chain_dir("C:\\Users\\Administrator\\AppData\\Roaming\\BitShares XTS");
   source_blockchain->open(test_net_chain_dir / "chain", fc::optional<fc::path>());
   BOOST_TEST_MESSAGE("Opened source blockchain containing " << source_blockchain->get_head_block_num() << " blocks");
-  unsigned total_blocks_to_replay = std::min<unsigned>(source_blockchain->get_head_block_num(), 30000);
+  unsigned total_blocks_to_replay = source_blockchain->get_head_block_num();// std::min<unsigned>(source_blockchain->get_head_block_num(), 30000);
   BOOST_TEST_MESSAGE("Will be benchmarking " << total_blocks_to_replay << " blocks");
   fc::time_point start_time(fc::time_point::now());
   client->sync_status(bts::client::block_message::type, total_blocks_to_replay);
@@ -609,7 +658,52 @@ BOOST_AUTO_TEST_CASE(replay_chain_database)
   client->sync_status(bts::client::block_message::type, 0);
   fc::time_point end_time(fc::time_point::now());
   BOOST_TEST_MESSAGE("Processed " << total_blocks_to_replay << " blocks in " << ((end_time - start_time).count() / fc::seconds(1).count()) << " seconds, which is " << (((double)total_blocks_to_replay*fc::seconds(1).count())/(end_time - start_time).count()) << " blocks/sec");
-  client_done.wait();
+  client->execute_command_line("quit");
+}
+
+BOOST_AUTO_TEST_CASE(replay_chain_database_in_stages)
+{
+  // now reset and try doing it in n stages
+  const unsigned number_of_stages = 4;
+  fc::temp_directory client_dir;
+  fc::remove_all(client_dir.path());
+  fc::create_directories(client_dir.path());
+  fc::microseconds accumulated_time;
+
+  bts::blockchain::chain_database_ptr source_blockchain = std::make_shared<bts::blockchain::chain_database>();
+  fc::path test_net_chain_dir("C:\\Users\\Administrator\\AppData\\Roaming\\BitShares X");
+  source_blockchain->open(test_net_chain_dir / "chain", fc::optional<fc::path>());
+  BOOST_TEST_MESSAGE("Opened source blockchain containing " << source_blockchain->get_head_block_num() << " blocks");
+  unsigned total_blocks_to_replay = source_blockchain->get_head_block_num();// std::min<unsigned>(source_blockchain->get_head_block_num(), 30000);
+  BOOST_TEST_MESSAGE("Will be benchmarking " << total_blocks_to_replay << " blocks");
+
+  bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
+
+  for (int n = 0; n < number_of_stages; ++n)
+  {
+    bts::client::client_ptr client = std::make_shared<bts::client::client>("wallet_tests", sim_network);
+    client->open( client_dir.path() );
+    client->configure_from_command_line( 0, nullptr );
+    fc::future<void> client_done = client->start();
+
+  fc::time_point start_time(fc::time_point::now());
+    unsigned start_block_num = client->get_chain()->get_head_block_num() + 1;
+    unsigned end_block_num = std::min<unsigned>(source_blockchain->get_head_block_num(), start_block_num + total_blocks_to_replay / number_of_stages);
+
+    client->sync_status(bts::client::block_message::type, total_blocks_to_replay);
+    for (unsigned block_num = start_block_num; block_num <= end_block_num; ++block_num)
+      client->handle_message(bts::client::block_message(source_blockchain->get_block(block_num)), true);
+    client->sync_status(bts::client::block_message::type, 0);
+    fc::time_point end_time(fc::time_point::now());
+    accumulated_time += end_time - start_time;
+    BOOST_TEST_MESSAGE("Processed " << end_block_num - start_block_num << " blocks in " << ((end_time - start_time).count() / fc::seconds(1).count()) << " seconds, which is " << (((double)total_blocks_to_replay*fc::seconds(1).count())/(end_time - start_time).count()) << " blocks/sec");
+    BOOST_TEST_MESSAGE("Total accumulated is now " << accumulated_time.count() / fc::seconds(1).count() << " seconds");
+    client->execute_command_line("quit");
+    client_done.wait();
+
+    client.reset();
+  }
+
 }
 #endif // 0
 

@@ -19,6 +19,9 @@
 #include <fc/thread/thread.hpp>
 #include <fc/git_revision.hpp>
 
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/scoped_lock.hpp>
+
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -27,10 +30,7 @@
 
 namespace bts { namespace rpc {
 
-   using namespace client;
-   FC_REGISTER_EXCEPTIONS( (rpc_exception)
-                           (missing_parameter)
-                           (unknown_method) )
+  using namespace client;
 
   namespace detail
   {
@@ -47,6 +47,7 @@ namespace bts { namespace rpc {
          fc::thread*                                       _thread;
          http_callback_type                                _http_file_callback;
          std::unordered_set<fc::rpc::json_connection_ptr>  _open_json_connections;
+         fc::mutex                                         _rpc_mutex; // locked to prevent executing two rpc calls at once
 
          typedef std::map<std::string, bts::api::method_data> method_map_type;
          method_map_type _method_map;
@@ -441,13 +442,15 @@ namespace bts { namespace rpc {
           // ilog( "arguments: ${params}", ("params",arguments) );
           if ((method_data.prerequisites & bts::api::json_authenticated) &&
               _authenticated_connection_set.find(con) == _authenticated_connection_set.end())
-            FC_THROW_EXCEPTION( bts::wallet::login_required, "not logged in");
+            FC_THROW_EXCEPTION( login_required, "not logged in");
           return dispatch_authenticated_method(method_data, arguments);
         }
 
         fc::variant dispatch_authenticated_method(const bts::api::method_data& method_data,
                                                   const fc::variants& arguments_from_caller)
         {
+          fc::scoped_lock<fc::mutex> lock(_rpc_mutex);
+
           if (!method_data.method)
           {
             // then this is a method using our new generated code
@@ -782,20 +785,27 @@ namespace bts { namespace rpc {
 
   void rpc_server::wait_till_rpc_server_shutdown()
   {
-    try
+    // wait until a quit has been signalled
+    if (!my->_on_quit_promise->ready())
     {
-      // wait until a quit has been signalled
-      if ( !my->_on_quit_promise->ready() )
+      try
       {
         my->_on_quit_promise->wait();
       }
-
-      // if we were running a TCP server, also wait for it to shut down
-      if (my->_tcp_serv && my->_accept_loop_complete.valid() )
-        my->_accept_loop_complete.wait();
+      catch (const fc::canceled_exception&)
+      {
+      }
     }
-    catch (const fc::canceled_exception&)
+    // if we were running a TCP server, also wait for it to shut down
+    if (my->_tcp_serv && my->_accept_loop_complete.valid())
     {
+      try
+      {
+        my->_accept_loop_complete.wait();
+      }
+      catch (const fc::canceled_exception&)
+      {
+      }
     }
   }
 

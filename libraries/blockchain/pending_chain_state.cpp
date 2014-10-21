@@ -196,9 +196,6 @@ namespace bts { namespace blockchain {
          else
          {
              slot_record invalid_slot_record;
-             invalid_slot_record.start_time = item.first;
-             invalid_slot_record.block_produced = true;
-             invalid_slot_record.block_id = block_id_type();
              undo_state->store_slot_record( invalid_slot_record );
          }
       }

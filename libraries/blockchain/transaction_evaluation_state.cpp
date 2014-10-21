@@ -1,4 +1,5 @@
 #include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 
@@ -142,12 +143,15 @@ namespace bts { namespace blockchain {
       reset();
       _skip_signature_check = skip_signature_check;
       try {
-        if( trx_arg.expiration < _current_state->now() )
+        if( _current_state->now() >= trx_arg.expiration )
         {
-           const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
-           FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
+           if( _current_state->now() > trx_arg.expiration || _current_state->get_head_block_num() >= BTSX_MARKET_FORK_11_BLOCK_NUM )
+           {
+               const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
+               FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );
+           }
         }
-        if( trx_arg.expiration > (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) )
+        if( (_current_state->now() + BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC) < trx_arg.expiration )
            FC_CAPTURE_AND_THROW( invalid_transaction_expiration, (trx_arg)(_current_state->now()) );
 
         auto trx_id = trx_arg.id();

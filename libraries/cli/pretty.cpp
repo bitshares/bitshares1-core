@@ -13,45 +13,48 @@ bool FILTER_OUTPUT_FOR_TESTS = false;
 
 string pretty_line( int size, char c )
 {
-    std::stringstream ss;
-    for( int i = 0; i < size; ++i ) ss << c;
-    return ss.str();
+    return string(size, c);
 }
 
 string pretty_shorten( const string& str, size_t max_size )
 {
-    if( str.size() > max_size ) return str.substr( 0, max_size - 3 ) + "...";
+    if( str.size() > max_size )
+        return str.substr( 0, max_size - 3 ) + "...";
     return str;
 }
 
 string pretty_timestamp( const time_point_sec& timestamp )
 {
-    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
+    if( FILTER_OUTPUT_FOR_TESTS )
+      return "<d-ign>" + timestamp.to_iso_extended_string() + "</d-ign>";
     return timestamp.to_iso_extended_string();
 }
 
 string pretty_path( const path& file_path )
 {
-    if( FILTER_OUTPUT_FOR_TESTS ) return "[redacted]";
-    return file_path.string();
+    if( FILTER_OUTPUT_FOR_TESTS )
+        return "<d-ign>" + file_path.generic_string() + "</d-ign>";
+    return file_path.generic_string();
 }
 
 string pretty_age( const time_point_sec& timestamp, bool from_now, const string& suffix )
 {
-    if( FILTER_OUTPUT_FOR_TESTS )
-    {
-        return "[redacted]";
-    }
-    else if( from_now )
+    string str;
+
+    if(from_now)
     {
         const auto now = blockchain::now();
         if( suffix.empty() )
-            return fc::get_approximate_relative_time_string( timestamp, now );
+            str = fc::get_approximate_relative_time_string(timestamp, now);
         else
-            return fc::get_approximate_relative_time_string( timestamp, now, " " + suffix );
+            str = fc::get_approximate_relative_time_string(timestamp, now, " " + suffix);
     }
-
-    return fc::get_approximate_relative_time_string( timestamp );
+    else
+        str = fc::get_approximate_relative_time_string(timestamp);
+    if(FILTER_OUTPUT_FOR_TESTS)
+        return "<d-ign>" + str + "</d-ign>";
+    else
+        return str;
 }
 
 string pretty_percent( double part, double whole, int precision )
@@ -67,6 +70,21 @@ string pretty_percent( double part, double whole, int precision )
     std::stringstream ss;
     ss << std::setprecision( precision ) << std::fixed << percent << " %";
     return ss.str();
+}
+
+string pretty_size( uint64_t bytes )
+{
+    static const vector<string> suffixes{ "B", "KiB", "MiB", "GiB" };
+    uint8_t suffix_pos = 0;
+    double count = bytes;
+    while( count >= 1024 && suffix_pos < suffixes.size() )
+    {
+        count /= 1024;
+        ++suffix_pos;
+    }
+    uint64_t size = round( count );
+
+    return std::to_string( size ) + " " + suffixes.at( suffix_pos );
 }
 
 string pretty_info( fc::mutable_variant_object info, cptr client )
@@ -114,7 +132,7 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
     info["client_data_dir"] = pretty_path( data_dir );
 
     if( !info["client_version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-        info["client_version"] = "[redacted]";
+      info["client_version"] = "<d-ign>" + info["client_version"].as_string() + "</d-ign>";
 
     if( !info["ntp_time"].is_null() )
     {
@@ -122,7 +140,7 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         info["ntp_time"] = pretty_timestamp( ntp_time );
 
         if( !info["ntp_time_error"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-            info["ntp_time_error"] = "[redacted]";
+          info["ntp_time_error"] = "<d-ign>" + info["ntp_time_error"].as_string() + "</d-ign>";
     }
 
     if( !info["wallet_unlocked_until_timestamp"].is_null() )
@@ -174,7 +192,7 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     out << std::left;
 
     if( !info["db_version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-        info["db_version"] = "[redacted]";
+      info["db_version"] = "<d-ign>" + info["db_version"].as_string() + "</d-ign>";
 
     const auto timestamp = info["genesis_timestamp"].as<time_point_sec>();
     info["genesis_timestamp"] = pretty_timestamp( timestamp );
@@ -208,6 +226,9 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
     const auto data_dir = info["data_dir"].as<path>();
     info["data_dir"] = pretty_path( data_dir );
 
+    if(!info["num_scanning_threads"].is_null() && FILTER_OUTPUT_FOR_TESTS)
+      info["num_scanning_threads"] = "<d-ign>" + info["num_scanning_threads"].as_string() + "</d-ign>";
+
     if( !info["unlocked_until_timestamp"].is_null() )
     {
         const auto unlocked_until_timestamp = info["unlocked_until_timestamp"].as<time_point_sec>();
@@ -236,9 +257,44 @@ string pretty_wallet_info( fc::mutable_variant_object info, cptr client )
     }
 
     if( !info["version"].is_null() && FILTER_OUTPUT_FOR_TESTS )
-        info["version"] = "[redacted]";
+      info["version"] = "<d-ign>" + info["version"].as_string() + "</d-ign>";
 
     out << fc::json::to_pretty_string( info ) << "\n";
+    return out.str();
+}
+
+string pretty_disk_usage( fc::mutable_variant_object usage )
+{
+    std::stringstream out;
+    out << std::left;
+
+    const auto format_size = []( fc::mutable_variant_object& dict, const string& key )
+    {
+        if( !dict[ key ].is_null() )
+        {
+            const auto size = dict[ key ].as_uint64();
+            dict[ key ] = pretty_size( size );
+        }
+    };
+
+    format_size( usage, "blockchain" );
+    format_size( usage, "dac_state" );
+    format_size( usage, "logs" );
+    format_size( usage, "mail_client" );
+    format_size( usage, "mail_server" );
+    format_size( usage, "network_peers" );
+
+    if( !usage[ "wallets" ].is_null() )
+    {
+        auto wallets = usage[ "wallets" ].as<fc::mutable_variant_object>();
+        for( const auto& item : wallets )
+            format_size( wallets, item.key() );
+        usage[ "wallets" ] = wallets;
+    }
+
+    format_size( usage, "total" );
+
+    out << fc::json::to_pretty_string( usage ) << "\n";
     return out.str();
 }
 
@@ -374,7 +430,7 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
         const auto& delegate_name = client->blockchain_get_block_signee( std::to_string( block_record.block_num ) );
 
         out << std::setw( 32 );
-        if( FILTER_OUTPUT_FOR_TESTS ) out << "[redacted]";
+        if(FILTER_OUTPUT_FOR_TESTS) out << "<d-ign>" << delegate_name << "</d-ign>";
         else out << pretty_shorten( delegate_name, 31 );
 
         out << std::setw(  8 ) << block_record.user_transaction_ids.size();
@@ -382,8 +438,8 @@ string pretty_block_list( const vector<block_record>& block_records, cptr client
 
         if( FILTER_OUTPUT_FOR_TESTS )
         {
-            out << std::setw(  8 ) << "[redacted]";
-            out << std::setw( 15 ) << "[redacted]";
+            out << std::setw(  8 ) << "<d-ign>" << block_record.latency.to_seconds() << "</d-ign>";
+            out << std::setw( 15 ) << "<d-ign>" << block_record.processing_time.count() / double(1000000) << "</d-ign>";
         }
         else
         {
@@ -497,20 +553,15 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
                 out << client->get_chain()->to_pretty_asset( transaction.fee );
 
                 out << std::setw( 8 );
-                if( FILTER_OUTPUT_FOR_TESTS )
-                {
-                    out << "[redacted]";
-                }
-                else if( transaction.is_virtual )
-                {
-                    std::stringstream ss;
-                    ss << "[" << string( transaction.trx_id ).substr( 0, 6 ) << "]";
-                    out << ss.str();
-                }
+                string str;
+                if( transaction.is_virtual )
+                  str = "[" + string(transaction.trx_id).substr(0, 6) + "]";
                 else
-                {
-                    out << string( transaction.trx_id ).substr( 0, 8 );
-                }
+                  str = string(transaction.trx_id).substr(0, 8);
+                if( FILTER_OUTPUT_FOR_TESTS )
+                    out << "<d-ign>" << str << "</d-ign>";
+                else
+                    out << str;
             }
             else
             {
@@ -523,6 +574,147 @@ string pretty_transaction_list( const vector<pretty_transaction>& transactions, 
         }
 
         if( group ) out << pretty_line( line_size + 2, '-' ) << "\n";
+    }
+
+    return out.str();
+}
+
+string pretty_experimental_transaction_list( const set<pretty_transaction_experimental>& transactions, cptr client )
+{
+    if( transactions.empty() ) return "No transactions found.\n";
+    FC_ASSERT( client != nullptr );
+
+    const vector<std::pair<string, int>> fields
+    {
+        { "timestamp",  20 },
+        { "block",      10 },
+        { "inputs",     40 },
+        { "outputs",    40 },
+        { "notes",      32 },
+        { "id",          8 }
+    };
+
+    std::stringstream out;
+    out << std::left;
+
+    map<string, int> field_widths;
+    int total_width = 0;
+    for( const auto& item : fields )
+    {
+        out << std::setw( item.second ) << boost::to_upper_copy( item.first );
+        field_widths[ item.first ] = item.second;
+        total_width += item.second;
+    }
+
+    out << "\n";
+
+    out << pretty_line( total_width ) << "\n";
+
+    for( const auto& transaction : transactions )
+    {
+        auto line_count = 0;
+
+        while( line_count < transaction.inputs.size()
+               || line_count < transaction.outputs.size()
+               || line_count < transaction.notes.size() )
+        {
+            out << std::setw( field_widths.at( "timestamp" ) );
+            if( line_count == 0 )
+                out << pretty_timestamp( transaction.timestamp );
+            else
+                out << "";
+
+            out << std::setw( field_widths.at( "block" ) );
+            if( line_count == 0 )
+            {
+                if( transaction.is_confirmed() )
+                {
+                    out << transaction.block_num;
+                }
+                /*
+                else if( transaction.error.valid() )
+                {
+                    auto name = string( transaction.error->name() );
+                    name = name.substr( 0, name.find( "_" ) );
+                    boost::to_upper( name );
+                    out << name.substr( 0, 9 );
+                }
+                */
+                else
+                {
+                    out << "PENDING";
+                }
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "inputs" ) );
+            if( line_count < transaction.inputs.size() )
+            {
+                const auto& item = transaction.inputs.at( line_count );
+                const string& label = item.first;
+                const asset& delta = item.second;
+                string input = " => " + client->get_chain()->to_pretty_asset( delta );
+                input = pretty_shorten( label, field_widths.at( "inputs" ) - input.size() - 1 ) + input;
+                out << input;
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "outputs" ) );
+            if( line_count < transaction.outputs.size() )
+            {
+                const auto& item = transaction.outputs.at( line_count );
+                const string& label = item.first;
+                const asset& delta = item.second;
+                string output = client->get_chain()->to_pretty_asset( delta ) + " => ";
+                output = output + pretty_shorten( label, field_widths.at( "outputs" ) - output.size() - 1 );
+                out << output;
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "notes" ) );
+            if( line_count < transaction.notes.size() )
+            {
+                out << pretty_shorten( transaction.notes.at( line_count ), field_widths.at( "notes" ) - 1 );
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << std::setw( field_widths.at( "id" ) );
+            if( line_count == 0 )
+            {
+                if( FILTER_OUTPUT_FOR_TESTS )
+                    out << "[redacted]";
+                else if( transaction.is_virtual() )
+                    out << "VIRTUAL";
+                else
+                {
+                  if(FILTER_OUTPUT_FOR_TESTS)
+                    out << "<d-ign>" << string(*transaction.transaction_id).substr(0, field_widths.at("id")) << "</d-ign>";
+                  else
+                    out << string( *transaction.transaction_id ).substr( 0, field_widths.at( "id" ) );
+                }
+            }
+            else
+            {
+                out << "";
+            }
+
+            out << "\n";
+            ++line_count;
+        }
+
+        out << pretty_line( total_width, '-' ) << "\n";
     }
 
     return out.str();

@@ -73,14 +73,12 @@ namespace bts { namespace blockchain {
                              price lowest_ask = price(),
                              price opening_price = price(),
                              price closing_price = price(),
-                             share_type volume = 0,
-                             fc::optional<price> recent_average_price = fc::optional<price>())
+                             share_type volume = 0)
          : highest_bid(highest_bid),
            lowest_ask(lowest_ask),
            opening_price(opening_price),
            closing_price(closing_price),
-           volume(volume),
-           recent_average_price(recent_average_price)
+           volume(volume)
        {}
 
        price highest_bid;
@@ -88,8 +86,6 @@ namespace bts { namespace blockchain {
        price opening_price;
        price closing_price;
        share_type volume;
-
-       fc::optional<price> recent_average_price;
 
        bool operator == ( const market_history_record& other ) const
        {
@@ -108,8 +104,6 @@ namespace bts { namespace blockchain {
        double opening_price;
        double closing_price;
        share_type volume;
-
-       fc::optional<double> recent_average_price;
    };
    typedef vector<market_history_point> market_history_points;
 
@@ -144,8 +138,11 @@ namespace bts { namespace blockchain {
       market_order( order_type_enum t, market_index_key k, order_record s, share_type c )
       :type(t),market_index(k),state(s),collateral(c){}
 
-      market_order( order_type_enum t, market_index_key k, order_record s, share_type c, time_point_sec exp )
-      :type(t),market_index(k),state(s),collateral(c),expiration(exp){}
+      market_order( order_type_enum t, market_index_key k, order_record s, share_type c, price interest )
+      :type(t),market_index(k),state(s),collateral(c),interest_rate(interest){}
+
+      market_order( order_type_enum t, market_index_key k, order_record s, share_type c, price interest, time_point_sec exp )
+      :type(t),market_index(k),state(s),collateral(c),interest_rate(interest),expiration(exp){}
 
       market_order():type(null_order){}
 
@@ -162,6 +159,7 @@ namespace bts { namespace blockchain {
       market_index_key                          market_index;
       order_record                              state;
       optional<share_type>                      collateral;
+      optional<price>                           interest_rate;
       optional<time_point_sec>                  expiration;
    };
 
@@ -174,9 +172,11 @@ namespace bts { namespace blockchain {
       asset                                     bid_paid;
       asset                                     bid_received;
       /** if bid_type == short, then collateral will be paid from short to cover positon */
-      optional<asset>                           bid_collateral;
+      optional<asset>                           short_collateral;
       asset                                     ask_paid;
       asset                                     ask_received;
+      /** any leftover collateral returned to owner after a cover */
+      optional<asset>                           returned_collateral;
       fc::enum_type<uint8_t, order_type_enum>   bid_type = null_order;
       fc::enum_type<uint8_t, order_type_enum>   ask_type = null_order;
       asset                                     fees_collected;
@@ -195,49 +195,62 @@ namespace bts { namespace blockchain {
 
    struct collateral_record
    {
-      collateral_record(share_type c = 0, share_type p = 0):collateral_balance(c),payoff_balance(p){}
+      collateral_record(share_type c = 0,
+                        share_type p = 0,
+                        const price& apr = price(),
+                        time_point_sec exp = time_point_sec())
+          :collateral_balance(c),payoff_balance(p),interest_rate(apr),expiration(exp){}
       bool is_null() const { return 0 == payoff_balance && 0 == collateral_balance; }
 
       share_type      collateral_balance;
       share_type      payoff_balance;
+      price           interest_rate;
       time_point_sec  expiration; // after expiration the collateral is forced to be called.
    };
    typedef fc::optional<collateral_record> ocollateral_record;
 
    struct market_status
    {
-       market_status():bid_depth(-BTS_BLOCKCHAIN_MAX_SHARES),ask_depth(-BTS_BLOCKCHAIN_MAX_SHARES){}
-       market_status( asset_id_type quote, asset_id_type base, share_type biddepth, share_type askdepth )
-       :quote_id(quote),base_id(base),bid_depth(biddepth),ask_depth(askdepth){}
+       market_status(){} // Null case
+       market_status( asset_id_type quote, asset_id_type base )
+       :quote_id(quote),base_id(base)
+       {
+           FC_ASSERT( quote > base );
+       }
 
-       bool is_null()const { return bid_depth == ask_depth && bid_depth == -BTS_BLOCKCHAIN_MAX_SHARES; }
+       bool is_null()const { return quote_id == base_id; }
+       void update_feed_price( const optional<price>& feed )
+       {
+           current_feed_price = feed;
+           if( current_feed_price.valid() )
+               last_valid_feed_price = current_feed_price;
+       }
 
-       asset_id_type quote_id;
-       asset_id_type base_id;
+       asset_id_type            quote_id;
+       asset_id_type            base_id;
+       optional<price>          current_feed_price;
+       optional<price>          last_valid_feed_price;
+       optional<fc::exception>  last_error;
 
+       /* All of these are no longer used but need to be kept around for applying old blocks */
+       share_type               ask_depth = 0;
+       share_type               bid_depth = 0;
+       price                    center_price;
        price minimum_ask()const
        {
-         auto avg = center_price;
-         avg.ratio *= 9;
-         avg.ratio /= 10;
-         return avg;
+           auto avg = center_price;
+           avg.ratio *= 9;
+           avg.ratio /= 10;
+           return avg;
        }
        price maximum_bid()const
        {
-         auto avg = center_price;
-         avg.ratio *= 10;
-         avg.ratio /= 9;
-         return avg;
+           auto avg = center_price;
+           avg.ratio *= 10;
+           avg.ratio /= 9;
+           return avg;
        }
-
-       // TODO: Remove these 3; no longer used. Infact remove above two member functions also.
-       // XXX: They must remain in BTSX for old market engines though
-       // XXX: We need a new is_null if removed
-       share_type               bid_depth;
-       share_type               ask_depth;
-       price                    center_price;
-
-       optional<fc::exception>  last_error;
+       /**************************************************************************************/
    };
    typedef optional<market_status> omarket_status;
 
@@ -245,22 +258,23 @@ namespace bts { namespace blockchain {
        api_market_status(const market_status& market_stat = market_status())
          : market_status(market_stat)
        {}
-       double                   center_price;
+       double                   current_feed_price;
+       double                   last_valid_feed_price;
    };
 
 } } // bts::blockchain
 
 FC_REFLECT_ENUM( bts::blockchain::order_type_enum, (null_order)(bid_order)(ask_order)(short_order)(cover_order) )
 FC_REFLECT_ENUM( bts::blockchain::market_history_key::time_granularity_enum, (each_block)(each_hour)(each_day) )
-FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(bid_depth)(ask_depth)(center_price)(last_error) )
-FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (center_price) )
+FC_REFLECT( bts::blockchain::market_status, (quote_id)(base_id)(current_feed_price)(last_valid_feed_price)(last_error)(ask_depth)(bid_depth)(center_price) )
+FC_REFLECT_DERIVED( bts::blockchain::api_market_status, (bts::blockchain::market_status), (current_feed_price)(last_valid_feed_price) )
 FC_REFLECT( bts::blockchain::market_index_key, (order_price)(owner) )
-FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(opening_price)(closing_price)(volume)(recent_average_price) )
+FC_REFLECT( bts::blockchain::market_history_record, (highest_bid)(lowest_ask)(opening_price)(closing_price)(volume) )
 FC_REFLECT( bts::blockchain::market_history_key, (quote_id)(base_id)(granularity)(timestamp) )
-FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(opening_price)(closing_price)(volume)(recent_average_price) )
+FC_REFLECT( bts::blockchain::market_history_point, (timestamp)(highest_bid)(lowest_ask)(opening_price)(closing_price)(volume) )
 FC_REFLECT( bts::blockchain::order_record, (balance)(short_price_limit)(last_update) )
-FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance)(expiration) )
-FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral)(expiration) )
+FC_REFLECT( bts::blockchain::collateral_record, (collateral_balance)(payoff_balance)(interest_rate)(expiration) )
+FC_REFLECT( bts::blockchain::market_order, (type)(market_index)(state)(collateral)(interest_rate)(expiration) )
 FC_REFLECT_TYPENAME( std::vector<bts::blockchain::market_transaction> )
 FC_REFLECT_TYPENAME( bts::blockchain::market_history_key::time_granularity_enum ) // http://en.wikipedia.org/wiki/Voodoo_programminqg
 FC_REFLECT( bts::blockchain::market_transaction,
@@ -270,9 +284,10 @@ FC_REFLECT( bts::blockchain::market_transaction,
             (ask_price)
             (bid_paid)
             (bid_received)
-            (bid_collateral)
+            (short_collateral)
             (ask_paid)
             (ask_received)
+            (returned_collateral)
             (bid_type)
             (ask_type)
             (fees_collected)

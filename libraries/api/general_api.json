@@ -190,6 +190,15 @@
         "parameters"  : [],
         "is_const"   : false,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name" : "disk_usage",
+        "description" : "Report disk space taken up by different groups of client files",
+        "return_type" : "variant",
+        "parameters"  : [],
+        "is_const"   : true,
+        "prerequisites" : ["json_authenticated"],
+        "aliases" : ["size", "sizes", "usage", "diskusage"]
       }
     ]
 }

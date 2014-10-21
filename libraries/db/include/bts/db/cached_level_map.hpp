@@ -7,13 +7,13 @@
 namespace bts { namespace db {
 
    template<typename Key, typename Value, class CacheType = std::map<Key,Value> >
-   class cached_level_map 
+   class cached_level_map
    {
       public:
          void open( const fc::path& dir, bool create = true, bool flush_on_store = true )
          {
            _flush_on_store = flush_on_store;
-           _db.open( dir, create ); 
+           _db.open( dir, create );
            for( auto itr = _db.begin(); itr.valid(); ++itr )
               _cache[itr.key()]  = itr.value();
          }
@@ -43,7 +43,7 @@ namespace bts { namespace db {
 
          void flush()
          {
-            // TODO... 
+            // TODO...
             // start batch
             for( auto item : _dirty )
                _db.store( item, _cache[item] );
@@ -173,6 +173,12 @@ namespace bts { namespace db {
         {
            return iterator( _cache.lower_bound(key), _cache.begin(), _cache.end() );
         }
+
+        // TODO: Iterate over cache instead
+        void export_to_json( const fc::path& path )const
+        { try {
+            _db.export_to_json( path );
+        } FC_CAPTURE_AND_RETHROW( (path) ) }
 
       private:
         CacheType                _cache;

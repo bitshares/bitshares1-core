@@ -18,6 +18,7 @@ struct email_record;
 class client : public std::enable_shared_from_this<client> {
 public:
     boost::signals2::signal<void(int)> new_mail_notifier;
+    boost::signals2::signal<void(transaction_notice_message)> new_transaction_notifier;
 
     enum mail_status {
         submitted,              //The message has been submitted to the client for processing
@@ -27,7 +28,8 @@ public:
 
         received,               //The message is an incoming message
 
-        failed                  //The message could not be processed
+        failed,                 //The message could not be processed
+        canceled                //The message was canceled by the user
     };
 
     client(wallet::wallet_ptr wallet, blockchain::chain_database_ptr chain);
@@ -36,17 +38,26 @@ public:
     void open(const fc::path& data_dir);
 
     void retry_message(message_id_type message_id);
+    void cancel_message(message_id_type message_id);
     void remove_message(message_id_type message_id);
     void archive_message(message_id_type message_id_type);
 
-    int check_new_messages();
+    int check_new_messages(bool get_old_messages = false);
 
     std::multimap<mail_status, message_id_type> get_processing_messages();
     std::multimap<mail_status, message_id_type> get_archive_messages();
     std::vector<email_header> get_inbox();
     email_record get_message(message_id_type message_id);
 
-    message_id_type send_email(const string& from, const string& to, const string& subject, const string& body, const message_id_type& reply_to = message_id_type());
+    message_id_type send_email(const string& from,
+                               const string& to,
+                               const string& subject,
+                               const string& body,
+                               const message_id_type& reply_to = message_id_type());
+    message_id_type send_encrypted_message(message&& ciphertext,
+                                           const string& from,
+                                           const string& to,
+                                           const blockchain::public_key_type& recipient_key);
 
     std::vector<email_header> get_messages_by_sender(string sender);
     std::vector<email_header> get_messages_by_recipient(string recipient);
@@ -88,6 +99,7 @@ typedef std::shared_ptr<client> mail_client_ptr;
 }
 
 FC_REFLECT_TYPENAME(bts::mail::client::mail_status)
-FC_REFLECT_ENUM(bts::mail::client::mail_status, (submitted)(proof_of_work)(transmitting)(accepted)(received)(failed))
+FC_REFLECT_ENUM(bts::mail::client::mail_status, (submitted)(proof_of_work)
+                (transmitting)(accepted)(received)(failed)(canceled))
 FC_REFLECT(bts::mail::email_header, (id)(sender)(recipient)(subject)(timestamp))
 FC_REFLECT(bts::mail::email_record, (header)(content)(mail_servers)(failure_reason))

@@ -49,65 +49,6 @@ void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
          }
          break;
       }
-
-      case withdraw_multi_sig_type:
-      {
-         auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
-         uint32_t valid_signatures = 0;
-         for( auto sig : multi_sig.owners )
-            valid_signatures += eval_state.check_signature( sig );
-         if( valid_signatures < multi_sig.required )
-            FC_CAPTURE_AND_THROW( missing_signature, (valid_signatures)(multi_sig) );
-         break;
-      }
-
-      case withdraw_password_type:
-      {
-         auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
-         try {
-            if( password_condition.timeout < eval_state._current_state->now() )
-            {
-               if( !eval_state.check_signature( password_condition.payor ) )
-                  FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payor) );
-            }
-            else
-            {
-               if( !eval_state.check_signature( password_condition.payee ) )
-                  FC_CAPTURE_AND_THROW( missing_signature, (password_condition.payee) );
-               if( claim_input_data.size() < sizeof( fc::ripemd160 ) )
-                  FC_CAPTURE_AND_THROW( invalid_claim_password, (claim_input_data) );
-
-               auto input_password_hash = fc::ripemd160::hash( claim_input_data.data(),
-                                                               claim_input_data.size() );
-
-               if( password_condition.password_hash != input_password_hash )
-                  FC_CAPTURE_AND_THROW( invalid_claim_password, (input_password_hash) );
-            }
-         } FC_CAPTURE_AND_RETHROW( (password_condition ) )
-         break;
-      }
-
-      case withdraw_option_type:
-      {
-         auto option = current_balance_record->condition.as<withdraw_option>();
-         try {
-            if( eval_state._current_state->now() > option.date )
-            {
-               if( !eval_state.check_signature( option.optionor ) )
-                  FC_CAPTURE_AND_THROW( missing_signature, (option.optionor) );
-            }
-            else // the option hasn't expired
-            {
-               if( !eval_state.check_signature( option.optionee ) )
-                  FC_CAPTURE_AND_THROW( missing_signature, (option.optionee) );
-
-               auto pay_amount = asset( this->amount, current_balance_record->condition.asset_id ) * option.strike_price;
-               eval_state.add_required_deposit( option.optionee, pay_amount );
-            }
-         } FC_CAPTURE_AND_RETHROW( (option) )
-         break;
-      }
-
       default:
          FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );
    }
@@ -126,7 +67,8 @@ void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
       auto yield = current_balance_record->calculate_yield( eval_state._current_state->now(),
                                                             current_balance_record->balance,
                                                             asset_rec->collected_fees,
-                                                            asset_rec->current_share_supply );
+                                                            asset_rec->current_share_supply,
+                                                            eval_state._current_state->get_head_block_num() );
       if( yield.amount > 0 )
       {
          asset_rec->collected_fees       -= yield.amount;

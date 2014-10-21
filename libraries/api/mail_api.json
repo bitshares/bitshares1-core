@@ -8,11 +8,6 @@
             "return_type": "void",
             "parameters" : [
                 {
-                    "name" : "owner",
-                    "type" : "address",
-                    "description" : "The address of the message's recipient."
-                },
-                {
                     "name" : "message",
                     "type" : "message",
                     "description" : "The message to store."
@@ -100,6 +95,19 @@
             "prerequisites" : ["json_authenticated"]
         },
         {
+            "method_name": "mail_cancel_message",
+            "description": "Cancels the outgoing message if it has not been transmitted yet.",
+            "return_type": "void",
+            "parameters" : [
+                {
+                    "name" : "message_id",
+                    "type" : "message_id",
+                    "description" : "ID of the message to cancel."
+                }
+            ],
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
             "method_name": "mail_remove_message",
             "description": "Removes the message from the local database.",
             "return_type": "void",
@@ -130,7 +138,14 @@
             "method_name": "mail_check_new_messages",
             "description": "Check mail server for new mail and return number of new messages.",
             "return_type": "int32_t",
-            "parameters" : [],
+            "parameters" : [
+                {
+                    "name" : "get_old_messages",
+                    "type" : "bool",
+                    "description" : "If true, all messages will be retrieved, not just new ones.",
+                    "default_value" : "false"
+                }
+            ],
             "prerequisites" : ["json_authenticated","wallet_unlocked"]
         },
         {

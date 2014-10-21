@@ -73,6 +73,8 @@ namespace bts { namespace blockchain {
 
      char div;
      ss >> quote_asset_id.value >> div >> base_asset_id.value;
+
+     FC_ASSERT( quote_asset_id > base_asset_id, "${quote} > ${base}", ("quote",quote_asset_id)("base",base_asset_id) );
   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
   int price::set_ratio_from_string( const std::string& ratio_str )
@@ -81,7 +83,7 @@ namespace bts { namespace blockchain {
     int digit = *c - '0';
     if (digit >= 0 && digit <= 9)
     {
-      int64_t int_part = digit;
+      uint64_t int_part = digit;
       ++c;
       digit = *c - '0';
       while (digit >= 0 && digit <= 9)

@@ -5,13 +5,13 @@
 /* Comment out this line for a non-test network */
 //#define BTS_TEST_NETWORK
 
-#define BTS_TEST_NETWORK_VERSION                            32
+#define BTS_TEST_NETWORK_VERSION                            37
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     145
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     150
 
 /**
  *  The address prepended to string representation of
@@ -36,7 +36,7 @@
  * The number of delegates that the blockchain is designed to support
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                        uint32_t(101)
-#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       BTS_BLOCKCHAIN_NUM_DELEGATES
+#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       (BTS_BLOCKCHAIN_NUM_DELEGATES + BTS_BLOCKCHAIN_NUM_DELEGATES/10)
 #define BTS_BLOCKCHAIN_MIN_FEEDS                            ((BTS_BLOCKCHAIN_NUM_DELEGATES/2) + 1)
 #define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     (BTS_BLOCKCHAIN_NUM_DELEGATES*4)
 

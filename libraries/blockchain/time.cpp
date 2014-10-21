@@ -55,6 +55,22 @@ fc::time_point_sec now()
       return fc::time_point::now() + fc::seconds( adjusted_time_sec );
 }
 
+fc::time_point_sec nonblocking_now()
+{
+  if (simulated_time)
+    return fc::time_point() + fc::seconds(simulated_time + adjusted_time_sec);
+
+  fc::ntp* actual_ntp_service = detail::ntp_service.load();
+  fc::optional<fc::time_point> current_ntp_time;
+  if (actual_ntp_service)
+    current_ntp_time = actual_ntp_service->get_time();
+
+  if (current_ntp_time)
+    return *current_ntp_time + fc::seconds(adjusted_time_sec);
+  else
+    return fc::time_point::now() + fc::seconds(adjusted_time_sec);
+}
+
 void update_ntp_time()
 {
   detail::ntp_service.load()->request_now();

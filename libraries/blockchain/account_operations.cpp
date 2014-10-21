@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
    { try {
       auto now = eval_state._current_state->now();
 
-      if( !eval_state._current_state->is_valid_account_name( this->name ) )
+      if( !blockchain::is_valid_account_name( this->name ) )
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
 
       auto current_account = eval_state._current_state->get_account_record( this->name );
@@ -58,10 +58,9 @@ namespace bts { namespace blockchain {
       new_record.set_active_key( now, this->active_key );
       if( this->is_delegate() )
       {
-          FC_ASSERT( this->delegate_pay_rate >= 0 );
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
+          const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
           eval_state.required_fees += asset( (max_reg_fee * delegate_pay_rate) / 100, 0 );
       }
       new_record.meta_data = this->meta_data;
@@ -154,11 +153,17 @@ namespace bts { namespace blockchain {
          current_record->public_data  = *this->public_data;
       }
 
+      if( current_record->is_delegate() )
+      {
+          // Delegates accounts cannot revert to a normal account
+          FC_ASSERT( this->is_delegate() );
+      }
+
       if( this->is_delegate() )
       {
-         FC_ASSERT( this->delegate_pay_rate >= 0 );
          if( current_record->is_delegate() )
          {
+            // Delegates cannot increase their pay rate
             FC_ASSERT( current_record->delegate_info->pay_rate >= this->delegate_pay_rate );
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
          }
@@ -166,7 +171,7 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-            auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
+            const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
             eval_state.required_fees += asset( (max_reg_fee * this->delegate_pay_rate) / 100, 0 );
          }
       }

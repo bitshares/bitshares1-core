@@ -54,6 +54,8 @@ namespace bts { namespace blockchain {
       update_feed_op_type           = 19,
       burn_op_type                  = 20,
       link_account_op_type          = 21,
+      withdraw_all_op_type          = 22,
+      release_escrow_op_type        = 23,
 
       short_op_v2_type              = 34
    };
@@ -130,6 +132,8 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (update_feed_op_type)
                  (burn_op_type)
                  (link_account_op_type)
+                 (withdraw_all_op_type)
+
                  (short_op_v2_type)
                  )
 

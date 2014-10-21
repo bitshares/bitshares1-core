@@ -12,6 +12,7 @@
 
 namespace bts { namespace blockchain {
    const operation_type_enum withdraw_operation::type               = withdraw_op_type;
+   const operation_type_enum withdraw_all_operation::type           = withdraw_all_op_type;
    const operation_type_enum deposit_operation::type                = deposit_op_type;
 
    const operation_type_enum register_account_operation::type       = register_account_op_type;
@@ -41,11 +42,13 @@ namespace bts { namespace blockchain {
    const operation_type_enum update_feed_operation::type            = update_feed_op_type;
    const operation_type_enum burn_operation::type                   = burn_op_type;
    const operation_type_enum link_account_operation::type           = link_account_op_type;
+   const operation_type_enum release_escrow_operation::type         = release_escrow_op_type;
 
    const operation_type_enum short_operation::type                  = short_op_v2_type;
 
    static bool first_chain = []()->bool{
       bts::blockchain::operation_factory::instance().register_operation<withdraw_operation>();
+      bts::blockchain::operation_factory::instance().register_operation<withdraw_all_operation>();
       bts::blockchain::operation_factory::instance().register_operation<deposit_operation>();
       bts::blockchain::operation_factory::instance().register_operation<create_asset_operation>();
       bts::blockchain::operation_factory::instance().register_operation<issue_asset_operation>();
@@ -68,6 +71,8 @@ namespace bts { namespace blockchain {
       bts::blockchain::operation_factory::instance().register_operation<update_feed_operation>();
       bts::blockchain::operation_factory::instance().register_operation<burn_operation>();
       bts::blockchain::operation_factory::instance().register_operation<link_account_operation>();
+
+      bts::blockchain::operation_factory::instance().register_operation<release_escrow_operation>();
 
       bts::blockchain::operation_factory::instance().register_operation<short_operation>();
       return true;

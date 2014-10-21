@@ -25,16 +25,19 @@ string pretty_timestamp( const time_point_sec& timestamp );
 string pretty_path( const path& file_path );
 string pretty_age( const time_point_sec& timestamp, bool from_now = false, const string& suffix = string() );
 string pretty_percent( double part, double whole, int precision = 2 );
+string pretty_size( uint64_t bytes );
 
 string pretty_info( fc::mutable_variant_object info, cptr client );
 string pretty_blockchain_info( fc::mutable_variant_object info, cptr client );
 string pretty_wallet_info( fc::mutable_variant_object info, cptr client );
+string pretty_disk_usage( fc::mutable_variant_object usage );
 
 string pretty_delegate_list( const vector<account_record>& delegate_records, cptr client );
 
 string pretty_block_list( const vector<block_record>& block_records, cptr client );
 
 string pretty_transaction_list( const vector<pretty_transaction>& transactions, cptr client );
+string pretty_experimental_transaction_list( const set<pretty_transaction_experimental>& transactions, cptr client );
 
 string pretty_asset_list( const vector<asset_record>& asset_records, cptr client );
 

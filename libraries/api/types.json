@@ -127,6 +127,10 @@
         "default_example" : "TODO"
       },
       {
+        "type_name" : "optional_variant_object",
+        "cpp_return_type" : "fc::optional<fc::variant_object>"
+      },
+      {
         "type_name" : "transaction_id",
         "cpp_return_type" : "bts::blockchain::transaction_id_type",
         "cpp_include_file" : "bts/blockchain/types.hpp",
@@ -306,6 +310,10 @@
         "cpp_return_type" : "std::vector<bts::wallet::pretty_transaction>",
         "cpp_include_file" : "bts/wallet/pretty.hpp",
         "default_example" : "TODO"
+      },
+      {
+        "type_name" : "experimental_transactions",
+        "cpp_return_type" : "std::set<bts::wallet::pretty_transaction_experimental>"
       },
       {
          "type_name" : "account_balance_summary_type",
@@ -628,6 +636,11 @@
       {
         "type_name" : "market_status",
         "cpp_return_type" : "bts::blockchain::api_market_status"
+      },
+      {
+        "type_name" : "market_status_array",
+        "container_type": "array",
+        "contained_type": "market_status"
       },
       {
         "type_name" : "vote_selection_method",

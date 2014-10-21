@@ -4,7 +4,50 @@
 #include <algorithm>
 #include <locale>
 
-namespace bts{ namespace blockchain {
+namespace bts { namespace blockchain {
+
+   bool is_valid_account_name( const std::string& str )
+   {
+      if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
+      if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
+      if( !isalpha(str[0]) ) return false;
+      if ( !isalnum(str[str.size()-1]) || isupper(str[str.size()-1]) ) return false;
+
+      std::string subname(str);
+      std::string supername;
+      int dot = str.find('.');
+      if( dot != std::string::npos )
+      {
+        subname = str.substr(0, dot);
+        //There is definitely a remainder; we checked above that the last character is not a dot
+        supername = str.substr(dot+1);
+      }
+
+      if ( !isalnum(subname[subname.size()-1]) || isupper(subname[subname.size()-1]) ) return false;
+      for( const auto& c : subname )
+      {
+          if( isalnum(c) && !isupper(c) ) continue;
+          else if( c == '-' ) continue;
+          else return false;
+      }
+
+      if( supername.empty() )
+        return true;
+      return is_valid_account_name(supername);
+   }
+
+   bool is_valid_symbol_name( const string& name )
+   {
+      if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+         return false;
+      if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
+         return false;
+      std::locale loc;
+      for( const auto& c : name )
+         if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
+            return false;
+      return true;
+   }
 
    balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
    {
@@ -33,36 +76,6 @@ namespace bts{ namespace blockchain {
    share_type chain_interface::get_asset_registration_fee()const
    {
       return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
-   }
-
-   bool chain_interface::is_valid_account_name( const std::string& str )const
-   {
-      if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
-      if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
-      if( !isalpha(str[0]) ) return false;
-      if ( !isalnum(str[str.size()-1]) || isupper(str[str.size()-1]) ) return false;
-
-      std::string subname(str);
-      std::string supername;
-      int dot = str.find('.');
-      if( dot != std::string::npos )
-      {
-        subname = str.substr(0, dot);
-        //There is definitely a remainder; we checked above that the last character is not a dot
-        supername = str.substr(dot+1);
-      }
-
-      if ( !isalnum(subname[subname.size()-1]) || isupper(subname[subname.size()-1]) ) return false;
-      for( const auto& c : subname )
-      {
-          if( isalnum(c) && !isupper(c) ) continue;
-          else if( c == '-' ) continue;
-          else return false;
-      }
-
-      if( supername.empty() )
-        return true;
-      return is_valid_account_name(supername);
    }
 
    asset_id_type chain_interface::last_asset_id()const
@@ -171,12 +184,13 @@ namespace bts{ namespace blockchain {
          fraction /= 10;
          fraction_string.erase(0, 1);
       }
-      return asset(whole > 0? whole + fraction : whole - fraction, record->id);
+      return asset(whole >= 0? whole + fraction : whole - fraction, record->id);
        } FC_CAPTURE_AND_RETHROW( (amount)(symbol) ) }
 
    price chain_interface::to_ugly_price(const std::string& price_string,
                                         const std::string& base_symbol,
-                                        const std::string& quote_symbol) const
+                                        const std::string& quote_symbol,
+                                        bool do_precision_dance) const
    { try {
       auto base_record = get_asset_record(base_symbol);
       auto quote_record = get_asset_record(quote_symbol);
@@ -184,8 +198,11 @@ namespace bts{ namespace blockchain {
       if( !quote_record ) FC_CAPTURE_AND_THROW( unknown_asset_symbol, (quote_symbol) );
 
       price ugly_price(price_string + " " + std::to_string(quote_record->id) + " / " + std::to_string(base_record->id));
-      ugly_price.ratio *= quote_record->get_precision();
-      ugly_price.ratio /= base_record->get_precision();
+      if( do_precision_dance )
+      {
+         ugly_price.ratio *= quote_record->get_precision();
+         ugly_price.ratio /= base_record->get_precision();
+      }
       return ugly_price;
    } FC_CAPTURE_AND_RETHROW( (price_string)(base_symbol)(quote_symbol) ) }
 
@@ -211,19 +228,6 @@ namespace bts{ namespace blockchain {
    int64_t chain_interface::get_required_confirmations()const
    {
       return get_property( confirmation_requirement ).as_int64();
-   }
-
-   bool chain_interface::is_valid_symbol_name( const string& name )const
-   {
-      if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
-         return false;
-      if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
-         return false;
-      std::locale loc;
-      for( const auto& c : name )
-         if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
-            return false;
-      return true;
    }
 
    share_type chain_interface::get_delegate_pay_rate()const

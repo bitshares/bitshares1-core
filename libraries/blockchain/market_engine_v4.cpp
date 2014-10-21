@@ -70,7 +70,7 @@ namespace bts { namespace blockchain { namespace detail {
              // Set initial market status
              {
                  omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
-                 if( !market_stat ) market_stat = market_status( quote_id, base_id, 0, 0 );
+                 if( !market_stat ) market_stat = market_status( quote_id, base_id );
                  _market_stat = *market_stat;
              }
 
@@ -156,14 +156,14 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
                    mtrx.bid_received   = mtrx.ask_paid;
 
-                   mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
+                   mtrx.short_collateral = mtrx.bid_paid / collateral_rate;
 
                    // Handle rounding errors
-                   if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
-                       mtrx.bid_collateral = _current_bid->get_balance();
+                   if( (*mtrx.short_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
+                       mtrx.short_collateral = _current_bid->get_balance();
 
                    // If too little collateral at this price
-                   if( *mtrx.bid_collateral < mtrx.ask_paid )
+                   if( *mtrx.short_collateral < mtrx.ask_paid )
                    {
                        edump( (mtrx) );
                        _current_bid.reset();
@@ -173,8 +173,8 @@ namespace bts { namespace blockchain { namespace detail {
                    pay_current_short( mtrx, *quote_asset );
                    pay_current_cover( mtrx, *quote_asset );
 
-                   _market_stat.bid_depth -= mtrx.bid_collateral->amount;
-                   _market_stat.ask_depth += mtrx.bid_collateral->amount;
+                   _market_stat.bid_depth -= mtrx.short_collateral->amount;
+                   _market_stat.ask_depth += mtrx.short_collateral->amount;
 
                    order_did_execute = true;
                 }
@@ -256,14 +256,14 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.ask_paid       = mtrx.ask_received * mtrx.ask_price;
                    mtrx.bid_received   = mtrx.ask_paid;
 
-                   mtrx.bid_collateral = mtrx.bid_paid / collateral_rate;
+                   mtrx.short_collateral = mtrx.bid_paid / collateral_rate;
 
                    // Handle rounding errors
-                   if( (*mtrx.bid_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
-                       mtrx.bid_collateral = _current_bid->get_balance();
+                   if( (*mtrx.short_collateral - _current_bid->get_balance()).amount < BTS_BLOCKCHAIN_PRECISION )
+                       mtrx.short_collateral = _current_bid->get_balance();
 
                    // If too little collateral at this price
-                   if( *mtrx.bid_collateral < mtrx.ask_paid )
+                   if( *mtrx.short_collateral < mtrx.ask_paid )
                    {
                        edump( (mtrx) );
                        _current_bid.reset();
@@ -273,8 +273,8 @@ namespace bts { namespace blockchain { namespace detail {
                    pay_current_short( mtrx, *quote_asset );
                    pay_current_ask( mtrx, *quote_asset );
 
-                   _market_stat.bid_depth -= mtrx.bid_collateral->amount;
-                   _market_stat.ask_depth += mtrx.bid_collateral->amount;
+                   _market_stat.bid_depth -= mtrx.short_collateral->amount;
+                   _market_stat.ask_depth += mtrx.short_collateral->amount;
 
                    order_did_execute = true;
                 }
@@ -365,7 +365,7 @@ namespace bts { namespace blockchain { namespace detail {
 
              // Update market status and market history
              _pending_state->store_market_status( _market_stat );
-             update_market_history( trading_volume, opening_price, closing_price, _market_stat, timestamp );
+             update_market_history( trading_volume, opening_price, closing_price, timestamp );
 
              wlog( "done matching orders" );
              idump( (_current_bid)(_current_ask) );
@@ -378,7 +378,7 @@ namespace bts { namespace blockchain { namespace detail {
            wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
            auto market_state = _prior_state->get_market_status( quote_id, base_id );
            if( !market_state )
-              market_state = market_status( quote_id, base_id, 0, 0 );
+              market_state = market_status( quote_id, base_id );
            market_state->last_error = e;
            _prior_state->store_market_status( *market_state );
         }
@@ -420,7 +420,7 @@ namespace bts { namespace blockchain { namespace detail {
          mtrx.ask_received   = asset( 0, quote_asset_id );
          mtrx.bid_received   = _current_bid->get_balance();
          mtrx.bid_paid       = asset( 0, quote_asset_id );
-         mtrx.bid_collateral.reset();
+         mtrx.short_collateral.reset();
 
          // Fund refund balance record
          const balance_id_type id = withdraw_condition( withdraw_with_signature( mtrx.bid_owner ), 0 ).get_address();
@@ -446,15 +446,15 @@ namespace bts { namespace blockchain { namespace detail {
           /** NOTE: the short may pay extra XTS to the collateral in the event rounding occurs.  This
            * just checks to make sure it is reasonable.
            */
-          FC_ASSERT( mtrx.ask_paid <= *mtrx.bid_collateral, "", ("mtrx",mtrx) );
+          FC_ASSERT( mtrx.ask_paid <= *mtrx.short_collateral, "", ("mtrx",mtrx) );
 
           quote_asset.current_share_supply += mtrx.bid_paid.amount;
 
-          auto collateral  = *mtrx.bid_collateral + mtrx.ask_paid;
+          auto collateral  = *mtrx.short_collateral + mtrx.ask_paid;
           if( mtrx.bid_paid.amount <= 0 ) // WHY is this ever negitive??
           {
              FC_ASSERT( mtrx.bid_paid.amount >= 0 );
-             _current_bid->state.balance -= mtrx.bid_collateral->amount;
+             _current_bid->state.balance -= mtrx.short_collateral->amount;
              return;
           }
 
@@ -479,7 +479,7 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( ocover_record->payoff_balance >= 0, "", ("record",ocover_record) );
           FC_ASSERT( ocover_record->collateral_balance >= 0 , "", ("record",ocover_record));
 
-          _current_bid->state.balance -= mtrx.bid_collateral->amount;
+          _current_bid->state.balance -= mtrx.short_collateral->amount;
           FC_ASSERT( _current_bid->state.balance >= 0 );
 
           _pending_state->store_collateral_record( cover_index, *ocover_record );
@@ -560,6 +560,8 @@ namespace bts { namespace blockchain { namespace detail {
                 ask_payout->balance += left_over_collateral;
                 ask_payout->last_update = _pending_state->now();
                 ask_payout->deposit_date = _pending_state->now();
+
+                mtrx.returned_collateral = left_over_collateral;
 
                 _pending_state->store_balance_record( *ask_payout );
                 _current_ask->collateral = 0;
@@ -727,7 +729,6 @@ namespace bts { namespace blockchain { namespace detail {
       void market_engine_v4::update_market_history( const asset& trading_volume,
                                   const price& opening_price,
                                   const price& closing_price,
-                                  const omarket_status& market_stat,
                                   const fc::time_point_sec& timestamp )
       {
              if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
@@ -738,9 +739,6 @@ namespace bts { namespace blockchain { namespace detail {
                                                 opening_price,
                                                 closing_price,
                                                 trading_volume.amount);
-
-               FC_ASSERT( market_stat );
-               new_record.recent_average_price = market_stat->center_price;
 
                //LevelDB iterators are dumb and don't support proper past-the-end semantics.
                auto last_key_itr = _db_impl._market_history_db.lower_bound(key);
@@ -772,7 +770,6 @@ namespace bts { namespace blockchain { namespace detail {
                  {
                    old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                    old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                   old_record.recent_average_price = new_record.recent_average_price;
                    _pending_state->market_history[old_key] = old_record;
                  }
                }
@@ -789,7 +786,6 @@ namespace bts { namespace blockchain { namespace detail {
                  {
                    old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
                    old_record.lowest_ask = std::min(new_record.lowest_ask, old_record.lowest_ask);
-                   old_record.recent_average_price = new_record.recent_average_price;
                    _pending_state->market_history[old_key] = old_record;
                  }
                }

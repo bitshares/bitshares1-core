@@ -630,6 +630,18 @@
               "name" : "delegate_name",
               "type" : "string",
               "description" : "Delegate whose block production slot records to query"
+            },
+            {
+              "name" : "start_block_num",
+              "type" : "int64_t",
+              "description" : "Only return slot records after the specified block's timestamp; negative to start backwards from the current head block",
+              "default_value" : "-1000"
+            },
+            {
+              "name" : "count",
+              "type" : "uint32_t",
+              "description" : "Return at most count slot records",
+              "default_value" : "10"
             }
         ],
         "is_const" : true,
@@ -646,6 +658,14 @@
               "description" : "block number or ID to retrieve the signee for"
             }
         ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "blockchain_list_markets",
+        "description": "Returns a list of active markets",
+        "return_type": "market_status_array",
+        "parameters" : [],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"]
       },
@@ -714,6 +734,20 @@
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : ["verify_signature", "verify_sig", "blockchain_verify_sig"]
+      },
+      {
+        "method_name": "blockchain_dump_state",
+        "description": "TODO",
+        "return_type": "void",
+        "parameters"  : [
+           {
+              "name" : "path",
+              "type" : "string",
+              "description" : "the directory to dump the state into"
+           }
+        ],
+        "is_const"   : true,
+        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }

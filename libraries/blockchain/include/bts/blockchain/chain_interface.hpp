@@ -11,6 +11,9 @@
 
 namespace bts { namespace blockchain {
 
+   bool is_valid_account_name( const string& name );
+   bool is_valid_symbol_name( const string& name );
+
    enum chain_property_enum
    {
       last_asset_id            = 0,
@@ -57,9 +60,6 @@ namespace bts { namespace blockchain {
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type& id )const;
 
-         virtual bool                       is_valid_symbol_name( const string& name ) const;
-         virtual bool                       is_valid_account_name( const string& name ) const;
-
          /** converts an asset + asset_id to a more friendly representation using the symbol name */
          string                             to_pretty_asset( const asset& a )const;
          double                             to_pretty_price_double( const price& a )const;
@@ -67,9 +67,10 @@ namespace bts { namespace blockchain {
          /** converts a numeric string + asset symbol to an asset */
          asset                              to_ugly_asset( const string& amount, const string& symbol )const;
          /** converts a numeric string and two asset symbols to a price */
-         price to_ugly_price( const string& price_string,
+         price                              to_ugly_price( const string& price_string,
                                                            const string& base_symbol,
-                                                           const string& quote_symbol )const;
+                                                           const string& quote_symbol,
+                                                           bool do_precision_dance = true )const;
 
          virtual void                       store_burn_record( const burn_record& br ) = 0;
          virtual oburn_record               fetch_burn_record( const burn_record_key& key )const = 0;

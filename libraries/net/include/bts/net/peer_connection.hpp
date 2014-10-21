@@ -142,6 +142,7 @@ namespace bts { namespace net
       /// blockchain synchronization state data
       /// @{
       boost::container::deque<item_hash_t> ids_of_items_to_get; /// id of items in the blockchain that this peer has told us about
+      std::set<item_hash_t> ids_of_items_being_processed; /// list of all items this peer has offered use that we've already handed to the client but the client hasn't finished processing
       uint32_t number_of_unfetched_item_ids; /// number of items in the blockchain that follow ids_of_items_to_get but the peer hasn't yet told us their ids
       bool peer_needs_sync_items_from_us;
       bool we_need_sync_items_from_peer;
@@ -180,7 +181,8 @@ namespace bts { namespace net
       // blockchain catch up
       fc::time_point transaction_fetching_inhibited_until;
 
-      //
+      uint32_t last_known_fork_block_number;
+
       fc::future<void> accept_or_connect_task_done;
 
 #ifndef NDEBUG
