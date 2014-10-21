@@ -681,12 +681,23 @@ public:
                             email_header header;
                             header.id = ciphertext.id();
                             if (plaintext.type == mail::email) {
+                                signed_email_message email = plaintext.as<signed_email_message>();
                                 try {
-                                   header.sender = _wallet->get_key_label(plaintext.as<signed_email_message>().from());
+                                   header.sender = _wallet->get_key_label(email.from());
                                 } catch (fc::exception& e) {
                                    header.sender = "INVALID SIGNATURE";
                                 }
-                                header.subject = plaintext.as<signed_email_message>().subject;
+                                header.subject = std::move(email.subject);
+                            } else if (plaintext.type == mail::transaction_notice) {
+                                transaction_notice_message notice = plaintext.as<transaction_notice_message>();
+                                try {
+                                   header.sender = _wallet->get_key_label(notice.from());
+                                } catch (fc::exception& e) {
+                                   header.sender = "INVALID SIGNATURE";
+                                }
+                                header.subject = "Transaction Notification";
+                                _wallet->scan_transaction(notice.trx.id().str(), true);
+                                self->new_transaction_notifier(notice);
                             }
                             header.recipient = account.name;
                             header.timestamp = plaintext.timestamp;
@@ -846,7 +857,7 @@ message_id_type client::send_email(const string &from,
     return email.id;
 }
 
-message_id_type client::send_encrypted_message(message& ciphertext,
+message_id_type client::send_encrypted_message(message&& ciphertext,
                                                const string& from,
                                                const string& to,
                                                const public_key_type& recipient_key)
@@ -854,6 +865,7 @@ message_id_type client::send_encrypted_message(message& ciphertext,
     FC_ASSERT(my->is_open());
     FC_ASSERT(ciphertext.type == encrypted, "Refusing to send plaintext message");
 
+    ciphertext.recipient = recipient_key;
     detail::mail_record mail_rec(from, to, recipient_key, std::move(ciphertext));
     my->process_outgoing_mail(mail_rec);
 

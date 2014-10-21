@@ -28,18 +28,6 @@ namespace bts { namespace wallet {
        inactive_delegate_status = 0x08
    };
 
-   /**
-    *  The vote selection method helps enhance user privacy by
-    *  not tying their accounts together.
-    */
-   enum vote_selection_method
-   {
-      vote_none        = 0,
-      vote_all         = 1,
-      vote_random      = 2,
-      vote_recommended = 3
-   };
-
    class wallet
    {
       public:
@@ -286,20 +274,6 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  const unordered_map<address, double>& to_address_amounts,
                  const string& memo_message,
-                 bool sign = true
-                 );
-         /**
-          *  This transfer works like a bitcoin transaction combining multiple inputs
-          *  and producing a single output.
-          */
-         wallet_transaction_record transfer_asset(
-                 double real_amount_to_transfer,
-                 const string& amount_to_transfer_symbol,
-                 const string& paying_account_name,
-                 const string& from_account_name,
-                 const string& to_account_name,
-                 const string& memo_message,
-                 vote_selection_method m,
                  bool sign = true
                  );
 

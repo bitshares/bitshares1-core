@@ -1998,18 +1998,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer(
-            double amount_to_transfer,
+            const string& amount_to_transfer,
             const string& asset_symbol,
             const string& from_account_name,
             const string& to_account_name,
             const string& memo_message,
             const vote_selection_method& selection_method )
     {
-        const auto record = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                     from_account_name, from_account_name, to_account_name,
-                                                     memo_message, selection_method );
-        network_broadcast_transaction( record.trx );
-        return record;
+        return wallet_transfer_from(amount_to_transfer, asset_symbol, from_account_name, from_account_name,
+                                    to_account_name, memo_message, selection_method);
     }
     wallet_transaction_record detail::client_impl::wallet_burn(
             double amount_to_transfer,
@@ -2028,7 +2025,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer_from(
-            double amount_to_transfer,
+            const string& amount_to_transfer,
             const string& asset_symbol,
             const string& paying_account_name,
             const string& from_account_name,
@@ -2036,10 +2033,25 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             const string& memo_message,
             const vote_selection_method& selection_method )
     {
-        const auto record = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                     paying_account_name, from_account_name, to_account_name,
-                                                     memo_message, selection_method );
+        asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
+        auto sender = _wallet->get_account(from_account_name);
+        auto payer = _wallet->get_account(paying_account_name);
+        auto recipient = _chain_db->get_account_record(to_account_name);
+        if( !recipient )
+            FC_THROW_EXCEPTION( unknown_account_name, "Unknown recipient account: ${name}", ("name", to_account_name) );
+        transaction_builder_ptr builder = _wallet->create_transaction_builder();
+        auto record = builder->deposit_asset(payer, *recipient, amount,
+                                             memo_message, selection_method, sender.owner_key)
+                              .finalize()
+                              .sign();
+
         network_broadcast_transaction( record.trx );
+        for( auto&& notice : builder->encrypted_notifications() )
+            _mail_client->send_encrypted_message(std::move(notice),
+                                                 from_account_name,
+                                                 to_account_name,
+                                                 recipient->owner_key);
+
         return record;
     }
 

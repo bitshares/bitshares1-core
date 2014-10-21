@@ -18,6 +18,7 @@ struct email_record;
 class client : public std::enable_shared_from_this<client> {
 public:
     boost::signals2::signal<void(int)> new_mail_notifier;
+    boost::signals2::signal<void(transaction_notice_message)> new_transaction_notifier;
 
     enum mail_status {
         submitted,              //The message has been submitted to the client for processing
@@ -53,7 +54,7 @@ public:
                                const string& subject,
                                const string& body,
                                const message_id_type& reply_to = message_id_type());
-    message_id_type send_encrypted_message(message& ciphertext,
+    message_id_type send_encrypted_message(message&& ciphertext,
                                            const string& from,
                                            const string& to,
                                            const blockchain::public_key_type& recipient_key);
