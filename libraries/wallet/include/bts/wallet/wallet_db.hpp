@@ -16,16 +16,10 @@ namespace bts { namespace wallet {
          void close();
          bool is_open()const;
 
+         int32_t new_wallet_record_index();
+
          void        set_property( property_enum property_id, const fc::variant& v );
          fc::variant get_property( property_enum property_id )const;
-
-
-         int32_t            new_wallet_record_index();
-         int32_t            new_key_child_index( const address& parent_account_address );
-
-         private_key_type   new_private_key( const fc::sha512& password,
-                                             const address& parent_account_address = address(),
-                                             bool store_key = true );
 
          // Wallet child keys
          uint32_t           get_last_wallet_child_key_index()const;

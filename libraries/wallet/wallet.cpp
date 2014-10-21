@@ -36,7 +36,7 @@ namespace detail {
 
    private_key_type wallet_impl::create_one_time_key()
    { try {
-       return _wallet_db.new_private_key( _wallet_password );
+       return _wallet_db.generate_new_one_time_key( _wallet_password );
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_impl::state_changed( const pending_chain_state_ptr& state )
@@ -517,9 +517,7 @@ namespace detail {
       auto current_account = _wallet_db.lookup_account( account_name );
       FC_ASSERT( current_account.valid() );
 
-      auto new_priv_key = _wallet_db.new_private_key( _wallet_password,
-                                                      current_account->account_address );
-      return new_priv_key.get_public_key();
+      return _wallet_db.generate_new_account_key( _wallet_password, account_name );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    /**
@@ -537,12 +535,11 @@ namespace detail {
       auto current_account = _wallet_db.lookup_account( account_name );
       FC_ASSERT( current_account.valid() );
 
-      auto new_priv_key = _wallet_db.new_private_key( _wallet_password,
-                                                      current_account->account_address );
-      return new_priv_key.get_public_key();
+      return _wallet_db.generate_new_account_key( _wallet_password, account_name );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id, vote_selection_method selection_method )
+   slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id,
+                                            vote_selection_method selection_method )
    {
       auto slate_id = slate_id_type( 0 );
       if( deposit_asset_id != asset_id_type( 0 ) ) return slate_id;
@@ -1970,6 +1967,10 @@ namespace detail {
        my->_wallet_db.store_account( *account_record );
 
        ulog( "Successfully generated ${n} keys.", ("n",total_regenerated_key_count) );
+
+       if( total_regenerated_key_count > 0 )
+           scan_chain( 0, -1, true );
+
        ulog( "Key regeneration may leave the wallet in an inconsistent state." );
        ulog( "It is recommended to create a new wallet and transfer all funds." );
        return total_regenerated_key_count;
@@ -1983,17 +1984,21 @@ namespace detail {
      int attempts = 0;
      int recoveries = 0;
 
+     uint32_t key_index = my->_wallet_db.get_last_wallet_child_key_index() + 1;
      while( recoveries < number_of_accounts && attempts++ < max_number_of_attempts )
      {
-        private_key_type new_priv_key = my->_wallet_db.new_private_key( my->_wallet_password, address(), false );
+        const private_key_type new_priv_key = my->_wallet_db.get_wallet_child_key( my->_wallet_password, key_index );
         fc::ecc::public_key new_pub_key = new_priv_key.get_public_key();
         auto recovered_account = my->_blockchain->get_account_record(new_pub_key);
 
         if( recovered_account.valid() )
         {
+          my->_wallet_db.set_last_wallet_child_key_index( key_index );
           import_private_key(new_priv_key, recovered_account->name, true);
           ++recoveries;
         }
+
+        ++key_index;
      }
 
      if( recoveries )
@@ -3019,7 +3024,7 @@ namespace detail {
          if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
 
       auto builder = create_transaction_builder();
-      builder->update_account_registration(account, public_data, optional<private_key_type>(), delegate_pay_rate, payer).
+      builder->update_account_registration(account, public_data, optional<public_key_type>(), delegate_pay_rate, payer).
                finalize();
       if( sign )
          return builder->sign();
@@ -3038,18 +3043,20 @@ namespace detail {
       owallet_account_record payer;
       if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
 
-      private_key_type new_private_key;
+      public_key_type new_public_key;
       if( new_active_key.empty() )
-        new_private_key = my->_wallet_db.new_private_key(my->_wallet_password, account.account_address, false);
+      {
+        new_public_key = my->_wallet_db.generate_new_account_key( my->_wallet_password, account_to_update );
+      }
       else
       {
-        auto key = utilities::wif_to_key(new_active_key);
-        FC_ASSERT(key.valid(), "Unable to parse new active key.");
-        new_private_key = *key;
+        const optional<private_key_type> new_private_key = utilities::wif_to_key(new_active_key);
+        FC_ASSERT(new_private_key.valid(), "Unable to parse new active key.");
+        new_public_key = import_private_key( *new_private_key, account_to_update, false );
       }
 
       auto builder = create_transaction_builder();
-      builder->update_account_registration(account, optional<variant>(), new_private_key, optional<share_type>(), payer).
+      builder->update_account_registration(account, optional<variant>(), new_public_key, optional<share_type>(), payer).
                finalize();
       if( sign )
          return builder->sign();

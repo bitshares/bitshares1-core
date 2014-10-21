@@ -48,6 +48,7 @@ namespace bts { namespace wallet {
       /**
        * @brief Look up the market transaction owner key used for a particular account
        * @param account_address Account owner key address to look up
+       * @param account_name Account name to generate new owner key for if necessary
        * @return The market transaction owner key used by the specified account in this transaction
        *
        * Gets the key which owns the market operations belonging to a particular account in this operation. If that
@@ -55,7 +56,7 @@ namespace bts { namespace wallet {
        * for the subsequent market operations. If no key yet exists for the specified account, a new key will be
        * generated to serve the purpose, and registered with the specified account's wallet.
        */
-      public_key_type order_key_for_account(const blockchain::address& account_address);
+      public_key_type order_key_for_account(const blockchain::address& account_address, const string& account_name);
 
       /**
        * \defgroup<charge_functions> Low-Level Balance Manipulation Functions
@@ -111,7 +112,7 @@ namespace bts { namespace wallet {
        */
       transaction_builder& update_account_registration(const wallet_account_record& account,
                                                        optional<variant> public_data,
-                                                       optional<private_key_type> active_key,
+                                                       optional<public_key_type> active_key,
                                                        optional<share_type> delegate_pay,
                                                        optional<wallet_account_record> paying_account);
       /**

@@ -228,64 +228,6 @@ namespace bts { namespace wallet {
       return next_rec_number;
    }
 
-   int32_t wallet_db::new_key_child_index( const address& account_address )
-   {
-      owallet_account_record account_rec = lookup_account( account_address );
-      if( account_rec )
-      {
-          account_rec->last_used_gen_sequence++;
-          store_account( *account_rec );
-          return account_rec->last_used_gen_sequence;
-      }
-
-      auto next_child_idx = get_property( next_child_key_index );
-      int32_t next_child_index = 0;
-      if( next_child_idx.is_null() )
-      {
-         next_child_index = 1;
-      }
-      else
-      {
-         next_child_index = next_child_idx.as<int32_t>();
-      }
-      set_property( property_enum::next_child_key_index, next_child_index + 1 );
-      return next_child_index;
-   }
-
-   private_key_type wallet_db::new_private_key( const fc::sha512& password,
-                                                const address& parent_account_address,
-                                                bool store_key )
-   {
-      FC_ASSERT( wallet_master_key.valid() );
-
-      const auto master_ext_priv_key = wallet_master_key->decrypt_key( password );
-      const auto key_index = new_key_child_index( parent_account_address );
-      private_key_type new_priv_key;
-      new_priv_key = master_ext_priv_key.child( key_index );
-      if( key_index >= 10000 )
-      {
-          fc::sha256::encoder enc;
-          fc::raw::pack( enc, parent_account_address );
-          fc::raw::pack( enc, key_index );
-          new_priv_key = master_ext_priv_key.child( enc.result() );
-      }
-
-      if( !store_key )
-        return new_priv_key;
-
-      key_data new_key;
-      new_key.account_address = parent_account_address;
-      new_key.encrypt_private_key( password, new_priv_key );
-      new_key.gen_seq_number = key_index;
-
-      // if there is no parent account address, then the account_address of this key is itself
-      if( parent_account_address == address() )
-         new_key.account_address = address( new_key.public_key );
-
-      this->store_key( new_key );
-      return new_priv_key;
-   }
-
    uint32_t wallet_db::get_last_wallet_child_key_index()const
    { try {
        FC_ASSERT( is_open() );
@@ -315,6 +257,7 @@ namespace bts { namespace wallet {
    public_key_type wallet_db::generate_new_account( const fc::sha512& password, const string& account_name, const variant& private_data )
    { try {
        FC_ASSERT( is_open() );
+
        owallet_account_record account_record = lookup_account( account_name );
        FC_ASSERT( !account_record.valid(), "Wallet already contains an account with that name!" );
 
@@ -329,6 +272,12 @@ namespace bts { namespace wallet {
        owallet_key_record key_record = lookup_key( account_address );
        FC_ASSERT( !key_record.valid(), "Wallet is in an inconsistent state! New key is already present!" );
 
+       key_record = wallet_key_record();
+       key_record->account_address = account_address;
+       key_record->public_key = account_public_key;
+       key_record->encrypt_private_key( password, account_private_key );
+       key_record->gen_seq_number = key_index;
+
        const time_point_sec now = blockchain::now();
 
        account_record = wallet_account_record();
@@ -340,11 +289,6 @@ namespace bts { namespace wallet {
        account_record->account_address = account_address;
        account_record->private_data = private_data;
        account_record->is_my_account = true;
-
-       key_record = wallet_key_record();
-       key_record->account_address = account_address;
-       key_record->public_key = account_public_key;
-       key_record->gen_seq_number = key_index;
 
        set_last_wallet_child_key_index( key_index );
        store_key( *key_record );
@@ -368,6 +312,7 @@ namespace bts { namespace wallet {
        key_record = wallet_key_record();
        key_record->account_address = one_time_address;
        key_record->public_key = one_time_public_key;
+       key_record->encrypt_private_key( password, one_time_private_key );
        key_record->gen_seq_number = key_index;
 
        set_last_wallet_child_key_index( key_index );
@@ -386,9 +331,42 @@ namespace bts { namespace wallet {
        return master_private_key.child( enc.result() );
    } FC_CAPTURE_AND_RETHROW( (account_address)(seq_num) ) }
 
+   public_key_type wallet_db::generate_new_account_key( const fc::sha512& password, const string& account_name )
+   { try {
+       FC_ASSERT( is_open() );
+
+       owallet_account_record account_record = lookup_account( account_name );
+       FC_ASSERT( account_record.valid(), "Account not found!" );
+       FC_ASSERT( account_record->is_my_account, "Not my account!" );
+
+       const address account_address = account_record->account_address;
+       const uint32_t seq_num = account_record->last_used_gen_sequence + 1;
+
+       const private_key_type account_child_private_key = get_account_child_key( password, account_address, seq_num );
+       const public_key_type account_child_public_key = account_child_private_key.get_public_key();
+       const address account_child_address = address( account_child_public_key );
+
+       owallet_key_record key_record = lookup_key( account_child_address );
+       FC_ASSERT( !key_record.valid(), "Wallet is in an inconsistent state! New key is already present!" );
+
+       account_record->last_used_gen_sequence = seq_num;
+
+       key_record = wallet_key_record();
+       key_record->account_address = account_child_address;
+       key_record->public_key = account_child_public_key;
+       key_record->encrypt_private_key( password, account_child_private_key );
+       key_record->gen_seq_number = seq_num;
+
+       store_account( *account_record );
+       store_key( *key_record );
+
+       return account_child_public_key;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
    void wallet_db::add_contact_account( const account_record& blockchain_account_record, const variant& private_data )
    { try {
        FC_ASSERT( is_open() );
+
        owallet_account_record record = lookup_account( blockchain_account_record.name );
        FC_ASSERT( !record.valid(), "Wallet already contains an account with that name!" );
 
