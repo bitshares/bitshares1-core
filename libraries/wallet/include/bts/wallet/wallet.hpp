@@ -536,6 +536,7 @@ namespace bts { namespace wallet {
    };
 
    typedef shared_ptr<wallet> wallet_ptr;
+   typedef std::weak_ptr<wallet> wallet_weak_ptr;
 
 } } // bts::wallet
 

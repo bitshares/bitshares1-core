@@ -52,13 +52,11 @@ uint16_t upnp_service::mapped_port() const
 
 upnp_service::~upnp_service()
 {
-  try {
+  try 
+  {
       my->done = true;
-      my->upnp_thread.quit();
       if( my->map_port_complete.valid() )
-      {
          my->map_port_complete.cancel_and_wait();
-      }
   } 
   catch ( const fc::canceled_exception& )
   {} // expected
