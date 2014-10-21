@@ -311,43 +311,6 @@ namespace bts { namespace wallet {
        return account_public_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   private_key_type wallet_db::generate_new_one_time_key( const fc::sha512& password )
-   { try {
-       FC_ASSERT( is_open() );
-
-       uint32_t key_index = get_last_wallet_child_key_index();
-       private_key_type one_time_private_key;
-       public_key_type one_time_public_key;
-       address one_time_address;
-       owallet_key_record key_record;
-       while( true )
-       {
-           ++key_index;
-           FC_ASSERT( key_index != 0, "Overflow!" );
-
-           one_time_private_key = get_wallet_child_key( password, key_index );
-           one_time_public_key = one_time_private_key.get_public_key();
-           one_time_address = address( one_time_public_key );
-
-           key_record = lookup_key( one_time_address );
-           if( key_record.valid() ) continue;
-
-           break;
-       }
-
-       FC_ASSERT( !key_record.valid() );
-       key_record = wallet_key_record();
-       key_record->account_address = one_time_address;
-       key_record->public_key = one_time_public_key;
-       key_record->encrypt_private_key( password, one_time_private_key );
-       key_record->gen_seq_number = key_index;
-
-       set_last_wallet_child_key_index( key_index );
-       store_key( *key_record );
-
-       return one_time_private_key;
-   } FC_CAPTURE_AND_RETHROW() }
-
    private_key_type wallet_db::get_account_child_key( const fc::sha512& password, const address& account_address, uint32_t seq_num )const
    { try {
        FC_ASSERT( is_open() );
@@ -358,7 +321,7 @@ namespace bts { namespace wallet {
        return master_private_key.child( enc.result() );
    } FC_CAPTURE_AND_RETHROW( (account_address)(seq_num) ) }
 
-   public_key_type wallet_db::generate_new_account_key( const fc::sha512& password, const string& account_name )
+   private_key_type wallet_db::generate_new_account_child_key( const fc::sha512& password, const string& account_name )
    { try {
        FC_ASSERT( is_open() );
 
@@ -399,7 +362,7 @@ namespace bts { namespace wallet {
        store_account( *account_record );
        store_key( *key_record );
 
-       return account_child_public_key;
+       return account_child_private_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    void wallet_db::add_contact_account( const account_record& blockchain_account_record, const variant& private_data )

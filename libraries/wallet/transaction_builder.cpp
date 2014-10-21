@@ -13,7 +13,7 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
    auto order_key = order_keys[account_address];
    if( order_key == public_key_type() )
    {
-       order_key = _wimpl->_wallet_db.generate_new_account_key(_wimpl->_wallet_password, account_name);
+       order_key = _wimpl->get_new_public_key(account_name);
        order_keys[account_address] = order_key;
    }
    return order_key;

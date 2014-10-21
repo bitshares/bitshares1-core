@@ -24,14 +24,9 @@ namespace detail {
            _scanner_threads.push_back( std::unique_ptr<fc::thread>( new fc::thread( "wallet_scanner_" + std::to_string( i ) ) ) );
    }
 
-  wallet_impl::~wallet_impl()
-  {
-  }
-
-   private_key_type wallet_impl::create_one_time_key()
-   { try {
-       return _wallet_db.generate_new_one_time_key( _wallet_password );
-   } FC_CAPTURE_AND_RETHROW() }
+   wallet_impl::~wallet_impl()
+   {
+   }
 
    void wallet_impl::state_changed( const pending_chain_state_ptr& state )
    {
@@ -509,35 +504,27 @@ namespace detail {
     *  will not be valid for sending TITAN transactions to, but will
     *  be able to receive payments directly.
     */
-   address wallet_impl::get_new_address( const string& account_name )
+   private_key_type wallet_impl::get_new_private_key( const string& account_name )
    { try {
       if( NOT self->is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT self->is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
       if( NOT is_receive_account(account_name) )
           FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
 
-      auto current_account = _wallet_db.lookup_account( account_name );
+      const auto current_account = _wallet_db.lookup_account( account_name );
       FC_ASSERT( current_account.valid() );
 
-      return _wallet_db.generate_new_account_key( _wallet_password, account_name );
+      return _wallet_db.generate_new_account_child_key( _wallet_password, account_name );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   /**
-    *  Creates a new private key under the specified account. This key
-    *  will not be valid for sending TITAN transactions to, but will
-    *  be able to receive payments directly.
-    */
    public_key_type wallet_impl::get_new_public_key( const string& account_name )
    { try {
-      if( NOT self->is_open() ) FC_CAPTURE_AND_THROW( wallet_closed );
-      if( NOT self->is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
-      if( NOT is_receive_account(account_name) )
-          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
+      return get_new_private_key( account_name ).get_public_key();
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-      auto current_account = _wallet_db.lookup_account( account_name );
-      FC_ASSERT( current_account.valid() );
-
-      return _wallet_db.generate_new_account_key( _wallet_password, account_name );
+   address wallet_impl::get_new_address( const string& account_name )
+   { try {
+      return address( get_new_public_key( account_name ) );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id,
@@ -2296,7 +2283,7 @@ namespace detail {
                                         memo_message,
                                         slate_id,
                                         sender_private_key.get_public_key(),
-                                        my->create_one_time_key(),
+                                        my->get_new_private_key( from_account_name ),
                                         from_memo
                                         );
              }
@@ -2308,7 +2295,7 @@ namespace detail {
                                         memo_message,
                                         slate_id,
                                         receiver_public_key,
-                                        my->create_one_time_key(),
+                                        my->get_new_private_key( from_account_name ),
                                         to_memo
                                         );
 
@@ -2416,7 +2403,7 @@ namespace detail {
                                memo_message,
                                slate_id,
                                delegate_public_key,
-                               my->create_one_time_key(),
+                               my->get_new_private_key( delegate_name ),
                                from_memo
                                );
 
@@ -2754,7 +2741,7 @@ namespace detail {
                                  memo_message,
                                  slate_id,
                                  sender_public_key,
-                                 my->create_one_time_key(),
+                                 my->get_new_private_key( paying_account_name ),
                                  from_memo
                                  );
       }
@@ -2983,7 +2970,7 @@ namespace detail {
                               memo_message,
                               0,
                               sender_private_key.get_public_key(),
-                              my->create_one_time_key(),
+                              my->get_new_private_key( issuer_account->name ),
                               from_memo
                               );
 
@@ -3049,7 +3036,7 @@ namespace detail {
       public_key_type new_public_key;
       if( new_active_key.empty() )
       {
-        new_public_key = my->_wallet_db.generate_new_account_key( my->_wallet_password, account_to_update );
+        new_public_key = my->get_new_public_key( account_to_update );
       }
       else
       {

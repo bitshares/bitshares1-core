@@ -32,7 +32,10 @@ bts::mail::message wallet::mail_encrypt(const public_key_type& recipient, const 
     FC_ASSERT(is_open());
     FC_ASSERT(is_unlocked());
 
-    auto one_time_key = my->create_one_time_key();
+    //TODO: Do you need a deterministic OTK here? Because I have changed all key generation to be done in the
+    //context of a particular account so that OTKs do not conflict with account recovery
+    //auto one_time_key = my->create_one_time_key();
+    auto one_time_key = fc::ecc::private_key::generate();
     return plaintext.encrypt(one_time_key, recipient);
 }
 

@@ -26,11 +26,10 @@ namespace bts { namespace wallet {
          void               set_last_wallet_child_key_index( uint32_t key_index );
          private_key_type   get_wallet_child_key( const fc::sha512& password, uint32_t key_index )const;
          public_key_type    generate_new_account( const fc::sha512& password, const string& account_name, const variant& private_data );
-         private_key_type   generate_new_one_time_key( const fc::sha512& password );
 
          // Account child keys
          private_key_type   get_account_child_key( const fc::sha512& password, const address& account_address, uint32_t seq_num )const;
-         public_key_type    generate_new_account_key( const fc::sha512& password, const string& account_name );
+         private_key_type   generate_new_account_child_key( const fc::sha512& password, const string& account_name );
 
          void               add_contact_account( const account_record& blockchain_account_record, const variant& private_data );
 
