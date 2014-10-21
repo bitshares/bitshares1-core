@@ -300,6 +300,8 @@ namespace detail {
        std::exception_ptr upgrade_failure_exception;
        try
        {
+           self->auto_backup( "version_upgrade" );
+
            /* Example
            if( current_version < 101 )
            {
