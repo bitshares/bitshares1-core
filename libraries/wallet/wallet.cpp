@@ -24,15 +24,9 @@ namespace detail {
            _scanner_threads.push_back( std::unique_ptr<fc::thread>( new fc::thread( "wallet_scanner_" + std::to_string( i ) ) ) );
    }
 
-   wallet_impl::~wallet_impl()
-   {
-       try {
-          for( auto& scan_thread : _scanner_threads )
-          {
-             if( scan_thread ) scan_thread->quit();
-          }
-       } catch( ... ) {}
-   }
+  wallet_impl::~wallet_impl()
+  {
+  }
 
    private_key_type wallet_impl::create_one_time_key()
    { try {

@@ -95,7 +95,6 @@ namespace bts { namespace keyhotee {
       auto result = fc::sha512::hash( (char*)&seeds[0], sizeof(fc::sha512)*seeds.size() );
       return result;
     }, "stretch_seed" ).wait();
-    stretch_seed_thread.quit();
     return stretched_seed;
   }
 

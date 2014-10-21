@@ -626,8 +626,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               cancel_rebroadcast_pending_loop();
               if( _chain_downloader_future.valid() && !_chain_downloader_future.ready() )
                  _chain_downloader_future.cancel_and_wait(__FUNCTION__);
-              _p2p_node.reset();
+              _rpc_server.reset(); // this needs to shut down before the _p2p_node because several RPC requests will try to dereference _p2p_node.  Shutting down _rpc_server kills all active/pending requests
               delete _cli;
+              _cli = nullptr;
+              _p2p_node.reset();
             }
 
             void start()
@@ -3303,6 +3305,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               try
               {
                   info["wallet_last_scanned_block_timestamp"]   = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+              }
+              catch (fc::canceled_exception&)
+              {
+                throw;
               }
               catch( ... )
               {
