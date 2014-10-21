@@ -27,7 +27,8 @@
                                            ((BTSX_MARKET_FORK_7_BLOCK_NUM,  "0.4.16",     1411258737)) \
                                            ((BTSX_MARKET_FORK_8_BLOCK_NUM,  "0.4.17",     1411599233)) \
                                            ((BTSX_MARKET_FORK_9_BLOCK_NUM,  "0.4.18",     1411765631)) \
-                                           ((BTSX_MARKET_FORK_10_BLOCK_NUM, "0.4.19",     1412203442))
+                                           ((BTSX_MARKET_FORK_10_BLOCK_NUM, "0.4.19",     1412203442)) \
+                                           ((BTSX_MARKET_FORK_11_BLOCK_NUM, "0.4.21",     1413928884))
 
 #define BTSX_YIELD_FORK_1_BLOCK_NUM             BTSX_MARKET_FORK_6_BLOCK_NUM
 #define BTSX_YIELD_FORK_2_BLOCK_NUM             494000
