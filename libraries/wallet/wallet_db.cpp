@@ -352,7 +352,7 @@ namespace bts { namespace wallet {
        account_record->last_used_gen_sequence = seq_num;
 
        key_record = wallet_key_record();
-       key_record->account_address = account_child_address;
+       key_record->account_address = account_address;
        key_record->public_key = account_child_public_key;
        key_record->encrypt_private_key( password, account_child_private_key );
        key_record->gen_seq_number = seq_num;
