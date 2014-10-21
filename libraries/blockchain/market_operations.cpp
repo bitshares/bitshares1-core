@@ -224,20 +224,35 @@ namespace bts { namespace blockchain {
       auto elapsed_sec = ( eval_state._current_state->now() - start_time ).to_seconds();
       if( elapsed_sec < 0 ) elapsed_sec = 0;
 
-      //If delta_amount exceeds the total principle due, we only take interest on the principle
-      auto interest_due = detail::market_engine::get_cover_interest(std::min(delta_amount,
-                                                                             asset(current_cover->payoff_balance,
-                                                                                   delta_amount.asset_id)),
-                                                                    current_cover->interest_rate,
-                                                                    elapsed_sec);
-      asset principle_paid = delta_amount - interest_due;
+      const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
+      const asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
+                                                                         elapsed_sec ) + principle;
+
+      asset principle_paid;
+      asset interest_paid;
+      if( delta_amount >= total_debt )
+      {
+          // Payoff the whole debt
+          principle_paid = principle;
+          interest_paid = delta_amount - principle_paid;
+          current_cover->payoff_balance = 0;
+      }
+      else
+      {
+          // Partial cover
+          interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
+          principle_paid = delta_amount - interest_paid;
+          current_cover->payoff_balance -= principle_paid.amount;
+      }
+      FC_ASSERT( principle_paid.amount >= 0 );
+      FC_ASSERT( interest_paid.amount >= 0 );
+      FC_ASSERT( current_cover->payoff_balance >= 0 );
 
       //Covered asset is destroyed, interest pays to fees
       asset_to_cover->current_share_supply -= principle_paid.amount;
-      asset_to_cover->collected_fees += interest_due.amount;
+      asset_to_cover->collected_fees += interest_paid.amount;
       eval_state._current_state->store_asset_record( *asset_to_cover );
 
-      current_cover->payoff_balance -= principle_paid.amount;
       // changing the payoff balance changes the call price... so we need to remove the old record
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
