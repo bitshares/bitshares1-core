@@ -123,7 +123,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    {
       trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
    } else {
-      auto one_time_key = _wimpl->create_one_time_key();
+      auto one_time_key = _wimpl->_wallet_db.generate_new_one_time_key(_wimpl->_wallet_password);
       titan_one_time_key = one_time_key.get_public_key();
       trx.deposit_to_account(recipient.active_key(),
                              amount,
@@ -453,7 +453,10 @@ std::vector<bts::mail::message> transaction_builder::encrypted_notifications()
 {
    vector<mail::message> messages;
    for( auto& notice : notices )
-      messages.emplace_back(mail::message(notice.first).encrypt(_wimpl->create_one_time_key(), notice.second));
+   {
+      auto one_time_key = _wimpl->_wallet_db.generate_new_one_time_key(_wimpl->_wallet_password);
+      messages.emplace_back(mail::message(notice.first).encrypt(one_time_key, notice.second));
+   }
    return messages;
 }
 
