@@ -272,9 +272,9 @@ namespace bts { namespace blockchain { namespace detail {
           _pending_state->store_asset_record( *quote_asset );
           _pending_state->store_asset_record( *base_asset );
 
-          _market_stat.last_error.reset();
-
           // Update market status and market history
+          _market_stat.update_feed_price( median_feed_price );
+          _market_stat.last_error.reset();
           _pending_state->store_market_status( _market_stat );
           update_market_history( trading_volume, opening_price, closing_price, timestamp );
 
