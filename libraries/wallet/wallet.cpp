@@ -1923,8 +1923,8 @@ namespace detail {
            fc::oexception regenerate_key_error;
            try
            {
-               const private_key_type private_key = my->_wallet_db.get_account_child_key( my->_wallet_password,
-                                                                                          account_record->account_address, seq_num );
+               const private_key_type private_key = my->_wallet_db.get_account_child_key_v1( my->_wallet_password,
+                                                                                             account_record->account_address, seq_num );
                const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
                if( !key_record.valid() || !key_record->has_private_key() )
                {

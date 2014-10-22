@@ -29,7 +29,8 @@ namespace bts { namespace wallet {
          public_key_type        generate_new_account( const fc::sha512& password, const string& account_name, const variant& private_data );
 
          // Account child keys
-         private_key_type       get_account_child_key( const fc::sha512& password, const address& account_address, uint32_t seq_num )const;
+         private_key_type       get_account_child_key( const private_key_type& active_private_key, uint32_t seq_num )const;
+         private_key_type       get_account_child_key_v1( const fc::sha512& password, const address& account_address, uint32_t seq_num )const;
          private_key_type       generate_new_account_child_key( const fc::sha512& password, const string& account_name );
 
          void                   add_contact_account( const account_record& blockchain_account_record, const variant& private_data );

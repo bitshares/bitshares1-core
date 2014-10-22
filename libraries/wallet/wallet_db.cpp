@@ -285,7 +285,17 @@ namespace bts { namespace wallet {
        return account_public_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   private_key_type wallet_db::get_account_child_key( const fc::sha512& password, const address& account_address, uint32_t seq_num )const
+   private_key_type wallet_db::get_account_child_key( const private_key_type& active_private_key, uint32_t seq_num )const
+   { try {
+       FC_ASSERT( is_open() );
+       const extended_private_key extended_active_private_key = extended_private_key( active_private_key );
+       fc::sha256::encoder enc;
+       fc::raw::pack( enc, seq_num );
+       return extended_active_private_key.child( enc.result() );
+   } FC_CAPTURE_AND_RETHROW( (seq_num) ) }
+
+   // Deprecated but kept for key regeneration
+   private_key_type wallet_db::get_account_child_key_v1( const fc::sha512& password, const address& account_address, uint32_t seq_num )const
    { try {
        FC_ASSERT( is_open() );
        const extended_private_key master_private_key = wallet_master_key->decrypt_key( password );
@@ -302,8 +312,12 @@ namespace bts { namespace wallet {
        owallet_account_record account_record = lookup_account( account_name );
        FC_ASSERT( account_record.valid(), "Account not found!" );
        FC_ASSERT( account_record->is_my_account, "Not my account!" );
-       const address account_address = account_record->account_address;
 
+       const owallet_key_record key_record = lookup_key( address( account_record->active_key() ) );
+       FC_ASSERT( key_record.valid(), "Active key not found!" );
+       FC_ASSERT( key_record->has_private_key(), "Active private key not found!" );
+
+       const private_key_type active_private_key = key_record->decrypt_private_key( password );
        uint32_t seq_num = account_record->last_used_gen_sequence;
        private_key_type account_child_private_key;
        public_key_type account_child_public_key;
@@ -313,7 +327,7 @@ namespace bts { namespace wallet {
            ++seq_num;
            FC_ASSERT( seq_num != 0, "Overflow!" );
 
-           account_child_private_key = get_account_child_key( password, account_address, seq_num );
+           account_child_private_key = get_account_child_key( active_private_key, seq_num );
            account_child_public_key = account_child_private_key.get_public_key();
            account_child_address = address( account_child_public_key );
 
@@ -326,7 +340,7 @@ namespace bts { namespace wallet {
        account_record->last_used_gen_sequence = seq_num;
 
        key_data key;
-       key.account_address = account_address;
+       key.account_address = account_record->account_address;
        key.public_key = account_child_public_key;
        key.encrypt_private_key( password, account_child_private_key );
        key.gen_seq_number = seq_num;
