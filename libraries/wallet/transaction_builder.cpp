@@ -396,6 +396,8 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    entry.to_account = owner_key_record->public_key;
    entry.amount = cover_amount;
    entry.memo = "payoff debt";
+
+   transaction_record.is_market = true;
    transaction_record.ledger_entries.push_back(entry);
 
    required_signatures.insert(owner_key_record->public_key);
