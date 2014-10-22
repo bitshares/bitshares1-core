@@ -49,8 +49,10 @@ namespace bts { namespace wallet {
 
          // Non-deterministic and not linked to any account
          private_key_type       generate_new_one_time_key( const fc::sha512& password );
-         // ***********************
 
+         // Restore as many broken record invariants as possible
+         void                   repair_records( const fc::sha512& password );
+         // ***********************
 
          void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );

@@ -27,7 +27,7 @@ namespace bts { namespace wallet {
 
            void load_generic_record( const generic_wallet_record& record )
            { try {
-               switch( wallet_record_type_enum(record.type) )
+               switch( wallet_record_type_enum( record.type ) )
                {
                    case master_key_record_type:
                        load_master_key_record( record.as<wallet_master_key_record>() );
@@ -533,6 +533,53 @@ namespace bts { namespace wallet {
        store_key( key );
 
        return one_time_private_key;
+   } FC_CAPTURE_AND_RETHROW() }
+
+   void wallet_db::repair_records( const fc::sha512& password )
+   { try {
+       FC_ASSERT( is_open() );
+
+       vector<generic_wallet_record> records;
+       for( auto iter = my->_records.begin(); iter.valid(); ++iter )
+           records.push_back( iter.value() );
+
+       // Repair account_data.account_address
+       for( generic_wallet_record& record : records )
+       {
+           if( wallet_record_type_enum( record.type ) == account_record_type )
+           {
+               try
+               {
+                   wallet_account_record account_record = record.as<wallet_account_record>();
+                   account_record.account_address = address( account_record.owner_key );
+                   store_account( account_record );
+               }
+               catch( ... )
+               {
+               }
+           }
+       }
+
+       // Repair key_data.public_key
+       for( generic_wallet_record& record : records )
+       {
+           if( wallet_record_type_enum( record.type ) == key_record_type )
+           {
+               try
+               {
+                   wallet_key_record key_record = record.as<wallet_key_record>();
+                   if( key_record.has_private_key() )
+                   {
+                       const private_key_type private_key = key_record.decrypt_private_key( password );
+                       key_record.public_key = private_key.get_public_key();
+                       store_key( key_record );
+                   }
+               }
+               catch( ... )
+               {
+               }
+           }
+       }
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_db::set_property( property_enum property_id, const variant& v )
