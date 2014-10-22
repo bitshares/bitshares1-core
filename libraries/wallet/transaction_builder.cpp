@@ -355,7 +355,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    auto age_at_transaction_expiration = _wimpl->_blockchain->now() + _wimpl->self->get_transaction_expiration() -
                      (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
    order_balance += blockchain::detail::market_engine
-           ::get_cover_interest(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
+           ::get_interest_owed(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
 
    //What's the account's actual balance? We can't pay more than that.
    auto account_balances = _wimpl->self->get_account_balances(from_account.name);
