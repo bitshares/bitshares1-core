@@ -77,6 +77,8 @@ namespace bts { namespace blockchain {
 
       share_type        delegate_pay_balance()const;
       bool              is_delegate()const;
+      bool              is_public_account()const
+      { return meta_data.valid() && meta_data->type == public_account; }
       void              adjust_votes_for( share_type delta );
       share_type        net_votes()const;
       bool              is_retracted()const;

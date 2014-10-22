@@ -55,7 +55,7 @@ struct mail_record {
     string recipient;
     public_key_type recipient_key;
     message content;
-    std::unordered_set<ip::endpoint> mail_servers;
+    mail_server_list mail_servers;
     ripemd160 proof_of_work_target;
     string failure_reason;
 };
@@ -85,7 +85,7 @@ struct mail_archive_record {
     string recipient;
     address recipient_address;
     message content;
-    std::unordered_set<ip::endpoint> mail_servers;
+    mail_server_list mail_servers;
 };
 
 struct mail_index_record {
@@ -265,20 +265,45 @@ public:
         get_proof_of_work_target(mail.id);
     }
 
-    std::unordered_set<fc::ip::endpoint> get_mail_servers_for_recipient(string recipient) {
+    unordered_set<string> get_mail_server_names_for_recipient(const string& recipient) {
         oaccount_record recipient_account = _chain->get_account_record(recipient);
+        //If recipient account is not registered, just take default servers.
         if (!recipient_account)
-            return std::unordered_set<fc::ip::endpoint>();
+            return BTS_MAIL_DEFAULT_MAIL_SERVERS;
 
         try {
-            return recipient_account->public_data.as<variant_object>()["mail_servers"]
-                                                 .as<std::unordered_set<ip::endpoint>>();
+            auto vector_servers = recipient_account->public_data.as<variant_object>()["mail_servers"]
+                                                                .as<vector<string>>();
+            unordered_set<string> servers;
+            for (auto&& server : vector_servers)
+                servers.insert(std::move(server));
+            return servers;
         } catch (fc::exception& e) {
             elog("Error while getting mail servers for ${r}: ${e}", ("r", recipient)("e", e.to_detail_string()));
         }
         ilog("It appears that ${r} has not published his preferred mail servers. Using defaults.",
              ("r", recipient));
         return BTS_MAIL_DEFAULT_MAIL_SERVERS;
+
+    }
+
+    mail_server_list get_mail_servers_for_recipient(const string& recipient) {
+        mail_server_list servers;
+        try {
+            auto server_list = get_mail_server_names_for_recipient(recipient);
+            for (const string& server_name : server_list) {
+                oaccount_record server_account = _chain->get_account_record(server_name);
+                if (!server_account)
+                    continue;
+                auto endpoint = server_account->public_data.as<variant_object>()["mail_server_endpoint"]
+                                                           .as<ip::endpoint>();
+                servers.emplace(std::move(server_name), std::move(endpoint));
+            }
+        } catch (fc::exception& e) {
+            elog("Error while getting mail servers for ${r}: ${e}", ("r", recipient)("e", e.to_detail_string()));
+        }
+
+        return servers;
     }
 
     void get_proof_of_work_target(const message_id_type& message_id) {
@@ -391,15 +416,15 @@ public:
 
             vector<fc::future<void>> transmit_tasks;
             transmit_tasks.reserve(email.mail_servers.size());
-            std::unordered_set<ip::endpoint> successful_servers;
+            mail_server_list successful_servers;
 
-            for (ip::endpoint server : email.mail_servers) {
+            for (mail_server_endpoint server : email.mail_servers) {
                 transmit_tasks.push_back(fc::async([&] {
                     auto email = _processing_db.fetch(message_id);
                     tcp_socket sock;
 
                     try {
-                        sock.connect_to(server);
+                        sock.connect_to(server.second);
                     } catch (fc::exception& e) {
                         if (successful_servers.empty()) {
                             //Mark as failed only if no servers have succeeded yet.
@@ -433,7 +458,7 @@ public:
                             //Message is stored! Don't store email; there's no error. We're done.
                             wlog("Message ${id} already stored on server ${server}.",
                                  ("id", message_id)("server", server));
-                            successful_servers.insert(server);
+                            successful_servers.insert(std::move(server));
                             return;
                         } else if (email.failure_reason == timestamp_too_old().what()) {
                             //Redo the proof-of-work
@@ -470,7 +495,7 @@ public:
                         return;
                     }
 
-                    successful_servers.insert(server);
+                    successful_servers.insert(std::move(server));
                 }, "Mail client transmitter"));
             }
 
@@ -613,7 +638,7 @@ public:
             if (!get_old_messages && (op = _property_db.fetch_optional("last_fetch/" + account.name)))
                 last_check_time = op->as<fc::time_point_sec>();
 
-            for (ip::endpoint server : servers) {
+            for (mail_server_endpoint server : servers) {
                 fetch_tasks.push_back(fc::async([=] {
                     //TODO: This whole design needs to be rethought. This is just a simplistic first effort.
                     //Right now we get the inventory, then download and store ALL of it locally.
@@ -623,7 +648,7 @@ public:
                     tcp_socket sock;
 
                     try {
-                        sock.connect_to(server);
+                        sock.connect_to(server.second);
                     } catch (fc::exception& e) {
                         elog("Failed to connect to mail server ${server}: ${e}",
                              ("server", server)("e", e.to_detail_string()));
@@ -681,12 +706,23 @@ public:
                             email_header header;
                             header.id = ciphertext.id();
                             if (plaintext.type == mail::email) {
+                                signed_email_message email = plaintext.as<signed_email_message>();
                                 try {
-                                   header.sender = _wallet->get_key_label(plaintext.as<signed_email_message>().from());
+                                   header.sender = _wallet->get_key_label(email.from());
                                 } catch (fc::exception& e) {
                                    header.sender = "INVALID SIGNATURE";
                                 }
-                                header.subject = plaintext.as<signed_email_message>().subject;
+                                header.subject = std::move(email.subject);
+                            } else if (plaintext.type == mail::transaction_notice) {
+                                transaction_notice_message notice = plaintext.as<transaction_notice_message>();
+                                try {
+                                   header.sender = _wallet->get_key_label(notice.from());
+                                } catch (fc::exception& e) {
+                                   header.sender = "INVALID SIGNATURE";
+                                }
+                                header.subject = "Transaction Notification";
+                                _wallet->scan_transaction(notice.trx.id().str(), true);
+                                self->new_transaction_notifier(notice);
                             }
                             header.recipient = account.name;
                             header.timestamp = plaintext.timestamp;
@@ -703,7 +739,7 @@ public:
                             } else
                                 new_mail = true;
 
-                            record.mail_servers.insert(server);
+                            record.mail_servers.insert(std::move(server));
 
                             _archive.store(email.second, record);
                             _mail_index.insert(header);
@@ -844,6 +880,21 @@ message_id_type client::send_email(const string &from,
     my->process_outgoing_mail(email);
 
     return email.id;
+}
+
+message_id_type client::send_encrypted_message(message&& ciphertext,
+                                               const string& from,
+                                               const string& to,
+                                               const public_key_type& recipient_key)
+{
+    FC_ASSERT(my->is_open());
+    FC_ASSERT(ciphertext.type == encrypted, "Refusing to send plaintext message");
+
+    ciphertext.recipient = recipient_key;
+    detail::mail_record mail_rec(from, to, recipient_key, std::move(ciphertext));
+    my->process_outgoing_mail(mail_rec);
+
+    return mail_rec.id;
 }
 
 std::vector<email_header> client::get_messages_by_sender(std::string sender)

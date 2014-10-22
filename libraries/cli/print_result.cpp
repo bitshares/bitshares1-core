@@ -1059,11 +1059,11 @@ namespace bts { namespace cli {
   void print_result::f_mail_get_message( std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client )
   {
     mail::email_record email = result.as<mail::email_record>();
-    mail::email_message content;
 
     switch (mail::message_type(email.content.type)) {
     case mail::email:
-      content = email.content.as<mail::signed_email_message>();
+    {
+      auto content = email.content.as<mail::signed_email_message>();
 
       out << "=== Email Message ==="
              "\nFrom:         " << email.header.sender
@@ -1073,14 +1073,32 @@ namespace bts { namespace cli {
           << (content.reply_to != mail::message_id_type()? "\nIn Reply To:  " + content.reply_to.str() : std::string())
           << "\n\n"
           << content.body << "\n\n"
-          << "===  End  Message ===\n\n";
-
-      if (email.failure_reason && !email.failure_reason->empty())
-        out << "Message Failed to Send: " << *email.failure_reason << "\n";
+             "===  End  Message ===\n\n";
       break;
+    }
+    case mail::transaction_notice:
+    {
+      auto content = email.content.as<mail::transaction_notice_message>();
+
+      out << "=== Transaction Message ==="
+             "\nFrom:         " << email.header.sender
+          << "\nTo:           " << email.header.recipient
+          << "\nDate:         " << pretty_timestamp(email.header.timestamp)
+          << "\nMemo:         " << content.extended_memo
+          << "\n\n"
+          << pretty_transaction_list({client->get_wallet()->to_pretty_trx(
+                                      client->get_wallet()->get_transaction(content.trx.id().str()))}, client)
+          << "\n===  End  Message ===\n\n";
+      break;
+    }
     default:
       out << fc::json::to_pretty_string(result);
     }
+
+    if (email.failure_reason && !email.failure_reason->empty())
+      out << "Message Failed to Send: " << *email.failure_reason << "\n"
+             "Attempted to send to these servers:\n"
+          << fc::json::to_pretty_string(email.mail_servers) << "\n";
   }
 
   void print_result::f_mail_header_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)

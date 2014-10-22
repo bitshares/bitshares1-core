@@ -3,6 +3,7 @@
 #include <bts/blockchain/transaction.hpp>
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/wallet/wallet_records.hpp>
+#include <bts/mail/message.hpp>
 
 #include <vector>
 #include <map>
@@ -38,12 +39,14 @@ namespace bts { namespace wallet {
 
       wallet_transaction_record transaction_record;
       std::unordered_set<blockchain::address> required_signatures;
-      //Set of accounts with a cover order in this transaction (only one cover allowed per account per block)
+      ///Set of accounts with a cover order in this transaction (only one cover allowed per account per block)
       std::unordered_set<blockchain::address> accounts_with_covers;
       ///Map of <owning account address, asset ID> to that account's balance in that asset ID
       std::map<std::pair<blockchain::address, asset_id_type>, share_type> outstanding_balances;
       ///Map of account address to key owning that account's market transactions
       std::map<blockchain::address, public_key_type> order_keys;
+      ///List of partially-completed transaction notifications; these will be completed when sign() is called
+      std::vector<std::pair<mail::transaction_notice_message, public_key_type>> notices;
 
       /**
        * @brief Look up the market transaction owner key used for a particular account
@@ -115,6 +118,30 @@ namespace bts { namespace wallet {
                                                        optional<public_key_type> active_key,
                                                        optional<share_type> delegate_pay,
                                                        optional<wallet_account_record> paying_account);
+      /**
+       * @brief Transfer funds from payer to recipient
+       * @param payer The account to charge
+       * @param recipient The account to credit
+       * @param amount The amount to credit
+       * @param memo The memo to attach to the transaction notification. May be arbitrarily long
+       * @param vote_method The method with which to select the delegate vote for the deposited asset
+       * @param memo_sender If valid, the recipient will see the transaction as being from this sender instead of the
+       * payer.
+       *
+       * payer is expected to be a receive account.
+       * If set, memo_sender is expected to be a receive account.
+       *
+       * If recipient is a public account, a public deposit will be made to his active address; otherwise, a TITAN
+       * transaction will be used.
+       *
+       * This method will create a transaction notice message, which will be completed after sign() is called.
+       */
+      transaction_builder& deposit_asset(const wallet_account_record& payer,
+                                         const account_record& recipient,
+                                         const asset& amount,
+                                         const string& memo,
+                                         vote_selection_method vote_method = vote_recommended,
+                                         fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
       /**
        * @brief Cancel a single order
        * @param order_id
@@ -198,6 +225,11 @@ namespace bts { namespace wallet {
          return required_signatures.size() == trx.signatures.size();
       }
 
+      /**
+       * @brief Encrypts and returns the transaction notifications for all deposits in this transaction
+       */
+      std::vector<mail::message> encrypted_notifications();
+
    private:
       detail::wallet_impl* _wimpl;
       //Shorthand name for the signed_transaction
@@ -228,4 +260,4 @@ namespace bts { namespace wallet {
    typedef std::shared_ptr<transaction_builder> transaction_builder_ptr;
 } } //namespace bts::wallet
 
-FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances) )
+FC_REFLECT( bts::wallet::transaction_builder, (transaction_record)(required_signatures)(outstanding_balances)(notices) )

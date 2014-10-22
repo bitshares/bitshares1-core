@@ -444,26 +444,36 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == cover_order );
       FC_ASSERT( mtrx.ask_type == cover_order );
 
-      auto cover_age = get_current_cover_age();
-      auto interest_paid = std::min( get_cover_interest( _current_ask->get_balance(),
-                                                         _current_collat_record.interest_rate,
-                                                         cover_age ),
-                                     get_cover_interest( mtrx.ask_received,
-                                                         _current_collat_record.interest_rate,
-                                                         cover_age ) );
+      const asset principle = asset( _current_collat_record.payoff_balance, quote_asset.id );
+      const auto cover_age = get_current_cover_age();
+      const asset total_debt = get_current_cover_debt();
 
-      auto amount_covered = mtrx.ask_received.amount - interest_paid.amount;
-      FC_ASSERT( amount_covered >= 0 );
-
-      // we are in the margin call range...
-      _current_ask->state.balance  -= amount_covered;
-      *(_current_ask->collateral)  -= mtrx.ask_paid.amount;
-
+      asset principle_paid;
+      asset interest_paid;
+      if( mtrx.ask_received >= total_debt )
+      {
+          // Payoff the whole debt
+          principle_paid = principle;
+          interest_paid = mtrx.ask_received - principle_paid;
+          _current_ask->state.balance = 0;
+      }
+      else
+      {
+          // Partial cover
+          interest_paid = get_interest_paid( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
+          principle_paid = mtrx.ask_received - interest_paid;
+          _current_ask->state.balance -= principle_paid.amount;
+      }
+      FC_ASSERT( principle_paid.amount >= 0 );
+      FC_ASSERT( interest_paid.amount >= 0 );
       FC_ASSERT( _current_ask->state.balance >= 0 );
+
+      *(_current_ask->collateral) -= mtrx.ask_paid.amount;
+
       FC_ASSERT( *_current_ask->collateral >= 0, "",
                  ("mtrx",mtrx)("_current_ask", _current_ask)("interest_paid",interest_paid)  );
 
-      quote_asset.current_share_supply -= amount_covered;
+      quote_asset.current_share_supply -= principle_paid.amount;
       quote_asset.collected_fees       += interest_paid.amount;
       if( *_current_ask->collateral == 0 )
       {
@@ -471,9 +481,9 @@ namespace bts { namespace blockchain { namespace detail {
           _current_ask->state.balance = 0;
       }
 
-      if( _current_ask->state.balance == 0 && *_current_ask->collateral > 0 ) // no more USD left
+      // If debt is fully paid off and there is leftover collateral
+      if( _current_ask->state.balance == 0 && *_current_ask->collateral > 0 )
       { // send collateral home to mommy & daddy
-            //wlog( "            collateral balance is now 0!" );
             auto ask_balance_address = withdraw_condition(
                                               withdraw_with_signature(_current_ask->get_owner()),
                                               _base_id ).get_address();
@@ -495,10 +505,6 @@ namespace bts { namespace blockchain { namespace detail {
 
                // these go to the network... as dividends..
                mtrx.fees_collected += asset( fee, _base_id );
-            }
-            else
-            {
-               mtrx.fees_collected += asset( 0, _base_id );
             }
 
             ask_payout->balance += left_over_collateral;
@@ -714,12 +720,12 @@ namespace bts { namespace blockchain { namespace detail {
           }
   }
 
-  asset market_engine::get_cover_interest(const asset& amount_paid, const price& apr, uint32_t age_seconds)
+  asset market_engine::get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds)
   {
       // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
       // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
-      // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE 
-      fc::real128 total_paid( amount_paid.amount );
+      // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE
+      fc::real128 total_paid( total_amount_paid.amount );
       fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
       fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
       fc::real128 iapr = apr_n / apr_d;
@@ -730,21 +736,28 @@ namespace bts { namespace blockchain { namespace detail {
       fc::real128 delta_principle = total_paid / ( fc::real128(1) + iapr * percent_of_year );
       fc::real128 interest_paid   = total_paid - delta_principle;
 
-      return asset( interest_paid.to_uint64(), amount_paid.asset_id );
+      return asset( interest_paid.to_uint64(), total_amount_paid.asset_id );
+  }
 
-      /*
-     asset annual_interest = principle * apr;
-     annual_interest.asset_id = principle.asset_id;
-     annual_interest.amount *= age_seconds;
-     annual_interest.amount /= ; // seconds per year
+  asset market_engine::get_interest_owed(const asset& principle, const price& apr, uint32_t age_seconds)
+  {
+      // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
+      fc::real128 total_principle( principle.amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+      fc::real128 iapr = apr_n / apr_d;
+      fc::real128 age_sec(age_seconds);
+      fc::real128 sec_per_year(365 * 24 * 60 * 60);
+      fc::real128 percent_of_year = age_sec / sec_per_year;
 
-     return annual_interest;
-     */
+      fc::real128 interest_owed   = total_principle * iapr * percent_of_year;
+
+      return asset( interest_owed.to_uint64(), principle.asset_id );
   }
 
   asset market_engine::get_current_cover_debt() const
   {
-     return get_cover_interest( _current_ask->get_balance(),
+      return get_interest_owed( _current_ask->get_balance(),
                                 _current_collat_record.interest_rate,
                                 get_current_cover_age() ) + _current_ask->get_balance();
   }

@@ -1,5 +1,6 @@
 #pragma once
 #include <bts/blockchain/chain_interface.hpp>
+#include <fc/reflect/reflect.hpp>
 #include <deque>
 
 namespace bts { namespace blockchain {

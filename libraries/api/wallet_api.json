@@ -536,7 +536,7 @@
           [
             {
               "name" : "amount_to_transfer",
-              "type" : "real_amount",
+              "type" : "string",
               "description" : "the amount of shares to transfer"
             },
             {
@@ -578,7 +578,7 @@
           [
             {
               "name" : "amount_to_transfer",
-              "type" : "real_amount",
+              "type" : "string",
               "description" : "the amount of shares to transfer"
             },
             {
@@ -594,7 +594,7 @@
             {
               "name" : "from_account_name",
               "type" : "sending_account_name",
-              "description" : "the account to show the recipient as being the sender (requires account's private key to be in wallet). Leave empty to send anonymously."
+              "description" : "the account to show the recipient as being the sender (requires account's private key to be in wallet)."
             },
             {
               "name" : "to_account_name",
@@ -1771,6 +1771,30 @@
                 "name" : "ciphertext",
                 "type" : "message",
                 "description" : "The encrypted message."
+             }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_set_preferred_mail_servers",
+         "description" : "Sets the list of mail servers an account checks for his mail.",
+         "return_type" : "void",
+         "parameters"  : [
+             {
+                "name" : "account_name",
+                "type" : "string",
+                "description" : "The name of the account whose mail servers should be updated."
+             },
+             {
+                "name" : "server_list",
+                "type" : "string_array",
+                "description" : "A list of names of blockchain accounts who run mail servers."
+             },
+             {
+                "name" : "paying_account",
+                "type" : "string",
+                "description" : "The name of the account to pay the transaction fee, if different from account_name.",
+                "default_value" : ""
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
