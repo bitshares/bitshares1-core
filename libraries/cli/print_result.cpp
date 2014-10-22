@@ -1096,7 +1096,9 @@ namespace bts { namespace cli {
     }
 
     if (email.failure_reason && !email.failure_reason->empty())
-      out << "Message Failed to Send: " << *email.failure_reason << "\n";
+      out << "Message Failed to Send: " << *email.failure_reason << "\n"
+             "Attempted to send to these servers:\n"
+          << fc::json::to_pretty_string(email.mail_servers) << "\n";
   }
 
   void print_result::f_mail_header_list(std::ostream& out, const fc::variants& arguments, const fc::variant& result, cptr client)
