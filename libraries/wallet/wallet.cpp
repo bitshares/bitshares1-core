@@ -1891,6 +1891,7 @@ namespace detail {
        ulog( "This may take a while..." );
        uint32_t total_regenerated_key_count = 0;
 
+       // Regenerate wallet child keys
        ulog( "Regenerating wallet child keys and importing into account: ${name}", ("name",account_name) );
        uint32_t key_index = 0;
        for( ; key_index < num_keys_to_regenerate; ++key_index )
@@ -1914,9 +1915,12 @@ namespace detail {
            if( regenerate_key_error.valid() )
                ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
        }
+
+       // Update wallet last used child key index
        my->_wallet_db.set_last_wallet_child_key_index( std::max( my->_wallet_db.get_last_wallet_child_key_index(), key_index - 1 ) );
 
-       ulog( "Regenerating account child keys for account: ${name}", ("name",account_name) );
+       // Regenerate v1 account child keys
+       ulog( "Regenerating type 1 account child keys for account: ${name}", ("name",account_name) );
        uint32_t seq_num = 0;
        for( ; seq_num < num_keys_to_regenerate; ++seq_num )
        {
@@ -1940,6 +1944,38 @@ namespace detail {
            if( regenerate_key_error.valid() )
                ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
        }
+
+       // Regenerate v2 account child keys
+       const owallet_key_record key_record = my->_wallet_db.lookup_key( address( account_record->active_key() ) );
+       if( key_record.valid() && key_record->has_private_key() )
+       {
+           ulog( "Regenerating type 2 account child keys for account: ${name}", ("name",account_name) );
+           const private_key_type active_private_key = key_record->decrypt_private_key( my->_wallet_password );
+           seq_num = 0;
+           for( ; seq_num < num_keys_to_regenerate; ++seq_num )
+           {
+               fc::oexception regenerate_key_error;
+               try
+               {
+                   const private_key_type private_key = my->_wallet_db.get_account_child_key( active_private_key, seq_num );
+                   const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
+                   if( !key_record.valid() || !key_record->has_private_key() )
+                   {
+                       import_private_key( private_key, account_name );
+                       ++total_regenerated_key_count;
+                   }
+               }
+               catch( const fc::exception& e )
+               {
+                   regenerate_key_error = e;
+               }
+
+               if( regenerate_key_error.valid() )
+                   ulog( "${e}", ("e",regenerate_key_error->to_detail_string()) );
+           }
+       }
+
+       // Update account last used key sequence number
        account_record->last_used_gen_sequence = std::max( account_record->last_used_gen_sequence, seq_num - 1 );
        my->_wallet_db.store_account( *account_record );
 
