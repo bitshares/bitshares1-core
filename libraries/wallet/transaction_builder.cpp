@@ -47,7 +47,7 @@ transaction_builder& transaction_builder::update_account_registration(const wall
                  *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
 
       //If account is not a delegate but wants to become one OR account is a delegate changing his pay rate...
-      if( (!account.is_delegate() && *delegate_pay >= 0) ||
+      if( (!account.is_delegate() && *delegate_pay <= 100) ||
            (account.is_delegate() && *delegate_pay != account.delegate_pay_rate()) )
       {
          if( !paying_account->is_my_account )
