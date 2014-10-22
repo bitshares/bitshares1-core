@@ -15,6 +15,9 @@ namespace detail { class client_impl; struct mail_record; struct mail_archive_re
 struct email_header;
 struct email_record;
 
+typedef std::pair<std::string, fc::ip::endpoint> mail_server_endpoint;
+typedef std::map<std::string, fc::ip::endpoint> mail_server_list;
+
 class client : public std::enable_shared_from_this<client> {
 public:
     boost::signals2::signal<void(int)> new_mail_notifier;
@@ -81,7 +84,7 @@ struct email_header {
 struct email_record {
     email_header header;
     message content;
-    fc::optional<std::unordered_set<fc::ip::endpoint>> mail_servers;
+    fc::optional<mail_server_list> mail_servers;
     fc::optional<string> failure_reason;
 
     email_record(){}
