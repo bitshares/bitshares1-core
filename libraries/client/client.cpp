@@ -626,8 +626,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               cancel_rebroadcast_pending_loop();
               if( _chain_downloader_future.valid() && !_chain_downloader_future.ready() )
                  _chain_downloader_future.cancel_and_wait(__FUNCTION__);
-              _p2p_node.reset();
+              _rpc_server.reset(); // this needs to shut down before the _p2p_node because several RPC requests will try to dereference _p2p_node.  Shutting down _rpc_server kills all active/pending requests
               delete _cli;
+              _cli = nullptr;
+              _p2p_node.reset();
             }
 
             void start()
@@ -1998,18 +2000,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer(
-            double amount_to_transfer,
+            const string& amount_to_transfer,
             const string& asset_symbol,
             const string& from_account_name,
             const string& to_account_name,
             const string& memo_message,
             const vote_selection_method& selection_method )
     {
-        const auto record = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                     from_account_name, from_account_name, to_account_name,
-                                                     memo_message, selection_method );
-        network_broadcast_transaction( record.trx );
-        return record;
+        return wallet_transfer_from(amount_to_transfer, asset_symbol, from_account_name, from_account_name,
+                                    to_account_name, memo_message, selection_method);
     }
     wallet_transaction_record detail::client_impl::wallet_burn(
             double amount_to_transfer,
@@ -2028,7 +2027,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     }
 
     wallet_transaction_record detail::client_impl::wallet_transfer_from(
-            double amount_to_transfer,
+            const string& amount_to_transfer,
             const string& asset_symbol,
             const string& paying_account_name,
             const string& from_account_name,
@@ -2036,10 +2035,23 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             const string& memo_message,
             const vote_selection_method& selection_method )
     {
-        const auto record = _wallet->transfer_asset( amount_to_transfer, asset_symbol,
-                                                     paying_account_name, from_account_name, to_account_name,
-                                                     memo_message, selection_method );
+        asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
+        auto sender = _wallet->get_account(from_account_name);
+        auto payer = _wallet->get_account(paying_account_name);
+        auto recipient = _wallet->get_account(to_account_name);
+        transaction_builder_ptr builder = _wallet->create_transaction_builder();
+        auto record = builder->deposit_asset(payer, recipient, amount,
+                                             memo_message, selection_method, sender.owner_key)
+                              .finalize()
+                              .sign();
+
         network_broadcast_transaction( record.trx );
+        for( auto&& notice : builder->encrypted_notifications() )
+            _mail_client->send_encrypted_message(std::move(notice),
+                                                 from_account_name,
+                                                 to_account_name,
+                                                 recipient.owner_key);
+
         return record;
     }
 
@@ -2387,6 +2399,64 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         return _wallet->mail_open(recipient, ciphertext);
     }
 
+    void detail::client_impl::wallet_set_preferred_mail_servers(const string& account_name,
+                                                                const std::vector<string>& server_list,
+                                                                const string& paying_account)
+    {
+        /*
+         * Brief overview of what's going on here... the user specifies a list of blockchain accounts which host mail
+         * servers. These are the mail servers the user's client will check for new mail. This list is published as a
+         * list of strings in public_data["mail_servers"].
+         *
+         * The server accounts will publish the actual endpoints in their public data as an ip::endpoint object in
+         * public_data["mail_server_endpoint"]. This function will not let the user set his mail server list unless all
+         * of his mail servers all publish this endpoint.
+         */
+
+        if( !_wallet->is_open() )
+            FC_THROW_EXCEPTION( wallet_closed, "Wallet is not open; cannot set preferred mail servers." );
+        //Skip unlock check here; wallet_account_update_registration below will check it.
+
+        //Sanity check account_name
+        wallet_account_record account_rec = _wallet->get_account(account_name);
+        if( !account_rec.is_my_account )
+            FC_THROW_EXCEPTION( unknown_receive_account,
+                                "Account ${name} is not owned by this wallet. Cannot set his mail servers.",
+                                ("name", account_name) );
+
+        //Check that all names in server_list are valid accounts which publish mail server endpoints
+        for( const string& server_name : server_list )
+        {
+            oaccount_record server_account = _chain_db->get_account_record(server_name);
+            if( !server_account )
+                FC_THROW_EXCEPTION( unknown_account_name,
+                                    "The server account ${name} from server_list is not registered on the blockchain.",
+                                    ("name", server_name) );
+            try {
+                //Not actually storing the value; I don't care. I just want to make sure that both of these .as() calls
+                //work smoothly.
+                server_account->public_data.as<fc::variant_object>()["mail_server_endpoint"].as<fc::ip::endpoint>();
+            } catch (fc::exception&) {
+                FC_ASSERT( false,
+                           "The server account ${name} from server_list does not publish a valid mail server endpoint.",
+                           ("name", server_name) );
+            }
+        }
+
+        //Update the public_data
+        fc::mutable_variant_object public_data;
+        try {
+            if( !account_rec.public_data.is_null() )
+                public_data = account_rec.public_data.as<fc::mutable_variant_object>();
+        } catch (fc::exception&) {
+            FC_ASSERT( false, "Account's public data is not an object. Please unset it or make it an object." );
+        }
+        public_data["mail_servers"] = server_list;
+
+        //Commit the change
+        wallet_account_update_registration(account_name, paying_account, public_data);
+    }
+
     map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balances( const string& first, uint32_t limit )const
     {
       return _chain_db->get_balances( first, limit );
@@ -2631,10 +2701,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       _mail_client->archive_message(message_id);
     }
 
-    int detail::client_impl::mail_check_new_messages()
+    int detail::client_impl::mail_check_new_messages(bool get_all)
     {
       FC_ASSERT(_mail_client);
-      return _mail_client->check_new_messages();
+      return _mail_client->check_new_messages(get_all);
     }
 
     mail::email_record detail::client_impl::mail_get_message(const mail::message_id_type& message_id) const
@@ -3303,6 +3373,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
               try
               {
                   info["wallet_last_scanned_block_timestamp"]   = _chain_db->get_block_header( last_scanned_block_num ).timestamp;
+              }
+              catch (fc::canceled_exception&)
+              {
+                throw;
               }
               catch( ... )
               {

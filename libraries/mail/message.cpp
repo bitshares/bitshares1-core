@@ -18,6 +18,13 @@ namespace bts { namespace mail {
       from_signature = from_key.sign_compact( digest() );
    } FC_CAPTURE_AND_RETHROW() }
 
+   fc::ecc::public_key transaction_notice_message::from() const
+   { try {
+      if( !memo_signature )
+         return fc::ecc::public_key();
+      return fc::ecc::public_key( *memo_signature, fc::sha256::hash(extended_memo.data(), extended_memo.size()) );
+   } FC_CAPTURE_AND_RETHROW() }
+
    fc::ecc::public_key signed_email_message::from()const
    { try {
       return fc::ecc::public_key( from_signature, digest() );

@@ -16,6 +16,18 @@
 namespace bts { namespace wallet {
    using namespace bts::blockchain;
 
+   /**
+    *  The vote selection method helps enhance user privacy by
+    *  not tying their accounts together.
+    */
+   enum vote_selection_method
+   {
+      vote_none        = 0,
+      vote_all         = 1,
+      vote_random      = 2,
+      vote_recommended = 3
+   };
+
    enum wallet_record_type_enum
    {
       master_key_record_type     = 0,

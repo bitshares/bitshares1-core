@@ -138,7 +138,14 @@
             "method_name": "mail_check_new_messages",
             "description": "Check mail server for new mail and return number of new messages.",
             "return_type": "int32_t",
-            "parameters" : [],
+            "parameters" : [
+                {
+                    "name" : "get_old_messages",
+                    "type" : "bool",
+                    "description" : "If true, all messages will be retrieved, not just new ones.",
+                    "default_value" : "false"
+                }
+            ],
             "prerequisites" : ["json_authenticated","wallet_unlocked"]
         },
         {

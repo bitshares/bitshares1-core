@@ -41,7 +41,7 @@ test                            99.39900 XTS
 default (unlocked) >>> wallet_account_update_active_key test test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   test                test                0.00000 XTS             update test active key                      0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   test                test                0.00000 XTS             Update test's active key                    0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -59,7 +59,7 @@ test                            98.89900 XTS
 default (unlocked) >>> wallet_account_update_active_key test test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   test                test                0.00000 XTS             update test active key                      0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   test                test                0.00000 XTS             Update test's active key                    0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================

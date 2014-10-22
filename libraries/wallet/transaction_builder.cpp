@@ -5,6 +5,10 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
+#include <bts/cli/pretty.hpp>
+
+#include <fc/crypto/sha256.hpp>
+
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
@@ -42,7 +46,9 @@ transaction_builder& transaction_builder::update_account_registration(const wall
       FC_ASSERT( !account.is_delegate() ||
                  *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
 
-      if( !account.is_delegate() || *delegate_pay != account.delegate_pay_rate() )
+      //If account is not a delegate but wants to become one OR account is a delegate changing his pay rate...
+      if( (!account.is_delegate() && *delegate_pay >= 0) ||
+           (account.is_delegate() && *delegate_pay != account.delegate_pay_rate()) )
       {
          if( !paying_account->is_my_account )
             FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
@@ -102,6 +108,56 @@ transaction_builder& transaction_builder::update_account_registration(const wall
    required_signatures = working_required_signatures;
    return *this;
 }
+
+transaction_builder& transaction_builder::deposit_asset(const bts::wallet::wallet_account_record& payer,
+                                                        const bts::blockchain::account_record& recipient,
+                                                        const asset& amount,
+                                                        const string& memo, vote_selection_method vote_method,
+                                                        fc::optional<public_key_type> memo_sender)
+{ try {
+   if( amount.amount <= 0 )
+      FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
+   optional<public_key_type> titan_one_time_key;
+
+   if( !memo_sender.valid() )
+       memo_sender = payer.active_key();
+
+   if( recipient.is_public_account() )
+   {
+      trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
+   } else {
+      auto one_time_key = _wimpl->create_one_time_key();
+      titan_one_time_key = one_time_key.get_public_key();
+      trx.deposit_to_account(recipient.active_key(),
+                             amount,
+                             _wimpl->self->get_private_key(*memo_sender),
+                             cli::pretty_shorten(memo, BTS_BLOCKCHAIN_MAX_MEMO_SIZE),
+                             _wimpl->select_slate(trx, amount.asset_id, vote_method),
+                             *memo_sender,
+                             one_time_key,
+                             from_memo);
+   }
+
+   deduct_balance(payer.owner_key, amount);
+
+   ledger_entry entry;
+   entry.from_account = payer.owner_key;
+   entry.to_account = recipient.owner_key;
+   entry.amount = amount;
+   entry.memo = memo;
+   if( *memo_sender != payer.active_key() )
+      entry.memo_from_account = *memo_sender;
+   transaction_record.ledger_entries.push_back(std::move(entry));
+
+   auto memo_signature = _wimpl->self->get_private_key(*memo_sender).sign_compact(fc::sha256::hash(memo.data(),
+                                                                                                   memo.size()));
+   notices.emplace_back(std::make_pair(mail::transaction_notice_message(string(memo),
+                                                                        std::move(titan_one_time_key),
+                                                                        std::move(memo_signature)),
+                                       recipient.active_key()));
+
+   return *this;
+} FC_CAPTURE_AND_RETHROW( (recipient)(amount)(memo) ) }
 
 transaction_builder& transaction_builder::cancel_market_order(const order_id_type& order_id)
 { try {
@@ -299,7 +355,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    auto age_at_transaction_expiration = _wimpl->_blockchain->now() + _wimpl->self->get_transaction_expiration() -
                      (*order->expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC);
    order_balance += blockchain::detail::market_engine
-           ::get_cover_interest(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
+           ::get_interest_owed(order_balance, *order->interest_rate, age_at_transaction_expiration.to_seconds());
 
    //What's the account's actual balance? We can't pay more than that.
    auto account_balances = _wimpl->self->get_account_balances(from_account.name);
@@ -340,6 +396,8 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    entry.to_account = owner_key_record->public_key;
    entry.amount = cover_amount;
    entry.memo = "payoff debt";
+
+   transaction_record.is_market = true;
    transaction_record.ledger_entries.push_back(entry);
 
    required_signatures.insert(owner_key_record->public_key);
@@ -387,8 +445,19 @@ wallet_transaction_record& transaction_builder::sign()
       } catch( ... ) {}
    }
 
+   for( auto& notice : notices )
+      notice.first.trx = trx;
+
    _wimpl->cache_transaction(trx, transaction_record);
    return transaction_record;
+}
+
+std::vector<bts::mail::message> transaction_builder::encrypted_notifications()
+{
+   vector<mail::message> messages;
+   for( auto& notice : notices )
+      messages.emplace_back(mail::message(notice.first).encrypt(_wimpl->create_one_time_key(), notice.second));
+   return messages;
 }
 
 void transaction_builder::pay_fees()
