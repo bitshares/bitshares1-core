@@ -46,7 +46,9 @@ transaction_builder& transaction_builder::update_account_registration(const wall
       FC_ASSERT( !account.is_delegate() ||
                  *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
 
-      if( !account.is_delegate() || *delegate_pay != account.delegate_pay_rate() )
+      //If account is not a delegate but wants to become one OR account is a delegate changing his pay rate...
+      if( (!account.is_delegate() && *delegate_pay >= 0) ||
+           (account.is_delegate() && *delegate_pay != account.delegate_pay_rate()) )
       {
          if( !paying_account->is_my_account )
             FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
