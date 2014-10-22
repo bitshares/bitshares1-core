@@ -42,6 +42,7 @@ namespace bts { namespace wallet {
 
          owallet_key_record     lookup_key( const address& derived_address )const;
          void                   store_key( const key_data& key );
+         void                   import_key( const fc::sha512& password, const string& account_name, const private_key_type& private_key );
          // ***********************
 
 

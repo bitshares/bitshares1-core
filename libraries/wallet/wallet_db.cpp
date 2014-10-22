@@ -485,6 +485,29 @@ namespace bts { namespace wallet {
        }
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
+   void wallet_db::import_key( const fc::sha512& password, const string& account_name, const private_key_type& private_key )
+   { try {
+       FC_ASSERT( is_open() );
+
+       owallet_account_record account_record = lookup_account( account_name );
+       FC_ASSERT( account_record.valid(), "Account name not found!" );
+
+       const public_key_type public_key = private_key.get_public_key();
+       const address key_address = address( public_key );
+
+       owallet_key_record key_record = lookup_key( key_address );
+       if( key_record.valid() )
+           FC_ASSERT( key_record->account_address == account_record->account_address );
+       else
+           key_record = wallet_key_record();
+
+       key_record->account_address = account_record->account_address;
+       key_record->public_key = public_key;
+       key_record->encrypt_private_key( password, private_key );
+
+       store_key( *key_record );
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
    void wallet_db::set_property( property_enum property_id, const variant& v )
    {
       wallet_property_record property_record;
@@ -603,11 +626,11 @@ namespace bts { namespace wallet {
                                const fc::sha512& password )
    {
       key_data data;
-      data.account_address = address(account_key.get_public_key());
-      //data.memo = memo_data(memo);
-      data.valid_from_signature = memo.has_valid_signature;
+      data.account_address = address( account_key.get_public_key() );
+      data.public_key = memo.owner_private_key.get_public_key();
       data.encrypt_private_key( password, memo.owner_private_key );
-
+      data.valid_from_signature = memo.has_valid_signature;
+      //data.memo = memo_data( memo );
       store_key( data );
    }
 

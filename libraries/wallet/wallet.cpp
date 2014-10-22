@@ -1384,11 +1384,7 @@ namespace detail {
          return current_key_record->public_key;
       }
 
-      key_data new_key_data;
-      new_key_data.account_address = current_account->account_address;
-      new_key_data.encrypt_private_key( my->_wallet_password, key );
-
-      my->_wallet_db.store_key( new_key_data );
+      my->_wallet_db.import_key( my->_wallet_password, current_account->name, key );
 
       return pub_key;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
