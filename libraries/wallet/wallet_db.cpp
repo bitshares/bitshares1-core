@@ -522,6 +522,19 @@ namespace bts { namespace wallet {
        store_key( *key_record );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
+   private_key_type wallet_db::generate_new_one_time_key( const fc::sha512& password )
+   { try {
+       FC_ASSERT( is_open() );
+       const private_key_type one_time_private_key = private_key_type::generate();
+
+       key_data key;
+       key.public_key = one_time_private_key.get_public_key();
+       key.encrypt_private_key( password, one_time_private_key );
+       store_key( key );
+
+       return one_time_private_key;
+   } FC_CAPTURE_AND_RETHROW() }
+
    void wallet_db::set_property( property_enum property_id, const variant& v )
    {
       wallet_property_record property_record;

@@ -35,15 +35,20 @@ namespace bts { namespace wallet {
 
          void                   add_contact_account( const account_record& blockchain_account_record, const variant& private_data );
 
+         // Account getters and setters
          owallet_account_record lookup_account( const address& account_address )const;
          owallet_account_record lookup_account( const string& account_name )const;
          owallet_account_record lookup_account( const account_id_type& account_id )const;
          void                   store_account( const account_data& account );
          void                   store_account( const blockchain::account_record& blockchain_account_record );
 
+         // Key getters and setters
          owallet_key_record     lookup_key( const address& derived_address )const;
          void                   store_key( const key_data& key );
          void                   import_key( const fc::sha512& password, const string& account_name, const private_key_type& private_key );
+
+         // Non-deterministic and not linked to any account
+         private_key_type       generate_new_one_time_key( const fc::sha512& password );
          // ***********************
 
 
