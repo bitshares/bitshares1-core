@@ -151,7 +151,7 @@ endif( WIN32 )
 
 find_package( BerkeleyDB )
 
-set( CUSTOM_URL_SCHEME "xts" )
+set( CUSTOM_URL_SCHEME "vts" )
 
 add_subdirectory( libraries )
 add_subdirectory( vendor/miniupnp/miniupnpc )

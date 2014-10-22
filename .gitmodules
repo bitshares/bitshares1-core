@@ -10,7 +10,3 @@
 	path = libraries/leveldb
 	url = https://github.com/bitcoin/leveldb.git
   ignore = dirty
-[submodule "programs/voting_gui"]
-	path = programs/voting_gui
-	url = git@github.com:nathanhourt/voting_gui
-	branch = develop
