@@ -264,11 +264,7 @@ namespace detail {
             {
                auto blockchain_acct_rec = _blockchain->get_account_record( acct.second.id );
                if( blockchain_acct_rec.valid() )
-               {
-                   blockchain::account_record& brec = acct.second;
-                   brec = *blockchain_acct_rec;
-                   _wallet_db.store_account( acct.second );
-               }
+                   _wallet_db.store_account( *blockchain_acct_rec );
             }
         }
 
@@ -1234,25 +1230,20 @@ namespace detail {
 
       if( local_account.valid() && chain_account.valid() )
       {
-         if( local_account->owner_key == chain_account->owner_key )
-         {
-             blockchain::account_record& bca = *local_account;
-             bca = *chain_account;
-             my->_wallet_db.store_account( *local_account );
-         }
-         else
+         if( local_account->owner_key != chain_account->owner_key )
          {
             wlog( "local account is owned by someone different public key than blockchain account" );
             wdump( (local_account)(chain_account) );
          }
       }
-      else if( !local_account.valid() )
+
+      if( chain_account.valid() )
       {
-          local_account = wallet_account_record();
-          blockchain::account_record& bca = *local_account;
-          bca = *chain_account;
+          my->_wallet_db.store_account( *chain_account );
+          local_account = my->_wallet_db.lookup_account( account_name );
       }
 
+      FC_ASSERT( local_account.valid() );
       return *local_account;
    } FC_CAPTURE_AND_RETHROW() }
 

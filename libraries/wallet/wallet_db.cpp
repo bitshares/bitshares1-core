@@ -426,6 +426,23 @@ namespace bts { namespace wallet {
        store_and_reload_record( *account_record );
    } FC_CAPTURE_AND_RETHROW( (account) ) }
 
+   void wallet_db::store_account( const blockchain::account_record& blockchain_account_record )
+   { try {
+       FC_ASSERT( is_open() );
+
+       const address account_address = address( blockchain_account_record.owner_key );
+       owallet_account_record account_record = lookup_account( account_address );
+       if( !account_record.valid() )
+           account_record = wallet_account_record();
+
+       blockchain::account_record& temp = *account_record;
+       temp = blockchain_account_record;
+
+       account_record->account_address = account_address;
+
+       store_account( *account_record );
+   } FC_CAPTURE_AND_RETHROW( (blockchain_account_record) ) }
+
    owallet_key_record wallet_db::lookup_key( const address& derived_address )const
    { try {
        FC_ASSERT( is_open() );
