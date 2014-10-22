@@ -4,4 +4,4 @@
 #define BTS_MAIL_MAX_MESSAGE_SIZE_BYTES (1024*1024)
 #define BTS_MAIL_MAX_MESSAGE_AGE (fc::minutes(5))
 #define BTS_MAIL_PROOF_OF_WORK_TARGET (fc::ripemd160("000ffffffdeadbeeffffffffffffffffffffffff"))
-#define BTS_MAIL_DEFAULT_MAIL_SERVERS (std::unordered_set<fc::ip::endpoint>({fc::ip::endpoint(fc::ip::address("69.90.132.209"), 1376)}))
+#define BTS_MAIL_DEFAULT_MAIL_SERVERS (std::unordered_set<std::string>({"nathanhourt.com"}))
