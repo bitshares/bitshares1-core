@@ -26,11 +26,15 @@ endif()
 find_package(Qt5Core)
 find_package(Qt5Gui)
 find_package(Qt5Qml)
+find_package(Qt5Widgets)
+add_definitions(-DQT_NO_KEYWORDS)
 
 qt5_add_resources(qrc_sources qml.qrc)
+set(qml_files main.qml)
 
-add_executable(voting_booth WIN32 MACOSX_BUNDLE main.cpp ${qrc_sources})
+add_executable(voting_booth WIN32 MACOSX_BUNDLE main.cpp ClientWrapper.cpp ${qrc_sources} ${qml_files})
 
-target_link_libraries(voting_booth Qt5::Core Qt5::Gui Qt5::Qml
+target_link_libraries(voting_booth Qt5::Core Qt5::Gui Qt5::Qml Qt5::Widgets
    bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client fc
-   ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} ${crypto_library} ${CrashRpt_LIBRARIES} ${ZLIB_LIBRARY} upnpc-static)
+   ${READLINE_LIBRARIES} ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS}
+   ${crypto_library} ${CrashRpt_LIBRARIES} ${ZLIB_LIBRARY} upnpc-static)

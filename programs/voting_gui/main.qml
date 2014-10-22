@@ -22,7 +22,7 @@ ApplicationWindow {
     }
 
     Text {
-        text: qsTr("Hello World")
+        text: bitshares.info
         anchors.centerIn: parent
     }
 }
