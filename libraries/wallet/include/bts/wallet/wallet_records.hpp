@@ -87,7 +87,7 @@ namespace bts { namespace wallet {
    /**
     *  Contacts are tracked by the hash of their receive key
     */
-   struct account : public bts::blockchain::account_record
+   struct account_data : public bts::blockchain::account_record
    {
        address  account_address;
        /**
@@ -243,7 +243,7 @@ namespace bts { namespace wallet {
    typedef wallet_record< master_key,                      master_key_record_type  >  wallet_master_key_record;
    typedef wallet_record< key_data,                        key_record_type         >  wallet_key_record;
    // TODO: Do not derive from blockchain account record
-   typedef wallet_record< account,                         account_record_type     >  wallet_account_record;
+   typedef wallet_record< account_data,                    account_record_type     >  wallet_account_record;
    typedef wallet_record< wallet_property,                 property_record_type    >  wallet_property_record;
    //typedef wallet_record< market_order_status,             market_order_record_type>  wallet_market_order_status_record;
    typedef wallet_record< setting,                         setting_record_type     >  wallet_setting_record;
@@ -291,7 +291,7 @@ FC_REFLECT( bts::wallet::wallet_property,
         (value)
         )
 
-FC_REFLECT_DERIVED( bts::wallet::account, (bts::blockchain::account_record),
+FC_REFLECT_DERIVED( bts::wallet::account_data, (bts::blockchain::account_record),
         (account_address)
         (private_data)
         (is_my_account)
