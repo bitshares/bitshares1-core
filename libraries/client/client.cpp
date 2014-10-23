@@ -2038,11 +2038,9 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
         auto sender = _wallet->get_account(from_account_name);
         auto payer = _wallet->get_account(paying_account_name);
-        auto recipient = _chain_db->get_account_record(to_account_name);
-        if( !recipient )
-            FC_THROW_EXCEPTION( unknown_account_name, "Unknown recipient account: ${name}", ("name", to_account_name) );
+        auto recipient = _wallet->get_account(to_account_name);
         transaction_builder_ptr builder = _wallet->create_transaction_builder();
-        auto record = builder->deposit_asset(payer, *recipient, amount,
+        auto record = builder->deposit_asset(payer, recipient, amount,
                                              memo_message, selection_method, sender.owner_key)
                               .finalize()
                               .sign();
@@ -2052,7 +2050,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             _mail_client->send_encrypted_message(std::move(notice),
                                                  from_account_name,
                                                  to_account_name,
-                                                 recipient->owner_key);
+                                                 recipient.owner_key);
 
         return record;
     }
