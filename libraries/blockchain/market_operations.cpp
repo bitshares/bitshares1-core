@@ -221,7 +221,7 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
       FC_ASSERT( current_cover->interest_rate.quote_asset_id > current_cover->interest_rate.base_asset_id,
-                 "Somehow an evil cover has snuck its way past our defenses.", ("cover", *current_cover) );
+                 "Rejecting cover order with invalid interest rate.", ("cover", *current_cover) );
 
       if( current_cover->payoff_balance > 0 )
       {
