@@ -563,6 +563,42 @@ namespace bts { namespace wallet {
        return one_time_private_key;
    } FC_CAPTURE_AND_RETHROW() }
 
+   map<private_key_type, string> wallet_db::get_account_private_keys( const fc::sha512& password )const
+   { try {
+       map<public_key_type, string> public_keys;
+       for( const auto& account_item : accounts )
+       {
+           const auto& account = account_item.second;
+           public_keys[ account.owner_key ] = account.name;
+           for( const auto& active_key_item : account.active_key_history )
+           {
+               const auto& active_key = active_key_item.second;
+               public_keys[ active_key ] = account.name;
+           }
+       }
+
+       map<private_key_type, string> private_keys;
+       for( const auto& public_key_item : public_keys )
+       {
+           const auto& public_key = public_key_item.first;
+           const auto& account_name = public_key_item.second;
+
+           const auto key_record = lookup_key( public_key );
+           if( !key_record.valid() || !key_record->has_private_key() )
+               continue;
+
+           try
+           {
+               private_keys[ key_record->decrypt_private_key( password ) ] = account_name;
+           }
+           catch( const fc::exception& e )
+           {
+               elog( "Error decrypting private key: ${e}", ("e",e.to_detail_string()) );
+           }
+       }
+       return private_keys;
+   } FC_CAPTURE_AND_RETHROW() }
+
    void wallet_db::repair_records( const fc::sha512& password )
    { try {
        FC_ASSERT( is_open() );
@@ -753,42 +789,6 @@ namespace bts { namespace wallet {
       //data.memo = memo_data( memo );
       store_key( data );
    }
-
-   map<private_key_type, string> wallet_db::get_account_private_keys( const fc::sha512& password )const
-   { try {
-       map<public_key_type, string> public_keys;
-       for( const auto& account_item : accounts )
-       {
-           const auto& account = account_item.second;
-           public_keys[ account.owner_key ] = account.name;
-           for( const auto& active_key_item : account.active_key_history )
-           {
-               const auto& active_key = active_key_item.second;
-               public_keys[ active_key ] = account.name;
-           }
-       }
-
-       map<private_key_type, string> private_keys;
-       for( const auto& public_key_item : public_keys )
-       {
-           const auto& public_key = public_key_item.first;
-           const auto& account_name = public_key_item.second;
-
-           const auto key_record = lookup_key( public_key );
-           if( !key_record.valid() || !key_record->has_private_key() )
-               continue;
-
-           try
-           {
-               private_keys[ key_record->decrypt_private_key( password ) ] = account_name;
-           }
-           catch( const fc::exception& e )
-           {
-               elog( "error decrypting private key: ${e}", ("e",e.to_detail_string()) );
-           }
-       }
-       return private_keys;
-   } FC_CAPTURE_AND_RETHROW() }
 
    owallet_balance_record wallet_db::lookup_balance( const balance_id_type& balance_id )const
    {

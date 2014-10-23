@@ -56,6 +56,8 @@ namespace bts { namespace wallet {
          // Non-deterministic and not linked to any account
          private_key_type       generate_new_one_time_key( const fc::sha512& password );
 
+         map<private_key_type, string> get_account_private_keys( const fc::sha512& password )const;
+
          // Restore as many broken record invariants as possible
          void                   repair_records( const fc::sha512& password );
          // ********************************************************************
@@ -70,7 +72,6 @@ namespace bts { namespace wallet {
 
          vector<wallet_transaction_record> get_pending_transactions()const;
 
-         map<private_key_type, string> get_account_private_keys( const fc::sha512& password )const;
          string                        get_account_name( const address& account_address )const;
 
          vector<wallet_balance_record>  get_all_balances( const string& account_name, uint32_t limit );
