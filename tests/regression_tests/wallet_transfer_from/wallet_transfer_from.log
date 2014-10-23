@@ -16,7 +16,7 @@ wallet_transfer_from <amount_to_transfer> <asset_symbol> <paying_account_name> <
 Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
 
 Parameters:
-  amount_to_transfer (real_amount, required): the amount of shares to transfer
+  amount_to_transfer (string, required): the amount of shares to transfer
   asset_symbol (asset_symbol, required): the asset to transfer
   paying_account_name (sending_account_name, required): the source account to draw the shares from
   from_account_name (sending_account_name, required): the account to show the recipient as being the sender (requires account's private key to be in wallet). Leave empty to send anonymously.
