@@ -4,7 +4,6 @@
 #include <bts/wallet/wallet_impl.hpp>
 
 #include <bts/blockchain/time.hpp>
-#include <bts/blockchain/fork_blocks.hpp>
 
 #include <bts/cli/pretty.hpp>
 #include <bts/utilities/git_revision.hpp>
@@ -3280,9 +3279,6 @@ namespace detail {
                                                   const string& price_limit,
                                                   bool sign)
    { try {
-      if( my->_blockchain->get_pending_state()->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
-          FC_ASSERT( !"Shorts disabled until next hardfork!" );
-
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
