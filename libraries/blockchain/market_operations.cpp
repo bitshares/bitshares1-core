@@ -220,14 +220,6 @@ namespace bts { namespace blockchain {
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
-      if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_COVER_SOFT_FORK )
-      {
-          if( current_cover->interest_rate.quote_asset_id == 0 && current_cover->interest_rate.base_asset_id == 0 )
-          {
-              current_cover->interest_rate.quote_asset_id = asset_to_cover->id;
-          }
-      }
-
       const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
       auto elapsed_sec = ( eval_state._current_state->now() - start_time ).to_seconds();
       if( elapsed_sec < 0 ) elapsed_sec = 0;

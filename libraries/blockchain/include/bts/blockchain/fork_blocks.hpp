@@ -3,8 +3,6 @@
 #include <stdint.h>
 #include <vector>
 
-#define BTSX_MARKET_COVER_SOFT_FORK             828000
-
 /** @file bts/blockchain/fork_blocks.hpp
  *  @brief Defines global block number constants for when hardforks take effect
  */

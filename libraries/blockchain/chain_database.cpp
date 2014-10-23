@@ -975,7 +975,7 @@ namespace bts { namespace blockchain {
             else if( block_data.block_num == BTSX_SUPPLY_FORK_2_BLOCK_NUM || block_data.block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
             {
                 vector<asset_record> records;
-                records.reserve( 40 );
+                records.reserve( 41 );
 
                 for( auto itr = _asset_db.begin(); itr.valid(); ++itr )
                     records.push_back( itr.value() );
