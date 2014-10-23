@@ -1876,6 +1876,13 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
+   void wallet::repair_records()
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       my->_wallet_db.repair_records( my->_wallet_password );
+   } FC_CAPTURE_AND_RETHROW() }
+
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate )
    { try {
        FC_ASSERT( is_open() );

@@ -173,10 +173,11 @@ namespace bts { namespace wallet {
       properties.clear();
       settings.clear();
 
-      btc_to_bts_address.clear();
       address_to_account_wallet_record_index.clear();
-      account_id_to_wallet_record_index.clear();
       name_to_account_wallet_record_index.clear();
+      account_id_to_wallet_record_index.clear();
+
+      btc_to_bts_address.clear();
    }
 
    bool wallet_db::is_open()const
@@ -560,7 +561,7 @@ namespace bts { namespace wallet {
            }
        }
 
-       // Repair key_data.public_key
+       // Repair key_data.public_key and remove key_records for which I don't have the private key
        for( generic_wallet_record& record : records )
        {
            if( wallet_record_type_enum( record.type ) == key_record_type )
@@ -573,6 +574,10 @@ namespace bts { namespace wallet {
                        const private_key_type private_key = key_record.decrypt_private_key( password );
                        key_record.public_key = private_key.get_public_key();
                        store_key( key_record );
+                   }
+                   else
+                   {
+                       remove_item( key_record.wallet_record_index );
                    }
                }
                catch( ... )
@@ -852,31 +857,31 @@ namespace bts { namespace wallet {
    } FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
    void wallet_db::remove_item( int32_t index )
-   {
-      try
-      {
-          my->_records.remove( index );
-      }
-      catch( const fc::key_not_found_exception& )
-      {
-          wlog("wallet_db tried to remove nonexistent index: ${i}", ("i",index) );
-      }
-   }
+   { try {
+       try
+       {
+           my->_records.remove( index );
+       }
+       catch( const fc::key_not_found_exception& )
+       {
+           wlog("wallet_db tried to remove nonexistent index: ${i}", ("i",index) );
+       }
+   } FC_CAPTURE_AND_RETHROW( (index) ) }
 
    bool wallet_db::validate_password( const fc::sha512& password )const
-   {
+   { try {
       FC_ASSERT( wallet_master_key );
       return wallet_master_key->validate_password( password );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_db::set_master_key( const extended_private_key& extended_key,
                                    const fc::sha512& new_password )
-   {
+   { try {
       master_key key;
       key.encrypt_key(new_password,extended_key);
       auto key_record = wallet_master_key_record( key, -1 );
       store_and_reload_record( key_record );
-   }
+   } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_db::change_password( const fc::sha512& old_password,
                                     const fc::sha512& new_password )

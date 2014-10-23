@@ -86,13 +86,13 @@ namespace bts { namespace wallet {
          void export_to_json( const path& filename )const;
          void import_from_json( const path& filename );
 
-         bool                           validate_password( const fc::sha512& password )const;
+         bool validate_password( const fc::sha512& password )const;
 
-         void                           set_master_key( const extended_private_key& key,
-                                                        const fc::sha512& new_password );
+         void set_master_key( const extended_private_key& key,
+                              const fc::sha512& new_password );
 
-         void                           change_password( const fc::sha512& old_password,
-                                                         const fc::sha512& new_password );
+         void change_password( const fc::sha512& old_password,
+                               const fc::sha512& new_password );
 
          const unordered_map< transaction_id_type, wallet_transaction_record >& get_transactions()const
          {

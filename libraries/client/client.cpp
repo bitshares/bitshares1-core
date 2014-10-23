@@ -4172,6 +4172,12 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->fetch_burn_records( account );
    }
 
+   void client_impl::wallet_repair_records()
+   {
+      _wallet->auto_backup( "before_record_repair" );
+      return _wallet->repair_records();
+   }
+
    int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )
    {
       _wallet->auto_backup( "before_key_regeneration" );
