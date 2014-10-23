@@ -692,6 +692,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
               auto old_record = *opt;
               old_record.volume += new_record.volume;
+              old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
@@ -708,6 +709,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
               auto old_record = *opt;
               old_record.volume += new_record.volume;
+              old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
