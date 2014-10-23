@@ -19,7 +19,7 @@ Parameters:
   amount_to_transfer (string, required): the amount of shares to transfer
   asset_symbol (asset_symbol, required): the asset to transfer
   paying_account_name (sending_account_name, required): the source account to draw the shares from
-  from_account_name (sending_account_name, required): the account to show the recipient as being the sender (requires account's private key to be in wallet). Leave empty to send anonymously.
+  from_account_name (sending_account_name, required): the account to show the recipient as being the sender (requires account's private key to be in wallet).
   to_account_name (receive_account_name, required): the account to transfer the shares to
   memo_message (string, optional, defaults to ""): a memo to store with the transaction
   vote_method (vote_selection_method, optional, defaults to "vote_recommended"): enumeration [vote_none | vote_all | vote_random | vote_recommended] 
