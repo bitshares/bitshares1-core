@@ -1,6 +1,8 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <fc/real128.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain { namespace detail {
 
   market_engine::market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
@@ -444,6 +446,14 @@ namespace bts { namespace blockchain { namespace detail {
       FC_ASSERT( _current_ask->type == cover_order );
       FC_ASSERT( mtrx.ask_type == cover_order );
 
+      if( _pending_state->get_head_block_num() >= BTSX_MARKET_COVER_SOFT_FORK )
+      {
+          if( _current_collat_record.interest_rate.quote_asset_id == 0 && _current_collat_record.interest_rate.base_asset_id == 0 )
+          {
+              _current_collat_record.interest_rate.quote_asset_id = quote_asset.id;
+          }
+      }
+
       const asset principle = asset( _current_collat_record.payoff_balance, quote_asset.id );
       const auto cover_age = get_current_cover_age();
       const asset total_debt = get_current_cover_debt();
@@ -692,6 +702,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
               auto old_record = *opt;
               old_record.volume += new_record.volume;
+              old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
@@ -708,6 +719,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
               auto old_record = *opt;
               old_record.volume += new_record.volume;
+              old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);

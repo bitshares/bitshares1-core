@@ -12,7 +12,7 @@ wallet_transfer <amount_to_transfer> <asset_symbol> <from_account_name> <to_acco
 Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.
 
 Parameters:
-  amount_to_transfer (real_amount, required): the amount of shares to transfer
+  amount_to_transfer (string, required): the amount of shares to transfer
   asset_symbol (asset_symbol, required): the asset to transfer
   from_account_name (sending_account_name, required): the source account to draw the shares from
   to_account_name (receive_account_name, required): the account to transfer the shares to
