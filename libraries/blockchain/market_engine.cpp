@@ -443,6 +443,7 @@ namespace bts { namespace blockchain { namespace detail {
   { try {
       FC_ASSERT( _current_ask->type == cover_order );
       FC_ASSERT( mtrx.ask_type == cover_order );
+      FC_ASSERT( _current_collat_record.interest_rate.quote_asset_id > _current_collat_record.interest_rate.base_asset_id );
 
       const asset principle = asset( _current_collat_record.payoff_balance, quote_asset.id );
       const auto cover_age = get_current_cover_age();
