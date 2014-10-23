@@ -1880,6 +1880,7 @@ namespace detail {
    { try {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
+       ulog( "Repairing wallet records. This may take a while..." );
        my->_wallet_db.repair_records( my->_wallet_password );
    } FC_CAPTURE_AND_RETHROW() }
 

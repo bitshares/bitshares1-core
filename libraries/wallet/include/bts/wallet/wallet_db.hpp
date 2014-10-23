@@ -21,7 +21,9 @@ namespace bts { namespace wallet {
          void        set_property( property_enum property_id, const fc::variant& v );
          fc::variant get_property( property_enum property_id )const;
 
-         // ************* Recently rewritten by Vikram
+         // ********************************************************************
+         // Recently rewritten by Vikram
+
          // Wallet child keys
          uint32_t               get_last_wallet_child_key_index()const;
          void                   set_last_wallet_child_key_index( uint32_t key_index );
@@ -47,14 +49,17 @@ namespace bts { namespace wallet {
          void                   store_key( const key_data& key );
          void                   import_key( const fc::sha512& password, const string& account_name, const private_key_type& private_key );
 
+         // Transaction getters and setters
+         owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
+         void store_transaction( const transaction_data& transaction );
+
          // Non-deterministic and not linked to any account
          private_key_type       generate_new_one_time_key( const fc::sha512& password );
 
          // Restore as many broken record invariants as possible
          void                   repair_records( const fc::sha512& password );
-         // ***********************
+         // ********************************************************************
 
-         void store_transaction( wallet_transaction_record& t );
          void cache_balance( const bts::blockchain::balance_record& b );
          void cache_memo( const memo_status& memo,
                           const private_key_type& account_key,
@@ -64,8 +69,6 @@ namespace bts { namespace wallet {
          void remove_transaction( const transaction_id_type& record_id );
 
          vector<wallet_transaction_record> get_pending_transactions()const;
-
-         owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
 
          map<private_key_type, string> get_account_private_keys( const fc::sha512& password )const;
          string                        get_account_name( const address& account_address )const;

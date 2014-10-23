@@ -95,10 +95,10 @@ namespace bts { namespace wallet {
                self->btc_to_bts_address[ address( pts_address( key_record.public_key, true,  56 ) ) ] = key_address; // Compressed PTS
            } FC_CAPTURE_AND_RETHROW( (key_record) ) }
 
-           void load_transaction_record( const wallet_transaction_record& rec )
+           void load_transaction_record( const wallet_transaction_record& transaction_record )
            { try {
-              self->transactions[ rec.record_id ] = rec;
-           } FC_CAPTURE_AND_RETHROW( (rec) ) }
+               self->transactions[ transaction_record.record_id ] = transaction_record;
+           } FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
            void load_balance_record( const wallet_balance_record& rec )
            { try {
@@ -117,7 +117,6 @@ namespace bts { namespace wallet {
      };
 
    } // namespace detail
-
 
    wallet_db::wallet_db()
    :my( new detail::wallet_db_impl() )
@@ -523,6 +522,34 @@ namespace bts { namespace wallet {
        store_key( *key_record );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
+   owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& record_id )const
+   { try {
+       FC_ASSERT( is_open() );
+       const auto id_map_iter = transactions.find( record_id );
+       if( id_map_iter != transactions.end() )
+       {
+           const wallet_transaction_record& transaction_record = id_map_iter->second;
+           return transaction_record;
+       }
+       return owallet_transaction_record();
+   } FC_CAPTURE_AND_RETHROW( (record_id) ) }
+
+   void wallet_db::store_transaction( const transaction_data& transaction )
+   { try {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( transaction.record_id != transaction_id_type() );
+       FC_ASSERT( transaction.is_virtual || transaction.trx.id() != signed_transaction().id() );
+
+       owallet_transaction_record transaction_record = lookup_transaction( transaction.record_id );
+       if( !transaction_record.valid() )
+           transaction_record = wallet_transaction_record();
+
+       transaction_data& temp = *transaction_record;
+       temp = transaction;
+
+       store_and_reload_record( *transaction_record );
+   } FC_CAPTURE_AND_RETHROW( (transaction) ) }
+
    private_key_type wallet_db::generate_new_one_time_key( const fc::sha512& password )
    { try {
        FC_ASSERT( is_open() );
@@ -585,6 +612,27 @@ namespace bts { namespace wallet {
                }
            }
        }
+
+       // Repair transaction_data.record_id
+       for( generic_wallet_record& record : records )
+       {
+           if( wallet_record_type_enum( record.type ) == transaction_record_type )
+           {
+               try
+               {
+                   wallet_transaction_record transaction_record = record.as<wallet_transaction_record>();
+                   if( transaction_record.trx.id() != signed_transaction().id()  )
+                   {
+                       remove_item( transaction_record.wallet_record_index );
+                       transaction_record.record_id = transaction_record.trx.id();
+                       store_transaction( transaction_record );
+                   }
+               }
+               catch( ... )
+               {
+               }
+           }
+       }
    } FC_CAPTURE_AND_RETHROW() }
 
    void wallet_db::set_property( property_enum property_id, const variant& v )
@@ -618,13 +666,6 @@ namespace bts { namespace wallet {
       auto opt = lookup_account( account_address );
       if( opt ) return opt->name;
       return "?";
-   }
-
-   owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& record_id )const
-   {
-      auto itr = transactions.find( record_id );
-      if( itr != transactions.end() ) return itr->second;
-      return owallet_transaction_record();
    }
 
    void wallet_db::store_setting(const string& name, const variant& value)
@@ -849,12 +890,6 @@ namespace bts { namespace wallet {
 
       store_and_reload_record( acct );
    }
-
-   void wallet_db::store_transaction( wallet_transaction_record& transaction_record )
-   { try {
-       store_and_reload_record( transaction_record );
-       transactions[ transaction_record.record_id ] = transaction_record;
-   } FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
    void wallet_db::remove_item( int32_t index )
    { try {
