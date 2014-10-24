@@ -38,19 +38,19 @@ std::string key_to_wif_single_hash(const fc::ecc::private_key& key)
 
 fc::optional<fc::ecc::private_key> wif_to_key( const std::string& wif_key )
 {
-    auto wif_bytes = fc::from_base58(wif_key);
-    auto key_bytes = std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4);
-    auto key = fc::variant(key_bytes).as<fc::ecc::private_key>();
-    auto check  = fc::sha256::hash( wif_bytes.data(), wif_bytes.size() - 4 );
-    auto check2 = fc::sha256::hash( check );
-    
-    if( 0 == memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) )
-       return key;
-    
-    if( 0 == memcmp( (char*)&check2, wif_bytes.data() + wif_bytes.size() - 4, 4 ) )
-     return key;
-
+  std::vector<char> wif_bytes = fc::from_base58(wif_key);
+  if (wif_bytes.size() < 5)
     return fc::optional<fc::ecc::private_key>();
+  std::vector<char> key_bytes(wif_bytes.begin() + 1, wif_bytes.end() - 4);
+  fc::ecc::private_key key = fc::variant(key_bytes).as<fc::ecc::private_key>();
+  fc::sha256 check = fc::sha256::hash(wif_bytes.data(), wif_bytes.size() - 4);
+  fc::sha256 check2 = fc::sha256::hash(check);
+    
+  if( memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) == 0 || 
+      memcmp( (char*)&check2, wif_bytes.data() + wif_bytes.size() - 4, 4 ) == 0 )
+    return key;
+
+  return fc::optional<fc::ecc::private_key>();
 }
 
 } } // end namespace bts::utilities

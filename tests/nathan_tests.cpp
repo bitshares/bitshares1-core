@@ -1,4 +1,5 @@
 #define BOOST_TEST_MODULE BlockchainTests2cc
+#include <bts/blockchain/market_engine.hpp>
 #include <boost/test/unit_test.hpp>
 #include "dev_fixture.hpp"
 
@@ -6,85 +7,86 @@ class nathan_fixture : public chain_fixture {
 public:
     nathan_fixture() {
         enable_logging();
-        exec(clienta, "scan");
-        exec(clientb, "scan");
+//        exec(clienta, "scan");
+//        exec(clientb, "scan");
         exec(clienta, "wallet_delegate_set_block_production ALL true");
         exec(clientb, "wallet_delegate_set_block_production ALL true");
-        exec(clienta, "wallet_set_transaction_scanning true");
-        exec(clientb, "wallet_set_transaction_scanning true");
+        exec(clienta, "wallet_set_transaction_scanning false");
+        exec(clientb, "wallet_set_transaction_scanning false");
 
         exec(clienta, "wallet_asset_create USD \"Federal Reserve Floats\" delegate21 \"100% Genuine United States Fiat\" \"arbitrary data!\" 1000000000 10000 true");
 
         produce_block(clienta);
+        produce_block(clienta);
 
-        exec(clientb, "wallet_publish_price_feed delegate2 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate4 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate6 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate8 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate10 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate12 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate14 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate16 .2 USD" );
-        produce_block(clienta);
-        produce_block(clientb);
-        exec(clientb, "wallet_publish_price_feed delegate18 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate20 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate22 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate24 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate26 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate28 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate30 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate32 .2 USD" );
-        produce_block(clienta);
-        produce_block(clientb);
-        exec(clientb, "wallet_publish_price_feed delegate34 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate36 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate38 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate40 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate42 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate44 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate46 .2 USD" );
-        produce_block(clienta);
-        produce_block(clientb);
-        exec(clientb, "wallet_publish_price_feed delegate48 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate50 .2 USD" );
-        exec(clientb, "wallet_publish_price_feed delegate52 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate1 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate3 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate5 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate7 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate9 .2 USD" );
-        produce_block(clienta);
-        produce_block(clientb);
-        exec(clienta, "wallet_publish_price_feed delegate11 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate13 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate15 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate17 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate19 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate21 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate23 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate25 .2 USD" );
-        produce_block(clienta);
-        produce_block(clientb);
-        exec(clienta, "wallet_publish_price_feed delegate27 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate29 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate31 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate33 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate35 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate37 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate39 .2 USD" );
-        produce_block(clienta);
-        produce_block(clientb);
-        exec(clienta, "wallet_publish_price_feed delegate41 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate43 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate45 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate47 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate49 .2 USD" );
-        exec(clienta, "wallet_publish_price_feed delegate51 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate2 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate4 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate6 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate8 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate10 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate12 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate14 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate16 .2 USD" );
+//        produce_block(clienta);
+//        produce_block(clientb);
+//        exec(clientb, "wallet_publish_price_feed delegate18 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate20 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate22 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate24 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate26 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate28 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate30 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate32 .2 USD" );
+//        produce_block(clienta);
+//        produce_block(clientb);
+//        exec(clientb, "wallet_publish_price_feed delegate34 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate36 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate38 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate40 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate42 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate44 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate46 .2 USD" );
+//        produce_block(clienta);
+//        produce_block(clientb);
+//        exec(clientb, "wallet_publish_price_feed delegate48 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate50 .2 USD" );
+//        exec(clientb, "wallet_publish_price_feed delegate52 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate1 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate3 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate5 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate7 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate9 .2 USD" );
+//        produce_block(clienta);
+//        produce_block(clientb);
+//        exec(clienta, "wallet_publish_price_feed delegate11 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate13 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate15 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate17 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate19 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate21 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate23 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate25 .2 USD" );
+//        produce_block(clienta);
+//        produce_block(clientb);
+//        exec(clienta, "wallet_publish_price_feed delegate27 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate29 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate31 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate33 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate35 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate37 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate39 .2 USD" );
+//        produce_block(clienta);
+//        produce_block(clientb);
+//        exec(clienta, "wallet_publish_price_feed delegate41 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate43 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate45 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate47 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate49 .2 USD" );
+//        exec(clienta, "wallet_publish_price_feed delegate51 .2 USD" );
 
-        produce_block(clienta);
-        produce_block(clientb);
-        std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+//        produce_block(clienta);
+//        produce_block(clientb);
+//        std::cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
     }
 
     void prompt()
@@ -169,27 +171,57 @@ public:
 //    prompt();
 //} FC_LOG_AND_RETHROW() }
 
-BOOST_FIXTURE_TEST_CASE( to_ugly_asset, nathan_fixture )
+//BOOST_FIXTURE_TEST_CASE( to_ugly_asset, nathan_fixture )
+//{ try {
+//    chain_interface_ptr chain = clienta->get_chain();
+
+//    BOOST_CHECK(chain->to_ugly_asset(".5", "XTS") == asset(50000));
+//    BOOST_CHECK(chain->to_ugly_asset("100.005", "XTS") == asset(10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("100", "XTS") == asset(10000000));
+//    BOOST_CHECK(chain->to_ugly_asset("100.00500", "XTS") == asset(10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("100.0050000", "XTS") == asset(10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("100.0050001", "XTS") == asset(10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("100.", "XTS") == asset(10000000));
+//    BOOST_CHECK(chain->to_ugly_asset("100.123456", "XTS") == asset(10012345));
+//    BOOST_CHECK(chain->to_ugly_asset("100.0000001", "XTS") == asset(10000000));
+//    BOOST_CHECK(chain->to_ugly_asset("-100.005", "XTS") == asset(-10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("-100", "XTS") == asset(-10000000));
+//    BOOST_CHECK(chain->to_ugly_asset("-100.00500", "XTS") == asset(-10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("-100.0050000", "XTS") == asset(-10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("-100.0050001", "XTS") == asset(-10000500));
+//    BOOST_CHECK(chain->to_ugly_asset("-100.", "XTS") == asset(-10000000));
+//    BOOST_CHECK(chain->to_ugly_asset("-100.123456", "XTS") == asset(-10012345));
+//    BOOST_CHECK(chain->to_ugly_asset("-100.0000001", "XTS") == asset(-10000000));
+//} FC_LOG_AND_RETHROW() }
+
+BOOST_FIXTURE_TEST_CASE( get_interest_owed, nathan_fixture )
 { try {
+    wlog( "*************************************START*************************************" );
+
     chain_interface_ptr chain = clienta->get_chain();
 
-    BOOST_CHECK(chain->to_ugly_asset(".5", "XTS") == asset(50000));
-    BOOST_CHECK(chain->to_ugly_asset("100.005", "XTS") == asset(10000500));
-    BOOST_CHECK(chain->to_ugly_asset("100", "XTS") == asset(10000000));
-    BOOST_CHECK(chain->to_ugly_asset("100.00500", "XTS") == asset(10000500));
-    BOOST_CHECK(chain->to_ugly_asset("100.0050000", "XTS") == asset(10000500));
-    BOOST_CHECK(chain->to_ugly_asset("100.0050001", "XTS") == asset(10000500));
-    BOOST_CHECK(chain->to_ugly_asset("100.", "XTS") == asset(10000000));
-    BOOST_CHECK(chain->to_ugly_asset("100.123456", "XTS") == asset(10012345));
-    BOOST_CHECK(chain->to_ugly_asset("100.0000001", "XTS") == asset(10000000));
-    BOOST_CHECK(chain->to_ugly_asset("-100.005", "XTS") == asset(-10000500));
-    BOOST_CHECK(chain->to_ugly_asset("-100", "XTS") == asset(-10000000));
-    BOOST_CHECK(chain->to_ugly_asset("-100.00500", "XTS") == asset(-10000500));
-    BOOST_CHECK(chain->to_ugly_asset("-100.0050000", "XTS") == asset(-10000500));
-    BOOST_CHECK(chain->to_ugly_asset("-100.0050001", "XTS") == asset(-10000500));
-    BOOST_CHECK(chain->to_ugly_asset("-100.", "XTS") == asset(-10000000));
-    BOOST_CHECK(chain->to_ugly_asset("-100.123456", "XTS") == asset(-10012345));
-    BOOST_CHECK(chain->to_ugly_asset("-100.0000001", "XTS") == asset(-10000000));
+    asset principle = chain->to_ugly_asset("100", "USD");
+    price apr = chain->to_ugly_price("1.", "XTS", "USD", false);
+    uint32_t loan_age = 60*60*24*365/2;
+    asset owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
+    wlog( "${x}", ("x",owed) );
+    BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("50", "USD").amount );
+
+    principle = chain->to_ugly_asset("100", "USD");
+    apr = chain->to_ugly_price(".5", "XTS", "USD", false);
+    loan_age = 60*60*24*365;
+    owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
+    wlog( "${x}", ("x",owed) );
+    BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("50", "USD").amount );
+
+    principle = chain->to_ugly_asset("100", "USD");
+    apr = chain->to_ugly_price(".5", "XTS", "USD", false);
+    loan_age = 60*60*24*365/2;
+    owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
+    wlog( "${x}", ("x",owed) );
+    BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("25", "USD").amount );
+
+    wlog( "**************************************END**************************************" );
 } FC_LOG_AND_RETHROW() }
 
 //BOOST_FIXTURE_TEST_CASE( market_stuff, nathan_fixture )
