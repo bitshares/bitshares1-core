@@ -4,77 +4,133 @@ namespace bts { namespace vote {
 
    using bts::blockchain;
 
-   struct identity
+   /**
+    *  An identity is tied to a private key, which is
+    *  represented by the hash of its public key.  Each identity
+    *  has many properties that can be attributed to it such as
+    *  name, birth date, address, ssn, etc.  Each of these properties
+    *  must be individually attributed to a particular private key.
+    *
+    *  These properties allow arbitrary named data to be attributed
+    *  to an identity.  A salt is included to prevent brute forcing
+    *  the value given a hash.  
+    */
+   struct identity_property
    {
-      address       owner;
-      digest_type   person_info_digest;
+      digest_type    id()const;
+
+      address        identity;
+      fc::uint128    salt;
+      string         name;
+      variant        value;
    };
 
+   /**
+    *  When someone signs a document that signature is only valid for
+    *  a limited time range.  Absent a blockchain to retract a signature the
+    *  time range prevents a need for renewal.
+    */
+   struct signature_data
+   {
+      /** sets the signature field as signer.sign( digest( identity_property_id ) ) */
+      void sign( const private_key_type& signer, 
+                 const digest_type& identity_property_id );
+
+      /**  hash( id + valid_from + valid_until ) ) */
+      digest_type digest( const digest_type& id)const;
+
+      /** recovers public key of signature given identity property id */
+      public_key_type signer( const digest_type& id )const;
+
+      time_point_sec valid_from;
+      time_point_sec valid_until;
+      signature_type signature;
+   };
+
+   /**
+    * Each identity property can be signed by more than one 
+    * identity provider.
+    */
+   struct signed_identity_property : public identity_property
+   {
+      vector<signature_data> verifier_signatures;
+   };
+
+   /**
+    *  An identity is a collection of properties that share a common
+    *  private key recognized as the address of the public key.
+    */
+   struct identity
+   {
+      digest_type digest()const;
+      unordered_map<digest_type, signed_identity_property>          properties;
+   };
+
+   /**
+    *  An identtiy signed by its owner.... ties everything together. 
+    */
    struct signed_identity : public identity
    {
-      optional<signature_type> verifier_signature;
+      public_key_type     get_public_key()const;
+      digest_type         get_property_index_digest()const;
+      identity_property   get_property( const string& name )const;
+      // owner_signature = owner_key.sign( digest() )
+      void                sign_by_owner( const private_key_type& owner_key );
+
       optional<signature_type> owner_signature;
    };
 
+   /**
+    * A ballot is cast in a database/blockchain and recognizes 
+    * canidates by the hash of their name.
+    */
    struct ballot
    {
-      uint32_t election_id = 0;
-      address  voter_id;
+      uint32_t    election_id = 0;
+      uint64_t    canidate_id = 0;    // hash of canidates full name lower case.
+      bool        approve     = true; // for approval voting
+      time_point  date;
 
-      uint64_t canidate_id = 0;  // hash of canidates full name lower case.
-      /**
-       *  The registrar's signature on the voter_id
-       */
-      vector<signature_type>  registrars; 
-      time_point              date;
+      digest_type digest()const;
    };
 
+   /**
+    *  For a ballot to be counted it must be signed by a voter who has had
+    *  their pulbic key signed by one or more registrars.  The count will
+    *  varry based upon how the ballots are interpreted (approval, winner takes all, etc),
+    *  with one election we can have many alternative results simultaniously. 
+    */
    struct signed_ballot : public ballot
    {
-       signature_type            voter_signature;
+      /**
+       *  The registrar's signature on the address(voter_public_key)
+       */
+       vector<signature_type>  registrars;  
+       /** voters signature on ballot::digest() */
+       signature_type          voter_signature;
 
-       bool validate_voter_signature();
+       void                    sign( const private_key_type& voter_private_key );
+       public_key_type         voter_public_key()const;
    };
 
-   /** a voting booth signs the voters signature certifying its role
-    * in producing the private key.
-    */
-   struct booth_signed_ballot : public signed_ballot
+
+   // wallet state protected by user password and should be encrypted when stored on disk.
+   struct wallet_state
    {
-       signature_type  booth_signature;
-       bool validate_booth_signature();
+        signed_identity  real_identity;
+        private_key_type real_id_private_key;
+        private_key_type voter_id_private_key;
+
+        map<mixer_id, token_data>  token_state;// blined/unblinded tokens generated for this mixer.
+
+        // signature of registrars on voter_id_public_key
+        vector<signature_type>  registrars;  
+
+        // trx history
+        vector<signed_ballot>   cast_ballots;
    };
 
-   /** a ballot that has been accepted by a ballot box server as
-    * having been submitted and included in the official count.
-    */
-   struct accepted_ballot : public signed_ballot
-   {
-       signature_type box_signature;
-   };
 
-   // API calls
-   //    // called by wallet GUI to generate a signed identity with new public key
-   //    // wallet stores all identities created.
-   //    signed_identity  create_identity( personal_info );
-   //    
-   //    // if the ballot has been verified return it, if not it may be pending or rejected
-   //    // will look up owner and submit the signed identity and personal_info passed to create
-   //    signed_identity request_validation( verifier_url, owner_id )
-   //
-   //    // this request may be repeated because the registrar should store the blinded token with the owner id.
-   //    // the blinded token is signed by the owner_id so that the registrar can prove that the request was 
-   //    // provided by the proper owner and no one else can claim it.
-   //    signed_token    request_ballot_token( blinded_token, owner_id_signature )
-   //
-   //    // if unblinded token is valid then sign voter_id with registrar signature.
-   //    signature_type  request_voter_id( voter_id, unblinded_token )
-   //
-   //    Called by Registrar after verifying personal info, returned to user.
-   //
-   //    signed_identity  sign_identity( signed_identity, variant personal_info ) 
-   //
-   //
 
 } } // bts::vote
 
