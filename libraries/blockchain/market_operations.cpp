@@ -225,8 +225,14 @@ namespace bts { namespace blockchain {
       if( elapsed_sec < 0 ) elapsed_sec = 0;
 
       const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
-      const asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
-                                                                         elapsed_sec ) + principle;
+      asset total_debt = detail::market_engine::get_interest_owed_v2( principle, current_cover->interest_rate,
+                                                                      elapsed_sec ) + principle;
+
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+      {
+          total_debt = detail::market_engine::get_interest_owed_v1( principle, current_cover->interest_rate,
+                                                                    elapsed_sec ) + principle;
+      }
 
       asset principle_paid;
       asset interest_paid;
@@ -240,7 +246,13 @@ namespace bts { namespace blockchain {
       else
       {
           // Partial cover
-          interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
+          interest_paid = detail::market_engine::get_interest_paid_v2( delta_amount, current_cover->interest_rate, elapsed_sec );
+
+          if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+          {
+              interest_paid = detail::market_engine::get_interest_paid_v1( delta_amount, current_cover->interest_rate, elapsed_sec );
+          }
+
           principle_paid = delta_amount - interest_paid;
           current_cover->payoff_balance -= principle_paid.amount;
       }
