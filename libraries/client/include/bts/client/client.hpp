@@ -66,7 +66,7 @@ namespace bts { namespace client {
     struct config
     {
        config( ) :
-          default_peers(vector<string>{"107.170.30.182:", "107.170.30.182:", "107.170.30.182:"}),
+          default_peers(vector<string>{"162.243.219.145:", "162.243.219.145:", "162.243.219.145:"}),
           mail_server_enabled(false),
           wallet_enabled(true),
           ignore_console(false),
