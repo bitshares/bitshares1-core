@@ -2762,7 +2762,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
           my->_chain_downloader_blocks_remaining = blocks_left;
         }, my->_chain_db->get_head_block_num() + 1);
         my->_chain_downloader_future.on_complete([this,chain_downloader,network_started_callback](const fc::exception_ptr& e) {
-          if( e->code() == fc::canceled_exception::code_value )
+          if( e && e->code() == fc::canceled_exception::code_value )
           {
             delete chain_downloader;
             return;
