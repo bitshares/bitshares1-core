@@ -203,21 +203,21 @@ BOOST_FIXTURE_TEST_CASE( get_interest_owed, nathan_fixture )
     asset principle = chain->to_ugly_asset("100", "USD");
     price apr = chain->to_ugly_price("1.", "XTS", "USD", false);
     uint32_t loan_age = 60*60*24*365/2;
-    asset owed = bts::blockchain::detail::market_engine::get_interest_owed_v2(principle, apr, loan_age);
+    asset owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
     wlog( "${x}", ("x",owed) );
     BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("50", "USD").amount );
 
     principle = chain->to_ugly_asset("100", "USD");
     apr = chain->to_ugly_price(".5", "XTS", "USD", false);
     loan_age = 60*60*24*365;
-    owed = bts::blockchain::detail::market_engine::get_interest_owed_v2(principle, apr, loan_age);
+    owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
     wlog( "${x}", ("x",owed) );
     BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("50", "USD").amount );
 
     principle = chain->to_ugly_asset("100", "USD");
     apr = chain->to_ugly_price(".5", "XTS", "USD", false);
     loan_age = 60*60*24*365/2;
-    owed = bts::blockchain::detail::market_engine::get_interest_owed_v2(principle, apr, loan_age);
+    owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
     wlog( "${x}", ("x",owed) );
     BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("25", "USD").amount );
 

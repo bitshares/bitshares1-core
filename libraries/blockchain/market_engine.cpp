@@ -463,7 +463,7 @@ namespace bts { namespace blockchain { namespace detail {
       else
       {
           // Partial cover
-          interest_paid = get_interest_paid_v2( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
+          interest_paid = get_interest_paid( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
 
           if( _pending_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
           {
@@ -731,7 +731,7 @@ namespace bts { namespace blockchain { namespace detail {
           }
   }
 
-  asset market_engine::get_interest_paid_v2(const asset& total_amount_paid, const price& apr, uint32_t age_seconds)
+  asset market_engine::get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds)
   {
       // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
       // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
@@ -750,7 +750,7 @@ namespace bts { namespace blockchain { namespace detail {
       return asset( interest_paid.to_uint64(), total_amount_paid.asset_id );
   }
 
-  asset market_engine::get_interest_owed_v2(const asset& principle, const price& apr, uint32_t age_seconds)
+  asset market_engine::get_interest_owed(const asset& principle, const price& apr, uint32_t age_seconds)
   {
       // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
       fc::real128 total_principle( principle.amount );
@@ -810,9 +810,9 @@ namespace bts { namespace blockchain { namespace detail {
                                        get_current_cover_age() ) + _current_ask->get_balance();
       }
 
-      return get_interest_owed_v2( _current_ask->get_balance(),
-                                   _current_collat_record.interest_rate,
-                                   get_current_cover_age() ) + _current_ask->get_balance();
+      return get_interest_owed( _current_ask->get_balance(),
+                                _current_collat_record.interest_rate,
+                                get_current_cover_age() ) + _current_ask->get_balance();
   }
 
 } } } // end namespace bts::blockchain::detail
