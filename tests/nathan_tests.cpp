@@ -17,6 +17,7 @@ public:
         exec(clienta, "wallet_asset_create USD \"Federal Reserve Floats\" delegate21 \"100% Genuine United States Fiat\" \"arbitrary data!\" 1000000000 10000 true");
 
         produce_block(clienta);
+        produce_block(clienta);
 
 //        exec(clientb, "wallet_publish_price_feed delegate2 .2 USD" );
 //        exec(clientb, "wallet_publish_price_feed delegate4 .2 USD" );
@@ -195,16 +196,32 @@ public:
 
 BOOST_FIXTURE_TEST_CASE( get_interest_owed, nathan_fixture )
 { try {
+    wlog( "*************************************START*************************************" );
+
     chain_interface_ptr chain = clienta->get_chain();
 
     asset principle = chain->to_ugly_asset("100", "USD");
     price apr = chain->to_ugly_price("1.", "XTS", "USD", false);
-    //Half a year
     uint32_t loan_age = 60*60*24*365/2;
+    asset owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
+    wlog( "${x}", ("x",owed) );
+    BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("50", "USD").amount );
 
+    principle = chain->to_ugly_asset("100", "USD");
+    apr = chain->to_ugly_price(".5", "XTS", "USD", false);
+    loan_age = 60*60*24*365;
+    owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
+    wlog( "${x}", ("x",owed) );
+    BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("50", "USD").amount );
 
-    BOOST_CHECK_EQUAL(bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age).amount,
-                         chain->to_ugly_asset("50", "USD").amount);
+    principle = chain->to_ugly_asset("100", "USD");
+    apr = chain->to_ugly_price(".5", "XTS", "USD", false);
+    loan_age = 60*60*24*365/2;
+    owed = bts::blockchain::detail::market_engine::get_interest_owed(principle, apr, loan_age);
+    wlog( "${x}", ("x",owed) );
+    BOOST_CHECK_EQUAL( owed.amount, chain->to_ugly_asset("25", "USD").amount );
+
+    wlog( "**************************************END**************************************" );
 } FC_LOG_AND_RETHROW() }
 
 //BOOST_FIXTURE_TEST_CASE( market_stuff, nathan_fixture )

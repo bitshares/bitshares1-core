@@ -729,8 +729,11 @@ namespace bts { namespace blockchain { namespace detail {
       // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
       // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE
       fc::real128 total_paid( total_amount_paid.amount );
-      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
-      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+#ifndef WIN32
+#warning [HARDFORK] This interest fix will hardfork BTSX
+#endif
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) ).amount );
       fc::real128 iapr = apr_n / apr_d;
       fc::real128 age_sec(age_seconds);
       fc::real128 sec_per_year(365 * 24 * 60 * 60);
@@ -746,8 +749,11 @@ namespace bts { namespace blockchain { namespace detail {
   {
       // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
       fc::real128 total_principle( principle.amount );
-      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
-      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+#ifndef WIN32
+#warning [HARDFORK] This interest fix will hardfork BTSX
+#endif
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) ).amount );
       fc::real128 iapr = apr_n / apr_d;
       fc::real128 age_sec(age_seconds);
       fc::real128 sec_per_year(365 * 24 * 60 * 60);
