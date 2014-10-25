@@ -443,6 +443,7 @@ namespace bts { namespace blockchain { namespace detail {
   { try {
       FC_ASSERT( _current_ask->type == cover_order );
       FC_ASSERT( mtrx.ask_type == cover_order );
+      FC_ASSERT( _current_collat_record.interest_rate.quote_asset_id > _current_collat_record.interest_rate.base_asset_id );
 
       const asset principle = asset( _current_collat_record.payoff_balance, quote_asset.id );
       const auto cover_age = get_current_cover_age();
@@ -692,6 +693,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
               auto old_record = *opt;
               old_record.volume += new_record.volume;
+              old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
@@ -708,6 +710,7 @@ namespace bts { namespace blockchain { namespace detail {
             {
               auto old_record = *opt;
               old_record.volume += new_record.volume;
+              old_record.closing_price = new_record.closing_price;
               if( new_record.highest_bid > old_record.highest_bid || new_record.lowest_ask < old_record.lowest_ask )
               {
                 old_record.highest_bid = std::max(new_record.highest_bid, old_record.highest_bid);
@@ -726,8 +729,8 @@ namespace bts { namespace blockchain { namespace detail {
       // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
       // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE
       fc::real128 total_paid( total_amount_paid.amount );
-      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
-      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) ).amount );
       fc::real128 iapr = apr_n / apr_d;
       fc::real128 age_sec(age_seconds);
       fc::real128 sec_per_year(365 * 24 * 60 * 60);
@@ -743,8 +746,8 @@ namespace bts { namespace blockchain { namespace detail {
   {
       // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
       fc::real128 total_principle( principle.amount );
-      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
-      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.base_asset_id ) ).amount );
       fc::real128 iapr = apr_n / apr_d;
       fc::real128 age_sec(age_seconds);
       fc::real128 sec_per_year(365 * 24 * 60 * 60);

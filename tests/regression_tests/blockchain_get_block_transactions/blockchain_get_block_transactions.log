@@ -20,18 +20,11 @@ Returns:
   blockchain_transaction_record_map
 default (unlocked) >>> blockchain_get_block_transactions 2
 [[
-    "93259386719fcbba91543f7d141b666e87f74328",{
+    "f37f4850a656adf3f1edc67e5e5866c805e88a67",{
       "trx": {
-        "expiration": "20140620T154750",
+        "expiration": "20140620T154030",
         "delegate_slate_id": null,
         "operations": [{
-            "type": "withdraw_op_type",
-            "data": {
-              "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
-              "amount": 10050000,
-              "claim_input_data": ""
-            }
-          },{
             "type": "deposit_op_type",
             "data": {
               "amount": 10000000,
@@ -48,10 +41,17 @@ default (unlocked) >>> blockchain_get_block_transactions 2
                 }
               }
             }
+          },{
+            "type": "withdraw_op_type",
+            "data": {
+              "balance_id": "XTS6GvhLUV93rQZLJSstvyhMeoU9cnZ578kz",
+              "amount": 10050000,
+              "claim_input_data": ""
+            }
           }
         ],
         "signatures": [
-          "1f2c364618493f85455491b476687b015918324bb75417411b3c3909281a3cca6c27b70509bf063ad1eee9cae56a8f72db63134f76859be659693632728a3060ac"
+          "208513ec7641898a4a37e0bfe8617a37bef25351eada00e9d0c04e79869bd335f62d31e437775037ce64d128228111c113441262ce4d66b4c13fbe41fa5135838c"
         ]
       },
       "signed_keys": [
@@ -87,12 +87,12 @@ default (unlocked) >>> blockchain_get_block_transactions 2
       "yield": [],
       "deltas": [[
           0,{
-            "amount": -10050000,
+            "amount": 10000000,
             "asset_id": 0
           }
         ],[
           1,{
-            "amount": 10000000,
+            "amount": -10050000,
             "asset_id": 0
           }
         ]
