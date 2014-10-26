@@ -631,7 +631,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
   boost::filesystem::current_path(original_working_directory);
 }
 
-#define ENABLE_REPLAY_CHAIN_DATABASE_TESTS
+//#define ENABLE_REPLAY_CHAIN_DATABASE_TESTS
 #ifdef ENABLE_REPLAY_CHAIN_DATABASE_TESTS
 // A simple test that feeds a chain database from a normal client installation block-by-block to
 // the client directly, bypassing all networking code.
