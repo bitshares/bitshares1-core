@@ -26,7 +26,7 @@ By default, the web wallet will not be rebuilt even after pulling new changes. T
 The binary will be located at programs/qt_wallet/BitSharesX
 The wallet can be installed as a local application capable of handling xts: URLs like so:
 
-	sudo cp programs/qt_wallet/BitSharesX /usr/local/bin/
+	sudo cp programs/qt_wallet/bin/BitSharesX /usr/local/bin/
 	sudo mkdir -p /usr/local/share/icons/
 	sudo cp programs/qt_wallet/images/qtapp80.png /usr/local/share/icons/BitSharesX.png
 	sudo cp programs/qt_wallet/BitSharesX.desktop /usr/local/share/applications/
