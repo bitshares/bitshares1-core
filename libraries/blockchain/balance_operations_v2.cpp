@@ -67,8 +67,16 @@ void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
       auto yield = current_balance_record->calculate_yield( eval_state._current_state->now(),
                                                             current_balance_record->balance,
                                                             asset_rec->collected_fees,
-                                                            asset_rec->current_share_supply,
-                                                            eval_state._current_state->get_head_block_num() );
+                                                            asset_rec->current_share_supply );
+
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      {
+         yield = current_balance_record->calculate_yield_v1( eval_state._current_state->now(),
+                                                             current_balance_record->balance,
+                                                             asset_rec->collected_fees,
+                                                             asset_rec->current_share_supply );
+      }
+
       if( yield.amount > 0 )
       {
          asset_rec->collected_fees       -= yield.amount;

@@ -3802,7 +3802,7 @@ namespace detail {
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
 
               const auto yield = record.calculate_yield( pending_state->now(), balance.amount,
-                                 asset_rec->collected_fees, asset_rec->current_share_supply, pending_state->get_head_block_num() );
+                                 asset_rec->collected_fees, asset_rec->current_share_supply );
               yield_summary[ name ][ yield.asset_id ] += yield.amount;
           }
       }
