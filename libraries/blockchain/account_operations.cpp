@@ -217,6 +217,8 @@ namespace bts { namespace blockchain {
 
    void link_account_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      FC_ASSERT( !"Link account operation is not enabled yet!" );
+
       auto source_account_rec = eval_state._current_state->get_account_record( source_account );
       FC_ASSERT( source_account_rec.valid() );
 
