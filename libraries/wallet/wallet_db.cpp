@@ -435,6 +435,27 @@ namespace bts { namespace wallet {
        temp = account;
 
        store_and_reload_record( *account_record );
+
+       set<public_key_type> account_public_keys;
+       account_public_keys.insert( account_record->owner_key );
+       for( const auto& active_key_item : account_record->active_key_history )
+       {
+           const public_key_type& active_key = active_key_item.second;
+           account_public_keys.insert( active_key );
+       }
+
+       for( const public_key_type& account_public_key : account_public_keys )
+       {
+           const address account_address = address( account_public_key );
+           const owallet_key_record key_record = lookup_key( account_address );
+           if( !key_record.valid() )
+           {
+               key_data key;
+               key.account_address = account_address;
+               key.public_key = account_public_key;
+               store_key( key );
+           }
+       }
    } FC_CAPTURE_AND_RETHROW( (account) ) }
 
    void wallet_db::store_account( const blockchain::account_record& blockchain_account_record )
@@ -488,7 +509,7 @@ namespace bts { namespace wallet {
        if( key_record->has_private_key() )
        {
            owallet_account_record account_record = lookup_account( key.account_address );
-           if( account_record.valid() )
+           if( account_record.valid() && !account_record->is_my_account )
            {
                account_record->is_my_account = true;
                store_account( *account_record );
@@ -607,26 +628,26 @@ namespace bts { namespace wallet {
        // Repair account_data.account_address
        for( generic_wallet_record& record : records )
        {
-           if( wallet_record_type_enum( record.type ) == account_record_type )
+           try
            {
-               try
+               if( wallet_record_type_enum( record.type ) == account_record_type )
                {
                    wallet_account_record account_record = record.as<wallet_account_record>();
                    account_record.account_address = address( account_record.owner_key );
                    store_account( account_record );
                }
-               catch( ... )
-               {
-               }
+           }
+           catch( ... )
+           {
            }
        }
 
-       // Repair key_data.public_key and remove key_records for which I don't have the private key
+       // Repair key_data.public_key when I have the private key
        for( generic_wallet_record& record : records )
        {
-           if( wallet_record_type_enum( record.type ) == key_record_type )
+           try
            {
-               try
+               if( wallet_record_type_enum( record.type ) == key_record_type )
                {
                    wallet_key_record key_record = record.as<wallet_key_record>();
                    if( key_record.has_private_key() )
@@ -635,23 +656,19 @@ namespace bts { namespace wallet {
                        key_record.public_key = private_key.get_public_key();
                        store_key( key_record );
                    }
-                   else
-                   {
-                       remove_item( key_record.wallet_record_index );
-                   }
                }
-               catch( ... )
-               {
-               }
+           }
+           catch( ... )
+           {
            }
        }
 
        // Repair transaction_data.record_id
        for( generic_wallet_record& record : records )
        {
-           if( wallet_record_type_enum( record.type ) == transaction_record_type )
+           try
            {
-               try
+               if( wallet_record_type_enum( record.type ) == transaction_record_type )
                {
                    wallet_transaction_record transaction_record = record.as<wallet_transaction_record>();
                    if( transaction_record.trx.id() != signed_transaction().id()  )
@@ -661,9 +678,9 @@ namespace bts { namespace wallet {
                        store_transaction( transaction_record );
                    }
                }
-               catch( ... )
-               {
-               }
+           }
+           catch( ... )
+           {
            }
        }
    } FC_CAPTURE_AND_RETHROW() }
