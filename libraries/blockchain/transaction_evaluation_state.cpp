@@ -1,7 +1,8 @@
 #include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
+
+#include <bts/blockchain/fork_blocks.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -224,7 +225,10 @@ namespace bts { namespace blockchain {
     */
    void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
    { try {
-      if( balance_id != balance_id_type() )
+#ifndef WIN32
+#warning [SOFTFORK] This check can be removed after BTSX_MARKET_FORK_12_BLOCK_NUM has passed
+#endif
+      if( balance_id != balance_id_type() || _current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
       {
          auto provided_deposit_itr = provided_deposits.find( balance_id );
          if( provided_deposit_itr == provided_deposits.end() )
