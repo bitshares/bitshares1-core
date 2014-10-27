@@ -599,9 +599,6 @@ namespace bts { namespace blockchain {
 
             auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
             FC_ASSERT( pending_base_record.valid() );
-#ifndef WIN32
-#warning [BTSX] Careful merging this into BTSX
-#endif
             pending_base_record->collected_fees -= max_available_paycheck;
             pending_state->store_asset_record( *pending_base_record );
 
