@@ -223,15 +223,18 @@ namespace bts { namespace blockchain {
     *
     */
    void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
-   {
-      auto provided_deposit_itr = provided_deposits.find( balance_id );
-      if( provided_deposit_itr == provided_deposits.end() )
+   { try {
+      if( balance_id != balance_id_type() )
       {
-         provided_deposits[balance_id] = amount;
-      }
-      else
-      {
-         provided_deposit_itr->second += amount;
+         auto provided_deposit_itr = provided_deposits.find( balance_id );
+         if( provided_deposit_itr == provided_deposits.end() )
+         {
+            provided_deposits[balance_id] = amount;
+         }
+         else
+         {
+            provided_deposit_itr->second += amount;
+         }
       }
 
       auto deposit_itr = deposits.find(amount.asset_id);
@@ -255,10 +258,10 @@ namespace bts { namespace blockchain {
       }
 
       deltas[ _current_op_index ] = amount;
-   }
+   } FC_CAPTURE_AND_RETHROW( (balance_id)(amount) ) }
 
    void transaction_evaluation_state::add_balance( const asset& amount )
-   {
+   { try {
       auto withdraw_itr = withdraws.find( amount.asset_id );
       if( withdraw_itr == withdraws.end() )
          withdraws[amount.asset_id] = amount;
@@ -272,7 +275,7 @@ namespace bts { namespace blockchain {
          balance_itr->second += amount.amount;
 
       deltas[ _current_op_index ] = -amount;
-   }
+   } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
    /**
     *  Throws if the asset is not known to the blockchain.
