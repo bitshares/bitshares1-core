@@ -43,13 +43,13 @@ namespace bts { namespace db {
 
          void flush()
          {
-            // TODO...
-            // start batch
-            for( auto item : _dirty )
-               _db.store( item, _cache[item] );
-            for( auto item : _dirty_remove )
-               _db.remove( item );
-            // end batch
+            level_map<Key, Value>::write_batch batch = _db.create_batch();
+            for (auto item : _dirty)
+              batch.store(item, _cache[item]);
+            for (auto item : _dirty_remove)
+              batch.remove(item);
+            batch.commit();
+
             _dirty.clear();
             _dirty_remove.clear();
          }
