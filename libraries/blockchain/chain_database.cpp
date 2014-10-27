@@ -585,6 +585,33 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
+      // TODO: Need to justify good parameters
+#if 0
+      void chain_database_impl::pay_delegate_v2( const block_id_type& block_id,
+                                              const pending_chain_state_ptr& pending_state,
+                                              const public_key_type& block_signee )
+      { try {
+            oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
+            FC_ASSERT( delegate_record.valid() );
+            delegate_record = pending_state->get_account_record( delegate_record->id );
+            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
+
+            const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
+            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
+            const share_type accepted_paycheck = (BTS_MAX_DELEGATE_PAY_PER_BLOCK * pay_rate_percent) / 100;
+            FC_ASSERT( accepted_paycheck >= 0 );
+
+            delegate_record->delegate_info->pay_balance += accepted_paycheck;
+            delegate_record->delegate_info->votes_for += accepted_paycheck;
+            pending_state->store_account_record( *delegate_record );
+
+            oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+            FC_ASSERT( base_asset_record.valid() );
+            base_asset_record->current_share_supply += accepted_paycheck;
+            pending_state->store_asset_record( *base_asset_record );
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+#endif
+
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const pending_chain_state_ptr& pending_state,
                                               const public_key_type& block_signee )
