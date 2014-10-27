@@ -23,7 +23,7 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
 transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
                                                                       optional<variant> public_data,
                                                                       optional<bts::blockchain::private_key_type> active_key,
-                                                                      optional<share_type> delegate_pay,
+                                                                      optional<uint8_t> delegate_pay,
                                                                       optional<wallet_account_record> paying_account)
 {
    if( account.registration_date == fc::time_point_sec() )
@@ -47,13 +47,13 @@ transaction_builder& transaction_builder::update_account_registration(const wall
                  *delegate_pay <= account.delegate_pay_rate(), "Pay rate can only be decreased!" );
 
       //If account is not a delegate but wants to become one OR account is a delegate changing his pay rate...
-      if( (!account.is_delegate() && *delegate_pay >= 0) ||
+      if( (!account.is_delegate() && *delegate_pay <= 100) ||
            (account.is_delegate() && *delegate_pay != account.delegate_pay_rate()) )
       {
          if( !paying_account->is_my_account )
             FC_THROW_EXCEPTION( unknown_account, "Unknown paying account!", ("paying_account", paying_account) );
 
-         asset fee(_wimpl->_blockchain->get_delegate_registration_fee(*delegate_pay));
+         asset fee(_wimpl->_blockchain->get_delegate_registration_fee());
          if( paying_account->is_delegate() && paying_account->delegate_pay_balance() >= fee.amount )
          {
             //Withdraw into trx, but don't record it in outstanding_balances because it's a fee

@@ -759,8 +759,8 @@
                },
                {
                   "name" : "delegate_pay_rate",
-                  "type" : "share_type",
-                  "description" : "Negative for non-delegates; otherwise the number of shares to be issued per produced block",
+                  "type" : "uint8_t",
+                  "description" : "-1 for non-delegates; otherwise the percent of delegate pay to accept per produced block",
                   "default_value" : -1
                },
                {
@@ -816,8 +816,8 @@
                },
                {
                   "name" : "delegate_pay_rate",
-                  "type" : "share_type",
-                  "description" : "Negative for non-delegates; otherwise the number of shares to be issued per produced block",
+                  "type" : "uint8_t",
+                  "description" : "-1 for non-delegates; otherwise the percent of delegate pay to accept per produced block",
                   "default_value" : -1
                }
             ],

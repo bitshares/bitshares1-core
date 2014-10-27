@@ -300,7 +300,7 @@ namespace bts { namespace wallet {
          wallet_transaction_record register_account(
                  const string& account_name,
                  const variant& json_data,
-                 share_type delegate_pay_rate,
+                 uint8_t delegate_pay_rate,
                  const string& pay_with_account_name,
                  bts::blockchain::account_type new_account_type = titan_account,
                  bool sign = true
@@ -310,7 +310,7 @@ namespace bts { namespace wallet {
                  const string& account_name,
                  const string& pay_from_account,
                  optional<variant> public_data,
-                 share_type delegate_pay_rate,
+                 uint8_t delegate_pay_rate = -1,
                  bool sign = true
                  );
 
