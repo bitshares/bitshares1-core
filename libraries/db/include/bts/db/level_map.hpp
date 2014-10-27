@@ -316,6 +316,19 @@ namespace bts { namespace db {
             fs.write( "]", 1 );
         } FC_CAPTURE_AND_RETHROW( (path) ) }
 
+        // note: this loops through all the items in the database, so it's not exactly fast.  it's intended for debugging, nothing else.
+        size_t size() const
+        {
+          iterator it = begin();
+          size_t count = 0;
+          while (it.valid())
+          {
+            ++count;
+            ++it;
+          }
+          return count;
+        }
+
      private:
         class key_compare : public leveldb::Comparator
         {

@@ -3118,23 +3118,23 @@ namespace bts { namespace blockchain {
    oprice chain_database::get_median_delegate_price( const asset_id_type& asset_id, const asset_id_type& base_id )const
    { try {
       auto feed_itr = my->_feed_db.lower_bound( feed_index{asset_id} );
+      vector<account_id_type> active_delegates = get_active_delegates();
+      std::sort(active_delegates.begin(), active_delegates.end());
       vector<price> prices;
       while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
       {
-         auto  key = feed_itr.key();
-         if( is_active_delegate( key.delegate_id ) )
+         feed_index key = feed_itr.key();
+         if( std::binary_search(active_delegates.begin(), active_delegates.end(), key.delegate_id) )
          {
             try {
-               auto val = feed_itr.value();
+               feed_record val = feed_itr.value();
                // only consider feeds updated in the past day
                if( (fc::time_point(val.last_update) + fc::days(1)) > fc::time_point(this->now()) )
                {
-                  prices.push_back(  val.value.as<price>() );
+                  prices.push_back( val.value.as<price>() );
                   if( prices.back().quote_asset_id != asset_id ||
                       prices.back().base_asset_id != base_id )
-                  {
                      prices.pop_back();
-                  }
                }
             }
             catch ( ... )
@@ -3343,5 +3343,20 @@ namespace bts { namespace blockchain {
        my->_market_history_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
    } FC_CAPTURE_AND_RETHROW( (path) ) }
+
+   fc::variant_object chain_database::get_stats() const
+   {
+     fc::mutable_variant_object stats;
+#define CHAIN_DB_DATABASES (_market_transactions_db)(_slate_db)(_fork_number_db)(_fork_db)(_property_db)(_undo_state_db) \
+                           (_block_num_to_id_db)(_block_id_to_block_record_db)(_block_id_to_block_data_db)(_known_transactions) \
+                           (_id_to_transaction_record_db)(_pending_transaction_db)(_pending_fee_index)(_asset_db)(_balance_db) \
+                           (_burn_db)(_account_db)(_address_to_account_db)(_account_index_db)(_symbol_index_db)(_delegate_vote_index_db) \
+                           (_slot_record_db)(_ask_db)(_bid_db)(_short_db)(_collateral_db)(_feed_db)(_market_status_db)(_market_history_db) \
+                           (_recent_operations)
+#define GET_DATABASE_SIZE(r, data, elem) stats[BOOST_PP_STRINGIZE(elem)] = my->elem.size();
+     BOOST_PP_SEQ_FOR_EACH(GET_DATABASE_SIZE, _, CHAIN_DB_DATABASES)
+     return stats;
+   }
+
 
 } } // bts::blockchain
