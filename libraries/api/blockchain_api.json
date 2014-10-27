@@ -428,7 +428,7 @@
               "name" : "limit",
               "type" : "uint32_t",
               "description" : "the maximum number of items to return, -1 for all",
-              "default_value" : "-1"
+              "default_value" : "10"
            }
         ],
         "prerequisites" : ["no_prerequisites"],

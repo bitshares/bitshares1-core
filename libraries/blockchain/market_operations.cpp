@@ -174,7 +174,7 @@ namespace bts { namespace blockchain {
 
 
       // subtract this from the transaction
-      eval_state.sub_balance( address(), delta_amount );
+      eval_state.sub_balance( balance_id_type(), delta_amount );
 
       auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
       if( NOT current_cover )
@@ -225,8 +225,8 @@ namespace bts { namespace blockchain {
 
       if( current_cover->payoff_balance > 0 )
       {
-         auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id) /
-                               asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
+         const auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
+                                     / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
          if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
             eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
@@ -253,10 +253,10 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( negative_deposit );
 
       asset delta_amount  = this->get_amount();
-      eval_state.sub_balance( address(), delta_amount );
+      eval_state.sub_balance( balance_id_type(), delta_amount );
 
       // update collateral and call price
-      auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
+      auto current_cover = eval_state._current_state->get_collateral_record( this->cover_index );
       if( NOT current_cover )
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
@@ -266,8 +266,8 @@ namespace bts { namespace blockchain {
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
-      auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id ) /
-                            asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
+      const auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
+                                  / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );

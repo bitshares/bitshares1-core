@@ -631,40 +631,90 @@ void run_regression_test(fc::path test_dir, bool with_network)
   boost::filesystem::current_path(original_working_directory);
 }
 
-#if 0
-
+//#define ENABLE_REPLAY_CHAIN_DATABASE_TESTS
+#ifdef ENABLE_REPLAY_CHAIN_DATABASE_TESTS
 // A simple test that feeds a chain database from a normal client installation block-by-block to
 // the client directly, bypassing all networking code.
-BOOST_AUTO_TEST_CASE(replay_chain_database)
+void replay_chain_database()
 {
+  const uint32_t granularity = BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
+
   fc::temp_directory client_dir;
+  fc::remove_all(client_dir.path());
   //auto sim_network = std::make_shared<bts::net::simulated_network>();
   bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
   bts::client::client_ptr client = std::make_shared<bts::client::client>("wallet_tests", sim_network);
-  client->open( client_dir.path() );
-  client->configure_from_command_line( 0, nullptr );
+  //client->open( client_dir.path() );
+  std::string client_dir_string = client_dir.path().string();
+  char *fake_argv[] = {"bitshares_client", "--data-dir", (char*)client_dir_string.c_str(), "--accept-incoming-connections=false", "--disable-default-peers", "--upnp=false"};
+  client->configure_from_command_line(sizeof(fake_argv) / sizeof(fake_argv[0]), fake_argv);
+  //client->configure_from_command_line(0, nullptr);
   fc::future<void> client_done = client->start();
-
+  fc::usleep(fc::milliseconds(10));
   bts::blockchain::chain_database_ptr source_blockchain = std::make_shared<bts::blockchain::chain_database>();
-  fc::path test_net_chain_dir("C:\\Users\\Administrator\\AppData\\Roaming\\BitShares XTS");
+  fc::path test_net_chain_dir("C:\\Users\\Administrator\\AppData\\Roaming\\BitShares X");
   source_blockchain->open(test_net_chain_dir / "chain", fc::optional<fc::path>());
   BOOST_TEST_MESSAGE("Opened source blockchain containing " << source_blockchain->get_head_block_num() << " blocks");
   unsigned total_blocks_to_replay = source_blockchain->get_head_block_num();// std::min<unsigned>(source_blockchain->get_head_block_num(), 30000);
   BOOST_TEST_MESSAGE("Will be benchmarking " << total_blocks_to_replay << " blocks");
+  BOOST_TEST_MESSAGE("First, loading them all into memory...");
+  fc::time_point load_start_time(fc::time_point::now());
+  std::vector<bts::client::block_message> all_messages;
+  all_messages.reserve(total_blocks_to_replay);
+  for (uint32_t i = 1; i <= total_blocks_to_replay; ++i)
+    all_messages.emplace_back(source_blockchain->get_block(i));
+  fc::time_point load_end_time(fc::time_point::now());
+  BOOST_TEST_MESSAGE("Done loading into memory in " << ((double)(load_end_time - load_start_time).count() / fc::seconds(1).count()) << " seconds, replaying now...");
+
+//#define COLLECT_DETAILED_STATS
+#ifdef COLLECT_DETAILED_STATS
+  std::ofstream csv_file("replay_chain_database.csv");
+  csv_file << "\"block_num\",\"elapsed_time\"";
+  fc::variant_object stats = client->get_chain()->get_stats();
+  for (fc::variant_object::iterator iter = stats.begin(); iter != stats.end(); ++iter)
+    csv_file << ",\"" << iter->key() << "\"";
+  csv_file << "\n";
+#endif
+
   fc::time_point start_time(fc::time_point::now());
+  fc::microseconds overhead_time;
   client->sync_status(bts::client::block_message::type, total_blocks_to_replay);
   for (unsigned block_num = 1; block_num <= total_blocks_to_replay; ++block_num)
-    client->handle_message(bts::client::block_message(source_blockchain->get_block(block_num)), true);
+  {
+    client->handle_message(all_messages[block_num - 1], true);
+
+#ifdef COLLECT_DETAILED_STATS
+    if (block_num % granularity == 0 || block_num == total_blocks_to_replay)
+    {
+      fc::time_point start_dumping_time(fc::time_point::now());
+      fc::microseconds elapsed_since_start = start_dumping_time - start_time - overhead_time;
+      csv_file << block_num << "," << elapsed_since_start.count();
+      stats = client->get_chain()->get_stats();
+      for (fc::variant_object::iterator iter = stats.begin(); iter != stats.end(); ++iter)
+        csv_file << ","<< iter->value().as<size_t>();
+      csv_file << "\n";
+
+      fc::time_point end_dumping_time(fc::time_point::now());
+      overhead_time += end_dumping_time - start_dumping_time;
+    }
+#endif
+
+    if (block_num % 100 == 0)
+      fc::yield();
+  }
+
   client->sync_status(bts::client::block_message::type, 0);
   fc::time_point end_time(fc::time_point::now());
-  BOOST_TEST_MESSAGE("Processed " << total_blocks_to_replay << " blocks in " << ((end_time - start_time).count() / fc::seconds(1).count()) << " seconds, which is " << (((double)total_blocks_to_replay*fc::seconds(1).count())/(end_time - start_time).count()) << " blocks/sec");
-  client->execute_command_line("quit");
+  BOOST_TEST_MESSAGE("Processed " << total_blocks_to_replay << " blocks in " << ((end_time - start_time - overhead_time).count() / fc::seconds(1).count()) << " seconds, " <<
+                     "which is " << (((double)total_blocks_to_replay*fc::seconds(1).count()) / (end_time - start_time - overhead_time).count()) << " blocks/sec");
+  client->stop();
+  client_done.wait();
 }
 
-BOOST_AUTO_TEST_CASE(replay_chain_database_in_stages)
+void replay_chain_database_in_stages()
 {
   // now reset and try doing it in n stages
-  const unsigned number_of_stages = 4;
+  const unsigned number_of_stages = 80;
   fc::temp_directory client_dir;
   fc::remove_all(client_dir.path());
   fc::create_directories(client_dir.path());
@@ -676,36 +726,48 @@ BOOST_AUTO_TEST_CASE(replay_chain_database_in_stages)
   BOOST_TEST_MESSAGE("Opened source blockchain containing " << source_blockchain->get_head_block_num() << " blocks");
   unsigned total_blocks_to_replay = source_blockchain->get_head_block_num();// std::min<unsigned>(source_blockchain->get_head_block_num(), 30000);
   BOOST_TEST_MESSAGE("Will be benchmarking " << total_blocks_to_replay << " blocks");
+  BOOST_TEST_MESSAGE("First, loading them all into memory...");
+  std::vector<bts::client::block_message> all_messages;
+  all_messages.reserve(total_blocks_to_replay);
+  for (uint32_t i = 1; i <= total_blocks_to_replay; ++i)
+    all_messages.emplace_back(source_blockchain->get_block(i));
+  BOOST_TEST_MESSAGE("Done loading into memory, replaying now...");
 
   bts::net::simulated_network_ptr sim_network = std::make_shared<bts::net::simulated_network>("wallet_tests");
 
   for (int n = 0; n < number_of_stages; ++n)
   {
     bts::client::client_ptr client = std::make_shared<bts::client::client>("wallet_tests", sim_network);
-    client->open( client_dir.path() );
-    client->configure_from_command_line( 0, nullptr );
+    std::string client_dir_string = client_dir.path().string();
+    char *fake_argv[] = {"bitshares_client", "--data-dir", (char*)client_dir_string.c_str(), "--accept-incoming-connections=false", "--disable-default-peers", "--upnp=false", "--daemon", "--rpcuser=none", "--rpcpassword=none"};
+    client->configure_from_command_line(sizeof(fake_argv) / sizeof(fake_argv[0]), fake_argv);
     fc::future<void> client_done = client->start();
 
-  fc::time_point start_time(fc::time_point::now());
+    fc::time_point start_time(fc::time_point::now());
     unsigned start_block_num = client->get_chain()->get_head_block_num() + 1;
     unsigned end_block_num = std::min<unsigned>(source_blockchain->get_head_block_num(), start_block_num + total_blocks_to_replay / number_of_stages);
 
-    client->sync_status(bts::client::block_message::type, total_blocks_to_replay);
+    client->sync_status(bts::client::block_message::type, end_block_num - start_block_num);
     for (unsigned block_num = start_block_num; block_num <= end_block_num; ++block_num)
-      client->handle_message(bts::client::block_message(source_blockchain->get_block(block_num)), true);
+    {
+      client->handle_message(all_messages[block_num - 1], true);
+      if (block_num % 100 == 0)
+        fc::yield();
+    }
     client->sync_status(bts::client::block_message::type, 0);
     fc::time_point end_time(fc::time_point::now());
     accumulated_time += end_time - start_time;
-    BOOST_TEST_MESSAGE("Processed " << end_block_num - start_block_num << " blocks in " << ((end_time - start_time).count() / fc::seconds(1).count()) << " seconds, which is " << (((double)total_blocks_to_replay*fc::seconds(1).count())/(end_time - start_time).count()) << " blocks/sec");
-    BOOST_TEST_MESSAGE("Total accumulated is now " << accumulated_time.count() / fc::seconds(1).count() << " seconds");
-    client->execute_command_line("quit");
+    BOOST_TEST_MESSAGE("Processed " << end_block_num - start_block_num << " blocks in " << ((end_time - start_time).count() / fc::seconds(1).count()) << " seconds, which is " << (((double)(end_block_num - start_block_num)*fc::seconds(1).count()) / (end_time - start_time).count()) << " blocks/sec");
+    BOOST_TEST_MESSAGE("Total accumulated is now " << accumulated_time.count() / fc::seconds(1).count() << " seconds, which is " << (((double)end_block_num*fc::seconds(1).count()) / (accumulated_time).count()) << " blocks/sec");
+
+    client->stop();
     client_done.wait();
 
     client.reset();
   }
 
 }
-#endif // 0
+#endif // defined ENABLE_REPLAY_CHAIN_DATABASE_TESTS
 
 boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] ) 
 {
@@ -745,5 +807,9 @@ boost::unit_test::test_suite* init_unit_test_suite( int argc, char* argv[] )
   boost::unit_test::framework::master_test_suite().add(regression_tests_without_network);
   boost::unit_test::framework::master_test_suite().add(regression_tests_with_network);
 
+#ifdef ENABLE_REPLAY_CHAIN_DATABASE_TESTS
+  boost::unit_test::framework::master_test_suite().add(BOOST_TEST_CASE(&replay_chain_database));
+  boost::unit_test::framework::master_test_suite().add(BOOST_TEST_CASE(&replay_chain_database_in_stages));
+#endif
   return 0;
 }

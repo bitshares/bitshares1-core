@@ -1314,13 +1314,13 @@
                "description" : "the ID of the order to recollateralize"
             },
             {
-               "name" : "collateral_to_add",
-               "type" : "share_type",
-               "description" : "Amount of collateral to add"
+               "name" : "real_quantity_collateral_to_add",
+               "type" : "string",
+               "description" : "the quantity of collateral of the base asset to add to the specified position",
             }
           ],
          "prerequisites" : ["wallet_unlocked"],
-         "aliases" : []
+         "aliases" : ["add_collateral"]
       },
       {
          "method_name" : "wallet_market_order_list",

@@ -409,7 +409,7 @@ namespace bts { namespace wallet {
          wallet_transaction_record add_collateral(
                  const string& from_account_name,
                  const order_id_type& short_id,
-                 share_type collateral_to_add,
+                 const string& real_quantity_collateral_to_add,
                  bool sign = true
                  );
          wallet_transaction_record cancel_market_orders(
