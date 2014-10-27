@@ -3254,7 +3254,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        info["max_blockchain_size"]          = BTS_BLOCKCHAIN_MAX_SIZE;
 
        info["address_prefix"]               = BTS_ADDRESS_PREFIX;
-       info["inactivity_fee_apr"]           = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
        info["relay_fee"]                    = _chain_db->get_relay_fee();
 
        info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
@@ -3783,11 +3782,11 @@ config load_config( const fc::path& datadir, bool enable_ulog )
                                                   start_time, duration, granularity );
    }
 
-   wallet_transaction_record client_impl::wallet_market_add_collateral( const std::string &from_account_name,
-                                                                        const order_id_type &cover_id,
-                                                                        const share_type &collateral_to_add )
+   wallet_transaction_record client_impl::wallet_market_add_collateral( const std::string& from_account_name,
+                                                                        const order_id_type& cover_id,
+                                                                        const string& real_quantity_collateral_to_add )
    {
-      const auto record = _wallet->add_collateral( from_account_name, cover_id, collateral_to_add );
+      const auto record = _wallet->add_collateral( from_account_name, cover_id, real_quantity_collateral_to_add );
       network_broadcast_transaction( record.trx );
       return record;
    }

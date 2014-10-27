@@ -130,7 +130,7 @@ namespace bts { namespace blockchain {
 
       asset delta_amount  = this->get_amount();
 
-      // Only allow using BTSX as collateral
+      // Only allow using the base asset as collateral
       FC_ASSERT( delta_amount.asset_id == 0 );
 
       eval_state.validate_asset( delta_amount );
@@ -211,7 +211,7 @@ namespace bts { namespace blockchain {
 
 
       // subtract this from the transaction
-      eval_state.sub_balance( address(), delta_amount );
+      eval_state.sub_balance( balance_id_type(), delta_amount );
 
       auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
       if( NOT current_cover )
@@ -220,21 +220,19 @@ namespace bts { namespace blockchain {
       auto  asset_to_cover = eval_state._current_state->get_asset_record( cover_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_cover.valid() );
 
-      if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_COVER_SOFT_FORK )
-      {
-          if( current_cover->interest_rate.quote_asset_id == 0 && current_cover->interest_rate.base_asset_id == 0 )
-          {
-              current_cover->interest_rate.quote_asset_id = asset_to_cover->id;
-          }
-      }
-
       const auto start_time = current_cover->expiration - fc::seconds( BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC );
       auto elapsed_sec = ( eval_state._current_state->now() - start_time ).to_seconds();
       if( elapsed_sec < 0 ) elapsed_sec = 0;
 
       const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
-      const asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
-                                                                         elapsed_sec ) + principle;
+      asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
+                                                                   elapsed_sec ) + principle;
+
+      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+      {
+          total_debt = detail::market_engine::get_interest_owed_v1( principle, current_cover->interest_rate,
+                                                                    elapsed_sec ) + principle;
+      }
 
       asset principle_paid;
       asset interest_paid;
@@ -249,6 +247,12 @@ namespace bts { namespace blockchain {
       {
           // Partial cover
           interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
+
+          if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+          {
+              interest_paid = detail::market_engine::get_interest_paid_v1( delta_amount, current_cover->interest_rate, elapsed_sec );
+          }
+
           principle_paid = delta_amount - interest_paid;
           current_cover->payoff_balance -= principle_paid.amount;
       }
@@ -270,8 +274,8 @@ namespace bts { namespace blockchain {
 
       if( current_cover->payoff_balance > 0 )
       {
-         auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id) /
-                               asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
+         const auto new_call_price = asset( current_cover->payoff_balance, delta_amount.asset_id)
+                                     / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
          if( this->new_cover_price && (*this->new_cover_price > new_call_price) )
             eval_state._current_state->store_collateral_record( market_index_key( *this->new_cover_price, this->cover_index.owner ),
@@ -304,10 +308,10 @@ namespace bts { namespace blockchain {
          FC_CAPTURE_AND_THROW( negative_deposit );
 
       asset delta_amount  = this->get_amount();
-      eval_state.sub_balance( address(), delta_amount );
+      eval_state.sub_balance( balance_id_type(), delta_amount );
 
       // update collateral and call price
-      auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
+      auto current_cover = eval_state._current_state->get_collateral_record( this->cover_index );
       if( NOT current_cover )
          FC_CAPTURE_AND_THROW( unknown_market_order, (cover_index) );
 
@@ -317,8 +321,8 @@ namespace bts { namespace blockchain {
       // and insert a new one.
       eval_state._current_state->store_collateral_record( this->cover_index, collateral_record() );
 
-      auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id ) /
-                            asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
+      const auto new_call_price = asset( current_cover->payoff_balance, cover_index.order_price.quote_asset_id )
+                                  / asset( (current_cover->collateral_balance*2)/3, cover_index.order_price.base_asset_id );
 
       eval_state._current_state->store_collateral_record( market_index_key( new_call_price, this->cover_index.owner),
                                                           *current_cover );

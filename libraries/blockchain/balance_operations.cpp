@@ -9,7 +9,7 @@ namespace bts { namespace blockchain {
    #include "balance_operations_v2.cpp"
    #include "balance_operations_v1.cpp"
 
-   asset balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply, uint32_t block_num )const
+   asset balance_record::calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
    {
       if( amount <= 0 )       return asset(0,condition.asset_id);
       if( share_supply <= 0 ) return asset(0,condition.asset_id);
@@ -24,10 +24,6 @@ namespace bts { namespace blockchain {
             amount_withdrawn *= 1000000;
 
             fc::uint128 current_supply( share_supply - yield_pool );
-            if( block_num < BTSX_MARKET_FORK_11_BLOCK_NUM )
-            {
-                current_supply = share_supply;
-            }
             fc::uint128 fee_fund( yield_pool );
 
             auto yield = (amount_withdrawn * fee_fund) / current_supply;
@@ -302,8 +298,16 @@ namespace bts { namespace blockchain {
          auto yield = current_balance_record->calculate_yield( eval_state._current_state->now(),
                                                                current_balance_record->balance,
                                                                asset_rec->collected_fees,
-                                                               asset_rec->current_share_supply,
-                                                               eval_state._current_state->get_head_block_num() );
+                                                               asset_rec->current_share_supply );
+
+         if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+         {
+            yield = current_balance_record->calculate_yield_v1( eval_state._current_state->now(),
+                                                                current_balance_record->balance,
+                                                                asset_rec->collected_fees,
+                                                                asset_rec->current_share_supply );
+         }
+
          if( yield.amount > 0 )
          {
             asset_rec->collected_fees       -= yield.amount;
@@ -327,8 +331,7 @@ namespace bts { namespace blockchain {
     */
    void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_WITHDRAW_ALL_FORK_1_BLOCK_NUM )
-          FC_ASSERT( !"Withdraw all operation is not enabled yet!" );
+      FC_ASSERT( !"Withdraw all operation is not enabled yet!" );
 
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
 
@@ -453,8 +456,16 @@ namespace bts { namespace blockchain {
          auto yield = current_balance_record->calculate_yield( eval_state._current_state->now(),
                                                                current_balance_record->balance,
                                                                asset_rec->collected_fees,
-                                                               asset_rec->current_share_supply,
-                                                               eval_state._current_state->get_head_block_num() );
+                                                               asset_rec->current_share_supply );
+
+         if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+         {
+            yield = current_balance_record->calculate_yield_v1( eval_state._current_state->now(),
+                                                                current_balance_record->balance,
+                                                                asset_rec->collected_fees,
+                                                                asset_rec->current_share_supply );
+         }
+
          if( yield.amount > 0 )
          {
             asset_rec->collected_fees       -= yield.amount;
@@ -503,13 +514,12 @@ namespace bts { namespace blockchain {
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_RELEASE_ESCROW_FORK_1_BLOCK_NUM )
-          FC_ASSERT( !"Release escrow operation is not enabled yet!" );
+      FC_ASSERT( !"Release escrow operation is not enabled yet!" );
 
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
 
-      if( !eval_state.check_signature( this->released_by ) ) 
+      if( !eval_state.check_signature( this->released_by ) )
          FC_ASSERT( !"transaction not signed by releasor" );
 
       auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();
@@ -543,6 +553,5 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *escrow_balance_record );
 
    } FC_CAPTURE_AND_RETHROW( (eval_state) )}
-
 
 } } // bts::blockchain

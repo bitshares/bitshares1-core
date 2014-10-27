@@ -18,7 +18,7 @@ namespace bts { namespace blockchain {
 
   asset& asset::operator += ( const asset& o )
   {
-     FC_ASSERT( asset_id == o.asset_id );
+     FC_ASSERT( this->asset_id == o.asset_id, "", ("*this",*this)("o",o) );
 
      if (((o.amount > 0) && (amount > (INT64_MAX - o.amount))) ||
          ((o.amount < 0) && (amount < (INT64_MIN - o.amount))))

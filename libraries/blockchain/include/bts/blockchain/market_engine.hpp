@@ -14,6 +14,9 @@ namespace bts { namespace blockchain { namespace detail {
     static asset get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
     static asset get_interest_owed(const asset& principle, const price& apr, uint32_t age_seconds);
 
+    static asset get_interest_paid_v1(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
+    static asset get_interest_owed_v1(const asset& principle, const price& apr, uint32_t age_seconds);
+
   private:
     void push_market_transaction( const market_transaction& mtrx );
 

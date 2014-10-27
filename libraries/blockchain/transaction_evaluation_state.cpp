@@ -1,7 +1,8 @@
 #include <bts/blockchain/chain_interface.hpp>
-#include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/operation_factory.hpp>
 #include <bts/blockchain/transaction_evaluation_state.hpp>
+
+#include <bts/blockchain/fork_blocks.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -223,15 +224,21 @@ namespace bts { namespace blockchain {
     *
     */
    void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
-   {
-      auto provided_deposit_itr = provided_deposits.find( balance_id );
-      if( provided_deposit_itr == provided_deposits.end() )
+   { try {
+#ifndef WIN32
+#warning [SOFTFORK] This check can be removed after BTSX_MARKET_FORK_12_BLOCK_NUM has passed
+#endif
+      if( balance_id != balance_id_type() || _current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
       {
-         provided_deposits[balance_id] = amount;
-      }
-      else
-      {
-         provided_deposit_itr->second += amount;
+         auto provided_deposit_itr = provided_deposits.find( balance_id );
+         if( provided_deposit_itr == provided_deposits.end() )
+         {
+            provided_deposits[balance_id] = amount;
+         }
+         else
+         {
+            provided_deposit_itr->second += amount;
+         }
       }
 
       auto deposit_itr = deposits.find(amount.asset_id);
@@ -255,10 +262,10 @@ namespace bts { namespace blockchain {
       }
 
       deltas[ _current_op_index ] = amount;
-   }
+   } FC_CAPTURE_AND_RETHROW( (balance_id)(amount) ) }
 
    void transaction_evaluation_state::add_balance( const asset& amount )
-   {
+   { try {
       auto withdraw_itr = withdraws.find( amount.asset_id );
       if( withdraw_itr == withdraws.end() )
          withdraws[amount.asset_id] = amount;
@@ -272,7 +279,7 @@ namespace bts { namespace blockchain {
          balance_itr->second += amount.amount;
 
       deltas[ _current_op_index ] = -amount;
-   }
+   } FC_CAPTURE_AND_RETHROW( (amount) ) }
 
    /**
     *  Throws if the asset is not known to the blockchain.

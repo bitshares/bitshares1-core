@@ -4,7 +4,6 @@
 #include <bts/wallet/wallet_impl.hpp>
 
 #include <bts/blockchain/time.hpp>
-#include <bts/blockchain/fork_blocks.hpp>
 
 #include <bts/cli/pretty.hpp>
 #include <bts/utilities/git_revision.hpp>
@@ -3280,9 +3279,6 @@ namespace detail {
                                                   const string& price_limit,
                                                   bool sign)
    { try {
-      if( my->_blockchain->get_pending_state()->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
-          FC_ASSERT( !"Shorts disabled until next hardfork!" );
-
       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
@@ -3308,17 +3304,24 @@ namespace detail {
    wallet_transaction_record wallet::add_collateral(
            const string& from_account_name,
            const order_id_type& cover_id,
-           share_type collateral_to_add,
+           const string& real_quantity_collateral_to_add,
            bool sign )
    { try {
        if (!is_open()) FC_CAPTURE_AND_THROW (wallet_closed);
        if (!is_unlocked()) FC_CAPTURE_AND_THROW (wallet_locked);
        if (!my->is_receive_account(from_account_name)) FC_CAPTURE_AND_THROW (unknown_receive_account);
-       if (collateral_to_add <= 0) FC_CAPTURE_AND_THROW (bad_collateral_amount);
 
        const auto order = my->_blockchain->get_market_order( cover_id, cover_order );
        if( !order.valid() )
            FC_THROW_EXCEPTION( unknown_market_order, "Cannot find that cover order!" );
+
+       const oasset_record base_asset = my->_blockchain->get_asset_record( order->market_index.order_price.base_asset_id );
+       FC_ASSERT( base_asset.valid() );
+
+       const asset collateral_to_add = my->_blockchain->to_ugly_asset( real_quantity_collateral_to_add,
+                                                                       base_asset->symbol );
+
+       if (collateral_to_add.amount <= 0) FC_CAPTURE_AND_THROW (bad_collateral_amount);
 
        const auto owner_address = order->get_owner();
        const auto owner_key_record = my->_wallet_db.lookup_key( owner_address );
@@ -3332,10 +3335,10 @@ namespace detail {
        unordered_set<address> required_signatures;
        required_signatures.insert( owner_address );
 
-       trx.add_collateral( collateral_to_add, order->market_index );
+       trx.add_collateral( collateral_to_add.amount, order->market_index );
 
        auto required_fees = get_transaction_fee();
-       my->withdraw_to_transaction( asset(collateral_to_add) + required_fees,
+       my->withdraw_to_transaction( collateral_to_add + required_fees,
                                     from_account_name,
                                     trx,
                                     required_signatures );
@@ -3347,7 +3350,7 @@ namespace detail {
        auto entry = ledger_entry();
        entry.from_account = from_account_key;
        entry.to_account = get_private_key( owner_address ).get_public_key();
-       entry.amount = asset(collateral_to_add);
+       entry.amount = collateral_to_add;
        entry.memo = "add collateral to short";
        record.ledger_entries.push_back(entry);
 
@@ -3355,7 +3358,7 @@ namespace detail {
        my->cache_transaction( trx, record );
 
        return record;
-   } FC_CAPTURE_AND_RETHROW((from_account_name)(cover_id)(collateral_to_add)(sign)) }
+   } FC_CAPTURE_AND_RETHROW((from_account_name)(cover_id)(real_quantity_collateral_to_add)(sign)) }
 
    wallet_transaction_record wallet::cover_short(
            const string& from_account_name,
@@ -3799,7 +3802,7 @@ namespace detail {
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
 
               const auto yield = record.calculate_yield( pending_state->now(), balance.amount,
-                                 asset_rec->collected_fees, asset_rec->current_share_supply, pending_state->get_head_block_num() );
+                                 asset_rec->collected_fees, asset_rec->current_share_supply );
               yield_summary[ name ][ yield.asset_id ] += yield.amount;
           }
       }
