@@ -264,7 +264,7 @@ namespace bts { namespace db {
            return true;
         } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" ); }
 
-        /** this class allows batched, atomic database writes.  
+        /** this class allows batched, atomic database writes.
          *  usage:
          *  {
          *    write_batch batch = _db.create_batch();

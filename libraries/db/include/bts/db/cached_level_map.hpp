@@ -44,9 +44,9 @@ namespace bts { namespace db {
          void flush()
          {
             level_map<Key, Value>::write_batch batch = _db.create_batch();
-            for (auto item : _dirty)
+            for( const auto& item : _dirty )
               batch.store(item, _cache[item]);
-            for (auto item : _dirty_remove)
+            for( const auto& item : _dirty_remove )
               batch.remove(item);
             batch.commit();
 
