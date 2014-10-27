@@ -283,8 +283,7 @@ transaction_builder& transaction_builder::submit_short(const wallet_account_reco
              ("rate", interest_rate)("limit", price_limit));
 
    asset cost = short_collateral_amount;
-
-   FC_ASSERT( cost.asset_id == asset_id_type( 0 ), "You can only use BTSX as collateral!" );
+   FC_ASSERT( cost.asset_id == asset_id_type( 0 ), "You can only use the base asset as collateral!" );
 
    auto order_key = order_key_for_account(from_account.account_address);
 

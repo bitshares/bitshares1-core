@@ -130,7 +130,7 @@ namespace bts { namespace blockchain {
 
       asset delta_amount  = this->get_amount();
 
-      // Only allow using BTSX as collateral
+      // Only allow using the base asset as collateral
       FC_ASSERT( delta_amount.asset_id == 0 );
 
       eval_state.validate_asset( delta_amount );
