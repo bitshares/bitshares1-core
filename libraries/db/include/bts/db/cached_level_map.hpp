@@ -180,6 +180,11 @@ namespace bts { namespace db {
             _db.export_to_json( path );
         } FC_CAPTURE_AND_RETHROW( (path) ) }
 
+        size_t size() const
+        {
+          return _cache.size();
+        }
+
       private:
         CacheType                _cache;
         std::set<Key>            _dirty;
