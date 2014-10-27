@@ -1,0 +1,161 @@
+#pragma once
+
+#include <fc/crypto/ripemd160.hpp>
+#include <fc/time.hpp>
+
+#include <bts/blockchain/types.hpp>
+
+#include <string>
+#include <vector>
+#include <map>
+
+namespace bts { namespace vote {
+using bts::blockchain::address;
+using bts::blockchain::public_key_type;
+using bts::blockchain::private_key_type;
+using fc::time_point_sec;
+using fc::ecc::compact_signature;
+using fc::variant;
+using fc::optional;
+using std::string;
+using std::vector;
+using std::unordered_map;
+using std::map;
+
+typedef fc::sha256 digest_type;
+
+/**
+ *  An identity is tied to a private key, which is
+ *  represented by the hash of its public key.  Each identity
+ *  has many properties that can be attributed to it such as
+ *  name, birth date, address, ssn, etc.  Each of these properties
+ *  must be individually attributed to a particular private key.
+ *
+ *  These properties allow arbitrary named data to be attributed
+ *  to an identity.  A salt is included to prevent brute forcing
+ *  the value given a hash.
+ */
+struct identity_property
+{
+   digest_type    digest()const;
+
+   address        identity;
+   fc::uint128    salt;
+   string         name;
+   variant        value;
+};
+
+/**
+ *  When someone signs a document that signature is only valid for
+ *  a limited time range.  Absent a blockchain to retract a signature the
+ *  time range prevents a need for renewal.
+ */
+struct signature_data
+{
+   /** sets the signature field as signer.sign( digest( identity_property_id ) ) */
+   void sign( const private_key_type& signer,
+              const digest_type& identity_property_id );
+
+   /**  hash( id + valid_from + valid_until ) ) */
+   digest_type digest( const digest_type& id)const;
+
+   /** recovers public key of signature given identity property id */
+   public_key_type signer( const digest_type& id )const;
+
+   time_point_sec valid_from;
+   time_point_sec valid_until;
+   compact_signature signature;
+};
+
+/**
+ * Each identity property can be signed by more than one
+ * identity provider.
+ */
+struct signed_identity_property : public identity_property
+{
+   vector<signature_data> verifier_signatures;
+};
+
+/**
+ *  An identity is a collection of properties that share a common
+ *  private key recognized as the address of the public key.
+ */
+struct identity
+{
+   digest_type digest()const;
+   public_key_type                                               owner;
+   unordered_map<digest_type, signed_identity_property>          properties;
+};
+
+/**
+ *  An identtiy signed by its owner.... ties everything together.
+ */
+struct signed_identity : public identity
+{
+   public_key_type     get_public_key()const;
+   digest_type         get_property_index_digest()const;
+   identity_property   get_property( const string& name )const;
+   // owner_signature = owner_key.sign( digest() )
+   void                sign_by_owner( const private_key_type& owner_key );
+
+   optional<compact_signature> owner_signature;
+   vector<compact_signature>   verifier_signatures;
+};
+
+/**
+ * A ballot is cast in a database/blockchain and recognizes
+ * canidates by the hash of their name.
+ */
+struct ballot
+{
+   uint32_t        election_id = 0;
+   uint64_t        candidate_id = 0;    // hash of canidates full name lower case.
+   bool            approve     = true; // for approval voting
+   time_point_sec  date;
+
+   digest_type digest()const;
+};
+
+/**
+ *  For a ballot to be counted it must be signed by a voter who has had
+ *  their pulbic key signed by one or more registrars.  The count will
+ *  varry based upon how the ballots are interpreted (approval, winner takes all, etc),
+ *  with one election we can have many alternative results simultaniously.
+ */
+struct signed_ballot : public ballot
+{
+   /**
+    *  The registrar's signature on the address(voter_public_key)
+    */
+    vector<compact_signature>  registrar_signatures;
+    /** voters signature on ballot::digest() */
+    compact_signature          voter_signature;
+
+    void                    sign( const private_key_type& voter_private_key );
+    public_key_type         voter_public_key()const;
+};
+
+
+// wallet state protected by user password and should be encrypted when stored on disk.
+struct wallet_state
+{
+     signed_identity  real_identity;
+     private_key_type real_id_private_key;
+     private_key_type voter_id_private_key;
+
+     //Need to define token_data...
+//     map<registrar_id, token_data>  token_state;// blinded/unblinded tokens generated for this registrar.
+
+     // signature of registrars on voter_id_public_key
+     vector<compact_signature>  registrars;
+
+     // trx history
+     vector<signed_ballot>   cast_ballots;
+};
+
+} } // bts::vote
+
+FC_REFLECT( bts::vote::identity, (owner)(properties) )
+FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature)(verifier_signatures) )
+FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
+FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )
