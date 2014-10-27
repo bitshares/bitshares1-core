@@ -174,7 +174,7 @@ namespace bts { namespace blockchain {
 
 
       // subtract this from the transaction
-      eval_state.sub_balance( address(), delta_amount );
+      eval_state.sub_balance( balance_id_type(), delta_amount );
 
       auto current_cover   = eval_state._current_state->get_collateral_record( this->cover_index );
       if( NOT current_cover )
@@ -252,8 +252,8 @@ namespace bts { namespace blockchain {
       if( this->amount < 0 )
          FC_CAPTURE_AND_THROW( negative_deposit );
 
-      asset delta_amount = this->get_amount();
-      eval_state.sub_balance( address(), delta_amount );
+      asset delta_amount  = this->get_amount();
+      eval_state.sub_balance( balance_id_type(), delta_amount );
 
       // update collateral and call price
       auto current_cover = eval_state._current_state->get_collateral_record( this->cover_index );
