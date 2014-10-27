@@ -327,8 +327,7 @@ namespace bts { namespace blockchain {
     */
    void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_WITHDRAW_ALL_FORK_1_BLOCK_NUM )
-          FC_ASSERT( !"Withdraw all operation is not enabled yet!" );
+      FC_ASSERT( !"Withdraw all operation is not enabled yet!" );
 
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
 
@@ -503,8 +502,7 @@ namespace bts { namespace blockchain {
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_RELEASE_ESCROW_FORK_1_BLOCK_NUM )
-          FC_ASSERT( !"Release escrow operation is not enabled yet!" );
+      FC_ASSERT( !"Release escrow operation is not enabled yet!" );
 
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
@@ -543,6 +541,5 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *escrow_balance_record );
 
    } FC_CAPTURE_AND_RETHROW( (eval_state) )}
-
 
 } } // bts::blockchain

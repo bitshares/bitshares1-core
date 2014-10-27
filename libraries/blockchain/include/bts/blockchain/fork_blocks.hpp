@@ -37,12 +37,6 @@
 #define BTSX_SUPPLY_FORK_1_BLOCK_NUM            BTSX_MARKET_FORK_7_BLOCK_NUM
 #define BTSX_SUPPLY_FORK_2_BLOCK_NUM            BTSX_MARKET_FORK_8_BLOCK_NUM
 
-#define BTSX_LINK_FORK_1_BLOCK_NUM              9999999
-
-#define BTSX_WITHDRAW_ALL_FORK_1_BLOCK_NUM      9999999
-
-#define BTSX_RELEASE_ESCROW_FORK_1_BLOCK_NUM    9999999
-
 namespace bts { namespace blockchain {
   uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t revision_time);
   std::vector<uint32_t> get_list_of_fork_block_numbers();
