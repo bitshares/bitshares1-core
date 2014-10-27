@@ -599,14 +599,10 @@ namespace bts { namespace blockchain {
 
             auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
             FC_ASSERT( pending_base_record.valid() );
-            if( pending_state->get_head_block_num() >= BTSX_SUPPLY_FORK_1_BLOCK_NUM )
-            {
-                pending_base_record->collected_fees -= max_available_paycheck;
-            }
-            else
-            {
-                pending_base_record->collected_fees -= accepted_paycheck;
-            }
+#ifndef WIN32
+#warning [BTSX] Careful merging this into BTSX
+#endif
+            pending_base_record->collected_fees -= max_available_paycheck;
             pending_state->store_asset_record( *pending_base_record );
 
             delegate_record->delegate_info->pay_balance += accepted_paycheck;
