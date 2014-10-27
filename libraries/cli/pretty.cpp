@@ -200,9 +200,6 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     const auto min_fee = info["min_block_fee"].as<share_type>();
     info["min_block_fee"] = client->get_chain()->to_pretty_asset( asset( min_fee ) );
 
-    const auto inactivity_fee = info["inactivity_fee_apr"].as<share_type>();
-    info["inactivity_fee_apr"] = client->get_chain()->to_pretty_asset( asset( inactivity_fee ) );
-
     const auto relay_fee = info["relay_fee"].as<share_type>();
     info["relay_fee"] = client->get_chain()->to_pretty_asset( asset( relay_fee ) );
 

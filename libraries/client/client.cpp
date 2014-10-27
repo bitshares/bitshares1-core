@@ -3254,7 +3254,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        info["max_blockchain_size"]          = BTS_BLOCKCHAIN_MAX_SIZE;
 
        info["address_prefix"]               = BTS_ADDRESS_PREFIX;
-       info["inactivity_fee_apr"]           = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
        info["relay_fee"]                    = _chain_db->get_relay_fee();
 
        info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
