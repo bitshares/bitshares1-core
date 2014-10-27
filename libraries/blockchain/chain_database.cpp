@@ -40,16 +40,19 @@ namespace bts { namespace blockchain {
             vector<transaction_id_type> trx_to_discard;
 
             _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
+            unsigned num_pending_transaction_considered = 0;
             auto itr = _pending_transaction_db.begin();
             while( itr.valid() )
             {
-                auto trx = itr.value();
-                auto trx_id = trx.id();
-                try {
-                  auto eval_state = self->evaluate_transaction( trx, _relay_fee );
+                signed_transaction trx = itr.value();
+                transaction_id_type trx_id = itr.key();
+                assert(trx_id == trx.id());
+                try 
+                {
+                  transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
                   share_type fees = eval_state->get_fees();
                   _pending_fee_index[ fee_index( fees, trx_id ) ] = eval_state;
-                  _pending_transaction_db.store( trx_id, trx );
+                  wlog("revalidated pending transaction id ${id}", ("id", trx_id));
                 }
                 catch ( const fc::canceled_exception& )
                 {
@@ -61,11 +64,15 @@ namespace bts { namespace blockchain {
                   wlog( "discarding invalid transaction: ${id} ${e}",
                         ("id",trx_id)("e",e.to_detail_string()) );
                 }
+                ++num_pending_transaction_considered;
                 ++itr;
             }
 
             for( const auto& item : trx_to_discard )
                 _pending_transaction_db.remove( item );
+            wlog("revalidate_pending complete, there are now ${pending_count} evaluated transactions, ${num_pending_transaction_considered} raw transactions", 
+                 ("pending_count", _pending_fee_index.size())
+                 ("num_pending_transaction_considered", num_pending_transaction_considered));
       }
 
       void chain_database_impl::open_database( const fc::path& data_dir )
@@ -339,7 +346,7 @@ namespace bts { namespace blockchain {
       {
          std::unordered_set<transaction_id_type> confirmed_trx_ids;
 
-         for( const auto& trx : blk.user_transactions )
+         for( const signed_transaction& trx : blk.user_transactions )
          {
             auto id = trx.id();
             confirmed_trx_ids.insert( id );
@@ -357,7 +364,8 @@ namespace bts { namespace blockchain {
          uint32_t last_checkpoint_block_num = 0;
          if( !CHECKPOINT_BLOCKS.empty() )
              last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
-         if( (!_revalidate_pending.valid() || _revalidate_pending.ready()) && _head_block_header.block_num >= last_checkpoint_block_num )
+         if( (!_revalidate_pending.valid() || _revalidate_pending.ready()) && 
+             _head_block_header.block_num >= last_checkpoint_block_num )
            _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
 
          _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
@@ -1710,10 +1718,13 @@ namespace bts { namespace blockchain {
    /** this should throw if the trx is invalid */
    transaction_evaluation_state_ptr chain_database::store_pending_transaction( const signed_transaction& trx, bool override_limits )
    { try {
-
       auto trx_id = trx.id();
-      auto current_itr = my->_pending_transaction_db.find( trx_id );
-      if( current_itr.valid() ) return nullptr;
+      if (override_limits)
+        wlog("storing new local transaction with id ${id}", ("id", trx_id));
+
+      auto current_itr = my->_pending_transaction_db.find(trx_id);
+      if( current_itr.valid() ) 
+        return nullptr;
 
       share_type relay_fee = my->_relay_fee;
       if( !override_limits )
@@ -1725,7 +1736,7 @@ namespace bts { namespace blockchain {
          }
       }
 
-      auto eval_state = evaluate_transaction( trx, relay_fee );
+      transaction_evaluation_state_ptr eval_state = evaluate_transaction( trx, relay_fee );
       share_type fees = eval_state->get_fees();
 
       //if( fees < my->_relay_fee )
