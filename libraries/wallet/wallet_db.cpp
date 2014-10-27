@@ -256,7 +256,7 @@ namespace bts { namespace wallet {
            if( account_record.valid() ) continue;
 
            owallet_key_record key_record = lookup_key( account_address );
-           if( key_record.valid() ) continue;
+           if( key_record.valid() && key_record->has_private_key() ) continue;
 
            break;
        }
@@ -267,13 +267,10 @@ namespace bts { namespace wallet {
        key.encrypt_private_key( password, account_private_key );
        key.gen_seq_number = key_index;
 
-       const time_point_sec now = blockchain::now();
-
        account_data account;
        account.name = account_name;
        account.owner_key = account_public_key;
-       account.set_active_key( now, account_public_key );
-       account.last_update = now;
+       account.set_active_key( blockchain::now(), account_public_key );
        account.account_address = account_address;
        account.private_data = private_data;
        account.is_my_account = true;
@@ -332,7 +329,7 @@ namespace bts { namespace wallet {
            account_child_address = address( account_child_public_key );
 
            owallet_key_record key_record = lookup_key( account_child_address );
-           if( key_record.valid() ) continue;
+           if( key_record.valid() && key_record->has_private_key() ) continue;
 
            break;
        }
