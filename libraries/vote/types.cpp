@@ -35,4 +35,10 @@ digest_type ballot::digest() const
 {
    return fc::digest(*this);
 }
+
+digest_type identity_verification_request::digest() const
+{
+   return fc::digest(*this);
+}
+
 } } // namespace bts::vote

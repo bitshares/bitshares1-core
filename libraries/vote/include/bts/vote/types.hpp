@@ -110,6 +110,25 @@ struct signed_identity : public identity
 };
 
 /**
+ * @brief A request from a user for ID verification
+ *
+ * The user fills in the names and salts for each property he wishes the verifier to fill and sign. He also provides a
+ * set of photos of himself and his credentials which the verifier uses to determine this user as a unique, validated
+ * identity.
+ *
+ * Photos are base64 JPEGs.
+ */
+struct identity_verification_request : public identity
+{
+   digest_type digest()const;
+
+   string owner_photo;
+   string id_front_photo;
+   string id_back_photo;
+   string voter_reg_photo;
+};
+
+/**
  * A ballot is cast in a database/blockchain and recognizes
  * canidates by the hash of their name.
  */
@@ -173,5 +192,7 @@ FC_REFLECT( bts::vote::identity_property, (identity)(salt)(name)(value) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity_property, (bts::vote::identity_property), (verifier_signatures) )
 FC_REFLECT( bts::vote::identity, (owner)(properties) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature) )
+FC_REFLECT_DERIVED( bts::vote::identity_verification_request, (bts::vote::identity),
+                    (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo) )
 FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
 FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )

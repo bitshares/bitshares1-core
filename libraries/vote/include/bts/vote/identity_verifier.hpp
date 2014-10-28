@@ -18,10 +18,6 @@ public:
    void close();
    bool is_open();
 
-   void store_pending_identity(const public_key_type& owner_key,
-                               const string& owner_photo,
-                               const string& id_front_photo,
-                               const string& id_back_photo,
-                               const string& voter_reg_photo);
+   void verify_identity(const identity_verification_request& request, const fc::ecc::compact_signature& signature);
 };
 } } // namespace bts::vote

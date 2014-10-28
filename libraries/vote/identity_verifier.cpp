@@ -24,6 +24,17 @@ struct identity_record : public vote::identity {
       rejected
    };
 
+   identity_record(){}
+   identity_record(const identity_verification_request &request, const fc::ecc::compact_signature& signature)
+       : owner_key(fc::ecc::public_key(signature, request.digest())),
+         person_photo(request.owner_photo),
+         id_card_front_photo(request.id_front_photo),
+         id_card_back_photo(request.id_back_photo),
+         voter_registration_photo(request.voter_reg_photo)
+   {
+      owner = owner_key;
+   }
+
    status_enum status = awaiting_processing;
    public_key_type owner_key;
    ///Photos are stored as base64 JPEGs
@@ -85,7 +96,7 @@ public:
       return _id_db.is_open();
    }
 
-   void store_pending_identity(identity_record& rec)
+   void store_pending_identity(identity_record&& rec)
    {
       _processing_id_db.insert(rec);
       _id_db.store(rec.owner, rec);
@@ -114,25 +125,15 @@ void identity_verifier::close()
 
 bool identity_verifier::is_open()
 {
-   return my->is_open();
+    return my->is_open();
 }
 
-void identity_verifier::store_pending_identity(const public_key_type& owner_key,
-                                               const string& owner_photo,
-                                               const string& id_front_photo,
-                                               const string& id_back_photo,
-                                               const string& voter_reg_photo)
+void identity_verifier::verify_identity(const identity_verification_request& request,
+                                        const fc::ecc::compact_signature& signature)
 {
    SANITY_CHECK;
 
-   detail::identity_record rec;
-   rec.owner = rec.owner_key = owner_key;
-   rec.person_photo = owner_photo;
-   rec.id_card_front_photo = id_front_photo;
-   rec.id_card_back_photo = id_back_photo;
-   rec.voter_registration_photo = voter_reg_photo;
-
-   my->store_pending_identity(rec);
+   my->store_pending_identity(detail::identity_record(request, signature));
 }
 
 } } // namespace bts::vote
