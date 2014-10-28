@@ -3603,11 +3603,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _wallet->get_account_yield( account_name );
    }
 
-   asset     client_impl::wallet_account_net_worth( const string& account_name, const string& symbol)const
-   {
-       return _wallet->get_account_net_worth( account_name, symbol );
-   }
-
    wallet_transaction_record client_impl::wallet_market_submit_bid(
            const string& from_account,
            const string& quantity,
