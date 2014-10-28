@@ -12,17 +12,20 @@
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
-public_key_type transaction_builder::order_key_for_account(const address& account_address)
+public_key_type transaction_builder::order_key_for_account(const address& account_address, const string& account_name)
 {
    auto order_key = order_keys[account_address];
    if( order_key == public_key_type() )
-      order_key = _wimpl->_wallet_db.new_private_key(_wimpl->_wallet_password, account_address).get_public_key();
+   {
+       order_key = _wimpl->get_new_public_key(account_name);
+       order_keys[account_address] = order_key;
+   }
    return order_key;
 }
 
 transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
                                                                       optional<variant> public_data,
-                                                                      optional<bts::blockchain::private_key_type> active_key,
+                                                                      optional<public_key_type> active_key,
                                                                       optional<share_type> delegate_pay,
                                                                       optional<wallet_account_record> paying_account)
 {
@@ -77,15 +80,9 @@ transaction_builder& transaction_builder::update_account_registration(const wall
    fc::optional<public_key_type> active_public_key;
    if( active_key )
    {
-      active_public_key = active_key->get_public_key();
-      if( _wimpl->_blockchain->get_account_record(*active_public_key).valid() ||
-          _wimpl->_wallet_db.lookup_account(*active_public_key).valid() )
-         FC_THROW_EXCEPTION( key_already_registered, "Key already belongs to another account!", ("new_public_key", active_public_key));
-
-      key_data new_key;
-      new_key.encrypt_private_key(_wimpl->_wallet_password, *active_key);
-      new_key.account_address = account.account_address;
-      _wimpl->_wallet_db.store_key(new_key);
+      if( _wimpl->_blockchain->get_account_record(*active_key).valid() ||
+          _wimpl->_wallet_db.lookup_account(*active_key).valid() )
+         FC_THROW_EXCEPTION( key_already_registered, "Key already belongs to another account!", ("new_public_key", active_key));
 
       ledger_entry entry;
       entry.from_account = paying_account->owner_key;
@@ -94,7 +91,7 @@ transaction_builder& transaction_builder::update_account_registration(const wall
       transaction_record.ledger_entries.push_back(entry);
    }
 
-   trx.update_account(account.id, *delegate_pay, public_data, active_public_key);
+   trx.update_account(account.id, *delegate_pay, public_data, active_key);
 
    if( public_data )
    {
@@ -126,7 +123,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    {
       trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
    } else {
-      auto one_time_key = _wimpl->create_one_time_key();
+      auto one_time_key = _wimpl->_wallet_db.generate_new_one_time_key(_wimpl->_wallet_password);
       titan_one_time_key = one_time_key.get_public_key();
       trx.deposit_to_account(recipient.active_key(),
                              amount,
@@ -223,7 +220,7 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
    asset cost = real_quantity * quote_price;
    FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
 
-   auto order_key = order_key_for_account(from_account.account_address);
+   auto order_key = order_key_for_account(from_account.account_address, from_account.name);
 
    //Charge this account for the bid
    deduct_balance(from_account.account_address, cost);
@@ -250,7 +247,7 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
    FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
 
-   auto order_key = order_key_for_account(from_account.account_address);
+   auto order_key = order_key_for_account(from_account.account_address, from_account.name);
 
    //Charge this account for the ask
    deduct_balance(from_account.account_address, cost);
@@ -284,7 +281,7 @@ transaction_builder& transaction_builder::submit_short(const wallet_account_reco
 
    asset cost = short_collateral_amount;
 
-   auto order_key = order_key_for_account(from_account.account_address);
+   auto order_key = order_key_for_account(from_account.account_address, from_account.name);
 
    deduct_balance(from_account.account_address, cost);
    trx.short_sell(cost, interest_rate, order_key, price_limit);
@@ -423,8 +420,8 @@ transaction_builder& transaction_builder::finalize()
    for( auto outstanding_balance : outstanding_balances )
    {
       asset balance(outstanding_balance.second, outstanding_balance.first.second);
-      address deposit_address = order_key_for_account(outstanding_balance.first.first);
       string account_name = _wimpl->_wallet_db.lookup_account(outstanding_balance.first.first)->name;
+      address deposit_address = order_key_for_account(outstanding_balance.first.first, account_name);
 
       if( balance.amount == 0 ) continue;
       else if( balance.amount > 0 ) trx.deposit(deposit_address, balance, slate_id);
@@ -458,7 +455,10 @@ std::vector<bts::mail::message> transaction_builder::encrypted_notifications()
 {
    vector<mail::message> messages;
    for( auto& notice : notices )
-      messages.emplace_back(mail::message(notice.first).encrypt(_wimpl->create_one_time_key(), notice.second));
+   {
+      auto one_time_key = _wimpl->_wallet_db.generate_new_one_time_key(_wimpl->_wallet_password);
+      messages.emplace_back(mail::message(notice.first).encrypt(one_time_key, notice.second));
+   }
    return messages;
 }
 

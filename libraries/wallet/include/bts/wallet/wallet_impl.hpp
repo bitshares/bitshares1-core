@@ -51,8 +51,6 @@ class wallet_impl : public chain_observer
        void reschedule_relocker();
        void relocker();
 
-       private_key_type create_one_time_key();
-
       /**
        * This method is called anytime the blockchain state changes including
        * undo operations.
@@ -160,8 +158,9 @@ class wallet_impl : public chain_observer
       bool is_valid_account( const string& account_name )const;
       bool is_unique_account( const string& account_name )const;
 
-      address get_new_address( const string& account_name );
-      public_key_type  get_new_public_key( const string& account_name );
+      private_key_type  get_new_private_key( const string& account_name );
+      public_key_type   get_new_public_key( const string& account_name );
+      address           get_new_address( const string& account_name );
 
       void sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const;
       void cache_transaction( const signed_transaction& transaction, wallet_transaction_record& record, bool apply_transaction = true );
