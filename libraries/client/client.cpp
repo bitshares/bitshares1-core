@@ -228,7 +228,7 @@ void print_banner()
 {
     std::cout<<"================================================================\n";
     std::cout<<"=                                                              =\n";
-    std::cout<<"=             Welcome to BitShares "<< std::setw(5) << std::left << BTS_ADDRESS_PREFIX<<"                       =\n";
+    std::cout<<"=             Welcome to BitShares "<< std::setw(5) << std::left << BTS_ADDRESS_PREFIX << "                       =\n";
     std::cout<<"=                                                              =\n";
     std::cout<<"=  This software is in alpha testing and is not suitable for   =\n";
     std::cout<<"=  real monetary transactions or trading.  Use at your own     =\n";
@@ -3302,7 +3302,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
       info["blockchain_share_supply"]                           = variant();
-      const auto share_record                                   = _chain_db->get_asset_record( BTS_ADDRESS_PREFIX );
+      const auto share_record                                   = _chain_db->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
       if( share_record.valid() )
           info["blockchain_share_supply"]                       = share_record->current_share_supply;
 

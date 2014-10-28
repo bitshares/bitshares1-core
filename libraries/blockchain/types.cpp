@@ -17,9 +17,10 @@ namespace bts { namespace blockchain {
 
     public_key_type::public_key_type( const std::string& base58str )
     {
-       static const size_t prefix_len = strlen(BTS_ADDRESS_PREFIX);
+       std::string prefix( BTS_ADDRESS_PREFIX );
+       const size_t prefix_len = prefix.size();
        FC_ASSERT( base58str.size() > prefix_len );
-       FC_ASSERT( base58str.substr( 0, prefix_len ) == BTS_ADDRESS_PREFIX, "", ("base58str", base58str) );
+       FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack<binary_key>(bin);
        key_data = bin_key.data;
