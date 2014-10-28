@@ -1,6 +1,8 @@
 #include <bts/vote/identity_verifier.hpp>
 #include <bts/db/level_map.hpp>
 
+#include <fc/reflect/variant.hpp>
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
@@ -86,8 +88,7 @@ public:
    void store_pending_identity(identity_record& rec)
    {
       _processing_id_db.insert(rec);
-      //FC! Y U NO WORK?
-//      _id_db.store(rec.owner, rec);
+      _id_db.store(rec.owner, rec);
    }
 };
 } // namespace detail
