@@ -30,7 +30,8 @@ int main(int argc, char*argv[])
     fc::variant json_as_variant;
     try
     {
-      json_as_variant = fc::json::from_stream(fc::buffered_istream(fc::cin_ptr));
+      fc::buffered_istream istream(fc::cin_ptr);
+      json_as_variant = fc::json::from_stream(istream);
     }
     catch (const fc::eof_exception& e)
     {
