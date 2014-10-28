@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fc/crypto/ripemd160.hpp>
+#include <fc/crypto/sha256.hpp>
 #include <fc/time.hpp>
 
 #include <bts/blockchain/types.hpp>
@@ -52,14 +52,18 @@ struct identity_property
  */
 struct signature_data
 {
-   /** sets the signature field as signer.sign( digest( identity_property_id ) ) */
    void sign( const private_key_type& signer,
-              const digest_type& identity_property_id );
+              const digest_type& identity_property_id )
+   {
+      signature = signer.sign_compact(digest(identity_property_id));
+   }
 
    /**  hash( id + valid_from + valid_until ) ) */
    digest_type digest( const digest_type& id)const;
 
-   /** recovers public key of signature given identity property id */
+   /** Recovers public key of signature given identity property id.
+     * Returns public_key_type() if current time is outside the validity window.
+     */
    public_key_type signer( const digest_type& id )const;
 
    time_point_sec valid_from;
@@ -77,26 +81,31 @@ struct signed_identity_property : public identity_property
 };
 
 /**
- *  An identity is a collection of properties that share a common
- *  private key recognized as the address of the public key.
+ *  An identity is a collection of properties that belong to a common owner key
  */
 struct identity
 {
    digest_type digest()const;
-   public_key_type                                               owner;
+   address                                                       owner;
    unordered_map<digest_type, signed_identity_property>          properties;
 };
 
 /**
- *  An identtiy signed by its owner.... ties everything together.
+ *  An identity signed by its owner.... ties everything together.
  */
 struct signed_identity : public identity
 {
-   public_key_type     get_public_key()const;
+   public_key_type     get_public_key()const
+   {
+      return owner_signature? public_key_type(fc::ecc::public_key(*owner_signature, digest()))
+                            : public_key_type();
+   }
    digest_type         get_property_index_digest()const;
    identity_property   get_property( const string& name )const;
-   // owner_signature = owner_key.sign( digest() )
-   void                sign_by_owner( const private_key_type& owner_key );
+   void                sign_by_owner( const private_key_type& owner_key )
+   {
+      owner_signature = owner_key.sign_compact(digest());
+   }
 
    optional<compact_signature> owner_signature;
    vector<compact_signature>   verifier_signatures;
@@ -108,9 +117,9 @@ struct signed_identity : public identity
  */
 struct ballot
 {
-   uint32_t        election_id = 0;
+   uint32_t        election_id  = 0;
    uint64_t        candidate_id = 0;    // hash of canidates full name lower case.
-   bool            approve     = true; // for approval voting
+   bool            approve      = true; // for approval voting
    time_point_sec  date;
 
    digest_type digest()const;
@@ -127,12 +136,18 @@ struct signed_ballot : public ballot
    /**
     *  The registrar's signature on the address(voter_public_key)
     */
-    vector<compact_signature>  registrar_signatures;
-    /** voters signature on ballot::digest() */
-    compact_signature          voter_signature;
+   vector<compact_signature>  registrar_signatures;
+   /** voters signature on ballot::digest() */
+   compact_signature          voter_signature;
 
-    void                    sign( const private_key_type& voter_private_key );
-    public_key_type         voter_public_key()const;
+   void                    sign( const private_key_type& voter_private_key )
+   {
+      voter_signature = voter_private_key.sign_compact(digest());
+   }
+   public_key_type         voter_public_key()const
+   {
+      return fc::ecc::public_key(voter_signature, digest());
+   }
 };
 
 
@@ -155,6 +170,9 @@ struct wallet_state
 
 } } // bts::vote
 
+FC_REFLECT( bts::vote::signature_data, (valid_from)(valid_until)(signature) )
+FC_REFLECT( bts::vote::identity_property, (identity)(salt)(name)(value) )
+FC_REFLECT_DERIVED( bts::vote::signed_identity_property, (bts::vote::identity_property), (verifier_signatures) )
 FC_REFLECT( bts::vote::identity, (owner)(properties) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature)(verifier_signatures) )
 FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
