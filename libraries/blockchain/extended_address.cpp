@@ -11,7 +11,7 @@ namespace bts { namespace blockchain {
   {
   }
 
-  extended_public_key::~extended_public_key(){} 
+  extended_public_key::~extended_public_key(){}
 
   extended_public_key::extended_public_key( const fc::ecc::public_key& key, const fc::sha256& code )
   :pub_key(key),chain_code(code)
@@ -101,7 +101,7 @@ namespace bts { namespace blockchain {
     memcpy( (char*)&ikey_right, ((char*)&ikey) + sizeof(ikey_left), sizeof(ikey_right) );
 
     child_key.priv_key  = fc::ecc::private_key::generate_from_seed( priv_key, ikey_left ).get_secret();
-    child_key.chain_code = ikey_right; 
+    child_key.chain_code = ikey_right;
 
     return child_key;
   } FC_RETHROW_EXCEPTIONS( warn, "child index ${child_idx}", ("child_idx", child_idx ) ) }
@@ -132,7 +132,7 @@ namespace bts { namespace blockchain {
     memcpy( (char*)&ikey_right, ((char*)&ikey) + sizeof(ikey_left), sizeof(ikey_right) );
 
     child_key.priv_key  = fc::ecc::private_key::generate_from_seed( priv_key, ikey_left ).get_secret();
-    child_key.chain_code = ikey_right; 
+    child_key.chain_code = ikey_right;
 
     return child_key;
   } FC_RETHROW_EXCEPTIONS( warn, "child index ${child_idx}", ("child_idx", child_idx ) ) }
@@ -154,10 +154,12 @@ namespace bts { namespace blockchain {
    { try {
 
       uint32_t checksum = 0;
-      FC_ASSERT( base58str.size() > strlen( BTS_ADDRESS_PREFIX ) );
-      FC_ASSERT( base58str.substr( 0, strlen( BTS_ADDRESS_PREFIX ) ) == BTS_ADDRESS_PREFIX );
+      std::string prefix( BTS_ADDRESS_PREFIX );
+      const size_t prefix_len = prefix.size();
+      FC_ASSERT( base58str.size() > prefix_len );
+      FC_ASSERT( base58str.substr( 0, prefix_len ) == prefix );
 
-      std::vector<char> data = fc::from_base58( base58str.substr( strlen( BTS_ADDRESS_PREFIX ) ) );
+      std::vector<char> data = fc::from_base58( base58str.substr( prefix_len ) );
       FC_ASSERT( data.size() == (33+32+4) );
 
       fc::datastream<const char*> ds(data.data(),data.size());
@@ -196,8 +198,8 @@ namespace bts { namespace blockchain {
 
 } } // namespace bts::blockchain
 
-namespace fc 
-{ 
+namespace fc
+{
    void to_variant( const bts::blockchain::extended_address& ext_addr,  fc::variant& vo )
    {
       vo = std::string(ext_addr);
