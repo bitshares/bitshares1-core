@@ -184,12 +184,14 @@ namespace bts { namespace blockchain {
 
    struct withdraw_vesting
    {
+       static const uint8_t    type;
+
        address                 owner;
        fc::time_point_sec      vesting_start;
-       fc::time_point_sec      vesting_duration;
-       asset                   claimed;
-       asset                   total;
-   }
+       uint32_t                vesting_duration;
+       share_type              claimed;
+       share_type              total;
+   };
 
 } } // bts::blockchain
 
