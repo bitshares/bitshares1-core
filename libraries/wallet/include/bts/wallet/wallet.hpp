@@ -465,6 +465,8 @@ namespace bts { namespace wallet {
          account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true )const;
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
+         asset                              asset_worth( const asset& base, const string& price_in_symbol )const;
+         asset                              get_account_net_worth( const string& account_name, const string& symbol )const;
          account_vote_summary_type          get_account_vote_summary( const string& account_name = "" )const;
 
          map<order_id_type, market_order>   get_market_orders( const string& account_name, uint32_t limit)const;
