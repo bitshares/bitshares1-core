@@ -47,7 +47,7 @@ namespace bts { namespace blockchain {
                 signed_transaction trx = itr.value();
                 transaction_id_type trx_id = itr.key();
                 assert(trx_id == trx.id());
-                try 
+                try
                 {
                   transaction_evaluation_state_ptr eval_state = self->evaluate_transaction( trx, _relay_fee );
                   share_type fees = eval_state->get_fees();
@@ -70,7 +70,7 @@ namespace bts { namespace blockchain {
 
             for( const auto& item : trx_to_discard )
                 _pending_transaction_db.remove( item );
-            wlog("revalidate_pending complete, there are now ${pending_count} evaluated transactions, ${num_pending_transaction_considered} raw transactions", 
+            wlog("revalidate_pending complete, there are now ${pending_count} evaluated transactions, ${num_pending_transaction_considered} raw transactions",
                  ("pending_count", _pending_fee_index.size())
                  ("num_pending_transaction_considered", num_pending_transaction_considered));
       }
@@ -364,7 +364,7 @@ namespace bts { namespace blockchain {
          uint32_t last_checkpoint_block_num = 0;
          if( !CHECKPOINT_BLOCKS.empty() )
              last_checkpoint_block_num = (--(CHECKPOINT_BLOCKS.end()))->first;
-         if( (!_revalidate_pending.valid() || _revalidate_pending.ready()) && 
+         if( (!_revalidate_pending.valid() || _revalidate_pending.ready()) &&
              _head_block_header.block_num >= last_checkpoint_block_num )
            _revalidate_pending = fc::async( [=](){ revalidate_pending(); }, "revalidate_pending" );
 
@@ -1723,7 +1723,7 @@ namespace bts { namespace blockchain {
         wlog("storing new local transaction with id ${id}", ("id", trx_id));
 
       auto current_itr = my->_pending_transaction_db.find(trx_id);
-      if( current_itr.valid() ) 
+      if( current_itr.valid() )
         return nullptr;
 
       share_type relay_fee = my->_relay_fee;
@@ -3002,7 +3002,7 @@ namespace bts { namespace blockchain {
         return prices[prices.size()/2];
       }
       return oprice();
-     } FC_CAPTURE_AND_RETHROW( (asset_id) ) }
+   } FC_CAPTURE_AND_RETHROW( (asset_id)(base_id) ) }
 
    vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type& asset_id, const asset_id_type& base_id )const
    {  try {
