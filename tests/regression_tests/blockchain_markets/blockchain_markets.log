@@ -180,7 +180,7 @@ Returns the long and short sides of the order book for a given market
 Parameters:
   quote_symbol (asset_symbol, required): the symbol name the market is quoted in
   base_symbol (asset_symbol, required): the item being bought in this market
-  limit (uint32_t, optional, defaults to "-1"): the maximum number of items to return, -1 for all
+  limit (uint32_t, optional, defaults to "10"): the maximum number of items to return, -1 for all
 
 Returns:
   pair<market_order_array,market_order_array>
