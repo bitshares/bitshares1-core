@@ -3717,6 +3717,7 @@ namespace detail {
        // open orders
        // balances
        // - debt
+       FC_ASSERT( false );
    }
 
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
