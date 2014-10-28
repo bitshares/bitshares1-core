@@ -1059,6 +1059,26 @@
          "aliases" : ["yield", "getyield"]
       },
       {
+         "method_name"    : "wallet_account_net_worth",
+         "description"    : "Compute this account's net worth.",
+         "return_type"    : "asset",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account to get the net worth for",
+         },
+         {
+            "name" : "symbol",
+            "type" : "asset_symbol",
+            "description" : "the asset in which to price your net worth"
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["net_worth", "worth"]
+      },
+      {
          "method_name" : "wallet_account_list_public_keys",
          "description" : "Lists all public keys in this account",
          "return_type" : "public_key_summary_array",

@@ -18,7 +18,8 @@ namespace bts { namespace blockchain {
       withdraw_multi_sig_type   = 2,
       withdraw_password_type    = 3,
       withdraw_option_type      = 4,
-      withdraw_escrow_type      = 5
+      withdraw_escrow_type      = 5,
+      withdraw_vesting_type     = 6
    };
 
    /**
@@ -181,6 +182,17 @@ namespace bts { namespace blockchain {
       price                strike_price;
    };
 
+   struct withdraw_vesting
+   {
+       static const uint8_t    type;
+
+       address                 owner;
+       fc::time_point_sec      vesting_start;
+       uint32_t                vesting_duration;
+       share_type              claimed;
+       share_type              total;
+   };
+
 } } // bts::blockchain
 
 namespace fc {
@@ -204,6 +216,7 @@ FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
 FC_REFLECT( bts::blockchain::withdraw_with_pts, (new_key)(pts_signature) )
+FC_REFLECT( bts::blockchain::withdraw_vesting, (owner)(vesting_start)(vesting_duration)(claimed)(total) )
 FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
 FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
 FC_REFLECT_DERIVED( bts::blockchain::memo_status,
