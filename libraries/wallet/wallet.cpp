@@ -921,7 +921,7 @@ namespace detail {
       while( true )
       {
           fc::time_point_sec now( time_point::now() );
-          std::string backup_filename = wallet_name + "-" + now.to_iso_string();
+          std::string backup_filename = wallet_name + "-" + now.to_iso_non_delimited_string();
           if( !reason.empty() ) backup_filename += "-" + reason;
           backup_filename += ".json";
           backup_path = wallet_dir / ".backups" / wallet_name / backup_filename;
