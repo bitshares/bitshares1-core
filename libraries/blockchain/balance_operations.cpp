@@ -193,6 +193,8 @@ namespace bts { namespace blockchain {
 
          case withdraw_multi_sig_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
             uint32_t valid_signatures = 0;
             for( auto sig : multi_sig.owners )
@@ -204,6 +206,8 @@ namespace bts { namespace blockchain {
 
          case withdraw_password_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
             try {
                if( password_condition.timeout < eval_state._current_state->now() )
@@ -230,6 +234,8 @@ namespace bts { namespace blockchain {
 
          case withdraw_option_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto option = current_balance_record->condition.as<withdraw_option>();
             try {
                if( eval_state._current_state->now() > option.date )
@@ -326,6 +332,8 @@ namespace bts { namespace blockchain {
     */
    void withdraw_all_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      FC_ASSERT( !"Withdraw all operation is not enabled yet!" );
+
       obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
 
       if( !current_balance_record )
@@ -372,6 +380,8 @@ namespace bts { namespace blockchain {
 
          case withdraw_multi_sig_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
             uint32_t valid_signatures = 0;
             for( auto sig : multi_sig.owners )
@@ -383,6 +393,8 @@ namespace bts { namespace blockchain {
 
          case withdraw_password_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto password_condition = current_balance_record->condition.as<withdraw_with_password>();
             try {
                if( password_condition.timeout < eval_state._current_state->now() )
@@ -409,6 +421,8 @@ namespace bts { namespace blockchain {
 
          case withdraw_option_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
             auto option = current_balance_record->condition.as<withdraw_option>();
             try {
                if( eval_state._current_state->now() > option.date )
@@ -492,6 +506,8 @@ namespace bts { namespace blockchain {
 
    void release_escrow_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      FC_ASSERT( !"Release escrow operation is not enabled yet!" );
+
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
 
@@ -529,6 +545,5 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_balance_record( *escrow_balance_record );
 
    } FC_CAPTURE_AND_RETHROW( (eval_state) )}
-
 
 } } // bts::blockchain

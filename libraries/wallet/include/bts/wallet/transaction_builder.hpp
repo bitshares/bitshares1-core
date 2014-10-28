@@ -116,7 +116,7 @@ namespace bts { namespace wallet {
       transaction_builder& update_account_registration(const wallet_account_record& account,
                                                        optional<variant> public_data,
                                                        optional<public_key_type> active_key,
-                                                       optional<share_type> delegate_pay,
+                                                       optional<uint8_t> delegate_pay,
                                                        optional<wallet_account_record> paying_account);
       /**
        * @brief Transfer funds from payer to recipient

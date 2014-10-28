@@ -2684,7 +2684,7 @@ namespace detail {
    wallet_transaction_record wallet::register_account(
            const string& account_to_register,
            const variant& public_data,
-           share_type delegate_pay_rate,
+           uint8_t delegate_pay_rate,
            const string& pay_with_account_name,
            account_type new_account_type,
            bool sign )
@@ -2715,7 +2715,7 @@ namespace detail {
                             public_data,
                             account_public_key, // master
                             account_public_key, // active
-                            delegate_pay_rate,
+                            delegate_pay_rate <= 100 ? delegate_pay_rate : -1,
                             meta_info );
 
       const auto pos = account_to_register.find( '.' );
@@ -2738,9 +2738,9 @@ namespace detail {
       auto required_fees = get_transaction_fee();
 
       bool as_delegate = false;
-      if( delegate_pay_rate >= 0  )
+      if( delegate_pay_rate <= 100  )
       {
-        required_fees += asset( my->_blockchain->get_delegate_registration_fee( delegate_pay_rate ), 0 );
+        required_fees += asset((delegate_pay_rate * my->_blockchain->get_delegate_registration_fee())/100,0);
         as_delegate = true;
       }
 
@@ -2911,7 +2911,7 @@ namespace detail {
            const string& account_to_update,
            const string& pay_from_account,
            optional<variant> public_data,
-           share_type delegate_pay_rate,
+           uint8_t delegate_pay_rate,
            bool sign )
    { try {
       FC_ASSERT( is_unlocked() );
@@ -2920,8 +2920,12 @@ namespace detail {
       owallet_account_record payer;
          if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
 
+      optional<uint8_t> pay;
+      if( delegate_pay_rate <= 100 )
+          pay = delegate_pay_rate;
+
       auto builder = create_transaction_builder();
-      builder->update_account_registration(account, public_data, optional<public_key_type>(), delegate_pay_rate, payer).
+      builder->update_account_registration(account, public_data, optional<public_key_type>(), pay, payer).
                finalize();
       if( sign )
          return builder->sign();
