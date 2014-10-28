@@ -417,7 +417,7 @@ transaction_builder& transaction_builder::finalize()
    else
       slate_id = 0;
 
-   pay_fees();
+   pay_fee();
 
    //outstanding_balance is pair<pair<account address, asset ID>, share_type>
    for( auto outstanding_balance : outstanding_balances )
@@ -462,14 +462,15 @@ std::vector<bts::mail::message> transaction_builder::encrypted_notifications()
    return messages;
 }
 
-void transaction_builder::pay_fees()
+void transaction_builder::pay_fee()
 { try {
    auto available_balances = all_positive_balances();
    asset required_fee(0, -1);
 
    //Choose an asset capable of paying the fee
    for( auto itr = available_balances.begin(); itr != available_balances.end(); ++itr )
-      if( itr->second >= _wimpl->self->get_transaction_fee(itr->first).amount )
+      if( _wimpl->self->asset_can_pay_fee(itr->first) &&
+          itr->second >= _wimpl->self->get_transaction_fee(itr->first).amount )
       {
          required_fee = _wimpl->self->get_transaction_fee(itr->first);
          transaction_record.fee = required_fee;

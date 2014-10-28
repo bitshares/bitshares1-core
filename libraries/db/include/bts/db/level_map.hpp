@@ -3,6 +3,7 @@
 #include <leveldb/db.h>
 #include <leveldb/comparator.h>
 #include <leveldb/cache.h>
+#include <leveldb/write_batch.h>
 
 #include <fc/filesystem.hpp>
 
@@ -263,7 +264,89 @@ namespace bts { namespace db {
            return true;
         } FC_RETHROW_EXCEPTIONS( warn, "error reading last item from database" ); }
 
-        void store( const Key& k, const Value& v, bool sync = false )
+        /** this class allows batched, atomic database writes.
+         *  usage:
+         *  {
+         *    write_batch batch = _db.create_batch();
+         *    batch.store(key1, value1);
+         *    batch.store(key2, value2);
+         *  }
+         *  when the batch goes out of scope, the operations are commited to the database
+         */
+        class write_batch
+        {
+        private:
+          leveldb::WriteBatch _batch;
+          level_map* _map;
+
+          friend class level_map;
+          write_batch(level_map* map) :
+            _map(map)
+          {
+          }
+        public:
+          ~write_batch()
+          {
+            try
+            {
+              commit();
+            }
+            catch (const fc::canceled_exception&)
+            {
+              throw;
+            }
+            catch (const fc::exception&)
+            {
+              // we're in a destructor, nothing we can do...
+            }
+          }
+
+          void commit()
+          {
+            try
+            {
+              FC_ASSERT(_map->is_open(), "Database is not open!");
+
+              ldb::Status status = _map->_db->Write(ldb::WriteOptions(), &_batch);
+              if (status.IsNotFound())
+                FC_THROW_EXCEPTION(fc::key_not_found_exception, "unable to find key while applying batch");
+              if (!status.ok())
+                FC_THROW_EXCEPTION(db_exception, "database error while applying batch: ${msg}", ("msg", status.ToString()));
+              _batch.Clear();
+            }
+            FC_RETHROW_EXCEPTIONS(warn, "error applying batch");
+          }
+
+          void abort()
+          {
+            _batch.Clear();
+          }
+
+          void store(const Key& k, const Value& v)
+          {
+            std::vector<char> kslice = fc::raw::pack(k);
+            ldb::Slice ks(kslice.data(), kslice.size());
+
+            auto vec = fc::raw::pack(v);
+            ldb::Slice vs(vec.data(), vec.size());
+
+            _batch.Put(ks, vs);
+          }
+
+          void remove(const Key& k, bool sync = false)
+          {
+            std::vector<char> kslice = fc::raw::pack(k);
+            ldb::Slice ks(kslice.data(), kslice.size());
+            _batch.Delete(ks);
+          }
+        };
+
+        write_batch create_batch()
+        {
+          return write_batch(this);
+        }
+
+        void store(const Key& k, const Value& v, bool sync = false)
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
