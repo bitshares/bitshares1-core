@@ -186,7 +186,7 @@ namespace bts { namespace wallet {
 
    void wallet_db::store_and_reload_generic_record( const generic_wallet_record& record )
    {
-       FC_ASSERT( is_open() );
+       FC_ASSERT( my->_records.is_open() );
        my->store_and_reload_generic_record( record );
    }
 
