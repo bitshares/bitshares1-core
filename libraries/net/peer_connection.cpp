@@ -400,14 +400,26 @@ namespace bts { namespace net
       return _message_connection.get_shared_secret();
     }
 
-    void peer_connection::clear_old_inventory_advertised_to_peer()
+    void peer_connection::clear_old_inventory()
     {
       VERIFY_CORRECT_THREAD();
       fc::time_point_sec oldest_inventory_to_keep(fc::time_point::now() - fc::minutes(BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES));
+
+      // expire old items from inventory_advertised_to_peer
       auto oldest_inventory_to_keep_iter = inventory_advertised_to_peer.get<timestamp_index>().lower_bound(oldest_inventory_to_keep);
       auto begin_iter = inventory_advertised_to_peer.get<timestamp_index>().begin();
-      //unsigned number_of_elements_to_discard = std::distance(begin_iter, oldest_inventory_to_keep_iter);
+      unsigned number_of_elements_advertised_to_peer_to_discard = std::distance(begin_iter, oldest_inventory_to_keep_iter);
       inventory_advertised_to_peer.get<timestamp_index>().erase(begin_iter, oldest_inventory_to_keep_iter);
+
+      // also expire items from inventory_peer_advertised_to_us
+      oldest_inventory_to_keep_iter = inventory_peer_advertised_to_us.get<timestamp_index>().lower_bound(oldest_inventory_to_keep);
+      begin_iter = inventory_peer_advertised_to_us.get<timestamp_index>().begin();
+      unsigned number_of_elements_peer_advertised_to_discard = std::distance(begin_iter, oldest_inventory_to_keep_iter);
+      inventory_peer_advertised_to_us.get<timestamp_index>().erase(begin_iter, oldest_inventory_to_keep_iter);
+      dlog("Expiring old inventory for peer ${peer}: removing ${to_peer} items advertised to peer (${remain_to_peer} left), and ${to_us} advertised to us (${remain_to_us} left)",
+           ("peer", get_remote_endpoint())
+           ("to_peer", number_of_elements_advertised_to_peer_to_discard)("remain_to_peer", inventory_advertised_to_peer.size())
+           ("to_us", number_of_elements_peer_advertised_to_discard)("remain_to_us", inventory_peer_advertised_to_us.size()));
     }
     // we have a higher limit for blocks than transactions so we will still fetch blocks even when transactions are throttled
     bool peer_connection::is_inventory_advertised_to_us_list_full_for_transactions() const
