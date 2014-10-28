@@ -1,12 +1,12 @@
 #include <bts/vote/types.hpp>
 
+#include <fc/crypto/digest.hpp>
+
 namespace bts { namespace vote {
 
-digest_type identity_property::digest()const
+digest_type identity_property::id()const
 {
-   digest_type::encoder enc;
-   fc::raw::pack(enc, *this);
-   return enc.result();
+   return fc::digest(*this);
 }
 
 digest_type signature_data::digest(const digest_type &id) const
@@ -28,15 +28,11 @@ public_key_type signature_data::signer(const digest_type &id) const
 
 digest_type identity::digest() const
 {
-   digest_type::encoder enc;
-   fc::raw::pack(enc, *this);
-   return enc.result();
+   return fc::digest(*this);
 }
 
 digest_type ballot::digest() const
 {
-   digest_type::encoder enc;
-   fc::raw::pack(enc, *this);
-   return enc.result();
+   return fc::digest(*this);
 }
 } } // namespace bts::vote

@@ -37,7 +37,7 @@ typedef fc::sha256 digest_type;
  */
 struct identity_property
 {
-   digest_type    digest()const;
+   digest_type    id()const;
 
    address        identity;
    fc::uint128    salt;
@@ -86,8 +86,8 @@ struct signed_identity_property : public identity_property
 struct identity
 {
    digest_type digest()const;
-   address                                                       owner;
-   unordered_map<digest_type, signed_identity_property>          properties;
+   address                                   owner;
+   vector<signed_identity_property>          properties;
 };
 
 /**
@@ -95,20 +95,18 @@ struct identity
  */
 struct signed_identity : public identity
 {
-   public_key_type     get_public_key()const
+   optional<public_key_type>     get_public_key()const
    {
       return owner_signature? public_key_type(fc::ecc::public_key(*owner_signature, digest()))
-                            : public_key_type();
+                            : optional<public_key_type>();
    }
-   digest_type         get_property_index_digest()const;
-   identity_property   get_property( const string& name )const;
-   void                sign_by_owner( const private_key_type& owner_key )
+   optional<identity_property>   get_property( const string& name )const;
+   void                          sign_by_owner( const private_key_type& owner_key )
    {
       owner_signature = owner_key.sign_compact(digest());
    }
 
    optional<compact_signature> owner_signature;
-   vector<compact_signature>   verifier_signatures;
 };
 
 /**
@@ -118,8 +116,8 @@ struct signed_identity : public identity
 struct ballot
 {
    uint32_t        election_id  = 0;
-   uint64_t        candidate_id = 0;    // hash of canidates full name lower case.
-   bool            approve      = true; // for approval voting
+   uint64_t        candidate_id = 0;    // Hash of canidate's full name lower case.
+   bool            approve      = true; // For approval voting
    time_point_sec  date;
 
    digest_type digest()const;
@@ -159,7 +157,7 @@ struct wallet_state
      private_key_type voter_id_private_key;
 
      //Need to define token_data...
-//     map<registrar_id, token_data>  token_state;// blinded/unblinded tokens generated for this registrar.
+//     map<registrar_id, token_data>  token_state; // blinded/unblinded tokens generated for this registrar.
 
      // signature of registrars on voter_id_public_key
      vector<compact_signature>  registrars;
@@ -174,6 +172,6 @@ FC_REFLECT( bts::vote::signature_data, (valid_from)(valid_until)(signature) )
 FC_REFLECT( bts::vote::identity_property, (identity)(salt)(name)(value) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity_property, (bts::vote::identity_property), (verifier_signatures) )
 FC_REFLECT( bts::vote::identity, (owner)(properties) )
-FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature)(verifier_signatures) )
+FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature) )
 FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
 FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )
