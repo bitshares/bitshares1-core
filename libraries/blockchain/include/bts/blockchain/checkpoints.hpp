@@ -13,5 +13,5 @@ const static std::map<uint32_t, bts::blockchain::block_id_type> CHECKPOINT_BLOCK
     { 600000, bts::blockchain::block_id_type( "f278db8722235343c9db9f077fe67c54a5f25f3b" ) },
     { 700000, bts::blockchain::block_id_type( "f120ff9b159661b9ac084a0a69c58dcbd79cbb49" ) },
     { 800000, bts::blockchain::block_id_type( "0e94ad17c598e42e5ec2f522a05bf4df6a1778da" ) },
-    { 855200, bts::blockchain::block_id_type( "d0dabe7b2a5c09a10f7b980dee02d8b48568adc8" ) }
+    { 863300, bts::blockchain::block_id_type( "9ad71eb07c202fdc81661d246c3d26ac2a4ba98f" ) }
 };
