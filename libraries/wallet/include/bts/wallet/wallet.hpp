@@ -83,6 +83,7 @@ namespace bts { namespace wallet {
 
          void                   set_transaction_fee( const asset& fee );
          asset                  get_transaction_fee( const asset_id_type& desired_fee_asset_id = 0 )const;
+         bool                   asset_can_pay_fee( const asset_id_type& desired_fee_asset_id = 0 )const;
 
          void                   set_transaction_expiration( uint32_t secs );
          uint32_t               get_transaction_expiration()const;

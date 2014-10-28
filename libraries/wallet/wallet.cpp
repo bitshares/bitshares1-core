@@ -3286,7 +3286,12 @@ namespace detail {
          }
       }
       return xts_fee;
-   } FC_CAPTURE_AND_RETHROW() }
+       } FC_CAPTURE_AND_RETHROW() }
+
+   bool wallet::asset_can_pay_fee(const asset_id_type& desired_fee_asset_id) const
+   {
+      return get_transaction_fee(desired_fee_asset_id).asset_id == desired_fee_asset_id;
+   }
 
    void wallet::set_last_scanned_block_number( uint32_t block_num )
    { try {
