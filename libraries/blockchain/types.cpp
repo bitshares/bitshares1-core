@@ -18,6 +18,8 @@ namespace bts { namespace blockchain {
     public_key_type::public_key_type( const std::string& base58str )
     {
        std::string prefix( BTS_ADDRESS_PREFIX );
+       if( base58str.size() == 53 )
+           prefix = std::string( "BTS" );
        const size_t prefix_len = prefix.size();
        FC_ASSERT( base58str.size() > prefix_len );
        FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );

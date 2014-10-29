@@ -165,6 +165,8 @@ namespace bts { namespace blockchain {
          {
             self->sanity_check();
             ilog( "Genesis state already initialized" );
+            if( chain_id == BTS_EXPECTED_CHAIN_ID )
+                chain_id = BTS_DESIRED_CHAIN_ID;
             return chain_id;
          }
 
@@ -208,6 +210,9 @@ namespace bts { namespace blockchain {
            chain_id = get_builtin_genesis_block_state_hash();
    #endif
          }
+
+         if( chain_id == BTS_EXPECTED_CHAIN_ID )
+             chain_id = BTS_DESIRED_CHAIN_ID;
 
          if( chain_id_only )
            return chain_id;
@@ -317,10 +322,6 @@ namespace bts { namespace blockchain {
             rec.current_share_supply = 0;
             rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
             rec.collected_fees = 0;
-            // need to transform the min_price according the precision
-            // 1 XTS = price USD, which means 1 satoshi_XTS = (price * usd_precision / xts_precsion) satoshi_USD
-            //rec.minimum_xts_price = price( ( asset.min_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
-            //rec.maximum_xts_price = price( ( asset.max_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
             self->store_asset_record( rec );
          }
 
