@@ -27,9 +27,9 @@ namespace bts { namespace blockchain {
 
    transaction_id_type signed_transaction::id()const
    {
-      fc::ripemd160::encoder enc;
+      fc::sha512::encoder enc;
       fc::raw::pack( enc, *this );
-      return enc.result();
+      return fc::ripemd160::hash( enc.result() );
    }
 
    transaction_id_type signed_transaction::permanent_id()const
