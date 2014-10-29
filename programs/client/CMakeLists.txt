@@ -8,6 +8,10 @@ target_link_libraries( bitshares_client
 target_include_directories( bitshares_client 
                             PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
+IF(WIN32 AND "${TARGET_ARCHITECTURE}" STREQUAL "x86")
+  SET_TARGET_PROPERTIES(bitshares_client PROPERTIES LINK_FLAGS "/LARGEADDRESSAWARE")
+ENDIF()
+
 if (ENABLE_INSTALLER)
   install(TARGETS bitshares_client RUNTIME DESTINATION bin)
 endif(ENABLE_INSTALLER)
