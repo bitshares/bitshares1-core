@@ -27,20 +27,19 @@ namespace bts { namespace blockchain {
 
    transaction_id_type signed_transaction::id()const
    {
-      fc::sha512::encoder enc;
-      fc::raw::pack(enc,*this);
-      return fc::ripemd160::hash( enc.result() );
+#ifndef WIN32
+#warning [BTSX] Run wallet record repair on wallet upgrade to re-index transactions
+#endif
+      fc::ripemd160::encoder enc;
+      fc::raw::pack( enc, *this );
+      return enc.result();
    }
 
    transaction_id_type signed_transaction::permanent_id()const
    {
-      signed_transaction cpy( *this );
-      cpy.signatures.clear();
-      // TODO: get rid of sha512 above
-      //return cpy.id();
-      fc::ripemd160::encoder enc;
-      fc::raw::pack( enc, cpy );
-      return enc.result();
+      signed_transaction copy( *this );
+      copy.signatures.clear();
+      return copy.id();
    }
 
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
@@ -160,7 +159,7 @@ namespace bts { namespace blockchain {
                                        const fc::variant& public_data,
                                        const public_key_type& master,
                                        const public_key_type& active,
-                                       share_type pay_rate,
+                                       uint8_t pay_rate,
                                        optional<account_meta_info> info )
    {
       register_account_operation op( name, public_data, master, active, pay_rate );
@@ -169,7 +168,7 @@ namespace bts { namespace blockchain {
    }
 
    void transaction::update_account( account_id_type account_id,
-                                  share_type delegate_pay_rate,
+                                  uint8_t delegate_pay_rate,
                                   const fc::optional<fc::variant>& public_data,
                                   const fc::optional<public_key_type>& active   )
    {

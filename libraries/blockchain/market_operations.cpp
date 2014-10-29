@@ -112,6 +112,9 @@ namespace bts { namespace blockchain {
 
       asset delta_amount  = this->get_amount();
 
+      // Only allow using the base asset as collateral
+      FC_ASSERT( delta_amount.asset_id == 0 );
+
       eval_state.validate_asset( delta_amount );
       auto  asset_to_short = eval_state._current_state->get_asset_record( short_index.order_price.quote_asset_id );
       FC_ASSERT( asset_to_short.valid() );
@@ -188,8 +191,8 @@ namespace bts { namespace blockchain {
       if( elapsed_sec < 0 ) elapsed_sec = 0;
 
       const asset principle = asset( current_cover->payoff_balance, delta_amount.asset_id );
-      const asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
-                                                                         elapsed_sec ) + principle;
+      asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
+                                                                   elapsed_sec ) + principle;
 
       asset principle_paid;
       asset interest_paid;

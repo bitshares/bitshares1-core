@@ -1152,21 +1152,21 @@ namespace bts { namespace net { namespace detail {
             unsigned total_items_to_send_to_this_peer = 0;
             for( const item_id& item_to_advertise : inventory_to_advertise )
               if( peer->inventory_advertised_to_peer.find(item_to_advertise) == peer->inventory_advertised_to_peer.end() &&
-                  peer->inventory_peer_advertised_to_us.find( item_to_advertise ) == peer->inventory_peer_advertised_to_us.end() )
+                  peer->inventory_peer_advertised_to_us.find(item_to_advertise) == peer->inventory_peer_advertised_to_us.end() )
               {
                 items_to_advertise_by_type[item_to_advertise.item_type].push_back( item_to_advertise.item_hash );
-                peer->clear_old_inventory_advertised_to_peer();
-                peer->inventory_advertised_to_peer.insert( peer_connection::timestamped_item_id(item_to_advertise, fc::time_point::now()) );
+                peer->inventory_advertised_to_peer.insert(peer_connection::timestamped_item_id(item_to_advertise, fc::time_point::now()));
                 ++total_items_to_send_to_this_peer;
                 if (item_to_advertise.item_type == trx_message_type)
-                  testnetlog( "advertising transaction ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash )("endpoint", peer->get_remote_endpoint() ));
-                dlog( "advertising item ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash )("endpoint", peer->get_remote_endpoint() ) );
+                  testnetlog("advertising transaction ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash)("endpoint", peer->get_remote_endpoint()));
+                dlog("advertising item ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash)("endpoint", peer->get_remote_endpoint()));
               }
-              dlog( "advertising ${count} new item(s ) of ${types} type(s ) to peer ${endpoint}",
-                   ( "count", total_items_to_send_to_this_peer )("types", items_to_advertise_by_type.size() )("endpoint", peer->get_remote_endpoint() ) );
+              dlog("advertising ${count} new item(s) of ${types} type(s) to peer ${endpoint}",
+                   ("count", total_items_to_send_to_this_peer)("types", items_to_advertise_by_type.size())("endpoint", peer->get_remote_endpoint()) );
             for( auto items_group : items_to_advertise_by_type )
-              inventory_messages_to_send.push_back( std::make_pair(peer, item_ids_inventory_message(items_group.first, items_group.second ) ) );
+              inventory_messages_to_send.push_back( std::make_pair(peer, item_ids_inventory_message(items_group.first, items_group.second)) );
           }
+          peer->clear_old_inventory();
         }
 
         for( auto iter = inventory_messages_to_send.begin(); iter != inventory_messages_to_send.end(); ++iter )
@@ -2526,7 +2526,7 @@ namespace bts { namespace net { namespace detail {
                originating_peer->is_inventory_advertised_to_us_list_full_for_transactions()) ||
               originating_peer->is_inventory_advertised_to_us_list_full())
             break;
-          originating_peer->inventory_peer_advertised_to_us.insert( advertised_item_id );
+          originating_peer->inventory_peer_advertised_to_us.insert(peer_connection::timestamped_item_id(advertised_item_id, fc::time_point::now()));
           if( !we_requested_this_item_from_a_peer )
           {
             auto insert_result = _items_to_fetch.insert(prioritized_item_id(advertised_item_id, _items_to_fetch_sequence_counter++));
@@ -2983,16 +2983,15 @@ namespace bts { namespace net { namespace detail {
           auto iter = peer->inventory_peer_advertised_to_us.find(block_message_item_id);
           if (iter != peer->inventory_peer_advertised_to_us.end())
           {
-            // this peer offered us the item; remove it from the list of items they offered us, and
-            // add it to the list of items we've offered them.  That will prevent us from offering them
-            // the same item back (no reason to do that; we already know they have it)
-            peer->inventory_peer_advertised_to_us.erase(iter);
-            peer->clear_old_inventory_advertised_to_peer();
-            peer->inventory_advertised_to_peer.insert(peer_connection::timestamped_item_id(block_message_item_id, fc::time_point::now()));
+            // this peer offered us the item.  It will eventually expire from the peer's 
+            // inventory_peer_advertised_to_us list after some time has passed (currently 2 minutes).
+            // For now, it will remain there, which will prevent us from offering the peer this 
+            // block back when we rebroadcast the block below
             peer->last_block_delegate_has_seen = block_message_to_process.block_id;
             peer->last_block_number_delegate_has_seen = block_number;
             peer->last_block_time_delegate_has_seen = block_time;
           }
+          peer->clear_old_inventory();
         }
         message_propagation_data propagation_data{message_receive_time, message_validated_time, originating_peer->node_id};
         broadcast( block_message_to_process, propagation_data );
@@ -4236,7 +4235,7 @@ namespace bts { namespace net { namespace detail {
       {
         bts::client::trx_message transaction_message_to_broadcast = item_to_broadcast.as<bts::client::trx_message>();
         hash_of_message_contents = transaction_message_to_broadcast.trx.id(); // for debugging
-        dlog( "broadcasting trx: ${trx}", ("trx",transaction_message_to_broadcast) );
+        dlog( "broadcasting trx: ${trx}", ("trx", transaction_message_to_broadcast) );
       }
       message_hash_type hash_of_item_to_broadcast = item_to_broadcast.id();
 
