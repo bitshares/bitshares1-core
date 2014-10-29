@@ -83,6 +83,12 @@ namespace bts { namespace blockchain {
              return extended_public_key( fc::ecc::private_key::regenerate(priv_key).get_public_key(), 
                                          chain_code);
           }
+          
+          bool operator==( const extended_private_key& k ) const
+          {
+		      return (this->priv_key == k.priv_key) &&
+			         (this->chain_code == k.chain_code);
+		  }
 
           fc::ecc::private_key_secret  priv_key;
           fc::sha256                   chain_code;
