@@ -302,9 +302,7 @@ namespace detail {
            if( current_version < 100 )
            {
                self->set_automatic_backups( true );
-               self->auto_backup( "version_upgrade" );
                self->set_transaction_scanning( self->get_my_delegates( enabled_delegate_status ).empty() );
-               self->set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
 
                /* Check for old index format genesis claim virtual transactions */
                auto present = false;
@@ -368,60 +366,9 @@ namespace detail {
                self->set_transaction_fee( asset( BTS_WALLET_DEFAULT_TRANSACTION_FEE ) );
            }
 
-           if( current_version < 103 )
-           {
-               const auto items = _wallet_db.get_balances();
-               for( const auto& balance_item : items )
-                   sync_balance_with_blockchain( balance_item.first );
-           }
-
-           if( current_version < 104 )
-           {
-#if 0
-               /* Transaction scanning was broken by commit 00ece3a78b2775c4b8817e394f59b6225dded80b */
-               const auto broken_time = time_point_sec( 1408463100 ); // 2014-08-19T15:45:00
-               auto broken_trxs = vector<transaction_id_type>();
-               const auto items = _wallet_db.get_transactions();
-               for( const auto& item : items )
-               {
-                   const auto id = item.first;
-                   const auto trx_rec = item.second;
-                   if( trx_rec.is_confirmed && trx_rec.created_time >= broken_time )
-                       broken_trxs.push_back( id );
-               }
-               if( broken_trxs.size() > 0 )
-               {
-                   const function<void( void )> rescan = [broken_trxs, this]()
-                   {
-                       for( const auto& id : broken_trxs )
-                       {
-                           const auto trx_rec = _wallet_db.lookup_transaction( id );
-                           if( !trx_rec.valid() ) continue;
-                           try
-                           {
-                               self->scan_transaction( trx_rec->block_num, trx_rec->record_id );
-                           }
-                           catch( ... )
-                           {
-                           }
-                       }
-                   };
-                   _unlocked_upgrade_tasks.push_back( rescan );
-               }
-#endif
-           }
-
            if( current_version < 106 )
            {
                self->set_transaction_expiration( BTS_WALLET_DEFAULT_TRANSACTION_EXPIRATION_SEC );
-
-#if 0
-               /* Transaction scanning was broken by commit d93521c7a2916eb0995dfadacd5ee74760f29d4b */
-               const uint32_t broken_block_num = 274524; // 2014-08-20T20:53:00
-               const auto block_num = std::min( broken_block_num, self->get_last_scanned_block_number() );
-               self->set_last_scanned_block_number( block_num );
-               _wallet_db.remove_transaction( transaction_id_type() );
-#endif
            }
 
            if( current_version < 107 )
@@ -434,6 +381,15 @@ namespace detail {
                    if( trx_rec.is_virtual && trx_rec.is_market && trx_rec.block_num == 554801 )
                        _wallet_db.remove_transaction( id );
                }
+           }
+
+           if( current_version < 108 )
+           {
+               const function<void( void )> repair = [&]()
+               {
+                   _wallet_db.repair_records( _wallet_password );
+               };
+               _unlocked_upgrade_tasks.push_back( repair );
            }
 
            if( _unlocked_upgrade_tasks.empty() )

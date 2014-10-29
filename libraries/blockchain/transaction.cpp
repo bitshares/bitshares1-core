@@ -27,9 +27,6 @@ namespace bts { namespace blockchain {
 
    transaction_id_type signed_transaction::id()const
    {
-#ifndef WIN32
-#warning [BTSX] Run wallet record repair on wallet upgrade to re-index transactions
-#endif
       fc::ripemd160::encoder enc;
       fc::raw::pack( enc, *this );
       return enc.result();
