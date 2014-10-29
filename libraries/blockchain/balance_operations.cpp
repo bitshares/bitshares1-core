@@ -260,7 +260,7 @@ namespace bts { namespace blockchain {
                  if( eval_state._current_state->now() < condition.vesting_start )
                      max_claimable = 0;
                  else if( eval_state._current_state->now() > condition.vesting_start + condition.vesting_duration )
-                     max_claimable = condition.total;
+                     max_claimable = condition.original_balance;
                  else
                  {
                      auto now = eval_state._current_state->now().sec_since_epoch();
@@ -269,17 +269,14 @@ namespace bts { namespace blockchain {
                      auto real_duration = now - start;
                      FC_ASSERT( real_duration > 0, "duration is not positive when it should be" );
                      FC_ASSERT( real_duration < max_duration, "duration is more than max possible duration" );
-                     max_claimable = real_duration * (condition.total / max_duration);
+                     max_claimable = real_duration * (condition.original_balance / max_duration);
                  }
 
-                 auto real_claimable = max_claimable - condition.claimed;
-                 FC_ASSERT( 0 < real_claimable && real_claimable < condition.total,
+                 auto real_claimable = max_claimable - (condition.original_balance - current_balance_record->balance);
+                 FC_ASSERT( 0 < real_claimable && real_claimable < condition.original_balance,
                             "Got an impossible claimable amount for a vesting balance" );
 
                  FC_ASSERT( this->amount <= real_claimable, "You cannot withdraw that much from this vesting balance" );
-                 condition.claimed += this->amount;
-                 current_balance_record->condition = condition;
-                 eval_state._current_state->store_balance_record( *current_balance_record );
 
              } FC_CAPTURE_AND_RETHROW( (condition) )
          }
@@ -311,9 +308,7 @@ namespace bts { namespace blockchain {
          }
       }
       
-      // Do not adjust the balance for a vesting condition - it is meaningless and always 0
-      if( (withdraw_condition_types)current_balance_record->condition.type != withdraw_vesting_type )
-          current_balance_record->balance -= this->amount;
+      current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_balance_record( *current_balance_record );
