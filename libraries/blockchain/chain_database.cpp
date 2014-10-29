@@ -150,9 +150,6 @@ namespace bts { namespace blockchain {
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
-#ifndef WIN32
-#warning [BTSX] Fix hardforking genesis config -> chain id changes
-#endif
       digest_type chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
       { try {
          digest_type chain_id = self->chain_id();
