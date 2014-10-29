@@ -3419,7 +3419,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        return _chain_db->calculate_supply( asset_id );
     }
 
-    asset client_impl::blockchain_calculate_debt( const string& asset )const
+    asset client_impl::blockchain_calculate_debt( const string& asset, bool include_interest )const
     {
        asset_id_type asset_id;
        if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
@@ -3427,7 +3427,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        else
            asset_id = _chain_db->get_asset_id( asset );
 
-       return _chain_db->calculate_debt( asset_id );
+       return _chain_db->calculate_debt( asset_id, include_interest );
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
