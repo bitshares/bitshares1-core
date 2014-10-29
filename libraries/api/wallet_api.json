@@ -1693,6 +1693,13 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_repair_records",
+         "description" : "tries to repair any inconsistent wallet account and key records",
+         "return_type" : "void",
+         "parameters"  : [],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_regenerate_keys",
          "description" : "regenerates private keys as part of wallet recovery",
          "return_type" : "int32_t",
