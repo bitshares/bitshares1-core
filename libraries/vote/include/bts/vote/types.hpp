@@ -129,13 +129,25 @@ struct identity_verification_request : public identity
 };
 
 /**
+ * @brief A response to the ID verification request
+ *
+ * verified_identity will be set iff accepted == true
+ */
+struct identity_verification_response
+{
+   bool accepted = false;
+   fc::optional<string> rejection_reason;
+   fc::optional<identity> verified_identity;
+};
+
+/**
  * A ballot is cast in a database/blockchain and recognizes
- * canidates by the hash of their name.
+ * candidates by the hash of their name.
  */
 struct ballot
 {
    uint32_t        election_id  = 0;
-   uint64_t        candidate_id = 0;    // Hash of canidate's full name lower case.
+   uint64_t        candidate_id = 0;    // Hash of candidate's full name lower case.
    bool            approve      = true; // For approval voting
    time_point_sec  date;
 
