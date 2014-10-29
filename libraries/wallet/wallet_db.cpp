@@ -674,6 +674,7 @@ namespace bts { namespace wallet {
                    if( transaction_record.trx.id() != signed_transaction().id()  )
                    {
                        remove_item( transaction_record.wallet_record_index );
+                       transactions.erase( transaction_record.record_id );
                        transaction_record.record_id = transaction_record.trx.id();
                        store_transaction( transaction_record );
                    }
