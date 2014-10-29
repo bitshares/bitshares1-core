@@ -26,8 +26,8 @@ string pretty_shorten( const string& str, size_t max_size )
 string pretty_timestamp( const time_point_sec& timestamp )
 {
     if( FILTER_OUTPUT_FOR_TESTS )
-      return "<d-ign>" + timestamp.to_iso_extended_string() + "</d-ign>";
-    return timestamp.to_iso_extended_string();
+        return "<d-ign>" + timestamp.to_iso_string() + "</d-ign>";
+    return timestamp.to_iso_string();
 }
 
 string pretty_path( const path& file_path )
