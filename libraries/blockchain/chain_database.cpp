@@ -165,6 +165,8 @@ namespace bts { namespace blockchain {
          {
             self->sanity_check();
             ilog( "Genesis state already initialized" );
+            if( chain_id == BTS_EXPECTED_CHAIN_ID )
+                chain_id = BTS_DESIRED_CHAIN_ID;
             return chain_id;
          }
 
@@ -208,6 +210,9 @@ namespace bts { namespace blockchain {
            chain_id = get_builtin_genesis_block_state_hash();
    #endif
          }
+
+         if( chain_id == BTS_EXPECTED_CHAIN_ID )
+             chain_id = BTS_DESIRED_CHAIN_ID;
 
          if( chain_id_only )
            return chain_id;
@@ -317,10 +322,6 @@ namespace bts { namespace blockchain {
             rec.current_share_supply = 0;
             rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
             rec.collected_fees = 0;
-            // need to transform the min_price according the precision
-            // 1 XTS = price USD, which means 1 satoshi_XTS = (price * usd_precision / xts_precsion) satoshi_USD
-            //rec.minimum_xts_price = price( ( asset.min_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
-            //rec.maximum_xts_price = price( ( asset.max_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
             self->store_asset_record( rec );
          }
 
@@ -3091,7 +3092,7 @@ namespace bts { namespace blockchain {
        return total;
    }
 
-   asset chain_database::calculate_debt( const asset_id_type& asset_id )const
+   asset chain_database::calculate_debt( const asset_id_type& asset_id, bool include_interest )const
    {
        const auto record = get_asset_record( asset_id );
        FC_ASSERT( record.valid() && record->is_market_issued() );
@@ -3100,8 +3101,18 @@ namespace bts { namespace blockchain {
 
        for( auto itr = my->_collateral_db.begin(); itr.valid(); ++itr )
        {
-           if( itr.key().order_price.quote_asset_id == asset_id )
-               total.amount += itr.value().payoff_balance;
+           const market_index_key& market_index = itr.key();
+           if( market_index.order_price.quote_asset_id != asset_id ) continue;
+           FC_ASSERT( market_index.order_price.base_asset_id == asset_id_type( 0 ) );
+
+           const collateral_record& record = itr.value();
+           const asset principle( record.payoff_balance, asset_id );
+           total += principle;
+           if( !include_interest ) continue;
+
+           const time_point_sec position_start_time = record.expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
+           const uint32_t position_age = (now() - position_start_time).to_seconds();
+           total += detail::market_engine::get_interest_owed( principle, record.interest_rate, position_age );
        }
 
        return total;

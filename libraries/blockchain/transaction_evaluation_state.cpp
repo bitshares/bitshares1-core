@@ -225,10 +225,7 @@ namespace bts { namespace blockchain {
     */
    void transaction_evaluation_state::sub_balance( const balance_id_type& balance_id, const asset& amount )
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] This check can be removed after BTSX_MARKET_FORK_12_BLOCK_NUM has passed
-#endif
-      if( balance_id != balance_id_type() || _current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+      if( balance_id != balance_id_type() )
       {
          auto provided_deposit_itr = provided_deposits.find( balance_id );
          if( provided_deposit_itr == provided_deposits.end() )

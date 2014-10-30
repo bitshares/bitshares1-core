@@ -28,19 +28,15 @@ namespace bts { namespace blockchain {
    transaction_id_type signed_transaction::id()const
    {
       fc::sha512::encoder enc;
-      fc::raw::pack(enc,*this);
+      fc::raw::pack( enc, *this );
       return fc::ripemd160::hash( enc.result() );
    }
 
    transaction_id_type signed_transaction::permanent_id()const
    {
-      signed_transaction cpy( *this );
-      cpy.signatures.clear();
-      // TODO: get rid of sha512 above
-      //return cpy.id();
-      fc::ripemd160::encoder enc;
-      fc::raw::pack( enc, cpy );
-      return enc.result();
+      signed_transaction copy( *this );
+      copy.signatures.clear();
+      return copy.id();
    }
 
    void signed_transaction::sign( const fc::ecc::private_key& signer, const digest_type& chain_id )
