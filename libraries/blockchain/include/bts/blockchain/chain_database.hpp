@@ -344,7 +344,7 @@ namespace bts { namespace blockchain {
          virtual ofeed_record               get_feed( const feed_index& )const override;
 
          asset                              calculate_supply( const asset_id_type& asset_id )const;
-         asset                              calculate_debt( const asset_id_type& asset_id )const;
+         asset                              calculate_debt( const asset_id_type& asset_id, bool include_interest = false )const;
          asset                              unclaimed_genesis();
 
          void                               dump_state( const fc::path& path )const;

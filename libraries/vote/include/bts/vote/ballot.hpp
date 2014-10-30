@@ -63,7 +63,7 @@ namespace bts { namespace vote {
    struct identity
    {
       digest_type digest()const;
-      unordered_map<digest_type, signed_identity_property>          properties;
+      vector<signed_identity_property>   properties;
    };
 
    /**
@@ -71,13 +71,12 @@ namespace bts { namespace vote {
     */
    struct signed_identity : public identity
    {
-      public_key_type     get_public_key()const;
-      digest_type         get_property_index_digest()const;
-      identity_property   get_property( const string& name )const;
+      optional<public_key_type>            get_public_key()const;
+      optional<signed_identity_property>   get_property( const string& name )const;
       // owner_signature = owner_key.sign( digest() )
-      void                sign_by_owner( const private_key_type& owner_key );
+      void                                 sign_by_owner( const private_key_type& owner_key );
 
-      optional<signature_type> owner_signature;
+      optional<signature_type>             owner_signature;
    };
 
    /**

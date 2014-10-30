@@ -35,6 +35,12 @@
               "name" : "asset",
               "type" : "string",
               "description" : "asset ticker symbol or ID to calculate debt for"
+            },
+            {
+              "name" : "include_interest",
+              "type" : "bool",
+              "description" : "true to include current outstanding interest and false otherwise",
+              "default_value" : "false"
             }
         ],
         "is_const" : true,

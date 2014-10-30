@@ -1986,6 +1986,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
+      _wallet->auto_backup( "before_account_recovery" );
       return _wallet->recover_accounts( accounts_to_recover, maximum_number_of_attempts );
     }
 
@@ -3418,7 +3419,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        return _chain_db->calculate_supply( asset_id );
     }
 
-    asset client_impl::blockchain_calculate_debt( const string& asset )const
+    asset client_impl::blockchain_calculate_debt( const string& asset, bool include_interest )const
     {
        asset_id_type asset_id;
        if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
@@ -3426,7 +3427,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        else
            asset_id = _chain_db->get_asset_id( asset );
 
-       return _chain_db->calculate_debt( asset_id );
+       return _chain_db->calculate_debt( asset_id, include_interest );
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
@@ -4174,8 +4175,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->fetch_burn_records( account );
    }
 
+   void client_impl::wallet_repair_records()
+   {
+      _wallet->auto_backup( "before_record_repair" );
+      return _wallet->repair_records();
+   }
+
    int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )
    {
+      _wallet->auto_backup( "before_key_regeneration" );
       return _wallet->regenerate_keys( account, number_to_regenerate );
    }
 

@@ -155,6 +155,8 @@ namespace bts { namespace blockchain {
 
       uint32_t checksum = 0;
       std::string prefix( BTS_ADDRESS_PREFIX );
+      if( base58str.size() == 74 )
+          prefix = std::string( "BTS" );
       const size_t prefix_len = prefix.size();
       FC_ASSERT( base58str.size() > prefix_len );
       FC_ASSERT( base58str.substr( 0, prefix_len ) == prefix );

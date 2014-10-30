@@ -262,6 +262,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
 
     const auto scan_create_asset = [&]( const create_asset_operation& op ) -> bool
     {
+        // TODO: Issuer could be asset_record::market_issued_asset
         const oaccount_record account_record = _blockchain->get_account_record( op.issuer_account_id );
         FC_ASSERT( account_record.valid() );
         const string& account_name = account_record->name;
