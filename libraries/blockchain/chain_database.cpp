@@ -603,8 +603,9 @@ namespace bts { namespace blockchain {
             const share_type accepted_paycheck = (BTS_MAX_DELEGATE_PAY_PER_BLOCK * pay_rate_percent) / 100;
             FC_ASSERT( accepted_paycheck >= 0 );
 
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
             delegate_record->delegate_info->votes_for += accepted_paycheck;
+            delegate_record->delegate_info->pay_balance += accepted_paycheck;
+            delegate_record->delegate_info->total_paid += accepted_paycheck;
             pending_state->store_account_record( *delegate_record );
 
             oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
