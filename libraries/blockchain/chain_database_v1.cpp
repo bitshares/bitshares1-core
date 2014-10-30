@@ -8,32 +8,36 @@ void chain_database_impl::pay_delegate_v1( const block_id_type& block_id,
                                            const pending_chain_state_ptr& pending_state,
                                            const public_key_type& block_signee )
 { try {
-      auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
-      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+      oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
+      FC_ASSERT( delegate_record.valid() );
+      delegate_record = pending_state->get_account_record( delegate_record->id );
+      FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
 
-      const auto pay_rate_percent = delegate_record->delegate_info->pay_rate;
+      const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
       FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
-      const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
-      const auto accepted_paycheck = ( pay_rate_percent * max_available_paycheck ) / 100;
 
-      auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
-      FC_ASSERT( pending_base_record.valid() );
+      const share_type max_available_paycheck = pending_state->get_delegate_pay_rate();
+      const share_type accepted_paycheck = (max_available_paycheck * pay_rate_percent) / 100;
+      const share_type burned_paycheck = max_available_paycheck - accepted_paycheck;
+      FC_ASSERT( max_available_paycheck >= accepted_paycheck );
+      FC_ASSERT( accepted_paycheck >= 0 );
+
+      oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+      FC_ASSERT( base_asset_record.valid() );
+      base_asset_record->current_share_supply -= burned_paycheck;
       if( pending_state->get_head_block_num() >= BTSX_SUPPLY_FORK_1_BLOCK_NUM )
       {
-          pending_base_record->collected_fees -= max_available_paycheck;
+          base_asset_record->collected_fees -= max_available_paycheck;
+          delegate_record->delegate_info->total_burned += burned_paycheck;
       }
       else
       {
-          pending_base_record->collected_fees -= accepted_paycheck;
+          base_asset_record->collected_fees -= accepted_paycheck;
       }
-      pending_state->store_asset_record( *pending_base_record );
-
-      delegate_record->delegate_info->pay_balance += accepted_paycheck;
-      delegate_record->delegate_info->votes_for += accepted_paycheck;
-      pending_state->store_account_record( *delegate_record );
-
-      auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
-      FC_ASSERT( base_asset_record.valid() );
-      base_asset_record->current_share_supply -= (max_available_paycheck - accepted_paycheck);
       pending_state->store_asset_record( *base_asset_record );
+
+      delegate_record->delegate_info->votes_for += accepted_paycheck;
+      delegate_record->delegate_info->pay_balance += accepted_paycheck;
+      delegate_record->delegate_info->total_paid += accepted_paycheck;
+      pending_state->store_account_record( *delegate_record );
 } FC_CAPTURE_AND_RETHROW( (block_id)(block_signee) ) }
