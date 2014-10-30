@@ -31,6 +31,14 @@ digest_type identity::digest() const
    return fc::digest(*this);
 }
 
+optional<identity_property> identity::get_property(const string& name) const
+{
+   for( const signed_identity_property& property : properties )
+      if( property.name == name )
+         return property;
+   return optional<identity_property>();
+}
+
 digest_type ballot::digest() const
 {
    return fc::digest(*this);

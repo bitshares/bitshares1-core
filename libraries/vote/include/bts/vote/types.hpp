@@ -24,6 +24,13 @@ using std::map;
 
 typedef fc::sha256 digest_type;
 
+enum request_status_enum {
+   awaiting_processing,
+   in_processing,
+   accepted,
+   rejected
+};
+
 /**
  *  An identity is tied to a private key, which is
  *  represented by the hash of its public key.  Each identity
@@ -86,6 +93,8 @@ struct signed_identity_property : public identity_property
 struct identity
 {
    digest_type digest()const;
+   optional<identity_property> get_property( const string& name )const;
+
    address                                   owner;
    vector<signed_identity_property>          properties;
 };
@@ -100,7 +109,6 @@ struct signed_identity : public identity
       return owner_signature? public_key_type(fc::ecc::public_key(*owner_signature, digest()))
                             : optional<public_key_type>();
    }
-   optional<identity_property>   get_property( const string& name )const;
    void                          sign_by_owner( const private_key_type& owner_key )
    {
       owner_signature = owner_key.sign_compact(digest());
@@ -126,6 +134,25 @@ struct identity_verification_request : public identity
    string id_front_photo;
    string id_back_photo;
    string voter_reg_photo;
+};
+
+/**
+ * @brief A summary of an identity verification request
+ *
+ * The objective is to keep this struct small (several kilobytes) as this is the in-memory record of an identity request
+ */
+struct identity_verification_request_summary : public identity {
+   identity_verification_request_summary()
+       :timestamp(fc::time_point::now())
+   {}
+
+   bool operator== (const identity_verification_request_summary& other) const {
+      return status == other.status && timestamp == other.timestamp;
+   }
+
+   request_status_enum status = awaiting_processing;
+   fc::time_point timestamp;
+   fc::optional<string> rejection_reason;
 };
 
 /**
@@ -206,5 +233,10 @@ FC_REFLECT( bts::vote::identity, (owner)(properties) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request, (bts::vote::identity),
                     (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo) )
+FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote::identity),
+                    (status)(timestamp)(rejection_reason) )
 FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
 FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )
+FC_REFLECT_TYPENAME( bts::vote::request_status_enum )
+FC_REFLECT_ENUM( bts::vote::request_status_enum,
+                 (awaiting_processing)(in_processing)(accepted)(rejected) )

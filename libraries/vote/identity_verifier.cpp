@@ -16,32 +16,7 @@ namespace bts { namespace vote {
 namespace detail {
 using namespace boost::multi_index;
 
-enum status_enum {
-   awaiting_processing,
-   in_processing,
-   accepted,
-   rejected
-};
-
-struct identity_record_summary : public vote::identity {
-   identity_record_summary()
-       :timestamp(fc::time_point::now())
-   {}
-
-   bool operator< (const identity_record_summary& other) const {
-      if( status != other.status ) return status < other.status;
-      return timestamp < other.timestamp;
-   }
-   bool operator== (const identity_record_summary& other) const {
-      return status == other.status && timestamp == other.timestamp;
-   }
-
-   status_enum status = awaiting_processing;
-   fc::time_point timestamp;
-   fc::optional<string> rejection_reason;
-};
-
-struct identity_record : public identity_record_summary {
+struct identity_record : public identity_verification_request_summary {
    identity_record(){}
    identity_record(const identity_verification_request &request, const fc::ecc::compact_signature& signature)
        : owner_key(fc::ecc::public_key(signature, request.digest())),
@@ -79,17 +54,25 @@ protected:
    struct by_status{};
 public:
    boost::multi_index_container<
-      identity_record_summary,
+      identity_verification_request_summary,
       indexed_by<
-         ordered_unique<
-            tag<by_status>,
-            boost::multi_index::identity<identity_record_summary>
-         >,
          //Allow constant time lookups by owner address
          hashed_unique<
             tag<by_owner>,
             member<vote::identity, bts::blockchain::address, &identity::owner>,
             std::hash<bts::blockchain::address>
+         >,
+         ordered_unique<
+            tag<by_status>,
+            composite_key<
+               identity_verification_request_summary,
+               member<identity_verification_request_summary,
+                      request_status_enum,
+                      &identity_verification_request_summary::status>,
+               member<identity_verification_request_summary,
+                      fc::time_point,
+                      &identity_verification_request_summary::timestamp>
+            >
          >
       >
    > _id_summary_db;
@@ -108,8 +91,9 @@ public:
          //Mark in_processing records as awaiting_processing again; no telling what might have happened
          //in the real world since it was marked as in_processing
          if( rec.status == in_processing )
-            rec.status = awaiting_processing;
-         _id_summary_db.insert(rec);
+            update_record_status(rec.timestamp, awaiting_processing);
+         else
+            _id_summary_db.insert(rec);
       }
    }
    void close()
@@ -117,12 +101,12 @@ public:
       if( is_open() )
          _id_db.close();
    }
-   bool is_open()
+   bool is_open() const
    {
       return _id_db.is_open();
    }
 
-   optional<identity_verification_response> store_new_request(identity_record&& rec)
+   optional<identity_verification_response> store_new_request(identity_record rec)
    {
       if( _id_summary_db.get<by_owner>().find(rec.owner) != _id_summary_db.get<by_owner>().end() )
          //If this owner has already started the verification process, just return the status.
@@ -133,9 +117,13 @@ public:
 
       return optional<identity_verification_response>();
    }
+   identity_record fetch_request_by_timestamp(fc::time_point timestamp) const
+   {
+      return _id_db.fetch(timestamp);
+   }
    optional<identity_verification_response> check_pending_identity(const address& owner) const
    {
-      identity_record_summary record;
+      identity_verification_request_summary record;
       auto& index = _id_summary_db.get<by_owner>();
       auto itr = index.find(owner);
 
@@ -162,6 +150,75 @@ public:
       response.verified_identity = record;
       return response;
    }
+
+   vector<identity_verification_request_summary> list_requests_by_status(request_status_enum status,
+                                                                         fc::time_point after_time,
+                                                                         uint32_t limit) const
+   {
+      vector<identity_verification_request_summary> results;
+      auto& index = _id_summary_db.get<by_status>();
+      auto end = index.end();
+      auto itr = index.lower_bound(boost::make_tuple(status, after_time));
+
+      if( limit == 0 || itr == end || itr->status != status )
+         return results;
+      if( itr->timestamp == after_time ) ++itr;
+
+      while( itr != end && results.size() < limit )
+         results.push_back(*itr++);
+
+      return results;
+   }
+
+   void commit_record(const identity_record& record)
+   {
+      _id_summary_db.insert(record);
+      _id_db.store(record.timestamp, record);
+   }
+   identity_record update_record_status(fc::time_point timestamp, request_status_enum status, bool commit = true)
+   {
+      //Fetch record from disk, set its status, and possibly commit it as well.
+      auto request = fetch_request_by_timestamp(timestamp);
+      request.status = status;
+      if( commit ) commit_record(request);
+      return request;
+   }
+
+   optional<identity_verification_request> take_next_request()
+   {
+      auto request_summary_vector = list_requests_by_status(awaiting_processing, fc::time_point(), 1);
+      if( request_summary_vector.empty() )
+         return optional<identity_verification_request>();
+
+      return update_record_status(request_summary_vector[0].timestamp, in_processing);
+   }
+   void resolve_request(time_point_sec timestamp, identity_verification_response response)
+   {
+      //We need to further update the record; don't bother to commit it just yet. We'll do it just once at the end.
+      identity_record request_record = update_record_status(timestamp, response.accepted? accepted : rejected, false);
+      if( response.accepted )
+      {
+         FC_ASSERT( response.verified_identity, "Identity accepted, but verified_identity was not provided." );
+         //For each verified property, copy the salt from the request to the verified property
+         for( signed_identity_property& property : response.verified_identity->properties )
+         {
+            auto oproperty = request_record.get_property(property.name);
+            FC_ASSERT( oproperty, "verified_identity contained property ${name} not in original request.",
+                       ("name", property.name) );
+            property.salt = request_record.get_property(property.name)->salt;
+         }
+         //Overwrite the request's properties with the now-salted approved properties. We don't want to keep any
+         //properties the verifier did not approve of, as we will later sign all properties in the record.
+         request_record.properties = std::move(response.verified_identity->properties);
+      } else {
+         //Request was rejected. Remove all properties, they must not be signed.
+         request_record.properties.clear();
+      }
+      //Copy over the rejection reason even if the request was accepted. No harm in passing it along if the verifier
+      //saw fit to set it.
+      request_record.rejection_reason = response.rejection_reason;
+      commit_record(request_record);
+   }
 };
 } // namespace detail
 
@@ -184,7 +241,7 @@ void identity_verifier::close()
    my->close();
 }
 
-bool identity_verifier::is_open()
+bool identity_verifier::is_open() const
 {
    return my->is_open();
 }
@@ -204,12 +261,36 @@ fc::optional<identity_verification_response> identity_verifier::get_verified_ide
    return my->check_pending_identity(owner);
 }
 
+vector<identity_verification_request_summary> identity_verifier::list_pending_requests(fc::time_point after_time,
+                                                                                       uint32_t limit) const
+{
+   SANITY_CHECK;
+
+   return my->list_requests_by_status(awaiting_processing, after_time, limit);
+}
+
+identity_verification_request identity_verifier::peek_pending_request(fc::time_point request_id) const
+{
+   SANITY_CHECK;
+
+   return my->fetch_request_by_timestamp(request_id);
+}
+
+fc::optional<identity_verification_request> identity_verifier::take_next_request()
+{
+   SANITY_CHECK;
+
+   return my->take_next_request();
+}
+
+void identity_verifier::resolve_request(fc::time_point request_id, const identity_verification_response& response)
+{
+   SANITY_CHECK;
+
+   my->resolve_request(request_id, response);
+}
+
 } } // namespace bts::vote
 
-FC_REFLECT_TYPENAME( bts::vote::detail::status_enum )
-FC_REFLECT_ENUM( bts::vote::detail::status_enum,
-                 (awaiting_processing)(in_processing)(accepted)(rejected) )
-FC_REFLECT_DERIVED( bts::vote::detail::identity_record_summary, (bts::vote::identity),
-                    (status)(timestamp)(rejection_reason) )
-FC_REFLECT_DERIVED( bts::vote::detail::identity_record, (bts::vote::detail::identity_record_summary),
+FC_REFLECT_DERIVED( bts::vote::detail::identity_record, (bts::vote::identity_verification_request_summary),
                     (owner_key)(person_photo)(id_card_front_photo)(id_card_back_photo)(voter_registration_photo) )
