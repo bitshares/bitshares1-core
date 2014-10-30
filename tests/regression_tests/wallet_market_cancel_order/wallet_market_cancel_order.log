@@ -9,7 +9,7 @@ OK
 default (unlocked) >>> wallet_asset_create XMO TEST_XMO delegate0 "CREATING AN ASSET" null 1000 100 true
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (TEST_XMO)                       1.70960 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (TEST_XMO)                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_list_blocks
@@ -25,17 +25,17 @@ default (unlocked) >>>  blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    TEST_XMO                CREATING AN ASSET                               MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.50101 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
 default (unlocked) >>> wallet_market_submit_short test 100 XTS 200 XMO 2
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 2.% APR                         0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 200.% APR                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_market_submit_short test 100 XTS 125 XMO
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 1.25% APR                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   test                test                100.00000 XTS           short XMO @ 125.% APR                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> balance test
@@ -46,24 +46,26 @@ default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    TEST_XMO                CREATING AN ASSET                               MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,997.29341 XTS     
+0     XTS    BitShares XTS           BitShares X Test Network                        GENESIS                         N/A       1,999,999,999.99901 XTS     
 default (unlocked) >>> wallet_account_transaction_history
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>0         GENESIS             delegate5           19,801,980.19801 XTS    claim PrLzgTE4wxcZ4DP3jMPBE9rvEMwhak5TgW    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>0         GENESIS             delegate8           19,801,980.19801 XTS    claim PYkHYETHwv1uVuSwR1A9BzdDNt8zKSXeFv    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>1         delegate0           test                10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>2         delegate0           delegate0           0.00000 XTS             create XMO (TEST_XMO)                       1.70960 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         test                test                100.00000 XTS           short XMO @ 2.% APR                         0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>4         test                test                100.00000 XTS           short XMO @ 1.25% APR                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>2         delegate0           delegate0           0.00000 XTS             create XMO (TEST_XMO)                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>3         test                SHORT-5ad609f3      100.00000 XTS           short XMO @ 200.% APR                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         test                SHORT-af112d92      100.00000 XTS           short XMO @ 125.% APR                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> wallet_market_order_list XMO XTS
 TYPE        QUANTITY            PRICE                         BALANCE             COST                COLLATERAL          ID                                      
 ==================================================================================================================================================================
-short_order 100.00000 XTS       2000. XMO / XTS               100.00000 XTS       200,000.00 XMO      N/A                 6a563d6122117410bff6fb923657ec7d32bbd43d
-short_order 100.00000 XTS       1250. XMO / XTS               100.00000 XTS       125,000.00 XMO      N/A                 bf427ad375365a1af64d678dc082c3fcaaf43b81
+short_order 100.00000 XTS       2000. XMO / XTS               100.00000 XTS       200,000.00 XMO      N/A                 5ad609f3656fd344147464520dae4c700dd3f1ac
+short_order 100.00000 XTS       1250. XMO / XTS               100.00000 XTS       125,000.00 XMO      N/A                 af112d92e3cff0725a508f745fa30ae18abca568
 default (unlocked) >>> help wallet_market_cancel_orders
 Usage:
 wallet_market_cancel_orders <order_ids>                                                               Cancel more than one order at a time
@@ -74,30 +76,32 @@ Parameters:
 
 Returns:
   transaction_record
-default (unlocked) >>> wallet_market_cancel_order 6a563d6122117410bff6fb923657ec7d32bbd43d
+default (unlocked) >>> wallet_market_cancel_order 5ad609f3656fd344147464520dae4c700dd3f1ac
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   test                test                100.00000 XTS           cancel SHORT-6a563d61                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   SHORT-5ad609f3      test                100.00000 XTS           cancel SHORT-5ad609f3                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> blockchain_market_list_shorts XMO
 AMOUNT                        COLLATERAL                    INTEREST RATE                 PRICE LIMIT                   ID                                      
 ================================================================================================================================
-125,000.00 XMO                100.00000 XTS                 125.000000 %                  NONE                          bf427ad375365a1af64d678dc082c3fcaaf43b81
+125,000.00 XMO                100.00000 XTS                 125.000000 %                  NONE                          af112d92e3cff0725a508f745fa30ae18abca568
 
 default (unlocked) >>> wallet_account_transaction_history
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
 <d-ign></d-ign>0         GENESIS             delegate0           19,801,980.19801 XTS    claim PiAmLNkx6fJD9e9GhigEhcyRSMmxmFkyns    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate4           19,801,980.19801 XTS    claim PkrWFQgshsBX5YGkPm581QT1NL7nfNhzpc    0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>0         GENESIS             delegate5           19,801,980.19801 XTS    claim PrLzgTE4wxcZ4DP3jMPBE9rvEMwhak5TgW    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate3           19,801,980.19801 XTS    claim PrAqJzqCULC3guyYGpQmggCDkQepFkLYmt    0.00000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>0         GENESIS             delegate8           19,801,980.19801 XTS    claim PYkHYETHwv1uVuSwR1A9BzdDNt8zKSXeFv    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate2           19,801,980.19801 XTS    claim PpTMxwrSXcGKVMwmF9MptTN9tFDhhxfVLV    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>0         GENESIS             delegate1           19,801,980.19801 XTS    claim Pf8LAwjSFbjX3mzYhzThhcFqo1SweKsD6c    0.00000 XTS         <d-ign></d-ign>
 <d-ign></d-ign>1         delegate0           test                10,000.00000 XTS                                                    0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>2         delegate0           delegate0           0.00000 XTS             create XMO (TEST_XMO)                       1.70960 XTS         <d-ign></d-ign>
-<d-ign></d-ign>3         test                test                100.00000 XTS           short XMO @ 2.% APR                         0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>4         test                test                100.00000 XTS           short XMO @ 1.25% APR                       0.50000 XTS         <d-ign></d-ign>
-<d-ign></d-ign>5         test                test                100.00000 XTS           cancel SHORT-6a563d61                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>2         delegate0           delegate0           0.00000 XTS             create XMO (TEST_XMO)                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>3         test                SHORT-5ad609f3      100.00000 XTS           short XMO @ 200.% APR                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>4         test                SHORT-af112d92      100.00000 XTS           short XMO @ 125.% APR                       0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>5         SHORT-5ad609f3      test                100.00000 XTS           cancel SHORT-5ad609f3                       0.50000 XTS         <d-ign></d-ign>
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
