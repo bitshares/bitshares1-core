@@ -70,28 +70,22 @@ namespace bts { namespace client {
                   "5.101.106.138:1776",
                   "5.101.106.138:1777",
                   "5.101.106.138:1778",
+                  "54.77.51.177:1776",
+                  "54.79.27.224:1776",
                   "61.129.33.213:1776",
-                  "80.240.133.79:1776",
-                  "80.240.133.79:1777",
-                  "80.240.133.79:1778",
                   "84.238.140.192:42577",
-                  "89.187.144.203:8764",
+                  "85.214.53.224:1776",
                   "95.85.33.16:8764",
                   "104.131.35.149:1776",
+                  "106.185.26.162:1776",
                   "178.62.50.61:1776",
                   "178.62.50.61:1777",
                   "178.62.50.61:1778",
                   "178.62.50.61:1779",
                   "178.62.157.161:1776",
                   "180.153.142.120:1777",
+                  "185.25.22.21:1776",
                   "188.226.195.137:60696"
-#if !defined(_WIN32) || !defined(_M_AMD64)
-				  // we're currently experiencing an intermittent crash on 64-bit windows
-				  // when adding nodes with symbolic DNS names.  Disable them until
-				  // we get it sorted out
-				  ,"auseednode.minebitshares.com:1776",
-                  "euseednode.minebitshares.com:1776"
-#endif
                   }),
           mail_server_enabled(false),
           wallet_enabled(true),
@@ -134,7 +128,7 @@ namespace bts { namespace client {
     {
        public:
          client(const std::string& user_agent);
-         client(const std::string& user_agent, 
+         client(const std::string& user_agent,
                 bts::net::simulated_network_ptr network_to_connect_to);
 
          void simulate_disconnect( bool state );

@@ -24,7 +24,7 @@ static int stdlib_rand_bytes(unsigned char *buf, int num)
   while (num)
   {
     seed = fc::sha512::hash(seed);
-  
+
     int bytes_to_copy = std::min<int>(num, sizeof(seed));
     memcpy(buf, &seed, bytes_to_copy);
     num -= bytes_to_copy;

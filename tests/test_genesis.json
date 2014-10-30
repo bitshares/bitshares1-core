@@ -1,10 +1,5 @@
 {
-  "supply": 10000000000000,
-  "precision": 1000000,
-  "timestamp": "20140620T144027",
-  "base_name": "BitShares XTS",
-  "base_symbol": "XTS",
-  "base_description": "Stake in future BitShares X chains",
+  "timestamp": "2014-06-20T14:40:27",
   "names": [{
       "name": "delegate0",
       "delegate_pay_rate": "100",

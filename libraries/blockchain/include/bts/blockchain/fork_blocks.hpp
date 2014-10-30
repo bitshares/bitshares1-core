@@ -1,11 +1,16 @@
+/** @file bts/blockchain/fork_blocks.hpp
+ *  @brief Defines global block number constants for when hardforks take effect
+ */
+
 #pragma once
 
 #include <stdint.h>
 #include <vector>
 
-/** @file bts/blockchain/fork_blocks.hpp
- *  @brief Defines global block number constants for when hardforks take effect
- */
+#define BTS_EXPECTED_CHAIN_ID                   digest_type( "fe9ebbafee5edcb76430739325dc376ad4756f313da96e59359c3214891e8cfa" )
+#define BTS_DESIRED_CHAIN_ID                    digest_type( "75c11a81b7670bbaa721cc603eadb2313756f94a3bcbb9928e9101432701ac5f" )
+
+
 #define BTSX_MARKET_FORK_1_BLOCK_NUM            274000
 #define BTSX_MARKET_FORK_2_BLOCK_NUM            316001
 #define BTSX_MARKET_FORK_3_BLOCK_NUM            340000
