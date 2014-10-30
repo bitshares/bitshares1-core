@@ -63,6 +63,7 @@
 #include <boost/accumulators/statistics/rolling_mean.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/version.hpp>
+#include <bts/vote/identity_verifier.hpp>
 
 #include <boost/filesystem/fstream.hpp>
 
@@ -730,6 +731,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             chain_database_ptr                                      _chain_db = nullptr;
             unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
             wallet_ptr                                              _wallet = nullptr;
+            std::shared_ptr<bts::vote::identity_verifier>           _id_verifier = nullptr;
             std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
             std::shared_ptr<bts::mail::client>                      _mail_client = nullptr;
             fc::future<void>                                        _delegate_loop_complete;
@@ -1788,6 +1790,13 @@ config load_config( const fc::path& datadir, bool enable_ulog )
         }
         my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
         my->_mail_client->open( data_dir / "mail_client" );
+
+        if (my->_config.identity_verifier_enabled)
+        {
+          FC_ASSERT( my->_config.wallet_enabled, "Identity verifier is enabled and requires wallet to be enabled!" );
+          my->_id_verifier = std::make_shared<bts::vote::identity_verifier>();
+          my->_id_verifier->open( data_dir / "id_verifier" );
+        }
 
         //if we are using a simulated network, _p2p_node will already be set by client's constructor
         if (!my->_p2p_node)

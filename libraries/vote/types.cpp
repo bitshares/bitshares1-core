@@ -1,6 +1,7 @@
 #include <bts/vote/types.hpp>
 
 #include <fc/crypto/digest.hpp>
+#include <fc/io/raw_variant.hpp>
 
 namespace bts { namespace vote {
 
