@@ -150,9 +150,6 @@ namespace bts { namespace blockchain {
           _pending_trx_state = std::make_shared<pending_chain_state>( self->shared_from_this() );
       } FC_CAPTURE_AND_RETHROW( (data_dir) ) }
 
-#ifndef WIN32
-#warning [BTSX] Fix hardforking genesis config -> chain id changes
-#endif
       digest_type chain_database_impl::initialize_genesis( const optional<path>& genesis_file, bool chain_id_only )
       { try {
          digest_type chain_id = self->chain_id();
@@ -2953,7 +2950,7 @@ namespace bts { namespace blockchain {
        return total;
    }
 
-   asset chain_database::calculate_debt( const asset_id_type& asset_id )const
+   asset chain_database::calculate_debt( const asset_id_type& asset_id, bool include_interest )const
    {
        const auto record = get_asset_record( asset_id );
        FC_ASSERT( record.valid() && record->is_market_issued() );
@@ -2962,8 +2959,18 @@ namespace bts { namespace blockchain {
 
        for( auto itr = my->_collateral_db.begin(); itr.valid(); ++itr )
        {
-           if( itr.key().order_price.quote_asset_id == asset_id )
-               total.amount += itr.value().payoff_balance;
+           const market_index_key& market_index = itr.key();
+           if( market_index.order_price.quote_asset_id != asset_id ) continue;
+           FC_ASSERT( market_index.order_price.base_asset_id == asset_id_type( 0 ) );
+
+           const collateral_record& record = itr.value();
+           const asset principle( record.payoff_balance, asset_id );
+           total += principle;
+           if( !include_interest ) continue;
+
+           const time_point_sec position_start_time = record.expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
+           const uint32_t position_age = (now() - position_start_time).to_seconds();
+           total += detail::market_engine::get_interest_owed( principle, record.interest_rate, position_age );
        }
 
        return total;

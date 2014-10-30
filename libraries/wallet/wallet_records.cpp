@@ -25,7 +25,8 @@ namespace bts { namespace wallet {
 
       // just to double check... we should find out if there is
       // a problem ASAP...
-      decrypt_key( password );
+      extended_private_key k_dec = decrypt_key( password );
+      FC_ASSERT( k_dec == k );
    } FC_CAPTURE_AND_RETHROW() }
 
    bool key_data::has_private_key()const
