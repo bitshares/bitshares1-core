@@ -573,6 +573,10 @@ namespace bts { namespace wallet {
        FC_ASSERT( is_open() );
        const private_key_type one_time_private_key = private_key_type::generate();
 
+       const address one_time_address = address( one_time_private_key.get_public_key() );
+       const owallet_key_record key_record = lookup_key( one_time_address );
+       FC_ASSERT( !key_record.valid() );
+
        key_data key;
        key.public_key = one_time_private_key.get_public_key();
        key.encrypt_private_key( password, one_time_private_key );
