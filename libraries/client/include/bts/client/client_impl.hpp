@@ -14,6 +14,7 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/rolling_mean.hpp>
+#include <bts/vote/identity_verifier.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -257,6 +258,7 @@ public:
    chain_database_ptr                                      _chain_db = nullptr;
    unordered_map<transaction_id_type, signed_transaction>  _pending_trxs;
    wallet_ptr                                              _wallet = nullptr;
+   std::shared_ptr<bts::vote::identity_verifier>           _id_verifier = nullptr;
    std::shared_ptr<bts::mail::server>                      _mail_server = nullptr;
    std::shared_ptr<bts::mail::client>                      _mail_client = nullptr;
    fc::future<void>                                        _delegate_loop_complete;

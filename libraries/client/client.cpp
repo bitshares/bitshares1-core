@@ -1334,6 +1334,13 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
       my->_mail_client = std::make_shared<bts::mail::client>(my->_wallet, my->_chain_db);
       my->_mail_client->open( data_dir / "mail_client" );
 
+      if (my->_config.identity_verifier_enabled)
+      {
+         FC_ASSERT( my->_config.wallet_enabled, "Identity verifier is enabled and requires wallet to be enabled!" );
+         my->_id_verifier = std::make_shared<bts::vote::identity_verifier>();
+         my->_id_verifier->open( data_dir / "id_verifier" );
+      }
+
       //if we are using a simulated network, _p2p_node will already be set by client's constructor
       if (!my->_p2p_node)
          my->_p2p_node = std::make_shared<bts::net::node>(my->_user_agent);
