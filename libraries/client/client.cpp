@@ -467,8 +467,6 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return cfg;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
 
-
-
 namespace detail
 {
 //should this function be moved to rpc server eventually? probably...
@@ -533,7 +531,6 @@ void client_impl::configure_rpc_server(config& cfg,
    {
       std::cout << "Not starting RPC server, use --server to enable the RPC interface\n";
    }
-
 }
 
 void client_impl::configure_chain_server(config& cfg, const program_options::variables_map& option_variables)
@@ -885,8 +882,8 @@ bool client_impl::handle_message(const bts::net::message& message_to_handle, boo
 }
 
 /**
-      *  Get the hash of all blocks after from_id
-      */
+  *  Get the hash of all blocks after from_id
+  */
 std::vector<bts::net::item_hash_t> client_impl::get_item_ids(uint32_t item_type,
                                                              const std::vector<bts::net::item_hash_t>& blockchain_synopsis,
                                                              uint32_t& remaining_item_count,
@@ -1831,8 +1828,8 @@ fc::ecc::public_key client_notification::signee() const
 }
 
 /**
-    * Detail Implementation
-    */
+  * Detail Implementation
+  */
 namespace detail  {
 
 //This function is here instead of in debug_api.cpp because it needs load_config() which is local to client.cpp
