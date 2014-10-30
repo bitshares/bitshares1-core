@@ -55,7 +55,9 @@ with open("testnet_setup_log.txt", "w") as log:
 os.rename("tmp_config", "libraries/blockchain/include/bts/blockchain/config.hpp")
 
 subprocess.call(["make", "-j4"])
-subprocess.call(["./programs/client/bitshares_client", "--input-log testnet_setup_log.txt"])
+subprocess.call(["./programs/client/bitshares_client", "--input-log", "testnet_setup_log.txt"])
 
 
-print "Setup complete. 
+print "\n\n"
+print "Setup complete. Delegates are in wallet 'default' with password 'password'."
+print "You may wish to commit and push your changes so others can join your network."
