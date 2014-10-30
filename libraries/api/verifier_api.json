@@ -1,0 +1,20 @@
+{
+    "category": "ID Verification Server Methods",
+    "methods" :
+    [
+        {
+            "method_name": "verifier_store_new_request",
+            "description": "Stores a new ID verification request, or returns the response for a duplicate request.",
+            "return_type": "message",
+            "parameters" : [
+                {
+                    "name" : "request",
+                    "type" : "message",
+                    "description" : "Ciphertext of ID verification request."
+                }
+            ],
+            "is_const" : false,
+            "prerequisites" : ["wallet_unlocked"]
+        }
+    ]
+}

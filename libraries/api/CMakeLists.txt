@@ -27,6 +27,7 @@ set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/types.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/general_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/mail_api.json"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/verifier_api.json"
                            "${CMAKE_CURRENT_SOURCE_DIR}/debug_api.json")
 source_group("JSON Files" FILES ${json_description_files})
 
