@@ -1,6 +1,7 @@
 #include <bts/vote/identity_verifier.hpp>
 #include <bts/db/level_map.hpp>
 
+#include <fc/io/raw_variant.hpp>
 #include <fc/reflect/variant.hpp>
 
 #include <boost/multi_index_container.hpp>
