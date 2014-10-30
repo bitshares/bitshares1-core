@@ -160,5 +160,5 @@ void stcp_socket::accept()
 }
 
 
-}} // namespace bts::network
+}} // namespace bts::net
 
