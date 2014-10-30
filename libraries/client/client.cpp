@@ -1985,6 +1985,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
 
     int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
     {
+      _wallet->auto_backup( "before_account_recovery" );
       return _wallet->recover_accounts( accounts_to_recover, maximum_number_of_attempts );
     }
 
@@ -2020,8 +2021,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             bool anonymous )
     {
         const auto record = _wallet->burn_asset( amount_to_transfer, asset_symbol,
-                                                     from_account_name, for_or_against, to_account_name,
-                                                     public_message, anonymous );
+                                                 from_account_name, for_or_against, to_account_name,
+                                                 public_message, anonymous );
         network_broadcast_transaction( record.trx );
         return record;
     }
@@ -3253,10 +3254,10 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        info["max_blockchain_size"]          = BTS_BLOCKCHAIN_MAX_SIZE;
 
        info["address_prefix"]               = BTS_ADDRESS_PREFIX;
-       info["inactivity_fee_apr"]           = BTS_BLOCKCHAIN_INACTIVE_FEE_APR;
        info["relay_fee"]                    = _chain_db->get_relay_fee();
 
        info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
+       info["delegate_reg_fee"]             = _chain_db->get_delegate_registration_fee();
 
        info["name_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
        info["memo_size_max"]                = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
@@ -3297,6 +3298,8 @@ config load_config( const fc::path& datadir, bool enable_ulog )
           info["blockchain_average_delegate_participation"]     = participation;
 
       info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
+
+      info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
 
       info["blockchain_share_supply"]                           = variant();
       const auto share_record                                   = _chain_db->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
@@ -3415,7 +3418,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        return _chain_db->calculate_supply( asset_id );
     }
 
-    asset client_impl::blockchain_calculate_debt( const string& asset )const
+    asset client_impl::blockchain_calculate_debt( const string& asset, bool include_interest )const
     {
        asset_id_type asset_id;
        if( std::all_of( asset.begin(), asset.end(), ::isdigit ) )
@@ -3423,7 +3426,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
        else
            asset_id = _chain_db->get_asset_id( asset );
 
-       return _chain_db->calculate_debt( asset_id );
+       return _chain_db->calculate_debt( asset_id, include_interest );
     }
 
     void client_impl::wallet_rescan_blockchain( uint32_t start, uint32_t count, bool fast_scan )
@@ -3499,7 +3502,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
     wallet_transaction_record client_impl::wallet_account_register( const string& account_name,
                                                                     const string& pay_with_account,
                                                                     const fc::variant& data,
-                                                                    const share_type& delegate_pay_rate,
+                                                                    uint8_t delegate_pay_rate,
                                                                     const string& new_account_type )
     { try {
         const auto record = _wallet->register_account( account_name, data, delegate_pay_rate, pay_with_account, variant(new_account_type).as<account_type>() );
@@ -3522,7 +3525,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
             const string& account_to_update,
             const string& pay_from_account,
             const variant& public_data,
-            const share_type& delegate_pay_rate )
+            uint8_t delegate_pay_rate )
     {
        const auto record = _wallet->update_registered_account( account_to_update, pay_from_account, public_data, delegate_pay_rate );
        network_broadcast_transaction( record.trx );
@@ -4176,8 +4179,15 @@ config load_config( const fc::path& datadir, bool enable_ulog )
       return _chain_db->fetch_burn_records( account );
    }
 
+   void client_impl::wallet_repair_records()
+   {
+      _wallet->auto_backup( "before_record_repair" );
+      return _wallet->repair_records();
+   }
+
    int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )
    {
+      _wallet->auto_backup( "before_key_regeneration" );
       return _wallet->regenerate_keys( account, number_to_regenerate );
    }
 

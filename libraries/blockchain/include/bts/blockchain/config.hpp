@@ -5,13 +5,13 @@
 /* Comment out this line for a non-test network */
 #define BTS_TEST_NETWORK
 
-#define BTS_TEST_NETWORK_VERSION                            39
+#define BTS_TEST_NETWORK_VERSION                            40
 
 /** @file bts/blockchain/config.hpp
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     150
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     153
 
 /**
  *  The address prepended to string representation of
@@ -37,11 +37,13 @@
  * The number of delegates that the blockchain is designed to support
  */
 #define BTS_BLOCKCHAIN_NUM_DELEGATES                        uint32_t(101)
-#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       (BTS_BLOCKCHAIN_NUM_DELEGATES + BTS_BLOCKCHAIN_NUM_DELEGATES/10)
+#define BTS_BLOCKCHAIN_MAX_SLATE_SIZE                       (BTS_BLOCKCHAIN_NUM_DELEGATES + (BTS_BLOCKCHAIN_NUM_DELEGATES/10))
 #define BTS_BLOCKCHAIN_MIN_FEEDS                            ((BTS_BLOCKCHAIN_NUM_DELEGATES/2) + 1)
 #define BTS_BLOCKCHAIN_MAX_UNDO_HISTORY                     (BTS_BLOCKCHAIN_NUM_DELEGATES*4)
 
 #define BTS_BLOCKCHAIN_ENABLE_NEGATIVE_VOTES                false
+
+#define BTS_MAX_DELEGATE_PAY_PER_BLOCK                      int64_t( 50 * BTS_BLOCKCHAIN_PRECISION ) // 50 XTS
 
 /**
  * To prevent a delegate from producing blocks on split network,
@@ -72,7 +74,6 @@
 #define BTS_BLOCKCHAIN_MAX_MEMO_SIZE                        19 // bytes
 #define BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE                      5 // characters
 #define BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE                      3 // characters
-#define BTS_BLOCKCHAIN_PROPOSAL_VOTE_MESSAGE_MAX_SIZE       1024 // bytes
 
 /**
  *  The maximum amount that can be issued for user assets.
@@ -111,8 +112,6 @@
 
 /** defines the maximum block size allowed, 2 MB per hour */
 #define BTS_BLOCKCHAIN_MAX_BLOCK_SIZE                       (10 * BTS_BLOCKCHAIN_AVERAGE_TRX_SIZE * BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE )
-
-#define BTS_BLOCKCHAIN_INACTIVE_FEE_APR                     10  // 10% per year
 
 /**
     This constant defines the number of blocks a delegate must produce before

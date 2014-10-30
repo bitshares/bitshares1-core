@@ -266,11 +266,7 @@ void wallet_impl::scan_registered_accounts()
         {
            auto existing_account_record = _wallet_db.lookup_account( key_rec->account_address );
            if( existing_account_record.valid() )
-           {
-              blockchain::account_record& as_blockchain_account_record = *existing_account_record;
-              as_blockchain_account_record = scanned_account_record;
-              _wallet_db.cache_account( *existing_account_record );
-           }
+              _wallet_db.store_account( scanned_account_record );
         }
    } );
    ilog( "account scan complete" );
@@ -631,9 +627,7 @@ bool wallet_impl::scan_register_account( const register_account_operation& op, w
     auto account_name_rec = _blockchain->get_account_record( op.name );
     FC_ASSERT( account_name_rec.valid() );
 
-    blockchain::account_record& as_blockchain_account_record = *opt_account;
-    as_blockchain_account_record = *account_name_rec;
-    _wallet_db.cache_account( *opt_account );
+    _wallet_db.store_account( *account_name_rec );
 
     for( auto& entry : trx_rec.ledger_entries )
     {
@@ -672,9 +666,7 @@ bool wallet_impl::scan_update_account( const update_account_operation& op, walle
     auto account_name_rec = _blockchain->get_account_record( oaccount->name );
     FC_ASSERT( account_name_rec.valid() );
 
-    blockchain::account_record& as_blockchain_account_record = *opt_account;
-    as_blockchain_account_record = *account_name_rec;
-    _wallet_db.cache_account( *opt_account );
+    _wallet_db.store_account( *account_name_rec );
 
     if( !opt_account->is_my_account )
       return false;
