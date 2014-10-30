@@ -44,9 +44,8 @@ enum request_status_enum {
  */
 struct identity_property
 {
-   digest_type    id()const;
+   digest_type    id(const address& identity)const;
 
-   address        identity;
    fc::uint128    salt;
    string         name;
    variant        value;
@@ -227,7 +226,7 @@ struct wallet_state
 } } // bts::vote
 
 FC_REFLECT( bts::vote::signature_data, (valid_from)(valid_until)(signature) )
-FC_REFLECT( bts::vote::identity_property, (identity)(salt)(name)(value) )
+FC_REFLECT( bts::vote::identity_property, (salt)(name)(value) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity_property, (bts::vote::identity_property), (verifier_signatures) )
 FC_REFLECT( bts::vote::identity, (owner)(properties) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature) )

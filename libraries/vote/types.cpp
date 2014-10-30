@@ -4,7 +4,7 @@
 
 namespace bts { namespace vote {
 
-digest_type identity_property::id()const
+digest_type identity_property::id(const blockchain::address& identity)const
 {
    return fc::digest(*this);
 }
