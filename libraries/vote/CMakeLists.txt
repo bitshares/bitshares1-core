@@ -2,6 +2,7 @@ file(GLOB HEADERS "include/bts/vote/*.hpp")
 
 add_library( bts_vote 
              types.cpp
+             messages.cpp
              identity_verifier.cpp
              ${HEADERS})
 

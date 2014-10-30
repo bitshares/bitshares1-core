@@ -10,6 +10,15 @@ digest_type identity_property::id(const blockchain::address& identity)const
    return fc::digest(*this);
 }
 
+signature_data signature_data::sign(const blockchain::private_key_type& signer, const digest_type& identity_property_id, fc::time_point_sec valid_from, fc::time_point_sec valid_until)
+{
+   signature_data data;
+   data.valid_from = valid_from;
+   data.valid_until = valid_until;
+   data.signature = signer.sign_compact(data.digest(identity_property_id));
+   return data;
+}
+
 digest_type signature_data::digest(const digest_type &id) const
 {
    digest_type::encoder enc;

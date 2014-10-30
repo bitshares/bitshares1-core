@@ -28,7 +28,8 @@ namespace bts { namespace mail {
        market_notice        = -1, // not encrypted
        encrypted            = 0,
        transaction_notice   = 1,
-       email                = 3
+       email                = 3,
+       user_defined         = 100 // All message types > 100 are reserved for implementation-specific usage
    };
 
    struct transaction_notice_message

@@ -58,11 +58,10 @@ struct identity_property
  */
 struct signature_data
 {
-   void sign( const private_key_type& signer,
-              const digest_type& identity_property_id )
-   {
-      signature = signer.sign_compact(digest(identity_property_id));
-   }
+   static signature_data sign( const private_key_type& signer,
+              const digest_type& identity_property_id,
+              fc::time_point_sec valid_from,
+              fc::time_point_sec valid_until );
 
    /**  hash( id + valid_from + valid_until ) ) */
    digest_type digest( const digest_type& id)const;
@@ -234,6 +233,7 @@ FC_REFLECT_DERIVED( bts::vote::identity_verification_request, (bts::vote::identi
                     (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote::identity),
                     (status)(timestamp)(rejection_reason) )
+FC_REFLECT( bts::vote::identity_verification_response, (accepted)(rejection_reason)(verified_identity) )
 FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
 FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )
 FC_REFLECT_TYPENAME( bts::vote::request_status_enum )
