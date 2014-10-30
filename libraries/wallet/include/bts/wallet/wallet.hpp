@@ -301,7 +301,7 @@ namespace bts { namespace wallet {
          wallet_transaction_record register_account(
                  const string& account_name,
                  const variant& json_data,
-                 share_type delegate_pay_rate,
+                 uint8_t delegate_pay_rate,
                  const string& pay_with_account_name,
                  bts::blockchain::account_type new_account_type = titan_account,
                  bool sign = true
@@ -311,7 +311,7 @@ namespace bts { namespace wallet {
                  const string& account_name,
                  const string& pay_from_account,
                  optional<variant> public_data,
-                 share_type delegate_pay_rate,
+                 uint8_t delegate_pay_rate = -1,
                  bool sign = true
                  );
 
@@ -485,8 +485,9 @@ namespace bts { namespace wallet {
 
          void                               remove_transaction_record( const string& record_id );
 
-         uint32_t                           regenerate_keys( const string& account_name, uint32_t max_number_of_attempts );
-         int32_t                            recover_accounts(int32_t number_of_accounts , int32_t max_number_of_attempts);
+         void                               repair_records();
+         uint32_t                           regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate );
+         int32_t                            recover_accounts( int32_t number_of_accounts , int32_t max_number_of_attempts );
 
          wallet_transaction_record          recover_transaction( const string& transaction_id_prefix, const string& recipient_account );
          optional<variant_object>           verify_titan_deposit( const string& transaction_id_prefix );

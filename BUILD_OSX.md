@@ -65,7 +65,7 @@ Building BitShares Toolkit on OS X 10.9
     sudo npm install lineman-angular
     sudo npm install lineman-less
     cd ../..
-    export CMAKE_PREFIX_PATH=~/Qt/5.3/
+    CMAKE_PREFIX_PATH=~/Qt/5.3/clang_64/
     make buildweb
     cmake -DINCLUDE_QT_WALLET=TRUE -DCMAKE_PREFIX_PATH=/usr/local/ssl  .
     make

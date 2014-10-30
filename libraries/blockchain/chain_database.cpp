@@ -213,7 +213,7 @@ namespace bts { namespace blockchain {
          std::vector<name_config> delegate_config;
          for( const auto& item : config.names )
          {
-            if( item.delegate_pay_rate >= 0 ) delegate_config.push_back( item );
+            if( item.delegate_pay_rate <= 100 ) delegate_config.push_back( item );
          }
 
          FC_ASSERT( delegate_config.size() >= BTS_BLOCKCHAIN_NUM_DELEGATES,
@@ -235,7 +235,7 @@ namespace bts { namespace blockchain {
             rec.set_active_key( timestamp, name.owner );
             rec.registration_date = timestamp;
             rec.last_update       = timestamp;
-            if( name.delegate_pay_rate >= 0 )
+            if( name.delegate_pay_rate <= 100 )
             {
                rec.delegate_info = delegate_stats( name.delegate_pay_rate );
                delegate_ids.push_back( account_id );
@@ -309,10 +309,6 @@ namespace bts { namespace blockchain {
             rec.current_share_supply = 0;
             rec.maximum_share_supply = BTS_BLOCKCHAIN_MAX_SHARES;
             rec.collected_fees = 0;
-            // need to transform the min_price according the precision
-            // 1 XTS = price USD, which means 1 satoshi_XTS = (price * usd_precision / xts_precsion) satoshi_USD
-            //rec.minimum_xts_price = price( ( asset.min_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
-            //rec.maximum_xts_price = price( ( asset.max_price * asset.precision ) / BTS_BLOCKCHAIN_PRECISION, asset_id, 0 );
             self->store_asset_record( rec );
          }
 
@@ -593,33 +589,57 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
+      // TODO: Need to justify good parameters
+#if 0
+      void chain_database_impl::pay_delegate_v2( const block_id_type& block_id,
+                                              const pending_chain_state_ptr& pending_state,
+                                              const public_key_type& block_signee )
+      { try {
+            oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
+            FC_ASSERT( delegate_record.valid() );
+            delegate_record = pending_state->get_account_record( delegate_record->id );
+            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
+
+            const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
+            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
+            const share_type accepted_paycheck = (BTS_MAX_DELEGATE_PAY_PER_BLOCK * pay_rate_percent) / 100;
+            FC_ASSERT( accepted_paycheck >= 0 );
+
+            delegate_record->delegate_info->pay_balance += accepted_paycheck;
+            delegate_record->delegate_info->votes_for += accepted_paycheck;
+            pending_state->store_account_record( *delegate_record );
+
+            oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+            FC_ASSERT( base_asset_record.valid() );
+            base_asset_record->current_share_supply += accepted_paycheck;
+            pending_state->store_asset_record( *base_asset_record );
+      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+#endif
+
       void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const pending_chain_state_ptr& pending_state,
                                               const public_key_type& block_signee )
       { try {
             auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
             FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-            share_type pay_per_block = delegate_record->delegate_info->pay_rate;
+
+            const auto pay_rate_percent = delegate_record->delegate_info->pay_rate;
+            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
+            const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
+            const auto accepted_paycheck = ( pay_rate_percent * max_available_paycheck ) / 100;
+
+            auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+            FC_ASSERT( pending_base_record.valid() );
+            pending_base_record->collected_fees -= max_available_paycheck;
+            pending_state->store_asset_record( *pending_base_record );
+
+            delegate_record->delegate_info->pay_balance += accepted_paycheck;
+            delegate_record->delegate_info->votes_for += accepted_paycheck;
+            pending_state->store_account_record( *delegate_record );
 
             auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
             FC_ASSERT( base_asset_record.valid() );
-
-            //Check for signed integer overflow conditions, then check that the pay won't exceed the max share supply
-            if( (base_asset_record->current_share_supply > 0 && (pay_per_block > (INT64_MAX - base_asset_record->current_share_supply))) ||
-                (base_asset_record->current_share_supply < 0 && (pay_per_block < (INT64_MIN - base_asset_record->current_share_supply))) ||
-                (base_asset_record->current_share_supply + pay_per_block > base_asset_record->maximum_share_supply) )
-            {
-               pay_per_block = 0;
-            }
-
-            delegate_record->delegate_info->pay_balance += pay_per_block;
-            delegate_record->delegate_info->votes_for += pay_per_block;
-            pending_state->store_account_record( *delegate_record );
-
-            base_asset_record->current_share_supply += pay_per_block;
-            // Destroy collected fees
-            base_asset_record->current_share_supply -= base_asset_record->collected_fees;
-            base_asset_record->collected_fees = 0;
+            base_asset_record->current_share_supply -= (max_available_paycheck - accepted_paycheck);
             pending_state->store_asset_record( *base_asset_record );
       } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
 
@@ -2930,7 +2950,7 @@ namespace bts { namespace blockchain {
        return total;
    }
 
-   asset chain_database::calculate_debt( const asset_id_type& asset_id )const
+   asset chain_database::calculate_debt( const asset_id_type& asset_id, bool include_interest )const
    {
        const auto record = get_asset_record( asset_id );
        FC_ASSERT( record.valid() && record->is_market_issued() );
@@ -2939,8 +2959,18 @@ namespace bts { namespace blockchain {
 
        for( auto itr = my->_collateral_db.begin(); itr.valid(); ++itr )
        {
-           if( itr.key().order_price.quote_asset_id == asset_id )
-               total.amount += itr.value().payoff_balance;
+           const market_index_key& market_index = itr.key();
+           if( market_index.order_price.quote_asset_id != asset_id ) continue;
+           FC_ASSERT( market_index.order_price.base_asset_id == asset_id_type( 0 ) );
+
+           const collateral_record& record = itr.value();
+           const asset principle( record.payoff_balance, asset_id );
+           total += principle;
+           if( !include_interest ) continue;
+
+           const time_point_sec position_start_time = record.expiration - BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC;
+           const uint32_t position_age = (now() - position_start_time).to_seconds();
+           total += detail::market_engine::get_interest_owed( principle, record.interest_rate, position_age );
        }
 
        return total;

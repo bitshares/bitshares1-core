@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     outfile.close();
 
     fc::time_point_sec timestamp = fc::time_point::now();
-    for (char c : timestamp.to_iso_string())
+    for (char c : timestamp.to_non_delimited_iso_string())
         compressed_stream.push_back(c);
     fc::ecc::compact_signature stream_signature = signing_key.sign_compact(fc::sha256::hash(compressed_stream.data(), compressed_stream.size()));
 
