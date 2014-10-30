@@ -602,9 +602,7 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
-      // TODO: Need to justify good parameters
-#if 0
-      void chain_database_impl::pay_delegate_v2( const block_id_type& block_id,
+      void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const pending_chain_state_ptr& pending_state,
                                               const public_key_type& block_signee )
       { try {
@@ -626,42 +624,7 @@ namespace bts { namespace blockchain {
             FC_ASSERT( base_asset_record.valid() );
             base_asset_record->current_share_supply += accepted_paycheck;
             pending_state->store_asset_record( *base_asset_record );
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
-#endif
-
-      void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                              const pending_chain_state_ptr& pending_state,
-                                              const public_key_type& block_signee )
-      { try {
-            auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
-            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-
-            const auto pay_rate_percent = delegate_record->delegate_info->pay_rate;
-            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
-            const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
-            const auto accepted_paycheck = ( pay_rate_percent * max_available_paycheck ) / 100;
-
-            auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
-            FC_ASSERT( pending_base_record.valid() );
-            if( pending_state->get_head_block_num() >= BTSX_SUPPLY_FORK_1_BLOCK_NUM )
-            {
-                pending_base_record->collected_fees -= max_available_paycheck;
-            }
-            else
-            {
-                pending_base_record->collected_fees -= accepted_paycheck;
-            }
-            pending_state->store_asset_record( *pending_base_record );
-
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
-            delegate_record->delegate_info->votes_for += accepted_paycheck;
-            pending_state->store_account_record( *delegate_record );
-
-            auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
-            FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply -= (max_available_paycheck - accepted_paycheck);
-            pending_state->store_asset_record( *base_asset_record );
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_id)(block_signee) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
