@@ -606,6 +606,9 @@ namespace bts { namespace blockchain {
                                               const pending_chain_state_ptr& pending_state,
                                               const public_key_type& block_signee )
       { try {
+            if( pending_state->get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+                return pay_delegate_v1( block_id, pending_state, block_signee );
+
             oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
             FC_ASSERT( delegate_record.valid() );
             delegate_record = pending_state->get_account_record( delegate_record->id );

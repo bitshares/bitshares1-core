@@ -4,9 +4,9 @@
 using namespace bts::blockchain;
 using namespace bts::blockchain::detail;
 
-void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                        const pending_chain_state_ptr& pending_state,
-                                        const public_key_type& block_signee )
+void chain_database_impl::pay_delegate_v1( const block_id_type& block_id,
+                                           const pending_chain_state_ptr& pending_state,
+                                           const public_key_type& block_signee )
 { try {
       auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
       FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
