@@ -36,6 +36,9 @@ namespace bts { namespace blockchain {
       return is_valid_account_name(supername);
    }
 
+#ifndef WIN32
+#warning [HARDFORK] Max symbol length was increased
+#endif
    bool is_valid_symbol_name( const string& name )
    {
       if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
