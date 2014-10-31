@@ -49,6 +49,14 @@ optional<identity_property> identity::get_property(const string& name) const
    return optional<identity_property>();
 }
 
+void identity::sign(const blockchain::private_key_type& key,
+                    fc::time_point_sec valid_from,
+                    fc::time_point_sec valid_until)
+{
+   for( signed_identity_property& property : properties )
+      property.verifier_signatures.push_back(signature_data::sign(key, property.id(owner), valid_from, valid_until));
+}
+
 digest_type ballot::digest() const
 {
    return fc::digest(*this);

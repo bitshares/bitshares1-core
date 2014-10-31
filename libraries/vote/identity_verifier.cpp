@@ -19,8 +19,8 @@ using namespace boost::multi_index;
 
 struct identity_record : public identity_verification_request_summary {
    identity_record(){}
-   identity_record(const identity_verification_request &request, const fc::ecc::compact_signature& signature)
-       : owner_key(fc::ecc::public_key(signature, request.digest())),
+   identity_record(const identity_verification_request &request, const public_key_type& owner_key)
+       : owner_key(owner_key),
          person_photo(request.owner_photo),
          id_card_front_photo(request.id_front_photo),
          id_card_back_photo(request.id_back_photo),
@@ -249,13 +249,13 @@ bool identity_verifier::is_open() const
 
 fc::optional<identity_verification_response> identity_verifier::store_new_request(
         const identity_verification_request& request,
-        const fc::ecc::compact_signature& signature)
+        const public_key_type& owner_key)
 {
    SANITY_CHECK;
 
-   return my->store_new_request(detail::identity_record(request, signature));
+   return my->store_new_request(detail::identity_record(request, owner_key));
 }
-fc::optional<identity_verification_response> identity_verifier::get_verified_identity(const blockchain::address& owner)
+fc::optional<identity_verification_response> identity_verifier::get_verified_identity(const blockchain::address& owner) const
 {
    SANITY_CHECK;
 

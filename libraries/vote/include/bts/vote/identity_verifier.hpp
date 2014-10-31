@@ -38,7 +38,7 @@ public:
     * @brief Submit a request to verify the provided identity by filling in the provided fields and signing them.
     * @param request The identity to verify and materials to identify with. Should have property names and salts
     * defined, and the verifier will fill in property values and signatures.
-    * @param signature Owner's signature on request.digest()
+    * @param owner_key Owner's public key
     * @return Identical semantics to get_verified_identity
     *
     * Submits request for processing by the ID verifier. The request object should contain photographs of the user, and
@@ -47,7 +47,7 @@ public:
     * them, or rejects the identity and does not sign any properties.
     */
    fc::optional<identity_verification_response> store_new_request(const identity_verification_request& request,
-                                                                  const fc::ecc::compact_signature& signature);
+                                                                  const blockchain::public_key_type& owner_key);
    /**
     * @brief Check if an identity verification request has been processed, and if so, get its result
     * @param owner Address of the owner of the identity
@@ -65,7 +65,7 @@ public:
     *
     * @throws fc::exception If owner has never requested an identity verification
     */
-   fc::optional<identity_verification_response> get_verified_identity(const address& owner);
+   fc::optional<identity_verification_response> get_verified_identity(const address& owner) const;
 
    /**
     * @brief Retrieve a set of pending requests.
@@ -117,4 +117,6 @@ public:
     */
    void resolve_request(fc::time_point request_id, const identity_verification_response& response);
 };
+
+typedef std::shared_ptr<identity_verifier> identity_verifier_ptr;
 } } // namespace bts::vote

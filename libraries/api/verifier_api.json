@@ -3,18 +3,80 @@
     "methods" :
     [
         {
-            "method_name": "verifier_store_new_request",
-            "description": "Stores a new ID verification request, or returns the response for a duplicate request.",
+            "method_name": "verifier_public_api",
+            "description": "All public verifier API calls route through this entry point. Returns a ciphertext if sender public key can be ascertained.",
             "return_type": "message",
             "parameters" : [
                 {
                     "name" : "request",
                     "type" : "message",
-                    "description" : "Ciphertext of ID verification request."
+                    "description" : "Ciphertext of message. type in include/bts/vote/messages.hpp. Find further documentation in that file."
                 }
             ],
             "is_const" : false,
             "prerequisites" : ["wallet_unlocked"]
+        },
+        {
+            "method_name": "verifier_list_pending_requests",
+            "description": "Get a list of pending ID verification requests.",
+            "return_type": "verification_request_summary_list",
+            "parameters" : [
+                {
+                    "name" : "after_time",
+                    "type" : "timestamp",
+                    "description" : "All returned requests will be after this timestamp.",
+                    "default_value" : "fc::time_point()"
+                },
+                {
+                    "name" : "limit",
+                    "type" : "uint32_t",
+                    "description" : "All returned requests will be after this timestamp.",
+                    "default_value" : "10"
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "verifier_peek_pending_request",
+            "description": "Examine a pending verification request without processing it.",
+            "return_type": "verification_request",
+            "parameters" : [
+                {
+                    "name" : "request_id",
+                    "type" : "timestamp",
+                    "description" : "The ID (timestamp) of the request to peek at."
+                }
+            ],
+            "is_const" : true,
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "verifier_take_next_request",
+            "description": "Retrieve the next pending verification request (if there is one) and mark it as in-processing.",
+            "return_type": "optional_verification_request",
+            "parameters" : [],
+            "is_const" : false,
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "verifier_resolve_request",
+            "description": "Mark verification request as resolved and set the decision.",
+            "return_type": "void",
+            "parameters" : [
+                {
+                    "name" : "request_id",
+                    "type" : "timestamp",
+                    "description" : "The ID (timestamp) of the request to resolve."
+                },
+                {
+                    "name" : "response",
+                    "type" : "verification_response",
+                    "description" : "The decision on the verification request."
+                }
+            ],
+            "is_const" : false,
+            "prerequisites" : ["json_authenticated"]
         }
     ]
 }

@@ -92,6 +92,7 @@ struct identity
 {
    digest_type digest()const;
    optional<identity_property> get_property( const string& name )const;
+   void sign(const private_key_type& key, fc::time_point_sec valid_from, fc::time_point_sec valid_until);
 
    address                                   owner;
    vector<signed_identity_property>          properties;

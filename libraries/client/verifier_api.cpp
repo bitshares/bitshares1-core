@@ -3,6 +3,8 @@
 #include <bts/mail/message.hpp>
 #include <bts/vote/messages.hpp>
 
+#include <fc/crypto/digest.hpp>
+
 #define SANITY_CHECK FC_ASSERT( _id_verifier, "ID Verifier must be enabled to use its API." );
 
 namespace bts { namespace client { namespace detail {
@@ -12,9 +14,7 @@ void sign_identity(identity& id, const private_key_type& key)
 {
    fc::time_point_sec valid_from = fc::time_point::now();
    fc::time_point_sec valid_until = valid_from + fc::days(365);
-
-   for( signed_identity_property property : id.properties )
-      property.verifier_signatures.push_back(signature_data::sign(key, property.id(id.owner), valid_from, valid_until));
+   id.sign(key, valid_from, valid_until);
 }
 
 void sign_identity_if_necessary(identity_verification_response_message& response, const private_key_type& my_key)
@@ -25,7 +25,7 @@ void sign_identity_if_necessary(identity_verification_response_message& response
       sign_identity(*response.response->verified_identity, my_key);
 }
 
-mail::message client_impl::verifier_store_new_request(const mail::message& const_request)
+mail::message client_impl::verifier_public_api(const message& const_request)
 {
    SANITY_CHECK;
    fc::optional<public_key_type> sender_public_key;
@@ -42,17 +42,34 @@ mail::message client_impl::verifier_store_new_request(const mail::message& const
       auto my_key = _wallet->get_private_key(my_account->active_key());
       request_message = request_message.as<encrypted_message>().decrypt(my_key);
 
-      FC_ASSERT( request_message.type == verification_request_message_type, "Unexpected message type ${t}",
-                 ("t", request_message.type) );
+      switch(short(request_message.type))
+      {
+      case verification_request_message_type: {
+         //Parse message, check signature
+         identity_verification_request_message call = request_message.as<identity_verification_request_message>();
+         sender_public_key = fc::ecc::public_key(call.signature, call.request.digest());
+         FC_ASSERT( *sender_public_key == call.request.owner, "Caller is not owner of identity." );
 
-      identity_verification_request_message request = request_message.as<identity_verification_request_message>();
-      sender_public_key = fc::ecc::public_key(request.signature, request.request.digest());
+         //Make actual call, sign response
+         identity_verification_response_message response({_id_verifier->store_new_request(call.request,
+                                                                                          *sender_public_key)});
+         sign_identity_if_necessary(response, my_key);
+         reply = response;
+         break;
+      } case get_verification_message_type: {
+         //Parse message, check signature
+         get_verification_message call = request_message.as<get_verification_message>();
+         sender_public_key = fc::ecc::public_key(call.owner_address_signature, fc::digest(call.owner));
+         FC_ASSERT( *sender_public_key == call.owner, "Caller is not owner of identity." );
 
-      auto response = identity_verification_response_message({_id_verifier->store_new_request(request.request,
-                                                              request.signature)});
-      sign_identity_if_necessary(response, my_key);
-
-      reply = response;
+         //Make actual call, sign response
+         identity_verification_response_message response({_id_verifier->get_verified_identity(call.owner)});
+         sign_identity_if_necessary(response, my_key);
+         reply = response;
+         break;
+      } default:
+         FC_THROW( "Unknown message type. Cannot evaluate call." );
+      }
    } catch (const fc::exception& e) {
       reply = exception_message({e});
    }
@@ -62,8 +79,33 @@ mail::message client_impl::verifier_store_new_request(const mail::message& const
       reply = reply.encrypt(fc::ecc::private_key::generate(), *sender_public_key);
       reply.recipient = *sender_public_key;
    }
-
    return reply;
 }
 
+vector<identity_verification_request_summary> client_impl::verifier_list_pending_requests(
+      const fc::time_point &after_time,
+      uint32_t limit) const
+{
+   SANITY_CHECK;
+   return _id_verifier->list_pending_requests(after_time, limit);
+}
+
+identity_verification_request client_impl::verifier_peek_pending_request(const fc::time_point& request_id) const
+{
+   SANITY_CHECK;
+   return _id_verifier->peek_pending_request(request_id);
+}
+
+optional<identity_verification_request> client_impl::verifier_take_next_request()
+{
+   SANITY_CHECK;
+   return _id_verifier->take_next_request();
+}
+
+void client_impl::verifier_resolve_request(const fc::time_point &request_id,
+                                           const identity_verification_response &response)
+{
+   SANITY_CHECK;
+   _id_verifier->resolve_request(request_id, response);
+}
 } } } // namespace bts::client::detail
