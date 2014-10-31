@@ -267,6 +267,28 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
          }
 
+         for( const auto& item : config.bts_sharedrop )
+         {
+            // try to parse the raw address
+            auto owner = address(); //TODO
+
+            withdraw_vesting data;
+            data.owner = owner;
+            data.vesting_start = fc::time_point::now();
+            data.vesting_duration = 10000;
+            data.original_balance = item.balance;
+
+            withdraw_condition condition(data, 0, 0);
+            balance_record balance_rec(condition);
+
+            /* In case of redundant balances */
+            auto cur = self->get_balance_record( balance_rec.id() );
+            if( cur.valid() ) balance_rec.balance += cur->balance;
+            balance_rec.last_update = config.timestamp;
+            self->store_balance_record( balance_rec );
+
+         }
+
          asset total;
          auto itr = _balance_db.begin();
          while( itr.valid() )
