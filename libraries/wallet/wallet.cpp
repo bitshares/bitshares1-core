@@ -3733,6 +3733,46 @@ namespace detail {
       return yield_summary;
    } FC_CAPTURE_AND_RETHROW() }
 
+
+   asset  wallet::asset_worth( const asset& base, const string& price_in_symbol )const
+   {
+       auto oquote = my->_blockchain->get_asset_record( price_in_symbol );
+       ulog("Asset worth for:\n base: ${base}\n quote: ${quote}", ("base", base)("quote", price_in_symbol));
+       FC_ASSERT( oquote.valid() );
+       if( oquote->id == base.asset_id )
+           return base;
+
+       asset_id_type quote_id = oquote->id;
+       asset_id_type base_id = base.asset_id;
+       if (oquote->id < base.asset_id ) // switch orientation
+       {
+           quote_id = base.asset_id;
+           base_id = oquote->id;
+       }
+
+       auto market_stat = my->_blockchain->get_market_status( oquote->id, base.asset_id );
+       return asset(0);
+   }
+
+   asset  wallet::get_account_net_worth( const string& account_name, const string& symbol )const
+   {
+       ulog("get_account_net_worth in asset:  USD");
+       auto btsx_worth = asset( 0, 0 );
+       auto balances = get_account_balance_records( account_name );
+       for( auto map : balances )
+       {
+           for( auto record : map.second )
+           {
+               auto asset = record.get_balance();
+               ulog("asset: ${asset}", ("asset", asset));
+               btsx_worth += asset_worth(asset, "BTS_BLOCKCHAIN_SYMBOL" );
+           }
+       }
+       // open orders
+       // balances
+       // - debt
+   }
+
    account_vote_summary_type wallet::get_account_vote_summary( const string& account_name )const
    { try {
       const auto pending_state = my->_blockchain->get_pending_state();
