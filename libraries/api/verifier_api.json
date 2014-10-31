@@ -25,7 +25,7 @@
                     "name" : "after_time",
                     "type" : "timestamp",
                     "description" : "All returned requests will be after this timestamp.",
-                    "default_value" : "fc::time_point()"
+                    "default_value" : "19700101T000000"
                 },
                 {
                     "name" : "limit",
