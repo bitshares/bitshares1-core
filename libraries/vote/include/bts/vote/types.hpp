@@ -82,6 +82,12 @@ struct signature_data
  */
 struct signed_identity_property : public identity_property
 {
+   signed_identity_property(){}
+   signed_identity_property(const identity_property& prop)
+      : identity_property(prop){}
+   signed_identity_property(const identity_property&& prop)
+      : identity_property(prop){}
+
    vector<signature_data> verifier_signatures;
 };
 
