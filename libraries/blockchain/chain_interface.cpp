@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-   bool is_valid_account_name( const std::string& str )
+   bool chain_interface::is_valid_account_name( const std::string& str )const
    {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
       if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning [HARDFORK] Max symbol length was increased
 #endif
-   bool is_valid_symbol_name( const string& name )
+   bool chain_interface::is_valid_symbol_name( const string& name )const
    {
       if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
          return false;
@@ -71,14 +71,27 @@ namespace bts { namespace blockchain {
       return address();
    }
 
-   share_type chain_interface::get_delegate_registration_fee()const
+#ifndef WIN32
+#warning [HARDFORK] Delegate and asset registration fees were changed
+#endif
+   share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
-      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_DELEGATE_REGISTRATION_FEE)/BTS_BLOCKCHAIN_NUM_DELEGATES;
+       static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
+       static const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * BTS_MAX_DELEGATE_PAY_PER_BLOCK;
+       static const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
+       const share_type registration_fee = (max_pay_per_two_weeks * pay_rate) / 100;
+       FC_ASSERT( registration_fee > 0 );
+       return registration_fee;
    }
 
-   share_type chain_interface::get_asset_registration_fee()const
+   share_type chain_interface::get_asset_registration_fee( uint8_t symbol_length )const
    {
-      return (get_delegate_pay_rate() * BTS_BLOCKCHAIN_ASSET_REGISTRATION_FEE);
+       // TODO: Add #define's for these fixed prices
+       static const share_type long_symbol_price = 500 * BTS_BLOCKCHAIN_PRECISION; // $10 at $0.02/XTS
+       static const share_type short_symbol_price = 1000 * long_symbol_price;
+       FC_ASSERT( long_symbol_price > 0 );
+       FC_ASSERT( short_symbol_price > long_symbol_price );
+       return symbol_length <= 5 ? short_symbol_price : long_symbol_price;
    }
 
    asset_id_type chain_interface::last_asset_id()const
@@ -231,13 +244,6 @@ namespace bts { namespace blockchain {
    int64_t chain_interface::get_required_confirmations()const
    {
       return get_property( confirmation_requirement ).as_int64();
-   }
-
-   share_type chain_interface::get_delegate_pay_rate()const
-   {
-       const auto base_record = get_asset_record( asset_id_type( 0 ) );
-       FC_ASSERT( base_record.valid() );
-       return base_record->collected_fees / (BTS_BLOCKCHAIN_BLOCKS_PER_DAY * 14);
    }
 
    void chain_interface::set_dirty_markets( const std::set<std::pair<asset_id_type, asset_id_type>>& d )
