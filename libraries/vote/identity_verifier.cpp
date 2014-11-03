@@ -26,6 +26,7 @@ struct identity_record : public identity_verification_request_summary {
          id_card_back_photo(request.id_back_photo),
          voter_registration_photo(request.voter_reg_photo)
    {
+      (identity&)*this = request;
       owner = owner_key;
    }
 
