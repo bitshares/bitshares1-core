@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
    { try {
       auto now = eval_state._current_state->now();
 
-      if( !blockchain::is_valid_account_name( this->name ) )
+      if( !eval_state._current_state->is_valid_account_name( this->name ) )
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
 
       auto current_account = eval_state._current_state->get_account_record( this->name );
@@ -60,8 +60,8 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
-          eval_state.required_fees += asset( (max_reg_fee * delegate_pay_rate) / 100, 0 );
+          const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
+          eval_state.required_fees += reg_fee;
       }
       new_record.meta_data = this->meta_data;
 
@@ -171,12 +171,12 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-            const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
-            eval_state.required_fees += asset( (max_reg_fee * this->delegate_pay_rate) / 100, 0 );
+            const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
+            eval_state.required_fees += reg_fee;
          }
       }
 
-      current_record->last_update   = eval_state._current_state->now();
+      current_record->last_update = eval_state._current_state->now();
 
       if( this->active_key.valid() )
       {

@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-   transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state, digest_type chain_id )
+   transaction_evaluation_state::transaction_evaluation_state( chain_interface* current_state, digest_type chain_id )
    :_current_state( current_state ),_chain_id(chain_id),_skip_signature_check(false)
    {
    }

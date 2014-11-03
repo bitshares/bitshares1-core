@@ -92,8 +92,8 @@ namespace bts { namespace client {
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
-          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
-          default_delegate_peers( vector<string>({"178.62.50.61:9988"}) )
+          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:9988") ),
+          default_delegate_peers( vector<string>({"0.0.0.0:9988"}) )
           {
               logging = fc::logging_config::default_config();
           }
