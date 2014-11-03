@@ -206,7 +206,10 @@ FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
                  (withdraw_signature_type)
                  (withdraw_multi_sig_type)
                  (withdraw_password_type)
-                 (withdraw_option_type) )
+                 (withdraw_option_type)
+                 (withdraw_escrow_type)
+                 (withdraw_vesting_type)
+                 )
 
 FC_REFLECT( bts::blockchain::titan_memo, (one_time_key)(encrypted_memo_data) );
 FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_slate_id)(type)(data) )
