@@ -35,7 +35,3 @@ target_link_libraries( pack_web fc )
 
 add_executable( compute_item_hashes compute_item_hashes.cpp )
 target_link_libraries( compute_item_hashes fc bts_net bts_client)
-
-if( ${INCLUDE_QT_WALLET} )
-  add_subdirectory( web_update_utility )
-endif()
