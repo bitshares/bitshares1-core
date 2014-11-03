@@ -6,6 +6,12 @@ import datetime
 import re #regex
 
 
+print "This will create a new genesis block and make changes to your config files."
+print "Continue? [y/N]"
+entry = raw_input()
+if entry != "y":
+    sys.exit("Operation canceled")
+
 input_log = []
 
 input_log.append(">>> wallet_create default password")
@@ -19,11 +25,13 @@ new_genesis = {
         "bts_sharedrop": []
 }
 
-new_genesis["bts_sharedrop"].append({
-    "raw_address": "XTSAY7NeKAAZ3n2B637SVFo8SzNoZ8DvoifX",
-    "balance": 100000,
-    "type": "bts_exodus_sharedrop"
-})
+with open("libraries/blockchain/bts_sharedrop.json") as snapshot:
+    items = json.loads(snapshot.read())
+    for item in items:
+        new_genesis["bts_sharedrop"].append({
+            "address": item[0],
+            "balance": item[1]
+        })
 
 for i in range(101):
     keys = json.loads(subprocess.check_output(["./programs/utils/bts_create_key"]))
@@ -66,7 +74,6 @@ os.rename("tmp_config", "libraries/net/include/bts/net/config.hpp")
 with open("libraries/blockchain/genesis.json", "w") as genesis:
     genesis.write(json.dumps(new_genesis, indent=4))
 
-
 with open("testnet_setup_log.txt", "w") as log:
     for line in input_log:
         log.write(line + "\n")
@@ -75,7 +82,3 @@ with open("testnet_setup_log.txt", "w") as log:
 subprocess.call(["make", "-j4"])
 subprocess.call(["./programs/client/bitshares_client", "--input-log", "testnet_setup_log.txt", "--min-delegate-connection-count", "0"])
 
-
-print "\n\n"
-print "Setup complete. Delegates are in wallet 'default' with password 'password'."
-print "You may wish to commit and push your changes so others can join your network."
