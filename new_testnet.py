@@ -29,7 +29,7 @@ with open("libraries/blockchain/bts_sharedrop.json") as snapshot:
     items = json.loads(snapshot.read())
     for item in items:
         new_genesis["bts_sharedrop"].append({
-            "address": item[0],
+            "raw_address": item[0],
             "balance": item[1]
         })
 

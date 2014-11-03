@@ -186,7 +186,7 @@ namespace bts { namespace blockchain {
    {
        static const uint8_t    type;
 
-       address                 owner;
+       string                  raw_address;
        fc::time_point_sec      vesting_start;
        uint32_t                vesting_duration;
        share_type              original_balance;
@@ -215,7 +215,7 @@ FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
 FC_REFLECT( bts::blockchain::withdraw_with_pts, (new_key)(pts_signature) )
-FC_REFLECT( bts::blockchain::withdraw_vesting, (owner)(vesting_start)(vesting_duration)(original_balance) )
+FC_REFLECT( bts::blockchain::withdraw_vesting, (raw_address)(vesting_start)(vesting_duration)(original_balance) )
 FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
 FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
 FC_REFLECT_DERIVED( bts::blockchain::memo_status,

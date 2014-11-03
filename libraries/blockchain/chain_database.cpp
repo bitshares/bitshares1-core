@@ -270,12 +270,11 @@ namespace bts { namespace blockchain {
          for( const auto& item : config.bts_sharedrop )
          {
             // try to parse the raw address
-            auto owner = address(); //TODO
 
             withdraw_vesting data;
-            data.owner = owner;
+            data.raw_address = item.raw_address;
             data.vesting_start = fc::time_point::now();
-            data.vesting_duration = 10000;
+            data.vesting_duration = 63072000;
             data.original_balance = item.balance;
 
             withdraw_condition condition(data, 0, 0);

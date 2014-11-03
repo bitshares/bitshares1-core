@@ -259,8 +259,12 @@ namespace bts { namespace blockchain {
          {
              auto condition = current_balance_record->condition.as<withdraw_vesting>();
              try {
-                 if( !eval_state.check_signature( condition.owner ) )
-                     FC_CAPTURE_AND_THROW( missing_signature, (condition.owner) );
+#warning Not checking signatures on vesting balances!
+                 /*
+                 try:  
+                     if( condition.raw_address )
+                         FC_CAPTURE_AND_THROW( missing_signature, (condition.owner) );
+                     */
 
                  share_type max_claimable;
                  if( eval_state._current_state->now() < condition.vesting_start )
