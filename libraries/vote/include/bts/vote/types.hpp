@@ -139,6 +139,8 @@ struct identity_verification_request : public identity
    string id_front_photo;
    string id_back_photo;
    string voter_reg_photo;
+   ///Clients can ignore this field.
+   fc::optional<fc::microseconds> id;
 };
 
 /**
@@ -237,7 +239,7 @@ FC_REFLECT_DERIVED( bts::vote::signed_identity_property, (bts::vote::identity_pr
 FC_REFLECT( bts::vote::identity, (owner)(properties) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_signature) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request, (bts::vote::identity),
-                    (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo) )
+                    (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo)(id) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote::identity),
                     (status)(id)(rejection_reason) )
 FC_REFLECT( bts::vote::identity_verification_response, (accepted)(rejection_reason)(verified_identity) )

@@ -34,10 +34,9 @@ struct identity_record : public identity_verification_request_summary {
    {
       identity_verification_request request;
       (identity&)(request) = *this;
-      request.owner_photo = person_photo;
-      request.id_front_photo = id_card_front_photo;
-      request.id_back_photo = id_card_back_photo;
-      request.voter_reg_photo = voter_registration_photo;
+      //Copy relevant fields from record to request.
+      std::tie(request.owner_photo, request.id_front_photo, request.id_back_photo, request.voter_reg_photo, request.id) =
+            std::tie(person_photo, id_card_front_photo, id_card_back_photo, voter_registration_photo, id);
       return request;
    }
 
