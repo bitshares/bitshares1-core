@@ -285,6 +285,8 @@ namespace bts { namespace blockchain {
 
          case withdraw_vesting_type:
          {
+            FC_ASSERT( !"Not supported yet!" );
+
              auto condition = current_balance_record->condition.as<withdraw_vesting>();
              try {
                  if( !eval_state.check_signature( condition.owner ) )
