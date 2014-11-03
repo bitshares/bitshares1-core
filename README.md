@@ -1,6 +1,9 @@
-BitShares X [![Build Status](https://travis-ci.org/dacsunlimited/bitsharesx.png)](https://travis-ci.org/dacsunlimited/bitsharesx)
+BitShares Development Toolkit [![Build Status](https://travis-ci.org/vikramrajkumar/bitshares_toolkit.png)](https://travis-ci.org/vikramrajkumar/bitshares_toolkit)
 ===============================
-A DAC built with [BitShares Toolkit](https://github.com/BitShares/bitshares_toolkit)
+The BitShares development toolkit is a set of libraries used to facilitate
+the development of Decentralized Autonomous Companies (DACs).  It provides
+a framework upon which new DACs can be developed based upon a common 
+architecture.  
 
 Build Instructions
 ------------------
