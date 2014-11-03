@@ -59,6 +59,10 @@ namespace bts { namespace blockchain {
          share_type                         get_delegate_registration_fee( uint8_t pay_rate )const;
          share_type                         get_asset_registration_fee( uint8_t symbol_length )const;
 
+         share_type                         get_delegate_registration_fee_v1( uint8_t pay_rate )const;
+         share_type                         get_asset_registration_fee_v1()const;
+         share_type                         get_delegate_pay_rate_v1()const;
+
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type& id )const;

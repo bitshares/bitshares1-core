@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <vector>
 
-// TODO: Rename this constants based on public release version
+// TODO: Rename these constants based on public release version
 
 #define BTS_EXPECTED_CHAIN_ID                   digest_type( "fe9ebbafee5edcb76430739325dc376ad4756f313da96e59359c3214891e8cfa" )
 #define BTS_DESIRED_CHAIN_ID                    digest_type( "75c11a81b7670bbaa721cc603eadb2313756f94a3bcbb9928e9101432701ac5f" )

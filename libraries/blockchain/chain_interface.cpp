@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <locale>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain {
 
    bool chain_interface::is_valid_account_name( const std::string& str )const
@@ -76,6 +78,9 @@ namespace bts { namespace blockchain {
 #endif
    share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
+       if( get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+           return get_delegate_registration_fee_v1( pay_rate );
+
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
        static const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * BTS_MAX_DELEGATE_PAY_PER_BLOCK;
        static const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
@@ -86,6 +91,9 @@ namespace bts { namespace blockchain {
 
    share_type chain_interface::get_asset_registration_fee( uint8_t symbol_length )const
    {
+       if( get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+           return get_asset_registration_fee_v1();
+
        // TODO: Add #define's for these fixed prices
        static const share_type long_symbol_price = 500 * BTS_BLOCKCHAIN_PRECISION; // $10 at $0.02/XTS
        static const share_type short_symbol_price = 1000 * long_symbol_price;

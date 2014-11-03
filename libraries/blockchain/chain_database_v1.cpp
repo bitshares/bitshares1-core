@@ -16,7 +16,7 @@ void chain_database_impl::pay_delegate_v1( const block_id_type& block_id,
       const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
       FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
 
-      const share_type max_available_paycheck = pending_state->get_delegate_pay_rate();
+      const share_type max_available_paycheck = pending_state->get_delegate_pay_rate_v1();
       const share_type accepted_paycheck = (max_available_paycheck * pay_rate_percent) / 100;
       const share_type burned_paycheck = max_available_paycheck - accepted_paycheck;
       FC_ASSERT( max_available_paycheck >= accepted_paycheck );
