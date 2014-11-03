@@ -82,6 +82,6 @@ struct get_verification_message
 } } // namespace bts::vote
 
 FC_REFLECT( bts::vote::exception_message, (e) )
-FC_REFLECT( bts::vote::identity_verification_request_message, (request) )
+FC_REFLECT( bts::vote::identity_verification_request_message, (request)(signature) )
 FC_REFLECT( bts::vote::identity_verification_response_message, (response) )
 FC_REFLECT( bts::vote::get_verification_message, (owner)(owner_address_signature) )

@@ -78,7 +78,7 @@ public:
     * parameters allow pagination of requests, so the first ten can be requested by calling with no parameters, the next
     * ten can be listed by passing to after_time the of timestamp the newest record from the first call, etc.
     */
-   vector<identity_verification_request_summary> list_pending_requests(fc::time_point after_time = fc::time_point(),
+   vector<identity_verification_request_summary> list_pending_requests(fc::microseconds after_time = fc::microseconds(),
                                                                        uint32_t limit = 10) const;
    /**
     * @brief Retrieve full request record for a request, but don't mark it as in-processing yet.
@@ -90,7 +90,7 @@ public:
     *
     * @throws fc::key_not_found_exception If request_id does not match any known request
     */
-   identity_verification_request peek_pending_request(fc::time_point request_id) const;
+   identity_verification_request peek_pending_request(fc::microseconds request_id) const;
 
    /**
     * @brief Retrieve the next pending request in line
@@ -115,7 +115,7 @@ public:
     * @throws fc::exception If response.accepted == true, but response.verified_identity == null
     * @throws fc::exception If response.verified_identity contains a property that was not in the request
     */
-   void resolve_request(fc::time_point request_id, const identity_verification_response& response);
+   void resolve_request(fc::microseconds request_id, const identity_verification_response& response);
 };
 
 typedef std::shared_ptr<identity_verifier> identity_verifier_ptr;

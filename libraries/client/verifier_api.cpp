@@ -83,14 +83,14 @@ mail::message client_impl::verifier_public_api(const message& const_request)
 }
 
 vector<identity_verification_request_summary> client_impl::verifier_list_pending_requests(
-      const fc::time_point &after_time,
+      const fc::microseconds &after_time,
       uint32_t limit) const
 {
    SANITY_CHECK;
    return _id_verifier->list_pending_requests(after_time, limit);
 }
 
-identity_verification_request client_impl::verifier_peek_pending_request(const fc::time_point& request_id) const
+identity_verification_request client_impl::verifier_peek_pending_request(const fc::microseconds& request_id) const
 {
    SANITY_CHECK;
    return _id_verifier->peek_pending_request(request_id);
@@ -102,7 +102,7 @@ optional<identity_verification_request> client_impl::verifier_take_next_request(
    return _id_verifier->take_next_request();
 }
 
-void client_impl::verifier_resolve_request(const fc::time_point &request_id,
+void client_impl::verifier_resolve_request(const fc::microseconds &request_id,
                                            const identity_verification_response &response)
 {
    SANITY_CHECK;

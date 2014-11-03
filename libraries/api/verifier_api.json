@@ -23,14 +23,14 @@
             "parameters" : [
                 {
                     "name" : "after_time",
-                    "type" : "timestamp",
+                    "type" : "microseconds",
                     "description" : "All returned requests will be after this timestamp.",
-                    "default_value" : "19700101T000000"
+                    "default_value" : "0"
                 },
                 {
                     "name" : "limit",
                     "type" : "uint32_t",
-                    "description" : "All returned requests will be after this timestamp.",
+                    "description" : "No more than limit results will be returned.",
                     "default_value" : "10"
                 }
             ],
@@ -44,7 +44,7 @@
             "parameters" : [
                 {
                     "name" : "request_id",
-                    "type" : "timestamp",
+                    "type" : "microseconds",
                     "description" : "The ID (timestamp) of the request to peek at."
                 }
             ],
@@ -66,7 +66,7 @@
             "parameters" : [
                 {
                     "name" : "request_id",
-                    "type" : "timestamp",
+                    "type" : "microseconds",
                     "description" : "The ID (timestamp) of the request to resolve."
                 },
                 {

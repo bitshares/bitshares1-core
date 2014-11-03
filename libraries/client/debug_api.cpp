@@ -1,6 +1,7 @@
 #include <bts/blockchain/time.hpp>
 #include <bts/client/client.hpp>
 #include <bts/client/client_impl.hpp>
+#include <bts/vote/messages.hpp>
 
 namespace bts { namespace client { namespace detail {
 
@@ -173,4 +174,37 @@ void client_impl::debug_wait_for_block_by_number(uint32_t block_number, const st
    _chain_db->remove_observer(&block_waiter);
 }
 
+variant_object client_impl::debug_request_verification(const std::string &account, const std::string &owner_photo, const std::string &id_front_photo, const std::string &id_back_photo, const std::string &reg_photo)
+{
+   using namespace bts::vote;
+   wallet_account_record account_rec = _wallet->get_account(account);
+   private_key_type key = _wallet->get_private_key(account_rec.active_key());
+   identity ident;
+   ident.owner = account_rec.active_key();
+   identity_property prop;
+
+   prop = {fc::uint128(123), "First Name", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(234), "Last Name", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(345), "SSN", variant()};
+   ident.properties.push_back(prop);
+
+   identity_verification_request req;
+   (identity&)req = ident;
+   std::tie(req.owner_photo, req.id_front_photo, req.id_back_photo, req.voter_reg_photo)
+     = std::tie(owner_photo,     id_front_photo,     id_back_photo,           reg_photo);
+   message reqm(identity_verification_request_message({req, key.sign_compact(req.digest())}));
+   wlog("Req: ${r}; Reqm: ${m}", ("r", reqm.as<identity_verification_request_message>())("m", reqm));
+   reqm = reqm.encrypt(fc::ecc::private_key::generate(), _wallet->get_active_private_key("verifier").get_public_key());
+   reqm.recipient = _wallet->get_active_private_key("verifier").get_public_key();
+
+   message resm = verifier_public_api(reqm);
+   if( resm.type == encrypted )
+      resm = resm.as<encrypted_message>().decrypt(key);
+   if( resm.type == exception_message_type )
+      return variant(resm.as<exception_message>()).as<variant_object>();
+
+   return fc::variant(resm.as<identity_verification_response_message>()).as<variant_object>();
+}
 } } } // namespace bts::client::detail

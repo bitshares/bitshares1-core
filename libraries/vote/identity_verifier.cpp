@@ -71,13 +71,13 @@ public:
                       request_status_enum,
                       &identity_verification_request_summary::status>,
                member<identity_verification_request_summary,
-                      fc::time_point,
-                      &identity_verification_request_summary::timestamp>
+                      fc::microseconds,
+                      &identity_verification_request_summary::id>
             >
          >
       >
    > _id_summary_db;
-   bts::db::level_map<fc::time_point, identity_record> _id_db;
+   bts::db::level_map<fc::microseconds, identity_record> _id_db;
 
    void open(const fc::path& data_dir)
    {
@@ -92,7 +92,7 @@ public:
          //Mark in_processing records as awaiting_processing again; no telling what might have happened
          //in the real world since it was marked as in_processing
          if( rec.status == in_processing )
-            update_record_status(rec.timestamp, awaiting_processing);
+            update_record_status(rec.id, awaiting_processing);
          else
             _id_summary_db.insert(rec);
       }
@@ -114,13 +114,13 @@ public:
          return check_pending_identity(rec.owner);
 
       _id_summary_db.insert(rec);
-      _id_db.store(rec.timestamp, rec);
+      _id_db.store(rec.id, rec);
 
       return optional<identity_verification_response>();
    }
-   identity_record fetch_request_by_timestamp(fc::time_point timestamp) const
+   identity_record fetch_request_by_id(fc::microseconds id) const
    {
-      return _id_db.fetch(timestamp);
+      return _id_db.fetch(id);
    }
    optional<identity_verification_response> check_pending_identity(const address& owner) const
    {
@@ -153,7 +153,7 @@ public:
    }
 
    vector<identity_verification_request_summary> list_requests_by_status(request_status_enum status,
-                                                                         fc::time_point after_time,
+                                                                         fc::microseconds after_time,
                                                                          uint32_t limit) const
    {
       vector<identity_verification_request_summary> results;
@@ -163,7 +163,7 @@ public:
 
       if( limit == 0 || itr == end || itr->status != status )
          return results;
-      if( itr->timestamp == after_time ) ++itr;
+      if( itr->id == after_time ) ++itr;
 
       while( itr != end && results.size() < limit )
          results.push_back(*itr++);
@@ -174,12 +174,12 @@ public:
    void commit_record(const identity_record& record)
    {
       _id_summary_db.insert(record);
-      _id_db.store(record.timestamp, record);
+      _id_db.store(record.id, record);
    }
-   identity_record update_record_status(fc::time_point timestamp, request_status_enum status, bool commit = true)
+   identity_record update_record_status(fc::microseconds id, request_status_enum status, bool commit = true)
    {
       //Fetch record from disk, set its status, and possibly commit it as well.
-      auto request = fetch_request_by_timestamp(timestamp);
+      auto request = fetch_request_by_id(id);
       request.status = status;
       if( commit ) commit_record(request);
       return request;
@@ -187,16 +187,16 @@ public:
 
    optional<identity_verification_request> take_next_request()
    {
-      auto request_summary_vector = list_requests_by_status(awaiting_processing, fc::time_point(), 1);
+      auto request_summary_vector = list_requests_by_status(awaiting_processing, fc::microseconds(), 1);
       if( request_summary_vector.empty() )
          return optional<identity_verification_request>();
 
-      return update_record_status(request_summary_vector[0].timestamp, in_processing);
+      return update_record_status(request_summary_vector[0].id, in_processing);
    }
-   void resolve_request(time_point_sec timestamp, identity_verification_response response)
+   void resolve_request(fc::microseconds id, identity_verification_response response)
    {
       //We need to further update the record; don't bother to commit it just yet. We'll do it just once at the end.
-      identity_record request_record = update_record_status(timestamp, response.accepted? accepted : rejected, false);
+      identity_record request_record = update_record_status(id, response.accepted? accepted : rejected, false);
       if( response.accepted )
       {
          FC_ASSERT( response.verified_identity, "Identity accepted, but verified_identity was not provided." );
@@ -262,7 +262,7 @@ fc::optional<identity_verification_response> identity_verifier::get_verified_ide
    return my->check_pending_identity(owner);
 }
 
-vector<identity_verification_request_summary> identity_verifier::list_pending_requests(fc::time_point after_time,
+vector<identity_verification_request_summary> identity_verifier::list_pending_requests(fc::microseconds after_time,
                                                                                        uint32_t limit) const
 {
    SANITY_CHECK;
@@ -270,11 +270,11 @@ vector<identity_verification_request_summary> identity_verifier::list_pending_re
    return my->list_requests_by_status(awaiting_processing, after_time, limit);
 }
 
-identity_verification_request identity_verifier::peek_pending_request(fc::time_point request_id) const
+identity_verification_request identity_verifier::peek_pending_request(fc::microseconds request_id) const
 {
    SANITY_CHECK;
 
-   return my->fetch_request_by_timestamp(request_id);
+   return my->fetch_request_by_id(request_id);
 }
 
 fc::optional<identity_verification_request> identity_verifier::take_next_request()
@@ -284,7 +284,7 @@ fc::optional<identity_verification_request> identity_verifier::take_next_request
    return my->take_next_request();
 }
 
-void identity_verifier::resolve_request(fc::time_point request_id, const identity_verification_response& response)
+void identity_verifier::resolve_request(fc::microseconds request_id, const identity_verification_response& response)
 {
    SANITY_CHECK;
 

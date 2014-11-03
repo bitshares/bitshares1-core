@@ -249,6 +249,36 @@
         "parameters" : [],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "debug_request_verification",
+        "description": "",
+        "return_type": "json_object",
+        "parameters" : [
+                {
+                   "name" : "account",
+                   "description" : "",
+                   "type" : "string"
+                },{
+                   "name" : "owner_photo",
+                   "description" : "",
+                   "type" : "string"
+                },{
+                   "name" : "id_front_photo",
+                   "description" : "",
+                   "type" : "string"
+                },{
+                   "name" : "id_back_photo",
+                   "description" : "",
+                   "type" : "string"
+                },{
+                   "name" : "reg_photo",
+                   "description" : "",
+                   "type" : "string"
+                }
+            ],
+        "is_const"   : false,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }

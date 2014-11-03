@@ -148,15 +148,15 @@ struct identity_verification_request : public identity
  */
 struct identity_verification_request_summary : public identity {
    identity_verification_request_summary()
-       :timestamp(fc::time_point::now())
+       :id(fc::time_point::now().time_since_epoch())
    {}
 
    bool operator== (const identity_verification_request_summary& other) const {
-      return status == other.status && timestamp == other.timestamp;
+      return status == other.status && id == other.id;
    }
 
    request_status_enum status = awaiting_processing;
-   fc::time_point timestamp;
+   fc::microseconds id;
    fc::optional<string> rejection_reason;
 };
 
@@ -239,7 +239,7 @@ FC_REFLECT_DERIVED( bts::vote::signed_identity, (bts::vote::identity), (owner_si
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request, (bts::vote::identity),
                     (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote::identity),
-                    (status)(timestamp)(rejection_reason) )
+                    (status)(id)(rejection_reason) )
 FC_REFLECT( bts::vote::identity_verification_response, (accepted)(rejection_reason)(verified_identity) )
 FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
 FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )
