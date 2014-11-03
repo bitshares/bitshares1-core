@@ -68,6 +68,11 @@ namespace bts { namespace blockchain {
    {
       if( condition.type == withdraw_signature_type )
          return condition.as<withdraw_with_signature>().owner;
+      if( condition.type == withdraw_vesting_type )
+      {
+          auto owner = condition.as<withdraw_vesting>().raw_address;
+          return address(condition.as<withdraw_vesting>().raw_address);
+      }
       return address();
    }
 

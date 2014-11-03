@@ -259,12 +259,21 @@ namespace bts { namespace blockchain {
          {
              auto condition = current_balance_record->condition.as<withdraw_vesting>();
              try {
-#warning Not checking signatures on vesting balances!
-                 /*
-                 try:  
-                     if( condition.raw_address )
-                         FC_CAPTURE_AND_THROW( missing_signature, (condition.owner) );
-                     */
+                #warning Not properly checking signatures on vesting balances!
+                 auto bts_owner = address( condition.raw_address );
+                 auto pts_owner = pts_address( condition.raw_address );
+                 if ( bts_owner.is_valid(condition.raw_address) )
+                 {
+                     if( !eval_state.check_signature( bts_owner ) )
+                         FC_CAPTURE_AND_THROW( missing_signature, (condition.raw_address) );
+                 } else if (pts_owner.is_valid() )
+                 {
+                     if( !eval_state.check_signature( pts_owner ) )
+                         FC_CAPTURE_AND_THROW( missing_signature, (condition.raw_address) );
+                 } else {
+                     FC_ASSERT(!"Cannot parse address");
+                 }
+
 
                  share_type max_claimable;
                  if( eval_state._current_state->now() < condition.vesting_start )

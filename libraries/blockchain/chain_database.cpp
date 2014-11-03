@@ -273,7 +273,8 @@ namespace bts { namespace blockchain {
 
             withdraw_vesting data;
             data.raw_address = item.raw_address;
-            data.vesting_start = fc::time_point::now();
+#warning november 1st
+            data.vesting_start = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;
             data.original_balance = item.balance;
 
