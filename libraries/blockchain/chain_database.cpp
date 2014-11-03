@@ -283,21 +283,32 @@ namespace bts { namespace blockchain {
          for( const auto& item : config.bts_sharedrop )
          {
             // try to parse the raw address
-            auto owner = address(); //TODO
 
             withdraw_vesting data;
-            data.owner = owner;
-            data.vesting_start = fc::time_point::now();
-            data.vesting_duration = 10000;
+            auto bts_addr = address(item.raw_address);
+            if( bts_addr.is_valid(item.raw_address) )
+                data.owner = bts_addr;
+            else if( pts_address(item.raw_address).is_valid() )
+                data.owner = address(pts_address(item.raw_address));
+            else
+                 FC_ASSERT(!"Cannot parse address");
+#ifndef WIN32
+#warning november 1st
+#endif
+            data.vesting_start = fc::time_point_sec(1414886399);
+            data.vesting_duration = 63072000;
             data.original_balance = item.balance;
 
             withdraw_condition condition(data, 0, 0);
             balance_record balance_rec(condition);
+            balance_rec.balance = item.balance;
 
             /* In case of redundant balances */
             auto cur = self->get_balance_record( balance_rec.id() );
             if( cur.valid() ) balance_rec.balance += cur->balance;
             balance_rec.last_update = config.timestamp;
+            balance_rec.genesis_info = genesis_record( balance_rec.get_balance(), string( data.owner ) );
+            //ulog("storing vesting record: ${rec}", ("rec", balance_rec.id()));
             self->store_balance_record( balance_rec );
 
          }

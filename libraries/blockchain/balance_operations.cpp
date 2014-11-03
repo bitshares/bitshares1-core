@@ -289,6 +289,9 @@ namespace bts { namespace blockchain {
 
              auto condition = current_balance_record->condition.as<withdraw_vesting>();
              try {
+#ifndef WIN32
+                #warning Not properly checking signatures on vesting balances!
+#endif
                  if( !eval_state.check_signature( condition.owner ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (condition.owner) );
 
@@ -315,6 +318,7 @@ namespace bts { namespace blockchain {
                  FC_ASSERT( this->amount <= real_claimable, "You cannot withdraw that much from this vesting balance" );
 
              } FC_CAPTURE_AND_RETHROW( (condition) )
+             break;
          }
 
 

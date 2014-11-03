@@ -186,6 +186,7 @@ namespace bts { namespace blockchain {
    {
        static const uint8_t    type;
 
+       // a btc, pts, dns, btsx, or xts address
        address                 owner;
        fc::time_point_sec      vesting_start;
        uint32_t                vesting_duration;
