@@ -36,9 +36,6 @@ namespace bts { namespace blockchain {
       return is_valid_account_name(supername);
    }
 
-#ifndef WIN32
-#warning [HARDFORK] Max symbol length was increased
-#endif
    bool chain_interface::is_valid_symbol_name( const string& name )const
    {
       if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
@@ -76,9 +73,6 @@ namespace bts { namespace blockchain {
       return address();
    }
 
-#ifndef WIN32
-#warning [HARDFORK] Delegate and asset registration fees were changed
-#endif
    share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
