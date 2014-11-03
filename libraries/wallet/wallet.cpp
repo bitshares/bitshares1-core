@@ -2681,9 +2681,6 @@ namespace detail {
          return record;
    } FC_CAPTURE_AND_RETHROW( (amount_to_transfer_symbol)(from_account_name)(to_address_amounts)(memo_message) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] Disable new delegate registration until after hardfork
-#endif
    wallet_transaction_record wallet::register_account(
            const string& account_to_register,
            const variant& public_data,
@@ -2767,9 +2764,6 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_register)(public_data)(pay_with_account_name)(delegate_pay_rate) ) }
 
-#ifndef WIN32
-#warning [HARDFORK] Disable new asset registration until after hardfork
-#endif
    wallet_transaction_record wallet::create_asset(
            const string& symbol,
            const string& asset_name,
