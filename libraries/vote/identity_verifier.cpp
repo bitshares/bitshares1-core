@@ -165,7 +165,7 @@ public:
          return results;
       if( itr->id == after_time ) ++itr;
 
-      while( itr != end && results.size() < limit )
+      while( itr != end && results.size() < limit && itr->status == status )
          results.push_back(*itr++);
 
       return results;
@@ -173,7 +173,13 @@ public:
 
    void commit_record(const identity_record& record)
    {
-      _id_summary_db.insert(record);
+      auto& index = _id_summary_db.get<by_owner>();
+      auto itr = index.find(record.owner);
+      if( itr == index.end() )
+         _id_summary_db.insert(record);
+      else
+         _id_summary_db.replace(itr, record);
+
       _id_db.store(record.id, record);
    }
    identity_record update_record_status(fc::microseconds id, request_status_enum status, bool commit = true)
