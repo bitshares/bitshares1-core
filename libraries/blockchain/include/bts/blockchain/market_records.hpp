@@ -232,6 +232,7 @@ namespace bts { namespace blockchain {
        optional<price>          last_valid_feed_price;
        optional<fc::exception>  last_error;
 
+       /**************************************************************************************/
        /* All of these are no longer used but need to be kept around for applying old blocks */
        share_type               ask_depth = 0;
        share_type               bid_depth = 0;

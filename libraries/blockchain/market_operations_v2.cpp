@@ -1,5 +1,16 @@
+#include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
+#include <bts/blockchain/market_engine.hpp>
+#include <bts/blockchain/market_operations.hpp>
+
+using namespace bts::blockchain;
+
 void cover_operation::evaluate_v2( transaction_evaluation_state& eval_state )
 {
+   if( eval_state._current_state->get_head_block_num() < BTS_V0_4_16_FORK_BLOCK_NUM )
+      return evaluate_v1( eval_state );
+
    if( this->cover_index.order_price == price() )
       FC_CAPTURE_AND_THROW( zero_price, (cover_index.order_price) );
 

@@ -1,3 +1,11 @@
+#include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
+#include <bts/blockchain/market_engine.hpp>
+#include <bts/blockchain/market_operations.hpp>
+
+using namespace bts::blockchain;
+
 void ask_operation::evaluate_v1( transaction_evaluation_state& eval_state )
 { try {
    if( this->ask_index.order_price == price() )

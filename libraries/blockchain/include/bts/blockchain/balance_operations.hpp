@@ -43,6 +43,7 @@ namespace bts { namespace blockchain {
        std::vector<char>  claim_input_data;
 
        void evaluate( transaction_evaluation_state& eval_state );
+       void evaluate_v3( transaction_evaluation_state& eval_state );
        void evaluate_v2( transaction_evaluation_state& eval_state );
        void evaluate_v1( transaction_evaluation_state& eval_state );
    };

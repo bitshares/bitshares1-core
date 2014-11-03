@@ -30,12 +30,6 @@
 #include <bts/blockchain/market_engine.hpp>
 
 #include <bts/blockchain/fork_blocks.hpp>
-#include <bts/blockchain/market_engine_v6.hpp>
-#include <bts/blockchain/market_engine_v5.hpp>
-#include <bts/blockchain/market_engine_v4.hpp>
-#include <bts/blockchain/market_engine_v3.hpp>
-#include <bts/blockchain/market_engine_v2.hpp>
-#include <bts/blockchain/market_engine_v1.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -838,98 +832,21 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
       { try {
-        vector<market_transaction> market_transactions;
+        if( pending_state->get_head_block_num() <= BTS_V0_4_21_FORK_BLOCK_NUM )
+           return execute_markets_v1( timestamp, pending_state );
 
-        const auto pending_block_num = pending_state->get_head_block_num();
-        if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
-        {
-           market_engine_v4 engine( pending_state, *this );
-           engine.cancel_all_shorts( self->get_block_header( BTS_V0_4_16_FORK_BLOCK_NUM ).timestamp );
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-        else if( pending_block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
-        {
-           market_engine_v6 engine( pending_state, *this );
-           engine.cancel_all_shorts();
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
+        vector<market_transaction> market_transactions;
 
         const auto dirty_markets = self->get_dirty_markets();
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num > BTS_V0_4_21_FORK_BLOCK_NUM )
+           market_engine engine( pending_state, *this );
+           if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
            {
-              market_engine engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
-           {
-               // Cancel all shorts before BTS_V0_4_21_FORK_BLOCK_NUM -- see above
-           }
-           else if( pending_block_num >= BTS_V0_4_19_FORK_BLOCK_NUM )
-           {
-              market_engine_v6 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num > BTS_V0_4_17_FORK_BLOCK_NUM )
-           {
-              market_engine_v5 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
-           {
-               // Cancel all shorts before BTS_V0_4_16_FORK_BLOCK_NUM -- see above
-           }
-           else if( pending_block_num > BTS_V0_4_16_FORK_BLOCK_NUM )
-           {
-              market_engine_v4 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
-           {
-               // Should have canceled all shorts but we missed it
-           }
-           else if( pending_block_num >= BTS_V0_4_13_FORK_BLOCK_NUM )
-           {
-              market_engine_v3 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num >= BTS_V0_4_0_FORK_BLOCK_NUM )
-           {
-              market_engine_v2 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else
-           {
-              market_engine_v1 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
         }
-
-        if( pending_block_num < BTS_V0_4_9_FORK_BLOCK_NUM )
-            pending_state->set_dirty_markets( pending_state->_dirty_markets );
 
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }

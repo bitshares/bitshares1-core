@@ -48,10 +48,17 @@ add_library( bts_blockchain
              types.cpp
              withdraw_types.cpp
              operations.cpp
+             balance_operations_v1.cpp
+             balance_operations_v2.cpp
+             balance_operations_v3.cpp
              balance_operations.cpp
              account_operations.cpp
              delegate_slate.cpp
              asset_operations.cpp
+             market_operations_v1.cpp
+             market_operations_v2.cpp
+             market_operations_v3.cpp
+             market_operations_v4.cpp
              market_operations.cpp
 #proposal_operations.cpp
              feed_operations.cpp

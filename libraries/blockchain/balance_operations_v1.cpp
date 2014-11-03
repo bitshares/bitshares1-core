@@ -1,3 +1,10 @@
+#include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
+
+using namespace bts::blockchain;
+
 asset balance_record::calculate_yield_v1( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const
 {
    if( amount <= 0 )       return asset(0,condition.asset_id);
