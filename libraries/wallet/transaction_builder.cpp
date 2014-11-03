@@ -506,39 +506,31 @@ void transaction_builder::pay_fee()
 
 bool transaction_builder::withdraw_fee()
 {
-   //Shake down every owner with a balance until you find one who can pay a fee
-   std::unordered_set<blockchain::address> checked_accounts;
    //At this point, we'll require XTS.
-   asset final_fee= _wimpl->self->get_transaction_fee();
-   address bag_holder;
-
-   for( auto itr = outstanding_balances.begin(); itr != outstanding_balances.end(); ++itr )
+   // for each asset type in my wallet... get transaction fee in that asset type.. 
+   for( auto item : outstanding_balances )
    {
-      address potential_bag_holder = itr->first.first;
+      auto current_asset_id = item.first.second;
+      asset final_fee = _wimpl->self->get_transaction_fee(current_asset_id);
 
-      //Have we already vetted this potential bag holder?
-      if( checked_accounts.find(potential_bag_holder) != checked_accounts.end() ) continue;
-      checked_accounts.insert(potential_bag_holder);
+      address bag_holder = item.first.first;
 
-      //Am I allowed to take money from this potential bag holder?
-      auto account_rec = _wimpl->_wallet_db.lookup_account(potential_bag_holder);
-      if( !account_rec || !account_rec->is_my_account ) continue;
+      //Am I allowed to take money from this bag holder?
+      auto account_rec = _wimpl->_wallet_db.lookup_account(bag_holder);
+      if( !account_rec || !account_rec->is_my_account ) 
+         continue;
 
-      //Does this potential bag holder have any money I can take?
+      //Does this bag holder have any money I can take?
       account_balance_summary_type balances = _wimpl->self->get_account_balances(account_rec->name);
-      if( balances.empty() ) continue;
+      if( balances.empty() ) 
+         continue;
 
-      //Does this potential bag holder have enough XTS?
+      //Does this bag holder have enough XTS?
       auto balance_map = balances.begin()->second;
-      if( balance_map.find(0) == balance_map.end() || balance_map[0] < final_fee.amount ) continue;
+      if( balance_map.find(current_asset_id) == balance_map.end() || 
+          balance_map[current_asset_id] < final_fee.amount ) 
+         continue;
 
-      //Let this potential bag holder be THE bag holder.
-      bag_holder = potential_bag_holder;
-      break;
-   }
-
-   if( bag_holder != address() )
-   {
       deduct_balance(bag_holder, final_fee);
       transaction_record.fee = final_fee;
       return true;
