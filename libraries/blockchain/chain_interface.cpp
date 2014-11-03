@@ -38,11 +38,17 @@ namespace bts { namespace blockchain {
       return is_valid_account_name(supername);
    }
 
-#ifndef WIN32
-#warning [HARDFORK] Max symbol length was increased
-#endif
    bool chain_interface::is_valid_symbol_name( const string& name )const
    {
+#ifndef WIN32
+#warning [SOFTFORK] Remove after BTSX_MARKET_FORK_13_BLOCK_NUM has passed
+#endif
+       if( get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+       {
+           if( name.size() > 5 )
+               return false;
+       }
+
       if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
          return false;
       if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
@@ -73,9 +79,6 @@ namespace bts { namespace blockchain {
       return address();
    }
 
-#ifndef WIN32
-#warning [HARDFORK] Delegate and asset registration fees were changed
-#endif
    share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
        if( get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
