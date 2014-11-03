@@ -72,7 +72,7 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )
    FC_ASSERT( asset_to_short.valid() );
    FC_ASSERT( asset_to_short->is_market_issued(), "${symbol} is not a market issued asset", ("symbol",asset_to_short->symbol) );
 
-   if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_8_BLOCK_NUM )
+   if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_17_FORK_BLOCK_NUM )
    {
        FC_ASSERT( !this->short_price_limit || *(this->short_price_limit) >= this->short_index.order_price, "Insufficient collateral at price limit" );
    }
@@ -159,11 +159,11 @@ void add_collateral_operation::evaluate_v1( transaction_evaluation_state& eval_s
 
 void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
 {
-   if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_7_BLOCK_NUM )
+   if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_16_FORK_BLOCK_NUM )
    {
       FC_ASSERT( !"short_operation_v1 is no longer supported!" );
    }
-   else if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_5_BLOCK_NUM )
+   else if( eval_state._current_state->get_head_block_num() < BTS_V0_4_12_FORK_BLOCK_NUM )
    {
       evaluate_v1( eval_state );
       return;
@@ -274,7 +274,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    {
       FC_ASSERT( short_index.order_price < market_stat->maximum_bid(), "", ("order",*this)("market_stat",market_stat) );
    }
-   else if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_1_BLOCK_NUM )
+   else if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_0_FORK_BLOCK_NUM )
    {
       auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
       FC_ASSERT( median_delegate_price.valid() );

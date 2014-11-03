@@ -2778,9 +2778,9 @@ namespace detail {
            bool sign )
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove after BTSX_MARKET_FORK_13_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
 #endif
-      if( delegate_pay_rate <= 100 && my->_blockchain->get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+      if( delegate_pay_rate <= 100 && my->_blockchain->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
           FC_ASSERT( !"Delegate registration disabled until next hardfork!" );
 
       if( !my->_blockchain->is_valid_account_name( account_to_register ) )
@@ -2870,9 +2870,9 @@ namespace detail {
            bool sign )
    { try {
 #ifndef WIN32
-#warning [SOFTFORK] Remove after BTSX_MARKET_FORK_13_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
 #endif
-      if( my->_blockchain->get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+      if( my->_blockchain->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
           FC_ASSERT( !"New asset creation disabled until next hardfork!" );
 
       FC_ASSERT( create_asset_operation::is_power_of_ten( precision ) );
@@ -3025,10 +3025,10 @@ namespace detail {
           pay = delegate_pay_rate;
 
 #ifndef WIN32
-#warning [SOFTFORK] Remove after BTSX_MARKET_FORK_13_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
 #endif
       if( !account.is_delegate() && delegate_pay_rate <= 100
-          && my->_blockchain->get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+          && my->_blockchain->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
           FC_ASSERT( !"Delegate registration disabled until next hardfork!" );
 
       auto builder = create_transaction_builder();

@@ -89,7 +89,7 @@ namespace bts { namespace blockchain {
       if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_MAX_SLATE_SIZE )
          FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
 
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
           if( this->slate.supported_delegates.size() > BTS_BLOCKCHAIN_NUM_DELEGATES )
              FC_CAPTURE_AND_THROW( too_may_delegates_in_slate, (slate.supported_delegates.size()) );
@@ -112,7 +112,7 @@ namespace bts { namespace blockchain {
     */
    void deposit_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-       if( eval_state._current_state->get_head_block_num() < BTSX_YIELD_FORK_1_BLOCK_NUM )
+       if( eval_state._current_state->get_head_block_num() < BTS_V0_4_13_FORK_BLOCK_NUM )
        {
           evaluate_v1( eval_state );
           return;
@@ -158,12 +158,12 @@ namespace bts { namespace blockchain {
     */
    void withdraw_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_YIELD_FORK_1_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_13_FORK_BLOCK_NUM )
       {
          evaluate_v1( eval_state );
          return;
       }
-      else if( eval_state._current_state->get_head_block_num() < BTSX_YIELD_FORK_2_BLOCK_NUM )
+      else if( eval_state._current_state->get_head_block_num() < BTS_V0_4_15_FORK_BLOCK_NUM )
       {
          evaluate_v2( eval_state );
          return;
@@ -335,7 +335,7 @@ namespace bts { namespace blockchain {
                                                                asset_rec->collected_fees,
                                                                asset_rec->current_share_supply );
 
-         if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+         if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
          {
             yield = current_balance_record->calculate_yield_v1( eval_state._current_state->now(),
                                                                 current_balance_record->balance,
@@ -493,7 +493,7 @@ namespace bts { namespace blockchain {
                                                                asset_rec->collected_fees,
                                                                asset_rec->current_share_supply );
 
-         if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+         if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
          {
             yield = current_balance_record->calculate_yield_v1( eval_state._current_state->now(),
                                                                 current_balance_record->balance,

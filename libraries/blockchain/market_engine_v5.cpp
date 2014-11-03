@@ -655,7 +655,7 @@ namespace bts { namespace blockchain { namespace detail {
 
   bool market_engine_v5::get_next_ask()
   { try {
-      if( _pending_state->get_head_block_num() < BTSX_MARKET_FORK_9_BLOCK_NUM )
+      if( _pending_state->get_head_block_num() < BTS_V0_4_18_FORK_BLOCK_NUM )
           return get_next_ask_v1();
 
       if( _current_ask && _current_ask->state.balance > 0 )

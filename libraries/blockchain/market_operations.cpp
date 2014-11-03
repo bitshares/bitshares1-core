@@ -68,7 +68,7 @@ namespace bts { namespace blockchain {
     */
    void ask_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
          evaluate_v1( eval_state );
          return;
@@ -117,7 +117,7 @@ namespace bts { namespace blockchain {
 
    void short_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
          evaluate_v1( eval_state );
          return;
@@ -179,17 +179,17 @@ namespace bts { namespace blockchain {
    */
    void cover_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_16_FORK_BLOCK_NUM )
       {
          evaluate_v1( eval_state );
          return;
       }
-      else if( eval_state._current_state->get_head_block_num() < BTSX_SUPPLY_FORK_2_BLOCK_NUM )
+      else if( eval_state._current_state->get_head_block_num() < BTS_V0_4_17_FORK_BLOCK_NUM )
       {
          evaluate_v2( eval_state );
          return;
       }
-      else if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      else if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
          evaluate_v3( eval_state );
          return;
@@ -228,7 +228,7 @@ namespace bts { namespace blockchain {
       asset total_debt = detail::market_engine::get_interest_owed( principle, current_cover->interest_rate,
                                                                    elapsed_sec ) + principle;
 
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
       {
           total_debt = detail::market_engine::get_interest_owed_v1( principle, current_cover->interest_rate,
                                                                     elapsed_sec ) + principle;
@@ -248,7 +248,7 @@ namespace bts { namespace blockchain {
           // Partial cover
           interest_paid = detail::market_engine::get_interest_paid( delta_amount, current_cover->interest_rate, elapsed_sec );
 
-          if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+          if( eval_state._current_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
           {
               interest_paid = detail::market_engine::get_interest_paid_v1( delta_amount, current_cover->interest_rate, elapsed_sec );
           }
@@ -292,7 +292,7 @@ namespace bts { namespace blockchain {
 
    void add_collateral_operation::evaluate( transaction_evaluation_state& eval_state )
    {
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
          evaluate_v1( eval_state );
          return;

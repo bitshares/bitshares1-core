@@ -1,11 +1,11 @@
 void cover_operation::evaluate_v3( transaction_evaluation_state& eval_state )
 {
-   if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_7_BLOCK_NUM )
+   if( eval_state._current_state->get_head_block_num() < BTS_V0_4_16_FORK_BLOCK_NUM )
    {
       evaluate_v1( eval_state );
       return;
    }
-   else if( eval_state._current_state->get_head_block_num() < BTSX_SUPPLY_FORK_2_BLOCK_NUM )
+   else if( eval_state._current_state->get_head_block_num() < BTS_V0_4_17_FORK_BLOCK_NUM )
    {
       evaluate_v2( eval_state );
       return;

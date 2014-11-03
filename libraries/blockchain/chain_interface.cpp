@@ -41,9 +41,9 @@ namespace bts { namespace blockchain {
    bool chain_interface::is_valid_symbol_name( const string& name )const
    {
 #ifndef WIN32
-#warning [SOFTFORK] Remove after BTSX_MARKET_FORK_13_BLOCK_NUM has passed
+#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
 #endif
-       if( get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+       if( get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
        {
            if( name.size() > 5 )
                return false;
@@ -81,7 +81,7 @@ namespace bts { namespace blockchain {
 
    share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
-       if( get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+       if( get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
            return get_delegate_registration_fee_v1( pay_rate );
 
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
@@ -94,7 +94,7 @@ namespace bts { namespace blockchain {
 
    share_type chain_interface::get_asset_registration_fee( uint8_t symbol_length )const
    {
-       if( get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+       if( get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
            return get_asset_registration_fee_v1();
 
        // TODO: Add #define's for these fixed prices

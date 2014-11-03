@@ -628,7 +628,7 @@ namespace bts { namespace blockchain {
                                               const pending_chain_state_ptr& pending_state,
                                               const public_key_type& block_signee )
       { try {
-            if( pending_state->get_head_block_num() < BTSX_MARKET_FORK_13_BLOCK_NUM )
+            if( pending_state->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
                 return pay_delegate_v1( block_id, pending_state, block_signee );
 
             oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
@@ -830,13 +830,13 @@ namespace bts { namespace blockchain {
         vector<market_transaction> market_transactions;
 
         const auto pending_block_num = pending_state->get_head_block_num();
-        if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
+        if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
         {
            market_engine_v4 engine( pending_state, *this );
-           engine.cancel_all_shorts( self->get_block_header( BTSX_MARKET_FORK_7_BLOCK_NUM ).timestamp );
+           engine.cancel_all_shorts( self->get_block_header( BTS_V0_4_16_FORK_BLOCK_NUM ).timestamp );
            market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
         }
-        else if( pending_block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
+        else if( pending_block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
         {
            market_engine_v6 engine( pending_state, *this );
            engine.cancel_all_shorts();
@@ -847,7 +847,7 @@ namespace bts { namespace blockchain {
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num > BTSX_MARKET_FORK_11_BLOCK_NUM )
+           if( pending_block_num > BTS_V0_4_21_FORK_BLOCK_NUM )
            {
               market_engine engine( pending_state, *this );
               if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
@@ -855,11 +855,11 @@ namespace bts { namespace blockchain {
                  market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
               }
            }
-           else if( pending_block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
+           else if( pending_block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
            {
-               // Cancel all shorts before BTSX_MARKET_FORK_11_BLOCK_NUM -- see above
+               // Cancel all shorts before BTS_V0_4_21_FORK_BLOCK_NUM -- see above
            }
-           else if( pending_block_num >= BTSX_MARKET_FORK_10_BLOCK_NUM )
+           else if( pending_block_num >= BTS_V0_4_19_FORK_BLOCK_NUM )
            {
               market_engine_v6 engine( pending_state, *this );
               if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
@@ -867,7 +867,7 @@ namespace bts { namespace blockchain {
                  market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
               }
            }
-           else if( pending_block_num > BTSX_MARKET_FORK_8_BLOCK_NUM )
+           else if( pending_block_num > BTS_V0_4_17_FORK_BLOCK_NUM )
            {
               market_engine_v5 engine( pending_state, *this );
               if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
@@ -875,11 +875,11 @@ namespace bts { namespace blockchain {
                  market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
               }
            }
-           else if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
+           else if( pending_block_num == BTS_V0_4_17_FORK_BLOCK_NUM )
            {
-               // Cancel all shorts before BTSX_MARKET_FORK_7_BLOCK_NUM -- see above
+               // Cancel all shorts before BTS_V0_4_16_FORK_BLOCK_NUM -- see above
            }
-           else if( pending_block_num > BTSX_MARKET_FORK_7_BLOCK_NUM )
+           else if( pending_block_num > BTS_V0_4_16_FORK_BLOCK_NUM )
            {
               market_engine_v4 engine( pending_state, *this );
               if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
@@ -887,11 +887,11 @@ namespace bts { namespace blockchain {
                  market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
               }
            }
-           else if( pending_block_num == BTSX_MARKET_FORK_7_BLOCK_NUM )
+           else if( pending_block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
            {
                // Should have canceled all shorts but we missed it
            }
-           else if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
+           else if( pending_block_num >= BTS_V0_4_13_FORK_BLOCK_NUM )
            {
               market_engine_v3 engine( pending_state, *this );
               if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
@@ -899,7 +899,7 @@ namespace bts { namespace blockchain {
                  market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
               }
            }
-           else if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
+           else if( pending_block_num >= BTS_V0_4_0_FORK_BLOCK_NUM )
            {
               market_engine_v2 engine( pending_state, *this );
               if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
@@ -917,7 +917,7 @@ namespace bts { namespace blockchain {
            }
         }
 
-        if( pending_block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
+        if( pending_block_num < BTS_V0_4_9_FORK_BLOCK_NUM )
             pending_state->set_dirty_markets( pending_state->_dirty_markets );
 
         pending_state->set_market_transactions( std::move( market_transactions ) );
@@ -963,12 +963,12 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_id, pending_state, block_signee );
 
-            if( block_data.block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
+            if( block_data.block_num < BTS_V0_4_9_FORK_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             execute_markets( block_data.timestamp, pending_state );
 
-            if( block_data.block_num >= BTSX_MARKET_FORK_2_BLOCK_NUM )
+            if( block_data.block_num >= BTS_V0_4_9_FORK_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             update_active_delegate_list( block_data, pending_state );
@@ -992,14 +992,14 @@ namespace bts { namespace blockchain {
 
             // self->sanity_check();
 
-            if( block_data.block_num == BTSX_SUPPLY_FORK_1_BLOCK_NUM )
+            if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
                 auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
                 base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
                 self->store_asset_record( *base_asset_record );
             }
-            else if( block_data.block_num == BTSX_SUPPLY_FORK_2_BLOCK_NUM || block_data.block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
+            else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM || block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
                 records.reserve( 41 );
@@ -1029,7 +1029,7 @@ namespace bts { namespace blockchain {
                 }
             }
 
-            if( block_data.block_num == BTSX_MARKET_FORK_13_BLOCK_NUM )
+            if( block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<account_record> records;
                 records.reserve( 5500 ); // Calibrate this after
@@ -1037,13 +1037,12 @@ namespace bts { namespace blockchain {
                 for( auto iter = _account_db.begin(); iter.valid(); ++iter )
                 {
                     const account_record& record = iter.value();
-                    if( !record.is_delegate() ) continue;
+                    if( !record.is_delegate() || !record.delegate_info.valid() ) continue;
                     records.push_back( record );
                 }
 
                 for( auto& record : records )
                 {
-                    FC_ASSERT( record.delegate_info.valid() );
                     record.delegate_info->pay_rate = 3;
                     self->store_account_record( record );
                 }
@@ -1936,7 +1935,7 @@ namespace bts { namespace blockchain {
       auto start_time = time_point::now();
 
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-      if( pending_state->get_head_block_num() >= BTSX_MARKET_FORK_2_BLOCK_NUM )
+      if( pending_state->get_head_block_num() >= BTS_V0_4_9_FORK_BLOCK_NUM )
          my->execute_markets( timestamp, pending_state );
       auto pending_trx = get_pending_transactions();
 

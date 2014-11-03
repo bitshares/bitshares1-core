@@ -25,7 +25,7 @@ void chain_database_impl::pay_delegate_v1( const block_id_type& block_id,
       oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
       FC_ASSERT( base_asset_record.valid() );
       base_asset_record->current_share_supply -= burned_paycheck;
-      if( pending_state->get_head_block_num() >= BTSX_SUPPLY_FORK_1_BLOCK_NUM )
+      if( pending_state->get_head_block_num() >= BTS_V0_4_16_FORK_BLOCK_NUM )
       {
           base_asset_record->collected_fees -= max_available_paycheck;
           delegate_record->delegate_info->total_burned += burned_paycheck;

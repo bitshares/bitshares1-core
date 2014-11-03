@@ -37,7 +37,7 @@ namespace bts { namespace blockchain { namespace detail {
 
     optional<market_order>        _current_bid;
     optional<market_order>        _current_ask;
-    optional<market_order>        _current_ask_backup; // used to allow us to validate blocks before BTSX_MARKET_FORK_4_BLOCK_NUM
+    optional<market_order>        _current_ask_backup; // used to allow us to validate blocks before BTS_V0_4_10_FORK_BLOCK_NUM
     share_type                    _current_payoff_balance = 0;
     asset_id_type                 _quote_id;
     asset_id_type                 _base_id;

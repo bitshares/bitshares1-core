@@ -86,7 +86,7 @@ void withdraw_operation::evaluate_v1( transaction_evaluation_state& eval_state )
 
    obalance_record current_balance_record = eval_state._current_state->get_balance_record( this->balance_id );
 
-   if( eval_state._current_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+   if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_10_FORK_BLOCK_NUM )
    {
       if( !current_balance_record )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );

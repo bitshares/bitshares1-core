@@ -69,7 +69,7 @@ void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
                                                             asset_rec->collected_fees,
                                                             asset_rec->current_share_supply );
 
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
          yield = current_balance_record->calculate_yield_v1( eval_state._current_state->now(),
                                                              current_balance_record->balance,
