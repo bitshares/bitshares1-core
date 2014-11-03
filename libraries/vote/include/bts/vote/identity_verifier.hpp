@@ -68,18 +68,20 @@ public:
    fc::optional<identity_verification_response> get_verified_identity(const address& owner) const;
 
    /**
-    * @brief Retrieve a set of pending requests.
+    * @brief Retrieve a set of requests of a certain status.
+    * @param status Only requests with this status will be returned
     * @param after_time Only requests received after this time will be returned
     * @param limit The maximum number of records to return
     * @return Up to limit requests received after after_time
     *
-    * This function is used to list the pending verification requests, which have not yet begun processing. This method
-    * can be called any number of times and will not alter the state of any requests. The after_time and limit
-    * parameters allow pagination of requests, so the first ten can be requested by calling with no parameters, the next
-    * ten can be listed by passing to after_time the of timestamp the newest record from the first call, etc.
+    * This function is used to list the verification requests with a given status. This method can be called any number
+    * of times and will not alter the state of any requests. The after_time and limit parameters allow pagination of
+    * requests, so the first ten can be requested by calling with no parameters, the next ten can be listed by passing
+    * to after_time the of timestamp the newest record from the first call, etc.
     */
-   vector<identity_verification_request_summary> list_pending_requests(fc::microseconds after_time = fc::microseconds(),
-                                                                       uint32_t limit = 10) const;
+   vector<identity_verification_request_summary> list_requests(request_status_enum status = awaiting_processing,
+                                                               fc::microseconds after_time = fc::microseconds(),
+                                                               uint32_t limit = 10) const;
    /**
     * @brief Retrieve full request record for a request, but don't mark it as in-processing yet.
     * @param request_id Timestamp of the request to retrieve. This uniquely identifies the request.
@@ -90,8 +92,20 @@ public:
     *
     * @throws fc::key_not_found_exception If request_id does not match any known request
     */
-   identity_verification_request peek_pending_request(fc::microseconds request_id) const;
+   identity_verification_request peek_request(fc::microseconds request_id) const;
 
+   /**
+    * @brief Retrieves a particular pending request, and marks it as in-processing.
+    * @param request_id Timestamp of the request to retrieve. This uniquely identifies the request.
+    * @return The request to process.
+    *
+    * This function allows the caller to claim a particular request to work on. The request must be in the
+    * awaiting_processing state, and it will be changed to in_processing.
+    *
+    * @throws fc::key_not_found_exception If request_id does not match any known request
+    * @throws fc::exception If no awaiting_processing request has the specified ID
+    */
+   identity_verification_request take_pending_request(fc::microseconds request_id);
    /**
     * @brief Retrieve the next pending request in line
     * @return The next pending request, or null if no pending requests exist

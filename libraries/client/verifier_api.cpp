@@ -82,18 +82,25 @@ mail::message client_impl::verifier_public_api(const message& const_request)
    return reply;
 }
 
-vector<identity_verification_request_summary> client_impl::verifier_list_pending_requests(
+vector<identity_verification_request_summary> client_impl::verifier_list_requests(
+      const vote::request_status_enum& status,
       const fc::microseconds &after_time,
       uint32_t limit) const
 {
    SANITY_CHECK;
-   return _id_verifier->list_pending_requests(after_time, limit);
+   return _id_verifier->list_requests(status, after_time, limit);
 }
 
-identity_verification_request client_impl::verifier_peek_pending_request(const fc::microseconds& request_id) const
+identity_verification_request client_impl::verifier_peek_request(const fc::microseconds& request_id) const
 {
    SANITY_CHECK;
-   return _id_verifier->peek_pending_request(request_id);
+   return _id_verifier->peek_request(request_id);
+}
+
+identity_verification_request client_impl::verifier_take_pending_request(const fc::microseconds &request_id)
+{
+   SANITY_CHECK;
+   return _id_verifier->take_pending_request(request_id);
 }
 
 optional<identity_verification_request> client_impl::verifier_take_next_request()

@@ -191,9 +191,9 @@ public:
       return request;
    }
 
-   optional<identity_verification_request> take_next_request()
+   optional<identity_verification_request> take_next_request(fc::microseconds request_id = fc::microseconds())
    {
-      auto request_summary_vector = list_requests_by_status(awaiting_processing, fc::microseconds(), 1);
+      auto request_summary_vector = list_requests_by_status(awaiting_processing, request_id, 1);
       if( request_summary_vector.empty() )
          return optional<identity_verification_request>();
 
@@ -258,42 +258,45 @@ fc::optional<identity_verification_response> identity_verifier::store_new_reques
         const public_key_type& owner_key)
 {
    SANITY_CHECK;
-
    return my->store_new_request(detail::identity_record(request, owner_key));
 }
 fc::optional<identity_verification_response> identity_verifier::get_verified_identity(const blockchain::address& owner) const
 {
    SANITY_CHECK;
-
    return my->check_pending_identity(owner);
 }
 
-vector<identity_verification_request_summary> identity_verifier::list_pending_requests(fc::microseconds after_time,
-                                                                                       uint32_t limit) const
+vector<identity_verification_request_summary> identity_verifier::list_requests(request_status_enum status,
+                                                                               fc::microseconds after_time,
+                                                                               uint32_t limit) const
 {
    SANITY_CHECK;
-
-   return my->list_requests_by_status(awaiting_processing, after_time, limit);
+   return my->list_requests_by_status(status, after_time, limit);
 }
 
-identity_verification_request identity_verifier::peek_pending_request(fc::microseconds request_id) const
+identity_verification_request identity_verifier::peek_request(fc::microseconds request_id) const
 {
    SANITY_CHECK;
-
    return my->fetch_request_by_id(request_id);
+}
+
+identity_verification_request identity_verifier::take_pending_request(fc::microseconds request_id)
+{
+   SANITY_CHECK;
+   auto request = my->take_next_request(request_id);
+   FC_ASSERT( request, "The specified request does not exist or is not awaiting_processing." );
+   return *request;
 }
 
 fc::optional<identity_verification_request> identity_verifier::take_next_request()
 {
    SANITY_CHECK;
-
    return my->take_next_request();
 }
 
 void identity_verifier::resolve_request(fc::microseconds request_id, const identity_verification_response& response)
 {
    SANITY_CHECK;
-
    my->resolve_request(request_id, response);
 }
 

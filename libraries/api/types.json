@@ -715,6 +715,11 @@
         "type_name" : "verification_request_summary_list",
         "container_type" : "array",
         "contained_type" : "verification_request_summary"
+      },
+      {
+        "type_name" : "id_verification_status",
+        "cpp_return_type" : "bts::vote::request_status_enum",
+        "cpp_include_file" : "bts/vote/types.hpp"
       }
     ]
 }
