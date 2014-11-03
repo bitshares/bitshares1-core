@@ -25,17 +25,18 @@
 #define BTS_V0_4_23_FORK_BLOCK_NUM  871000
 #define BTS_V0_4_24_FORK_BLOCK_NUM  9999999
 
-#define BTSX_MARKET_FORK_TO_UNIX_TIME_LIST ((BTS_V0_4_0_FORK_BLOCK_NUM,   "0.4.0",      1408064036)) \
-                                           ((BTS_V0_4_9_FORK_BLOCK_NUM,   "0.4.9-RC1",  1409096675)) \
-                                           ((BTS_V0_4_9_FORK_2_BLOCK_NUM, "0.4.9",      1409193626)) \
-                                           ((BTS_V0_4_10_FORK_BLOCK_NUM,  "0.4.10",     1409437355)) \
-                                           ((BTS_V0_4_12_FORK_BLOCK_NUM,  "0.4.12",     1409846462)) \
-                                           ((BTS_V0_4_13_FORK_BLOCK_NUM,  "0.4.13-RC1", 1410288486)) \
-                                           ((BTS_V0_4_16_FORK_BLOCK_NUM,  "0.4.16",     1411258737)) \
-                                           ((BTS_V0_4_17_FORK_BLOCK_NUM,  "0.4.17",     1411599233)) \
-                                           ((BTS_V0_4_18_FORK_BLOCK_NUM,  "0.4.18",     1411765631)) \
-                                           ((BTS_V0_4_19_FORK_BLOCK_NUM,  "0.4.19",     1412203442)) \
-                                           ((BTS_V0_4_21_FORK_BLOCK_NUM,  "0.4.21",     1413928884))
+#define BTS_FORK_TO_UNIX_TIME_LIST  ((BTS_V0_4_0_FORK_BLOCK_NUM,   "0.4.0",     1408064036)) \
+                                    ((BTS_V0_4_9_FORK_2_BLOCK_NUM, "0.4.9",     1409193626)) \
+                                    ((BTS_V0_4_10_FORK_BLOCK_NUM,  "0.4.10",    1409437355)) \
+                                    ((BTS_V0_4_12_FORK_BLOCK_NUM,  "0.4.12",    1409846462)) \
+                                    ((BTS_V0_4_13_FORK_BLOCK_NUM,  "0.4.13",    1410294635)) \
+                                    ((BTS_V0_4_15_FORK_BLOCK_NUM,  "0.4.15",    1410657316)) \
+                                    ((BTS_V0_4_16_FORK_BLOCK_NUM,  "0.4.16",    1411258737)) \
+                                    ((BTS_V0_4_17_FORK_BLOCK_NUM,  "0.4.17",    1411599233)) \
+                                    ((BTS_V0_4_18_FORK_BLOCK_NUM,  "0.4.18",    1411765631)) \
+                                    ((BTS_V0_4_19_FORK_BLOCK_NUM,  "0.4.19",    1412203442)) \
+                                    ((BTS_V0_4_21_FORK_BLOCK_NUM,  "0.4.21",    1414019090)) \
+                                    ((BTS_V0_4_23_FORK_BLOCK_NUM,  "0.4.23",    1414527136))
 
 namespace bts { namespace blockchain {
   uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t revision_time);

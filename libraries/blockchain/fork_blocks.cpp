@@ -25,7 +25,7 @@ namespace bts { namespace blockchain {
       if (!detail::fork_version_data_by_revision_map_initialized)
       {
   #define INSERT_ELEMENT(r, data, elem) detail::fork_version_data_by_revision[BOOST_PP_TUPLE_ELEM(3, 2, elem)] = detail::fork_version_data{BOOST_PP_TUPLE_ELEM(3, 0, elem), BOOST_PP_TUPLE_ELEM(3, 1, elem)};
-        BOOST_PP_SEQ_FOR_EACH(INSERT_ELEMENT, _, BTSX_MARKET_FORK_TO_UNIX_TIME_LIST)
+        BOOST_PP_SEQ_FOR_EACH(INSERT_ELEMENT, _, BTS_FORK_TO_UNIX_TIME_LIST)
         detail::fork_version_data_by_revision_map_initialized = true;
       }
     }
