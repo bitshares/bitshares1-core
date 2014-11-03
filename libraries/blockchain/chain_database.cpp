@@ -279,7 +279,9 @@ namespace bts { namespace blockchain {
                 data.owner = address(pts_address(item.raw_address));
             else
                  FC_ASSERT(!"Cannot parse address");
+#ifndef WIN32
 #warning november 1st
+#endif
             data.vesting_start = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;
             data.original_balance = item.balance;
