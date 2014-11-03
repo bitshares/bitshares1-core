@@ -1028,6 +1028,26 @@ namespace bts { namespace blockchain {
                     self->store_asset_record( record );
                 }
             }
+
+            if( block_data.block_num == BTSX_MARKET_FORK_13_BLOCK_NUM )
+            {
+                vector<account_record> records;
+                records.reserve( 5500 ); // Calibrate this after
+
+                for( auto iter = _account_db.begin(); iter.valid(); ++iter )
+                {
+                    const account_record& record = iter.value();
+                    if( !record.is_delegate() ) continue;
+                    records.push_back( record );
+                }
+
+                for( auto& record : records )
+                {
+                    FC_ASSERT( record.delegate_info.valid() );
+                    record.delegate_info->pay_rate = 3;
+                    self->store_account_record( record );
+                }
+            }
          }
          catch ( const fc::exception& e )
          {
