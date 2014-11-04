@@ -156,6 +156,12 @@ namespace bts { namespace blockchain {
          auto account_with_same_key = eval_state._current_state->get_account_record( address(*this->active_key) );
          if( account_with_same_key )
             FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
+
+#ifndef WIN32
+#warning Until block signing keys can be changed, they must always be equal to the active key
+#endif
+         if( current_record->is_delegate() )
+            current_record->delegate_info->block_signing_key = current_record->active_key();
       }
 
       if( this->public_data.valid() )
