@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>qml/main.qml</file>
         <file>qml/RoadMap.qml</file>
+        <file>qml/CheckPoint.qml</file>
     </qresource>
 </RCC>

@@ -17,12 +17,7 @@ ApplicationWindow {
 
       MouseArea {
          anchors.fill: parent;
-         onClicked: parent.checkpointsComplete = (parent.checkpointsComplete + 1) % (parent.checkpoints.count + 1)
+         onClicked: parent.checkpointsComplete = (parent.checkpointsComplete + 1) % parent.checkpoints.count
       }
-   }
-
-   Text {
-      text: bitshares.info
-      anchors.centerIn: parent
    }
 }

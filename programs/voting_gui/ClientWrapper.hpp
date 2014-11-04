@@ -12,6 +12,7 @@
 class ClientWrapper : public QObject
 {
    Q_OBJECT
+   Q_PROPERTY(bool initialized READ is_initialized NOTIFY initialization_complete)
    Q_PROPERTY(QString info READ get_info NOTIFY state_changed)
 
 public:
@@ -31,12 +32,16 @@ public:
 
    void handle_crash();
 
+   bool is_initialized() const {
+      return _init_complete.ready();
+   }
+
 public Q_SLOTS:
    void set_data_dir(QString data_dir);
    void confirm_and_set_approval(QString delegate_name, bool approve);
 
 Q_SIGNALS:
-   void initialized();
+   void initialization_complete();
    void state_changed();
    void status_update(QString statusString);
    void error(QString errorString);

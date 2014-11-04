@@ -132,8 +132,6 @@ void ClientWrapper::initialize()
          }
          catch(...)
          {}
-
-         _main_thread->async( [&]{ Q_EMIT initialized(); });
       }
       catch (const bts::db::db_in_use_exception&)
       {
@@ -148,6 +146,9 @@ void ClientWrapper::initialize()
          } else
             _main_thread->async( [&]{ Q_EMIT error( tr("An error occurred while trying to start.")); });
       }
+   });
+   _init_complete.on_complete([this](fc::exception_ptr) {
+      Q_EMIT initialization_complete();
    });
 }
 

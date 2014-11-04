@@ -16,8 +16,12 @@ Item {
       ListElement {
          title: "Voting"
       }
+      ListElement {
+         title: "Finished"
+      }
    }
    property int checkpointsComplete: 0
+   readonly property variant currentCheckpoint: checkpoints.get(checkpointsComplete)
 
    RowLayout {
       id: roadMapBar
@@ -26,38 +30,11 @@ Item {
 
       Repeater {
          model: checkpoints
-         delegate: Component {
-            Item {
-               anchors.verticalCenter: parent.verticalCenter
-               height: parent.height
-               Layout.fillWidth: true
-
-               QtObject {
-                  id: d
-                  property bool completed: index < checkpointsComplete
-                  property bool inProgress: index == checkpointsComplete
-               }
-
-               Image {
-                  source: d.inProgress? "qrc:/res/halfchecked.png"
-                                      : d.completed? "qrc:/res/checked.png"
-                                                   : "qrc:/res/unchecked.png"
-                  anchors.top: parent.top
-                  anchors.bottom: checkpointLabel.top
-                  anchors.horizontalCenter: parent.horizontalCenter
-                  fillMode: Image.PreserveAspectFit
-               }
-
-               Label {
-                  id: checkpointLabel
-                  text: title
-                  anchors.horizontalCenter: parent.horizontalCenter
-                  anchors.bottom: parent.bottom
-                  horizontalAlignment: Text.AlignHCenter
-               }
-            }
+         delegate: CheckPoint {
+            anchors.verticalCenter: parent.verticalCenter
+            height: parent.height
+            Layout.fillWidth: true
          }
       }
-
    }
 }
