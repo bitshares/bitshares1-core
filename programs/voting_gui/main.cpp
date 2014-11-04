@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQmlDebuggingEnabler>
 
 #include "ClientWrapper.hpp"
 
@@ -10,6 +11,10 @@ int main(int argc, char *argv[])
 
     ClientWrapper* client = new ClientWrapper(&app);
     client->initialize();
+
+#ifndef NDEBUG
+    QQmlDebuggingEnabler enabler;
+#endif
 
     QQmlApplicationEngine engine;
     QQmlContext* context = engine.rootContext();
