@@ -236,4 +236,22 @@ namespace bts { namespace blockchain {
       // STORE LINK...
    } FC_CAPTURE_AND_RETHROW( (eval_state) ) }
 
+   void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
+   {
+      auto account_rec = eval_state._current_state->get_account_record( this->account_id );
+      FC_ASSERT( account_rec.valid() );
+      FC_ASSERT( account_rec->is_delegate() );
+      if( eval_state.check_signature( account_rec->active_key() ) ||
+          eval_state.check_signature( account_rec->owner_key ) ||
+          eval_state.check_signature( account_rec->delegate_info->block_signing_key )  )
+      {
+          account_rec->delegate_info->block_signing_key = this->block_signing_key;
+      }
+      else
+      {
+         FC_CAPTURE_AND_THROW( missing_signature, (account_rec->owner_key) );
+      }
+
+   }
+
 } } // bts::blockchain
