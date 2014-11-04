@@ -3793,6 +3793,7 @@ namespace detail {
       return balance_ids;
    } FC_CAPTURE_AND_RETHROW() }
 
+   // This will lie about vesting balances to show the user what they can actually spend
    account_balance_summary_type wallet::get_account_balances( const string& account_name, bool include_empty )const
    { try {
       map<string, map<asset_id_type, share_type>> balances;
@@ -3805,7 +3806,11 @@ namespace detail {
 
           for( const auto& record : records )
           {
-              const auto balance = record.get_balance();
+#ifndef WIN32
+#warning [BTS] Keep old behaviour in mainnet until vesting is finalized
+#endif
+              //const auto balance = record.get_balance();
+              const auto balance = record.get_vested_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }
       }

@@ -157,7 +157,10 @@ namespace bts { namespace blockchain {
          digest_type chain_id = self->chain_id();
          if( chain_id != digest_type() && !chain_id_only )
          {
-            self->sanity_check();
+#ifndef WIN32
+#warning re-enable sanity check
+#endif
+            //self->sanity_check();
             ilog( "Genesis state already initialized" );
             if( chain_id == BTS_EXPECTED_CHAIN_ID )
                 chain_id = BTS_DESIRED_CHAIN_ID;
@@ -277,21 +280,25 @@ namespace bts { namespace blockchain {
          for( const auto& item : config.bts_sharedrop )
          {
             // try to parse the raw address
-
+            // is_valid() throws when it should return false b/c the constructor also calls it -.-
             withdraw_vesting data;
-            auto bts_addr = address(item.raw_address);
-            if( bts_addr.is_valid(item.raw_address) )
-                data.owner = bts_addr;
-            else if( pts_address(item.raw_address).is_valid() )
-                data.owner = address(pts_address(item.raw_address));
-            else
-                 FC_ASSERT(!"Cannot parse address");
-#ifndef WIN32
-#warning november 1st
-#endif
+            try {
+                auto bts_addr = address(item.raw_address);
+                if( bts_addr.is_valid(item.raw_address) )
+                    data.owner = bts_addr;
+            }
+            catch (...)
+            {
+                try
+                {
+                    if( pts_address(item.raw_address).is_valid() )
+                        data.owner = address(pts_address(item.raw_address));
+                } FC_CAPTURE_AND_RETHROW( (item.raw_address) )
+            }
+
             data.vesting_start = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;
-            data.original_balance = item.balance;
+            data.original_balance = item.balance / 1000;
 
             withdraw_condition condition(data, 0, 0);
             balance_record balance_rec(condition);
@@ -366,7 +373,10 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
-         self->sanity_check();
+#ifndef WIN32
+#warning re-enable sanity check
+#endif
+         //self->sanity_check();
          return _chain_id;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 

@@ -69,10 +69,10 @@ namespace bts { namespace blockchain {
            *      to calculate child keys, otherwise the extended_private_key is
            *      required to calculate all children.
            */
-          extended_private_key child( uint32_t c, 
+          extended_private_key child( uint32_t c,
                                       derivation_type derivation = private_derivation )const;
 
-          extended_private_key child( const fc::sha256& secret, 
+          extended_private_key child( const fc::sha256& secret,
                                       derivation_type derivation = private_derivation )const;
 
           operator fc::ecc::private_key()const;
@@ -80,10 +80,10 @@ namespace bts { namespace blockchain {
 
           operator extended_public_key()const
           {
-             return extended_public_key( fc::ecc::private_key::regenerate(priv_key).get_public_key(), 
+             return extended_public_key( fc::ecc::private_key::regenerate(priv_key).get_public_key(),
                                          chain_code);
           }
-          
+
           bool operator==( const extended_private_key& k ) const
           {
 		      return (this->priv_key == k.priv_key) &&
