@@ -11,7 +11,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     154
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     155
 
 /**
  *  The address prepended to string representation of
@@ -22,7 +22,7 @@
 #define BTS_ADDRESS_PREFIX                                  "XTS"
 #define BTS_BLOCKCHAIN_SYMBOL                               "XTS"
 #define BTS_BLOCKCHAIN_NAME                                 "BitShares XTS"
-#define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares X Test Network"
+#define BTS_BLOCKCHAIN_DESCRIPTION                          "BitShares Test Network"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC                 (60*60*24) // 24 hours
@@ -30,7 +30,6 @@
 #define BTS_BLOCKCHAIN_MIN_BURN_FEE                         BTS_BLOCKCHAIN_PRECISION * 1 // 1 XTS
 #define BTS_BLOCKCHAIN_DEFAULT_RELAY_FEE                    10000 // XTS
 #define BTS_BLOCKCHAIN_MINIMUM_SHORT_ORDER_SIZE             (BTS_BLOCKCHAIN_PRECISION*100)
-//#define BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC                 (30*24*60*60) // 30 days * 24 hours * 60 minutes * 60 seconds = 1 month
 #define BTS_BLOCKCHAIN_MAX_SHORT_PERIOD_SEC                 (2*60*60) // 2 hours for test network
 
 /**

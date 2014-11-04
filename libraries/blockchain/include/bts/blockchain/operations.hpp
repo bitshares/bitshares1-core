@@ -141,4 +141,3 @@ namespace fc {
    void to_variant( const bts::blockchain::operation& var,  variant& vo );
    void from_variant( const variant& var,  bts::blockchain::operation& vo );
 }
-

@@ -297,7 +297,7 @@ namespace bts { namespace blockchain {
             eval_state._current_state->store_asset_record( *asset_rec );
          }
       }
-      
+
       current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._current_state->now();
 
@@ -490,7 +490,7 @@ namespace bts { namespace blockchain {
       auto escrow_balance_record = eval_state._current_state->get_balance_record( this->escrow_id );
       FC_ASSERT( escrow_balance_record.valid() );
 
-      if( !eval_state.check_signature( this->released_by ) ) 
+      if( !eval_state.check_signature( this->released_by ) )
          FC_ASSERT( !"transaction not signed by releasor" );
 
       auto escrow_condition = escrow_balance_record->condition.as<withdraw_with_escrow>();

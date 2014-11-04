@@ -288,7 +288,7 @@ namespace bts { namespace blockchain {
                     FC_ASSERT(!"Cannot parse address");
                 }
             }
-#warning november 1st
+
             data.vesting_start = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;
             data.original_balance = item.balance;
