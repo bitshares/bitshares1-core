@@ -333,7 +333,6 @@ namespace bts { namespace blockchain { namespace detail {
                       // bid price assuming the bid price is reasonable
                       if( mtrx.bid_price < min_cover_ask )
                       {
-                         wlog( "skipping cover ${x} < min_cover_ask ${b}", ("x",_current_ask->get_price())("b", min_cover_ask)  );
                          reset_current_ask();
                          continue;
                       }
