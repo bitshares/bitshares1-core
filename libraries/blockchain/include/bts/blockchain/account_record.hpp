@@ -69,6 +69,7 @@ namespace bts { namespace blockchain {
 
       share_type        total_paid = 0;
       share_type        total_burned = 0;
+      public_key_type   block_signing_key;
    };
 
    typedef fc::optional<delegate_stats> odelegate_stats;
@@ -150,6 +151,7 @@ FC_REFLECT( bts::blockchain::delegate_stats,
             (pay_balance)
             (total_paid)
             (total_burned)
+            (block_signing_key)
             )
 FC_REFLECT( bts::blockchain::burn_record_key,   (account_id)(transaction_id) )
 FC_REFLECT( bts::blockchain::burn_record_value, (amount)(message)(signer) )
