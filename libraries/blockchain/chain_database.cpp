@@ -330,7 +330,7 @@ namespace bts { namespace blockchain {
          base_asset.id = asset_id;
          base_asset.symbol = BTS_BLOCKCHAIN_SYMBOL;
          base_asset.name = BTS_BLOCKCHAIN_NAME;
-         base_asset.description = BTS_BLOCKCHAIN_DESCRIPTION;
+         base_asset.description = "BitShares"; // TODO: fix BTS_BLOCKCHAIN_NAME
          base_asset.public_data = variant("");
          base_asset.issuer_account_id = god.id;
          base_asset.precision = BTS_BLOCKCHAIN_PRECISION;
