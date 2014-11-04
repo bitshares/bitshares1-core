@@ -465,7 +465,7 @@ namespace bts { namespace blockchain { namespace detail {
           // Partial cover
           interest_paid = get_interest_paid( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
 
-          if( _pending_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+          if( _pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
           {
               interest_paid = get_interest_paid_v1( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
           }
@@ -803,7 +803,7 @@ namespace bts { namespace blockchain { namespace detail {
 
   asset market_engine::get_current_cover_debt() const
   {
-      if( _pending_state->get_head_block_num() < BTSX_MARKET_FORK_12_BLOCK_NUM )
+      if( _pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
       {
           return get_interest_owed_v1( _current_ask->get_balance(),
                                        _current_collat_record.interest_rate,

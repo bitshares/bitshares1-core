@@ -70,6 +70,7 @@ namespace bts { namespace client {
                   "5.101.106.138:1776",
                   "5.101.106.138:1777",
                   "5.101.106.138:1778",
+                  "46.226.109.66:1776",
                   "54.77.51.177:1776",
                   "54.79.27.224:1776",
                   "61.129.33.213:1776",
@@ -92,8 +93,8 @@ namespace bts { namespace client {
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
-          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
-          default_delegate_peers( vector<string>({"178.62.50.61:9988"}) )
+          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:9988") ),
+          default_delegate_peers( vector<string>({"0.0.0.0:9988"}) )
           {
               logging = fc::logging_config::default_config();
           }

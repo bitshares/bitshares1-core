@@ -11,9 +11,6 @@
 
 namespace bts { namespace blockchain {
 
-   bool is_valid_account_name( const string& name );
-   bool is_valid_symbol_name( const string& name );
-
    enum chain_property_enum
    {
       last_asset_id            = 0,
@@ -56,6 +53,16 @@ namespace bts { namespace blockchain {
          /** return the timestamp from the most recent block */
          virtual fc::time_point_sec         now()const                                                      = 0;
 
+         bool                               is_valid_account_name( const string& name )const;
+         bool                               is_valid_symbol_name( const string& name )const;
+
+         share_type                         get_delegate_registration_fee( uint8_t pay_rate )const;
+         share_type                         get_asset_registration_fee( uint8_t symbol_length )const;
+
+         share_type                         get_delegate_registration_fee_v1( uint8_t pay_rate )const;
+         share_type                         get_asset_registration_fee_v1()const;
+         share_type                         get_delegate_pay_rate_v1()const;
+
          std::vector<account_id_type>       get_active_delegates()const;
          void                               set_active_delegates( const std::vector<account_id_type>& id );
          bool                               is_active_delegate( const account_id_type& id )const;
@@ -83,14 +90,9 @@ namespace bts { namespace blockchain {
 
          virtual fc::ripemd160              get_current_random_seed()const                                  = 0;
 
-         share_type                         get_delegate_pay_rate()const;
-
          virtual odelegate_slate            get_delegate_slate( slate_id_type id )const                     = 0;
          virtual void                       store_delegate_slate( slate_id_type id,
                                                                   const delegate_slate& slate )             = 0;
-
-         virtual share_type                 get_delegate_registration_fee()const;
-         virtual share_type                 get_asset_registration_fee()const;
 
          virtual int64_t                    get_required_confirmations()const;
          virtual fc::variant                get_property( chain_property_enum property_id )const            = 0;

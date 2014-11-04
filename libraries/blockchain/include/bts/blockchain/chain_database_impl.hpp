@@ -84,6 +84,9 @@ namespace bts { namespace blockchain {
             void                                        pay_delegate( const block_id_type& block_id,
                                                                       const pending_chain_state_ptr&,
                                                                       const public_key_type& block_signee );
+            void                                        pay_delegate_v1( const block_id_type& block_id,
+                                                                         const pending_chain_state_ptr&,
+                                                                         const public_key_type& block_signee );
             void                                        save_undo_state( const block_id_type& id,
                                                                          const pending_chain_state_ptr& );
             void                                        update_head_block( const full_block& blk );
@@ -92,6 +95,7 @@ namespace bts { namespace blockchain {
             void                                        recursive_mark_as_invalid( const std::unordered_set<block_id_type>& ids, const fc::exception& reason );
 
             void                                        execute_markets(const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state );
+            void                                        execute_markets_v1(const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state );
             void                                        update_random_seed( const secret_hash_type& new_secret,
                                                                             const pending_chain_state_ptr& pending_state );
             void                                        update_active_delegate_list(const full_block& block_data,

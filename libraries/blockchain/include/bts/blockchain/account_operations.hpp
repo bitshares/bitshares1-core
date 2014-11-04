@@ -39,6 +39,7 @@ namespace bts { namespace blockchain {
       optional<account_meta_info> meta_data;
 
       void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate_v1( transaction_evaluation_state& eval_state );
    };
 
    struct update_account_operation
@@ -59,6 +60,7 @@ namespace bts { namespace blockchain {
 
       bool is_delegate()const;
       void evaluate( transaction_evaluation_state& eval_state );
+      void evaluate_v1( transaction_evaluation_state& eval_state );
    };
 
    struct withdraw_pay_operation

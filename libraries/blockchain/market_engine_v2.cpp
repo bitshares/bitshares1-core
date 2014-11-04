@@ -5,7 +5,7 @@
 namespace bts { namespace blockchain { namespace detail {
 
       // This is used to save & restore the _current_ask with its previous value, required to
-      // reproduce some quirky behavior in pre-BTSX_MARKET_FORK_4_BLOCK_NUM blocks.
+      // reproduce some quirky behavior in pre-BTS_V0_4_10_FORK_BLOCK_NUM blocks.
       struct save_and_restore_ask
       {
         fc::optional<market_order>& _current_ask_to_swap;
@@ -101,7 +101,7 @@ namespace bts { namespace blockchain { namespace detail {
                    max_short_bid = market_stat->maximum_bid();
                    min_cover_ask = market_stat->minimum_ask();
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   if( pending_block_num >= BTS_V0_4_10_FORK_BLOCK_NUM )
                    {
                       if( median_price )
                          max_short_bid = *median_price;
@@ -116,8 +116,8 @@ namespace bts { namespace blockchain { namespace detail {
                   get_next_bid(); // this is necessary for get_next_ask to work with collateral
                   while( get_next_ask() )
                   {
-                     assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
-                     if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
+                     assert(_pending_state->get_head_block_num() < BTS_V0_4_10_FORK_BLOCK_NUM || _current_ask);
+                     if (_pending_state->get_head_block_num() >= BTS_V0_4_10_FORK_BLOCK_NUM && !_current_ask)
                        FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
                      save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
 
@@ -172,8 +172,8 @@ namespace bts { namespace blockchain { namespace detail {
              bool order_did_execute = false;
              while( get_next_bid() && get_next_ask() )
              {
-                assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
-                if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
+                assert(_pending_state->get_head_block_num() < BTS_V0_4_10_FORK_BLOCK_NUM || _current_ask);
+                if (_pending_state->get_head_block_num() >= BTS_V0_4_10_FORK_BLOCK_NUM && !_current_ask)
                   FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
                 save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
 
@@ -208,7 +208,7 @@ namespace bts { namespace blockchain { namespace detail {
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
 
-                   if( pending_block_num < BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   if( pending_block_num < BTS_V0_4_10_FORK_BLOCK_NUM )
                    {
                       // in the event that there is a margin call, we must accept the
                       // bid price assuming the bid price is reasonable
@@ -220,7 +220,7 @@ namespace bts { namespace blockchain { namespace detail {
                       }
                    }
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+                   if( pending_block_num >= BTS_V0_4_12_FORK_BLOCK_NUM )
                    {
                        /**
                         *  Don't allow shorts to be executed if they are too far over priced or they will be
@@ -309,7 +309,7 @@ namespace bts { namespace blockchain { namespace detail {
                    if( mtrx.ask_price < mtrx.bid_price )
                       break; // the call price has not been reached
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+                   if( pending_block_num >= BTS_V0_4_12_FORK_BLOCK_NUM )
                    {
                        /**
                         *  Don't allow margin calls to be executed too far below
@@ -327,7 +327,7 @@ namespace bts { namespace blockchain { namespace detail {
 
                    mtrx.ask_price = mtrx.bid_price;
 
-                   if( pending_block_num < BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   if( pending_block_num < BTS_V0_4_10_FORK_BLOCK_NUM )
                    {
                       // in the event that there is a margin call, we must accept the
                       // bid price assuming the bid price is reasonable
@@ -342,7 +342,7 @@ namespace bts { namespace blockchain { namespace detail {
                    auto max_usd_purchase = asset(*_current_ask->collateral,0) * mtrx.bid_price;
                    auto usd_exchanged = std::min( current_bid_balance, max_usd_purchase );
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
+                   if( pending_block_num >= BTS_V0_4_9_FORK_2_BLOCK_NUM )
                    {
                       const auto required_usd_purchase = _current_ask->get_balance();
                       if( required_usd_purchase < usd_exchanged )
@@ -371,7 +371,7 @@ namespace bts { namespace blockchain { namespace detail {
                    if( mtrx.bid_price < mtrx.ask_price ) break;
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+                   if( pending_block_num >= BTS_V0_4_12_FORK_BLOCK_NUM )
                    {
                        /**
                         *  If the ask is less than the "max short bid" then that means the
@@ -485,12 +485,12 @@ namespace bts { namespace blockchain { namespace detail {
 
              market_stat->last_error.reset();
 
-             if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
+             if( pending_block_num >= BTS_V0_4_9_FORK_2_BLOCK_NUM )
                  order_did_execute |= (pending_block_num % 6) == 0;
 
              if( _current_bid && _current_ask && order_did_execute )
              {
-                if( median_price && pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+                if( median_price && pending_block_num >= BTS_V0_4_12_FORK_BLOCK_NUM )
                 {
                    market_stat->center_price = *median_price;
                 }
@@ -499,7 +499,7 @@ namespace bts { namespace blockchain { namespace detail {
                    // after the market is running solid we can use this metric...
                    market_stat->center_price.ratio *= (BTS_BLOCKCHAIN_BLOCKS_PER_HOUR-1);
 
-                   if( pending_block_num >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+                   if( pending_block_num >= BTS_V0_4_10_FORK_BLOCK_NUM )
                    {
                       const auto max_bid = market_stat->maximum_bid();
 
@@ -540,7 +540,7 @@ namespace bts { namespace blockchain { namespace detail {
                 }
              }
 
-             if( pending_block_num >= BTSX_MARKET_FORK_5_BLOCK_NUM )
+             if( pending_block_num >= BTS_V0_4_12_FORK_BLOCK_NUM )
              {
                  if( quote_asset->is_market_issued() && base_id == 0 )
                  {
@@ -557,7 +557,7 @@ namespace bts { namespace blockchain { namespace detail {
              {
                  if( quote_asset->is_market_issued() )
                  {
-                     if( pending_block_num >= BTSX_MARKET_FORK_3_BLOCK_NUM )
+                     if( pending_block_num >= BTS_V0_4_9_FORK_2_BLOCK_NUM )
                      {
                         if( market_stat->ask_depth < 1000000000000ll
                             || market_stat->bid_depth < 1000000000000ll )
@@ -894,7 +894,7 @@ namespace bts { namespace blockchain { namespace detail {
             }
             ++_ask_itr;
 
-            if( _pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM )
+            if( _pending_state->get_head_block_num() >= BTS_V0_4_10_FORK_BLOCK_NUM )
                return _current_ask.valid();
 
             return true;
@@ -914,8 +914,8 @@ namespace bts { namespace blockchain { namespace detail {
       {
              if( trading_volume.amount > 0 && get_next_bid() && get_next_ask() )
              {
-               assert(_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM || _current_ask);
-               if (_pending_state->get_head_block_num() >= BTSX_MARKET_FORK_4_BLOCK_NUM && !_current_ask)
+               assert(_pending_state->get_head_block_num() < BTS_V0_4_10_FORK_BLOCK_NUM || _current_ask);
+               if (_pending_state->get_head_block_num() >= BTS_V0_4_10_FORK_BLOCK_NUM && !_current_ask)
                  FC_THROW_EXCEPTION(evaluation_error, "no current_ask"); // should never happen, but if it does, don't swap in the backup ask
                save_and_restore_ask current_ask_swapper(_current_ask, _current_ask_backup);
 
@@ -984,7 +984,7 @@ namespace bts { namespace blockchain { namespace detail {
       {
         if (_current_ask)
         {
-          if (_pending_state->get_head_block_num() < BTSX_MARKET_FORK_4_BLOCK_NUM)
+          if (_pending_state->get_head_block_num() < BTS_V0_4_10_FORK_BLOCK_NUM)
             _current_ask_backup = _current_ask;
           _current_ask.reset();
         }

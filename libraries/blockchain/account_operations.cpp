@@ -24,7 +24,7 @@ namespace bts { namespace blockchain {
    { try {
       auto now = eval_state._current_state->now();
 
-      if( !blockchain::is_valid_account_name( this->name ) )
+      if( !eval_state._current_state->is_valid_account_name( this->name ) )
          FC_CAPTURE_AND_THROW( invalid_account_name, (name) );
 
       auto current_account = eval_state._current_state->get_account_record( this->name );
@@ -60,8 +60,9 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
-          eval_state.required_fees += asset( (max_reg_fee * delegate_pay_rate) / 100, 0 );
+          new_record.delegate_info->block_signing_key = this->active_key;
+          const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
+          eval_state.required_fees += reg_fee;
       }
       new_record.meta_data = this->meta_data;
 
@@ -148,6 +149,21 @@ namespace bts { namespace blockchain {
          }
       }
 
+      if( this->active_key.valid() )
+      {
+         // Update active key
+         current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
+         auto account_with_same_key = eval_state._current_state->get_account_record( address(*this->active_key) );
+         if( account_with_same_key )
+            FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
+
+#ifndef WIN32
+#warning Until block signing keys can be changed, they must always be equal to the active key
+#endif
+         if( current_record->is_delegate() )
+            current_record->delegate_info->block_signing_key = current_record->active_key();
+      }
+
       if( this->public_data.valid() )
       {
          current_record->public_data  = *this->public_data;
@@ -171,20 +187,13 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-            const auto max_reg_fee = eval_state._current_state->get_delegate_registration_fee();
-            eval_state.required_fees += asset( (max_reg_fee * this->delegate_pay_rate) / 100, 0 );
+            current_record->delegate_info->block_signing_key = current_record->active_key();
+            const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
+            eval_state.required_fees += reg_fee;
          }
       }
 
-      current_record->last_update   = eval_state._current_state->now();
-
-      if( this->active_key.valid() )
-      {
-         current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
-         auto account_with_same_key = eval_state._current_state->get_account_record( address(*this->active_key) );
-         if( account_with_same_key )
-            FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
-      }
+      current_record->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_account_record( *current_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }

@@ -4,15 +4,15 @@
     ignore = dirty
 [submodule "libraries/fc"]
 	path = libraries/fc
-	url = https://github.com/InvictusInnovations/fc.git
+	url = https://github.com/BitShares/fc.git
     ignore = dirty
 [submodule "programs/web_wallet"]
 	path = programs/web_wallet
-	url = https://github.com/dacsunlimited/web_wallet.git
+	url = https://github.com/BitShares/web_wallet.git
     ignore = dirty
 [submodule "programs/qt_wallet"]
 	path = programs/qt_wallet
-	url = https://github.com/dacsunlimited/qt_wallet.git
+	url = https://github.com/BitShares/qt_wallet.git
     ignore = dirty
 [submodule "libraries/leveldb"]
 	path = libraries/leveldb

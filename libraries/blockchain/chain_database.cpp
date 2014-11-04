@@ -30,12 +30,6 @@
 #include <bts/blockchain/market_engine.hpp>
 
 #include <bts/blockchain/fork_blocks.hpp>
-#include <bts/blockchain/market_engine_v6.hpp>
-#include <bts/blockchain/market_engine_v5.hpp>
-#include <bts/blockchain/market_engine_v4.hpp>
-#include <bts/blockchain/market_engine_v3.hpp>
-#include <bts/blockchain/market_engine_v2.hpp>
-#include <bts/blockchain/market_engine_v1.hpp>
 
 namespace bts { namespace blockchain {
 
@@ -163,7 +157,10 @@ namespace bts { namespace blockchain {
          digest_type chain_id = self->chain_id();
          if( chain_id != digest_type() && !chain_id_only )
          {
-            self->sanity_check();
+#ifndef WIN32
+#warning re-enable sanity check
+#endif
+            //self->sanity_check();
             ilog( "Genesis state already initialized" );
             if( chain_id == BTS_EXPECTED_CHAIN_ID )
                 chain_id = BTS_DESIRED_CHAIN_ID;
@@ -251,6 +248,7 @@ namespace bts { namespace blockchain {
             if( name.delegate_pay_rate <= 100 )
             {
                rec.delegate_info = delegate_stats( name.delegate_pay_rate );
+               rec.delegate_info->block_signing_key = name.owner;
                delegate_ids.push_back( account_id );
             }
             self->store_account_record( rec );
@@ -278,6 +276,43 @@ namespace bts { namespace blockchain {
             initial_balance.genesis_info = genesis_record( initial_balance.get_balance(), string( addr ) );
             initial_balance.last_update = config.timestamp;
             self->store_balance_record( initial_balance );
+         }
+
+         for( const auto& item : config.bts_sharedrop )
+         {
+            // try to parse the raw address
+            // is_valid() throws when it should return false b/c the constructor also calls it -.-
+            withdraw_vesting data;
+            try {
+                auto bts_addr = address(item.raw_address);
+                if( bts_addr.is_valid(item.raw_address) )
+                    data.owner = bts_addr;
+            }
+            catch (...)
+            {
+                try
+                {
+                    if( pts_address(item.raw_address).is_valid() )
+                        data.owner = address(pts_address(item.raw_address));
+                } FC_CAPTURE_AND_RETHROW( (item.raw_address) )
+            }
+
+            data.vesting_start = fc::time_point_sec(1414886399);
+            data.vesting_duration = 63072000;
+            data.original_balance = item.balance / 1000;
+
+            withdraw_condition condition(data, 0, 0);
+            balance_record balance_rec(condition);
+            balance_rec.balance = item.balance;
+
+            /* In case of redundant balances */
+            auto cur = self->get_balance_record( balance_rec.id() );
+            if( cur.valid() ) balance_rec.balance += cur->balance;
+            balance_rec.last_update = config.timestamp;
+            balance_rec.genesis_info = genesis_record( balance_rec.get_balance(), string( data.owner ) );
+            //ulog("storing vesting record: ${rec}", ("rec", balance_rec.id()));
+            self->store_balance_record( balance_rec );
+
          }
 
          asset total;
@@ -339,7 +374,10 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
-         self->sanity_check();
+#ifndef WIN32
+#warning re-enable sanity check
+#endif
+         //self->sanity_check();
          return _chain_id;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -586,7 +624,7 @@ namespace bts { namespace blockchain {
             {
                //ilog( "applying   ${trx}", ("trx",trx) );
                transaction_evaluation_state_ptr trx_eval_state =
-                      std::make_shared<transaction_evaluation_state>(pending_state,_chain_id);
+                      std::make_shared<transaction_evaluation_state>(pending_state.get(), _chain_id);
                trx_eval_state->evaluate( trx, _skip_signature_verification );
                //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
                // TODO:  capture the evaluation state with a callback for wallets...
@@ -602,12 +640,13 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
-      // TODO: Need to justify good parameters
-#if 0
-      void chain_database_impl::pay_delegate_v2( const block_id_type& block_id,
+      void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const pending_chain_state_ptr& pending_state,
                                               const public_key_type& block_signee )
       { try {
+            if( pending_state->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
+                return pay_delegate_v1( block_id, pending_state, block_signee );
+
             oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
             FC_ASSERT( delegate_record.valid() );
             delegate_record = pending_state->get_account_record( delegate_record->id );
@@ -618,50 +657,18 @@ namespace bts { namespace blockchain {
             const share_type accepted_paycheck = (BTS_MAX_DELEGATE_PAY_PER_BLOCK * pay_rate_percent) / 100;
             FC_ASSERT( accepted_paycheck >= 0 );
 
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
             delegate_record->delegate_info->votes_for += accepted_paycheck;
+            delegate_record->delegate_info->pay_balance += accepted_paycheck;
+            delegate_record->delegate_info->total_paid += accepted_paycheck;
             pending_state->store_account_record( *delegate_record );
 
             oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
             FC_ASSERT( base_asset_record.valid() );
             base_asset_record->current_share_supply += accepted_paycheck;
+            base_asset_record->current_share_supply -= base_asset_record->collected_fees;
+            base_asset_record->collected_fees = 0;
             pending_state->store_asset_record( *base_asset_record );
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
-#endif
-
-      void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                              const pending_chain_state_ptr& pending_state,
-                                              const public_key_type& block_signee )
-      { try {
-            auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
-            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-
-            const auto pay_rate_percent = delegate_record->delegate_info->pay_rate;
-            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
-            const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
-            const auto accepted_paycheck = ( pay_rate_percent * max_available_paycheck ) / 100;
-
-            auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
-            FC_ASSERT( pending_base_record.valid() );
-            if( pending_state->get_head_block_num() >= BTSX_SUPPLY_FORK_1_BLOCK_NUM )
-            {
-                pending_base_record->collected_fees -= max_available_paycheck;
-            }
-            else
-            {
-                pending_base_record->collected_fees -= accepted_paycheck;
-            }
-            pending_state->store_asset_record( *pending_base_record );
-
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
-            delegate_record->delegate_info->votes_for += accepted_paycheck;
-            pending_state->store_account_record( *delegate_record );
-
-            auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
-            FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply -= (max_available_paycheck - accepted_paycheck);
-            pending_state->store_asset_record( *base_asset_record );
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_id)(block_signee) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
@@ -716,7 +723,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( block_signee != expected_delegate.active_key() )
+            if( block_signee != expected_delegate.delegate_info->block_signing_key )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
@@ -836,98 +843,21 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
       { try {
-        vector<market_transaction> market_transactions;
+        if( pending_state->get_head_block_num() <= BTS_V0_4_21_FORK_BLOCK_NUM )
+           return execute_markets_v1( timestamp, pending_state );
 
-        const auto pending_block_num = pending_state->get_head_block_num();
-        if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
-        {
-           market_engine_v4 engine( pending_state, *this );
-           engine.cancel_all_shorts( self->get_block_header( BTSX_MARKET_FORK_7_BLOCK_NUM ).timestamp );
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
-        else if( pending_block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
-        {
-           market_engine_v6 engine( pending_state, *this );
-           engine.cancel_all_shorts();
-           market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-        }
+        vector<market_transaction> market_transactions;
 
         const auto dirty_markets = self->get_dirty_markets();
         for( const auto& market_pair : dirty_markets )
         {
            FC_ASSERT( market_pair.first > market_pair.second );
-           if( pending_block_num > BTSX_MARKET_FORK_11_BLOCK_NUM )
+           market_engine engine( pending_state, *this );
+           if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
            {
-              market_engine engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
-           {
-               // Cancel all shorts before BTSX_MARKET_FORK_11_BLOCK_NUM -- see above
-           }
-           else if( pending_block_num >= BTSX_MARKET_FORK_10_BLOCK_NUM )
-           {
-              market_engine_v6 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num > BTSX_MARKET_FORK_8_BLOCK_NUM )
-           {
-              market_engine_v5 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num == BTSX_MARKET_FORK_8_BLOCK_NUM )
-           {
-               // Cancel all shorts before BTSX_MARKET_FORK_7_BLOCK_NUM -- see above
-           }
-           else if( pending_block_num > BTSX_MARKET_FORK_7_BLOCK_NUM )
-           {
-              market_engine_v4 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num == BTSX_MARKET_FORK_7_BLOCK_NUM )
-           {
-               // Should have canceled all shorts but we missed it
-           }
-           else if( pending_block_num >= BTSX_MARKET_FORK_6_BLOCK_NUM )
-           {
-              market_engine_v3 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else if( pending_block_num >= BTSX_MARKET_FORK_1_BLOCK_NUM )
-           {
-              market_engine_v2 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
-           }
-           else
-           {
-              market_engine_v1 engine( pending_state, *this );
-              if( engine.execute( market_pair.first, market_pair.second, timestamp ) )
-              {
-                 market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
-              }
+              market_transactions.insert( market_transactions.end(), engine._market_transactions.begin(), engine._market_transactions.end() );
            }
         }
-
-        if( pending_block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
-            pending_state->set_dirty_markets( pending_state->_dirty_markets );
 
         pending_state->set_market_transactions( std::move( market_transactions ) );
       } FC_CAPTURE_AND_RETHROW() }
@@ -972,12 +902,12 @@ namespace bts { namespace blockchain {
 
             pay_delegate( block_id, pending_state, block_signee );
 
-            if( block_data.block_num < BTSX_MARKET_FORK_2_BLOCK_NUM )
+            if( block_data.block_num < BTS_V0_4_9_FORK_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             execute_markets( block_data.timestamp, pending_state );
 
-            if( block_data.block_num >= BTSX_MARKET_FORK_2_BLOCK_NUM )
+            if( block_data.block_num >= BTS_V0_4_9_FORK_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
 
             update_active_delegate_list( block_data, pending_state );
@@ -1001,14 +931,14 @@ namespace bts { namespace blockchain {
 
             // self->sanity_check();
 
-            if( block_data.block_num == BTSX_SUPPLY_FORK_1_BLOCK_NUM )
+            if( block_data.block_num == BTS_V0_4_16_FORK_BLOCK_NUM )
             {
                 auto base_asset_record = self->get_asset_record( asset_id_type( 0 ) );
                 FC_ASSERT( base_asset_record.valid() );
                 base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
                 self->store_asset_record( *base_asset_record );
             }
-            else if( block_data.block_num == BTSX_SUPPLY_FORK_2_BLOCK_NUM || block_data.block_num == BTSX_MARKET_FORK_11_BLOCK_NUM )
+            else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM || block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
                 records.reserve( 41 );
@@ -1035,6 +965,25 @@ namespace bts { namespace blockchain {
                     record.current_share_supply = supply.amount;
                     record.collected_fees = fees;
                     self->store_asset_record( record );
+                }
+            }
+
+            if( block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
+            {
+                vector<account_record> records;
+                records.reserve( 5500 ); // Calibrate this after
+
+                for( auto iter = _account_db.begin(); iter.valid(); ++iter )
+                {
+                    const account_record& record = iter.value();
+                    if( !record.is_delegate() || !record.delegate_info.valid() ) continue;
+                    records.push_back( record );
+                }
+
+                for( auto& record : records )
+                {
+                    record.delegate_info->pay_rate = 3;
+                    self->store_account_record( record );
                 }
             }
          }
@@ -1451,7 +1400,7 @@ namespace bts { namespace blockchain {
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
 
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
-      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
+      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state.get(), my->_chain_id);
 
       trx_eval_state->evaluate( trx );
       auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
@@ -1471,7 +1420,7 @@ namespace bts { namespace blockchain {
        try
        {
           auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state, my->_chain_id );
+          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get(), my->_chain_id );
 
           eval_state->evaluate( transaction );
           auto fees = eval_state->get_fees();
@@ -1925,7 +1874,7 @@ namespace bts { namespace blockchain {
       auto start_time = time_point::now();
 
       pending_chain_state_ptr pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-      if( pending_state->get_head_block_num() >= BTSX_MARKET_FORK_2_BLOCK_NUM )
+      if( pending_state->get_head_block_num() >= BTS_V0_4_9_FORK_BLOCK_NUM )
          my->execute_markets( timestamp, pending_state );
       auto pending_trx = get_pending_transactions();
 
@@ -1942,7 +1891,7 @@ namespace bts { namespace blockchain {
 
          /* Make modifications to temporary state */
          auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
-         auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state, my->_chain_id );
+         auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get(), my->_chain_id );
 
          try
          {

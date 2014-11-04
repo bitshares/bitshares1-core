@@ -1,6 +1,6 @@
 ##################################################################################################
 # Magic to get the genesis.json converted to a .cpp file and compiled into the bts_client library
-set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis_btsx.json")
+set(genesis_json "${CMAKE_CURRENT_SOURCE_DIR}/genesis_bts.json")
 
 set(EMBED_GENESIS_STATE_AS_TEXT FALSE CACHE BOOL "If true, genesis.json is included in text form, causing slower startup times")
 
@@ -48,10 +48,17 @@ add_library( bts_blockchain
              types.cpp
              withdraw_types.cpp
              operations.cpp
+             balance_operations_v1.cpp
+             balance_operations_v2.cpp
+             balance_operations_v3.cpp
              balance_operations.cpp
              account_operations.cpp
              delegate_slate.cpp
              asset_operations.cpp
+             market_operations_v1.cpp
+             market_operations_v2.cpp
+             market_operations_v3.cpp
+             market_operations_v4.cpp
              market_operations.cpp
 #proposal_operations.cpp
              feed_operations.cpp
@@ -64,6 +71,7 @@ add_library( bts_blockchain
              account_record.cpp
              asset_record.cpp
              market_records.cpp
+             chain_interface_v1.cpp
              chain_interface.cpp
              pending_chain_state.cpp
              market_engine_v1.cpp
@@ -73,6 +81,7 @@ add_library( bts_blockchain
              market_engine_v5.cpp
              market_engine_v6.cpp
              market_engine.cpp
+             chain_database_v1.cpp
              chain_database.cpp
              fork_blocks.cpp
              ${generated_genesis_file}

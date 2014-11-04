@@ -6,7 +6,7 @@
 
 namespace bts { namespace blockchain {
 
-   transaction_evaluation_state::transaction_evaluation_state( const chain_interface_ptr& current_state, digest_type chain_id )
+   transaction_evaluation_state::transaction_evaluation_state( chain_interface* current_state, digest_type chain_id )
    :_current_state( current_state ),_chain_id(chain_id),_skip_signature_check(false)
    {
    }
@@ -146,7 +146,7 @@ namespace bts { namespace blockchain {
       try {
         if( _current_state->now() >= trx_arg.expiration )
         {
-           if( _current_state->now() > trx_arg.expiration || _current_state->get_head_block_num() >= BTSX_MARKET_FORK_11_BLOCK_NUM )
+           if( _current_state->now() > trx_arg.expiration || _current_state->get_head_block_num() >= BTS_V0_4_21_FORK_BLOCK_NUM )
            {
                const auto expired_by_sec = (_current_state->now() - trx_arg.expiration).to_seconds();
                FC_CAPTURE_AND_THROW( expired_transaction, (trx_arg)(_current_state->now())(expired_by_sec) );

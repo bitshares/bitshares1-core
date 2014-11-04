@@ -1,5 +1,15 @@
+#include <bts/blockchain/balance_operations.hpp>
+#include <bts/blockchain/chain_interface.hpp>
+#include <bts/blockchain/exceptions.hpp>
+#include <bts/blockchain/fork_blocks.hpp>
+
+using namespace bts::blockchain;
+
 void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
 { try {
+   if( eval_state._current_state->get_head_block_num() < BTS_V0_4_13_FORK_BLOCK_NUM )
+      return evaluate_v1( eval_state );
+
    if( this->amount <= 0 )
       FC_CAPTURE_AND_THROW( negative_deposit, (amount) );
 
@@ -69,7 +79,7 @@ void withdraw_operation::evaluate_v2( transaction_evaluation_state& eval_state )
                                                             asset_rec->collected_fees,
                                                             asset_rec->current_share_supply );
 
-      if( eval_state._current_state->get_head_block_num() < BTSX_MARKET_FORK_11_BLOCK_NUM )
+      if( eval_state._current_state->get_head_block_num() < BTS_V0_4_21_FORK_BLOCK_NUM )
       {
          yield = current_balance_record->calculate_yield_v1( eval_state._current_state->now(),
                                                              current_balance_record->balance,
