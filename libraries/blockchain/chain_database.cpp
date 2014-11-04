@@ -296,7 +296,7 @@ namespace bts { namespace blockchain {
 
             withdraw_condition condition(data, 0, 0);
             balance_record balance_rec(condition);
-            balance_rec.balance = item.balance;
+            balance_rec.balance = item.balance / 1000;
 
             /* In case of redundant balances */
             auto cur = self->get_balance_record( balance_rec.id() );

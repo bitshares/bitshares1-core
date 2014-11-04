@@ -7,9 +7,9 @@ import re #regex
 
 
 print "This will create a new genesis block and make changes to your config files."
-print "Continue? [y/N]"
+print "Continue? [Y/n]"
 entry = raw_input()
-if entry != "y":
+if entry != "n":
     sys.exit("Operation canceled")
 
 input_log = []
@@ -43,8 +43,6 @@ for i in range(101):
         "delegate_pay_rate": 1
     }
     new_genesis["names"].append(acct)
-
-    balances = [keys["pts_address"], 100]
 
 
 input_log.append(">>> wallet_delegate_set_block_production ALL true")
