@@ -259,31 +259,13 @@ namespace bts { namespace blockchain {
          {
              auto condition = current_balance_record->condition.as<withdraw_vesting>();
              try {
-                #warning Not properly checking signatures on vesting balances!
                  if( !eval_state.check_signature( condition.owner ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (condition.owner) );
+            
+                 auto now = eval_state._current_state->now();
+                 auto claimable = current_balance_record->get_vested_balance(now);
 
-                 share_type max_claimable;
-                 if( eval_state._current_state->now() < condition.vesting_start )
-                     max_claimable = 0;
-                 else if( eval_state._current_state->now() > condition.vesting_start + condition.vesting_duration )
-                     max_claimable = condition.original_balance;
-                 else
-                 {
-                     auto now = eval_state._current_state->now().sec_since_epoch();
-                     auto start = condition.vesting_start.sec_since_epoch();
-                     auto max_duration = condition.vesting_duration;
-                     auto real_duration = now - start;
-                     FC_ASSERT( real_duration > 0, "duration is not positive when it should be" );
-                     FC_ASSERT( real_duration < max_duration, "duration is more than max possible duration" );
-                     max_claimable = real_duration * (condition.original_balance / max_duration);
-                 }
-
-                 auto real_claimable = max_claimable - (condition.original_balance - current_balance_record->balance);
-                 FC_ASSERT( 0 < real_claimable && real_claimable < condition.original_balance,
-                            "Got an impossible claimable amount for a vesting balance" );
-
-                 FC_ASSERT( this->amount <= real_claimable, "You cannot withdraw that much from this vesting balance" );
+                 FC_ASSERT( this->amount <= claimable.amount, "You cannot withdraw that much from this vesting balance" );
 
              } FC_CAPTURE_AND_RETHROW( (condition) )
              break;

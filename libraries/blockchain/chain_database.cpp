@@ -270,15 +270,24 @@ namespace bts { namespace blockchain {
          for( const auto& item : config.bts_sharedrop )
          {
             // try to parse the raw address
-
+            // is_valid() throws when it should return false b/c the constructor also calls it -.-
             withdraw_vesting data;
-            auto bts_addr = address(item.raw_address);
-            if( bts_addr.is_valid(item.raw_address) )
-                data.owner = bts_addr;
-            else if( pts_address(item.raw_address).is_valid() )
-                data.owner = address(pts_address(item.raw_address));
-            else
-                 FC_ASSERT(!"Cannot parse address");
+            try {
+                auto bts_addr = address(item.raw_address);
+                if( bts_addr.is_valid(item.raw_address) )
+                    data.owner = bts_addr;
+            }
+            catch (...)
+            {
+                try
+                {
+                    if( pts_address(item.raw_address).is_valid() )
+                        data.owner = address(pts_address(item.raw_address));
+                } catch (...) 
+                {
+                    FC_ASSERT(!"Cannot parse address");
+                }
+            }
 #warning november 1st
             data.vesting_start = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;

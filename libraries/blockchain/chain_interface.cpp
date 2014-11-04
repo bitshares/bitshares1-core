@@ -61,6 +61,34 @@ namespace bts { namespace blockchain {
       return asset( balance, condition.asset_id );
    }
 
+   asset balance_record::get_vested_balance(const fc::time_point_sec& now)const 
+   {
+       if( (withdraw_condition_types)this->condition.type != withdraw_vesting_type )
+           return get_balance();
+
+       auto condition = this->condition.as<withdraw_vesting>();
+       share_type max_claimable;
+       if( now < condition.vesting_start )
+           max_claimable = 0;
+       else if( now > condition.vesting_start + condition.vesting_duration )
+           max_claimable = condition.original_balance;
+       else
+       {
+           auto start = condition.vesting_start.sec_since_epoch();
+           auto max_duration = condition.vesting_duration;
+           auto real_duration = now.sec_since_epoch() - start;
+           FC_ASSERT( real_duration > 0, "duration is not positive when it should be" );
+           FC_ASSERT( real_duration < max_duration, "duration is more than max possible duration" );
+           max_claimable = real_duration * (condition.original_balance / max_duration);
+       }
+
+       auto real_claimable = max_claimable - (condition.original_balance - this->balance);
+       FC_ASSERT( 0 <= real_claimable && real_claimable <= condition.original_balance,
+                    "Got an impossible claimable amount for a vesting balance" );
+
+       return asset( real_claimable, 0 );
+   }
+
    address balance_record::owner()const
    {
       if( condition.type == withdraw_signature_type )
