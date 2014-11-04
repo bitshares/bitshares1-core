@@ -116,7 +116,7 @@ namespace bts { namespace client {
     {
        public:
          client(const std::string& user_agent);
-         client(const std::string& user_agent, 
+         client(const std::string& user_agent,
                 bts::net::simulated_network_ptr network_to_connect_to);
 
          void simulate_disconnect( bool state );
