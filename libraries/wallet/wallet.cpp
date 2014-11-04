@@ -3699,7 +3699,7 @@ namespace detail {
 
           for( const auto& record : records )
           {
-              const auto balance = record.get_vested_balance(fc::time_point::now());
+              const auto balance = record.get_vested_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }
       }
