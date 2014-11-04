@@ -54,3 +54,13 @@ tests/wallet_tests
 tests/debug_tests.log
 tests/failed_tests.log
 tests/regression_tests/_newtest
+
+BitShares.dmg
+
+programs/utils/web_update_utility/web_update_utility
+
+programs/utils/web_update_utility/web_update_utility_automoc.cpp
+
+install_manifest.txt
+
+_CPack_Packages/*
