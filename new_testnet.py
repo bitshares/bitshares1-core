@@ -25,7 +25,7 @@ new_genesis = {
         "bts_sharedrop": []
 }
 
-with open("libraries/blockchain/bts_sharedrop.json") as snapshot:
+with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
     items = json.loads(snapshot.read())
     for item in items:
         new_genesis["bts_sharedrop"].append({
