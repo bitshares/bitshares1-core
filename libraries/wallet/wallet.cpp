@@ -642,11 +642,12 @@ namespace detail {
           for( const auto& approved_candidate : for_candidates )
           {
             oaccount_record candidate_record = _blockchain->get_account_record(approved_candidate);
+            if( !candidate_record.valid() ) continue;
 
-            FC_ASSERT( candidate_record.valid() );
             if( !candidate_record->public_data.is_object()
                 || !candidate_record->public_data.get_object().contains("slate_id"))
               continue;
+
             if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
