@@ -642,11 +642,12 @@ namespace detail {
           for( const auto& approved_candidate : for_candidates )
           {
             oaccount_record candidate_record = _blockchain->get_account_record(approved_candidate);
+            if( !candidate_record.valid() ) continue;
 
-            FC_ASSERT( candidate_record.valid() );
             if( !candidate_record->public_data.is_object()
                 || !candidate_record->public_data.get_object().contains("slate_id"))
               continue;
+
             if( !candidate_record->public_data.get_object()["slate_id"].is_uint64() )
             {
               //Delegate is doing something non-kosher with their slate_id. Disapprove of them.
@@ -1562,7 +1563,7 @@ namespace detail {
           FC_THROW_EXCEPTION( invalid_timestamp, "Invalid block timestamp! Block production may be disabled" );
 
       auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
-      auto delegate_pub_key = delegate_record.active_key();
+      auto delegate_pub_key = delegate_record.delegate_info->block_signing_key; //.active_key();
       auto delegate_key = get_private_key( address(delegate_pub_key) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
@@ -3699,6 +3700,10 @@ namespace detail {
 
           for( const auto& record : records )
           {
+#ifndef WIN32
+#warning [BTS] Keep old behaviour in mainnet until vesting is finalized
+#endif
+              //const auto balance = record.get_balance();
               const auto balance = record.get_vested_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }

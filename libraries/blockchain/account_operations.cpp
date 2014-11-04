@@ -60,6 +60,7 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
+          new_record.delegate_info->block_signing_key = this->owner_key;
           const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
           eval_state.required_fees += reg_fee;
       }
@@ -171,6 +172,7 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
+            current_record->delegate_info->block_signing_key = current_record->owner_key;
             const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
             eval_state.required_fees += reg_fee;
          }

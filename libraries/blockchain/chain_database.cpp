@@ -155,7 +155,9 @@ namespace bts { namespace blockchain {
          digest_type chain_id = self->chain_id();
          if( chain_id != digest_type() && !chain_id_only )
          {
+#ifndef WIN32
 #warning re-enable sanity check
+#endif
             //self->sanity_check();
             ilog( "Genesis state already initialized" );
             return chain_id;
@@ -239,6 +241,7 @@ namespace bts { namespace blockchain {
             if( name.delegate_pay_rate <= 100 )
             {
                rec.delegate_info = delegate_stats( name.delegate_pay_rate );
+               rec.delegate_info->block_signing_key = name.owner;
                delegate_ids.push_back( account_id );
             }
             self->store_account_record( rec );
@@ -364,7 +367,9 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
+#ifndef WIN32
 #warning re-enable sanity check
+#endif
          //self->sanity_check();
          return _chain_id;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
@@ -708,7 +713,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( block_signee != expected_delegate.active_key() )
+            if( block_signee != expected_delegate.delegate_info->block_signing_key  )  //expected_delegate.active_key() )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
