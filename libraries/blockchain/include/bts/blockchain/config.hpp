@@ -11,7 +11,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     156
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     157
 
 /**
  *  The address prepended to string representation of
@@ -21,7 +21,7 @@
  */
 #define BTS_ADDRESS_PREFIX                                  "BTSX"
 #define BTS_BLOCKCHAIN_SYMBOL                               "BTS"
-#define BTS_BLOCKCHAIN_NAME                                 "BitShares X"
+#define BTS_BLOCKCHAIN_NAME                                 "BitShares"
 #define BTS_BLOCKCHAIN_DESCRIPTION                          "Company. Community. Currency"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
