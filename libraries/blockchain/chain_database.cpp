@@ -155,7 +155,8 @@ namespace bts { namespace blockchain {
          digest_type chain_id = self->chain_id();
          if( chain_id != digest_type() && !chain_id_only )
          {
-            self->sanity_check();
+#warning re-enable sanity check
+            //self->sanity_check();
             ilog( "Genesis state already initialized" );
             return chain_id;
          }
@@ -283,15 +284,12 @@ namespace bts { namespace blockchain {
                 {
                     if( pts_address(item.raw_address).is_valid() )
                         data.owner = address(pts_address(item.raw_address));
-                } catch (...) 
-                {
-                    FC_ASSERT(!"Cannot parse address");
-                }
+                } FC_CAPTURE_AND_RETHROW( (item.raw_address) )
             }
 
             data.vesting_start = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;
-            data.original_balance = item.balance;
+            data.original_balance = item.balance / 1000;
 
             withdraw_condition condition(data, 0, 0);
             balance_record balance_rec(condition);
@@ -366,7 +364,8 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
-         self->sanity_check();
+#warning re-enable sanity check
+         //self->sanity_check();
          return _chain_id;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
