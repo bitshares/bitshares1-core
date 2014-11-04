@@ -327,7 +327,7 @@ namespace bts { namespace blockchain {
             eval_state._current_state->store_asset_record( *asset_rec );
          }
       }
-      
+
       current_balance_record->balance -= this->amount;
       current_balance_record->last_update = eval_state._current_state->now();
 
