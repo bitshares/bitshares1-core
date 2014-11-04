@@ -38,15 +38,15 @@ namespace bts { namespace wallet {
       {}
 
       wallet_transaction_record transaction_record;
-      std::unordered_set<blockchain::address> required_signatures;
+      std::unordered_set<blockchain::address>                                      required_signatures;
       ///Set of accounts with a cover order in this transaction (only one cover allowed per account per block)
-      std::unordered_set<blockchain::address> accounts_with_covers;
+      std::unordered_set<blockchain::address>                                      accounts_with_covers;
       ///Map of <owning account address, asset ID> to that account's balance in that asset ID
-      std::map<std::pair<blockchain::address, asset_id_type>, share_type> outstanding_balances;
+      std::map<std::pair<blockchain::address, asset_id_type>, share_type>          outstanding_balances;
       ///Map of account address to key owning that account's market transactions
-      std::map<blockchain::address, public_key_type> order_keys;
+      std::map<blockchain::address, public_key_type>                               order_keys;
       ///List of partially-completed transaction notifications; these will be completed when sign() is called
-      std::vector<std::pair<mail::transaction_notice_message, public_key_type>> notices;
+      std::vector<std::pair<mail::transaction_notice_message, public_key_type>>    notices;
 
       /**
        * @brief Look up the market transaction owner key used for a particular account

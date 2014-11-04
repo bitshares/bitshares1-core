@@ -29,6 +29,7 @@ namespace bts { namespace blockchain {
       /** condition.get_address() */
       balance_id_type            id()const { return condition.get_address(); }
       asset                      get_balance()const;
+      asset                      get_vested_balance(const fc::time_point_sec& now)const;
       bool                       is_null()const    { return balance == 0; }
       balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
       asset_id_type              asset_id()const { return condition.asset_id; }

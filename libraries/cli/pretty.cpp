@@ -109,9 +109,6 @@ string pretty_info( fc::mutable_variant_object info, cptr client )
         info["blockchain_average_delegate_participation"] = pretty_percent( participation, 100 );
     }
 
-    const auto pay_rate = info["blockchain_delegate_pay_rate"].as<share_type>();
-    info["blockchain_delegate_pay_rate"] = client->get_chain()->to_pretty_asset( asset( pay_rate ) );
-
     if( !info["blockchain_share_supply"].is_null() )
     {
         const auto share_supply = info["blockchain_share_supply"].as<share_type>();
@@ -203,11 +200,17 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     const auto relay_fee = info["relay_fee"].as<share_type>();
     info["relay_fee"] = client->get_chain()->to_pretty_asset( asset( relay_fee ) );
 
-    const auto delegate_reg_fee = info["delegate_reg_fee"].as<share_type>();
-    info["delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( delegate_reg_fee ) );
+    const auto max_delegate_pay_per_block = info["max_delegate_pay_per_block"].as<share_type>();
+    info["max_delegate_pay_per_block"] = client->get_chain()->to_pretty_asset( asset( max_delegate_pay_per_block ) );
 
-    const auto asset_reg_fee = info["asset_reg_fee"].as<share_type>();
-    info["asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( asset_reg_fee ) );
+    const auto max_delegate_reg_fee = info["max_delegate_reg_fee"].as<share_type>();
+    info["max_delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( max_delegate_reg_fee ) );
+
+    const auto short_symbol_asset_reg_fee = info["short_symbol_asset_reg_fee"].as<share_type>();
+    info["short_symbol_asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( short_symbol_asset_reg_fee ) );
+
+    const auto long_symbol_asset_reg_fee = info["long_symbol_asset_reg_fee"].as<share_type>();
+    info["long_symbol_asset_reg_fee"] = client->get_chain()->to_pretty_asset( asset( long_symbol_asset_reg_fee ) );
 
     out << fc::json::to_pretty_string( info ) << "\n";
     return out.str();

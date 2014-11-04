@@ -44,8 +44,6 @@ variant_object client_impl::get_info()const
 
    info["blockchain_confirmation_requirement"]               = _chain_db->get_required_confirmations();
 
-   info["blockchain_delegate_pay_rate"]                      = _chain_db->get_delegate_pay_rate();
-
    info["blockchain_share_supply"]                           = variant();
    const auto share_record                                   = _chain_db->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
    if( share_record.valid() )

@@ -16,5 +16,5 @@ namespace bts { namespace net { namespace detail {
     };
 } } } //namespace bts::net::detail
 
-FC_REFLECT_ENUM(bts::net::detail::chain_server_commands, (get_blocks_from_number))
+FC_REFLECT_ENUM(bts::net::detail::chain_server_commands, (finish)(get_blocks_from_number))
 FC_REFLECT_TYPENAME(bts::net::detail::chain_server_commands)

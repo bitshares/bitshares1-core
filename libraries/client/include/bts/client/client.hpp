@@ -66,24 +66,24 @@ namespace bts { namespace client {
     struct config
     {
        config( ) :
-          default_peers(vector<string>{"162.243.219.145:", "162.243.219.145:", "162.243.219.145:"}),
+          default_peers(vector<string>{ BTS_NET_TEST_SEED_IP, BTS_NET_TEST_SEED_IP, BTS_NET_TEST_SEED_IP }),
           mail_server_enabled(false),
           identity_verifier_enabled(false),
           wallet_enabled(true),
           ignore_console(false),
           use_upnp(true),
           maximum_number_of_connections(BTS_NET_DEFAULT_MAX_CONNECTIONS) ,
-          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:0") ),
-          default_delegate_peers( vector<string>({"107.170.30.182:9988"}) )
+          delegate_server( fc::ip::endpoint::from_string("0.0.0.0:9988") ),
+          default_delegate_peers( vector<string>({"0.0.0.0:9988"}) )
           {
 #ifdef BTS_TEST_NETWORK
               uint32_t port = BTS_NET_TEST_P2P_PORT + BTS_TEST_NETWORK_VERSION;
 #else
               uint32_t port = BTS_NET_DEFAULT_P2P_PORT;
 #endif
-              default_peers[0] += fc::to_string( port );
-              default_peers[1] += fc::to_string( port + 100 );
-              default_peers[2] += fc::to_string( port + 200 );
+              default_peers[0] += ":" + fc::to_string( port );
+              default_peers[1] += ":" + fc::to_string( port + 100 );
+              default_peers[2] += ":" + fc::to_string( port + 200 );
               logging = fc::logging_config::default_config();
           }
 
@@ -118,7 +118,7 @@ namespace bts { namespace client {
     {
        public:
          client(const std::string& user_agent);
-         client(const std::string& user_agent, 
+         client(const std::string& user_agent,
                 bts::net::simulated_network_ptr network_to_connect_to);
 
          void simulate_disconnect( bool state );

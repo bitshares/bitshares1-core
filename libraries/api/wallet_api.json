@@ -1687,7 +1687,7 @@
              {
                 "name" : "symbol_to_price_map",
                 "type" : "price_map",
-                "description" : "maps the BitAsset symbol to the price per BTSX"
+                "description" : "maps the BitAsset symbol to its price per share"
              }
          ],
          "prerequisites" : ["wallet_unlocked"]

@@ -118,6 +118,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (create_asset_op_type)
                  (update_asset_op_type)
                  (issue_asset_op_type)
+                 (fire_delegate_op_type)
                  (submit_proposal_op_type)
                  (vote_proposal_op_type)
                  (bid_op_type)
@@ -131,6 +132,7 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (burn_op_type)
                  (link_account_op_type)
                  (withdraw_all_op_type)
+                 (release_escrow_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )
@@ -139,4 +141,3 @@ namespace fc {
    void to_variant( const bts::blockchain::operation& var,  variant& vo );
    void from_variant( const variant& var,  bts::blockchain::operation& vo );
 }
-

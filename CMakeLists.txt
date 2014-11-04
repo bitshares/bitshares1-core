@@ -151,7 +151,7 @@ endif( WIN32 )
 
 find_package( BerkeleyDB )
 
-set( CUSTOM_URL_SCHEME "vts" )
+set( CUSTOM_URL_SCHEME "bts" )
 
 add_subdirectory( libraries )
 add_subdirectory( vendor/miniupnp/miniupnpc )
@@ -204,8 +204,8 @@ set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
 set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-set(CPACK_PACKAGE_DESCRIPTION "A client for the BitShares XTS network")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A client for the BitShares XTS network")
+set(CPACK_PACKAGE_DESCRIPTION "A client for the BitShares network")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A client for the BitShares network")
 set(CPACK_PACKAGE_EXECUTABLES "Keyhotee;Keyhotee")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "BitShares ${CPACK_PACKAGE_VERSION}")
@@ -215,13 +215,11 @@ if(WIN32)
  set(CPACK_PACKAGE_NAME "BitShares") # override above
  set(CPACK_NSIS_CONTACT "contact.us@invictus-innovations.com")
  set(CPACK_NSIS_EXECUTABLES_DIRECTORY .)
- set(CPACK_NSIS_PACKAGE_NAME "BitShares XTS v${CPACK_PACKAGE_VERSION}")
+ set(CPACK_NSIS_PACKAGE_NAME "BitShares v${CPACK_PACKAGE_VERSION}")
  set(CPACK_NSIS_DISPLAY_NAME "${CPACK_NSIS_PACKAGE_NAME}")
  set(CPACK_NSIS_URL_INFO_ABOUT "http://bitshares.org")
  set(CPACK_NSIS_HELP_LINK "https://bitsharestalk.org/index.php?board=3.0")
- set(CPACK_NSIS_MENU_LINKS
-     "https://bitsharestalk.org/index.php?board=3.0" "BitShares TestNet Development Forum"
-     "http://bitshares.org" "Invictus Innovations Website")
+ set(CPACK_NSIS_MENU_LINKS "http://bitshares.org" "bitshares.org")
  set(CPACK_NSIS_DEFINES "  !define MUI_STARTMENUPAGE_DEFAULTFOLDER \\\"BitShares\\\"")
  # it seems like windows zip files usually don't have a single directory inside them, unix tgz frequently do
  SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)

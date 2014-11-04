@@ -267,6 +267,46 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
          }
 
+         for( const auto& item : config.bts_sharedrop )
+         {
+            // try to parse the raw address
+            // is_valid() throws when it should return false b/c the constructor also calls it -.-
+            withdraw_vesting data;
+            try {
+                auto bts_addr = address(item.raw_address);
+                if( bts_addr.is_valid(item.raw_address) )
+                    data.owner = bts_addr;
+            }
+            catch (...)
+            {
+                try
+                {
+                    if( pts_address(item.raw_address).is_valid() )
+                        data.owner = address(pts_address(item.raw_address));
+                } catch (...) 
+                {
+                    FC_ASSERT(!"Cannot parse address");
+                }
+            }
+
+            data.vesting_start = fc::time_point_sec(1414886399);
+            data.vesting_duration = 63072000;
+            data.original_balance = item.balance;
+
+            withdraw_condition condition(data, 0, 0);
+            balance_record balance_rec(condition);
+            balance_rec.balance = item.balance;
+
+            /* In case of redundant balances */
+            auto cur = self->get_balance_record( balance_rec.id() );
+            if( cur.valid() ) balance_rec.balance += cur->balance;
+            balance_rec.last_update = config.timestamp;
+            balance_rec.genesis_info = genesis_record( balance_rec.get_balance(), string( data.owner ) );
+            //ulog("storing vesting record: ${rec}", ("rec", balance_rec.id()));
+            self->store_balance_record( balance_rec );
+
+         }
+
          asset total;
          auto itr = _balance_db.begin();
          while( itr.valid() )
@@ -573,7 +613,7 @@ namespace bts { namespace blockchain {
             {
                //ilog( "applying   ${trx}", ("trx",trx) );
                transaction_evaluation_state_ptr trx_eval_state =
-                      std::make_shared<transaction_evaluation_state>(pending_state,_chain_id);
+                      std::make_shared<transaction_evaluation_state>(pending_state.get(), _chain_id);
                trx_eval_state->evaluate( trx, _skip_signature_verification );
                //ilog( "evaluation: ${e}", ("e",*trx_eval_state) );
                // TODO:  capture the evaluation state with a callback for wallets...
@@ -589,9 +629,7 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
-      // TODO: Need to justify good parameters
-#if 0
-      void chain_database_impl::pay_delegate_v2( const block_id_type& block_id,
+      void chain_database_impl::pay_delegate( const block_id_type& block_id,
                                               const pending_chain_state_ptr& pending_state,
                                               const public_key_type& block_signee )
       { try {
@@ -605,43 +643,18 @@ namespace bts { namespace blockchain {
             const share_type accepted_paycheck = (BTS_MAX_DELEGATE_PAY_PER_BLOCK * pay_rate_percent) / 100;
             FC_ASSERT( accepted_paycheck >= 0 );
 
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
             delegate_record->delegate_info->votes_for += accepted_paycheck;
+            delegate_record->delegate_info->pay_balance += accepted_paycheck;
+            delegate_record->delegate_info->total_paid += accepted_paycheck;
             pending_state->store_account_record( *delegate_record );
 
             oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
             FC_ASSERT( base_asset_record.valid() );
             base_asset_record->current_share_supply += accepted_paycheck;
+            base_asset_record->current_share_supply -= base_asset_record->collected_fees;
+            base_asset_record->collected_fees = 0;
             pending_state->store_asset_record( *base_asset_record );
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
-#endif
-
-      void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                              const pending_chain_state_ptr& pending_state,
-                                              const public_key_type& block_signee )
-      { try {
-            auto delegate_record = pending_state->get_account_record( self->get_delegate_record_for_signee( block_signee ).id );
-            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
-
-            const auto pay_rate_percent = delegate_record->delegate_info->pay_rate;
-            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
-            const auto max_available_paycheck = pending_state->get_delegate_pay_rate();
-            const auto accepted_paycheck = ( pay_rate_percent * max_available_paycheck ) / 100;
-
-            auto pending_base_record = pending_state->get_asset_record( asset_id_type( 0 ) );
-            FC_ASSERT( pending_base_record.valid() );
-            pending_base_record->collected_fees -= max_available_paycheck;
-            pending_state->store_asset_record( *pending_base_record );
-
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
-            delegate_record->delegate_info->votes_for += accepted_paycheck;
-            pending_state->store_account_record( *delegate_record );
-
-            auto base_asset_record = pending_state->get_asset_record( asset_id_type(0) );
-            FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply -= (max_available_paycheck - accepted_paycheck);
-            pending_state->store_asset_record( *base_asset_record );
-      } FC_RETHROW_EXCEPTIONS( warn, "", ("block_id",block_id) ) }
+      } FC_CAPTURE_AND_RETHROW( (block_id)(block_signee) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
@@ -1310,7 +1323,7 @@ namespace bts { namespace blockchain {
          my->_pending_trx_state = std::make_shared<pending_chain_state>( shared_from_this() );
 
       pending_chain_state_ptr          pend_state = std::make_shared<pending_chain_state>(my->_pending_trx_state);
-      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state,my->_chain_id);
+      transaction_evaluation_state_ptr trx_eval_state = std::make_shared<transaction_evaluation_state>(pend_state.get(), my->_chain_id);
 
       trx_eval_state->evaluate( trx );
       auto fees = trx_eval_state->get_fees() + trx_eval_state->alt_fees_paid.amount;
@@ -1330,7 +1343,7 @@ namespace bts { namespace blockchain {
        try
        {
           auto pending_state = std::make_shared<pending_chain_state>( shared_from_this() );
-          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state, my->_chain_id );
+          transaction_evaluation_state_ptr eval_state = std::make_shared<transaction_evaluation_state>( pending_state.get(), my->_chain_id );
 
           eval_state->evaluate( transaction );
           auto fees = eval_state->get_fees();
@@ -1800,7 +1813,7 @@ namespace bts { namespace blockchain {
 
          /* Make modifications to temporary state */
          auto pending_trx_state = std::make_shared<pending_chain_state>( pending_state );
-         auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state, my->_chain_id );
+         auto trx_eval_state = std::make_shared<transaction_evaluation_state>( pending_trx_state.get(), my->_chain_id );
 
          try
          {
