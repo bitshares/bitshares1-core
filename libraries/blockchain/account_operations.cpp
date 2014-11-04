@@ -60,7 +60,7 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          new_record.delegate_info->block_signing_key = this->owner_key;
+          new_record.delegate_info->block_signing_key = this->active_key;
           const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
           eval_state.required_fees += reg_fee;
       }
@@ -149,6 +149,15 @@ namespace bts { namespace blockchain {
          }
       }
 
+      if( this->active_key.valid() )
+      {
+         // Update active key
+         current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
+         auto account_with_same_key = eval_state._current_state->get_account_record( address(*this->active_key) );
+         if( account_with_same_key )
+            FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
+      }
+
       if( this->public_data.valid() )
       {
          current_record->public_data  = *this->public_data;
@@ -172,21 +181,13 @@ namespace bts { namespace blockchain {
          {
             current_record->delegate_info = delegate_stats();
             current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-            current_record->delegate_info->block_signing_key = current_record->owner_key;
+            current_record->delegate_info->block_signing_key = current_record->active_key();
             const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
             eval_state.required_fees += reg_fee;
          }
       }
 
       current_record->last_update = eval_state._current_state->now();
-
-      if( this->active_key.valid() )
-      {
-         current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
-         auto account_with_same_key = eval_state._current_state->get_account_record( address(*this->active_key) );
-         if( account_with_same_key )
-            FC_CAPTURE_AND_THROW( account_key_in_use, (active_key)(account_with_same_key) );
-      }
 
       eval_state._current_state->store_account_record( *current_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
