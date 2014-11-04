@@ -61,6 +61,24 @@ namespace bts { namespace blockchain {
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
+   /**
+    *  Updates the key used for signing blocks for a given
+    *  delegate.  Must be signed by one of:
+    *
+    *  1) Owner Key
+    *  2) Active Key
+    *  3) Current Block Signing Key
+    */
+   struct update_block_signing_key
+   {
+      static const operation_type_enum  type;
+
+      account_id_type  account_id;
+      public_key_type  block_signing_key;
+
+      void evaluate( transaction_evaluation_state& eval_state );
+   };
+
    struct withdraw_pay_operation
    {
       static const operation_type_enum type;
@@ -100,3 +118,4 @@ FC_REFLECT( bts::blockchain::register_account_operation, (name)(public_data)(own
 FC_REFLECT( bts::blockchain::update_account_operation, (account_id)(public_data)(active_key)(delegate_pay_rate) )
 FC_REFLECT( bts::blockchain::withdraw_pay_operation, (amount)(account_id) )
 FC_REFLECT( bts::blockchain::link_account_operation, (source_account)(destination_account)(data) )
+FC_REFLECT( bts::blockchain::update_block_signing_key, (account_id)(block_signing_key) )

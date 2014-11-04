@@ -1563,7 +1563,8 @@ namespace detail {
           FC_THROW_EXCEPTION( invalid_timestamp, "Invalid block timestamp! Block production may be disabled" );
 
       auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
-      auto delegate_pub_key = delegate_record.delegate_info->block_signing_key; //.active_key();
+      FC_ASSERT( delegate_record.is_delegate() && delegate_record.delegate_info.valid() );
+      auto delegate_pub_key = delegate_record.delegate_info->block_signing_key;
       auto delegate_key = get_private_key( address(delegate_pub_key) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
