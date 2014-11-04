@@ -29,7 +29,7 @@ find_package(Qt5Qml)
 find_package(Qt5Widgets)
 add_definitions(-DQT_NO_KEYWORDS)
 
-qt5_add_resources(qrc_sources qml.qrc)
+qt5_add_resources(qrc_sources qml.qrc res.qrc)
 file(GLOB qml_files qml/*.qml)
 
 add_executable(voting_booth WIN32 MACOSX_BUNDLE main.cpp ClientWrapper.cpp ${qrc_sources} ${qml_files})
