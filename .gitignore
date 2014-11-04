@@ -53,3 +53,5 @@ tests/wallet_tests
 tests/debug_tests.log
 tests/failed_tests.log
 tests/regression_tests/_newtest
+
+programs/utils/compute_item_hashes
