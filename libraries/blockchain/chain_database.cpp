@@ -155,7 +155,9 @@ namespace bts { namespace blockchain {
          digest_type chain_id = self->chain_id();
          if( chain_id != digest_type() && !chain_id_only )
          {
+#ifndef WIN32
 #warning re-enable sanity check
+#endif
             //self->sanity_check();
             ilog( "Genesis state already initialized" );
             return chain_id;
@@ -364,7 +366,9 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
+#ifndef WIN32
 #warning re-enable sanity check
+#endif
          //self->sanity_check();
          return _chain_id;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }

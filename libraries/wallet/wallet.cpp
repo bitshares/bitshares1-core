@@ -3699,6 +3699,10 @@ namespace detail {
 
           for( const auto& record : records )
           {
+#ifndef WIN32
+#warning [BTS] Keep old behaviour in mainnet until vesting is finalized
+#endif
+              //const auto balance = record.get_balance();
               const auto balance = record.get_vested_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }
