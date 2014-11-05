@@ -54,7 +54,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 100,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
     },
     "meta_data": null
   }
@@ -89,7 +90,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 100,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
     },
     "meta_data": null
   },{
@@ -113,7 +115,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 90,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
     },
     "meta_data": null
   }
@@ -148,7 +151,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 100,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
     },
     "meta_data": null
   },{
@@ -172,7 +176,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 90,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
     },
     "meta_data": null
   },{
@@ -196,7 +201,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 10,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
     },
     "meta_data": null
   }
@@ -279,7 +285,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 100,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
     },
     "meta_data": null
   },{
@@ -303,7 +310,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 90,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
     },
     "meta_data": null
   },{
@@ -327,7 +335,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 10,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
     },
     "meta_data": null
   },{
@@ -351,7 +360,8 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
       "pay_rate": 100,
       "pay_balance": 0,
       "total_paid": 0,
-      "total_burned": 0
+      "total_burned": 0,
+      "block_signing_key": "XTS6XtfD6n2T2i3GE4BVuabQUvZRAxVLYUUTLpf7sFAqRxnA3i8Kf"
     },
     "meta_data": null
   }
