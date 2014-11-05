@@ -21,45 +21,45 @@ wallet (unlocked) >>> wallet_get_info
 wallet (unlocked) >>> wallet_set_automatic_backups false
 false
 wallet (unlocked) >>> wallet_account_create testaccount
-"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 wallet (unlocked) >>> wallet_account_balance testaccount
 No balances found.
 wallet (unlocked) >>> wallet_list_my_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
-testaccount                        XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0              N/A                      
+testaccount                        XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0              N/A                      
 wallet (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
-    "hex": "03881b007b922bd8e69e525ac5568b1e71bd17aafc592c74903c8919e8d0f6249d",
-    "native_pubkey": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
-    "native_address": "XTS8k4PT5hKqNY9VSS3tqR3yL3JQ3sYSxUCa",
-    "pts_normal_address": "PhPkbA7ELsiH58RvLbYZCWs5D9Ae7hKvHi",
-    "pts_compressed_address": "PZs8yvKN37HWR7wDDjfaEhVCzmUQrirzvU",
-    "btc_normal_address": "1ATyT5R6ammDGrd4y6ti3Vd1xtjpH3gB8L",
-    "btc_compressed_address": "12wMqqdEH1LScr8MrF1j5gF9kX3b3PPZgG"
+    "hex": "02f969a87ca684e235b95bff54981ab2125aa331969e290ea9278645b2988892ff",
+    "native_pubkey": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
+    "native_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
+    "pts_normal_address": "PZqJmL4CBann1nABLuiza9H6h222exNzT7",
+    "pts_compressed_address": "PoBu4vy326x1U3zvWfUjcgf8QqwVKHEJ9x",
+    "btc_normal_address": "12uXdFN4RUqiDWMKyR59R833SmbCrHzjjQ",
+    "btc_compressed_address": "1GG7vrGuFzzwfnC59AptTfR5AbWfVskurs"
   }
 ]
 wallet (unlocked) >>> wallet_account_rename testaccount myaccount
 OK
 wallet (unlocked) >>> wallet_account_list_public_keys myaccount
 [{
-    "hex": "03881b007b922bd8e69e525ac5568b1e71bd17aafc592c74903c8919e8d0f6249d",
-    "native_pubkey": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
-    "native_address": "XTS8k4PT5hKqNY9VSS3tqR3yL3JQ3sYSxUCa",
-    "pts_normal_address": "PhPkbA7ELsiH58RvLbYZCWs5D9Ae7hKvHi",
-    "pts_compressed_address": "PZs8yvKN37HWR7wDDjfaEhVCzmUQrirzvU",
-    "btc_normal_address": "1ATyT5R6ammDGrd4y6ti3Vd1xtjpH3gB8L",
-    "btc_compressed_address": "12wMqqdEH1LScr8MrF1j5gF9kX3b3PPZgG"
+    "hex": "02f969a87ca684e235b95bff54981ab2125aa331969e290ea9278645b2988892ff",
+    "native_pubkey": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
+    "native_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
+    "pts_normal_address": "PZqJmL4CBann1nABLuiza9H6h222exNzT7",
+    "pts_compressed_address": "PoBu4vy326x1U3zvWfUjcgf8QqwVKHEJ9x",
+    "btc_normal_address": "12uXdFN4RUqiDWMKyR59R833SmbCrHzjjQ",
+    "btc_compressed_address": "1GG7vrGuFzzwfnC59AptTfR5AbWfVskurs"
   }
 ]
 wallet (unlocked) >>> wallet_list_my_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       BLOCK PRODUCTION ENABLED 
-myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0              N/A                      
+myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0              N/A                      
 wallet (unlocked) >>> wallet_account_transaction_history myaccount
 No transactions found.
 wallet (unlocked) >>> wallet_account_update_private_data myaccount "1234 test private data"
 OK
-wallet (unlocked) >>> wallet_dump_private_key XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
-"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
+wallet (unlocked) >>> wallet_dump_private_key XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
+"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
 wallet (unlocked) >>> wallet_change_passphrase 87654321
 OK
 wallet (unlocked) >>> wallet_get_name 
@@ -70,7 +70,7 @@ wallet (unlocked) >>> wallet_account_set_favorite myaccount
 OK
 wallet (unlocked) >>> wallet_list_favorite_accounts 
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    YES            0         
+myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    YES            0         
 wallet (unlocked) >>> wallet_account_set_favorite myaccount false
 OK
 wallet (unlocked) >>> wallet_list_favorite_accounts 
@@ -79,13 +79,13 @@ wallet (unlocked) >>> wallet_add_contact_account test XTS5nkoz8qNcLPF8w7xSpnf6CC
 OK
 wallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0         
+myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0         
 test                               XTS5nkoz8qNcLPF8w7xSpnf6CCFcgioGMDqsvw7G7hgEvMAxL6fCc           NO                    NO             0         
 wallet (unlocked) >>> wallet_remove_contact_account test
 OK
 wallet (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-myaccount                          XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0         
+myaccount                          XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0         
 wallet (unlocked) >>> wallet_set_setting t1 123456
 OK
 wallet (unlocked) >>> wallet_lock

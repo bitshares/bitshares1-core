@@ -7,19 +7,19 @@ OK
 testwallet2 (unlocked) >>> wallet_set_automatic_backups false
 false
 testwallet2 (unlocked) >>> wallet_account_create testaccount 
-"XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v"
+"XTS7dr2hs2vY6395Wdv1MaMrzvBE116JKsMJ8rVSQdEL3DUx7BJH5"
 testwallet2 (unlocked) >>> wallet_account_create testaccount2
-"XTS7CCZsSumbT4xCvu5t21C2ic9msdiYf9oRuNyLBoJz18LTkArfs"
+"XTS7mAdPLnZeq3ck1ztd6FTnziEboJnvChkYjEtvztKvc7KRyTMUV"
 testwallet2 (unlocked) >>> wallet_dump_private_key testaccount
-"5KXkrnm5jb5eq75pieMohVxT3YR3b9V6r9mAc9pFKSG9yM1vdXJ"
+"5KYQkvA4QA2suTEXu52E7UoSjtanoqneEcvMpERV5PYf4C6XFSa"
 testwallet2 (unlocked) >>> wallet_dump_private_key testaccount2
-"5K3JSpEFZKY4JWZ2wcG3wEWZr6t2GYv3FzWvVVhCuDvvBBfQao9"
+"5K2bLafpiBqxjNR1pBjN2AyZ2cgrfS9XLJeX3EgQthMpRxVuuqH"
 testwallet2 (unlocked) >>> wallet_open testwallet1
 OK
 testwallet1 (locked) >>> wallet_unlock 9999 password
 OK
 testwallet1 (unlocked) >>> wallet_account_create testaccount
-"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 testwallet1 (unlocked) >>> help wallet_import_private_key 
 Usage:
 wallet_import_private_key <wif_key> [account_name] [create_new_account] [rescan]                      Loads the private key into the specified account. Returns which account it was actually imported to.
@@ -38,16 +38,16 @@ aliases: import_key, importprivkey
 testwallet1 (unlocked) >>> wallet_import_private_key 5KXkrnm5jb5eq75pieMohVxT3YR3b9V6r9mAc9pFKSG9yM1vdXJ testaccount false true
 "testaccount"
 testwallet1 (unlocked) >>> wallet_dump_private_key testaccount
-"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
+"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
 testwallet1 (unlocked) >>> wallet_account_list_public_keys testaccount
 [{
-    "hex": "03881b007b922bd8e69e525ac5568b1e71bd17aafc592c74903c8919e8d0f6249d",
-    "native_pubkey": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
-    "native_address": "XTS8k4PT5hKqNY9VSS3tqR3yL3JQ3sYSxUCa",
-    "pts_normal_address": "PhPkbA7ELsiH58RvLbYZCWs5D9Ae7hKvHi",
-    "pts_compressed_address": "PZs8yvKN37HWR7wDDjfaEhVCzmUQrirzvU",
-    "btc_normal_address": "1ATyT5R6ammDGrd4y6ti3Vd1xtjpH3gB8L",
-    "btc_compressed_address": "12wMqqdEH1LScr8MrF1j5gF9kX3b3PPZgG"
+    "hex": "02f969a87ca684e235b95bff54981ab2125aa331969e290ea9278645b2988892ff",
+    "native_pubkey": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
+    "native_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
+    "pts_normal_address": "PZqJmL4CBann1nABLuiza9H6h222exNzT7",
+    "pts_compressed_address": "PoBu4vy326x1U3zvWfUjcgf8QqwVKHEJ9x",
+    "btc_normal_address": "12uXdFN4RUqiDWMKyR59R833SmbCrHzjjQ",
+    "btc_compressed_address": "1GG7vrGuFzzwfnC59AptTfR5AbWfVskurs"
   },{
     "hex": "03210c243d6e3d35a2cd4a0e33914d58366e9c23a18f2301331864af2f8148e394",
     "native_pubkey": "XTS75ngXKr5VCgxFU6iQTkwQzXXYwQz5em6AwEtH6hAzo4sW5j81v",
@@ -58,10 +58,10 @@ testwallet1 (unlocked) >>> wallet_account_list_public_keys testaccount
     "btc_compressed_address": "12tvS6JZ4LDVM1o6AjYY92nYaQ787WUtuC"
   }
 ]
-testwallet1 (unlocked) >>> wallet_dump_private_key XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
-"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
-testwallet1 (unlocked) >>> wallet_dump_private_key XTS8k4PT5hKqNY9VSS3tqR3yL3JQ3sYSxUCa
-"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
+testwallet1 (unlocked) >>> wallet_dump_private_key XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
+"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
+testwallet1 (unlocked) >>> wallet_dump_private_key XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN
+"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
 testwallet1 (unlocked) >>> wallet_import_private_key 5JdxsVV1B5oKiTBT3NraUenTii89Lj7jnFidg6M3HwcxyV572Cb testaccount2 true true
 "testaccount2"
 testwallet1 (unlocked) >>> wallet_dump_private_key testaccount2

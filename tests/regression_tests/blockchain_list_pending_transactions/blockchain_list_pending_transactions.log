@@ -3,7 +3,7 @@ ACCOUNT                         BALANCE
 ============================================================
 delegate0                       19,801,980.19801 XTS        
 default (unlocked) >>> wallet_account_create test
-"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> wallet_account_balance test
 No balances found.
 default (unlocked) >>> wallet_transfer 100 XTS delegate0 test

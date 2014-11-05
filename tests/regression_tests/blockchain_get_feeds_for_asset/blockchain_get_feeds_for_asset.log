@@ -1,7 +1,7 @@
 default (unlocked) >>> wallet_asset_create XMO DIGITAL_DEVICE1 delegate0 "CREATING AN ASSET" null 500 100
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
-<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                0.50000 XTS         <d-ign></d-ign>
+<d-ign></d-ign>PENDING   delegate0           delegate0           0.00000 XTS             create XMO (DIGITAL_DEVICE1)                500,000.50000 XTS   <d-ign></d-ign>
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait 2
@@ -62,37 +62,37 @@ default (unlocked) >>> blockchain_get_feeds_for_asset XMO
 [{
     "delegate_name": "delegate0",
     "price": 2,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate1",
     "price": 0.20000000000000001,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate2",
     "price": 1,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate4",
     "price": 2.5,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate6",
     "price": 0.01,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate7",
     "price": 2,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": null,
     "median_price": null
   }
