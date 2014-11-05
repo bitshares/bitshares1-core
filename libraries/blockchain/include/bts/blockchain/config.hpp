@@ -22,7 +22,7 @@
 #define BTS_ADDRESS_PREFIX                                  "BTSX"
 #define BTS_BLOCKCHAIN_SYMBOL                               "BTS"
 #define BTS_BLOCKCHAIN_NAME                                 "BitShares"
-#define BTS_BLOCKCHAIN_DESCRIPTION                          "Company. Community. Currency"
+#define BTS_BLOCKCHAIN_DESCRIPTION                          "Community. Company. Currency"
 #define BTS_BLOCKCHAIN_PRECISION                            100000
 #define BTS_BLOCKCHAIN_MAX_TRANSACTION_EXPIRATION_SEC       (60*60*24*2)
 #define BTS_BLOCKCHAIN_MIN_YIELD_PERIOD_SEC                 (60*60*24) // 24 hours
