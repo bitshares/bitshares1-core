@@ -2,19 +2,6 @@
 #include <boost/test/unit_test.hpp>
 #include "dev_fixture.hpp"
 
-BOOST_AUTO_TEST_CASE( timetest )
-{ 
-  auto block_time =  fc::variant( "20140617T024645" ).as<fc::time_point_sec>();
-  auto now =  fc::variant( "20140617T024332" ).as<fc::time_point_sec>();
-  elog( "delta: ${d}", ("d", (block_time - now).to_seconds() ) );
-}
-BOOST_FIXTURE_TEST_CASE( fork_testing, chain_fixture )
-{
-   produce_block(clientb);
-   produce_block(clienta);
-   exec( clientb, "info" );
-   exec( clienta, "info" );
-}
 
 BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
 { try {
@@ -738,3 +725,16 @@ BOOST_FIXTURE_TEST_CASE( malicious_trading, chain_fixture )
 } FC_LOG_AND_RETHROW() }
 #endif
 
+BOOST_AUTO_TEST_CASE( timetest )
+{ 
+  auto block_time =  fc::variant( "20140617T024645" ).as<fc::time_point_sec>();
+  auto now =  fc::variant( "20140617T024332" ).as<fc::time_point_sec>();
+  elog( "delta: ${d}", ("d", (block_time - now).to_seconds() ) );
+}
+BOOST_FIXTURE_TEST_CASE( fork_testing, chain_fixture )
+{
+   produce_block(clientb);
+   produce_block(clienta);
+   exec( clientb, "info" );
+   exec( clienta, "info" );
+}
