@@ -244,6 +244,8 @@ namespace bts { namespace blockchain {
 
    void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
    {
+      FC_ASSERT( !"Update block signing key operation is not enabled yet!" );
+
       auto account_rec = eval_state._current_state->get_account_record( this->account_id );
       FC_ASSERT( account_rec.valid() );
       FC_ASSERT( account_rec->is_delegate() );
