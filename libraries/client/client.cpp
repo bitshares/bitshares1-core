@@ -354,20 +354,23 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
       }
       else
       {
-         auto dir_name = string( BTS_BLOCKCHAIN_NAME );
+         const auto get_os_specific_dir_name = [&]( string dir_name ) -> string
+         {
 #ifdef WIN32
 #elif defined( __APPLE__ )
 #else
-         std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
-         dir_name.erase( end_pos, dir_name.end() );
-         dir_name = "." + dir_name;
+             std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
+             dir_name.erase( end_pos, dir_name.end() );
+             dir_name = "." + dir_name;
 #endif
 
 #ifdef BTS_TEST_NETWORK
-         dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
+             dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif
+             return dir_name;
+         };
 
-         datadir = fc::app_path() / dir_name;
+         datadir = fc::app_path() / get_os_specific_dir_name( BTS_BLOCKCHAIN_NAME );
       }
       return datadir;
 
