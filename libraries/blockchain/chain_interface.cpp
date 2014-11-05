@@ -49,6 +49,8 @@ namespace bts { namespace blockchain {
                return false;
        }
 
+      FC_ASSERT( name != "BTSX" );
+
       if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
          return false;
       if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
