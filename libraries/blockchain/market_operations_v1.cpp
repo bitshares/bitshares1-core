@@ -86,7 +86,6 @@ void short_operation::evaluate_v1( transaction_evaluation_state& eval_state )
    }
 
    auto current_short   = eval_state._current_state->get_short_record( this->short_index );
-   //if( current_short ) wdump( (current_short) );
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw
@@ -197,7 +196,6 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
 
 
    auto current_short   = eval_state._current_state->get_short_record( this->short_index );
-   //if( current_short ) wdump( (current_short) );
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw
@@ -300,7 +298,6 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    */
 
    auto current_short   = eval_state._current_state->get_short_record( this->short_index );
-   //if( current_short ) wdump( (current_short) );
 
    if( this->amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount );
    if( this->amount <  0 ) // withdraw

@@ -31,7 +31,6 @@ namespace bts { namespace blockchain { namespace detail {
 
              if( !_ask_itr.valid() )
              {
-                wlog( "ask iter invalid..." );
                 _ask_itr = _db_impl._ask_db.begin();
              }
 
@@ -82,14 +81,12 @@ namespace bts { namespace blockchain { namespace detail {
                 }
                 else // we only liquidate fees collected for user issued assets
                 {
-  //  wlog( "==========================  LIQUIDATE FEES ${amount}  =========================\n", ("amount", quote_asset->collected_fees) );
 
                   get_next_bid(); // this is necessary for get_next_ask to work with collateral
                   while( get_next_ask() )
                   {
                      if( (asset(quote_asset->collected_fees,quote_id) * _current_ask->get_price()).amount < (10000 * BTS_BLOCKCHAIN_PRECISION) )
                         break;
-                //     idump( (_current_ask) );
                      market_transaction mtrx;
                      mtrx.bid_price = _current_ask->get_price();
                      mtrx.ask_price = _current_ask->get_price();
@@ -129,7 +126,6 @@ namespace bts { namespace blockchain { namespace detail {
                      quote_asset->collected_fees -= mtrx.bid_paid.amount;
                      base_asset->collected_fees += mtrx.ask_paid.amount;
                   }
-                //  wlog( "==========================  DONE LIQUIDATE FEES BALANCE: ${amount}=========================\n", ("amount", quote_asset->collected_fees) );
                 }
              }
 
@@ -164,7 +160,6 @@ namespace bts { namespace blockchain { namespace detail {
 
                 if( _current_ask->type == cover_order && _current_bid->type == short_order )
                 {
-                   //elog( "CURRENT ASK IS COVER" );
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.ask_price < mtrx.bid_price ) // the call price has not been reached
                       break;
@@ -175,8 +170,6 @@ namespace bts { namespace blockchain { namespace detail {
                     */
                    if( mtrx.bid_price > market_stat->maximum_bid() )
                    {
-                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                      // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
                    }
@@ -186,8 +179,6 @@ namespace bts { namespace blockchain { namespace detail {
                     */
                    if( mtrx.bid_price < market_stat->minimum_ask() )
                    {
-                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                      // TODO: cancel the short order...
                       _current_ask.reset();
                       continue;
                    }
@@ -195,16 +186,8 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.ask_price = mtrx.bid_price;
 
                    // we want to sell enough XTS to cover our balance.
-                   //ulog("Current ask balance:  ${ask_balance},  current bid price: ${bid_price}",
-                   //     ("ask_balance", current_ask_balance)("bid_price", mtrx.bid_price));
                    ask_quantity_xts  = current_ask_balance * mtrx.bid_price;
 
-                   /*
-                   ulog("Current bid:  ${bid} \n  Current ask: ${ask}",
-                           ("bid", _current_bid)
-                           ("ask", _current_ask)
-                           ("ask_quantity_xts",ask_quantity_xts));
-                           */
                    if( ask_quantity_xts.amount > *_current_ask->collateral )
                       ask_quantity_xts.amount = *_current_ask->collateral;
 
@@ -214,7 +197,6 @@ namespace bts { namespace blockchain { namespace detail {
                         mtrx.bid_paid      = current_ask_balance;
                    else
                         mtrx.bid_paid      = quantity_xts * mtrx.bid_price;
-                   //ulog( "mtrx: ${mtrx}", ("mtrx",mtrx) );
 
                    mtrx.ask_received  = mtrx.bid_paid;
                    xts_paid_by_short  = quantity_xts;
@@ -241,7 +223,6 @@ namespace bts { namespace blockchain { namespace detail {
                 }
                 else if( _current_ask->type == cover_order && _current_bid->type == bid_order )
                 {
-                   //elog( "CURRENT ASK IS COVER" );
                    FC_ASSERT( quote_asset->is_market_issued() && base_id == 0 );
                    if( mtrx.ask_price < mtrx.bid_price )
                       break; // the call price has not been reached
@@ -253,8 +234,6 @@ namespace bts { namespace blockchain { namespace detail {
                     */
                    if( mtrx.bid_price < market_stat->minimum_ask() )
                    {
-                      //wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                      // TODO: cancel the short order...
                       _current_ask.reset();
                       continue;
                    }
@@ -299,8 +278,6 @@ namespace bts { namespace blockchain { namespace detail {
                     */
                    if( mtrx.bid_price > max_short_bid && mtrx.ask_price > max_short_bid )
                    {
-                      // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                      // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
                    }
@@ -311,8 +288,6 @@ namespace bts { namespace blockchain { namespace detail {
                     */
                    if( mtrx.bid_price > market_stat->maximum_bid() )
                    {
-                      // wlog( "skipping short ${x} < max_short_bid ${b}", ("x",mtrx.bid_price)("b", max_short_bid)  );
-                      // TODO: cancel the short order...
                       _current_bid.reset();
                       continue;
                    }
@@ -324,7 +299,6 @@ namespace bts { namespace blockchain { namespace detail {
                    mtrx.bid_received   = mtrx.ask_paid;
                    mtrx.ask_received   = mtrx.ask_paid * mtrx.ask_price;
 
-                   //ulog( "bid_quat: ${b}  balance ${q}  ask ${a}\n", ("b",quantity_xts)("q",*_current_bid)("a",*_current_ask) );
                    xts_paid_by_short   = quantity_xts; //bid_quantity_xts;
 
                    // rounding errors go into collateral, round to the nearest 1 XTS
@@ -439,13 +413,11 @@ namespace bts { namespace blockchain { namespace detail {
 
              update_market_history( trading_volume, opening_price, closing_price, timestamp );
 
-             wlog( "done matching orders" );
              _pending_state->apply_changes();
              return true;
         }
         catch( const fc::exception& e )
         {
-           wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
            auto market_state = _prior_state->get_market_status( quote_id, base_id );
            if( !market_state )
               market_state = market_status( quote_id, base_id );
@@ -465,7 +437,6 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( mtrx.ask_paid >= mtrx.bid_received );
           FC_ASSERT( mtrx.fees_collected.amount >= 0 );
 
-          //elog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
 
           _market_transactions.push_back(mtrx);
       } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
@@ -488,7 +459,6 @@ namespace bts { namespace blockchain { namespace detail {
           if( mtrx.bid_paid.amount <= 0 ) // WHY is this ever negitive??
           {
              FC_ASSERT( mtrx.bid_paid.amount >= 0 );
-             //ulog( "bid paid ${c}  collateral ${xts} \nbid: ${current}\nask: ${ask}", ("c",mtrx.bid_paid)("xts",xts_paid_by_short)("current", (*_current_bid))("ask",*_current_ask) );
              _current_bid->state.balance -= xts_paid_by_short.amount;
              return;
           }
@@ -568,7 +538,6 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( _current_ask->state.balance == 0 && *_current_ask->collateral > 0 ) // no more USD left
           { // send collateral home to mommy & daddy
-                //wlog( "            collateral balance is now 0!" );
                 auto ask_balance_address = withdraw_condition(
                                                   withdraw_with_signature(_current_ask->get_owner()),
                                                   _base_id ).get_address();
@@ -600,7 +569,6 @@ namespace bts { namespace blockchain { namespace detail {
                 _pending_state->store_balance_record( *ask_payout );
                 _current_ask->collateral = 0;
           }
-          //ulog( "storing collateral ${c}", ("c",_current_ask) );
 
           // the collateral position is now worse than before, if we don't update the market index then
           // the index price will be "wrong"... ie: the call price should move up based upon the fact
@@ -661,7 +629,6 @@ namespace bts { namespace blockchain { namespace detail {
          if( _short_itr.valid() )
          {
             auto bid = market_order( short_order, _short_itr.key(), _short_itr.value() );
-            //wlog( "SHORT ITER VALID: ${o}", ("o",bid) );
             if( bid.get_price().quote_asset_id == _quote_id &&
                 bid.get_price().base_asset_id == _base_id )
             {
@@ -675,7 +642,6 @@ namespace bts { namespace blockchain { namespace detail {
          }
          else
          {
-            // wlog( "           No Shorts         ****   " );
          }
          if( _bid_itr.valid() ) --_bid_itr;
          return _current_bid.valid();
@@ -685,7 +651,6 @@ namespace bts { namespace blockchain { namespace detail {
       { try {
          if( _current_ask && _current_ask->state.balance > 0 )
          {
-            //idump( (_current_ask) );
             return _current_ask.valid();
          }
          _current_ask.reset();
@@ -729,9 +694,7 @@ namespace bts { namespace blockchain { namespace detail {
                    {
                       _current_ask = cover_ask;
                       _current_payoff_balance = _collateral_itr.value().payoff_balance;
-                      //wlog( "--collateral_iter" );
                       --_collateral_itr;
-                      //idump( (_current_ask) );
                       return _current_ask.valid();
                    }
                 }
@@ -742,7 +705,6 @@ namespace bts { namespace blockchain { namespace detail {
          if( _ask_itr.valid() )
          {
             auto ask = market_order( ask_order, _ask_itr.key(), _ask_itr.value() );
-            //wlog( "ASK ITER VALID: ${o}", ("o",ask) );
             if( ask.get_price().quote_asset_id == _quote_id &&
                 ask.get_price().base_asset_id == _base_id )
             {
