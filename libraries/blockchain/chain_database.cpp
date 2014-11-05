@@ -297,22 +297,24 @@ namespace bts { namespace blockchain {
                 } FC_CAPTURE_AND_RETHROW( (item.raw_address) )
             }
 
+#ifndef WIN32
+#warning Set these correctly for the real vesting release
+#endif
             data.vesting_start = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;
             data.original_balance = item.balance / 1000;
 
             withdraw_condition condition(data, 0, 0);
             balance_record balance_rec(condition);
-            balance_rec.balance = item.balance;
+            balance_rec.balance = item.balance / 1000;
 
             /* In case of redundant balances */
             auto cur = self->get_balance_record( balance_rec.id() );
             if( cur.valid() ) balance_rec.balance += cur->balance;
             balance_rec.last_update = config.timestamp;
-            balance_rec.genesis_info = genesis_record( balance_rec.get_balance(), string( data.owner ) );
+            //balance_rec.genesis_info = genesis_record( balance_rec.get_balance(), string( data.owner ) );
             //ulog("storing vesting record: ${rec}", ("rec", balance_rec.id()));
             self->store_balance_record( balance_rec );
-
          }
 
          asset total;

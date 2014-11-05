@@ -2498,6 +2498,10 @@ namespace bts { namespace net { namespace detail {
     void node_impl::on_item_ids_inventory_message( peer_connection* originating_peer, const item_ids_inventory_message& item_ids_inventory_message_received )
     {
       VERIFY_CORRECT_THREAD();
+
+      // expire old inventory so we'll be making decisions our about whether to fetch blocks below based only on recent inventory
+      originating_peer->clear_old_inventory();
+
       dlog( "received inventory of ${count} items from peer ${endpoint}",
            ( "count", item_ids_inventory_message_received.item_hashes_available.size() )("endpoint", originating_peer->get_remote_endpoint() ) );
       for( const item_hash_t& item_hash : item_ids_inventory_message_received.item_hashes_available )

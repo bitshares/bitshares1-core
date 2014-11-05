@@ -356,41 +356,29 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
       }
       else
       {
-         auto dir_name = string( BTS_BLOCKCHAIN_NAME );
-         auto old_dir_name = string( "BitShares X" );
+         const auto get_os_specific_dir_name = [&]( string dir_name ) -> string
+         {
 #ifdef WIN32
 #elif defined( __APPLE__ )
 #else
-         std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
-         dir_name.erase( end_pos, dir_name.end() );
-         dir_name = "." + dir_name;
-
-         std::string::iterator end_pos = std::remove( old_dir_name.begin(), old_dir_name.end(), ' ' );
-         old_dir_name.erase( end_pos, old_dir_name.end() );
-         old_dir_name = "." + old_dir_name;
+             std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
+             dir_name.erase( end_pos, dir_name.end() );
+             dir_name = "." + dir_name;
 #endif
 
 #ifdef BTS_TEST_NETWORK
-         dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
+             dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif
+             return dir_name;
+         };
 
-         datadir = fc::app_path() / dir_name;
-         auto olddatadir = fc::app_path() / old_dir_name;
-         wdump( (datadir) );
-         wdump( (olddatadir) );
+         datadir = fc::app_path() / get_os_specific_dir_name( BTS_BLOCKCHAIN_NAME );
+
          if( !fc::exists( datadir ) )
          {
-            ilog( "new data dir doesn't exist yet" );
-            wdump( (olddatadir) );
-            if( fc::exists( olddatadir ) )
-            {
-               elog( "rename ${a} ${b}", ("olddatadir",olddatadir)("datadir",datadir) );
-               fc::rename( olddatadir, datadir );
-            }
-         }
-         else
-         {
-            ilog( "new data dir already exists" );
+             const auto old_data_dir = fc::app_path() / get_os_specific_dir_name( "BitShares X" );
+             if( fc::exists( old_data_dir ) )
+                 fc::rename( old_data_dir, datadir );
          }
       }
       return datadir;

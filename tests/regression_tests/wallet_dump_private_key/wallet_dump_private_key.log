@@ -1,8 +1,8 @@
 default (unlocked) >>> wallet_account_create test
-"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> wallet_list_accounts
 NAME (* delegate)                  KEY                                                             REGISTERED            FAVORITE       APPROVAL       
-test                               XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp           NO                    NO             0         
+test                               XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt           NO                    NO             0         
 default (unlocked) >>> help wallet_dump_private_key
 Usage:
 wallet_dump_private_key <input>                                                                       Reveals the private key corresponding to an account, public key, or address
@@ -16,9 +16,9 @@ Returns:
 
 aliases: dump_private_key, dumpprivkey
 default (unlocked) >>> wallet_dump_private_key test
-"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
-default (unlocked) >>> wallet_dump_private_key XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp
-"5KkUwBTCSpCKvzvkxjM1fS8Syf5Y9chybQcTVgtB3r9iURjdhiF"
+"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
+default (unlocked) >>> wallet_dump_private_key XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
+"5K8dupxvPDBADHXLHpTcUxn6EKBVypwU6j7sNqG3mCYKLUZyasd"
 default (unlocked) >>> wallet_dump_private_key test2
 "key not found"
 default (unlocked) >>> quit

@@ -1,5 +1,5 @@
 default (unlocked) >>> wallet_account_create testaccount
-"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> help wallet_get_account
 Usage:
 wallet_get_account <account_name>                                                                     Get the account record for a given name
@@ -16,17 +16,17 @@ default (unlocked) >>> wallet_get_account testaccount
   "id": 0,
   "name": "testaccount",
   "public_data": null,
-  "owner_key": "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp",
+  "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
   "active_key_history": [[
-      "2014-06-20T14:40:30",
-      "XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+      "20140620T144030",
+      "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
     ]
   ],
-  "registration_date": "1970-01-01T00:00:00",
-  "last_update": "1970-01-01T00:00:00",
+  "registration_date": "19700101T000000",
+  "last_update": "19700101T000000",
   "delegate_info": null,
   "meta_data": null,
-  "account_address": "XTS8k4PT5hKqNY9VSS3tqR3yL3JQ3sYSxUCa",
+  "account_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
   "private_data": null,
   "is_my_account": true,
   "approved": 0,
