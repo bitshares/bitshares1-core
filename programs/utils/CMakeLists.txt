@@ -16,6 +16,9 @@ target_link_libraries( bts_create_genesis fc bts_blockchain bts_utilities)
 add_executable( key_to_wif key_to_wif.cpp )
 target_link_libraries( key_to_wif fc bts_blockchain bts_utilities)
 
+add_executable( bts_key_info bts_key_info.cpp )
+target_link_libraries( bts_key_info fc bts_blockchain bts_utilities)
+
 # I've added two small files here that are also compiled in bts_blockchain
 # to avoid a circular dependency.  The circular dependency could be broken more cleanly
 # by splitting bts_blockchain, but it doesn't seem worth it just for this
