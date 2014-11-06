@@ -310,7 +310,7 @@ namespace detail {
                auto present = false;
                _blockchain->scan_balances( [&]( const balance_record& bal_rec )
                {
-                    if( !bal_rec.genesis_info.valid() ) return;
+                    if( !bal_rec.snapshot_info.valid() ) return;
                     const auto id = bal_rec.id().addr;
                     present |= _wallet_db.lookup_transaction( id ).valid();
                } );
@@ -322,7 +322,7 @@ namespace detail {
                        /* Upgrade genesis claim virtual transaction indexes */
                        _blockchain->scan_balances( [&]( const balance_record& bal_rec )
                        {
-                            if( !bal_rec.genesis_info.valid() ) return;
+                            if( !bal_rec.snapshot_info.valid() ) return;
                             const auto id = bal_rec.id().addr;
                             _wallet_db.remove_transaction( id );
                        } );
