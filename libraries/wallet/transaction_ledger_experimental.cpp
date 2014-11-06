@@ -22,11 +22,11 @@ void wallet_impl::scan_genesis_experimental( const account_balance_record_summar
         const string& account_name = item.first;
         for( const auto& balance_record : item.second )
         {
-            if( !balance_record.genesis_info.valid() )
+            if( !balance_record.snapshot_info.valid() )
                 continue;
 
-            const string& claim_addr = balance_record.genesis_info->claim_addr;
-            const asset& delta_amount = balance_record.genesis_info->initial_balance;
+            const string& claim_addr = balance_record.snapshot_info->claim_addr;
+            const asset& delta_amount = balance_record.snapshot_info->initial_balance;
             record.delta_amounts[ claim_addr ][ delta_amount.asset_id ] -= delta_amount.amount;
             record.delta_amounts[ account_name ][ delta_amount.asset_id ] += delta_amount.amount;
         }

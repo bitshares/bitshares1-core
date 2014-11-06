@@ -155,10 +155,7 @@ namespace bts { namespace blockchain {
          digest_type chain_id = self->chain_id();
          if( chain_id != digest_type() && !chain_id_only )
          {
-#ifndef WIN32
-#warning re-enable sanity check
-#endif
-            //self->sanity_check();
+            self->sanity_check();
             ilog( "Genesis state already initialized" );
             return chain_id;
          }
@@ -266,7 +263,8 @@ namespace bts { namespace blockchain {
             /* In case of redundant balances */
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
-            initial_balance.genesis_info = genesis_record( initial_balance.get_balance(), string( addr ) );
+            const asset bal( initial_balance.balance, initial_balance.condition.asset_id );
+            initial_balance.snapshot_info = snapshot_record( bal, string( addr ) );
             initial_balance.last_update = config.timestamp;
             self->store_balance_record( initial_balance );
          }
@@ -293,7 +291,7 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning Set these correctly for the real vesting release
 #endif
-            data.vesting_start = fc::time_point_sec(1414886399);
+            data.vesting_start_time = fc::time_point_sec(1414886399);
             data.vesting_duration = 63072000;
             data.original_balance = item.balance / 1000;
 
@@ -305,8 +303,8 @@ namespace bts { namespace blockchain {
             auto cur = self->get_balance_record( balance_rec.id() );
             if( cur.valid() ) balance_rec.balance += cur->balance;
             balance_rec.last_update = config.timestamp;
-            //balance_rec.genesis_info = genesis_record( balance_rec.get_balance(), string( data.owner ) );
-            //ulog("storing vesting record: ${rec}", ("rec", balance_rec.id()));
+            const asset bal( balance_rec.balance, balance_rec.condition.asset_id );
+            balance_rec.snapshot_info = snapshot_record( bal, item.raw_address );
             self->store_balance_record( balance_rec );
          }
 
@@ -314,7 +312,7 @@ namespace bts { namespace blockchain {
          auto itr = _balance_db.begin();
          while( itr.valid() )
          {
-            auto ind = itr.value().get_balance();
+            const asset ind( itr.value().balance, itr.value().condition.asset_id );
             FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
             total += ind;
             ++itr;
@@ -369,10 +367,7 @@ namespace bts { namespace blockchain {
          self->set_property( chain_property_enum::last_random_seed_id, fc::variant( secret_hash_type() ) );
          self->set_property( chain_property_enum::confirmation_requirement, BTS_BLOCKCHAIN_NUM_DELEGATES*2 );
 
-#ifndef WIN32
-#warning re-enable sanity check
-#endif
-         //self->sanity_check();
+         self->sanity_check();
          return _chain_id;
       } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
@@ -2317,7 +2312,7 @@ namespace bts { namespace blockchain {
       auto itr = my->_balance_db.begin();
       while( itr.valid() )
       {
-         auto ind = itr.value().get_balance();
+         const asset ind( itr.value().balance, itr.value().condition.asset_id );
          if( ind.asset_id == 0 )
          {
             FC_ASSERT( ind.amount >= 0, "", ("record",itr.value()) );
@@ -2913,7 +2908,7 @@ namespace bts { namespace blockchain {
        {
            const balance_record balance = balance_itr.value();
            if( balance.asset_id() == total.asset_id )
-               total += balance.get_balance();
+               total.amount += balance.balance;
        }
 
        // Add ask balances
@@ -3003,7 +2998,7 @@ namespace bts { namespace blockchain {
 
         while (balance.valid()) {
             if (balance.value().last_update <= genesis_date)
-                unclaimed_total += balance.value().get_balance();
+                unclaimed_total.amount += balance.value().balance;
 
             ++balance;
         }
@@ -3117,29 +3112,6 @@ namespace bts { namespace blockchain {
       }
       return results;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
-
-   vector<asset> chain_database::get_balance_for_key( const address& owner_address )const
-   {
-      map<asset_id_type,share_type> result;
-      auto itr = my->_balance_db.begin();
-      while( itr.valid() )
-      {
-         auto value = itr.value();
-         if( value.owner() == owner_address )
-         {
-            auto balance = value.get_balance();
-            result[balance.asset_id] += balance.amount;
-         }
-         ++itr;
-      }
-      vector<asset> asset_result;
-      asset_result.reserve(result.size());
-      for( auto item : result )
-      {
-         asset_result.push_back( asset(item.second,item.first) );
-      }
-      return asset_result;
-   }
 
    void chain_database::dump_state( const fc::path& path )const
    { try {

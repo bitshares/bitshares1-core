@@ -229,7 +229,7 @@ void wallet_impl::scan_balances()
         {
           sync_balance_with_blockchain( bal_rec.id() );
 
-          if( bal_rec.genesis_info.valid() ) /* Create virtual transactions for genesis claims */
+          if( bal_rec.snapshot_info.valid() ) /* Create virtual transactions for genesis claims */
           {
               const auto public_key = key_rec->public_key;
               const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
@@ -243,8 +243,8 @@ void wallet_impl::scan_balances()
 
               auto entry = ledger_entry();
               entry.to_account = public_key;
-              entry.amount = bal_rec.genesis_info->initial_balance;
-              entry.memo = "claim " + bal_rec.genesis_info->claim_addr;
+              entry.amount = bal_rec.snapshot_info->initial_balance;
+              entry.memo = "claim " + bal_rec.snapshot_info->claim_addr;
 
               transaction_record->record_id = record_id;
               transaction_record->is_virtual = true;

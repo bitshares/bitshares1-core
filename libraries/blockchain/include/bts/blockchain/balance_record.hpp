@@ -5,17 +5,17 @@
 
 namespace bts { namespace blockchain {
 
-   struct genesis_record
+   struct snapshot_record
    {
-      genesis_record(){}
+      snapshot_record(){}
 
-      genesis_record( const asset& b, const string& a )
+      snapshot_record( const asset& b, const string& a )
       :initial_balance(b),claim_addr(a){}
 
       asset     initial_balance;
       string    claim_addr;
    };
-   typedef fc::optional<genesis_record> ogenesis_record;
+   typedef fc::optional<snapshot_record> osnapshot_record;
 
    struct balance_record
    {
@@ -28,8 +28,7 @@ namespace bts { namespace blockchain {
 
       /** condition.get_address() */
       balance_id_type            id()const { return condition.get_address(); }
-      asset                      get_balance()const;
-      asset                      get_vested_balance(const fc::time_point_sec& now)const;
+      asset                      get_spendable_balance( const time_point_sec& at_time )const;
       bool                       is_null()const    { return balance == 0; }
       balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
       asset_id_type              asset_id()const { return condition.asset_id; }
@@ -41,7 +40,7 @@ namespace bts { namespace blockchain {
 
       share_type                 balance = share_type( 0 );
       withdraw_condition         condition;
-      ogenesis_record            genesis_info;
+      osnapshot_record           snapshot_info;
       fc::time_point_sec         last_update;
       fc::time_point_sec         deposit_date;
    };
@@ -49,5 +48,5 @@ namespace bts { namespace blockchain {
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::genesis_record, (initial_balance)(claim_addr) )
-FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(genesis_info)(last_update)(deposit_date) )
+FC_REFLECT( bts::blockchain::snapshot_record, (initial_balance)(claim_addr) )
+FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(snapshot_info)(last_update)(deposit_date) )

@@ -149,7 +149,8 @@ namespace bts { namespace blockchain {
       if( !current_balance_record )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
-      if( this->amount > current_balance_record->balance ) // Some withdraw conditions require extra checks (e.g. vesting condition)
+      // NOTE: Some withdraw conditions (e.g. vesting condition) require extra checks below
+      if( this->amount > current_balance_record->balance )
          FC_CAPTURE_AND_THROW( insufficient_funds,
                                (current_balance_record)
                                (amount)
@@ -261,16 +262,15 @@ namespace bts { namespace blockchain {
              try {
                  if( !eval_state.check_signature( condition.owner ) )
                      FC_CAPTURE_AND_THROW( missing_signature, (condition.owner) );
-            
-                 auto now = eval_state._current_state->now();
-                 auto claimable = current_balance_record->get_vested_balance(now);
+
+                 const time_point_sec now = eval_state._current_state->now();
+                 const asset claimable = current_balance_record->get_spendable_balance( now );
 
                  FC_ASSERT( this->amount <= claimable.amount, "You cannot withdraw that much from this vesting balance" );
 
              } FC_CAPTURE_AND_RETHROW( (condition) )
              break;
          }
-
 
          default:
             FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );

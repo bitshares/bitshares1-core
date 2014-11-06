@@ -69,7 +69,7 @@ namespace detail {
          FC_CAPTURE_AND_THROW( insufficient_funds, (from_account_name)(amount_to_withdraw)(balance_records) );
       for( const auto& record : balance_records.at( from_account_name ) )
       {
-          const asset balance = record.get_balance();
+          const asset balance = record.get_spendable_balance( _blockchain->get_pending_state()->now() );
           if( balance.amount <= 0 || balance.asset_id != amount_remaining.asset_id )
               continue;
 
@@ -1454,10 +1454,10 @@ namespace detail {
            auto oslate = my->_blockchain->get_delegate_slate( balance.delegate_slate_id() );
            if( oslate.valid() )
            {
-               total += balance.get_balance().amount * oslate->supported_delegates.size();
+               total += balance.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
                ilog("total: ${t}", ("t", total));
            }
-           total_possible += balance.get_balance().amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
+           total_possible += balance.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
            ilog("total_possible: ${t}", ("t", total_possible));
        }
        ilog("total_possible: ${t}", ("t", total_possible));
@@ -2278,7 +2278,7 @@ namespace detail {
 
              signed_transaction trx;
 
-             auto from_balance = balance_item.second.get_balance();
+             auto from_balance = balance_item.second.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
 
              if( from_balance.amount <= 0 )
                 continue;
@@ -3702,10 +3702,9 @@ namespace detail {
           for( const auto& record : records )
           {
 #ifndef WIN32
-#warning [BTS] Keep old behaviour in mainnet until vesting is finalized
+#warning [BTS] Set timestamp to before snapshot in mainnet to keep old behaviour until snapshot is finalized
 #endif
-              //const auto balance = record.get_balance();
-              const auto balance = record.get_vested_balance( my->_blockchain->get_pending_state()->now() );
+              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }
       }
@@ -3726,7 +3725,7 @@ namespace detail {
 
           for( const auto& record : records )
           {
-              const auto balance = record.get_balance();
+              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
               // TODO: Memoize these
               const auto asset_rec = pending_state->get_asset_record( balance.asset_id );
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
@@ -3761,7 +3760,7 @@ namespace detail {
        return asset(0);
    }
 
-   asset  wallet::get_account_net_worth( const string& account_name, const string& symbol )const
+   asset wallet::get_account_net_worth( const string& account_name, const string& symbol )const
    {
        ulog("get_account_net_worth in asset:  USD");
        auto btsx_worth = asset( 0, 0 );
@@ -3770,9 +3769,9 @@ namespace detail {
        {
            for( auto record : map.second )
            {
-               auto asset = record.get_balance();
-               ulog("asset: ${asset}", ("asset", asset));
-               btsx_worth += asset_worth(asset, "BTS_BLOCKCHAIN_SYMBOL" );
+               //const auto balance = asset( record.balance, record.condition.asset_id );
+               //ulog("asset: ${asset}", ("asset", asset));
+               //btsx_worth += asset_worth(balance, "BTS_BLOCKCHAIN_SYMBOL" );
            }
        }
        // open orders
@@ -3800,7 +3799,7 @@ namespace detail {
           const auto obalance = pending_state->get_balance_record( item.first );
           if( !obalance.valid() ) continue;
 
-          const auto balance = obalance->get_balance();
+          const auto balance = obalance->get_spendable_balance( pending_state->now() );
           if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
 
           const auto slate_id = obalance->delegate_slate_id();
