@@ -264,7 +264,7 @@ namespace bts { namespace blockchain {
             auto cur = self->get_balance_record( initial_balance.id() );
             if( cur.valid() ) initial_balance.balance += cur->balance;
             const asset bal( initial_balance.balance, initial_balance.condition.asset_id );
-            initial_balance.snapshot_info = snapshot_record( bal, string( addr ) );
+            initial_balance.snapshot_info = snapshot_record( string( addr ), bal.amount );
             initial_balance.last_update = config.timestamp;
             self->store_balance_record( initial_balance );
          }
@@ -294,8 +294,8 @@ namespace bts { namespace blockchain {
 #ifndef WIN32
 #warning Set these correctly for the real vesting release
 #endif
-            data.vesting_start_time = fc::time_point_sec(1414886399);
-            data.vesting_duration = 63072000;
+            data.start_time = fc::time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
+            data.duration = fc::days( 2 ).to_seconds();
             data.original_balance = item.balance / 1000;
 
             withdraw_condition condition(data, 0, 0);
@@ -307,7 +307,7 @@ namespace bts { namespace blockchain {
             if( cur.valid() ) balance_rec.balance += cur->balance;
             balance_rec.last_update = config.timestamp;
             const asset bal( balance_rec.balance, balance_rec.condition.asset_id );
-            balance_rec.snapshot_info = snapshot_record( bal, item.raw_address );
+            balance_rec.snapshot_info = snapshot_record( item.raw_address, bal.amount );
             self->store_balance_record( balance_rec );
          }
 

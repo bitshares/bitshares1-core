@@ -243,8 +243,8 @@ void wallet_impl::scan_balances()
 
               auto entry = ledger_entry();
               entry.to_account = public_key;
-              entry.amount = bal_rec.snapshot_info->initial_balance;
-              entry.memo = "claim " + bal_rec.snapshot_info->claim_addr;
+              entry.amount = asset( bal_rec.snapshot_info->original_balance, bal_rec.condition.asset_id );
+              entry.memo = "claim " + bal_rec.snapshot_info->original_address;
 
               transaction_record->record_id = record_id;
               transaction_record->is_virtual = true;

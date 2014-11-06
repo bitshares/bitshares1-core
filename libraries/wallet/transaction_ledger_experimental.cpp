@@ -25,8 +25,8 @@ void wallet_impl::scan_genesis_experimental( const account_balance_record_summar
             if( !balance_record.snapshot_info.valid() )
                 continue;
 
-            const string& claim_addr = balance_record.snapshot_info->claim_addr;
-            const asset& delta_amount = balance_record.snapshot_info->initial_balance;
+            const string& claim_addr = balance_record.snapshot_info->original_address;
+            const asset delta_amount = asset( balance_record.snapshot_info->original_balance, balance_record.condition.asset_id );
             record.delta_amounts[ claim_addr ][ delta_amount.asset_id ] -= delta_amount.amount;
             record.delta_amounts[ account_name ][ delta_amount.asset_id ] += delta_amount.amount;
         }

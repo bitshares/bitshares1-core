@@ -69,15 +69,15 @@ namespace bts { namespace blockchain {
 
                share_type max_claimable = 0;
 
-               if( at_time >= vesting_condition.vesting_start_time + vesting_condition.vesting_duration )
+               if( at_time >= vesting_condition.start_time + vesting_condition.duration )
                {
                    max_claimable = vesting_condition.original_balance;
                }
-               else if( at_time > vesting_condition.vesting_start_time )
+               else if( at_time > vesting_condition.start_time )
                {
-                   const auto elapsed_time = (at_time - vesting_condition.vesting_start_time).to_seconds();
-                   FC_ASSERT( elapsed_time > 0 && elapsed_time < vesting_condition.vesting_duration );
-                   max_claimable = (vesting_condition.original_balance * elapsed_time) / vesting_condition.vesting_duration;
+                   const auto elapsed_time = (at_time - vesting_condition.start_time).to_seconds();
+                   FC_ASSERT( elapsed_time > 0 && elapsed_time < vesting_condition.duration );
+                   max_claimable = (vesting_condition.original_balance * elapsed_time) / vesting_condition.duration;
                    FC_ASSERT( max_claimable > 0 && max_claimable < vesting_condition.original_balance );
                }
 

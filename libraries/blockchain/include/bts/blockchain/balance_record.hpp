@@ -9,11 +9,11 @@ namespace bts { namespace blockchain {
    {
       snapshot_record(){}
 
-      snapshot_record( const asset& b, const string& a )
-      :initial_balance(b),claim_addr(a){}
+      snapshot_record( const string& a, share_type b )
+      :original_address(a),original_balance(b){}
 
-      asset     initial_balance;
-      string    claim_addr;
+      string        original_address;
+      share_type    original_balance = 0;
    };
    typedef fc::optional<snapshot_record> osnapshot_record;
 
@@ -38,15 +38,15 @@ namespace bts { namespace blockchain {
       /** if condition is signature or by name, return the owner */
       address                    owner()const;
 
-      share_type                 balance = share_type( 0 );
       withdraw_condition         condition;
+      share_type                 balance = 0;
       osnapshot_record           snapshot_info;
-      fc::time_point_sec         last_update;
       fc::time_point_sec         deposit_date;
+      fc::time_point_sec         last_update;
    };
    typedef fc::optional<balance_record> obalance_record;
 
 } } // bts::blockchain
 
-FC_REFLECT( bts::blockchain::snapshot_record, (initial_balance)(claim_addr) )
-FC_REFLECT( bts::blockchain::balance_record, (balance)(condition)(snapshot_info)(last_update)(deposit_date) )
+FC_REFLECT( bts::blockchain::snapshot_record, (original_address)(original_balance) )
+FC_REFLECT( bts::blockchain::balance_record, (condition)(balance)(snapshot_info)(deposit_date)(last_update) )
