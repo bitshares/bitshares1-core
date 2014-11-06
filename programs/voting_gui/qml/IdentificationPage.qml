@@ -10,6 +10,7 @@ Rectangle {
    QtObject {
       id: d
       property Item snapper
+      property PhotoButton currentButton
    }
    Component {
       id: photoSnapper
@@ -18,8 +19,19 @@ Rectangle {
          source: camera
          viaItem: overlord
          expandedContainer: container
+         onExpanding: {
+            if( d.currentButton.imageSet )
+            {
+               previewSource = d.currentButton.currentImage
+               hasImage = true
+            }
+         }
          onExpanded: previewVisible = false
-         onCollapsed: d.snapper.destroy()
+         onCollapsed: {
+            d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
+            d.currentButton = null
+            d.snapper.destroy()
+         }
          onCaptureRequested: camera.imageCapture.capture()
       }
    }
@@ -57,6 +69,7 @@ Rectangle {
          iconSource: "qrc:/res/camera.png"
 
          onClicked: {
+            d.currentButton = this
             d.snapper = photoSnapper.createObject(this, {"owner": this})
 
             if( d.snapper === null ) {

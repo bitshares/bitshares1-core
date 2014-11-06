@@ -18,6 +18,7 @@ Rectangle {
    property alias previewVisible: photoPreview.opacity
    property alias previewSource: photoPreview.source
    property alias source: videoOutput.source
+   property bool hasImage: false
 
    signal expanding
    signal expanded
@@ -38,7 +39,10 @@ Rectangle {
          }
          PropertyChanges {
             target: mouseArea
-            onClicked: viewFinder.captureRequested()
+            onClicked: {
+               hasImage = true
+               viewFinder.captureRequested()
+            }
          }
          PropertyChanges {
             target: promptText
@@ -128,7 +132,7 @@ Rectangle {
    Image {
       id: photoPreview
       source: "qrc:/res/camera.png"
-      fillMode: Image.Pad
+      fillMode: hasImage? Image.Stretch : Image.Pad
       horizontalAlignment: Image.AlignHCenter
       verticalAlignment: Image.AlignVCenter
       anchors.fill: parent
