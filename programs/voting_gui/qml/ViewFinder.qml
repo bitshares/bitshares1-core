@@ -15,7 +15,7 @@ Rectangle {
    property Item owner
    property Item viaItem
    property Item expandedContainer
-   property alias previewVisible: photoPreview.opacity
+   property alias previewOpacity: photoPreview.opacity
    property alias previewSource: photoPreview.source
    property alias source: videoOutput.source
    property bool hasImage: false

@@ -11,6 +11,19 @@ Rectangle {
       id: d
       property Item snapper
       property PhotoButton currentButton
+
+      function startSnapshot(button) {
+         d.currentButton = button
+         d.snapper = photoSnapper.createObject(button, {"owner": button})
+
+         if( d.snapper === null ) {
+            console.log("Error instantiating photo snapper: " + snapper.errorString())
+            return
+         }
+
+         d.snapper.state = "EXPANDED"
+         camera.cameraState = Camera.ActiveState
+      }
    }
    Component {
       id: photoSnapper
@@ -26,7 +39,7 @@ Rectangle {
                hasImage = true
             }
          }
-         onExpanded: previewVisible = false
+         onExpanded: previewOpacity = 0
          onCollapsed: {
             d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
             d.currentButton = null
@@ -66,35 +79,26 @@ Rectangle {
       PhotoButton {
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
-         iconSource: "qrc:/res/camera.png"
-
-         onClicked: {
-            d.currentButton = this
-            d.snapper = photoSnapper.createObject(this, {"owner": this})
-
-            if( d.snapper === null ) {
-               console.log("Error instantiating photo snapper: " + snapper.errorString())
-               return
-            }
-
-            d.snapper.state = "EXPANDED"
-            camera.cameraState = Camera.ActiveState
-         }
+         onClicked: d.startSnapshot(this)
+         labelText: qsTr("Your Photo")
       }
       PhotoButton {
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
-         iconSource: "qrc:/res/camera.png"
+         onClicked: d.startSnapshot(this)
+         labelText: qsTr("ID Card Front")
       }
       PhotoButton {
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
-         iconSource: "qrc:/res/camera.png"
+         onClicked: d.startSnapshot(this)
+         labelText: qsTr("ID Card Back")
       }
       PhotoButton {
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
-         iconSource: "qrc:/res/camera.png"
+         onClicked: d.startSnapshot(this)
+         labelText: qsTr("Voter Registration")
       }
    }
 }
