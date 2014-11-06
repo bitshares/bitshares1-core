@@ -185,9 +185,23 @@ variant_object client_impl::debug_request_verification(const std::string &accoun
 
    prop = {fc::uint128(123), "First Name", variant()};
    ident.properties.push_back(prop);
+   prop = {fc::uint128(666), "Middle Name", variant()};
+   ident.properties.push_back(prop);
    prop = {fc::uint128(234), "Last Name", variant()};
    ident.properties.push_back(prop);
-   prop = {fc::uint128(345), "SSN", variant()};
+   prop = {fc::uint128(777), "Date of Birth", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(345), "ID Number", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(3456), "Address Line 1", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(34567), "Address Line 2", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(34567), "City", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(543), "State", variant()};
+   ident.properties.push_back(prop);
+   prop = {fc::uint128(5432), "9-Digit ZIP", variant()};
    ident.properties.push_back(prop);
 
    identity_verification_request req;

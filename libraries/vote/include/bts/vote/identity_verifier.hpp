@@ -127,6 +127,7 @@ public:
     *
     * @throws fc::key_not_found_exception If request_id does not match any known request
     * @throws fc::exception If response.accepted == true, but response.verified_identity == null
+    * @throws fc::exception If response.accepted == true, but response.expiration_date == null
     * @throws fc::exception If response.verified_identity contains a property that was not in the request
     */
    void resolve_request(fc::microseconds request_id, const identity_verification_response& response);

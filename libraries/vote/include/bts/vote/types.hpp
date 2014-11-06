@@ -172,6 +172,7 @@ struct identity_verification_response
    bool accepted = false;
    fc::optional<string> rejection_reason;
    fc::optional<identity> verified_identity;
+   fc::optional<time_point_sec> expiration_date;
 };
 
 /**
@@ -242,7 +243,8 @@ FC_REFLECT_DERIVED( bts::vote::identity_verification_request, (bts::vote::identi
                     (owner_photo)(id_front_photo)(id_back_photo)(voter_reg_photo)(id) )
 FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote::identity),
                     (status)(id)(rejection_reason) )
-FC_REFLECT( bts::vote::identity_verification_response, (accepted)(rejection_reason)(verified_identity) )
+FC_REFLECT( bts::vote::identity_verification_response, (accepted)
+            (rejection_reason)(verified_identity)(expiration_date) )
 FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
 FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )
 FC_REFLECT_TYPENAME( bts::vote::request_status_enum )

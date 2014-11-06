@@ -10,11 +10,10 @@
 namespace bts { namespace client { namespace detail {
 using namespace bts::vote;
 
-void sign_identity(identity& id, const private_key_type& key)
+void sign_identity(identity& id, const private_key_type& key, fc::time_point_sec expiration)
 {
    fc::time_point_sec valid_from = fc::time_point::now();
-   fc::time_point_sec valid_until = valid_from + fc::days(365);
-   id.sign(key, valid_from, valid_until);
+   id.sign(key, valid_from, expiration);
 }
 
 void sign_identity_if_necessary(identity_verification_response_message& response, const private_key_type& my_key)
@@ -22,7 +21,7 @@ void sign_identity_if_necessary(identity_verification_response_message& response
    //Did we accept the verification request? If so, sign the identity.
    if( response.response && response.response->accepted && response.response->verified_identity )
       //TODO: Cache these signatures
-      sign_identity(*response.response->verified_identity, my_key);
+      sign_identity(*response.response->verified_identity, my_key, *response.response->expiration_date);
 }
 
 mail::message client_impl::verifier_public_api(const message& const_request)

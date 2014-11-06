@@ -206,6 +206,7 @@ public:
       if( response.accepted )
       {
          FC_ASSERT( response.verified_identity, "Identity accepted, but verified_identity was not provided." );
+         FC_ASSERT( response.expiration_date, "Identity accepted, but expiration date was not provided." );
          //For each verified property, copy the salt from the request to the verified property
          for( signed_identity_property& property : response.verified_identity->properties )
          {
