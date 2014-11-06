@@ -7,21 +7,6 @@ ApplicationWindow {
    height: 1024
    title: qsTr("Voting Booth")
 
-   Component {
-      id: taskPage
-      Rectangle {
-         color: "#d9d9d9"
-
-         property variant currentCheckpoint
-
-         Text {
-            anchors.centerIn: parent
-            text: parent.currentCheckpoint.title
-            font.pointSize: 40
-         }
-      }
-   }
-
    RoadMap {
       id: roadMap
       anchors {
@@ -60,7 +45,7 @@ ApplicationWindow {
             } else {
                parent.checkpointsComplete = 0
                votingUiStack.clear()
-               votingUiStack.push({"item": taskPage, "properties": {"currentCheckpoint": roadMap.currentCheckpoint}, "immediate": true})
+               votingUiStack.push({"item": Qt.resolvedUrl("IdentificationPage.qml")})
             }
          }
       }
@@ -73,7 +58,7 @@ ApplicationWindow {
          right: parent.right
          bottom: parent.bottom
       }
-      initialItem: {"item": taskPage, "properties": {"currentCheckpoint": roadMap.currentCheckpoint}}
+      initialItem: IdentificationPage{}
       delegate: StackViewDelegate {
          function transitionFinished(properties)
          {
@@ -107,6 +92,21 @@ ApplicationWindow {
                property: "scale"
                from: 1
                to: .8
+            }
+         }
+      }
+
+      Component {
+         id: taskPage
+         Rectangle {
+            color: "#d9d9d9"
+
+            property variant currentCheckpoint
+
+            Text {
+               anchors.centerIn: parent
+               text: parent.currentCheckpoint.title
+               font.pointSize: 40
             }
          }
       }
