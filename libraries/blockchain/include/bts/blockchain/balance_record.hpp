@@ -42,6 +42,7 @@ namespace bts { namespace blockchain {
       share_type                 balance = share_type( 0 );
       withdraw_condition         condition;
       ogenesis_record            genesis_info;
+      ogenesis_record            sharedrop_info;
       fc::time_point_sec         last_update;
       fc::time_point_sec         deposit_date;
    };

@@ -277,6 +277,9 @@ namespace bts { namespace blockchain {
             // is_valid() throws when it should return false b/c the constructor also calls it -.-
             withdraw_vesting data;
             try {
+                auto addr = item.raw_address;
+                if( ! addr.compare(0, 3, "KEY") )
+                    addr.replace(0, 3, "BTS");
                 auto bts_addr = address(item.raw_address);
                 if( bts_addr.is_valid(item.raw_address) )
                     data.owner = bts_addr;
@@ -305,9 +308,11 @@ namespace bts { namespace blockchain {
             auto cur = self->get_balance_record( balance_rec.id() );
             if( cur.valid() ) balance_rec.balance += cur->balance;
             balance_rec.last_update = config.timestamp;
+            balance_rec.sharedrop_info = genesis_record( asset(item.balance / 1000, 0) , item.raw_address );
             //balance_rec.genesis_info = genesis_record( balance_rec.get_balance(), string( data.owner ) );
             //ulog("storing vesting record: ${rec}", ("rec", balance_rec.id()));
             self->store_balance_record( balance_rec );
+
          }
 
          asset total;
