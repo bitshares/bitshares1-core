@@ -221,6 +221,18 @@ void wallet_impl::scan_balances()
        }
    }
 
+#ifndef WIN32
+#warning [SHAREDROP] Rescan genesis on wallet upgrade
+#endif
+   // Do the same for sharedrop balances
+   const auto record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
+   auto transaction_record = _wallet_db.lookup_transaction( record_id );
+   if( transaction_record.valid() )
+   {
+       transaction_record->ledger_entries.clear();
+       _wallet_db.store_transaction( *transaction_record );
+   }
+
    const auto timestamp = _blockchain->get_genesis_timestamp();
    _blockchain->scan_balances( [&]( const balance_record& bal_rec )
    {
@@ -232,13 +244,18 @@ void wallet_impl::scan_balances()
           if( bal_rec.snapshot_info.valid() ) /* Create virtual transactions for genesis claims */
           {
               const auto public_key = key_rec->public_key;
-              const auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
+              auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
+              if( bal_rec.condition.type == withdraw_vesting_type )
+                  record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
               auto transaction_record = _wallet_db.lookup_transaction( record_id );
               if( !transaction_record.valid() )
               {
                   transaction_record = wallet_transaction_record();
                   transaction_record->created_time = timestamp;
                   transaction_record->received_time = timestamp;
+
+                  if( bal_rec.condition.type == withdraw_vesting_type )
+                      transaction_record->block_num = 933804;
               }
 
               auto entry = ledger_entry();
@@ -1396,6 +1413,8 @@ pretty_transaction wallet::to_pretty_trx( const wallet_transaction_record& trx_r
           pretty_entry.from_account = "GENESIS";
        else if( trx_rec.is_market )
           pretty_entry.from_account = "MARKET";
+       else if( trx_rec.is_virtual && trx_rec.block_num == 933804 )
+          pretty_entry.from_account = "SHAREDROP";
        else
           pretty_entry.from_account = "UNKNOWN";
 

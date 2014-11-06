@@ -10,6 +10,7 @@
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
+// TODO: Handle vesting sharedrop balances
 void wallet_impl::scan_genesis_experimental( const account_balance_record_summary_type& account_balances )
 { try {
     transaction_ledger_entry record;
