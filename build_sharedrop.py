@@ -55,6 +55,7 @@ with open("dns-dev-fund.json") as devfund:
     #print "dns no dev: " + str(dns_no_dev)
     scale = 75000000.0 / dns_no_dev
     scale *= 10 ** 8
+    print "BTS per DNS: " + str(scale / 1000)
 
     for item in snapshot:
         if (item[0] in devkeys and item[1] != 0):
@@ -69,11 +70,14 @@ with open("dns-dev-fund.json") as devfund:
     bts_to_bonus = int(scale * pangel_dns) 
     bts_added += bts_to_bonus
 
-# TODO fmv-key
-fmv_allocation = 30000000 * 10**8
-bts_added += fmv_allocation
+# Follow my vote dev stake
+with open("fmv-key.json") as fmvkey:
+    item = json.load(fmvkey)[0]
+    exodus_balances.append(item)
+    bts_added += item[1]
+    print "FMV allocation: " + str(item[1])
 
-print "bts to bonus: " + str(bts_to_bonus)
+print "bts to bonus: " + str(bts_to_bonus / (10**8))
 
 # DNS extra - add pangel funds and exchange subsidy
 with open("dns-collapse.json") as collapse:
@@ -84,7 +88,7 @@ with open("dns-collapse.json") as collapse:
         if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
             continue
         collapse_total += int(item[1])
-   
+  
     bts_for_exchanges = 100000
     bts_added += bts_for_exchanges
     scale = (bts_to_bonus - bts_for_exchanges) / collapse_total
@@ -97,8 +101,6 @@ with open("dns-collapse.json") as collapse:
         balance = int(scale * int(item[1]))
         exodus_balances.append([item[0], balance])
         bts_added += balance
-
-print "total so far: " + str(agspts_total + vote_total + fmv_allocation)
 
 print "bts_added: " + str(bts_added)
 print "bts_removed: " + str(bts_removed)
