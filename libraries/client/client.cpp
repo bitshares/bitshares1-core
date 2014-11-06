@@ -1359,6 +1359,13 @@ client::~client()
    if (my->_notifier)
       my->_notifier->client_is_shutting_down();
    my->cancel_delegate_loop();
+   try
+   {
+     my->_client_done.cancel_and_wait();
+   }
+   catch (...)
+   {
+   }
 }
 
 wallet_ptr client::get_wallet()const { return my->_wallet; }
@@ -1654,7 +1661,8 @@ void client::configure_from_command_line(int argc, char** argv)
 
 fc::future<void> client::start()
 {
-   return fc::async( [=](){ my->start(); }, "client::start" );
+   my->_client_done = fc::async( [=](){ my->start(); }, "client::start" );
+   return my->_client_done;
 }
 
 bool client::is_connected() const
