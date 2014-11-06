@@ -15,11 +15,11 @@ namespace bts { namespace blockchain {
        * is provided the first time something is withdrawn */
       withdraw_null_type        = 0,
       withdraw_signature_type   = 1,
-      withdraw_multi_sig_type   = 2,
-      withdraw_password_type    = 3,
-      withdraw_option_type      = 4,
-      withdraw_escrow_type      = 5,
-      withdraw_vesting_type     = 6
+      withdraw_vesting_type     = 2,
+      withdraw_multi_sig_type   = 3,
+      withdraw_password_type    = 4,
+      withdraw_option_type      = 5,
+      withdraw_escrow_type      = 6
    };
 
    /**
@@ -141,12 +141,6 @@ namespace bts { namespace blockchain {
       optional<titan_memo>    memo;
    };
 
-   struct withdraw_with_pts
-   {
-      public_key_type             new_key;
-      fc::ecc::compact_signature  pts_signature;
-   };
-
    /**
     *  User A picks a random password and generates password_hash.
     *  User A sends funds to user B which they may claim with the password + their signature, but
@@ -204,11 +198,11 @@ namespace fc {
 FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
                  (withdraw_null_type)
                  (withdraw_signature_type)
+                 (withdraw_vesting_type)
                  (withdraw_multi_sig_type)
                  (withdraw_password_type)
                  (withdraw_option_type)
                  (withdraw_escrow_type)
-                 (withdraw_vesting_type)
                  )
 
 FC_REFLECT( bts::blockchain::titan_memo, (one_time_key)(encrypted_memo_data) );
@@ -217,7 +211,6 @@ FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )
 FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
-FC_REFLECT( bts::blockchain::withdraw_with_pts, (new_key)(pts_signature) )
 FC_REFLECT( bts::blockchain::withdraw_vesting, (owner)(start_time)(duration)(original_balance) )
 FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
 FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
