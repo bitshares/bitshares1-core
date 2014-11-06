@@ -36,7 +36,6 @@ namespace bts { namespace rpc {
        const bts::api::method_data& get_method_data(const std::string& method_name);
        std::vector<bts::api::method_data> get_all_method_data() const;
 
-       void close(); // shut down the RPC server
        // wait until the RPC server is shut down (via the above close(), or by processing a "stop" RPC call)
        void wait_till_rpc_server_shutdown();
        void shutdown_rpc_server();

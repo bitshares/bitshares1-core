@@ -149,11 +149,8 @@ namespace bts { namespace blockchain {
       if( !current_balance_record )
          FC_CAPTURE_AND_THROW( unknown_balance_record, (balance_id) );
 
-      if( this->amount > current_balance_record->balance ) // Some withdraw conditions require extra checks (e.g. vesting condition)
-         FC_CAPTURE_AND_THROW( insufficient_funds,
-                               (current_balance_record)
-                               (amount)
-                               (current_balance_record->balance - amount) );
+      if( this->amount > current_balance_record->get_spendable_balance( eval_state._current_state->now() ).amount )
+         FC_CAPTURE_AND_THROW( insufficient_funds, (current_balance_record)(amount) );
 
       switch( (withdraw_condition_types)current_balance_record->condition.type )
       {
@@ -161,7 +158,7 @@ namespace bts { namespace blockchain {
          {
             auto owner = current_balance_record->condition.as<withdraw_with_signature>().owner;
             if( claim_input_data.size() )
-            {
+            { // This case is never used
                auto pts_sig = fc::raw::unpack<withdraw_with_pts>( claim_input_data );
                fc::sha256::encoder enc;
                fc::raw::pack( enc, eval_state._current_state->get_property( chain_property_enum::chain_id ).as<fc::ripemd160>() );
@@ -257,20 +254,12 @@ namespace bts { namespace blockchain {
 
          case withdraw_vesting_type:
          {
-             auto condition = current_balance_record->condition.as<withdraw_vesting>();
-             try {
-                 if( !eval_state.check_signature( condition.owner ) )
-                     FC_CAPTURE_AND_THROW( missing_signature, (condition.owner) );
-            
-                 auto now = eval_state._current_state->now();
-                 auto claimable = current_balance_record->get_vested_balance(now);
-
-                 FC_ASSERT( this->amount <= claimable.amount, "You cannot withdraw that much from this vesting balance" );
-
-             } FC_CAPTURE_AND_RETHROW( (condition) )
+             const withdraw_vesting condition = current_balance_record->condition.as<withdraw_vesting>();
+             const address owner = condition.owner;
+             if( !eval_state.check_signature( owner ) )
+                 FC_CAPTURE_AND_THROW( missing_signature, (owner) );
              break;
          }
-
 
          default:
             FC_CAPTURE_AND_THROW( invalid_withdraw_condition, (current_balance_record->condition) );

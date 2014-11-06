@@ -55,38 +55,45 @@ namespace bts { namespace blockchain {
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
-   /** returns 0 if asset id is not condition.asset_id */
-   asset balance_record::get_balance()const
+   asset balance_record::get_spendable_balance( const time_point_sec& at_time )const
    {
-      return asset( balance, condition.asset_id );
-   }
-
-   asset balance_record::get_vested_balance(const fc::time_point_sec& now)const 
-   {
-       if( (withdraw_condition_types)this->condition.type != withdraw_vesting_type )
-           return get_balance();
-
-       auto condition = this->condition.as<withdraw_vesting>();
-       share_type max_claimable;
-       if( now < condition.vesting_start )
-           max_claimable = 0;
-       else if( now > condition.vesting_start + condition.vesting_duration )
-           max_claimable = condition.original_balance;
-       else
+       switch( withdraw_condition_types( condition.type ) )
        {
-           auto start = condition.vesting_start.sec_since_epoch();
-           auto max_duration = condition.vesting_duration;
-           auto real_duration = now.sec_since_epoch() - start;
-           FC_ASSERT( real_duration > 0, "duration is not positive when it should be" );
-           FC_ASSERT( real_duration < max_duration, "duration is more than max possible duration" );
-           max_claimable = real_duration * (condition.original_balance / max_duration);
+           case withdraw_signature_type:
+           {
+               return asset( balance, condition.asset_id );
+           }
+           case withdraw_vesting_type:
+           {
+               const withdraw_vesting vesting_condition = condition.as<withdraw_vesting>();
+
+               share_type max_claimable = 0;
+
+               if( at_time >= vesting_condition.start_time + vesting_condition.duration )
+               {
+                   max_claimable = vesting_condition.original_balance;
+               }
+               else if( at_time > vesting_condition.start_time )
+               {
+                   const auto elapsed_time = (at_time - vesting_condition.start_time).to_seconds();
+                   FC_ASSERT( elapsed_time > 0 && elapsed_time < vesting_condition.duration );
+                   max_claimable = (vesting_condition.original_balance * elapsed_time) / vesting_condition.duration;
+                   FC_ASSERT( max_claimable > 0 && max_claimable < vesting_condition.original_balance );
+               }
+
+               const share_type claimed_so_far = vesting_condition.original_balance - balance;
+               FC_ASSERT( claimed_so_far >= 0 && claimed_so_far <= vesting_condition.original_balance );
+
+               const share_type spendable_balance = max_claimable - claimed_so_far;
+               FC_ASSERT( spendable_balance >= 0 && spendable_balance <= vesting_condition.original_balance );
+
+               return asset( spendable_balance, condition.asset_id );
+           }
+           default:
+           {
+               FC_ASSERT( !"Unsupported withdraw condition!" );
+           }
        }
-
-       auto real_claimable = max_claimable - (condition.original_balance - this->balance);
-       FC_ASSERT( 0 <= real_claimable && real_claimable <= condition.original_balance,
-                    "Got an impossible claimable amount for a vesting balance" );
-
-       return asset( real_claimable, 0 );
    }
 
    address balance_record::owner()const
