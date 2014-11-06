@@ -275,8 +275,11 @@ namespace bts { namespace blockchain {
             // is_valid() throws when it should return false b/c the constructor also calls it -.-
             withdraw_vesting data;
             try {
-                auto bts_addr = address(item.raw_address);
-                if( bts_addr.is_valid(item.raw_address) )
+                auto addr = item.raw_address;
+                if( ! addr.compare(0, 3, "KEY") )
+                    addr.replace(0, 3, "BTS");
+                auto bts_addr = address( addr );
+                if( bts_addr.is_valid( addr ) )
                     data.owner = bts_addr;
             }
             catch (...)
@@ -297,7 +300,7 @@ namespace bts { namespace blockchain {
 
             withdraw_condition condition(data, 0, 0);
             balance_record balance_rec(condition);
-            balance_rec.balance = item.balance / 1000;
+            balance_rec.balance = data.original_balance;
 
             /* In case of redundant balances */
             auto cur = self->get_balance_record( balance_rec.id() );
