@@ -1619,6 +1619,7 @@ namespace bts { namespace blockchain {
           my->_account_db.remove( record_to_store.id );
           my->_account_index_db.remove( record_to_store.name );
 
+          my->_address_to_account_db.remove( address( record_to_store.owner_key ) );
           for( const auto& item : old_rec->active_key_history )
              my->_address_to_account_db.remove( address(item.second) );
 
@@ -1643,11 +1644,11 @@ namespace bts { namespace blockchain {
           my->_account_db.store( record_to_store.id, record_to_store );
           my->_account_index_db.store( record_to_store.name, record_to_store.id );
 
+          my->_address_to_account_db.store( address( record_to_store.owner_key ), record_to_store.id );
           for( const auto& item : record_to_store.active_key_history )
           { // re-index all keys for this record
              my->_address_to_account_db.store( address(item.second), record_to_store.id );
           }
-
 
           if( old_rec.valid() && old_rec->is_delegate() )
           {
@@ -1655,12 +1656,11 @@ namespace bts { namespace blockchain {
                                                             record_to_store.id ) );
           }
 
-
           if( record_to_store.is_delegate() )
           {
               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
                                                            record_to_store.id ),
-                                                0/*dummy value*/ );
+                                                0 /*dummy value*/ );
           }
        }
      } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
