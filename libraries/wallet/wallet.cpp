@@ -390,6 +390,7 @@ namespace detail {
                const function<void( void )> repair = [&]()
                {
                    _wallet_db.repair_records( _wallet_password );
+                   self->scan_chain( 0, 1 );
                };
                _unlocked_upgrade_tasks.push_back( repair );
            }
