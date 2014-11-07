@@ -5,5 +5,7 @@
         <file>res/halfchecked.png</file>
         <file>res/camera.png</file>
         <file>res/person_silhouette.png</file>
+        <file>res/id_front.png</file>
+        <file>res/id_back.png</file>
     </qresource>
 </RCC>

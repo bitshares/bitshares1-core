@@ -94,13 +94,13 @@ Rectangle {
       PhotoButton {
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
-         onClicked: d.startSnapshot(this)
+         onClicked: d.startSnapshot(this, "qrc:/res/id_front.png")
          labelText: qsTr("ID Card Front")
       }
       PhotoButton {
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
-         onClicked: d.startSnapshot(this)
+         onClicked: d.startSnapshot(this, "qrc:/res/id_back.png")
          labelText: qsTr("ID Card Back")
       }
       PhotoButton {
