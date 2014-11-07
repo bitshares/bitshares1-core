@@ -93,6 +93,10 @@ Rectangle {
             restoreEntryValues: false
          }
          PropertyChanges {
+            target: videoOutput
+            visible: false
+         }
+         PropertyChanges {
             target: captureButton
             visible: false
          }
@@ -219,7 +223,6 @@ Rectangle {
       horizontalAlignment: Image.AlignHCenter
       verticalAlignment: Image.AlignVCenter
       anchors.fill: parent
-      mirror: true
 
       Behavior on opacity { NumberAnimation { duration: 400 } }
    }
