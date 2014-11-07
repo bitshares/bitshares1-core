@@ -132,6 +132,10 @@ print "bts_added: " + str(bts_added)
 print "bts_excluded: " + str(bts_exluded)
 print "total reviewed: " + str(bts_added + bts_exluded)
 
+non_empty = []
+for item in exodus_balances:
+    if item[1] != 0:
+        non_empty.append(item)
 
 with open("libraries/blockchain/bts-sharedrop.json", "w") as sharedrop:
-    sharedrop.write(json.dumps(exodus_balances, indent=4))
+    sharedrop.write(json.dumps(non_empty, indent=4))
