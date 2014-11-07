@@ -10,11 +10,13 @@ Rectangle {
    height: width / 16 * 9
    x: 0
    y: owner.height / 2 - height / 2
+   z: greyer.z + 1
 
    property Item owner
    property Item viaItem
    property Item expandedContainer
    property Camera camera
+   readonly property GreySheet greyer: greyOut.createObject(expandedContainer)
    property alias viewFinderOverlaySource: overlay.source
    property alias previewOpacity: photoPreview.opacity
    property alias previewSource: photoPreview.source
@@ -25,6 +27,12 @@ Rectangle {
    signal captureRequested
    signal collapsing
    signal collapsed
+
+   Component {
+      id: greyOut
+      GreySheet {
+      }
+   }
 
    states: [
       State {
@@ -47,6 +55,11 @@ Rectangle {
          PropertyChanges {
             target: promptText
             text: qsTr("Click to take photo")
+         }
+         PropertyChanges {
+            target: greyer
+            state: "GREYED"
+            onClicked: viewFinder.state = "COLLAPSED"
          }
       },
       State {
@@ -93,6 +106,11 @@ Rectangle {
             target: videoOutput
             visible: false
          }
+         PropertyChanges {
+            target: greyer
+            state: "CLEAR"
+            onClicked: {}
+         }
       }
    ]
    transitions: [
@@ -102,7 +120,7 @@ Rectangle {
             via: viaItem
             SequentialAnimation {
                ScriptAction { script: viewFinder.expanding() }
-               NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 1000; easing.type: "OutQuad" }
+               NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 400; easing.type: "InOutQuad" }
                ScriptAction {
                   script: {
                      promptText.visible = true
@@ -118,7 +136,7 @@ Rectangle {
             via: viaItem
             SequentialAnimation {
                ScriptAction { script: viewFinder.collapsing() }
-               NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 1000; easing.type: "InQuad" }
+               NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 300; easing.type: "InQuad" }
                ScriptAction { script: viewFinder.collapsed() }
             }
          }
