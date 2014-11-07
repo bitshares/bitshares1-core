@@ -14,10 +14,10 @@ Rectangle {
    property Item owner
    property Item viaItem
    property Item expandedContainer
+   property Camera camera
    property alias viewFinderOverlaySource: overlay.source
    property alias previewOpacity: photoPreview.opacity
    property alias previewSource: photoPreview.source
-   property alias source: videoOutput.source
    property bool hasImage: false
 
    signal expanding
@@ -133,6 +133,7 @@ Rectangle {
          axis {x: 0; y: 1; z: 0}
          angle: 180
       }
+      source: camera
 
       Image {
          id: overlay
@@ -150,6 +151,7 @@ Rectangle {
       horizontalAlignment: Image.AlignHCenter
       verticalAlignment: Image.AlignVCenter
       anchors.fill: parent
+      mirror: true
 
       Behavior on opacity { NumberAnimation { duration: 400 } }
 

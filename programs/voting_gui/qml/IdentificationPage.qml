@@ -15,9 +15,9 @@ Rectangle {
       function startSnapshot(button, overlaySource) {
          d.currentButton = button
          if( typeof overlaySource === "undefined" )
-            d.snapper = photoSnapper.createObject(button, {"owner": button})
+            d.snapper = photoSnapper.createObject(button, {"owner": button, "camera": camera})
          else
-            d.snapper = photoSnapper.createObject(button, {"owner": button,
+            d.snapper = photoSnapper.createObject(button, {"owner": button, "camera": camera,
                                                            "viewFinderOverlaySource": overlaySource})
 
          if( d.snapper === null ) {
@@ -33,7 +33,6 @@ Rectangle {
       id: photoSnapper
 
       ViewFinder {
-         source: camera
          viaItem: overlord
          expandedContainer: container
          onExpanding: {
