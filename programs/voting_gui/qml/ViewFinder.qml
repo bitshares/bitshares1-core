@@ -6,19 +6,15 @@ import QtMultimedia 5.0
 
 Rectangle {
    id: viewFinder
-   width: owner.width
-   height: width / 16 * 9
-   x: 0
-   y: owner.height / 2 - height / 2
    z: greyer.z + 1
 
    property Item owner
    property Item viaItem
    property Item expandedContainer
    property Camera camera
+   property url oldImage
    readonly property GreySheet greyer: greyOut.createObject(expandedContainer)
    property alias viewFinderOverlaySource: overlay.source
-   property alias previewOpacity: photoPreview.opacity
    property alias previewSource: photoPreview.source
    property bool hasImage: false
 
@@ -28,10 +24,17 @@ Rectangle {
    signal collapsing
    signal collapsed
 
+   onOwnerChanged: {
+      parent = owner
+      width = owner.width
+      height = width / 16 * 9
+      x = 0
+      y = owner.height / 2 - height / 2
+   }
+
    Component {
       id: greyOut
-      GreySheet {
-      }
+      GreySheet {}
    }
 
    states: [
@@ -53,13 +56,21 @@ Rectangle {
             }
          }
          PropertyChanges {
-            target: promptText
-            text: qsTr("Click to take photo")
+            target: photoPreview
+            source: oldImage
+            opacity: 0
+         }
+         PropertyChanges {
+            target: videoOutput
+            visible: true
          }
          PropertyChanges {
             target: greyer
             state: "GREYED"
-            onClicked: viewFinder.state = "COLLAPSED"
+            onClicked: {
+               viewFinder.state = "COLLAPSED"
+               hasImage = false
+            }
          }
       },
       State {
@@ -68,31 +79,23 @@ Rectangle {
          PropertyChanges {
             target: photoPreview
             opacity: 1
-            fillMode: Image.Stretch
+            source: "file:" + camera.imageCapture.capturedImagePath
+            restoreEntryValues: false
          }
          PropertyChanges {
             target: mouseArea
             onClicked: { viewFinder.state = "COLLAPSED" }
          }
-         PropertyChanges {
-            target: videoOutput
-            visible: false
-         }
-         PropertyChanges {
-            target: promptText
-            text: qsTr("Click to close")
-         }
       },
       State {
          name: "COLLAPSED"
          PropertyChanges {
-            target: promptText
-            visible: false
-         }
-         PropertyChanges {
             target: photoPreview
             opacity: 1
-            fillMode: Image.Stretch
+         }
+         PropertyChanges {
+            target: videoOutput
+            visible: false
          }
          ParentChange {
             target: viewFinder
@@ -101,10 +104,6 @@ Rectangle {
             height: width / 16 * 9
             x: 0
             y: owner.height / 2 - height / 2
-         }
-         PropertyChanges {
-            target: videoOutput
-            visible: false
          }
          PropertyChanges {
             target: greyer
@@ -123,7 +122,6 @@ Rectangle {
                NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 400; easing.type: "InOutQuad" }
                ScriptAction {
                   script: {
-                     promptText.visible = true
                      viewFinder.expanded()
                   }
                }
@@ -131,18 +129,32 @@ Rectangle {
          }
       },
       Transition {
+         from: "EXPANDED,CAPTURED"
          to: "COLLAPSED"
          ParentAnimation {
             via: viaItem
             SequentialAnimation {
                ScriptAction { script: viewFinder.collapsing() }
                NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 300; easing.type: "InQuad" }
-               ScriptAction { script: viewFinder.collapsed() }
+               ScriptAction {
+                  script: {
+                     viewFinder.collapsed()
+                  }
+               }
             }
          }
       }
    ]
 
+   Image {
+      id: placeholder
+      anchors.fill: parent
+      fillMode: Image.Pad
+      source: "qrc:/res/camera.png"
+      horizontalAlignment: Image.AlignHCenter
+      verticalAlignment: Image.AlignVCenter
+      mirror: true
+   }
    VideoOutput {
       id: videoOutput
       anchors.fill: parent
@@ -164,33 +176,16 @@ Rectangle {
    }
    Image {
       id: photoPreview
-      source: "qrc:/res/camera.png"
-      fillMode: hasImage? Image.Stretch : Image.Pad
+      fillMode: Image.Stretch
       horizontalAlignment: Image.AlignHCenter
       verticalAlignment: Image.AlignVCenter
       anchors.fill: parent
       mirror: true
 
       Behavior on opacity { NumberAnimation { duration: 400 } }
-
-      Rectangle {
-         anchors.fill: parent
-         z: -1
-      }
    }
    MouseArea {
       id: mouseArea
       anchors.fill: parent
-   }
-   Text {
-      id: promptText
-      anchors.horizontalCenter: parent.horizontalCenter
-      anchors.bottom: parent.bottom
-      anchors.bottomMargin: height * 2
-      font.pointSize: 30
-      visible: false
-      opacity: .4
-      style: Text.Outline
-      styleColor: "grey"
    }
 }

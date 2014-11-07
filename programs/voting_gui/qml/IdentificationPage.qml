@@ -9,20 +9,25 @@ Rectangle {
 
    QtObject {
       id: d
-      property ViewFinder snapper
+      readonly property ViewFinder snapper: photoSnapper.createObject(this, {"visible": false,
+                                                                             "camera": camera})
       property PhotoButton currentButton
 
       function startSnapshot(button, overlaySource) {
          d.currentButton = button
-         if( typeof overlaySource === "undefined" )
-            d.snapper = photoSnapper.createObject(button, {"owner": button, "camera": camera})
-         else
-            d.snapper = photoSnapper.createObject(button, {"owner": button, "camera": camera,
-                                                           "viewFinderOverlaySource": overlaySource})
+         snapper.owner = button
+         snapper.state = "COLLAPSED"
+         if( button.imageSet ) {
+            snapper.oldImage = button.currentImage
+         } else {
+            snapper.oldImage = button.iconSource
+         }
+         snapper.visible = true
 
-         if( d.snapper === null ) {
-            console.log("Error instantiating photo snapper: " + snapper.errorString())
-            return
+         if( typeof overlaySource !== "undefined" ) {
+            d.snapper.viewFinderOverlaySource = overlaySource
+         } else {
+            d.snapper.viewFinderOverlaySource = ""
          }
 
          d.snapper.state = "EXPANDED"
@@ -41,12 +46,11 @@ Rectangle {
                hasImage = true
             }
          }
-         onExpanded: previewOpacity = 0
          onCollapsed: {
             if( hasImage )
                d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
             d.currentButton = null
-            d.snapper.destroy()
+            d.snapper.visible = false
          }
          onCaptureRequested: camera.imageCapture.capture()
       }
@@ -55,7 +59,7 @@ Rectangle {
       id: overlord
       //This item exists to be the via property of the ParentAnimation of the ViewFinder as it collapses.
       //Without it, the ViewFinder sinks below the camera buttons while collapsing.
-      z: 5
+      z: d.snapper.greyer.z + 1
    }
    Camera {
       id: camera
@@ -71,6 +75,7 @@ Rectangle {
    }
 
    RowLayout {
+      id: photoButtonRow
       anchors {
          left: parent.left
          right: parent.right
@@ -80,6 +85,7 @@ Rectangle {
       height: width / 5 + spacing * 2;
 
       PhotoButton {
+         id: firstPhotoButton
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this, "qrc:/res/person_silhouette.png")
