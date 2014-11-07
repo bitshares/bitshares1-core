@@ -638,11 +638,11 @@ namespace bts { namespace blockchain { namespace detail {
                 --_collateral_itr;
                 return _current_ask.valid();
             }
-#ifndef WIN32
-#warning [HARDFORK]
-#endif
-            --_collateral_itr;
-            continue;
+            if( _pending_state->get_head_block_num() >= BTS_V0_4_24_FORK_BLOCK_NUM )
+            {
+                --_collateral_itr;
+                continue;
+            }
         }
         _collateral_itr.reset();
         break;
