@@ -4,7 +4,7 @@
 #include <bts/blockchain/operations.hpp>
 #include <bts/blockchain/types.hpp>
 
-namespace bts { namespace blockchain { 
+namespace bts { namespace blockchain {
 
    /**
     *  Creates / defines an asset type but does not
@@ -12,10 +12,9 @@ namespace bts { namespace blockchain {
     */
    struct create_asset_operation
    {
-       static const operation_type_enum type; 
-       static bool is_power_of_ten( int64_t n );
+       static const operation_type_enum type;
 
-       create_asset_operation():maximum_share_supply(0),precision(0){}
+       static bool is_power_of_ten( int64_t n );
 
        /**
         * Symbols may only contain A-Z and 0-9 and up to 5
@@ -44,9 +43,9 @@ namespace bts { namespace blockchain {
        account_id_type        issuer_account_id;
 
        /** The maximum number of shares that may be allocated */
-       share_type          maximum_share_supply;
+       share_type          maximum_share_supply = 0;
 
-       int64_t             precision;
+       int64_t             precision = 0;
 
        void evaluate( transaction_evaluation_state& eval_state );
    };
@@ -57,7 +56,7 @@ namespace bts { namespace blockchain {
     */
    struct update_asset_operation
    {
-       static const operation_type_enum type; 
+       static const operation_type_enum type;
 
        asset_id_type        asset_id;
        std::string          name;
@@ -77,7 +76,7 @@ namespace bts { namespace blockchain {
     */
    struct issue_asset_operation
    {
-       static const operation_type_enum type; 
+       static const operation_type_enum type;
 
        issue_asset_operation( asset a = asset() ):amount(a){}
        asset            amount;
@@ -85,7 +84,7 @@ namespace bts { namespace blockchain {
        void evaluate( transaction_evaluation_state& eval_state );
    };
 
-} } // bts::blockchain 
+} } // bts::blockchain
 
 FC_REFLECT( bts::blockchain::create_asset_operation, (symbol)(name)(description)(public_data)(issuer_account_id)(maximum_share_supply)(precision) )
 FC_REFLECT( bts::blockchain::update_asset_operation, (asset_id)(name)(description)(public_data)(issuer_account_id) )

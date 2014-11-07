@@ -3701,9 +3701,6 @@ namespace detail {
 
           for( const auto& record : records )
           {
-#ifndef WIN32
-#warning [BTS] Set timestamp to before snapshot in mainnet to keep old behaviour until snapshot is finalized
-#endif
               const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }
@@ -4033,5 +4030,29 @@ namespace detail {
       }
       return result;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
+
+   vector<snapshot_record> wallet::check_sharedrop()const
+   { try {
+       vector<snapshot_record> snapshot_records;
+
+       const auto scan_balance = [&]( const balance_record& record )
+       {
+           if( !record.snapshot_info.valid() )
+               return;
+
+           if( record.condition.type != withdraw_vesting_type )
+               return;
+
+           const owallet_key_record key_record = my->_wallet_db.lookup_key( record.owner() );
+           if( !key_record.valid() || !key_record->has_private_key() )
+               return;
+
+           snapshot_records.push_back( *record.snapshot_info );
+       };
+
+       my->_blockchain->scan_balances( scan_balance );
+
+       return snapshot_records;
+   } FC_CAPTURE_AND_RETHROW() }
 
 } } // bts::wallet

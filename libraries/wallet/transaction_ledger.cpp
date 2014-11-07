@@ -221,9 +221,6 @@ void wallet_impl::scan_balances()
        }
    }
 
-#ifndef WIN32
-#warning [SHAREDROP] Rescan genesis on wallet upgrade
-#endif
    // Do the same for sharedrop balances
    const auto record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
    auto transaction_record = _wallet_db.lookup_transaction( record_id );

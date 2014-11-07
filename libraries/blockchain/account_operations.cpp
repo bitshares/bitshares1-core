@@ -207,10 +207,10 @@ namespace bts { namespace blockchain {
       }
 
       // STORE LINK...
-   } FC_CAPTURE_AND_RETHROW( (eval_state) ) }
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
-   {
+   { try {
       FC_ASSERT( !"Update block signing key operation is not enabled yet!" );
 
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
@@ -231,6 +231,6 @@ namespace bts { namespace blockchain {
       account_rec->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_account_record( *account_rec );
-   }
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
 } } // bts::blockchain
