@@ -938,10 +938,12 @@ namespace bts { namespace blockchain {
                 base_asset_record->current_share_supply = self->calculate_supply( asset_id_type( 0 ) ).amount;
                 self->store_asset_record( *base_asset_record );
             }
-            else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM || block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM )
+            else if( block_data.block_num == BTS_V0_4_17_FORK_BLOCK_NUM
+                     || block_data.block_num == BTS_V0_4_21_FORK_BLOCK_NUM
+                     || block_data.block_num == BTS_V0_4_24_FORK_BLOCK_NUM )
             {
                 vector<asset_record> records;
-                records.reserve( 41 );
+                records.reserve( 41 ); // Calibrate this after
 
                 for( auto itr = _asset_db.begin(); itr.valid(); ++itr )
                     records.push_back( itr.value() );
