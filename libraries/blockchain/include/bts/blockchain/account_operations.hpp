@@ -23,9 +23,6 @@ namespace bts { namespace blockchain {
       public_key_type             owner_key;
       public_key_type             active_key;
 
-      bool                        is_delegate()const;
-
-      // 0-100% of the transaction fees to be paid to delegate
       uint8_t                     delegate_pay_rate = -1;
 
       /**
@@ -38,6 +35,7 @@ namespace bts { namespace blockchain {
        */
       optional<account_meta_info> meta_data;
 
+      bool                        is_delegate()const;
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
@@ -45,14 +43,10 @@ namespace bts { namespace blockchain {
    {
       static const operation_type_enum type;
 
-      update_account_operation():account_id(0){}
-
-      /** this should be 0 for creating a new name */
       account_id_type                   account_id;
       fc::optional<fc::variant>         public_data;
       fc::optional<public_key_type>     active_key;
 
-      // 0-100% of the transaction fees to be paid to delegate
       // this value can only be reduced, never increased from
       // the prior value.
       uint8_t                           delegate_pay_rate = -1;
