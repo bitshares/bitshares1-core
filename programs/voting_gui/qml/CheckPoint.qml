@@ -21,7 +21,7 @@ Item {
    
    Label {
       id: checkpointLabel
-      text: title
+      text: (index + 1) + ". " + title
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.bottom: parent.bottom
       horizontalAlignment: Text.AlignHCenter
