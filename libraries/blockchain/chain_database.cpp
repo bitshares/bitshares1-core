@@ -287,15 +287,12 @@ namespace bts { namespace blockchain {
                 FC_CAPTURE_AND_RETHROW( (item.raw_address) )
             }
 
-#ifndef WIN32
-#warning Set these correctly for the real vesting release
-#endif
             data.start_time = fc::time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
-            data.duration = fc::days( 2 ).to_seconds();
+            data.duration = fc::days( 2 * 365 ).to_seconds();
             data.original_balance = item.balance / 1000;
 
-            withdraw_condition condition(data, 0, 0);
-            balance_record balance_rec(condition);
+            withdraw_condition condition( data, 0, 0 );
+            balance_record balance_rec( condition );
             balance_rec.balance = data.original_balance;
 
             /* In case of redundant balances */
