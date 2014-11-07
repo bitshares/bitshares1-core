@@ -638,6 +638,8 @@ namespace bts { namespace blockchain { namespace detail {
                 --_collateral_itr;
                 return _current_ask.valid();
             }
+            --_collateral_itr;
+            continue;
         }
         _collateral_itr.reset();
         break;
