@@ -26,7 +26,6 @@ Rectangle {
          }
 
          d.snapper.state = "EXPANDED"
-         camera.cameraState = Camera.ActiveState
       }
    }
    Component {
@@ -44,7 +43,8 @@ Rectangle {
          }
          onExpanded: previewOpacity = 0
          onCollapsed: {
-            d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
+            if( hasImage )
+               d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
             d.currentButton = null
             d.snapper.destroy()
          }
@@ -59,13 +59,13 @@ Rectangle {
    }
    Camera {
       id: camera
-      cameraState: Camera.LoadedState
+      cameraState: container.Stack.status === Stack.Activating || container.Stack.status === Stack.Active?
+                      Camera.ActiveState : Camera.LoadedState
       onError: console.log("Camera error: " + errorString)
       imageCapture {
          onImageCaptured: {
             d.snapper.previewSource = preview
             d.snapper.state = "CAPTURED"
-            camera.cameraState = Camera.LoadedState
          }
       }
    }
