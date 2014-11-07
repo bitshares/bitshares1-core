@@ -4,5 +4,6 @@
         <file>res/unchecked.png</file>
         <file>res/halfchecked.png</file>
         <file>res/camera.png</file>
+        <file>res/person_silhouette.png</file>
     </qresource>
 </RCC>

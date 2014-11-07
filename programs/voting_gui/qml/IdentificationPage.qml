@@ -9,12 +9,16 @@ Rectangle {
 
    QtObject {
       id: d
-      property Item snapper
+      property ViewFinder snapper
       property PhotoButton currentButton
 
-      function startSnapshot(button) {
+      function startSnapshot(button, overlaySource) {
          d.currentButton = button
-         d.snapper = photoSnapper.createObject(button, {"owner": button})
+         if( typeof overlaySource === "undefined" )
+            d.snapper = photoSnapper.createObject(button, {"owner": button})
+         else
+            d.snapper = photoSnapper.createObject(button, {"owner": button,
+                                                           "viewFinderOverlaySource": overlaySource})
 
          if( d.snapper === null ) {
             console.log("Error instantiating photo snapper: " + snapper.errorString())
@@ -79,7 +83,7 @@ Rectangle {
       PhotoButton {
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
-         onClicked: d.startSnapshot(this)
+         onClicked: d.startSnapshot(this, "qrc:/res/person_silhouette.png")
          labelText: qsTr("Your Photo")
       }
       PhotoButton {

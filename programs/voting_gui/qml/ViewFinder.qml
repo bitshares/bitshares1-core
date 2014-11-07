@@ -6,7 +6,6 @@ import QtMultimedia 5.0
 
 Rectangle {
    id: viewFinder
-   clip: true
    width: owner.width
    height: width / 16 * 9
    x: 0
@@ -15,6 +14,7 @@ Rectangle {
    property Item owner
    property Item viaItem
    property Item expandedContainer
+   property alias viewFinderOverlaySource: overlay.source
    property alias previewOpacity: photoPreview.opacity
    property alias previewSource: photoPreview.source
    property alias source: videoOutput.source
@@ -128,6 +128,20 @@ Rectangle {
    VideoOutput {
       id: videoOutput
       anchors.fill: parent
+      transform: Rotation {
+         origin {x: videoOutput.width / 2; y: 0}
+         axis {x: 0; y: 1; z: 0}
+         angle: 180
+      }
+
+      Image {
+         id: overlay
+         anchors.fill: parent
+         fillMode: Image.PreserveAspectCrop
+         horizontalAlignment: Image.AlignHCenter
+         verticalAlignment: Image.AlignBottom
+         visible: status !== Image.Null
+      }
    }
    Image {
       id: photoPreview
