@@ -298,8 +298,8 @@ namespace bts { namespace blockchain {
             data.duration = fc::days( 2 * 365 ).to_seconds();
             data.original_balance = item.balance / 1000;
 
-            withdraw_condition condition(data, 0, 0);
-            balance_record balance_rec(condition);
+            withdraw_condition condition( data, 0, 0 );
+            balance_record balance_rec( condition );
             balance_rec.balance = data.original_balance;
 
             /* In case of redundant balances */
