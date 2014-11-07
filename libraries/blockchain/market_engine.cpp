@@ -630,6 +630,9 @@ namespace bts { namespace blockchain { namespace detail {
                 --_collateral_itr;
                 return _current_ask.valid();
             }
+#ifndef WIN32
+#warning [HARDFORK]
+#endif
             --_collateral_itr;
             continue;
         }
