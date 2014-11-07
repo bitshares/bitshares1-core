@@ -4046,6 +4046,10 @@ namespace detail {
            if( record.condition.type != withdraw_vesting_type )
                return;
 
+           const owallet_key_record key_record = my->_wallet_db.lookup_key( record.owner() );
+           if( !key_record.valid() || !key_record->has_private_key() )
+               return;
+
            snapshot_records.push_back( *record.snapshot_info );
        };
 
