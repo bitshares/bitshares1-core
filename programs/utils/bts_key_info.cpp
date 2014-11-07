@@ -16,22 +16,23 @@ using namespace bts::blockchain;
 
 int main( int argc, char** argv )
 {
-
     if( argc == 2 )
     {
-        fc::ecc::private_key k;
-        try{
-            auto key = bts::blockchain::public_key_type(std::string(argv[1]));
-            auto obj = fc::mutable_variant_object();
+        try
+        {
+            bts::blockchain::public_key_type key(argv[1]);
+            fc::mutable_variant_object obj;
 
-            obj["public_key"] = public_key_type(key);
-            obj["native_address"] = bts::blockchain::address(key);
-            obj["pts_address"] = bts::blockchain::pts_address(key);
+            obj["public_key"] = key;
+            obj["native_address"] = bts::blockchain::address((fc::ecc::public_key_data)key);
+            obj["pts_address"] = bts::blockchain::pts_address((fc::ecc::public_key)key);
 
             std::cout << fc::json::to_pretty_string(obj);
             return 0;
 
-        } catch (fc::exception e) {
+        }
+        catch (fc::exception e) 
+        {
             std::cout << e.to_detail_string();
         }
     }
