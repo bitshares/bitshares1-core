@@ -49,19 +49,16 @@ Rectangle {
             y: expandedContainer.height / 2 - height / 2
          }
          PropertyChanges {
-            target: mouseArea
-            onClicked: {
-               hasImage = true
-               viewFinder.captureRequested()
-            }
-         }
-         PropertyChanges {
             target: photoPreview
             source: oldImage
             opacity: 0
          }
          PropertyChanges {
             target: videoOutput
+            visible: true
+         }
+         PropertyChanges {
+            target: captureButton
             visible: true
          }
          PropertyChanges {
@@ -83,8 +80,12 @@ Rectangle {
             restoreEntryValues: false
          }
          PropertyChanges {
-            target: mouseArea
-            onClicked: { viewFinder.state = "COLLAPSED" }
+            target: captureButton
+            visible: false
+         }
+         PropertyChanges {
+            target: retakeAcceptButtons
+            visible: true
          }
       },
       State {
@@ -92,6 +93,8 @@ Rectangle {
          PropertyChanges {
             target: photoPreview
             opacity: 1
+            source: hasImage? "file:" + camera.imageCapture.capturedImagePath
+                            : oldImage
          }
          PropertyChanges {
             target: videoOutput
@@ -120,11 +123,7 @@ Rectangle {
             SequentialAnimation {
                ScriptAction { script: viewFinder.expanding() }
                NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 400; easing.type: "InOutQuad" }
-               ScriptAction {
-                  script: {
-                     viewFinder.expanded()
-                  }
-               }
+               ScriptAction { script: viewFinder.expanded() }
             }
          }
       },
@@ -136,16 +135,15 @@ Rectangle {
             SequentialAnimation {
                ScriptAction { script: viewFinder.collapsing() }
                NumberAnimation { target: viewFinder; properties: "x,y,width,height"; duration: 300; easing.type: "InQuad" }
-               ScriptAction {
-                  script: {
-                     viewFinder.collapsed()
-                  }
-               }
+               ScriptAction { script: viewFinder.collapsed() }
             }
          }
       }
    ]
 
+   MouseArea {
+      anchors.fill: parent
+   }
    Image {
       id: placeholder
       anchors.fill: parent
@@ -184,8 +182,85 @@ Rectangle {
 
       Behavior on opacity { NumberAnimation { duration: 400 } }
    }
-   MouseArea {
-      id: mouseArea
-      anchors.fill: parent
+   Rectangle {
+      id: captureButton
+      color: "green"
+      radius: height / 4
+      anchors {
+         bottom: parent.bottom
+         left: parent.left
+         right: parent.right
+         margins: 20
+      }
+      height: width / 10
+      opacity: .4
+      visible: false
+
+      Text {
+         anchors.centerIn: parent
+         font.pointSize: parent.height - 20
+         color: "white"
+         text: qsTr("Capture")
+      }
+      MouseArea {
+         anchors.fill: parent
+         enabled: parent.visible
+         onClicked: viewFinder.captureRequested()
+      }
+   }
+   RowLayout {
+      id: retakeAcceptButtons
+      anchors {
+         bottom: parent.bottom
+         left: parent.left
+         right: parent.right
+         margins: 20
+      }
+      height: width / 10
+      opacity: .4
+      spacing: 20
+      visible: false
+
+      Rectangle {
+         id: retakeButton
+         color: "yellow"
+         radius: height / 4
+         Layout.fillWidth: true
+         Layout.fillHeight: true
+
+         Text {
+            anchors.centerIn: parent
+            font.pointSize: parent.height - 20
+            color: "white"
+            text: qsTr("Retake")
+         }
+         MouseArea {
+            anchors.fill: parent
+            enabled: parent.visible
+            onClicked: viewFinder.state = "EXPANDED"
+         }
+      }
+      Rectangle {
+         id: acceptButton
+         color: "green"
+         radius: height / 4
+         Layout.fillWidth: true
+         Layout.fillHeight: true
+
+         Text {
+            anchors.centerIn: parent
+            font.pointSize: parent.height - 20
+            color: "white"
+            text: qsTr("Accept")
+         }
+         MouseArea {
+            anchors.fill: parent
+            enabled: parent.visible
+            onClicked: {
+               hasImage = true
+               viewFinder.state = "COLLAPSED"
+            }
+         }
+      }
    }
 }

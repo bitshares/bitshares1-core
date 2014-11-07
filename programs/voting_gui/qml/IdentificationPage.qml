@@ -20,7 +20,7 @@ Rectangle {
          if( button.imageSet ) {
             snapper.oldImage = button.currentImage
          } else {
-            snapper.oldImage = button.iconSource
+            snapper.oldImage = ""
          }
          snapper.visible = true
 
