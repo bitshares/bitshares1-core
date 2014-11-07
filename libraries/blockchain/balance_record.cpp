@@ -29,8 +29,8 @@ namespace bts { namespace blockchain {
            {
                const withdraw_vesting vesting_condition = condition.as<withdraw_vesting>();
 
+               // First calculate max that could be claimed assuming no prior withdrawals
                share_type max_claimable = 0;
-
                if( at_time >= vesting_condition.start_time + vesting_condition.duration )
                {
                    max_claimable = vesting_condition.original_balance;
