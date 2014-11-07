@@ -242,8 +242,12 @@ void wallet_impl::scan_balances()
           {
               const auto public_key = key_rec->public_key;
               auto record_id = fc::ripemd160::hash( self->get_key_label( public_key ) );
+#ifndef WIN32
+#warning [SHAREDROP] Re-enable scanning when finalized
+#endif
               if( bal_rec.condition.type == withdraw_vesting_type )
-                  record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
+                  //record_id = fc::ripemd160::hash( string( "SHAREDROP" ) );
+                  return;
               auto transaction_record = _wallet_db.lookup_transaction( record_id );
               if( !transaction_record.valid() )
               {
