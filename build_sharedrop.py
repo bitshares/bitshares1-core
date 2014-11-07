@@ -61,6 +61,7 @@ dns_no_dev = 0
 dns_scaled_total = 0
 bts_to_bonus = 0
 
+delta_add_1 = 0
 # DNS normal - remove pangel and dev funds
 with open("dns-dev-fund.json") as devfund:
     devkeys = json.load(devfund)
@@ -68,45 +69,52 @@ with open("dns-dev-fund.json") as devfund:
         snapshot = json.load(dns)
         for item in snapshot:
             if (item[0] in devkeys and item[1] != 0):
+                if item[1] < 200000000 * 10**8:
+                    pangel_dns += item[1]
+                else:
+                    #print "skipping dev balance: " + str(item[1])
+                    continue
+            if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
+                pangel_dns += item[1]
+            dns_no_dev += item[1]
+
+        #print "dns no dev: " + str(dns_no_dev)
+        scale = 75000000.0 / dns_no_dev
+        scale *= 10 ** 8
+        print "BTS per DNS: " + str(scale / 1000)
+
+        for item in snapshot:
+            if (item[0] in devkeys and item[1] != 0):
                 #print "skipping dev balance: " + str(item[1])
                 continue
             if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
-                pangel_dns = item[1]
-            dns_no_dev += item[1]
+                continue
+            balance = int(scale * int(item[1]))
+            bts_added += balance
+            delta_add_1 += balance
+            exodus_balances.append([item[0], balance])
 
-    #print "dns no dev: " + str(dns_no_dev)
-    scale = 75000000.0 / dns_no_dev
-    scale *= 10 ** 8
-    print "BTS per DNS: " + str(scale / 1000)
+        bts_to_bonus = int(scale * pangel_dns) 
 
-    for item in snapshot:
-        if (item[0] in devkeys and item[1] != 0):
-            #print "skipping dev balance: " + str(item[1])
-            continue
-        if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
-            continue
-        balance = int(scale * int(item[1]))
-        bts_added += balance
-        exodus_balances.append([item[0], balance])
-
-    bts_to_bonus = int(scale * pangel_dns) 
-    bts_added += bts_to_bonus
-
+print "delta add 1: " + str(delta_add_1 / 10**8)
 print "bts to bonus: " + str(bts_to_bonus / (10**8))
 
+delta_add_2 = 0
 # DNS extra - add pangel funds and exchange subsidy
 with open("dns-collapse.json") as collapse:
+    collapse = json.load(collapse)
     collapse_total = 0
-    for item in json.load(collapse):
+    for item in collapse:
         if (item[0] in devkeys and item[1] != 0):
             continue
         if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
             continue
         collapse_total += int(item[1])
   
-    bts_for_exchanges = 0 # undetermined
+    bts_for_exchanges = 10000000 * 10**8 # undetermined
+    exodus_balances.append(["PpSzfyGkPcpc5sNnPURWQzJ5gcP5KH67gb", balance])
     bts_added += bts_for_exchanges
-    scale = (bts_to_bonus - bts_for_exchanges) / collapse_total
+    scale = 1.0 * (bts_to_bonus - bts_for_exchanges) / collapse_total
     for item in collapse:
         if item[0] in devkeys:
             continue
@@ -116,11 +124,18 @@ with open("dns-collapse.json") as collapse:
         balance = int(scale * int(item[1]))
         exodus_balances.append([item[0], balance])
         bts_added += balance
+        delta_add_2 += balance
+
+print "delta add 2: " + str(delta_add_2 / 10**8)
 
 print "bts_added: " + str(bts_added)
 print "bts_excluded: " + str(bts_exluded)
 print "total reviewed: " + str(bts_added + bts_exluded)
 
+non_empty = []
+for item in exodus_balances:
+    if item[1] != 0:
+        non_empty.append(item)
 
 with open("libraries/blockchain/bts-sharedrop.json", "w") as sharedrop:
-    sharedrop.write(json.dumps(exodus_balances, indent=4))
+    sharedrop.write(json.dumps(non_empty, indent=4))

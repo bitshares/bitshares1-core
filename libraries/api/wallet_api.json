@@ -313,6 +313,14 @@
         "aliases" : ["hx"]
       },
       {
+        "method_name": "wallet_check_sharedrop",
+        "description": "",
+        "return_type": "snapshot_record_list",
+        "parameters" : [],
+        "prerequisites" : ["wallet_open"],
+        "is_const": true
+      },
+      {
         "method_name": "wallet_remove_transaction",
         "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
         "return_type": "void",
