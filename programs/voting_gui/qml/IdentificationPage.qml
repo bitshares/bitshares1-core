@@ -68,6 +68,7 @@ Rectangle {
       onError: console.log("Camera error: " + errorString)
       imageCapture {
          onImageCaptured: {
+            camera.captureMode = Camera.CaptureViewfinder
             d.snapper.previewSource = preview
             d.snapper.state = "CAPTURED"
          }

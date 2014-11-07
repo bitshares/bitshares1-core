@@ -71,6 +71,19 @@ Rectangle {
          }
       },
       State {
+         name: "COUNTDOWN"
+         extend: "EXPANDED"
+         PropertyChanges {
+            target: captureButton
+            visible: false
+         }
+         PropertyChanges {
+            target: greyer
+            state: "GREYED"
+            onClicked: {}
+         }
+      },
+      State {
          name: "CAPTURED"
          extend: "EXPANDED"
          PropertyChanges {
@@ -128,6 +141,25 @@ Rectangle {
          }
       },
       Transition {
+         to: "COUNTDOWN"
+         SequentialAnimation {
+            ScriptAction { script: { camera.captureMode = Camera.CaptureStillImage } }
+            PropertyAction { target: countdownText; property: "text"; value: "3" }
+            PropertyAnimation { target: countdownText; property: "opacity"; from: 0; to: 1 }
+            PauseAnimation { duration: 400 }
+            PropertyAnimation { target: countdownText; property: "opacity"; from: 1; to: 0 }
+            PropertyAction { target: countdownText; property: "text"; value: "2" }
+            PropertyAnimation { target: countdownText; property: "opacity"; from: 0; to: 1 }
+            PauseAnimation { duration: 400 }
+            PropertyAnimation { target: countdownText; property: "opacity"; from: 1; to: 0 }
+            PropertyAction { target: countdownText; property: "text"; value: "1" }
+            PropertyAnimation { target: countdownText; property: "opacity"; from: 0; to: 1 }
+            PauseAnimation { duration: 400 }
+            PropertyAnimation { target: countdownText; property: "opacity"; from: 1; to: 0 }
+            ScriptAction { script: { captureRequested() } }
+         }
+      },
+      Transition {
          from: "EXPANDED,CAPTURED"
          to: "COLLAPSED"
          ParentAnimation {
@@ -172,6 +204,15 @@ Rectangle {
          visible: status !== Image.Null
       }
    }
+   Text {
+      id: countdownText
+      anchors.centerIn: parent
+      font.pointSize: parent.height / 3
+      color: "white"
+      style: Text.Outline
+      styleColor: "black"
+      opacity: 0
+   }
    Image {
       id: photoPreview
       fillMode: Image.Stretch
@@ -205,7 +246,7 @@ Rectangle {
       MouseArea {
          anchors.fill: parent
          enabled: parent.visible
-         onClicked: viewFinder.captureRequested()
+         onClicked: viewFinder.state = "COUNTDOWN"
       }
    }
    RowLayout {
