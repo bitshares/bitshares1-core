@@ -60,6 +60,7 @@ pangel_dns = 0 # PaNGEL address
 dns_no_dev = 0
 dns_scaled_total = 0
 bts_to_bonus = 0
+dns_to_bonus = 0
 
 # DNS normal - remove pangel and dev funds
 with open("dns-dev-fund.json") as devfund:
@@ -67,11 +68,15 @@ with open("dns-dev-fund.json") as devfund:
     with open("dns-nov-5.json") as dns:
         snapshot = json.load(dns)
         for item in snapshot:
-            if (item[0] in devkeys and item[1] != 0):
-                #print "skipping dev balance: " + str(item[1])
-                continue
+            if item[0] in devkeys:
+                if item[1] < (200000000 * 10**8):
+                    dns_to_bonus += item[1]
+                else:
+                    #print "skipping dev balance: " + str(item[1])
+                    continue
             if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
-                pangel_dns = item[1]
+                dns_to_bonus += item[1]
+
             dns_no_dev += item[1]
 
     #print "dns no dev: " + str(dns_no_dev)
@@ -89,7 +94,7 @@ with open("dns-dev-fund.json") as devfund:
         bts_added += balance
         exodus_balances.append([item[0], balance])
 
-    bts_to_bonus = int(scale * pangel_dns) 
+    bts_to_bonus += int(scale * dns_to_bonus)
     bts_added += bts_to_bonus
 
 print "bts to bonus: " + str(bts_to_bonus / (10**8))
