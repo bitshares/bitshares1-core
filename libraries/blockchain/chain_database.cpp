@@ -271,24 +271,20 @@ namespace bts { namespace blockchain {
 
          for( const auto& item : config.bts_sharedrop )
          {
-            // try to parse the raw address
-            // is_valid() throws when it should return false b/c the constructor also calls it -.-
             withdraw_vesting data;
             try {
-                auto addr = item.raw_address;
-                if( ! addr.compare(0, 3, "KEY") )
-                    addr.replace(0, 3, "BTS");
-                auto bts_addr = address( addr );
-                if( bts_addr.is_valid( addr ) )
-                    data.owner = bts_addr;
+                string addr = item.raw_address;
+                if( addr.find( "KEY" ) == 0 )
+                    addr = BTS_ADDRESS_PREFIX + addr.substr( 3 );
+                data.owner = address( addr );
             }
             catch (...)
             {
                 try
                 {
-                    if( pts_address(item.raw_address).is_valid() )
-                        data.owner = address(pts_address(item.raw_address));
-                } FC_CAPTURE_AND_RETHROW( (item.raw_address) )
+                    data.owner = address( pts_address( item.raw_address ) );
+                }
+                FC_CAPTURE_AND_RETHROW( (item.raw_address) )
             }
 
 #ifndef WIN32
