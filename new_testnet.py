@@ -31,10 +31,7 @@ new_genesis = {
 with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
     items = json.loads(snapshot.read())
     for item in items:
-        new_genesis["bts_sharedrop"].append({
-            "raw_address": item[0],
-            "balance": item[1]
-        })
+        new_genesis["bts_sharedrop"].append(item)
 
 for i in range(101):
     keys = json.loads(subprocess.check_output(["./programs/utils/bts_create_key"]))

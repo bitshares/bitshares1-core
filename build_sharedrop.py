@@ -61,7 +61,6 @@ dns_no_dev = 0
 dns_scaled_total = 0
 bts_to_bonus = 0
 
-delta_add_1 = 0
 # DNS normal - remove pangel and dev funds
 with open("dns-dev-fund.json") as devfund:
     devkeys = json.load(devfund)
@@ -70,7 +69,8 @@ with open("dns-dev-fund.json") as devfund:
         for item in snapshot:
             if (item[0] in devkeys and item[1] != 0):
                 if item[1] < 200000000 * 10**8:
-                    pangel_dns += item[1]
+                    #pangel_dns += item[1]
+                    continue
                 else:
                     #print "skipping dev balance: " + str(item[1])
                     continue
@@ -91,15 +91,12 @@ with open("dns-dev-fund.json") as devfund:
                 continue
             balance = int(scale * int(item[1]))
             bts_added += balance
-            delta_add_1 += balance
             exodus_balances.append([item[0], balance])
 
         bts_to_bonus = int(scale * pangel_dns) 
 
-print "delta add 1: " + str(delta_add_1 / 10**8)
 print "bts to bonus: " + str(bts_to_bonus / (10**8))
 
-delta_add_2 = 0
 # DNS extra - add pangel funds and exchange subsidy
 with open("dns-collapse.json") as collapse:
     collapse = json.load(collapse)
@@ -111,8 +108,9 @@ with open("dns-collapse.json") as collapse:
             continue
         collapse_total += int(item[1])
   
-    bts_for_exchanges = 10000000 * 10**8 # undetermined
-    exodus_balances.append(["PpSzfyGkPcpc5sNnPURWQzJ5gcP5KH67gb", balance])
+    bts_for_exchanges = bts_to_bonus * 2/3 # 10000000 * 10**8
+    print "bts for exchanges: " + str(bts_for_exchanges / 10**8)
+    exodus_balances.append(["PZ6KoPSkGD3dqiFzoueTmreAxWBCgvRKQ5", bts_for_exchanges])
     bts_added += bts_for_exchanges
     scale = 1.0 * (bts_to_bonus - bts_for_exchanges) / collapse_total
     for item in collapse:
@@ -124,18 +122,24 @@ with open("dns-collapse.json") as collapse:
         balance = int(scale * int(item[1]))
         exodus_balances.append([item[0], balance])
         bts_added += balance
-        delta_add_2 += balance
 
-print "delta add 2: " + str(delta_add_2 / 10**8)
 
 print "bts_added: " + str(bts_added)
 print "bts_excluded: " + str(bts_exluded)
 print "total reviewed: " + str(bts_added + bts_exluded)
 
-non_empty = []
+real_total = 0
+output = []
 for item in exodus_balances:
     if item[1] != 0:
-        non_empty.append(item)
+        real_total += item[1]
+        obj = {
+            "raw_address": item[0],
+            "balance": item[1]
+        }
+        output.append(obj)
+
+print "Real total: " + str(real_total / 10**8)
 
 with open("libraries/blockchain/bts-sharedrop.json", "w") as sharedrop:
-    sharedrop.write(json.dumps(non_empty, indent=4))
+    sharedrop.write(json.dumps(output, indent=4))
