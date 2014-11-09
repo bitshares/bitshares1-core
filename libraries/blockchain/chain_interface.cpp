@@ -6,6 +6,14 @@
 
 namespace bts { namespace blockchain {
 
+   optional<string> chain_interface::get_parent_account_name( const string& account_name )const
+   {
+      const size_t pos = account_name.find( '.' );
+      if( pos != string::npos )
+          return account_name.substr( pos + 1 );
+      return optional<string>();
+   }
+
    bool chain_interface::is_valid_account_name( const std::string& str )const
    {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
@@ -114,7 +122,7 @@ namespace bts { namespace blockchain {
 
    void chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
    {
-      set_property( active_delegate_list_id, fc::variant(delegate_ids) );
+      set_property( active_delegate_list_id, fc::variant( delegate_ids ) );
    }
 
    bool chain_interface::is_active_delegate( const account_id_type& id )const
@@ -147,7 +155,6 @@ namespace bts { namespace blockchain {
       tmp.ratio /= oquote_asset->get_precision();
 
       return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
-
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
 
    asset chain_interface::to_ugly_asset(const std::string& amount, const std::string& symbol) const
