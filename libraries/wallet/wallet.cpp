@@ -1565,7 +1565,7 @@ namespace detail {
       auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
       FC_ASSERT( delegate_record.is_delegate() && delegate_record.delegate_info.valid() );
       auto delegate_pub_key = delegate_record.delegate_info->block_signing_key;
-      auto delegate_key = get_private_key( address(delegate_pub_key) );
+      auto delegate_key = get_private_key( address( delegate_pub_key ) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
       header.previous_secret = my->get_secret( delegate_record.delegate_info->last_block_num_produced,

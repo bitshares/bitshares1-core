@@ -820,7 +820,7 @@ namespace bts { namespace blockchain {
                 rand_seed = fc::sha256::hash(rand_seed);
              }
 
-             pending_state->set_property( chain_property_enum::active_delegate_list_id, fc::variant(active_del) );
+             pending_state->set_active_delegates( active_del );
           }
       }
 
@@ -1016,16 +1016,17 @@ namespace bts { namespace blockchain {
 
    std::vector<account_id_type> chain_database::next_round_active_delegates()const
    {
-      return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );
+       return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );
    }
 
    /**
     *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
     */
-   std::vector<account_id_type> chain_database::get_delegates_by_vote(uint32_t first, uint32_t count )const
+   std::vector<account_id_type> chain_database::get_delegates_by_vote( uint32_t first, uint32_t count )const
    { try {
       auto del_vote_itr = my->_delegate_vote_index_db.begin();
       std::vector<account_id_type> sorted_delegates;
+      sorted_delegates.reserve( count );
       uint32_t pos = 0;
       while( sorted_delegates.size() < count && del_vote_itr.valid() )
       {
