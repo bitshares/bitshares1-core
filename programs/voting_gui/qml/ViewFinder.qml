@@ -150,15 +150,15 @@ Rectangle {
             ScriptAction { script: { camera.captureMode = Camera.CaptureStillImage } }
             PropertyAction { target: countdownText; property: "text"; value: "3" }
             PropertyAnimation { target: countdownText; property: "opacity"; from: 0; to: 1 }
-            PauseAnimation { duration: 400 }
+//            PauseAnimation { duration: 400 }
             PropertyAnimation { target: countdownText; property: "opacity"; from: 1; to: 0 }
             PropertyAction { target: countdownText; property: "text"; value: "2" }
             PropertyAnimation { target: countdownText; property: "opacity"; from: 0; to: 1 }
-            PauseAnimation { duration: 400 }
+//            PauseAnimation { duration: 400 }
             PropertyAnimation { target: countdownText; property: "opacity"; from: 1; to: 0 }
             PropertyAction { target: countdownText; property: "text"; value: "1" }
             PropertyAnimation { target: countdownText; property: "opacity"; from: 0; to: 1 }
-            PauseAnimation { duration: 400 }
+//            PauseAnimation { duration: 400 }
             PropertyAnimation { target: countdownText; property: "opacity"; from: 1; to: 0 }
             ScriptAction { script: { captureRequested() } }
          }

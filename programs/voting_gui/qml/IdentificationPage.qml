@@ -9,6 +9,25 @@ Rectangle {
 
    property string imageDir
 
+   function mayProceed() {
+      return true
+      for( var i = 0; i < photoButtonRow.children.length; i++ ) {
+         var button = photoButtonRow.children[i]
+         if( !button.imageSet ) {
+            return false
+         }
+      }
+      return true
+   }
+   function cannotProceedAlert() {
+      for( var i = 0; i < photoButtonRow.children.length; i++ ) {
+         var button = photoButtonRow.children[i]
+         if( !button.imageSet ) {
+            button.errorAlert()
+         }
+      }
+   }
+
    Component.onCompleted: {
       imageDir = utilities.make_temporary_directory()
       console.log("Image directory: " + imageDir)
@@ -93,29 +112,52 @@ Rectangle {
       height: width / 5 + spacing * 2;
 
       PhotoButton {
-         id: firstPhotoButton
+         id: userPhotoButton
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this, "qrc:/res/person_silhouette.png")
          labelText: qsTr("Your Photo")
       }
       PhotoButton {
+         id: idFrontPhotoButton
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this, "qrc:/res/id_front.png")
          labelText: qsTr("ID Card Front")
       }
       PhotoButton {
+         id: idBackPhotoButton
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this, "qrc:/res/id_back.png")
          labelText: qsTr("ID Card Back")
       }
       PhotoButton {
+         id: voterRegistrationPhotoButton
          Layout.alignment: Qt.AlignHCenter | Qt.AlignVCenter
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this)
          labelText: qsTr("Voter Registration")
+      }
+   }
+
+   SimpleButton {
+      id: nextButton
+      color: "green"
+      anchors {
+         bottom: parent.bottom
+         right: parent.right
+         margins: 40
+      }
+      height: parent.height * .05
+      width: height * 4
+      text: qsTr("Next")
+      onClicked: {
+         if( mayProceed() ) {
+            window.nextPage()
+         } else {
+            cannotProceedAlert()
+         }
       }
    }
 }

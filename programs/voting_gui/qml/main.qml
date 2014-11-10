@@ -2,10 +2,17 @@ import QtQuick 2.3
 import QtQuick.Controls 1.2
 
 ApplicationWindow {
+   id: window
    visible: true
    width: 1280
    height: 1024
    title: qsTr("Voting Booth")
+
+   //Called by individual pages via window.nextPage()
+   function nextPage() {
+      roadMap.checkpointsComplete++
+      votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)})
+   }
 
    RoadMap {
       id: roadMap
@@ -19,6 +26,7 @@ ApplicationWindow {
       checkpoints: ListModel {
          ListElement {
             title: "Identification"
+            page: "IdentificationPage.qml"
          }
          ListElement {
             title: "Verification"
@@ -45,7 +53,7 @@ ApplicationWindow {
             } else {
                parent.checkpointsComplete = 0
                votingUiStack.clear()
-               votingUiStack.push({"item": Qt.resolvedUrl("IdentificationPage.qml")})
+               votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)})
             }
          }
       }
@@ -58,7 +66,7 @@ ApplicationWindow {
          right: parent.right
          bottom: parent.bottom
       }
-      initialItem: IdentificationPage{}
+      initialItem: {"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)}
       delegate: StackViewDelegate {
          function transitionFinished(properties)
          {

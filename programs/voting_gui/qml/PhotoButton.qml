@@ -13,6 +13,10 @@ Button {
    property alias currentImage: image.source
    property bool imageSet: image.status !== Image.Null
 
+   function errorAlert() {
+      errorAnimation.restart()
+   }
+
    Text {
       id: label
       anchors.horizontalCenter: parent.horizontalCenter
@@ -26,5 +30,30 @@ Button {
       anchors.fill: parent
       anchors.margins: 3
       fillMode: Image.PreserveAspectFit
+   }
+
+   RectangularGlow {
+      id: redGlow
+      anchors.fill: parent
+      glowRadius: 0
+      spread: 0.2
+      color: "red"
+      z: -1
+   }
+
+   SequentialAnimation {
+      id: errorAnimation
+      PropertyAnimation {
+         target: redGlow
+         property: "glowRadius"
+         from: 0; to: 20
+         duration: 200
+      }
+      PropertyAnimation {
+         target: redGlow
+         property: "glowRadius"
+         from: 20; to: 0
+         duration: 200
+      }
    }
 }
