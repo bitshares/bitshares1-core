@@ -226,10 +226,9 @@ Rectangle {
 
       Behavior on opacity { NumberAnimation { duration: 400 } }
    }
-   Rectangle {
+   SimpleButton {
       id: captureButton
       color: "green"
-      radius: height / 4
       anchors {
          bottom: parent.bottom
          left: parent.left
@@ -237,20 +236,9 @@ Rectangle {
          margins: 20
       }
       height: width / 10
-      opacity: .4
       visible: false
-
-      Text {
-         anchors.centerIn: parent
-         font.pointSize: parent.height - 20
-         color: "white"
-         text: qsTr("Capture")
-      }
-      MouseArea {
-         anchors.fill: parent
-         enabled: parent.visible
-         onClicked: viewFinder.state = "COUNTDOWN"
-      }
+      text: qsTr("Capture")
+      onClicked: viewFinder.state = "COUNTDOWN"
    }
    RowLayout {
       id: retakeAcceptButtons
@@ -261,49 +249,26 @@ Rectangle {
          margins: 20
       }
       height: width / 10
-      opacity: .4
       spacing: 20
       visible: false
 
-      Rectangle {
+      SimpleButton {
          id: retakeButton
          color: "yellow"
-         radius: height / 4
          Layout.fillWidth: true
          Layout.fillHeight: true
-
-         Text {
-            anchors.centerIn: parent
-            font.pointSize: parent.height - 20
-            color: "white"
-            text: qsTr("Retake")
-         }
-         MouseArea {
-            anchors.fill: parent
-            enabled: parent.visible
-            onClicked: viewFinder.state = "EXPANDED"
-         }
+         text: qsTr("Retake")
+         onClicked: viewFinder.state = "EXPANDED"
       }
-      Rectangle {
+      SimpleButton {
          id: acceptButton
          color: "green"
-         radius: height / 4
          Layout.fillWidth: true
          Layout.fillHeight: true
-
-         Text {
-            anchors.centerIn: parent
-            font.pointSize: parent.height - 20
-            color: "white"
-            text: qsTr("Accept")
-         }
-         MouseArea {
-            anchors.fill: parent
-            enabled: parent.visible
-            onClicked: {
-               hasImage = true
-               viewFinder.state = "COLLAPSED"
-            }
+         text: qsTr("Accept")
+         onClicked: {
+            hasImage = true
+            viewFinder.state = "COLLAPSED"
          }
       }
    }
