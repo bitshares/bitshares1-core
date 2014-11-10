@@ -156,6 +156,63 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
    return *this;
 } FC_CAPTURE_AND_RETHROW( (recipient)(amount)(memo) ) }
 
+
+transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::wallet::wallet_account_record& payer,
+                                                        const bts::blockchain::account_record& recipient,
+                                                        const bts::blockchain::account_record& escrow_agent,
+                                                        digest_type agreement, 
+                                                        const asset& amount,
+                                                        const string& memo, vote_selection_method vote_method,
+                                                        fc::optional<public_key_type> memo_sender)
+{ try {
+   if( amount.amount <= 0 )
+      FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
+   optional<public_key_type> titan_one_time_key;
+
+   if( !memo_sender.valid() )
+       memo_sender = payer.active_key();
+
+   if( recipient.is_public_account() )
+   {
+      trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
+   } else {
+      auto one_time_key = _wimpl->get_new_private_key(payer.name);
+      titan_one_time_key = one_time_key.get_public_key();
+      trx.deposit_to_escrow( recipient.active_key(),
+                             escrow_agent.active_key(),
+                             agreement,
+                             amount,
+                             _wimpl->self->get_private_key(*memo_sender),
+                             cli::pretty_shorten(memo, BTS_BLOCKCHAIN_MAX_MEMO_SIZE),
+                             _wimpl->select_slate(trx, amount.asset_id, vote_method),
+                             *memo_sender,
+                             one_time_key,
+                             from_memo);
+   }
+
+   deduct_balance(payer.owner_key, amount);
+
+   ledger_entry entry;
+   entry.from_account = payer.owner_key;
+   entry.to_account = recipient.owner_key;
+   entry.amount = amount;
+   entry.memo = memo;
+   if( *memo_sender != payer.active_key() )
+      entry.memo_from_account = *memo_sender;
+   transaction_record.ledger_entries.push_back(std::move(entry));
+
+   auto memo_signature = _wimpl->self->get_private_key(*memo_sender).sign_compact(fc::sha256::hash(memo.data(),
+                                                                                                   memo.size()));
+   notices.emplace_back(std::make_pair(mail::transaction_notice_message(string(memo),
+                                                                        std::move(titan_one_time_key),
+                                                                        std::move(memo_signature)),
+                                       recipient.active_key()));
+
+   return *this;
+} FC_CAPTURE_AND_RETHROW( (recipient)(amount)(memo) ) }
+
+
+
 transaction_builder& transaction_builder::cancel_market_order(const order_id_type& order_id)
 { try {
    const auto order = _wimpl->_blockchain->get_market_order( order_id );
