@@ -4,6 +4,7 @@
 #include <bts/net/upnp.hpp>
 #include <bts/net/config.hpp>
 #include <bts/db/exception.hpp>
+#include <bts/wallet/exceptions.hpp>
 
 #include <QGuiApplication>
 #include <QResource>
@@ -126,12 +127,17 @@ void ClientWrapper::initialize()
             _upnp_service->map_port( actual_p2p_endpoint.port() );
          }
 
+         //FIXME: nuff sed
+         std::string passphrase = "voting_booth_passphrase_is_totally_secure";
          try
          {
             _client->wallet_open(default_wallet_name);
          }
-         catch(...)
-         {}
+         catch( bts::wallet::no_such_wallet )
+         {
+            _client->wallet_create(default_wallet_name, passphrase);
+         }
+         _client->wallet_unlock(99999999, passphrase);
       }
       catch (const bts::db::db_in_use_exception&)
       {
@@ -181,4 +187,9 @@ void ClientWrapper::confirm_and_set_approval(QString delegate_name, bool approve
    }
    else
       QMessageBox::warning(nullptr, tr("Invalid Account"), tr("Account %1 is not a delegate, so its approval cannot be set.").arg(delegate_name));
+}
+
+void ClientWrapper::create_account(QString account_name)
+{
+   _client->get_wallet()->create_account(account_name.toStdString());
 }

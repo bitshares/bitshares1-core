@@ -40,6 +40,8 @@ public Q_SLOTS:
    void set_data_dir(QString data_dir);
    void confirm_and_set_approval(QString delegate_name, bool approve);
 
+   void create_account(QString account_name);
+
 Q_SIGNALS:
    void initialization_complete();
    void state_changed();

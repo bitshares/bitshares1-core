@@ -7,6 +7,13 @@ Rectangle {
    id: container
    color: "#d9d9d9"
 
+   property string imageDir
+
+   Component.onCompleted: {
+      imageDir = utilities.make_temporary_directory()
+      console.log("Image directory: " + imageDir)
+   }
+
    QtObject {
       id: d
       readonly property ViewFinder snapper: photoSnapper.createObject(this, {"visible": false,
@@ -52,7 +59,7 @@ Rectangle {
             d.currentButton = null
             d.snapper.visible = false
          }
-         onCaptureRequested: camera.imageCapture.capture()
+         onCaptureRequested: camera.imageCapture.captureToLocation(imageDir)
       }
    }
    Item {

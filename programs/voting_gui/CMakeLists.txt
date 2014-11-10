@@ -33,7 +33,7 @@ add_definitions(-DQT_NO_KEYWORDS)
 qt5_add_resources(qrc_sources qml.qrc res.qrc)
 file(GLOB qml_files qml/*.qml)
 
-add_executable(voting_booth WIN32 MACOSX_BUNDLE main.cpp ClientWrapper.cpp ${qrc_sources} ${qml_files})
+add_executable(voting_booth WIN32 MACOSX_BUNDLE main.cpp ClientWrapper.cpp Utilities.cpp ${qrc_sources} ${qml_files})
 
 target_link_libraries(voting_booth Qt5::Core Qt5::Gui Qt5::Qml Qt5::Widgets Qt5::Multimedia
    bts_wallet bts_rpc bts_cli bts_blockchain bts_db bts_net bts_client fc
