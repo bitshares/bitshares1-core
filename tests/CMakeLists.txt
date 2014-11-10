@@ -124,4 +124,5 @@ endif (false )
 #target_link_libraries( recover bts_blockchain fc bts_utilities)
 
 add_subdirectory( bitcoin )
+add_subdirectory( drltc_tests )
 #add_subdirectory( client_rpc_tests )
