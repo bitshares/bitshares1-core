@@ -87,7 +87,7 @@ class BitSharesNode
 end
 
 if $0 == __FILE__
-  client_binary = '/Users/vz/bitshares/osx_build/programs/client/bitshares_client'
+  client_binary = "#{ENV['BTS_BUILD']}/programs/client/bitshares_client"
   client_node = BitSharesNode.new client_binary, data_dir: "tmp/client_a", genesis: "test_genesis.json", http_port: 5680, delegate: false
   client_node.start
   client_node.exec 'create', 'default', '123456789'
