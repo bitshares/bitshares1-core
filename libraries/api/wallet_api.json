@@ -537,6 +537,61 @@
         "aliases" : ["burn"]
       },
       {
+         "method_name" : "wallet_create_new_address",
+         "description" : "Creates an address which can be used for a simple (non-TITAN) transfer.",
+         "return_type" : "address",
+         "parameters"  : [
+            {
+              "name" : "account_name",
+              "type" : "string",
+              "description" : "The account name that will own this address"
+            }
+
+         ],
+         "prerequisites" : ["wallet_open"],
+         "aliases": ["new_address"]
+      },
+      {
+         "method_name" : "wallet_transfer_asset_to_address",
+         "description" : "Do a simple (non-TITAN) transfer to an address",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "to_address",
+              "type" : "address",
+              "description" : "the address to transfer to"
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
+            }
+         ],
+         "prerequisites" : ["wallet_open"]
+      },
+      {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
         "return_type": "transaction_record",

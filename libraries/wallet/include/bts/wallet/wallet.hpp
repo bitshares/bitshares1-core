@@ -233,6 +233,8 @@ namespace bts { namespace wallet {
          public_key_type import_wif_private_key( const string& wif_key,
                                                  const string& account_name,
                                                  bool create_account = false );
+
+         address  create_new_address( const string& account_name );
          ///@}
 
          /**
@@ -266,6 +268,7 @@ namespace bts { namespace wallet {
                  vote_selection_method selection_method,
                  bool sign = true
                  );
+
          /**
           * This transfer works like a bitcoin sendmany transaction combining multiple inputs
           * and producing a single output.

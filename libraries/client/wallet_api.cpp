@@ -170,6 +170,33 @@ wallet_transaction_record detail::client_impl::wallet_burn(
     return record;
 }
 
+
+address  detail::client_impl::wallet_create_new_address( const string& account_name )
+{
+    return _wallet->create_new_address( account_name );
+}
+
+
+wallet_transaction_record detail::client_impl::wallet_transfer_asset_to_address(
+        double amount_to_transfer,
+        const string& asset_symbol,
+        const string& from_account_name,
+        const address& to_address,
+        const string& memo_message,
+        const vote_selection_method& selection_method )
+{
+    auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
+                                      asset_symbol,
+                                      from_account_name,
+                                      to_address,
+                                      memo_message,
+                                      selection_method,
+                                      true);
+    network_broadcast_transaction( record.trx );
+    return record;
+
+}
+
 wallet_transaction_record detail::client_impl::wallet_transfer_from(
         const string& amount_to_transfer,
         const string& asset_symbol,

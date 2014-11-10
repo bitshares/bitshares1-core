@@ -2546,6 +2546,15 @@ namespace detail {
 
       return record;
    }
+
+   address  wallet::create_new_address( const string& account_name )
+   {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( my->is_receive_account( account_name ) );
+       return my->get_new_address( account_name );
+   }
+
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
