@@ -53,6 +53,7 @@ namespace bts { namespace blockchain {
          /** return the timestamp from the most recent block */
          virtual fc::time_point_sec         now()const                                                      = 0;
 
+         optional<string>                   get_parent_account_name( const string& account_name )const;
          bool                               is_valid_account_name( const string& name )const;
          bool                               is_valid_symbol_name( const string& name )const;
 

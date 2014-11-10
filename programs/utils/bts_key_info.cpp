@@ -24,8 +24,8 @@ int main( int argc, char** argv )
             fc::mutable_variant_object obj;
 
             obj["public_key"] = key;
-            obj["native_address"] = bts::blockchain::address((fc::ecc::public_key_data)key);
-            obj["pts_address"] = bts::blockchain::pts_address((fc::ecc::public_key)key);
+            obj["native_address"] = bts::blockchain::address(key.operator fc::ecc::public_key_data());
+            obj["pts_address"] = bts::blockchain::pts_address(key.operator fc::ecc::public_key());
 
             std::cout << fc::json::to_pretty_string(obj);
             return 0;

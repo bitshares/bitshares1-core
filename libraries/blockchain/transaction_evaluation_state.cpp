@@ -27,9 +27,44 @@ namespace bts { namespace blockchain {
    }
 
    bool transaction_evaluation_state::check_signature( const address& a )const
-   {
+   { try {
       return  _skip_signature_check || signed_keys.find( a ) != signed_keys.end();
-   }
+   } FC_CAPTURE_AND_RETHROW( (a) ) }
+
+   bool transaction_evaluation_state::any_parent_has_signed( const string& account_name )const
+   { try {
+       for( optional<string> parent_name = _current_state->get_parent_account_name( account_name );
+            parent_name.valid();
+            parent_name = _current_state->get_parent_account_name( *parent_name ) )
+       {
+           const oaccount_record parent_record = _current_state->get_account_record( *parent_name );
+           if( !parent_record.valid() )
+               continue;
+
+           if( parent_record->is_retracted() )
+               continue;
+
+           if( check_signature( parent_record->active_key() ) )
+               return true;
+
+           if( check_signature( parent_record->owner_key ) )
+               return true;
+       }
+       return false;
+   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+
+   bool transaction_evaluation_state::account_or_any_parent_has_signed( const account_record& record )const
+   { try {
+       if( !record.is_retracted() )
+       {
+           if( check_signature( record.active_key() ) )
+               return true;
+
+           if( check_signature( record.owner_key ) )
+               return true;
+       }
+       return any_parent_has_signed( record.name );
+   } FC_CAPTURE_AND_RETHROW( (record) ) }
 
    void transaction_evaluation_state::verify_delegate_id( account_id_type id )const
    {
