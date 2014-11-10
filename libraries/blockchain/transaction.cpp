@@ -151,6 +151,35 @@ namespace bts { namespace blockchain {
 
       operations.push_back( op );
    }
+   void transaction::deposit_to_escrow( fc::ecc::public_key receiver_key,
+                                        fc::ecc::public_key escrow_key,
+                                        digest_type agreement,
+                                        asset amount,
+                                        fc::ecc::private_key from_key,
+                                        const std::string& memo_message,
+                                        slate_id_type slate_id,
+                                        const fc::ecc::public_key& memo_pub_key,
+                                        fc::ecc::private_key one_time_private_key,
+                                        memo_flags_enum memo_type
+                                      )
+   {
+      withdraw_with_escrow by_escrow;
+      by_escrow.encrypt_memo_data( one_time_private_key,
+                                 receiver_key,
+                                 from_key,
+                                 memo_message,
+                                 memo_pub_key,
+                                 memo_type );
+      by_escrow.escrow = escrow_key;
+      by_escrow.agreement_digest = agreement;
+
+      deposit_operation op;
+      op.amount = amount.amount;
+      op.condition = withdraw_condition( by_escrow, amount.asset_id, slate_id );
+
+      operations.push_back( op );
+   }
+
 
    void transaction::register_account( const std::string& name,
                                        const fc::variant& public_data,

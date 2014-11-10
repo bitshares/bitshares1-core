@@ -54,6 +54,17 @@ namespace bts { namespace blockchain {
                              const asset& amount,
                              slate_id_type delegate_id );
 
+      void deposit_to_escrow( fc::ecc::public_key receiver_key,
+                              fc::ecc::public_key escrow_key,
+                              digest_type agreement,
+                              asset amount,
+                              fc::ecc::private_key from_key,
+                              const string& memo_message,
+                              slate_id_type delegate_id,
+                              const fc::ecc::public_key& memo_public_key,
+                              fc::ecc::private_key one_time_private_key,
+                              memo_flags_enum memo_type = from_memo );
+
       void deposit_to_account( fc::ecc::public_key receiver_key,
                                 asset amount,
                                 fc::ecc::private_key from_key,
