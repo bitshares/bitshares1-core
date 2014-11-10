@@ -518,7 +518,7 @@ namespace detail {
       return get_new_private_key( account_name ).get_public_key();
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   address wallet_impl::get_new_address( const string& account_name )
+   address wallet_impl::get_new_address( const string& account_name, const string& label )
    { try {
       return address( get_new_public_key( account_name ) );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
@@ -1481,6 +1481,14 @@ namespace detail {
       return key->decrypt_private_key( my->_wallet_password );
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
+   public_key_type  wallet::get_public_key( const address& addr) const
+   {
+       FC_ASSERT( is_open() );
+       auto key = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( key.valid(), "No known key for this address." );
+       return key->public_key;
+   }
+
    void wallet::set_delegate_block_production( const string& delegate_name, bool enabled )
    {
       FC_ASSERT( is_open() );
@@ -1555,6 +1563,28 @@ namespace detail {
 
       return my->_blockchain->get_next_producible_block_timestamp( delegate_ids );
    } FC_CAPTURE_AND_RETHROW() }
+
+
+    fc::ecc::compact_signature  wallet::sign_hash(const string& signer, const fc::sha256& hash )const
+    {
+        try {
+           auto key = public_key_type( signer );
+           auto privkey = get_private_key( address( key ) );
+           return privkey.sign_compact( hash );
+       }
+       catch (...)
+       {
+           try {
+               auto addr = address( signer );
+               auto privkey = get_private_key( addr );
+               return privkey.sign_compact( hash );
+           }
+           catch (...)
+           {
+               return get_active_private_key(signer).sign_compact(hash);
+           }
+       }
+    }
 
    void wallet::sign_block( signed_block_header& header )const
    { try {
@@ -2547,12 +2577,12 @@ namespace detail {
       return record;
    }
 
-   address  wallet::create_new_address( const string& account_name )
+   address  wallet::create_new_address( const string& account_name, const string& label )
    {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
-       return my->get_new_address( account_name );
+       return my->get_new_address( account_name, label );
    }
 
    wallet_transaction_record wallet::transfer_asset_to_address(
@@ -3926,6 +3956,7 @@ namespace detail {
       }
       return account_keys;
    }
+   
 
    map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, uint32_t limit )const
    {

@@ -722,9 +722,9 @@
         "return_type": "bool",
         "parameters" : [
             {
-                "name" : "signing_account",
+                "name" : "signer",
                 "type" : "string",
-                "description" : "The account the signature claims to be from"
+                "description" : "A public key, address, or account name whose signature to check"
             },
             {
                 "name" : "hash",
