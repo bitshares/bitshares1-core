@@ -637,7 +637,7 @@ namespace bts { namespace blockchain {
 
             const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
             FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
-            const share_type accepted_paycheck = (BTS_MAX_DELEGATE_PAY_PER_BLOCK * pay_rate_percent) / 100;
+            const share_type accepted_paycheck = (self->get_max_delegate_pay_per_block() * pay_rate_percent) / 100;
             FC_ASSERT( accepted_paycheck >= 0 );
 
             delegate_record->delegate_info->votes_for += accepted_paycheck;

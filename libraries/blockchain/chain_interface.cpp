@@ -57,11 +57,31 @@ namespace bts { namespace blockchain {
       return true;
    }
 
+   // Starting 2014-11-06, delegates are issued max 50 shares per block produced, and this value is halved every 4 years
+   // just like in Bitcoin
+   share_type chain_interface::get_max_delegate_pay_per_block()const
+   {
+       static const time_point_sec start_timestamp = time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
+       static const uint32_t seconds_per_period = fc::days( 4 * 365 ).to_seconds(); // Ignore leap years, leap seconds, etc.
+
+       const time_point_sec now = this->now();
+       FC_ASSERT( now >= start_timestamp );
+       const uint32_t elapsed_time = (now - start_timestamp).to_seconds();
+
+       const uint32_t num_full_periods = elapsed_time / seconds_per_period;
+
+       share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
+       for( uint32_t i = 0; i < num_full_periods; ++i )
+           pay_per_block /= 2;
+
+       return pay_per_block;
+   }
+
    share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
-       static const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * BTS_MAX_DELEGATE_PAY_PER_BLOCK;
-       static const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
+       const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_per_block();
+       const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
        const share_type registration_fee = (max_pay_per_two_weeks * pay_rate) / 100;
        FC_ASSERT( registration_fee > 0 );
        return registration_fee;
