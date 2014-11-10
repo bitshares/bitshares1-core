@@ -1324,7 +1324,7 @@
             {
                "name" : "real_quantity_collateral_to_add",
                "type" : "string",
-               "description" : "the quantity of collateral of the base asset to add to the specified position",
+               "description" : "the quantity of collateral of the base asset to add to the specified position"
             }
           ],
          "prerequisites" : ["wallet_unlocked"],

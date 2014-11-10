@@ -6,14 +6,6 @@
 
 namespace bts { namespace blockchain {
 
-   string get_parent_account_name( const string& child )
-   {
-      const auto pos = child.find( '.' );
-      if( pos == string::npos )
-          return string();
-      return child.substr( pos + 1 );
-   }
-
    bool register_account_operation::is_delegate()const
    {
        return delegate_pay_rate <= 100;
@@ -36,19 +28,10 @@ namespace bts { namespace blockchain {
       if( current_account.valid() )
           FC_CAPTURE_AND_THROW( account_key_in_use, (this->active_key)(current_account) );
 
-      string parent_name = get_parent_account_name( this->name );
-      if( !parent_name.empty() )
+      if( eval_state._current_state->get_parent_account_name( this->name ).valid() )
       {
-         const oaccount_record parent_record = eval_state._current_state->get_account_record( parent_name );
-         if( !parent_record.valid() )
-             FC_CAPTURE_AND_THROW( unknown_account_name, (parent_name) );
-
-         if( parent_record->is_retracted() )
-            FC_CAPTURE_AND_THROW( parent_account_retracted, (parent_record) );
-
-         // TODO: Allow any parent signature like in update_account_operation below
-         if( !eval_state.check_signature( parent_record->active_key() ) )
-            FC_CAPTURE_AND_THROW( missing_parent_account_signature, (parent_record) );
+          if( !eval_state.any_parent_has_signed( this->name ) )
+              FC_CAPTURE_AND_THROW( missing_parent_account_signature, (*this) );
       }
 
       const time_point_sec now = eval_state._current_state->now();
@@ -90,40 +73,14 @@ namespace bts { namespace blockchain {
       if( current_record->is_retracted() )
           FC_CAPTURE_AND_THROW( account_retracted, (current_record) );
 
-      const auto can_update_active_key = [&]() -> bool
-      {
-          if( eval_state.check_signature( current_record->owner_key ) )
-              return true;
-
-          string parent_name = get_parent_account_name( current_record->name );
-          while( !parent_name.empty() )
-          {
-              const oaccount_record parent_record = eval_state._current_state->get_account_record( parent_name );
-              if( !parent_record.valid() )
-                  return false;
-
-              if( parent_record->is_retracted() )
-                  return false;
-
-              if( eval_state.check_signature( parent_record->active_key() ) )
-                  return true;
-
-              if( eval_state.check_signature( parent_record->owner_key ) )
-                  return true;
-
-              parent_name = get_parent_account_name( parent_name );
-          }
-
-          return false;
-      };
-
+      // If updating active key
       if( this->active_key.valid() && *this->active_key != current_record->active_key() )
       {
           const oaccount_record account_with_same_key = eval_state._current_state->get_account_record( *this->active_key );
           if( account_with_same_key.valid() )
               FC_CAPTURE_AND_THROW( account_key_in_use, (*this->active_key)(account_with_same_key) );
 
-          if( !can_update_active_key() )
+          if( !eval_state.check_signature( current_record->owner_key ) && !eval_state.any_parent_has_signed( current_record->name ) )
               FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
           current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
@@ -136,7 +93,7 @@ namespace bts { namespace blockchain {
       }
       else
       {
-          if( !eval_state.check_signature( current_record->active_key() ) && !can_update_active_key() )
+          if( !eval_state.account_or_any_parent_has_signed( *current_record ) )
               FC_CAPTURE_AND_THROW( missing_signature, (*this) );
       }
 
@@ -186,9 +143,8 @@ namespace bts { namespace blockchain {
       if( account->delegate_info->pay_balance < this->amount )
          FC_CAPTURE_AND_THROW( insufficient_funds, (account)(amount) );
 
-      // TODO: Allow any parent signature like in update_account_operation above
-      if( !eval_state.check_signature( account->active_key() ) && !eval_state.check_signature( account->owner_key ) )
-          FC_CAPTURE_AND_THROW( missing_signature, (*account) );
+      if( !eval_state.account_or_any_parent_has_signed( *account ) )
+          FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
       account->delegate_info->pay_balance -= this->amount;
       eval_state.net_delegate_votes[ account_id ].votes_for -= this->amount;
@@ -202,15 +158,21 @@ namespace bts { namespace blockchain {
       FC_ASSERT( !"Link account operation is not enabled yet!" );
 
       auto source_account_rec = eval_state._current_state->get_account_record( source_account );
-      FC_ASSERT( source_account_rec.valid() );
+      if( !source_account_rec.valid() )
+          FC_CAPTURE_AND_THROW( unknown_account_id, (*this) );
+
+      if( source_account_rec->is_retracted() )
+          FC_CAPTURE_AND_THROW( account_retracted, (*this) );
 
       auto destination_account_rec = eval_state._current_state->get_account_record( destination_account );
-      FC_ASSERT( destination_account_rec.valid() );
+      if( !destination_account_rec.valid() )
+          FC_CAPTURE_AND_THROW( unknown_account_id, (*this) );
 
-      if( !eval_state.check_signature( source_account_rec->active_key() ) )
-      {
-         FC_CAPTURE_AND_THROW( missing_signature, (source_account_rec->active_key()) );
-      }
+      if( destination_account_rec->is_retracted() )
+          FC_CAPTURE_AND_THROW( account_retracted, (*this) );
+
+      if( !eval_state.account_or_any_parent_has_signed( *source_account_rec ) )
+          FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
       // STORE LINK...
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
@@ -229,9 +191,8 @@ namespace bts { namespace blockchain {
       if( !account_rec->is_delegate() )
           FC_CAPTURE_AND_THROW( not_a_delegate, (*account_rec) );
 
-      // TODO: Allow any parent signature like in update_account_operation above
-      if( !eval_state.check_signature( account_rec->active_key() ) && !eval_state.check_signature( account_rec->owner_key ) )
-          FC_CAPTURE_AND_THROW( missing_signature, (*account_rec) );
+      if( !eval_state.account_or_any_parent_has_signed( *account_rec ) )
+          FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
       account_rec->delegate_info->block_signing_key = this->block_signing_key;
       account_rec->last_update = eval_state._current_state->now();

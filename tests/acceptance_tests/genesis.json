@@ -1,0 +1,995 @@
+{
+  "supply": 10000000000000,
+  "precision": 1000000,
+  "timestamp": "20140620T144027",
+  "base_name": "BitShares XTS",
+  "base_symbol": "XTS",
+  "base_description": "Test stake in BitShares XTS",
+  "market_assets": [
+    {
+      "symbol": "PTS",
+      "name": "BitShares PTS",
+      "description": "1 PTS",
+      "precision": 100000000,
+      "min_price": 1.0e-06,
+      "max_price": 1000000
+    },
+    {
+      "symbol": "LTC",
+      "name": "Litecoin",
+      "description": "1 litecoin",
+      "precision": 100000000,
+      "min_price": 1.0e-06,
+      "max_price": 1000000
+    },
+    {
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "description": "1 bitcoin",
+      "precision": 100000000,
+      "min_price": 1.0e-06,
+      "max_price": 1000000
+    },
+    {
+      "symbol": "GLD",
+      "name": "Gold",
+      "description": "1 troy ounce .999 fine gold",
+      "precision": 1000000,
+      "min_price": 1.0e-06,
+      "max_price": 1000000
+    },
+    {
+      "symbol": "TRY",
+      "name": "Turkish Lira",
+      "description": "1 Turkish lira",
+      "precision": 10000,
+      "min_price": 1.0e-06,
+      "max_price": 1000000
+    },
+    {
+      "symbol": "CNY",
+      "name": "Chinese Yuan",
+      "description": "1 Chinese yuan",
+      "precision": 10000,
+      "min_price": 1.0e-06,
+      "max_price": 1000000
+    },
+    {
+      "symbol": "USD",
+      "name": "United States Dollar",
+      "description": "1 United States dollar",
+      "precision": 10000,
+      "min_price": 1.0e-06,
+      "max_price": 1000000
+    }
+  ],
+  "names": [
+    {
+      "name": "delegate0",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6mGLutzyiL8EMr6UDHdJKRsrRTqQKK1SCCDpJ9PGcSrV2Nw6KK"
+    },
+    {
+      "name": "delegate1",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6GcGvMDmVQy4N2GdCHHcGcGtN6EtEqxYkZRdxyaiuegy5kSTF4"
+    },
+    {
+      "name": "delegate2",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8BmWaHsdSdj3qsmiuco9uEnxd5tXdqQ7pkgao8RgaiRHLcJZLb"
+    },
+    {
+      "name": "delegate3",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8hDti7Fho8yDb7K8jyKLmGCVKPyLTF6iXz1X9TwJMTRKoS9E31"
+    },
+    {
+      "name": "delegate4",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5HeteNSKJms1p5GNhG7Jniw32fmCEBbRNZsd2deBWB7sKuD7df"
+    },
+    {
+      "name": "delegate5",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7RuLpTLjctwG4cASTcqo7nYo8Hj8xaDjuG4Fyhxmo8jXdxGETx"
+    },
+    {
+      "name": "delegate6",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6Bsqoq99oAvQUg2c9pNAmBFVFbhyAmgDPwNTx6kbfDwYcf5vdZ"
+    },
+    {
+      "name": "delegate7",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7jABwZkZmYqhqPjsXZKmq4E4C1cw9jzpxKzj4p2mZcDY7HgW4x"
+    },
+    {
+      "name": "delegate8",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7tPbx3YvJZ5vBBpVVKUzBmRmEVomjqmLB4R6aQvKySbAXaz7Dy"
+    },
+    {
+      "name": "delegate9",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8e4xHKoDzfXQeFeUgXJ9iVKEMjaf1HbtHuCYADx8m1rML2yjFm"
+    },
+    {
+      "name": "delegate10",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8CrVdyeUU8YXTmZgGTsJNk4VrTQC4rjD3TPu8V4hXZtvdYfeNr"
+    },
+    {
+      "name": "delegate11",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8ajTu1y3C1LVhK9gV27dWKWkb3XsyfxbYoDRD3p6Hun5qfUqC2"
+    },
+    {
+      "name": "delegate12",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7bN6twTyo1fpGjFW9UBvcgN7MxxoRdt4VWspGX47n12DTiHo5j"
+    },
+    {
+      "name": "delegate13",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8BW4LopSvWaC1svUMxyxrojkDKNDVw3ajut8Q83ELfDoJSsUCF"
+    },
+    {
+      "name": "delegate14",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6H23BhNhMg8Vgmfr8R8e7EuuK2tgTgfaTgmvHHgUnqTkhy8Pb1"
+    },
+    {
+      "name": "delegate15",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8G92fgUtgQQjUCjcNwUMktYrSU7U4vpFHzoJWeTXh3H7PGriZj"
+    },
+    {
+      "name": "delegate16",
+      "delegate_pay_rate": "100",
+      "owner": "XTS82dAg8qo3WbhACs1cqiPy4SJVBhodgHHjgnmbPeVFAdG1cW8UG"
+    },
+    {
+      "name": "delegate17",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8EowdZM8QdUWDFgJFBZ977g9yiHaJ6etWgJ4iCbtciCEaHBpQn"
+    },
+    {
+      "name": "delegate18",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8Ti7JgNvkAfPA5guvhrg85UM4Wo9qu4ZWLjiodJQDbcCr6rrcZ"
+    },
+    {
+      "name": "delegate19",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5wQrV9D6kLYCuDwCqP6kDBhkm7YuYDVJvwTJTC1747cwUrsVv1"
+    },
+    {
+      "name": "delegate20",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5Meq2atEPmAEY8ohHzoaHW9vF1etWhVNPQyN19PQbzVUhsYz7Q"
+    },
+    {
+      "name": "delegate21",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6fkE5Fh8r4EqPVhuXiAefeX9vjrRAAh1cZJV24U9BuTVoMe2oY"
+    },
+    {
+      "name": "delegate22",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7FtrnkMqnyYta3ha7cvsDTxV3EmNvMki32sky6DEjjJAvrDkkW"
+    },
+    {
+      "name": "delegate23",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7iQ3r4xvFVB638WGbNqXWmKbsjfy32ZQnMNgrsRbURDHS1nutT"
+    },
+    {
+      "name": "delegate24",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7yf1vtwBxPT6Jx7tfwASr8ZozaiGVx9ahdkxmUwMC9xezqecdB"
+    },
+    {
+      "name": "delegate25",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7HNBE5cSVwyt62NBnguwknus2MsgQCFZVSsUXYrU8g4AQn5Txq"
+    },
+    {
+      "name": "delegate26",
+      "delegate_pay_rate": "100",
+      "owner": "XTS78k9xRkuGTtLRyUQ9m9b9SsDhVCLZm6ZtJnie5dDbrxzRmcbS7"
+    },
+    {
+      "name": "delegate27",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6TDPteTQHZi1iu13AahvqU2PV767Kro9cafk2tj4cNRUB3y8TW"
+    },
+    {
+      "name": "delegate28",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5PNEHGn7F7CGcm4LigvExBpLzY6anedv4HnuwZmCLfvDRePRuw"
+    },
+    {
+      "name": "delegate29",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5vsz8A5fpxBy2jEDDiiJsk5dmfV6Wt29K26JnSvYU93KoADVzC"
+    },
+    {
+      "name": "delegate30",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6pJcBkDzeYKvW3sKFw5xgarxk7gX5Dfe6Ym4JpQaVaB6gNAXQq"
+    },
+    {
+      "name": "delegate31",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5DqQDAH63qz1K8FNmfgi2bg1BpHgV8tSEggr3vTqrjbfJGhvYK"
+    },
+    {
+      "name": "delegate32",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7FvoDGL3iASj4gZ9yv2W4fJY8HnHhsKpWVehAF7ZuzaRVmnRXg"
+    },
+    {
+      "name": "delegate33",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7vi8aGm1ij3yGNiW77zzLWYjTCPmZ14ZmVEtg97J7Q45fCGEPk"
+    },
+    {
+      "name": "delegate34",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6QEJzHxfXJGhmMhDwezrscQCSmnSa6hGmPU7Sv6EATYLjMqGLt"
+    },
+    {
+      "name": "delegate35",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7j3i1d3q5hc4oVw22CKfVntjokFizXcN9b1Q3S5oj3Cs6Bd71o"
+    },
+    {
+      "name": "delegate36",
+      "delegate_pay_rate": "100",
+      "owner": "XTS59zTQcZ1YdBY1vEoqo3yU9fv8e99CrtD2mxTMmiL7YPDoaC1wz"
+    },
+    {
+      "name": "delegate37",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5Kp2K7xX1bXpHjkGS4A1GvT99eXcBR5vy2zJ5HH1jUSbqyiYRn"
+    },
+    {
+      "name": "delegate38",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5F8DzFrbZAw1HjvH6puSL8JEZuVUWrVJJUHdvTVczmQK9KSJVN"
+    },
+    {
+      "name": "delegate39",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7FgKcf9vBGKkoLUzp3hE6Ea1SrGFrS4Kt8CvH1doAKUi8zQTdC"
+    },
+    {
+      "name": "delegate40",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8K8WErHwDExmqqXxT1poR1xtraijTo9RnJKFaKeNs6FrQvEU3A"
+    },
+    {
+      "name": "delegate41",
+      "delegate_pay_rate": "100",
+      "owner": "XTS51EgRpA98kzKo14MQgiappCfttATCnVk4p3wiPuj46kJwk1P25"
+    },
+    {
+      "name": "delegate42",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8P3h9UxSPhkEL6RtCBmi2eneKjDMH6r7SA7XZEwpeiL7uPDTsx"
+    },
+    {
+      "name": "delegate43",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5jGv3aKsTQNnwDEKWPiMGvBXibpJDyfZRsfdXCFKJbEAGgQsHP"
+    },
+    {
+      "name": "delegate44",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6ttcR9pZ21Hafjc5FZoKw5tSPquLaacm2jM55qMuY9A3MZmfg8"
+    },
+    {
+      "name": "delegate45",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6qzXKY862kct3YRfMceS4trrDRQgMqtbFSmxiWCpYWvKLHKyvm"
+    },
+    {
+      "name": "delegate46",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8joyjv4QFzYuzQFkXKdpxGt33NatUgu3ZJEnz3yndrPjHDS4H3"
+    },
+    {
+      "name": "delegate47",
+      "delegate_pay_rate": "100",
+      "owner": "XTS82DFJpp943cdX68qakYubj68L6Zw3sZ7kVJZCkH6ukqWRAjogD"
+    },
+    {
+      "name": "delegate48",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5Jj6FqzLYj22e44vQcgwha53LBxcTcom4Lkw5wsnCaurJHkBhf"
+    },
+    {
+      "name": "delegate49",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7V5c1smiJkUbTjk9cK4vfyi7yL9ZyJkkc7RHh3h6CSXRPmr4ac"
+    },
+    {
+      "name": "delegate50",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7cbXrwpaViMfXsCKAoWXyPqZdmUAethEiGWL4ZAUzAmcq79L3e"
+    },
+    {
+      "name": "delegate51",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6Rqfg3LgVZQ6B42r9QBmJKXWKRxTks1RBVd3mxkhuJ6tamUjmh"
+    },
+    {
+      "name": "delegate52",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5xWzHse2qAsZmCrrwU2WMmyZe6YSbkY4XeNh9q16wJhvbDXKKE"
+    },
+    {
+      "name": "delegate53",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7rBQmQx2ZHKGrkiN9uEdPcM1ZwZcVDK1zZ1xREMF7LwTT2FSyk"
+    },
+    {
+      "name": "delegate54",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6mbaTRNZjq7R5ZELaBCDot1ESd6cGsiAcw2nsquXt5cV3akj6m"
+    },
+    {
+      "name": "delegate55",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6zWLSChFqvJAgVAPsJDm4ZWCbnJvgAY6Ng8X6czMhdU2Qo88uW"
+    },
+    {
+      "name": "delegate56",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7zJayc7GovEE7kAyp6WErYYL4a8XmYcw32RDRMdp4p4YsoCQK8"
+    },
+    {
+      "name": "delegate57",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7buVx8TS3vWVBH8NEu7aDS6kC6RXJiNWnd2rTvo6fWMvNNShS9"
+    },
+    {
+      "name": "delegate58",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5PhLMEPvWNxgrNUeyStjpBnqzwM9H2zbrFUrUymqSWeLknh5nd"
+    },
+    {
+      "name": "delegate59",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6E8U1PKVr6w3Q5QjP5ZAzsKZbvkm7rP6zzhf1b6ARrXcD3y2JD"
+    },
+    {
+      "name": "delegate60",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7mqyz8jzaJp4aPp8ryEE55EuUJkYgRnCf1Tk2oVB1fGEao8Nz4"
+    },
+    {
+      "name": "delegate61",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7uKTeQXSgYLNjsZPxJovFfZKv6jCGCQT85khdAr9mK8H6n1DDS"
+    },
+    {
+      "name": "delegate62",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7fHNSrMPF2dbhfCdcq1Lrb8tMrRvbajrgo6VkqUGorgeQHvdor"
+    },
+    {
+      "name": "delegate63",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7vGeovWssdb39ViHnwYjxW3GWrm3fTt1dNekibDddogfc64Kpc"
+    },
+    {
+      "name": "delegate64",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5xpvoRnmHEGf3k5YsVV4gK7Q15nfc8zB9yohZrJMMchdiCZWY6"
+    },
+    {
+      "name": "delegate65",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6k3U8Rxq3wzpVU6ipo6Cw1oB9VZYX4Vosk8g8yC1Ry8Jujoo4J"
+    },
+    {
+      "name": "delegate66",
+      "delegate_pay_rate": "100",
+      "owner": "XTS4wLJcheBLDXRpmQAEninxzLZ2wJ9EAuQuz4wYxp72mAEkvzBJg"
+    },
+    {
+      "name": "delegate67",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6ajPDsWt7QCJB1XYutAfyAK3mYcjBDeCYo1Mfx3dhYkDfnHrnz"
+    },
+    {
+      "name": "delegate68",
+      "delegate_pay_rate": "100",
+      "owner": "XTS68aUzAfZqvsspr7JtmzVCifPBdF8zPTTmBzdmUgX7ovBRY4vaF"
+    },
+    {
+      "name": "delegate69",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8CxMboq94Xp57WWoAhswwMa6Xz7a4uFssp6LvZ5WNM45RtgTq8"
+    },
+    {
+      "name": "delegate70",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8CRqmwppTWA7fAkfhCYzJ5Dp96j2qc9AAKtCe1gHsFZtVrnFT6"
+    },
+    {
+      "name": "delegate71",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5zpprFqmzxwX2RcSkuGbdXdvskxy1c5GL3Bkk9Nc9SWKLsqyC8"
+    },
+    {
+      "name": "delegate72",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5qsPBxsbVtR2qxx8yEW58TsDYxr4HuXqr8ANhvDn8f83A4wPPW"
+    },
+    {
+      "name": "delegate73",
+      "delegate_pay_rate": "100",
+      "owner": "XTS51egvFBaoDMPVckhSDK8RGMaHUTbkeJdteZVzVDMu5LUmf22zM"
+    },
+    {
+      "name": "delegate74",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7vzVpggrjnCG54hKnDfr2EFjMSiac7oPan2LsyEF9Tytewb8Uz"
+    },
+    {
+      "name": "delegate75",
+      "delegate_pay_rate": "100",
+      "owner": "XTS87vMsDGtjSW5xAV3XmbC98mio4uuUqjrM9waGAz66zxwHjkT4w"
+    },
+    {
+      "name": "delegate76",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5SV5XNJLfopG6WQeMJA4v68c2JMYRwvPed1dHwnM8AE1vodKp8"
+    },
+    {
+      "name": "delegate77",
+      "delegate_pay_rate": "100",
+      "owner": "XTS87onbs5g1jvwusijM8pbhMdpqwo7XPbHf7jE26ctsJMEiga2Wj"
+    },
+    {
+      "name": "delegate78",
+      "delegate_pay_rate": "100",
+      "owner": "XTS57oAGEHrJQpavDjb5C7zMP2ccL3X1UiwFBRemH4VRTyZaGY52N"
+    },
+    {
+      "name": "delegate79",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7So5bYJEr4G3HyhCXchjrUdR1futNpx7QR2T5qDeK2UgaohLim"
+    },
+    {
+      "name": "delegate80",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8GMcBM8EVQ5SLZn7nD51KBGGTQD8cTMjhxGrtDC2LMUGjovPQt"
+    },
+    {
+      "name": "delegate81",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7ZfSG8tFSEmGNFsianwrWFwKkcaiYKzqyKEotBHvxokv29NnAs"
+    },
+    {
+      "name": "delegate82",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5xfkENeediDRpSy4mzHSaC492macvAPTtJQKA5YVxoqF1EhxCP"
+    },
+    {
+      "name": "delegate83",
+      "delegate_pay_rate": "100",
+      "owner": "XTS72VgcgpGyEycepZcXfbCJMdQDQFuPob6GeZ1BGdnBZ8iA8Xioi"
+    },
+    {
+      "name": "delegate84",
+      "delegate_pay_rate": "100",
+      "owner": "XTS61fGdMStmKxcYKBaDVg2uhMF1Cp1R143FFdobaEGKjHULZtmLj"
+    },
+    {
+      "name": "delegate85",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8MC2t79FcBhvNVX57nhXqddQVC15QqpAyRXh5kHBP84v3ufY2M"
+    },
+    {
+      "name": "delegate86",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5NEQo8xWyJRomN4auKbqiDnNpoj72s5bpFVpniBXnuDiQsTHSM"
+    },
+    {
+      "name": "delegate87",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8VJB8BxVAvXjqcf9edmYKjsZ14zQx2tYsey64cMzGs9nQHd7nk"
+    },
+    {
+      "name": "delegate88",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7HiWEykfQmvsf6kAiQBAKgQ2ag5Lzey9XJGbJeY2uJnjiEAPyK"
+    },
+    {
+      "name": "delegate89",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8JgXtxYtWREKZ5T1geV28HCGttxhyjcGVKAr8JqBtYCdLnKprp"
+    },
+    {
+      "name": "delegate90",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6vQ583wkRnxzLc1kBnY8akB7naCT6HkuxEckqp4EkG9UeS4sh6"
+    },
+    {
+      "name": "delegate91",
+      "delegate_pay_rate": "100",
+      "owner": "XTS8f9YUuqskmF2pKWTCstDNt8kLFPspuC6VjQuT1PCgTPPz6F3FU"
+    },
+    {
+      "name": "delegate92",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7B1KjGzyNQF47p7Rh5g78GrWD1tVJhTLFYXnLuWvWs3hbV933w"
+    },
+    {
+      "name": "delegate93",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6HsSTYHBJAZ6kAc5mR6M4DVW584p2B2VLkT4tXVVnkkCzEkRZp"
+    },
+    {
+      "name": "delegate94",
+      "delegate_pay_rate": "100",
+      "owner": "XTS6JUX7itJ7JaTveCbhp5gnndQvMB3WYnAtNuNtPq8kTzuEb57jp"
+    },
+    {
+      "name": "delegate95",
+      "delegate_pay_rate": "100",
+      "owner": "XTS5U6PTDBqpH8z3DUpAu1Q2KJcPubiMtD43ajPuXPYuFw4GujQDC"
+    },
+    {
+      "name": "delegate96",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7YMmdmfJYq8dKda2pFyAXgc2BSVbJdg5ERtpp4ptiTHkNYoULL"
+    },
+    {
+      "name": "delegate97",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7QHuxzGvCGviQL7fAUHvry2XDYJA76DXVKB6NoUhxxZZN2LMqY"
+    },
+    {
+      "name": "delegate98",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7Mr3Vichs1StinNvSA6am8QjvsL8vqVE8WH1dNtvzwFxJP9gBA"
+    },
+    {
+      "name": "delegate99",
+      "delegate_pay_rate": "100",
+      "owner": "XTS615vWNkBB1DWBSHYhsBKiE5v2PxQADnVYCFNMkaSgRVvWH8dE2"
+    },
+    {
+      "name": "delegate100",
+      "delegate_pay_rate": "100",
+      "owner": "XTS7rvFBk7GwYzBm8WySy7CXxcwSRLUE4NxDGSdJJMMMdroKbJhuq"
+    }
+  ],
+  "balances": [
+    [
+      "Pg4vsAbETUPNTSP1aDNfofVVaB1zksxcX6",
+      10000000000
+    ],
+    [
+      "Pod7oF7nqiVYdFaHBTbdxTsgPLgHVXYSNW",
+      10000000000
+    ],
+    [
+      "PuAAiMAoWmoKL6FVcLsKujGLhQhYJU391k",
+      10000000000
+    ],
+    [
+      "PksDA6BehHhK94DBkTxmL86P8hEDP2uXnN",
+      10000000000
+    ],
+    [
+      "PeoXMhg1dex9H8uzs6AHBn3uC937h9aJUX",
+      10000000000
+    ],
+    [
+      "Pcgc4RNLMxA22ZmyHkCdoMtPMJBvwptEnG",
+      10000000000
+    ],
+    [
+      "PdF6M5Xu8MD5sWhS2PJ5x4s8b77Jjdsa2u",
+      10000000000
+    ],
+    [
+      "PnK1ZvuA6b5yUjt7DXJAdpKeNdmCQmggdk",
+      10000000000
+    ],
+    [
+      "PqDRFeAGBx2TxvWfxKmadw4ZxVyD9QHrXG",
+      10000000000
+    ],
+    [
+      "PozGckRuhnvfGi49Uf5LeVEpgy2WYzCQJC",
+      10000000000
+    ],
+    [
+      "PbMKrFkhak7Jx6hkpNtZcyYZ5srbTZz3ds",
+      10000000000
+    ],
+    [
+      "PZAHTCHdxA6L9iLFhqiNGX8D1bUnux372W",
+      10000000000
+    ],
+    [
+      "PsxgRzeVkNTFzCVsiwxXQhb851tXejg2zU",
+      10000000000
+    ],
+    [
+      "PkW58RKRxvgu4x27UM7tuf4H5oHsUefTZj",
+      10000000000
+    ],
+    [
+      "PtMnjHQaFTmgS7cHwJDsJTTbvRzTE6vE3Q",
+      10000000000
+    ],
+    [
+      "PiFWRYYP3EUVbri2UF1t72pSJNy3SKSAGW",
+      10000000000
+    ],
+    [
+      "Pk4q7eYV6XMWuqdaNjLpPD2W1VXQT2vR4n",
+      10000000000
+    ],
+    [
+      "PuAmNREDNcRhNNbbmswZFDBsoM1Vqu2mpX",
+      10000000000
+    ],
+    [
+      "PrJpyr9hPfcsYhJkUo5VDwqERuWRiVtGoe",
+      10000000000
+    ],
+    [
+      "PttMiu4rZ8Q3o1wnU3uEUwCnYcjZaZKF6j",
+      10000000000
+    ],
+    [
+      "PnPUQyTxyr75FA4tC28YUGiYMDGZXwmv5J",
+      10000000000
+    ],
+    [
+      "PsoC478riycziyTykigfEjtR7NNHbwhak2",
+      10000000000
+    ],
+    [
+      "PhVf5VC7hpShnE9Ft7bM2MjFvotz8PHvco",
+      10000000000
+    ],
+    [
+      "PYBKdC5SDUDkCJf8xf88ChE9nKpACQVSem",
+      10000000000
+    ],
+    [
+      "PuD3uFhNiBeUAqHAEAzkjvTuMh9tqgmatB",
+      10000000000
+    ],
+    [
+      "Puxxf6xpPB1aNsQE2efPutXWDR9UZjRCr4",
+      10000000000
+    ],
+    [
+      "Pb38zEHKQu4B7NL2AquwUZjT1gREm9Yg5G",
+      10000000000
+    ],
+    [
+      "PmmTDTFfs6dEuo1a7NN8u1UaGnaPtnWv7u",
+      10000000000
+    ],
+    [
+      "Pts1SWr6aQPUmGxXqPyzq5j4qZdtnBqkzp",
+      10000000000
+    ],
+    [
+      "PaLLzGtJDswF7jFtoPTGby5vYtGYTKthkJ",
+      10000000000
+    ],
+    [
+      "PavYFUfNZaMhQDNjuQN6ULWZfEgVbQkRZv",
+      10000000000
+    ],
+    [
+      "Pgvpq7cpAoXw1uk4u8hjZg1NzCATV3hMNi",
+      10000000000
+    ],
+    [
+      "PZCnozUc1NbSnVeUWRTsFqCR7XUD3y573q",
+      10000000000
+    ],
+    [
+      "Pn4g5BP7kA2sZE66qvrf54EepfyGaxJSfv",
+      10000000000
+    ],
+    [
+      "PiWpgMWP9WpQUnhkh8ehFzGn9rdeL5ZZvd",
+      10000000000
+    ],
+    [
+      "PeuHqCdJhvuCEBKefET6LeK4S8tnZqhUU6",
+      10000000000
+    ],
+    [
+      "PegZGSKf2T91MTjc3GE4c6HRv7Y35xFFYZ",
+      10000000000
+    ],
+    [
+      "Pt7DsUJmsTATADf8bXhYkELR7dUdeGRAtV",
+      10000000000
+    ],
+    [
+      "PsMiSHju4dNAdWUmGpQF3A1zsRr62a2Fnn",
+      10000000000
+    ],
+    [
+      "PnfMzTWSuz7KnMJ9cGuTjegGsbqosjuzRt",
+      10000000000
+    ],
+    [
+      "Psdgidk3aLz7PrgnAKvAcqz8T1hvpBAaZU",
+      10000000000
+    ],
+    [
+      "PmccjJeV89xwtQ3otNsZdJwBo2eK49X3EL",
+      10000000000
+    ],
+    [
+      "PbsQ7z9n99nmc55prVqu3gPtwY9CLHbx7f",
+      10000000000
+    ],
+    [
+      "PoCtUkUsRNo91kWqqVzJtKBrFYFoe64Sz7",
+      10000000000
+    ],
+    [
+      "Pa2zaoAqTTv7B9HoURSfxQJKPdaUSeRWQ6",
+      10000000000
+    ],
+    [
+      "PcS7SdPCYfxK23ox7VPkAhAYT4RforoyKW",
+      10000000000
+    ],
+    [
+      "PvVND3DhuKK6VXRgvL9s4uwvUeqWwfSv7Z",
+      10000000000
+    ],
+    [
+      "PbBLwuVQGQAs9nYLC56Tc1MYVb1ftM27p4",
+      10000000000
+    ],
+    [
+      "PfVFK9Ypw6w9rQeSDEhoRNnPMFcKpxovg4",
+      10000000000
+    ],
+    [
+      "PvSEpNXvg4EL9RkgDheEUjK2AezFRk1QFD",
+      10000000000
+    ],
+    [
+      "PeGc31f9L5JAMuhzVDZFDx96tu95usn9JB",
+      10000000000
+    ],
+    [
+      "PuQmiisqBMkn2AaPaFkhfj7qjsrdwRJsUu",
+      10000000000
+    ],
+    [
+      "PZsPHbLmYM9grQsasbxoAyE4pQAgaR6Kqk",
+      10000000000
+    ],
+    [
+      "Pf3hQsaWYTWhbDM4XRJUFfbcA1oJBEr8N5",
+      10000000000
+    ],
+    [
+      "PdGAttRNUXQCLy8sh7CHRpZ5YCRSHrKyC3",
+      10000000000
+    ],
+    [
+      "PtQuTjZAV7kPxJvKbrtzTBrRBjD56rwjNw",
+      10000000000
+    ],
+    [
+      "PeMWx5WZtM61moLGSKmKjzzN5y8j6xQWSC",
+      10000000000
+    ],
+    [
+      "PY32B9DY7QHKHdcUqDfUZ3gdbc83QQ65tM",
+      10000000000
+    ],
+    [
+      "PrW6amQtRCLisgsmxF74JDXB8SL2K5mfRA",
+      10000000000
+    ],
+    [
+      "Ppsvqb5gRtSqibd4xsmUu15WrJNedrcmax",
+      10000000000
+    ],
+    [
+      "PdkdbQA1tyx7TwcRf7mkfC6QDHm68Qn9bb",
+      10000000000
+    ],
+    [
+      "PdGAEBRoKUkoxVxedQQuen9pshgcy8bU5G",
+      10000000000
+    ],
+    [
+      "Ptj9nQPSkwbLNZuDvToy3MJy5s3KhqLCEC",
+      10000000000
+    ],
+    [
+      "PnLxhiwF3UN9bgRhQnRVM4wuQMKLAfHmmF",
+      10000000000
+    ],
+    [
+      "Pa8UaQva7NbyX26rJuvuhujKbgrgELPraM",
+      10000000000
+    ],
+    [
+      "PiGMUeJ2Fykhc37yMehqzNfkk9EjUSXiBP",
+      10000000000
+    ],
+    [
+      "PpWsJQ25sSnW53JBi5XruHws198Krhzviv",
+      10000000000
+    ],
+    [
+      "PthwL1Kt2q6n3Lczfevdi7Rp3cMRcJEoe4",
+      10000000000
+    ],
+    [
+      "Ps8TFyPdSDQTq8hGNdz8mn3ByjJig2zMCd",
+      10000000000
+    ],
+    [
+      "PepSGW79My8j6MEdCMgA7Wbsv2G92MAw3s",
+      10000000000
+    ],
+    [
+      "PjatWkfaEdgG2Nv7xVB1ho71PYnf2aJ28t",
+      10000000000
+    ],
+    [
+      "PnLCvB1RNtLHyw8zrfuo4hPDniZLbUdqyy",
+      10000000000
+    ],
+    [
+      "PsKZk91HLWPMnJ7pKUNwLCYSfBbM9Agveh",
+      10000000000
+    ],
+    [
+      "PgnhMbKZsWNj6Fg15DZjTgP2kUy4pEX8QN",
+      10000000000
+    ],
+    [
+      "PfYdafqRZhyQYTPxRSjM8BXTtudN3yxguC",
+      10000000000
+    ],
+    [
+      "PhiqQvDcBSVBvgZrbKi8jCBhZHeU8MBxFt",
+      10000000000
+    ],
+    [
+      "PcdG3r1gGWRk1fFK88JCZw7gGAyoiicy9a",
+      10000000000
+    ],
+    [
+      "PoZDXuj1LxP6sh3SgXb2451XKbjJtLeBnr",
+      10000000000
+    ],
+    [
+      "Pf1ye9Edd5b3C9tRQoiwrdnQRfSZHkqfJi",
+      10000000000
+    ],
+    [
+      "Ptb4KpaqvRDaB72NUv7mUGf3aEQsZg7UcJ",
+      10000000000
+    ],
+    [
+      "Pd6WxjgEnZf7HR8LJx1riPUsSUacH14owv",
+      10000000000
+    ],
+    [
+      "PsVv8ERo6HVMyPW9zg6wUveHSMNyomnMv7",
+      10000000000
+    ],
+    [
+      "PoPqiLfCy57jbZBk2ogsfNChKg9oGUy5Cq",
+      10000000000
+    ],
+    [
+      "PgE4ghDuSM8bFWmJV1FKK6cJq7eNjC2ds8",
+      10000000000
+    ],
+    [
+      "PuzqjL1fix2n9JVGCsTbPLjXrpNpdLcqaP",
+      10000000000
+    ],
+    [
+      "PpAfroxgPgkP5e7NXB7CmfEaj38XNEBPAS",
+      10000000000
+    ],
+    [
+      "PdutvSutXCkj3aYWzQsHhviHt1pty6hRJZ",
+      10000000000
+    ],
+    [
+      "Pr1igmuUZzccjLGkdycuvkmyYDmLfRK57G",
+      10000000000
+    ],
+    [
+      "PubuWeCb3p7ssmzowgFy1G4PN3FJMeguNi",
+      10000000000
+    ],
+    [
+      "PqVzwo1aKhoQa5beM339PNM8YdcAg8UL96",
+      10000000000
+    ],
+    [
+      "Pc3B7YDsffVQhpVCxeT9PAm5ew3ViGRDvA",
+      10000000000
+    ],
+    [
+      "PcA9sbhyXUkNuQwT67Wxx2gU7Mh5rT2JiK",
+      10000000000
+    ],
+    [
+      "PrMTWF2eeQvNzvaW4k422fsAk21zfni5j5",
+      10000000000
+    ],
+    [
+      "Pod5gqPjwzQ1xRZg8DPQjRtjGRr94uQrak",
+      10000000000
+    ],
+    [
+      "Pnd2jsnteZVmyuStpFKDbN3npN6xKu6DLW",
+      10000000000
+    ],
+    [
+      "PduPxzrFFfRaZ2zp2znuqimN3XenoiP8x8",
+      10000000000
+    ],
+    [
+      "PotF7mvpvA93v9GJ8U7GVpJ8eoSXrTWoa9",
+      10000000000
+    ],
+    [
+      "PYrwbrEHNbyNeevyp4aoQS63Mkk7LUNLRm",
+      10000000000
+    ],
+    [
+      "Pbd5VV2RSLYozN33kaNayPUd3F6QyaQRQL",
+      10000000000
+    ],
+    [
+      "Pr5dqEUkyEVHQ523B88jUhTRYGfC6fiVat",
+      10000000000
+    ],
+    [
+      "Pk3dse1W86rpi6rpAwDeU9imgzLNeXPJcX",
+      10000000000
+    ],
+    [
+      "PoFsVZdP4YyqiixiefCnAfUr3BCKnmAsNt",
+      4747500000000
+    ],
+    [
+      "Ptk2ogdPYFbC22QVTfDCTQPcwKp63rFWDw",
+      4747500000000
+    ],
+    [
+      "PZkBfimpaBTKDAtYgnxybQNFnAjgCv3bvw",
+      4747500000000
+    ],
+    [
+      "PfchfpjKhnhXs8Fm9BMugtaS5cqNTAxGBR",
+      4747500000000
+    ]
+  ]
+}

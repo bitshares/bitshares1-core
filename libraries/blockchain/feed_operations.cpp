@@ -17,12 +17,10 @@ namespace bts { namespace blockchain {
       if( !account_record->is_delegate() )
           FC_CAPTURE_AND_THROW( not_a_delegate, (*account_record) );
 
-      // TODO: Allow any parent signature like in update_account_operation
       if( !eval_state.check_signature( account_record->delegate_info->block_signing_key )
-          && !eval_state.check_signature( account_record->active_key() )
-          && !eval_state.check_signature( account_record->owner_key ) )
+          && !eval_state.account_or_any_parent_has_signed( *account_record ) )
       {
-          FC_CAPTURE_AND_THROW( missing_signature, (*account_record) );
+          FC_CAPTURE_AND_THROW( missing_signature, (*this) );
       }
 
       eval_state._current_state->set_feed( feed_record{ feed, value, eval_state._current_state->now() } );
