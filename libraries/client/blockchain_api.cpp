@@ -295,7 +295,7 @@ variant_object client_impl::blockchain_get_info() const
    info["relay_fee"]                    = _chain_db->get_relay_fee();
 
    info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
-   info["max_delegate_pay_per_block"]   = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
+   info["max_delegate_pay_per_block"]   = _chain_db->get_max_delegate_pay_per_block();
    info["max_delegate_reg_fee"]         = _chain_db->get_delegate_registration_fee( 100 );
 
    info["name_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_SIZE;

@@ -57,6 +57,7 @@ namespace bts { namespace blockchain {
          bool                               is_valid_account_name( const string& name )const;
          bool                               is_valid_symbol_name( const string& name )const;
 
+         share_type                         get_max_delegate_pay_per_block()const;
          share_type                         get_delegate_registration_fee( uint8_t pay_rate )const;
          share_type                         get_asset_registration_fee( uint8_t symbol_length )const;
 
