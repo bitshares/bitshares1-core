@@ -148,6 +148,18 @@ namespace bts { namespace blockchain {
       address                 receiver;
       address                 escrow;
       digest_type             agreement_digest;
+
+      omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
+      void         encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
+                                      const fc::ecc::public_key&  to_public_key,
+                                      const fc::ecc::private_key& from_private_key,
+                                      const std::string& memo_message,
+                                      const fc::ecc::public_key&  memo_pub_key,
+                                      memo_flags_enum memo_type = from_memo);
+
+      memo_data    decrypt_memo_data( const fc::sha512& secret )const;
+      void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
+
       optional<titan_memo>    memo;
    };
 

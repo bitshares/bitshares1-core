@@ -254,6 +254,7 @@ namespace bts { namespace wallet {
                                                          const string& memo_message,
                                                          bool sign );
 
+
          /**
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output. The only different aspect with transfer_asset is that
