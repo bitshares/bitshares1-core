@@ -211,7 +211,7 @@ Rectangle {
    Text {
       id: countdownText
       anchors.centerIn: parent
-      font.pointSize: parent.height / 3
+      font.pointSize: Math.max(parent.height / 3, 1)
       color: "white"
       style: Text.Outline
       styleColor: "black"

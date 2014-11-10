@@ -15,7 +15,7 @@ Rectangle {
    Text {
       id: label
       anchors.centerIn: parent
-      font.pointSize: parent.height - 20
+      font.pointSize: Math.max(parent.height * .8, 1)
       color: "white"
    }
    MouseArea {
