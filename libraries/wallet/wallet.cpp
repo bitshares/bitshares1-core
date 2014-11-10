@@ -518,7 +518,7 @@ namespace detail {
       return get_new_private_key( account_name ).get_public_key();
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   address wallet_impl::get_new_address( const string& account_name )
+   address wallet_impl::get_new_address( const string& account_name, const string& label )
    { try {
       return address( get_new_public_key( account_name ) );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
@@ -2547,12 +2547,12 @@ namespace detail {
       return record;
    }
 
-   address  wallet::create_new_address( const string& account_name )
+   address  wallet::create_new_address( const string& account_name, const string& label )
    {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
-       return my->get_new_address( account_name );
+       return my->get_new_address( account_name, label );
    }
 
    wallet_transaction_record wallet::transfer_asset_to_address(

@@ -234,7 +234,7 @@ namespace bts { namespace wallet {
                                                  const string& account_name,
                                                  bool create_account = false );
 
-         address  create_new_address( const string& account_name );
+         address  create_new_address( const string& account_name, const string& label);
          ///@}
 
          /**

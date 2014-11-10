@@ -545,8 +545,13 @@
               "name" : "account_name",
               "type" : "string",
               "description" : "The account name that will own this address"
+            },
+            {
+              "name" : "label",
+              "type" : "string",
+              "description" : "",
+              "default_value" : ""
             }
-
          ],
          "prerequisites" : ["wallet_open"],
          "aliases": ["new_address"]

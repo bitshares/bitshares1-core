@@ -171,9 +171,9 @@ wallet_transaction_record detail::client_impl::wallet_burn(
 }
 
 
-address  detail::client_impl::wallet_create_new_address( const string& account_name )
+address  detail::client_impl::wallet_create_new_address( const string& account_name, const string& label )
 {
-    return _wallet->create_new_address( account_name );
+    return _wallet->create_new_address( account_name, label );
 }
 
 
