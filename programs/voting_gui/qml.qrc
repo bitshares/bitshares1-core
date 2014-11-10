@@ -4,6 +4,7 @@
         <file>qml/RoadMap.qml</file>
         <file>qml/CheckPoint.qml</file>
         <file>qml/IdentificationPage.qml</file>
+        <file>qml/VerificationPage.qml</file>
         <file>qml/PhotoButton.qml</file>
         <file>qml/ViewFinder.qml</file>
         <file>qml/GreySheet.qml</file>

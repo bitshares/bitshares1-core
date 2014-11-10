@@ -30,6 +30,7 @@ ApplicationWindow {
          }
          ListElement {
             title: "Verification"
+            page: "VerificationPage.qml"
          }
          ListElement {
             title: "Registration"
@@ -66,7 +67,7 @@ ApplicationWindow {
          right: parent.right
          bottom: parent.bottom
       }
-      initialItem: {"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)}
+      initialItem: IdentificationPage{}
       delegate: StackViewDelegate {
          function transitionFinished(properties)
          {
