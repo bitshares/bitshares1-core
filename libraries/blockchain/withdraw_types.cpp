@@ -109,6 +109,89 @@ namespace bts { namespace blockchain {
       memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
    }
 
+
+
+
+
+
+
+   omemo_status withdraw_with_escrow::decrypt_memo_data( const fc::ecc::private_key& receiver_key )const
+   { try {
+      FC_ASSERT( memo.valid() );
+      auto secret = receiver_key.get_shared_secret( memo->one_time_key );
+      extended_private_key ext_receiver_key(receiver_key);
+
+      fc::ecc::private_key secret_private_key = ext_receiver_key.child( fc::sha256::hash(secret),
+                                                                        extended_private_key::public_derivation );
+      auto secret_public_key = secret_private_key.get_public_key();
+
+      if( receiver != address(secret_public_key) )
+         return omemo_status();
+
+      auto memo = decrypt_memo_data( secret );
+
+      bool has_valid_signature = false;
+      if( memo.memo_flags == from_memo && !( memo.from == public_key_type() && memo.from_signature == 0 ) )
+      {
+         auto check_secret = secret_private_key.get_shared_secret( memo.from );
+         has_valid_signature = check_secret._hash[0] == memo.from_signature;
+      }
+      else
+      {
+         has_valid_signature = true;
+      }
+
+      return memo_status( memo, has_valid_signature, secret_private_key );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void withdraw_with_escrow::encrypt_memo_data(
+           const fc::ecc::private_key& one_time_private_key,
+           const fc::ecc::public_key&  to_public_key,
+           const fc::ecc::private_key& from_private_key,
+           const std::string& memo_message,
+           const fc::ecc::public_key&  memo_pub_key,
+           memo_flags_enum memo_type )
+   {
+      memo = titan_memo();
+      const auto secret = one_time_private_key.get_shared_secret( to_public_key );
+      const auto ext_to_public_key = extended_public_key( to_public_key );
+      const auto secret_ext_public_key = ext_to_public_key.child( fc::sha256::hash( secret ) );
+      const auto secret_public_key = secret_ext_public_key.get_pub_key();
+      receiver = address( secret_public_key );
+
+      fc::sha512 check_secret;
+      if( from_private_key.get_secret() != fc::ecc::private_key().get_secret() )
+        check_secret = from_private_key.get_shared_secret( secret_public_key );
+
+      memo_data memo_content;
+      memo_content.set_message( memo_message );
+      memo_content.from = memo_pub_key;
+      memo_content.from_signature = check_secret._hash[0];
+      memo_content.memo_flags = memo_type;
+
+      memo->one_time_key = one_time_private_key.get_public_key();
+
+      encrypt_memo_data( secret, memo_content );
+   }
+
+   memo_data withdraw_with_escrow::decrypt_memo_data( const fc::sha512& secret )const
+   { try {
+      FC_ASSERT( memo.valid() );
+      return fc::raw::unpack<memo_data>( fc::aes_decrypt( secret, memo->encrypted_memo_data ) );
+   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+   void withdraw_with_escrow::encrypt_memo_data( const fc::sha512& secret,
+                                             const memo_data& memo_content )
+   {
+      FC_ASSERT( memo.valid() );
+      memo->encrypted_memo_data = fc::aes_encrypt( secret, fc::raw::pack( memo_content ) );
+   }
+
+
+
+
+
+
 } } // bts::blockchain
 
 namespace fc {

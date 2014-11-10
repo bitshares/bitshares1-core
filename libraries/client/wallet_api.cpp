@@ -226,6 +226,40 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
     return record;
 }
 
+wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
+        const string& amount_to_transfer,
+        const string& asset_symbol,
+        const string& paying_account_name,
+        const string& from_account_name,
+        const string& to_account_name,
+        const string& escrow_account_name,
+        const digest_type&   agreement,
+        const string& memo_message,
+        const vote_selection_method& selection_method )
+{
+    asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
+    auto sender = _wallet->get_account(from_account_name);
+    auto payer = _wallet->get_account(paying_account_name);
+    auto recipient = _wallet->get_account(to_account_name);
+    auto escrow_account = _wallet->get_account(escrow_account_name);
+    transaction_builder_ptr builder = _wallet->create_transaction_builder();
+
+    auto record = builder->deposit_asset_with_escrow(payer, recipient, escrow_account, agreement,
+                                                     amount, memo_message, selection_method, 
+                                                     sender.owner_key)
+                          .finalize()
+                          .sign();
+
+    network_broadcast_transaction( record.trx );
+    for( auto&& notice : builder->encrypted_notifications() )
+        _mail_client->send_encrypted_message(std::move(notice),
+                                             from_account_name,
+                                             to_account_name,
+                                             recipient.owner_key);
+
+    return record;
+}
+
 wallet_transaction_record detail::client_impl::wallet_asset_create(
         const string& symbol,
         const string& asset_name,

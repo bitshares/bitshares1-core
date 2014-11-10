@@ -1,0 +1,16 @@
+#########################
+# gen_privkey
+#########################
+
+private_key_0:
+    e8 b5 0a ac 17 33 1f 7e 92 23 62 69 13 05 31 be
+    f3 e8 e7 cf 14 d9 04 32 27 3c 31 1b 02 3b 29 cf
+private_key_1:
+    7c 00 fc fe 44 d8 fc c9 b9 7b 71 50 7a ad c8 4a
+    dd df ca a8 4a 8b a1 34 30 71 aa a5 04 fa 95 6c
+private_key_2:
+    17 6e 4e ba eb e9 b2 74 19 0b ae 5b 5f 08 9e 23
+    d7 98 4b cb 11 fc 39 49 3c 2e dd 51 a8 47 b5 55
+private_key_3:
+    f0 73 a5 7e a9 1a 7a 2c 40 0f ae fc 61 56 c3 d3
+    d9 36 e0 fc 46 78 00 83 94 f5 6c 31 62 cf 8f 10

@@ -404,6 +404,10 @@
         "default_example" : "some_filename.txt"
       },
       {
+        "type_name" : "digest",
+        "cpp_return_type" : "bts::blockchain::digest_type"
+      },
+      {
         "type_name" : "address",
         "cpp_return_type" : "bts::blockchain::address",
         "cpp_include_file" : "bts/blockchain/address.hpp"
