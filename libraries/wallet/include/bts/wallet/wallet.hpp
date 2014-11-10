@@ -118,6 +118,7 @@ namespace bts { namespace wallet {
 
          public_key_summary get_public_key_summary( const public_key_type& pubkey ) const;
          vector<public_key_type> get_public_keys_in_account( const string& account_name )const;
+
          ///@}
 
          wallet_transaction_record get_transaction( const string& transaction_id_prefix )const;
@@ -182,6 +183,8 @@ namespace bts { namespace wallet {
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void sign_block( signed_block_header& header )const;
          ///@}
+         
+         fc::ecc::compact_signature  sign_hash(const string& signer, const fc::sha256& hash )const;
 
          /**
           *  Account management API
@@ -500,6 +503,7 @@ namespace bts { namespace wallet {
          vote_summary get_vote_proportion( const string& account_name );
 
          private_key_type get_private_key( const address& addr )const;
+         public_key_type get_public_key( const address& addr) const;
 
          std::string login_start( const std::string& account_name );
          fc::variant login_finish( const public_key_type& server_key,
