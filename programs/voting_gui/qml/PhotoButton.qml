@@ -7,7 +7,7 @@ import QtMultimedia 5.0
 Button {
    width: height
    implicitWidth: width
-   iconSource: "qrc:/res/camera.png"
+   iconSource: imageSet? "" : "qrc:/res/camera.png"
 
    property alias labelText: label.text
    property alias currentImage: image.source
@@ -19,7 +19,6 @@ Button {
       anchors.bottom: parent.bottom
       anchors.bottomMargin: parent.height / 10
       font.pointSize: 16
-      visible: !imageSet
    }
 
    Image {
