@@ -139,7 +139,9 @@ namespace bts { namespace wallet {
        public_key_type          public_key;
        std::vector<char>        encrypted_private_key;
        bool                     valid_from_signature = false;
-       optional<string>         memo;
+       optional<string>         memo; // this memo is not used for anything.
+       optional<string>         label;
+       optional<string>         virtual_account;
        /** defines the generation number that was used to generate the key
         * relative to the account address.
         */

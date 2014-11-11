@@ -520,7 +520,16 @@ namespace detail {
 
    address wallet_impl::get_new_address( const string& account_name, const string& label )
    { try {
-      return address( get_new_public_key( account_name ) );
+       auto addr = address( get_new_public_key( account_name ) );
+       auto okey = _wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "Key I just created does not exist" );
+       
+       if( label != "" )
+       {
+           okey->label = label;
+           _wallet_db.store_key( *okey );
+       }
+       return addr;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id,
@@ -2582,8 +2591,41 @@ namespace detail {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
-       return my->get_new_address( account_name, label );
+       auto addr = my->get_new_address( account_name, label );
+       set_address_virtual_account( addr, "" );
+       return addr;
    }
+
+   void   wallet::set_address_label( const address& addr, const string& label )
+   {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       okey->label = label;
+       my->_wallet_db.store_key( *okey );
+   }
+
+    void  wallet::set_address_virtual_account( const address& addr, const string& virtual_account )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        okey->virtual_account = virtual_account;
+        my->_wallet_db.store_key( *okey );
+    }
+
+    vector<address>  wallet::get_addresses_for_virtual_account( const string& virtual_account )
+    {
+        vector<address> addrs;
+        for( auto item : my->_wallet_db.get_keys() )
+        {
+            if( item.second.virtual_account == virtual_account )
+                addrs.push_back( item.first );
+        }
+        return addrs;
+    }
 
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
