@@ -116,6 +116,7 @@ Rectangle {
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this, "qrc:/res/person_silhouette.png")
          labelText: qsTr("Your Photo")
+         onCurrentImageChanged: window.userPhoto = currentImage
       }
       PhotoButton {
          id: idFrontPhotoButton
@@ -123,6 +124,7 @@ Rectangle {
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this, "qrc:/res/id_front.png")
          labelText: qsTr("ID Card Front")
+         onCurrentImageChanged: window.idFrontPhoto = currentImage
       }
       PhotoButton {
          id: idBackPhotoButton
@@ -130,6 +132,7 @@ Rectangle {
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this, "qrc:/res/id_back.png")
          labelText: qsTr("ID Card Back")
+         onCurrentImageChanged: window.idBackPhoto = currentImage
       }
       PhotoButton {
          id: voterRegistrationPhotoButton
@@ -137,6 +140,7 @@ Rectangle {
          Layout.fillHeight: true
          onClicked: d.startSnapshot(this)
          labelText: qsTr("Voter Registration")
+         onCurrentImageChanged: window.voterRegistrationPhoto = currentImage
       }
    }
 

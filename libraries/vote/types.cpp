@@ -5,12 +5,22 @@
 
 namespace bts { namespace vote {
 
+identity_property identity_property::generate(string name, const variant& value)
+{
+   uint64_t salt1 = *((uint64_t*)(fc::ecc::private_key::generate().get_secret().data()));
+   uint64_t salt2 = *((uint64_t*)(fc::ecc::private_key::generate().get_secret().data()));
+   return identity_property({fc::uint128(salt1, salt2), name, value});
+}
+
 digest_type identity_property::id(const blockchain::address& identity)const
 {
    return fc::digest(*this);
 }
 
-signature_data signature_data::sign(const blockchain::private_key_type& signer, const digest_type& identity_property_id, fc::time_point_sec valid_from, fc::time_point_sec valid_until)
+signature_data signature_data::sign(const blockchain::private_key_type& signer,
+                                    const digest_type& identity_property_id,
+                                    fc::time_point_sec valid_from,
+                                    fc::time_point_sec valid_until)
 {
    signature_data data;
    data.valid_from = valid_from;

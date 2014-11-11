@@ -1,10 +1,13 @@
 #include "ClientWrapper.hpp"
 
+#include <bts/cli/pretty.hpp>
 #include <bts/blockchain/time.hpp>
 #include <bts/net/upnp.hpp>
 #include <bts/net/config.hpp>
 #include <bts/db/exception.hpp>
 #include <bts/wallet/exceptions.hpp>
+#include <bts/vote/messages.hpp>
+#include <bts/rpc/rpc_client.hpp>
 
 #include <QGuiApplication>
 #include <QResource>
@@ -13,8 +16,11 @@
 #include <QUrl>
 #include <QMessageBox>
 #include <QDir>
+#include <QDebug>
 
 #include <iostream>
+
+using std::string;
 
 ClientWrapper::ClientWrapper(QObject *parent)
    : QObject(parent),
@@ -189,7 +195,81 @@ void ClientWrapper::confirm_and_set_approval(QString delegate_name, bool approve
       QMessageBox::warning(nullptr, tr("Invalid Account"), tr("Account %1 is not a delegate, so its approval cannot be set.").arg(delegate_name));
 }
 
-void ClientWrapper::create_account(QString account_name)
+QString ClientWrapper::create_voter_account()
 {
-   _client->get_wallet()->create_account(account_name.toStdString());
+   try {
+      string name = "voter-" + string(fc::digest(fc::time_point::now())).substr(0, 8) + ".booth.follow-my-vote";
+      _client->wallet_account_create(name);
+      return QString::fromStdString(name);
+   } catch (fc::exception e) {
+      qDebug("%s", e.to_detail_string().c_str());
+   }
+   return "";
+}
+
+void ClientWrapper::begin_verification(QObject* window, QString account_name, QStringList verifiers)
+{
+   if( verifiers.size() == 0 )
+   {
+      Q_EMIT error("No verifiers were specified.");
+      return;
+   }
+
+   bts::vote::identity_verification_request request;
+   request.owner = _client->wallet_get_account(account_name.toStdString()).active_key();
+
+   //Set empty properties
+   request.properties.emplace_back(bts::vote::identity_property::generate("First Name"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("Middle Name"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("Last Name"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("Date of Birth"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("ID Number"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("Address Line 1"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("Address Line 2"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("City"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("State"));
+   request.properties.emplace_back(bts::vote::identity_property::generate("9-Digit ZIP"));
+
+   qDebug() << fc::json::to_pretty_string(request).c_str();
+
+   //Set photos
+   QFile file(window->property("userPhoto").toUrl().toLocalFile());
+   file.open(QIODevice::ReadOnly);
+   request.owner_photo = file.readAll().toBase64().data();
+   qDebug() << "User photo" << file.fileName() << "is" << bts::cli::pretty_size(request.owner_photo.size()).c_str();
+   file.close();
+   file.setFileName(window->property("idFrontPhoto").toUrl().toLocalFile());
+   file.open(QIODevice::ReadOnly);
+   request.id_front_photo = file.readAll().toBase64().data();
+   qDebug() << "ID front photo" << file.fileName() << "is" << bts::cli::pretty_size(request.id_front_photo.size()).c_str();
+   file.close();
+   file.setFileName(window->property("idBackPhoto").toUrl().toLocalFile());
+   file.open(QIODevice::ReadOnly);
+   request.id_back_photo = file.readAll().toBase64().data();
+   qDebug() << "ID back photo" << file.fileName() << "is" << bts::cli::pretty_size(request.id_back_photo.size()).c_str();
+   file.close();
+   file.setFileName(window->property("voterRegistrationPhoto").toUrl().toLocalFile());
+   file.open(QIODevice::ReadOnly);
+   request.voter_reg_photo = file.readAll().toBase64().data();
+   qDebug() << "Voter reg photo" << file.fileName() << "is" << bts::cli::pretty_size(request.voter_reg_photo.size()).c_str();
+   file.close();
+
+   //Sign request
+   bts::vote::identity_verification_request_message request_message;
+   request_message.request = request;
+   request_message.signature = _client->wallet_sign_hash(account_name.toStdString(), request.digest());
+
+   auto verifier_account = _client->blockchain_get_account(verifiers[0].toStdString());
+   if( !verifier_account )
+   {
+      Q_EMIT error(QString("Could not find verifier account %1.").arg(verifiers[0]));
+      return;
+   }
+
+   bts::mail::message ciphertext = bts::mail::message(request_message).encrypt(fc::ecc::private_key::generate(),
+                                                                               verifier_account->active_key());
+   ciphertext.recipient = verifier_account->active_key();
+   bts::rpc::rpc_client client;
+   client.connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
+   client.verifier_public_api(ciphertext);
 }

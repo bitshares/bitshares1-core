@@ -8,6 +8,11 @@ ApplicationWindow {
    height: 1024
    title: qsTr("Voting Booth")
 
+   property url userPhoto
+   property url idFrontPhoto
+   property url idBackPhoto
+   property url voterRegistrationPhoto
+
    //Called by individual pages via window.nextPage()
    function nextPage() {
       roadMap.checkpointsComplete++

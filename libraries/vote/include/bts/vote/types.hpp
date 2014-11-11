@@ -44,6 +44,8 @@ enum request_status_enum {
  */
 struct identity_property
 {
+   static identity_property generate(std::string name, const fc::variant& value = fc::variant());
+
    digest_type    id(const address& identity)const;
 
    fc::uint128    salt;

@@ -28,6 +28,8 @@ public:
    QString get_data_dir();
    Q_INVOKABLE QString get_info();
 
+   Q_INVOKABLE QString create_voter_account();
+
    std::shared_ptr<bts::client::client> get_client() { return _client; }
 
    void handle_crash();
@@ -40,7 +42,7 @@ public Q_SLOTS:
    void set_data_dir(QString data_dir);
    void confirm_and_set_approval(QString delegate_name, bool approve);
 
-   void create_account(QString account_name);
+   void begin_verification(QObject* window, QString account_name, QStringList verifiers);
 
 Q_SIGNALS:
    void initialization_complete();
