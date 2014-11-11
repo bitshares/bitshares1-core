@@ -238,6 +238,11 @@ namespace bts { namespace wallet {
                                                  bool create_account = false );
 
          address  create_new_address( const string& account_name, const string& label);
+
+         void              set_address_label( const address& addr, const string& label );
+         void              set_address_virtual_account( const address& addr, const string& virtual_account );
+         vector<address>   get_addresses_for_virtual_account( const string& virtual_account );
+
          ///@}
 
          /**
@@ -467,6 +472,8 @@ namespace bts { namespace wallet {
 
          bool                               is_sending_address( const address& addr )const;
          bool                               is_receive_address( const address& addr )const;
+
+         vector<escrow_summary>             get_escrow_balances( const string& account_name );
 
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true )const;
          account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true )const;

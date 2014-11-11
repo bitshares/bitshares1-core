@@ -3,6 +3,9 @@
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
+#include <fc/network/resolve.hpp>
+#include <fc/network/url.hpp>
+#include <fc/network/http/connection.hpp>
 
 #include <fc/thread/non_preemptable_scope_check.hpp>
 
@@ -89,7 +92,35 @@ void detail::client_impl::wallet_unlock( uint32_t timeout, const string& passwor
 {
   _wallet->unlock(password, timeout);
   reschedule_delegate_loop();
+  if( _config.wallet_callback_url.size() > 0 )
+  {
+     _http_callback_signal_connection = 
+        _wallet->wallet_claimed_transaction.connect( 
+            [=]( ledger_entry e ) { this->wallet_http_callback( _config.wallet_callback_url, e ); } );
+  }
 }
+
+void detail::client_impl::wallet_http_callback( const string& url, const ledger_entry& e )
+{
+   fc::async( [=]()
+              {
+                  fc::url u(url);
+                  if( u.host() )
+                  {
+                     auto endpoints = fc::resolve( *u.host(), u.port() ? *u.port() : 80 );
+                     for( auto ep : endpoints )
+                     {
+                        fc::http::connection con;
+                        con.connect_to( ep );
+                        auto response = con.request( "POST", url, fc::json::to_string(e) );
+                        if( response.status == fc::http::reply::OK )
+                           return;
+                     }
+                  }
+              }
+            );
+}
+
 
 void detail::client_impl::wallet_change_passphrase(const string& new_password)
 {
