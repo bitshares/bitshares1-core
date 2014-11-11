@@ -157,6 +157,8 @@ namespace bts { namespace blockchain {
       const auto ext_to_public_key = extended_public_key( to_public_key );
       const auto secret_ext_public_key = ext_to_public_key.child( fc::sha256::hash( secret ) );
       const auto secret_public_key = secret_ext_public_key.get_pub_key();
+
+      sender   = address( one_time_private_key.get_public_key() );
       receiver = address( secret_public_key );
 
       fc::sha512 check_secret;
