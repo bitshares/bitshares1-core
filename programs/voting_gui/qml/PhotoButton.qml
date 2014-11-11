@@ -10,6 +10,7 @@ Button {
    property alias labelText: label.text
    property alias currentImage: image.source
    property bool imageSet: image.status !== Image.Null
+   property bool imageAccepted: false
 
    function errorAlert() {
       errorAnimation.restart()
@@ -28,6 +29,33 @@ Button {
       anchors.fill: parent
       anchors.margins: 3
       fillMode: Image.PreserveAspectFit
+
+      Rectangle {
+         color: "black"
+         opacity: .3
+         visible: imageAccepted
+         anchors.fill: parent
+
+         Behavior on opacity { PropertyAnimation {} }
+
+         Image {
+            anchors.centerIn: parent
+            source: "qrc:/res/checked.png"
+         }
+         MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+
+            onHoveredChanged: {
+               if( containsMouse ) {
+                  parent.opacity = 0
+               } else {
+                  parent.opacity = .3
+               }
+            }
+         }
+      }
    }
 
    RectangularGlow {

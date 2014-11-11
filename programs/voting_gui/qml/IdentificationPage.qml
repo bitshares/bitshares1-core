@@ -72,8 +72,10 @@ Rectangle {
             }
          }
          onCollapsed: {
-            if( hasImage )
+            if( hasImage ) {
                d.currentButton.currentImage = "file:" + camera.imageCapture.capturedImagePath
+               d.currentButton.imageAccepted = true
+            }
             d.currentButton = null
             d.snapper.visible = false
          }
