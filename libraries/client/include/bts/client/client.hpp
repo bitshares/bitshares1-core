@@ -23,7 +23,8 @@ namespace bts { namespace client {
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
-    using namespace bts::mail;
+    using bts::mail::mail_client_ptr;
+    using bts::mail::mail_server_ptr;
 
     boost::program_options::variables_map parse_option_variables(int argc, char** argv);
     fc::path get_data_dir(const boost::program_options::variables_map& option_variables);

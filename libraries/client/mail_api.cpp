@@ -42,25 +42,25 @@ vector<mail::email_header> detail::client_impl::mail_inbox() const
    return _mail_client->get_inbox();
 }
 
-void detail::client_impl::mail_retry_send(const message_id_type& message_id)
+void detail::client_impl::mail_retry_send(const bts::mail::message_id_type& message_id)
 {
    FC_ASSERT(_mail_client);
    _mail_client->retry_message(message_id);
 }
 
-void detail::client_impl::mail_cancel_message(const message_id_type &message_id)
+void detail::client_impl::mail_cancel_message(const bts::mail::message_id_type &message_id)
 {
    FC_ASSERT(_mail_client);
    _mail_client->cancel_message(message_id);
 }
 
-void detail::client_impl::mail_remove_message(const message_id_type &message_id)
+void detail::client_impl::mail_remove_message(const bts::mail::message_id_type &message_id)
 {
    FC_ASSERT(_mail_client);
    _mail_client->remove_message(message_id);
 }
 
-void detail::client_impl::mail_archive_message(const message_id_type &message_id)
+void detail::client_impl::mail_archive_message(const bts::mail::message_id_type &message_id)
 {
    FC_ASSERT(_mail_client);
    _mail_client->archive_message(message_id);
@@ -97,7 +97,8 @@ vector<mail::email_header> detail::client_impl::mail_get_messages_in_conversatio
    auto backward = _mail_client->get_messages_from_to(account_two, account_one);
 
    std::move(backward.begin(), backward.end(), std::back_inserter(forward));
-   std::sort(forward.begin(), forward.end(), [](const email_header& a, const email_header& b) {return a.timestamp < b.timestamp;});
+   std::sort(forward.begin(), forward.end(), 
+             [](const bts::mail::email_header& a, const bts::mail::email_header& b) { return a.timestamp < b.timestamp;});
    return forward;
 }
 
@@ -105,7 +106,7 @@ mail::message_id_type detail::client_impl::mail_send(const std::string& from,
                                                      const std::string& to,
                                                      const std::string& subject,
                                                      const std::string& body,
-                                                     const message_id_type& reply_to)
+                                                     const bts::mail::message_id_type& reply_to)
 {
    FC_ASSERT(_mail_client);
    return _mail_client->send_email(from, to, subject, body, reply_to);

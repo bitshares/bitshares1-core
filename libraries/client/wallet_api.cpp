@@ -461,15 +461,15 @@ string detail::client_impl::wallet_dump_private_key( const std::string& input )
   return "key not found";
 }
 
-message detail::client_impl::wallet_mail_create(const std::string& sender,
-                                                const std::string& subject,
-                                                const std::string& body,
-                                                const message_id_type& reply_to)
+bts::mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
+                                                           const std::string& subject,
+                                                           const std::string& body,
+                                                           const bts::mail::message_id_type& reply_to)
 {
     return _wallet->mail_create(sender, subject, body, reply_to);
 }
 
-message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, const message &plaintext)
+bts::mail::message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, const bts::mail::message &plaintext)
 {
     auto recipient_account = _chain_db->get_account_record(recipient);
     FC_ASSERT(recipient_account, "Unknown recipient name.");
@@ -477,7 +477,7 @@ message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, c
     return _wallet->mail_encrypt(recipient_account->active_key(), plaintext);
 }
 
-mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message& ciphertext)
+bts::mail::message detail::client_impl::wallet_mail_open(const address& recipient, const bts::mail::message& ciphertext)
 {
     return _wallet->mail_open(recipient, ciphertext);
 }
