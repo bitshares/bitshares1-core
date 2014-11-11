@@ -473,6 +473,8 @@ namespace bts { namespace wallet {
          bool                               is_sending_address( const address& addr )const;
          bool                               is_receive_address( const address& addr )const;
 
+         vector<escrow_summary>             get_escrow_balances( const string& account_name );
+
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true )const;
          account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true )const;

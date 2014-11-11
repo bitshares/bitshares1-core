@@ -1718,9 +1718,8 @@ namespace detail {
       unordered_set<address> required_signatures;
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account );
+      FC_ASSERT( current_account.valid() && current_account->is_delegate() );
       auto payer_public_key = get_account_public_key( account_to_publish_under );
-      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
@@ -3399,9 +3398,9 @@ namespace detail {
    asset wallet::get_transaction_fee( const asset_id_type& desired_fee_asset_id )const
    { try {
       FC_ASSERT( is_open() );
-      // TODO: support price conversion using price from blockchain
 
       asset xts_fee( BTS_WALLET_DEFAULT_TRANSACTION_FEE, 0 );
+
       try
       {
           xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
@@ -3412,22 +3411,23 @@ namespace detail {
 
       if( desired_fee_asset_id != 0 )
       {
-         const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
+         const oasset_record asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
-             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
-             if( median_price )
+             const oprice median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
+             if( median_price.valid() )
              {
                 xts_fee += xts_fee + xts_fee;
                 // fees paid in something other than XTS are discounted 50%
-                auto alt_fees_paid = xts_fee * *median_price;
+                const asset alt_fees_paid = xts_fee * *median_price;
                 return alt_fees_paid;
              }
          }
       }
+
       return xts_fee;
-       } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (desired_fee_asset_id) ) }
 
    bool wallet::asset_can_pay_fee(const asset_id_type& desired_fee_asset_id) const
    {
