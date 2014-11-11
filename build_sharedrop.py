@@ -32,22 +32,29 @@ substitutions = dict([
     ("1376AFc3gfic94o9yK1dx7JMMqxzfbssrg", "1gD8zEUgPN6imT3uGUqVVnxT5agAH9r4Y"),
 ])
 
+
 # All assets have precision 10**8
 
 # These should add up to 500m * 10**8
 bts_added = 0
 bts_excluded = 0
 
-# AGS and PTS - generated using snapshot tool. No substitutions.
+# AGS and PTS - generated using snapshot tool.
 with open("ags-pts-nov-5.json") as agspts:
     snapshot = json.load(agspts)
     agspts_total = 0
     for item in snapshot["balances"]:
+        balance = int(item[1])
         if item[0] == "KEYHOTEE_FOUNDERS":
-            bts_excluded += int(item[1])
+            bts_excluded += balance
             continue
+        if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
+            balance -= 297806854702309
+            # Dan adds another vested interest
+            exodus_balances.append(["1CTicY4ESkTqD5n5kFVTeNees7cq7tboXe", 297806854702309])
+            print "If this line gets printed twice, it means the PaNGEL address donated to AGS!"
         agspts_total += int(item[1])
-        exodus_balances.append(item)
+        exodus_balances.append([item[0], balance])
         bts_added += int(item[1])
 
 # VOTE
