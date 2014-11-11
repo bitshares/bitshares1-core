@@ -20,7 +20,7 @@ exodus_balances = []
 
 # These should add up to 500m * 10**8
 bts_added = 0
-bts_exluded = 0
+bts_excluded = 0
 
 # AGS and PTS - generated using snapshot tool. No substitutions.
 with open("ags-pts-nov-5.json") as agspts:
@@ -28,7 +28,7 @@ with open("ags-pts-nov-5.json") as agspts:
     agspts_total = 0
     for item in snapshot["balances"]:
         if item[0] == "KEYHOTEE_FOUNDERS":
-            bts_exluded += int(item[1])
+            bts_excluded += int(item[1])
             continue
         agspts_total += int(item[1])
         exodus_balances.append(item)
@@ -41,7 +41,7 @@ with open("vote-aug-21-noFMV.json") as vote:
     for item in snapshot["balances"]:
         if item[0] == "KEYHOTEE_FOUNDERS":
             #print "removing keyhotee ags: " + str(item[1])
-            bts_exluded += int(item[1])
+            bts_excluded += int(item[1])
             continue
         vote_total += int(item[1])
         exodus_balances.append(item)
@@ -110,8 +110,18 @@ with open("dns-collapse.json") as collapse:
   
     bts_for_exchanges = bts_to_bonus * 2/3 # 10000000 * 10**8
     print "bts for exchanges: " + str(bts_for_exchanges / 10**8)
-    exodus_balances.append(["PZ6KoPSkGD3dqiFzoueTmreAxWBCgvRKQ5", bts_for_exchanges])
-    bts_added += bts_for_exchanges
+    with open("exchanges.json") as exchanges:
+        exchanges = json.load(exchanges)
+        ex_total = 0
+        for item in exchanges:
+            ex_total += item["proportion"]
+        for item in exchanges:
+            print item["name"]
+            bts_to_exchange = int(bts_for_exchanges * 1.0 * item["proportion"] / ex_total)
+            exodus_balances.append([item["address"], bts_to_exchange])
+            bts_added += bts_to_exchange
+            print bts_to_exchange
+
     scale = 1.0 * (bts_to_bonus - bts_for_exchanges) / collapse_total
     for item in collapse:
         if item[0] in devkeys:
@@ -123,23 +133,36 @@ with open("dns-collapse.json") as collapse:
         exodus_balances.append([item[0], balance])
         bts_added += balance
 
+# bts_added and bts_excluded add up at this point. Any further changes have to adjust both balances
 
-print "bts_added: " + str(bts_added)
-print "bts_excluded: " + str(bts_exluded)
-print "total reviewed: " + str(bts_added + bts_exluded)
-
-real_total = 0
 output = []
 for item in exodus_balances:
     if item[1] != 0:
-        real_total += item[1]
+        address = item[0]
+        # ILuXgc0SsMz4vBni3kRBoAiWc6m2bJnUiqMpyRgNI8Zjf4n/ikFFuflV/cQv4p6PRuKxw6CwQ1mD3CC/EEki8Kw=
+        # "Bastard stole my PTS.  Whip his ass."
+        if address == "Pe9F7tmq8Wxd2bCkFrW6nc4h5RASAzHAWC":
+            address = "PmBR2p6uYY1SKhB9FbdHMbSGcqjEGsfK2n"
+        # H0eoaUht5pgKeO0W6U+graUn2kkyTxybb5ttkdZ8BxOBamghu0vB/ZbBw4329LbzKIZIoH4QtTTLPAFBqmX6IR4=
+        # "Dan is the man with the plan!"  - same person
+        elif address == "1376AFc3gfic94o9yK1dx7JMMqxzfbssrg":
+            address = "1gD8zEUgPN6imT3uGUqVVnxT5agAH9r4Y"
+       
+        # ~ 1 in 600 million chance... not a coincidence
+        if address.startswith("PaNGEL") and address != "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
+            bts_added -= item[1]
+            bts_excluded += item[1]
+            print "Removed from pangel scammer: " + str(item[1] / 10**8)
+        
         obj = {
             "raw_address": item[0],
             "balance": item[1]
         }
         output.append(obj)
 
-print "Real total: " + str(real_total / 10**8)
+print "bts_added: " + str(bts_added)
+print "bts_excluded: " + str(bts_excluded)
+print "total reviewed: " + str(bts_added + bts_excluded)
 
 with open("libraries/blockchain/bts-sharedrop.json", "w") as sharedrop:
     sharedrop.write(json.dumps(output, indent=4))
