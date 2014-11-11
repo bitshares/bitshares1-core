@@ -1,4 +1,4 @@
-# BTS merger allocation draft 1
+# BTS merger allocation draft 3
 
 #  ags-pts-nov-5.json
 #  662e2bd091a401108fd9736dd556a2c8744111e1  -
@@ -163,17 +163,18 @@ for item in exodus_balances:
     if item[1] != 0:
         address = item[0]
         if address in substitutions.keys():
+            print "substituting address: " + address + " for amount " + str(item[1] / 10 ** 8)
             address = substitutions[address]
-            print "substituted address: " + address + " for amount " + str(item[1] / 10 ** 8)
        
         # ~ 1 in 600 million chance... not a coincidence
         if address.startswith("PaNGEL") and address != "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
             bts_added -= item[1]
             bts_excluded += item[1]
             print "Removed from pangel scammer: " + str(item[1] / 10**8)
+            continue
         
         obj = {
-            "raw_address": item[0],
+            "raw_address": address,
             "balance": item[1]
         }
         output.append(obj)
