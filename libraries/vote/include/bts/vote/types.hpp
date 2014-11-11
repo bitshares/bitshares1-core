@@ -204,7 +204,7 @@ struct contest
 {
    string name;
    string description;
-   vector<string> tags;
+   map<string,string> tags;
    ///Contestants are identified in decisions by their index in this vector
    vector<contestant> contestants;
 
