@@ -44,12 +44,14 @@ namespace bts { namespace wallet {
    {
       /** the transaction ID that created the escrow balance */
       transaction_id_type creating_transaction_id;
+      balance_id_type     balance_id;
       /** the amount of money still held in escrow */
       asset               balance;
       /** the account name of the escrow agent */
       string              sender_account_name;
       string              receiver_account_name;
       string              escrow_agent_account_name;
+      digest_type         agreement_digest;
    };
 
    struct generic_wallet_record
@@ -287,10 +289,12 @@ namespace bts { namespace wallet {
 
 FC_REFLECT( bts::wallet::escrow_summary, 
             (creating_transaction_id)
+            (balance_id)
             (balance)
             (sender_account_name)
             (receiver_account_name)
             (escrow_agent_account_name) 
+            (agreement_digest)
           )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
