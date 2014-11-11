@@ -520,7 +520,16 @@ namespace detail {
 
    address wallet_impl::get_new_address( const string& account_name, const string& label )
    { try {
-      return address( get_new_public_key( account_name ) );
+       auto addr = address( get_new_public_key( account_name ) );
+       auto okey = _wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "Key I just created does not exist" );
+       
+       if( label != "" )
+       {
+           okey->label = label;
+           _wallet_db.store_key( *okey );
+       }
+       return addr;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id,
@@ -1709,9 +1718,8 @@ namespace detail {
       unordered_set<address> required_signatures;
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account );
+      FC_ASSERT( current_account.valid() && current_account->is_delegate() );
       auto payer_public_key = get_account_public_key( account_to_publish_under );
-      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
@@ -2582,8 +2590,41 @@ namespace detail {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
-       return my->get_new_address( account_name, label );
+       auto addr = my->get_new_address( account_name, label );
+       set_address_virtual_account( addr, "" );
+       return addr;
    }
+
+   void   wallet::set_address_label( const address& addr, const string& label )
+   {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       auto okey = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "No such address." );
+       okey->label = label;
+       my->_wallet_db.store_key( *okey );
+   }
+
+    void  wallet::set_address_virtual_account( const address& addr, const string& virtual_account )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        okey->virtual_account = virtual_account;
+        my->_wallet_db.store_key( *okey );
+    }
+
+    vector<address>  wallet::get_addresses_for_virtual_account( const string& virtual_account )
+    {
+        vector<address> addrs;
+        for( auto item : my->_wallet_db.get_keys() )
+        {
+            if( item.second.virtual_account == virtual_account )
+                addrs.push_back( item.first );
+        }
+        return addrs;
+    }
 
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
@@ -3357,9 +3398,9 @@ namespace detail {
    asset wallet::get_transaction_fee( const asset_id_type& desired_fee_asset_id )const
    { try {
       FC_ASSERT( is_open() );
-      // TODO: support price conversion using price from blockchain
 
       asset xts_fee( BTS_WALLET_DEFAULT_TRANSACTION_FEE, 0 );
+
       try
       {
           xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
@@ -3370,22 +3411,23 @@ namespace detail {
 
       if( desired_fee_asset_id != 0 )
       {
-         const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
+         const oasset_record asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
-             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
-             if( median_price )
+             const oprice median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
+             if( median_price.valid() )
              {
                 xts_fee += xts_fee + xts_fee;
                 // fees paid in something other than XTS are discounted 50%
-                auto alt_fees_paid = xts_fee * *median_price;
+                const asset alt_fees_paid = xts_fee * *median_price;
                 return alt_fees_paid;
              }
          }
       }
+
       return xts_fee;
-       } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (desired_fee_asset_id) ) }
 
    bool wallet::asset_can_pay_fee(const asset_id_type& desired_fee_asset_id) const
    {

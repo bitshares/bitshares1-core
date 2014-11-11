@@ -40,6 +40,18 @@ namespace bts { namespace wallet {
       setting_record_type        = 9
    };
 
+   struct escrow_summary
+   {
+      /** the transaction ID that created the escrow balance */
+      transaction_id_type creating_transaction_id;
+      /** the amount of money still held in escrow */
+      asset               balance;
+      /** the account name of the escrow agent */
+      string              sender_account_name;
+      string              receiver_account_name;
+      string              escrow_agent_account_name;
+   };
+
    struct generic_wallet_record
    {
        generic_wallet_record():type(0){}
@@ -139,7 +151,9 @@ namespace bts { namespace wallet {
        public_key_type          public_key;
        std::vector<char>        encrypted_private_key;
        bool                     valid_from_signature = false;
-       optional<string>         memo;
+       optional<string>         memo; // this memo is not used for anything.
+       optional<string>         label;
+       optional<string>         virtual_account;
        /** defines the generation number that was used to generate the key
         * relative to the account address.
         */
@@ -270,6 +284,14 @@ namespace bts { namespace wallet {
    typedef optional< wallet_setting_record >                owallet_setting_record;
 
 } } // bts::wallet
+
+FC_REFLECT( bts::wallet::escrow_summary, 
+            (creating_transaction_id)
+            (balance)
+            (sender_account_name)
+            (receiver_account_name)
+            (escrow_agent_account_name) 
+          )
 
 FC_REFLECT_ENUM( bts::wallet::wallet_record_type_enum,
         (master_key_record_type)
