@@ -69,6 +69,10 @@ with open("libraries/net/include/bts/net/config.hpp") as config:
                 tmp.write(line)
 os.rename("tmp_config", "libraries/net/include/bts/net/config.hpp")
 
+old_balances = []
+with open("libraries/blockchain/genesis.json") as genesis:
+    old_balances = json.load(genesis)["balances"]
+
 with open("libraries/blockchain/genesis.json", "w") as genesis:
     genesis.write(json.dumps(new_genesis, indent=4))
 
