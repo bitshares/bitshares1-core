@@ -228,10 +228,9 @@ struct ballot
       return fc::digest(*this);
    }
    compact_signature authorize_voter(const public_key_type& voter_public_key,
-                                     const private_key& registrar_private_key)const;
-   bts::blockchain::public_key_type ballot::get_authorizing_registrar(
-         const compact_signature& authorization,
-         const public_key_type& voter_public_key)const;
+                                     const fc::ecc::private_key& registrar_private_key)const;
+   public_key_type get_authorizing_registrar(const compact_signature& authorization,
+                                             const public_key_type& voter_public_key)const;
 };
 
 /**
