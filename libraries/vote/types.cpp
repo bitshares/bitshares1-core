@@ -57,14 +57,28 @@ void identity::sign(const blockchain::private_key_type& key,
       property.verifier_signatures.push_back(signature_data::sign(key, property.id(owner), valid_from, valid_until));
 }
 
-digest_type ballot::digest() const
+digest_type identity_verification_request::digest() const
 {
    return fc::digest(*this);
 }
 
-digest_type identity_verification_request::digest() const
+fc::ecc::compact_signature ballot::authorize_voter(const blockchain::public_key_type& voter_public_key,
+                                                   const fc::ecc::private_key& registrar_private_key) const
 {
-   return fc::digest(*this);
+   fc::sha256::encoder enc;
+   fc::raw::pack(enc, voter_public_key);
+   fc::raw::pack(enc, id());
+   return registrar_private_key.sign_compact(enc.result());
+}
+
+bts::blockchain::public_key_type ballot::get_authorizing_registrar(
+      const fc::ecc::compact_signature& authorization,
+      const bts::blockchain::public_key_type& voter_public_key) const
+{
+   fc::sha256::encoder enc;
+   fc::raw::pack(enc, voter_public_key);
+   fc::raw::pack(enc, id());
+   return fc::ecc::public_key(authorization, enc.result());
 }
 
 } } // namespace bts::vote

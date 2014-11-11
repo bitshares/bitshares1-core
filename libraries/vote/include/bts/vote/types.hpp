@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fc/crypto/sha256.hpp>
+#include <fc/crypto/digest.hpp>
 #include <fc/time.hpp>
 
 #include <bts/blockchain/types.hpp>
@@ -179,45 +179,91 @@ struct identity_verification_response
    fc::optional<bool> voter_reg_photo_valid;
 };
 
-/**
- * A ballot is cast in a database/blockchain and recognizes
- * candidates by the hash of their name.
- */
-struct ballot
+struct contestant
 {
-   uint32_t        election_id  = 0;
-   uint64_t        candidate_id = 0;    // Hash of candidate's full name lower case.
-   bool            approve      = true; // For approval voting
-   time_point_sec  date;
-
-   digest_type digest()const;
+   string name;
+   string description;
 };
 
 /**
- *  For a ballot to be counted it must be signed by a voter who has had
- *  their pulbic key signed by one or more registrars.  The count will
- *  varry based upon how the ballots are interpreted (approval, winner takes all, etc),
- *  with one election we can have many alternative results simultaniously.
+ * @brief A contest is one of the questions on which voters may specify an opinion.
+ *
+ * A contest has a name and a description, and also a list of free-form tags which are used to specify details about
+ * that particular contest (what type of contest is it, what district it pertains to, hints on how to render it in a
+ * GUI, etc. etc.). Finally, a contest has some list of contestants which voters may specify opinions on.
+ *
+ * This format of representation was chosen to provide the utmost flexibility in what can be represented unambiguously
+ * on the blockchain. This is because real-world contests are often defined in off-the-cuff, unstructured ways and the
+ * blockchain must be capable of storing this data, and a UI needs to be able to display it in a sane format. A
+ * free-form list of tags allows arbitrary contest types to be defined as needed, and provides hints for GUIs to render
+ * them elegantly.
  */
-struct signed_ballot : public ballot
+struct contest
 {
-   /**
-    *  The registrar's signature on the address(voter_public_key)
-    */
-   vector<compact_signature>  registrar_signatures;
-   /** voters signature on ballot::digest() */
-   compact_signature          voter_signature;
+   string name;
+   string description;
+   vector<string> tags;
+   ///Contestants are identified in decisions by their index in this vector
+   vector<contestant> contestants;
 
-   void                    sign( const private_key_type& voter_private_key )
+   digest_type id()const
    {
-      voter_signature = voter_private_key.sign_compact(digest());
+      return fc::digest(*this);
    }
-   public_key_type         voter_public_key()const
+};
+
+/**
+ * @brief A ballot is a list of contests which a particular voter may vote for.
+ *
+ * A voter is assigned a ballot by the ID verifier based on his geographical location.
+ */
+struct ballot
+{
+   string title;
+   string description;
+   vector<digest_type> contests;
+
+   digest_type id()const
+   {
+      return fc::digest(*this);
+   }
+   compact_signature authorize_voter(const public_key_type& voter_public_key,
+                                     const private_key& registrar_private_key)const;
+   bts::blockchain::public_key_type ballot::get_authorizing_registrar(
+         const compact_signature& authorization,
+         const public_key_type& voter_public_key)const;
+};
+
+/**
+ * @brief A voter_decision represents a vote on a particular contest.
+ *
+ * When a voter votes on a particular contest, he specifies opinions on some subset of the contestants, and potentially
+ * some write-in contestants. A voter may only specify one opinion per contestant. Only the last valid decision per
+ * voter per contest should be counted.
+ *
+ * Each opinion is comprised of a contestant ID and a number. The contestant ID is the index of the contestant in the
+ * contest structure above. Write-in contestant IDs are the sum of the size of the list of official contestants and the
+ * index of the desired write-in contestant in the vector write_in_names, thus if there are 4 official contestants, the
+ * first contestant in write_in_names would be ID 4; the next would be ID 5, etc.
+ */
+struct voter_decision
+{
+   digest_type contest_id;
+   vector<string> write_in_names;
+   map<fc::signed_int, fc::signed_int> voter_opinions;
+   fc::ecc::compact_signature voter_signature;
+   digest_type ballot_id;
+   vector<fc::ecc::compact_signature> registrar_authorizations;
+
+   digest_type digest()const
+   {
+      return fc::digest(*this);
+   }
+   bts::blockchain::public_key_type voter_public_key()const
    {
       return fc::ecc::public_key(voter_signature, digest());
    }
 };
-
 
 // wallet state protected by user password and should be encrypted when stored on disk.
 struct wallet_state
@@ -233,7 +279,7 @@ struct wallet_state
      vector<compact_signature>  registrars;
 
      // trx history
-     vector<signed_ballot>   cast_ballots;
+     vector<voter_decision>   decisions;
 };
 
 } } // bts::vote
@@ -250,8 +296,10 @@ FC_REFLECT_DERIVED( bts::vote::identity_verification_request_summary, (bts::vote
 FC_REFLECT( bts::vote::identity_verification_response, (accepted)
             (rejection_reason)(verified_identity)(expiration_date)
             (owner_photo_valid)(id_front_photo_valid)(id_back_photo_valid)(voter_reg_photo_valid))
-FC_REFLECT( bts::vote::ballot, (election_id)(candidate_id)(approve)(date) )
-FC_REFLECT_DERIVED( bts::vote::signed_ballot, (bts::vote::ballot), (registrar_signatures)(voter_signature) )
 FC_REFLECT_TYPENAME( bts::vote::request_status_enum )
 FC_REFLECT_ENUM( bts::vote::request_status_enum,
                  (awaiting_processing)(in_processing)(accepted)(rejected) )
+FC_REFLECT( bts::vote::contestant, (name)(description) )
+FC_REFLECT( bts::vote::contest, (name)(description)(tags)(contestants) )
+FC_REFLECT( bts::vote::ballot, (title)(description)(contests) )
+FC_REFLECT( bts::vote::voter_decision, (contest_id)(write_in_names)(voter_opinions)(voter_signature) )
