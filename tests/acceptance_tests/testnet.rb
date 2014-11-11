@@ -37,7 +37,6 @@ module BitShares
       clientnode = BitSharesNode.new @client_binary, name: dir, data_dir: td(dir), genesis: 'genesis.json', http_port: port, p2p_port: @p2p_port, logger: @logger
       clientnode.start(false)
       if create_wallet
-        clientnode.exec 'enable_raw'
         clientnode.exec 'wallet_create', 'default', '123456789'
         clientnode.exec 'wallet_unlock', '9999999', '123456789'
       end
@@ -135,7 +134,6 @@ module BitShares
 
       nodes = [@delegate_node, @alice_node, @bob_node]
       wait_nodes(nodes)
-      nodes.each{ |n| n.exec 'enable_raw' }
     end
 
     def create
