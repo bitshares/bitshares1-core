@@ -73,6 +73,8 @@ old_balances = []
 with open("libraries/blockchain/genesis.json") as genesis:
     old_balances = json.load(genesis)["balances"]
 
+new_genesis["balances"] = old_balances
+
 with open("libraries/blockchain/genesis.json", "w") as genesis:
     genesis.write(json.dumps(new_genesis, indent=4))
 

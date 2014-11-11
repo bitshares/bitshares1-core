@@ -238,6 +238,11 @@ namespace bts { namespace wallet {
                                                  bool create_account = false );
 
          address  create_new_address( const string& account_name, const string& label);
+
+         void              set_address_label( const address& addr, const string& label );
+         void              set_address_virtual_account( const address& addr, const string& virtual_account );
+         vector<address>   get_addresses_for_virtual_account( const string& virtual_account );
+
          ///@}
 
          /**
