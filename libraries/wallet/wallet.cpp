@@ -1709,9 +1709,8 @@ namespace detail {
       unordered_set<address> required_signatures;
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account );
+      FC_ASSERT( current_account.valid() && current_account->is_delegate() );
       auto payer_public_key = get_account_public_key( account_to_publish_under );
-      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
