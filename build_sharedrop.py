@@ -1,4 +1,4 @@
-# BTS merger allocation draft 1
+# BTS merger allocation draft 3
 
 #  ags-pts-nov-5.json
 #  662e2bd091a401108fd9736dd556a2c8744111e1  -
@@ -16,22 +16,45 @@ import json
 # Collect (address, balance) pairs
 exodus_balances = []
 
+# signatures at end of file
+substitutions = dict([
+    ("178RVtWSyrCD8N1BnSdiSbMMokD2foQhAd", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("1GJczjbQF8evXsLCHpX9sNXQ3m2QbwH2Wv", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("19btdFcvEgF6t7hyr5n4gzsGitHZjk7uF4", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("1J9FPXTMJXwh1mC4CYDp8kjtgsQehiVos4", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("18Cpgt8w1aFsGBc3s82NMCU5RiRE1kiEe3", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("1MnEmUHF9TYXMio86dTGXvRxeirW4VFE9w", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("1DL9Rt8bWZbmNbSMZedqA2WeFRUeJS415s", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("1QC9jKo53vAdo6zYUcHwpJWqGwCe5voxLv", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("1JtuJEr3cGL7AyB4xcg9qMLjWV73qnHRBt", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("1G3HMZzCr4QDihJEpz1arrmR4swm7krinM", "1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb"), 
+    ("Pe9F7tmq8Wxd2bCkFrW6nc4h5RASAzHAWC", "PmBR2p6uYY1SKhB9FbdHMbSGcqjEGsfK2n"),
+    ("1376AFc3gfic94o9yK1dx7JMMqxzfbssrg", "1gD8zEUgPN6imT3uGUqVVnxT5agAH9r4Y"),
+])
+
+
 # All assets have precision 10**8
 
 # These should add up to 500m * 10**8
 bts_added = 0
-bts_exluded = 0
+bts_excluded = 0
 
-# AGS and PTS - generated using snapshot tool. No substitutions.
+# AGS and PTS - generated using snapshot tool.
 with open("ags-pts-nov-5.json") as agspts:
     snapshot = json.load(agspts)
     agspts_total = 0
     for item in snapshot["balances"]:
+        balance = int(item[1])
         if item[0] == "KEYHOTEE_FOUNDERS":
-            bts_exluded += int(item[1])
+            bts_excluded += balance
             continue
+        if item[0] == "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
+            balance -= 297806854702309
+            # Dan adds another vested interest
+            exodus_balances.append(["1CTicY4ESkTqD5n5kFVTeNees7cq7tboXe", 297806854702309])
+            print "If this line gets printed twice, it means the PaNGEL address donated to AGS!"
         agspts_total += int(item[1])
-        exodus_balances.append(item)
+        exodus_balances.append([item[0], balance])
         bts_added += int(item[1])
 
 # VOTE
@@ -41,7 +64,7 @@ with open("vote-aug-21-noFMV.json") as vote:
     for item in snapshot["balances"]:
         if item[0] == "KEYHOTEE_FOUNDERS":
             #print "removing keyhotee ags: " + str(item[1])
-            bts_exluded += int(item[1])
+            bts_excluded += int(item[1])
             continue
         vote_total += int(item[1])
         exodus_balances.append(item)
@@ -110,8 +133,18 @@ with open("dns-collapse.json") as collapse:
   
     bts_for_exchanges = bts_to_bonus * 2/3 # 10000000 * 10**8
     print "bts for exchanges: " + str(bts_for_exchanges / 10**8)
-    exodus_balances.append(["PZ6KoPSkGD3dqiFzoueTmreAxWBCgvRKQ5", bts_for_exchanges])
-    bts_added += bts_for_exchanges
+    with open("exchanges.json") as exchanges:
+        exchanges = json.load(exchanges)
+        ex_total = 0
+        for item in exchanges:
+            ex_total += item["proportion"]
+        for item in exchanges:
+            print item["name"]
+            bts_to_exchange = int(bts_for_exchanges * 1.0 * item["proportion"] / ex_total)
+            exodus_balances.append([item["address"], bts_to_exchange])
+            bts_added += bts_to_exchange
+            print bts_to_exchange
+
     scale = 1.0 * (bts_to_bonus - bts_for_exchanges) / collapse_total
     for item in collapse:
         if item[0] in devkeys:
@@ -123,23 +156,90 @@ with open("dns-collapse.json") as collapse:
         exodus_balances.append([item[0], balance])
         bts_added += balance
 
+# bts_added and bts_excluded add up at this point. Any further changes have to adjust both balances
 
-print "bts_added: " + str(bts_added)
-print "bts_excluded: " + str(bts_exluded)
-print "total reviewed: " + str(bts_added + bts_exluded)
-
-real_total = 0
 output = []
 for item in exodus_balances:
     if item[1] != 0:
-        real_total += item[1]
+        address = item[0]
+        if address in substitutions.keys():
+            print "substituting address: " + address + " for amount " + str(item[1] / 10 ** 8)
+            address = substitutions[address]
+       
+        # ~ 1 in 600 million chance... not a coincidence
+        if address.startswith("PaNGEL") and address != "PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw":
+            bts_added -= item[1]
+            bts_excluded += item[1]
+            print "Removed from pangel scammer: " + str(item[1] / 10**8)
+            continue
+        
         obj = {
-            "raw_address": item[0],
+            "raw_address": address,
             "balance": item[1]
         }
         output.append(obj)
 
-print "Real total: " + str(real_total / 10**8)
+print "bts_added: " + str(bts_added)
+print "bts_excluded: " + str(bts_excluded)
+print "total reviewed: " + str(bts_added + bts_excluded)
 
 with open("libraries/blockchain/bts-sharedrop.json", "w") as sharedrop:
     sharedrop.write(json.dumps(output, indent=4))
+
+
+# coinbase substitutions - signatures confirmed by toast
+# https://bitsharestalk.org/index.php?topic=9516.msg123741#msg123741
+# Address: 178RVtWSyrCD8N1BnSdiSbMMokD2foQhAd
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: G4SbByvsoQhLVjyA3ZDwNUZW/cYO2pJK/HsaS2KgGajMUAQMZw+ZxuD82sRzq88l30fWVgn+gYoDs1uvE6gLPbY=
+# 
+# Address: 1GJczjbQF8evXsLCHpX9sNXQ3m2QbwH2Wv
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: GwrBVRWHmbyhFIkD5aDRxPDIS6I1HubOZEAw+9OPHAEuRS3SH6Wy6Ma9ndKDLdmc/TF279ADDLxbYr6k1ucy8ao=
+# 
+# Address: 19btdFcvEgF6t7hyr5n4gzsGitHZjk7uF4
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: HDdneKnMiA5dc9uKPHlPSSI53WBL0QQw43oRhKjLOePQfzPZN39gKEZObxg45Hb8MIyq6sEBO5vfY1vJaRokHjQ=
+# 
+# Address: 1J9FPXTMJXwh1mC4CYDp8kjtgsQehiVos4
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: HIxFt5eGHnvLe5jgqxzP6ZuKCeVJn7hb4JgVLaFOZE4vSJNJ6qrD/ScIXny2pjOqLekdoGL11st+Jd+rmXADVQQ=
+# 
+# Address: 18Cpgt8w1aFsGBc3s82NMCU5RiRE1kiEe3
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: HE2tfLu9bz5GQ3pNxYLmY/vIfytnblIgqmqxWKxCqRZRuMpsXra049k+vzmKU2bOcLzpZm0OKlaW+vPOA0bHe/k=
+# 
+# Address: 1MnEmUHF9TYXMio86dTGXvRxeirW4VFE9w
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: G8jfexkOvKP9LLtT6pzrplIVUXja/eoWsToCFMC55uqv/w5np0A9P4ijBqLrd9lKMouwHl6jlIN+qlkBXnoVCXU=
+# 
+# Address: 1DL9Rt8bWZbmNbSMZedqA2WeFRUeJS415s
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: G2gllIrPC6iWBB+LBHdMdPigOFC8yhShikKJwt4lv+Nwz+Ff7sQFpvaq4Z/1yui3ngnlKdi7JdkgE04WDTf5Mgs=
+# 
+# Address: 1QC9jKo53vAdo6zYUcHwpJWqGwCe5voxLv
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: G8j7vZOXw6EJ4/bOXAwKQppyK9YxXSgMrRwdvwnNrJu7uRajHfYN346LWiFwz0pqLkA7+vI2xJ4D7GCFXcVDlMI=
+# 
+# Address: 1JtuJEr3cGL7AyB4xcg9qMLjWV73qnHRBt
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: G7iO3R96/ojfmba3v9spFQEIDUYVwjd7fXpjmb7fw5uy4sOizXbyLXvOX5AUFPlLakKqDjKE5AftdC4XE8/eG+k=
+# 
+# Address: 1G3HMZzCr4QDihJEpz1arrmR4swm7krinM
+# Message: New BTC Address: 1KfjASdNiX97R8eJM9HPbnKcFWZ8RRhzzb
+# Signature: HJk5aiPFINZ9+3yKe9h7yZPuPY6yLY05T27bBReEAYDr2jCHrmDhmFzkwe8/+dtnz
+
+
+# educatedwarrior theft - confirmed manually by BM 
+
+# ILuXgc0SsMz4vBni3kRBoAiWc6m2bJnUiqMpyRgNI8Zjf4n/ikFFuflV/cQv4p6PRuKxw6CwQ1mD3CC/EEki8Kw=
+# "Bastard stole my PTS.  Whip his ass."
+# if address == "Pe9F7tmq8Wxd2bCkFrW6nc4h5RASAzHAWC":
+#    address = "PmBR2p6uYY1SKhB9FbdHMbSGcqjEGsfK2n"
+
+# H0eoaUht5pgKeO0W6U+graUn2kkyTxybb5ttkdZ8BxOBamghu0vB/ZbBw4329LbzKIZIoH4QtTTLPAFBqmX6IR4=
+# "Dan is the man with the plan!"  - same person
+# if address == "1376AFc3gfic94o9yK1dx7JMMqxzfbssrg":
+#    address = "1gD8zEUgPN6imT3uGUqVVnxT5agAH9r4Y"
+
+
