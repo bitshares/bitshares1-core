@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <fc/crypto/sha512.hpp>
+#include <bts/blockchain/config.hpp>
 
 #include <cstdio>
 #include <cstdlib>
@@ -25,7 +26,13 @@ static void _warn()
               << "********************************************************************************\n";
     deterministic_rand_warning_shown = true;
   }
-  return;    
+#ifndef BTS_TEST_NETWORK
+  std::cerr << "This program looks like a production application, but is calling the deterministic RNG.\n"
+            << "Perhaps the compile-time options in config.hpp were misconfigured?\n"
+  exit(1);
+#else
+  return;
+#endif
 }
 
 // These don't need to do anything if you don't have anything for them to do.
