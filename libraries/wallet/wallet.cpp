@@ -69,7 +69,7 @@ namespace detail {
          FC_CAPTURE_AND_THROW( insufficient_funds, (from_account_name)(amount_to_withdraw)(balance_records) );
       for( const auto& record : balance_records.at( from_account_name ) )
       {
-          const asset balance = record.get_balance();
+          const asset balance = record.get_spendable_balance( _blockchain->get_pending_state()->now() );
           if( balance.amount <= 0 || balance.asset_id != amount_remaining.asset_id )
               continue;
 
@@ -518,7 +518,7 @@ namespace detail {
       return get_new_private_key( account_name ).get_public_key();
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
-   address wallet_impl::get_new_address( const string& account_name )
+   address wallet_impl::get_new_address( const string& account_name, const string& label )
    { try {
       return address( get_new_public_key( account_name ) );
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
@@ -1454,10 +1454,10 @@ namespace detail {
            auto oslate = my->_blockchain->get_delegate_slate( balance.delegate_slate_id() );
            if( oslate.valid() )
            {
-               total += balance.get_balance().amount * oslate->supported_delegates.size();
+               total += balance.get_spendable_balance( my->_blockchain->now() ).amount * oslate->supported_delegates.size();
                ilog("total: ${t}", ("t", total));
            }
-           total_possible += balance.get_balance().amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
+           total_possible += balance.get_spendable_balance( my->_blockchain->now() ).amount * BTS_BLOCKCHAIN_MAX_SLATE_SIZE;
            ilog("total_possible: ${t}", ("t", total_possible));
        }
        ilog("total_possible: ${t}", ("t", total_possible));
@@ -1480,6 +1480,14 @@ namespace detail {
       FC_ASSERT( key->has_private_key() );
       return key->decrypt_private_key( my->_wallet_password );
    } FC_CAPTURE_AND_RETHROW( (addr) ) }
+
+   public_key_type  wallet::get_public_key( const address& addr) const
+   {
+       FC_ASSERT( is_open() );
+       auto key = my->_wallet_db.lookup_key( addr );
+       FC_ASSERT( key.valid(), "No known key for this address." );
+       return key->public_key;
+   }
 
    void wallet::set_delegate_block_production( const string& delegate_name, bool enabled )
    {
@@ -1556,6 +1564,28 @@ namespace detail {
       return my->_blockchain->get_next_producible_block_timestamp( delegate_ids );
    } FC_CAPTURE_AND_RETHROW() }
 
+
+    fc::ecc::compact_signature  wallet::sign_hash(const string& signer, const fc::sha256& hash )const
+    {
+        try {
+           auto key = public_key_type( signer );
+           auto privkey = get_private_key( address( key ) );
+           return privkey.sign_compact( hash );
+       }
+       catch (...)
+       {
+           try {
+               auto addr = address( signer );
+               auto privkey = get_private_key( addr );
+               return privkey.sign_compact( hash );
+           }
+           catch (...)
+           {
+               return get_active_private_key(signer).sign_compact(hash);
+           }
+       }
+    }
+
    void wallet::sign_block( signed_block_header& header )const
    { try {
       FC_ASSERT( is_unlocked() );
@@ -1565,7 +1595,7 @@ namespace detail {
       auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
       FC_ASSERT( delegate_record.is_delegate() && delegate_record.delegate_info.valid() );
       auto delegate_pub_key = delegate_record.delegate_info->block_signing_key;
-      auto delegate_key = get_private_key( address(delegate_pub_key) );
+      auto delegate_key = get_private_key( address( delegate_pub_key ) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
       header.previous_secret = my->get_secret( delegate_record.delegate_info->last_block_num_produced,
@@ -1679,9 +1709,8 @@ namespace detail {
       unordered_set<address> required_signatures;
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account );
+      FC_ASSERT( current_account.valid() && current_account->is_delegate() );
       auto payer_public_key = get_account_public_key( account_to_publish_under );
-      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
@@ -2278,7 +2307,7 @@ namespace detail {
 
              signed_transaction trx;
 
-             auto from_balance = balance_item.second.get_balance();
+             auto from_balance = balance_item.second.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
 
              if( from_balance.amount <= 0 )
                 continue;
@@ -2546,6 +2575,15 @@ namespace detail {
 
       return record;
    }
+
+   address  wallet::create_new_address( const string& account_name, const string& label )
+   {
+       FC_ASSERT( is_open() );
+       FC_ASSERT( is_unlocked() );
+       FC_ASSERT( my->is_receive_account( account_name ) );
+       return my->get_new_address( account_name, label );
+   }
+
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
@@ -3318,9 +3356,9 @@ namespace detail {
    asset wallet::get_transaction_fee( const asset_id_type& desired_fee_asset_id )const
    { try {
       FC_ASSERT( is_open() );
-      // TODO: support price conversion using price from blockchain
 
       asset xts_fee( BTS_WALLET_DEFAULT_TRANSACTION_FEE, 0 );
+
       try
       {
           xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
@@ -3331,22 +3369,23 @@ namespace detail {
 
       if( desired_fee_asset_id != 0 )
       {
-         const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
+         const oasset_record asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
-             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
-             if( median_price )
+             const oprice median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
+             if( median_price.valid() )
              {
                 xts_fee += xts_fee + xts_fee;
                 // fees paid in something other than XTS are discounted 50%
-                auto alt_fees_paid = xts_fee * *median_price;
+                const asset alt_fees_paid = xts_fee * *median_price;
                 return alt_fees_paid;
              }
          }
       }
+
       return xts_fee;
-       } FC_CAPTURE_AND_RETHROW() }
+   } FC_CAPTURE_AND_RETHROW( (desired_fee_asset_id) ) }
 
    bool wallet::asset_can_pay_fee(const asset_id_type& desired_fee_asset_id) const
    {
@@ -3701,11 +3740,7 @@ namespace detail {
 
           for( const auto& record : records )
           {
-#ifndef WIN32
-#warning [BTS] Keep old behaviour in mainnet until vesting is finalized
-#endif
-              //const auto balance = record.get_balance();
-              const auto balance = record.get_vested_balance( my->_blockchain->get_pending_state()->now() );
+              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
               balances[ name ][ balance.asset_id ] += balance.amount;
           }
       }
@@ -3726,7 +3761,7 @@ namespace detail {
 
           for( const auto& record : records )
           {
-              const auto balance = record.get_balance();
+              const auto balance = record.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
               // TODO: Memoize these
               const auto asset_rec = pending_state->get_asset_record( balance.asset_id );
               if( !asset_rec.valid() || !asset_rec->is_market_issued() ) continue;
@@ -3761,7 +3796,7 @@ namespace detail {
        return asset(0);
    }
 
-   asset  wallet::get_account_net_worth( const string& account_name, const string& symbol )const
+   asset wallet::get_account_net_worth( const string& account_name, const string& symbol )const
    {
        ulog("get_account_net_worth in asset:  USD");
        auto btsx_worth = asset( 0, 0 );
@@ -3770,9 +3805,9 @@ namespace detail {
        {
            for( auto record : map.second )
            {
-               auto asset = record.get_balance();
-               ulog("asset: ${asset}", ("asset", asset));
-               btsx_worth += asset_worth(asset, "BTS_BLOCKCHAIN_SYMBOL" );
+               //const auto balance = asset( record.balance, record.condition.asset_id );
+               //ulog("asset: ${asset}", ("asset", asset));
+               //btsx_worth += asset_worth(balance, "BTS_BLOCKCHAIN_SYMBOL" );
            }
        }
        // open orders
@@ -3800,7 +3835,7 @@ namespace detail {
           const auto obalance = pending_state->get_balance_record( item.first );
           if( !obalance.valid() ) continue;
 
-          const auto balance = obalance->get_balance();
+          const auto balance = obalance->get_spendable_balance( pending_state->now() );
           if( balance.amount <= 0 || balance.asset_id != 0 ) continue;
 
           const auto slate_id = obalance->delegate_slate_id();
@@ -3921,6 +3956,7 @@ namespace detail {
       }
       return account_keys;
    }
+   
 
    map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, uint32_t limit )const
    {
@@ -4034,5 +4070,29 @@ namespace detail {
       }
       return result;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol) ) }
+
+   vector<snapshot_record> wallet::check_sharedrop()const
+   { try {
+       vector<snapshot_record> snapshot_records;
+
+       const auto scan_balance = [&]( const balance_record& record )
+       {
+           if( !record.snapshot_info.valid() )
+               return;
+
+           if( record.condition.type != withdraw_vesting_type )
+               return;
+
+           const owallet_key_record key_record = my->_wallet_db.lookup_key( record.owner() );
+           if( !key_record.valid() || !key_record->has_private_key() )
+               return;
+
+           snapshot_records.push_back( *record.snapshot_info );
+       };
+
+       my->_blockchain->scan_balances( scan_balance );
+
+       return snapshot_records;
+   } FC_CAPTURE_AND_RETHROW() }
 
 } } // bts::wallet

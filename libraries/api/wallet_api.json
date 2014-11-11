@@ -313,6 +313,14 @@
         "aliases" : ["hx"]
       },
       {
+        "method_name": "wallet_check_sharedrop",
+        "description": "",
+        "return_type": "snapshot_record_list",
+        "parameters" : [],
+        "prerequisites" : ["wallet_open"],
+        "is_const": true
+      },
+      {
         "method_name": "wallet_remove_transaction",
         "description": "Removes the specified transaction record from your transaction history. USE WITH CAUTION! Rescan cannot reconstruct all transaction details",
         "return_type": "void",
@@ -529,6 +537,66 @@
         "aliases" : ["burn"]
       },
       {
+         "method_name" : "wallet_create_new_address",
+         "description" : "Creates an address which can be used for a simple (non-TITAN) transfer.",
+         "return_type" : "address",
+         "parameters"  : [
+            {
+              "name" : "account_name",
+              "type" : "string",
+              "description" : "The account name that will own this address"
+            },
+            {
+              "name" : "label",
+              "type" : "string",
+              "description" : "",
+              "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_open"],
+         "aliases": ["new_address"]
+      },
+      {
+         "method_name" : "wallet_transfer_asset_to_address",
+         "description" : "Do a simple (non-TITAN) transfer to an address",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "to_address",
+              "type" : "address",
+              "description" : "the address to transfer to"
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
+            }
+         ],
+         "prerequisites" : ["wallet_open"]
+      },
+      {
         "method_name": "wallet_transfer",
         "description": "Sends given amount to the given account, with the from field set to the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
         "return_type": "transaction_record",
@@ -569,6 +637,63 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer"]
+      },
+      {
+        "method_name": "wallet_transfer_from_with_escrow",
+        "description": "Sends given amount to the given name, with the from field set to a different account than the payer.  This transfer will occur in a single transaction and will be cheaper, but may reduce your privacy.",
+        "return_type": "transaction_record",
+        "parameters" :
+          [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "string",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "paying_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "sending_account_name",
+              "description" : "the account to show the recipient as being the sender (requires account's private key to be in wallet)."
+            },
+            {
+              "name" : "to_account_name",
+              "type" : "receive_account_name",
+              "description" : "the account to transfer the shares to"
+            },
+            {
+              "name" : "escrow_account_name",
+              "type" : "account_name",
+              "description" : "the account of the escrow agent which has the power to decide how to divide the funds among from/to accounts."
+            },
+            {
+              "name" : "agreement",
+              "type" : "digest",
+              "description" : "the hash of an agreement between the sender/receiver in the event a dispute arises can be given to escrow agent",
+              "default_value" : ""
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"]
       },
       {
         "method_name": "wallet_transfer_from",
@@ -1316,7 +1441,7 @@
             {
                "name" : "real_quantity_collateral_to_add",
                "type" : "string",
-               "description" : "the quantity of collateral of the base asset to add to the specified position",
+               "description" : "the quantity of collateral of the base asset to add to the specified position"
             }
           ],
          "prerequisites" : ["wallet_unlocked"],
@@ -1513,9 +1638,9 @@
          "return_type" : "compact_signature",
          "parameters"  : [
             {
-                "name" : "signing_account",
+                "name" : "signer",
                 "type" : "string",
-                "description" : "Name of the account to sign the message with"
+                "description" : "A public key, address, or account name whose key to sign with"
             },
             {
                 "name" : "hash",

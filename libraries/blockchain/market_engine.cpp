@@ -70,11 +70,15 @@ namespace bts { namespace blockchain { namespace detail {
 
           _feed_price = _db_impl.self->get_median_delegate_price( _quote_id, _base_id );
           // Market issued assets cannot match until the first time there is a median feed
-          if( quote_asset->is_market_issued() )
+#ifndef WIN32
+#warning [BTS] Possible market hardfork
+#endif
+          //if( quote_asset->is_market_issued() )
+          if( quote_asset->is_market_issued() && !base_asset->is_market_issued() )
           {
               const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
               if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
-                  FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id) );
+                  FC_CAPTURE_AND_THROW( insufficient_feeds, (quote_id)(base_id) );
           }
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
@@ -630,6 +634,8 @@ namespace bts { namespace blockchain { namespace detail {
                 --_collateral_itr;
                 return _current_ask.valid();
             }
+            --_collateral_itr;
+            continue;
         }
         _collateral_itr.reset();
         break;

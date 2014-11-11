@@ -295,7 +295,7 @@ variant_object client_impl::blockchain_get_info() const
    info["relay_fee"]                    = _chain_db->get_relay_fee();
 
    info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
-   info["max_delegate_pay_per_block"]   = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
+   info["max_delegate_pay_per_block"]   = _chain_db->get_max_delegate_pay_per_block();
    info["max_delegate_reg_fee"]         = _chain_db->get_delegate_registration_fee( 100 );
 
    info["name_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
@@ -482,16 +482,30 @@ string client_impl::blockchain_get_block_signee( const string& block )const
       return _chain_db->get_block_signee( std::stoi( block ) ).name;
 }
 
-bool client_impl::blockchain_verify_signature(const string& signing_account, const fc::sha256& hash, const fc::ecc::compact_signature& signature) const
+bool client_impl::blockchain_verify_signature(const string& signer, const fc::sha256& hash, const fc::ecc::compact_signature& signature) const
 {
-   oaccount_record rec = blockchain_get_account(signing_account);
-   if (!rec.valid())
-      return false;
+    try {
+        auto key = public_key_type( signer );
+        return key == fc::ecc::public_key(signature, hash);
+    }
+    catch (...)
+    {
+        try {
+            auto addr = address( signer );
+            return addr == address(fc::ecc::public_key( signature, hash ));
+        }
+        catch(...) {
+           oaccount_record rec = blockchain_get_account( signer );
+           if (!rec.valid())
+              return false;
 
-   // logic shamelessly copy-pasted from signed_block_header::validate_signee()
-   // NB LHS of == operator is bts::blockchain::public_key_type and RHS is fc::ecc::public_key,
-   //   the opposite order won't compile (look at operator== prototype in public_key_type class declaration)
-   return rec->active_key() == fc::ecc::public_key(signature, hash);
+           // logic shamelessly copy-pasted from signed_block_header::validate_signee()
+           // NB LHS of == operator is bts::blockchain::public_key_type and RHS is fc::ecc::public_key,
+           //   the opposite order won't compile (look at operator== prototype in public_key_type class declaration)
+           return rec->active_key() == fc::ecc::public_key(signature, hash);
+
+        }
+    }
 }
 
 void client_impl::blockchain_dump_state( const string& path )const

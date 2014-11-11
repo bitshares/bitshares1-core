@@ -15,11 +15,11 @@ namespace bts { namespace blockchain {
        * is provided the first time something is withdrawn */
       withdraw_null_type        = 0,
       withdraw_signature_type   = 1,
-      withdraw_multi_sig_type   = 2,
-      withdraw_password_type    = 3,
-      withdraw_option_type      = 4,
-      withdraw_escrow_type      = 5,
-      withdraw_vesting_type     = 6
+      withdraw_vesting_type     = 2,
+      withdraw_multi_sig_type   = 3,
+      withdraw_password_type    = 4,
+      withdraw_option_type      = 5,
+      withdraw_escrow_type      = 6
    };
 
    /**
@@ -54,6 +54,12 @@ namespace bts { namespace blockchain {
       std::vector<char>                                 data;
    };
 
+   struct titan_memo
+   {
+      public_key_type   one_time_key;
+      vector<char>      encrypted_memo_data;
+   };
+
    enum memo_flags_enum
    {
       from_memo = 0, ///< default memo type, the public key is who the deposit is from
@@ -68,7 +74,7 @@ namespace bts { namespace blockchain {
    struct memo_data
    {
       public_key_type                      from;
-      uint64_t                             from_signature;
+      uint64_t                             from_signature = 0;
 
       void        set_message( const std::string& message );
       std::string get_message()const;
@@ -83,26 +89,20 @@ namespace bts { namespace blockchain {
 
    struct memo_status : public memo_data
    {
-      memo_status():has_valid_signature(false){}
-
+      memo_status(){}
       memo_status( const memo_data& memo,
                    bool valid_signature,
                    const fc::ecc::private_key& opk );
 
-      bool                 has_valid_signature;
+      bool                 has_valid_signature = false;
       fc::ecc::private_key owner_private_key;
    };
    typedef fc::optional<memo_status> omemo_status;
 
-   struct titan_memo
-   {
-      public_key_type   one_time_key;
-      vector<char>      encrypted_memo_data;
-   };
-
    struct withdraw_with_signature
    {
       static const uint8_t    type;
+
       withdraw_with_signature( const address owner_arg = address() )
       :owner(owner_arg){}
 
@@ -119,6 +119,16 @@ namespace bts { namespace blockchain {
 
       address                 owner;
       optional<titan_memo>    memo;
+   };
+
+   struct withdraw_vesting
+   {
+       static const uint8_t type;
+
+       address              owner;
+       fc::time_point_sec   start_time;
+       uint32_t             duration = 0;
+       share_type           original_balance = 0;
    };
 
    struct withdraw_with_multi_sig
@@ -138,13 +148,19 @@ namespace bts { namespace blockchain {
       address                 receiver;
       address                 escrow;
       digest_type             agreement_digest;
-      optional<titan_memo>    memo;
-   };
 
-   struct withdraw_with_pts
-   {
-      public_key_type             new_key;
-      fc::ecc::compact_signature  pts_signature;
+      omemo_status decrypt_memo_data( const fc::ecc::private_key& receiver_key )const;
+      void         encrypt_memo_data( const fc::ecc::private_key& one_time_private_key,
+                                      const fc::ecc::public_key&  to_public_key,
+                                      const fc::ecc::private_key& from_private_key,
+                                      const std::string& memo_message,
+                                      const fc::ecc::public_key&  memo_pub_key,
+                                      memo_flags_enum memo_type = from_memo);
+
+      memo_data    decrypt_memo_data( const fc::sha512& secret )const;
+      void         encrypt_memo_data( const fc::sha512& secret, const memo_data& );
+
+      optional<titan_memo>    memo;
    };
 
    /**
@@ -182,17 +198,6 @@ namespace bts { namespace blockchain {
       price                strike_price;
    };
 
-   struct withdraw_vesting
-   {
-       static const uint8_t    type;
-
-       // a btc, pts, dns, btsx, or xts address
-       address                 owner;
-       fc::time_point_sec      vesting_start;
-       uint32_t                vesting_duration;
-       share_type              original_balance;
-   };
-
 } } // bts::blockchain
 
 namespace fc {
@@ -203,27 +208,71 @@ namespace fc {
 }
 
 FC_REFLECT_ENUM( bts::blockchain::withdraw_condition_types,
-                 (withdraw_null_type)
-                 (withdraw_signature_type)
-                 (withdraw_multi_sig_type)
-                 (withdraw_password_type)
-                 (withdraw_option_type)
-                 (withdraw_escrow_type)
-                 (withdraw_vesting_type)
-                 )
-
-FC_REFLECT( bts::blockchain::titan_memo, (one_time_key)(encrypted_memo_data) );
-FC_REFLECT( bts::blockchain::withdraw_condition, (asset_id)(delegate_slate_id)(type)(data) )
-FC_REFLECT( bts::blockchain::withdraw_with_signature, (owner)(memo) )
-FC_REFLECT( bts::blockchain::withdraw_with_multi_sig, (required)(owners)(memo) )
-FC_REFLECT( bts::blockchain::withdraw_with_password, (payee)(payor)(timeout)(password_hash)(memo) )
-FC_REFLECT( bts::blockchain::withdraw_option, (optionor)(optionee)(date)(strike_price) )
-FC_REFLECT( bts::blockchain::withdraw_with_pts, (new_key)(pts_signature) )
-FC_REFLECT( bts::blockchain::withdraw_vesting, (owner)(vesting_start)(vesting_duration)(original_balance) )
-FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum, (from_memo)(to_memo) )
-FC_REFLECT( bts::blockchain::memo_data, (from)(from_signature)(message)(memo_flags) );
+        (withdraw_null_type)
+        (withdraw_signature_type)
+        (withdraw_vesting_type)
+        (withdraw_multi_sig_type)
+        (withdraw_password_type)
+        (withdraw_option_type)
+        (withdraw_escrow_type)
+        )
+FC_REFLECT( bts::blockchain::withdraw_condition,
+        (asset_id)
+        (delegate_slate_id)
+        (type)
+        (data)
+        )
+FC_REFLECT( bts::blockchain::titan_memo,
+        (one_time_key)
+        (encrypted_memo_data)
+        )
+FC_REFLECT_ENUM( bts::blockchain::memo_flags_enum,
+        (from_memo)
+        (to_memo)
+        )
+FC_REFLECT( bts::blockchain::memo_data,
+        (from)
+        (from_signature)
+        (message)
+        (memo_flags)
+        )
 FC_REFLECT_DERIVED( bts::blockchain::memo_status,
-                    (bts::blockchain::memo_data),
-                    (has_valid_signature)(owner_private_key) )
-FC_REFLECT( bts::blockchain::withdraw_with_escrow, (sender)(receiver)(escrow)(agreement_digest)(memo) )
-
+        (bts::blockchain::memo_data),
+        (has_valid_signature)
+        (owner_private_key)
+        )
+FC_REFLECT( bts::blockchain::withdraw_with_signature,
+        (owner)
+        (memo)
+        )
+FC_REFLECT( bts::blockchain::withdraw_vesting,
+        (owner)
+        (start_time)
+        (duration)
+        (original_balance)
+        )
+FC_REFLECT( bts::blockchain::withdraw_with_multi_sig,
+        (required)
+        (owners)
+        (memo)
+        )
+FC_REFLECT( bts::blockchain::withdraw_with_password,
+        (payee)
+        (payor)
+        (timeout)
+        (password_hash)
+        (memo)
+        )
+FC_REFLECT( bts::blockchain::withdraw_option,
+        (optionor)
+        (optionee)
+        (date)
+        (strike_price)
+        )
+FC_REFLECT( bts::blockchain::withdraw_with_escrow,
+        (sender)
+        (receiver)
+        (escrow)
+        (agreement_digest)
+        (memo)
+        )

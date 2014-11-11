@@ -3,6 +3,9 @@
 #include <bts/utilities/key_conversion.hpp>
 #include <bts/wallet/config.hpp>
 #include <bts/wallet/exceptions.hpp>
+#include <fc/network/resolve.hpp>
+#include <fc/network/url.hpp>
+#include <fc/network/http/connection.hpp>
 
 #include <fc/thread/non_preemptable_scope_check.hpp>
 
@@ -89,7 +92,35 @@ void detail::client_impl::wallet_unlock( uint32_t timeout, const string& passwor
 {
   _wallet->unlock(password, timeout);
   reschedule_delegate_loop();
+  if( _config.wallet_callback_url.size() > 0 )
+  {
+     _http_callback_signal_connection = 
+        _wallet->wallet_claimed_transaction.connect( 
+            [=]( ledger_entry e ) { this->wallet_http_callback( _config.wallet_callback_url, e ); } );
+  }
 }
+
+void detail::client_impl::wallet_http_callback( const string& url, const ledger_entry& e )
+{
+   fc::async( [=]()
+              {
+                  fc::url u(url);
+                  if( u.host() )
+                  {
+                     auto endpoints = fc::resolve( *u.host(), u.port() ? *u.port() : 80 );
+                     for( auto ep : endpoints )
+                     {
+                        fc::http::connection con;
+                        con.connect_to( ep );
+                        auto response = con.request( "POST", url, fc::json::to_string(e) );
+                        if( response.status == fc::http::reply::OK )
+                           return;
+                     }
+                  }
+              }
+            );
+}
+
 
 void detail::client_impl::wallet_change_passphrase(const string& new_password)
 {
@@ -170,6 +201,33 @@ wallet_transaction_record detail::client_impl::wallet_burn(
     return record;
 }
 
+
+address  detail::client_impl::wallet_create_new_address( const string& account_name, const string& label )
+{
+    return _wallet->create_new_address( account_name, label );
+}
+
+
+wallet_transaction_record detail::client_impl::wallet_transfer_asset_to_address(
+        double amount_to_transfer,
+        const string& asset_symbol,
+        const string& from_account_name,
+        const address& to_address,
+        const string& memo_message,
+        const vote_selection_method& selection_method )
+{
+    auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
+                                      asset_symbol,
+                                      from_account_name,
+                                      to_address,
+                                      memo_message,
+                                      selection_method,
+                                      true);
+    network_broadcast_transaction( record.trx );
+    return record;
+
+}
+
 wallet_transaction_record detail::client_impl::wallet_transfer_from(
         const string& amount_to_transfer,
         const string& asset_symbol,
@@ -186,6 +244,40 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
     transaction_builder_ptr builder = _wallet->create_transaction_builder();
     auto record = builder->deposit_asset(payer, recipient, amount,
                                          memo_message, selection_method, sender.owner_key)
+                          .finalize()
+                          .sign();
+
+    network_broadcast_transaction( record.trx );
+    for( auto&& notice : builder->encrypted_notifications() )
+        _mail_client->send_encrypted_message(std::move(notice),
+                                             from_account_name,
+                                             to_account_name,
+                                             recipient.owner_key);
+
+    return record;
+}
+
+wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
+        const string& amount_to_transfer,
+        const string& asset_symbol,
+        const string& paying_account_name,
+        const string& from_account_name,
+        const string& to_account_name,
+        const string& escrow_account_name,
+        const digest_type&   agreement,
+        const string& memo_message,
+        const vote_selection_method& selection_method )
+{
+    asset amount = _chain_db->to_ugly_asset(amount_to_transfer, asset_symbol);
+    auto sender = _wallet->get_account(from_account_name);
+    auto payer = _wallet->get_account(paying_account_name);
+    auto recipient = _wallet->get_account(to_account_name);
+    auto escrow_account = _wallet->get_account(escrow_account_name);
+    transaction_builder_ptr builder = _wallet->create_transaction_builder();
+
+    auto record = builder->deposit_asset_with_escrow(payer, recipient, escrow_account, agreement,
+                                                     amount, memo_message, selection_method, 
+                                                     sender.owner_key)
                           .finalize()
                           .sign();
 
@@ -400,15 +492,15 @@ string detail::client_impl::wallet_dump_private_key( const std::string& input )
   return "key not found";
 }
 
-message detail::client_impl::wallet_mail_create(const std::string& sender,
-                                                const std::string& subject,
-                                                const std::string& body,
-                                                const message_id_type& reply_to)
+bts::mail::message detail::client_impl::wallet_mail_create(const std::string& sender,
+                                                           const std::string& subject,
+                                                           const std::string& body,
+                                                           const bts::mail::message_id_type& reply_to)
 {
     return _wallet->mail_create(sender, subject, body, reply_to);
 }
 
-message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, const message &plaintext)
+bts::mail::message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, const bts::mail::message &plaintext)
 {
     auto recipient_account = _chain_db->get_account_record(recipient);
     FC_ASSERT(recipient_account, "Unknown recipient name.");
@@ -416,7 +508,7 @@ message detail::client_impl::wallet_mail_encrypt(const std::string &recipient, c
     return _wallet->mail_encrypt(recipient_account->active_key(), plaintext);
 }
 
-mail::message detail::client_impl::wallet_mail_open(const address& recipient, const message& ciphertext)
+bts::mail::message detail::client_impl::wallet_mail_open(const address& recipient, const bts::mail::message& ciphertext)
 {
     return _wallet->mail_open(recipient, ciphertext);
 }
@@ -532,6 +624,11 @@ set<pretty_transaction_experimental> client_impl::wallet_transaction_history_exp
 #endif
    return _wallet->transaction_history_experimental( account_name );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+vector<snapshot_record> client_impl::wallet_check_sharedrop()const
+{ try {
+   return _wallet->check_sharedrop();
+} FC_CAPTURE_AND_RETHROW() }
 
 wallet_transaction_record client_impl::wallet_get_transaction( const string& transaction_id )
 { try {
@@ -774,9 +871,9 @@ bool client_impl::wallet_set_transaction_scanning( bool enabled )
     return _wallet->get_transaction_scanning();
 }
 
-fc::ecc::compact_signature client_impl::wallet_sign_hash(const string& signing_account, const fc::sha256& hash)
+fc::ecc::compact_signature client_impl::wallet_sign_hash(const string& signer, const fc::sha256& hash)
 {
-   return _wallet->get_active_private_key(signing_account).sign_compact(hash);
+    return _wallet->sign_hash( signer, hash );
 }
 
 std::string client_impl::wallet_login_start(const std::string &server_account)

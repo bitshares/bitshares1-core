@@ -912,7 +912,10 @@ namespace bts { namespace cli {
   {
     try
     {
-      wait_till_cli_shutdown();
+     ilog( "waiting on server to quit" );
+     my->_rpc_server->shutdown_rpc_server();
+     my->_rpc_server->wait_till_rpc_server_shutdown();
+     ilog( "rpc server shut down" );
     }
     catch( const fc::exception& e )
     {
@@ -921,14 +924,6 @@ namespace bts { namespace cli {
   }
 
   void cli::start() { my->start(); }
-
-  void cli::wait_till_cli_shutdown()
-  {
-     ilog( "waiting on server to quit" );
-     my->_rpc_server->close();
-     my->_rpc_server->wait_till_rpc_server_shutdown();
-     ilog( "rpc server shut down" );
-  }
 
   void cli::enable_output(bool enable_output)
   {

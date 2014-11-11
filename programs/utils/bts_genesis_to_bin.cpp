@@ -77,6 +77,8 @@ int main( int argc, char** argv )
     fc::raw::pack(genesis_bin, genesis_config);
     int first = true;
     int column = 0;
+    unsigned array_count = 0;
+    unsigned bytes_this_array = 0;
     std::istreambuf_iterator<char> end_iter;
     for (std::istreambuf_iterator<char> iter(genesis_bin.rdbuf());
          iter != end_iter; ++iter)    
@@ -84,8 +86,10 @@ int main( int argc, char** argv )
       if (first)
       {
         first = false;
+        source_out << "static const unsigned char raw_genesis_config" << array_count++ << "[] =\n";
+        source_out << "{\n";
         source_out << "  ";
-        column += 2;
+        column = 2;
       }
       else
       {
@@ -100,8 +104,50 @@ int main( int argc, char** argv )
       }
       source_out << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int)(unsigned char)*iter;
       column += 4;
+      ++bytes_this_array;
+      if (bytes_this_array > 1024*1024)
+      {
+        source_out << "\n";
+        source_out << "};\n\n";
+        bytes_this_array = 0;
+        first = true;
+      }
     }
-    source_out << "\n";
+
+    if (!first)
+    {
+      source_out << "\n";
+      source_out << "};\n\n";
+    }
+
+    source_out << "genesis_block_config get_builtin_genesis_block_config()\n";
+    source_out << "{\n";
+    source_out << "  unsigned total_size = ";
+    for (unsigned i = 0; i < array_count; ++i)
+    {
+      if (i)
+        source_out << "+ \n                        ";
+      source_out << "sizeof(" << "raw_genesis_config" << i << ")";
+    }
+    source_out << ";\n";
+    source_out << "  std::unique_ptr<char[]> buffer(new char[total_size]);\n";
+    source_out << "  char *ptr = buffer.get();\n";
+    for (unsigned i = 0; i < array_count; ++i)
+    {
+      source_out << "  memcpy(ptr, (const char*)raw_genesis_config" << i << ", sizeof(" << "raw_genesis_config" << i << "));\n";
+      source_out << "  ptr += sizeof(" << "raw_genesis_config" << i << ");\n";
+    }
+    source_out << "  return fc::raw::unpack<genesis_block_config>(buffer.get(), total_size);\n";
+    source_out << "}\n\n";
+
+    source_out << "fc::sha256 get_builtin_genesis_block_state_hash()\n";
+    source_out << "{\n";
+    source_out << "  fc::sha256::encoder encoder;\n";
+    for (unsigned i = 0; i < array_count; ++i)
+      source_out << "  encoder.write((const char*)raw_genesis_config" << i << ", sizeof(" << "raw_genesis_config" << i << "));\n";
+    source_out << "  return encoder.result();\n";
+    source_out << "}\n";
+
 
     if (option_variables.count("epilogue"))
     {

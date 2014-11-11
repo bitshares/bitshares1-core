@@ -173,14 +173,14 @@ struct chain_fixture
       clienta->open( clienta_dir.path(), clienta_dir.path() / "genesis.json" );
       clienta->configure_from_command_line( 0, nullptr );
       clienta->set_daemon_mode(true);
-      clienta->start();
+      _clienta_done = clienta->start();
       ilog( "... " );
 
       clientb = std::make_shared<bts::client::client>("dev_fixture", sim_network);
       clientb->open( clientb_dir.path(), clientb_dir.path() / "genesis.json" );
       clientb->configure_from_command_line( 0, nullptr );
       clientb->set_daemon_mode(true);
-      clientb->start();
+      _clientb_done = clientb->start();
       ilog( "... " );
 
       enable_logging();
@@ -251,6 +251,8 @@ struct chain_fixture
 
    ~chain_fixture()
    {
+     clienta.reset();
+     clientb.reset();
    }
 
    void exec( std::shared_ptr<bts::client::client> c, const string& command_to_run )
@@ -267,7 +269,9 @@ struct chain_fixture
    std::shared_ptr<bts::net::simulated_network> sim_network;
    std::shared_ptr<bts::net::simulated_network> sim_network_fork;
    std::shared_ptr<bts::client::client>        clienta;
+   fc::future<void>                            _clienta_done;
    std::shared_ptr<bts::client::client>        clientb;
+   fc::future<void>                            _clientb_done;
    fc::temp_directory             clienta_dir;
    fc::temp_directory             clientb_dir;
    vector<fc::ecc::private_key>   delegate_private_keys;

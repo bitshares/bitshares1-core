@@ -7,6 +7,3 @@
 #include <fc/io/raw.hpp>
 
 namespace bts { namespace blockchain {
-
-static const unsigned char raw_genesis_config[] =
-{

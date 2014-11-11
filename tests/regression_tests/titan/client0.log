@@ -5,7 +5,7 @@ delegate0                       19,801,980.19801 XTS
 default (unlocked) >>> wallet_add_contact_account account-for-client1 "XTS5qLJBGDBFX7BpBgs17tynUfvDpQGiMJGoXafF3Ro5JjvdR1n1j"
 OK
 default (unlocked) >>> wallet_account_create test-account
-"XTS7sBALSBA1rNiSWA1kqpponAXqrCXhRztLGwSxZjzLa3txJdUmp"
+"XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
 default (unlocked) >>> wallet_account_register test-account delegate0
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================

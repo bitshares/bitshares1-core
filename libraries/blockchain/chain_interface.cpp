@@ -6,6 +6,14 @@
 
 namespace bts { namespace blockchain {
 
+   optional<string> chain_interface::get_parent_account_name( const string& account_name )const
+   {
+      const size_t pos = account_name.find( '.' );
+      if( pos != string::npos )
+          return account_name.substr( pos + 1 );
+      return optional<string>();
+   }
+
    bool chain_interface::is_valid_account_name( const std::string& str )const
    {
       if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
@@ -49,60 +57,32 @@ namespace bts { namespace blockchain {
       return true;
    }
 
-   balance_record::balance_record( const address& owner, const asset& balance_arg, slate_id_type delegate_id )
+   // Starting 2014-11-06, delegates are issued max 50 shares per block produced, and this value is halved every 4 years
+   // just like in Bitcoin
+   share_type chain_interface::get_max_delegate_pay_per_block()const
    {
-      balance =  balance_arg.amount;
-      condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
-   }
+       share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
 
-   /** returns 0 if asset id is not condition.asset_id */
-   asset balance_record::get_balance()const
-   {
-      return asset( balance, condition.asset_id );
-   }
+       static const time_point_sec start_timestamp = time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
+       static const uint32_t seconds_per_period = fc::days( 4 * 365 ).to_seconds(); // Ignore leap years, leap seconds, etc.
 
-   asset balance_record::get_vested_balance(const fc::time_point_sec& now)const 
-   {
-       if( (withdraw_condition_types)this->condition.type != withdraw_vesting_type )
-           return get_balance();
-
-       auto condition = this->condition.as<withdraw_vesting>();
-       share_type max_claimable;
-       if( now < condition.vesting_start )
-           max_claimable = 0;
-       else if( now > condition.vesting_start + condition.vesting_duration )
-           max_claimable = condition.original_balance;
-       else
+       const time_point_sec now = this->now();
+       if( now >= start_timestamp )
        {
-           auto start = condition.vesting_start.sec_since_epoch();
-           auto max_duration = condition.vesting_duration;
-           auto real_duration = now.sec_since_epoch() - start;
-           FC_ASSERT( real_duration > 0, "duration is not positive when it should be" );
-           FC_ASSERT( real_duration < max_duration, "duration is more than max possible duration" );
-           max_claimable = real_duration * (condition.original_balance / max_duration);
+           const uint32_t elapsed_time = (now - start_timestamp).to_seconds();
+           const uint32_t num_full_periods = elapsed_time / seconds_per_period;
+           for( uint32_t i = 0; i < num_full_periods; ++i )
+               pay_per_block /= 2;
        }
 
-       auto real_claimable = max_claimable - (condition.original_balance - this->balance);
-       FC_ASSERT( 0 <= real_claimable && real_claimable <= condition.original_balance,
-                    "Got an impossible claimable amount for a vesting balance" );
-
-       return asset( real_claimable, 0 );
-   }
-
-   address balance_record::owner()const
-   {
-      if( condition.type == withdraw_signature_type )
-         return condition.as<withdraw_with_signature>().owner;
-      if( condition.type == withdraw_vesting_type )
-         return condition.as<withdraw_vesting>().owner;
-      return address();
+       return pay_per_block;
    }
 
    share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
-       static const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * BTS_MAX_DELEGATE_PAY_PER_BLOCK;
-       static const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
+       const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_per_block();
+       const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
        const share_type registration_fee = (max_pay_per_two_weeks * pay_rate) / 100;
        FC_ASSERT( registration_fee > 0 );
        return registration_fee;
@@ -163,7 +143,7 @@ namespace bts { namespace blockchain {
 
    void chain_interface::set_active_delegates( const std::vector<account_id_type>& delegate_ids )
    {
-      set_property( active_delegate_list_id, fc::variant(delegate_ids) );
+      set_property( active_delegate_list_id, fc::variant( delegate_ids ) );
    }
 
    bool chain_interface::is_active_delegate( const account_id_type& id )const
@@ -196,7 +176,6 @@ namespace bts { namespace blockchain {
       tmp.ratio /= oquote_asset->get_precision();
 
       return tmp.ratio_string() + " " + oquote_asset->symbol + " / " + obase_asset->symbol;
-
    } FC_CAPTURE_AND_RETHROW( (price_to_pretty_print) ) }
 
    asset chain_interface::to_ugly_asset(const std::string& amount, const std::string& symbol) const

@@ -23,7 +23,8 @@ namespace bts { namespace client {
 
     using namespace bts::blockchain;
     using namespace bts::wallet;
-    using namespace bts::mail;
+    using bts::mail::mail_client_ptr;
+    using bts::mail::mail_server_ptr;
 
     boost::program_options::variables_map parse_option_variables(int argc, char** argv);
     fc::path get_data_dir(const boost::program_options::variables_map& option_variables);
@@ -101,6 +102,7 @@ namespace bts { namespace client {
           fc::logging_config  logging;
           fc::ip::endpoint    delegate_server;
           vector<string>      default_delegate_peers;
+          string              wallet_callback_url;
 
           fc::optional<std::string> growl_notify_endpoint;
           fc::optional<std::string> growl_password;
@@ -200,6 +202,7 @@ FC_REFLECT( bts::client::config,
             (identity_verifier_enabled)(wallet_enabled)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers)
+            (wallet_callback_url)
             (growl_notify_endpoint)
             (growl_password)
             (growl_bitshares_client_identifier) )

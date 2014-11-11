@@ -630,12 +630,6 @@ namespace bts { namespace rpc {
       return boost::algorithm::trim_copy(help_string);
     }
 
-    void rpc_server_impl::shutdown_rpc_server()
-    {
-      if (!_on_quit_promise->ready())
-        _on_quit_promise->set_value();
-    }
-
   } // detail
 
 
@@ -653,7 +647,7 @@ namespace bts { namespace rpc {
   {
     try
     {
-      close();
+      shutdown_rpc_server();
       wait_till_rpc_server_shutdown();
       // just to be safe, destroy the  servers inside this try/catch block in case they throw
       my->_tcp_serv.reset();
@@ -773,28 +767,16 @@ namespace bts { namespace rpc {
     my->_method_map.insert(detail::rpc_server_impl::method_map_type::value_type(data.name, data));
   }
 
-  void rpc_server::close()
-  {
-    if( my->_on_quit_promise )
-       my->_on_quit_promise->set_value();
-    if (my->_tcp_serv)
-      my->_tcp_serv->close();
-    if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
-      my->_accept_loop_complete.cancel(__FUNCTION__);
-  }
 
   void rpc_server::wait_till_rpc_server_shutdown()
   {
     // wait until a quit has been signalled
-    if (!my->_on_quit_promise->ready())
+    try
     {
-      try
-      {
-        my->_on_quit_promise->wait();
-      }
-      catch (const fc::canceled_exception&)
-      {
-      }
+      my->_on_quit_promise->wait();
+    }
+    catch (const fc::canceled_exception&)
+    {
     }
     // if we were running a TCP server, also wait for it to shut down
     if (my->_tcp_serv && my->_accept_loop_complete.valid())
@@ -816,7 +798,12 @@ namespace bts { namespace rpc {
     // my->_thread->async([=]() { fc::usleep(fc::milliseconds(10)); close(); });
     // Because we never waited on the above call we would crash... when rpc_server is
     // deleted before it can execute.
-    close();
+    if( my->_on_quit_promise )
+       my->_on_quit_promise->set_value();
+    if (my->_tcp_serv)
+      my->_tcp_serv->close();
+    if( my->_accept_loop_complete.valid() && !my->_accept_loop_complete.ready())
+      my->_accept_loop_complete.cancel(__FUNCTION__);
   }
 
   std::string rpc_server::help(const std::string& command_name) const

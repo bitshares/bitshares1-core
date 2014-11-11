@@ -354,20 +354,23 @@ fc::path get_data_dir(const program_options::variables_map& option_variables)
       }
       else
       {
-         auto dir_name = string( BTS_BLOCKCHAIN_NAME );
+         const auto get_os_specific_dir_name = [&]( string dir_name ) -> string
+         {
 #ifdef WIN32
 #elif defined( __APPLE__ )
 #else
-         std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
-         dir_name.erase( end_pos, dir_name.end() );
-         dir_name = "." + dir_name;
+             std::string::iterator end_pos = std::remove( dir_name.begin(), dir_name.end(), ' ' );
+             dir_name.erase( end_pos, dir_name.end() );
+             dir_name = "." + dir_name;
 #endif
 
 #ifdef BTS_TEST_NETWORK
-         dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
+             dir_name += "-Test" + std::to_string( BTS_TEST_NETWORK_VERSION );
 #endif
+             return dir_name;
+         };
 
-         datadir = fc::app_path() / dir_name;
+         datadir = fc::app_path() / get_os_specific_dir_name( BTS_BLOCKCHAIN_NAME );
       }
       return datadir;
 
@@ -1347,6 +1350,9 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
       my->_p2p_node->set_node_delegate(my.get());
 
       my->start_rebroadcast_pending_loop();
+
+
+
    } FC_RETHROW_EXCEPTIONS( warn, "", ("data_dir",data_dir) ) }
 
 client::~client()
@@ -1354,6 +1360,13 @@ client::~client()
    if (my->_notifier)
       my->_notifier->client_is_shutting_down();
    my->cancel_delegate_loop();
+   try
+   {
+     my->_client_done.cancel_and_wait();
+   }
+   catch (...)
+   {
+   }
 }
 
 wallet_ptr client::get_wallet()const { return my->_wallet; }
@@ -1649,7 +1662,8 @@ void client::configure_from_command_line(int argc, char** argv)
 
 fc::future<void> client::start()
 {
-   return fc::async( [=](){ my->start(); }, "client::start" );
+   my->_client_done = fc::async( [=](){ my->start(); }, "client::start" );
+   return my->_client_done;
 }
 
 bool client::is_connected() const
