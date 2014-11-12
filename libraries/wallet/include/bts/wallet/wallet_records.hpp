@@ -147,25 +147,33 @@ namespace bts { namespace wallet {
                                                    const extended_private_key& k );
    };
 
+   // A public key can control a virtual bitcoind API compatible wallet
+   // which tries not interact with other bts accounts or TITAN transactions.
+   struct simple_wallet_data
+   {
+       string label = "";
+       string group_label = ""; // for fake bitcoin wallet "accounts"
+   };
+
    struct key_data
    {
-       address                  account_address;
-       public_key_type          public_key;
-       std::vector<char>        encrypted_private_key;
-       bool                     valid_from_signature = false;
-       optional<string>         memo; // this memo is not used for anything.
-       optional<string>         label;
-       optional<string>         virtual_account;
+       address                          account_address;
+       public_key_type                  public_key;
+       std::vector<char>                encrypted_private_key;
+       bool                             valid_from_signature = false;
+       optional<string>                 memo; // this memo is not used for anything.
+
+       optional<simple_wallet_data>     btc_data;
        /** defines the generation number that was used to generate the key
         * relative to the account address.
         */
-       uint32_t                 gen_seq_number = 0;
+       uint32_t                         gen_seq_number = 0;
 
-       address                  get_address()const { return address( public_key ); }
-       bool                     has_private_key()const;
-       void                     encrypt_private_key( const fc::sha512& password,
-                                                     const private_key_type& );
-       private_key_type         decrypt_private_key( const fc::sha512& password )const;
+       address                          get_address()const { return address( public_key ); }
+       bool                             has_private_key()const;
+       void                             encrypt_private_key( const fc::sha512& password,
+                                                             const private_key_type& );
+       private_key_type                 decrypt_private_key( const fc::sha512& password )const;
    };
 
    struct ledger_entry

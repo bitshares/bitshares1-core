@@ -16,7 +16,7 @@ string   detail::client_impl::btc_getaccount( const string& real_account,
                                               const string& asset_symbol,
                                               const address& addr ) const
 { try {
-    return _wallet->get_address_virtual_account( addr );
+    return _wallet->get_address_group_label( addr );
 } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 address   detail::client_impl::btc_getaccountaddress( const string& real_account,
@@ -31,7 +31,7 @@ vector<address>   detail::client_impl::btc_getaddressesbyaccount( const string& 
                                                                   const string& asset_symbol,
                                                                   const string& virtual_account ) const
 { try {
-    return _wallet->get_addresses_for_virtual_account( virtual_account );
+    return _wallet->get_addresses_for_group_label( virtual_account );
 } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 double   detail::client_impl::btc_getbalance( const string& real_account,
@@ -48,7 +48,7 @@ double   detail::client_impl::btc_getbalance( const string& real_account,
         if( bal.asset_id() != asset_rec->id )
             continue;
         auto addr = bal.owner();
-        auto virtual_acct = _wallet->get_address_virtual_account( addr );
+        auto virtual_acct = _wallet->get_address_group_label( addr );
         if( virtual_acct == virtual_account )
             total += bal.get_spendable_balance( _chain_db->now() );
     }
