@@ -48,15 +48,6 @@ namespace bts { namespace blockchain {
 
    bool chain_interface::is_valid_symbol_name( const string& name )const
    {
-#ifndef WIN32
-#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
-#endif
-       if( get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
-       {
-           if( name.size() > 5 )
-               return false;
-       }
-
       FC_ASSERT( name != "BTSX" );
 
       if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )

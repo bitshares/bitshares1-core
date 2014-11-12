@@ -2900,12 +2900,6 @@ namespace detail {
            account_type new_account_type,
            bool sign )
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
-#endif
-      if( delegate_pay_rate <= 100 && my->_blockchain->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
-          FC_ASSERT( !"Delegate registration disabled until next hardfork!" );
-
       if( !my->_blockchain->is_valid_account_name( account_to_register ) )
           FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_to_register",account_to_register) );
 
@@ -2992,12 +2986,6 @@ namespace detail {
            bool is_market_issued,
            bool sign )
    { try {
-#ifndef WIN32
-#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
-#endif
-      if( my->_blockchain->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
-          FC_ASSERT( !"New asset creation disabled until next hardfork!" );
-
       FC_ASSERT( create_asset_operation::is_power_of_ten( precision ) );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
@@ -3146,13 +3134,6 @@ namespace detail {
       optional<uint8_t> pay;
       if( delegate_pay_rate <= 100 )
           pay = delegate_pay_rate;
-
-#ifndef WIN32
-#warning [SOFTFORK] Remove after BTS_V0_4_24_FORK_BLOCK_NUM has passed
-#endif
-      if( !account.is_delegate() && delegate_pay_rate <= 100
-          && my->_blockchain->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
-          FC_ASSERT( !"Delegate registration disabled until next hardfork!" );
 
       auto builder = create_transaction_builder();
       builder->update_account_registration(account, public_data, optional<public_key_type>(), pay, payer).
