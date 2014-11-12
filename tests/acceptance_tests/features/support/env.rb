@@ -1,6 +1,7 @@
 require 'rspec/expectations'
 require 'logger'
 require './testnet.rb'
+require './webserver.rb'
 
 Actor = Struct.new(:node, :account) do
 end
@@ -9,7 +10,7 @@ class Helper
 
   def initialize
     @logger = Logger.new('features.log')
-    @logger.info '--------------------------------------'
+    @logger.info "\n\n____________________________________________________"
     @pause = false
   end
 

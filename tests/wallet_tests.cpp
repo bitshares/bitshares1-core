@@ -437,7 +437,7 @@ char** CommandLineToArgvA(const char* CmdLine, int* _argc)
 #endif
 
 using namespace boost;
-#include "deterministic_openssl_rand.hpp"
+#include <bts/utilities/deterministic_openssl_rand.hpp>
 #include <bts/utilities/key_conversion.hpp>
 
 void create_genesis_block(fc::path genesis_json_file)
@@ -448,7 +448,7 @@ void create_genesis_block(fc::path genesis_json_file)
    config.timestamp         = bts::blockchain::now();
 
    // set our fake random number generator to generate deterministic keys
-   set_random_seed_for_testing( fc::sha512::hash( string( "genesis" ) ) );
+   bts::utilities::set_random_seed_for_testing( fc::sha512::hash( string( "genesis" ) ) );
    std::ofstream key_stream( genesis_json_file.string() + ".keypairs" );
    //create a script for importing the delegate keys
    std::ofstream delegate_key_import_stream(genesis_json_file.string() + ".log");
@@ -489,7 +489,7 @@ void run_regression_test(fc::path test_dir, bool with_network)
 {
   bts::blockchain::start_simulated_time(fc::time_point_sec::min());
   // set our fake random number generator to generate deterministic keys
-  set_random_seed_for_testing( fc::sha512::hash( string( "regression" ) ) );
+  bts::utilities::set_random_seed_for_testing( fc::sha512::hash( string( "regression" ) ) );
   //  open testconfig file
   //  for each line in testconfig file
   //    add a verify_file object that knows the name of the input command file and the generated log file

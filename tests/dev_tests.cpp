@@ -21,23 +21,32 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clienta, "wallet_delegate_set_block_production delegate31 true" );
    exec( clienta, "wallet_delegate_set_block_production delegate33 true" );
    exec(clienta, "wallet_set_transaction_scanning true");
-   exec( clienta, "wallet_set_delegate_trust delegate33 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate34 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate35 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate36 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate37 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate38 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate39 true" );
+   exec( clienta, "wallet_account_set_approval delegate33 true" );
+   exec( clienta, "wallet_account_set_approval delegate34 true" );
+   exec( clienta, "wallet_account_set_approval delegate35 true" );
+   exec( clienta, "wallet_account_set_approval delegate36 true" );
+   exec( clienta, "wallet_account_set_approval delegate37 true" );
+   exec( clienta, "wallet_account_set_approval delegate38 true" );
+   exec( clienta, "wallet_account_set_approval delegate39 true" );
 
    wlog( "------------------  CLIENT B  -----------------------------------" );
    exec( clientb, "info" );
-   exec( clientb, "wallet_set_delegate_trust delegate23 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate24 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate25 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate26 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate27 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate28 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate29 true" );
+   exec( clientb, "wallet_account_set_approval delegate23 true" );
+   exec( clientb, "wallet_account_set_approval delegate24 true" );
+   exec( clientb, "wallet_account_set_approval delegate25 true" );
+   exec( clientb, "wallet_account_set_approval delegate26 true" );
+   exec( clientb, "wallet_account_set_approval delegate27 true" );
+   exec( clientb, "wallet_account_set_approval delegate28 true" );
+   exec( clientb, "wallet_account_set_approval delegate29 true" );
+
+   for( uint32_t i = 0; i < 10; ++i )
+   {
+      produce_block(clienta);
+   }
+   for( uint32_t i = 0; i < 10; ++i )
+   {
+      produce_block(clientb);
+   }
 
    exec( clientb, "wallet_list_my_accounts" );
    exec( clientb, "wallet_account_balance" );
@@ -214,6 +223,7 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec(clienta, "blockchain_calculate_supply BUSD");
    exec(clienta, "balance" );
    exec(clientb, "balance" );
+   exit(1);
    return;
    elog( "=====================================================================\n" );
    elog( "=====================================================================\n" );
@@ -352,13 +362,13 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    produce_block( clientb );
    exec( clientb, "wallet_account_transaction_history c-account" );
    exec( clientb, "blockchain_list_delegates" );
-   exec( clientb, "wallet_set_delegate_trust b-account true" );
+   exec( clientb, "wallet_account_set_approval b-account true" );
    exec( clientb, "wallet_list_my_accounts" );
    exec( clientb, "balance" );
    exec( clientb, "wallet_transfer 100000 XTS delegate32 c-account to-me" );
    exec( clientb, "wallet_transfer 100000 XTS delegate30 c-account to-me" );
    wlog( "------------------  CLIENT A  -----------------------------------" );
-   exec( clienta, "wallet_set_delegate_trust b-account true" );
+   exec( clienta, "wallet_account_set_approval b-account true" );
    // TODO: this should throw an exception from the wallet regarding delegate_vote_limit, but it produces
    // the transaction anyway.
    // TODO: before fixing the wallet production side to include multiple outputs and spread the vote,
@@ -447,40 +457,40 @@ BOOST_FIXTURE_TEST_CASE( basic_commands, chain_fixture )
    exec( clientb, "blockchain_list_delegates" );
 
 
-   exec( clienta, "wallet_set_delegate_trust delegate33 false" );
-   exec( clienta, "wallet_set_delegate_trust delegate34 false" );
-   exec( clienta, "wallet_set_delegate_trust delegate35 false" );
-   exec( clienta, "wallet_set_delegate_trust delegate36 false" );
-   exec( clienta, "wallet_set_delegate_trust delegate37 false" );
-   exec( clienta, "wallet_set_delegate_trust delegate38 false" );
-   exec( clienta, "wallet_set_delegate_trust delegate39 false" );
+   exec( clienta, "wallet_account_set_approval delegate33 false" );
+   exec( clienta, "wallet_account_set_approval delegate34 false" );
+   exec( clienta, "wallet_account_set_approval delegate35 false" );
+   exec( clienta, "wallet_account_set_approval delegate36 false" );
+   exec( clienta, "wallet_account_set_approval delegate37 false" );
+   exec( clienta, "wallet_account_set_approval delegate38 false" );
+   exec( clienta, "wallet_account_set_approval delegate39 false" );
 
 
-   exec( clientb, "wallet_set_delegate_trust delegate23 false" );
-   exec( clientb, "wallet_set_delegate_trust delegate24 false" );
-   exec( clientb, "wallet_set_delegate_trust delegate25 false" );
-   exec( clientb, "wallet_set_delegate_trust delegate26 false" );
-   exec( clientb, "wallet_set_delegate_trust delegate27 false" );
-   exec( clientb, "wallet_set_delegate_trust delegate28 false" );
-   exec( clientb, "wallet_set_delegate_trust delegate29 false" );
+   exec( clientb, "wallet_account_set_approval delegate23 false" );
+   exec( clientb, "wallet_account_set_approval delegate24 false" );
+   exec( clientb, "wallet_account_set_approval delegate25 false" );
+   exec( clientb, "wallet_account_set_approval delegate26 false" );
+   exec( clientb, "wallet_account_set_approval delegate27 false" );
+   exec( clientb, "wallet_account_set_approval delegate28 false" );
+   exec( clientb, "wallet_account_set_approval delegate29 false" );
 
    wlog( "------------------  CLIENT A  -----------------------------------" );
-   exec( clienta, "wallet_set_delegate_trust delegate44 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate44 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate45 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate46 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate47 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate48 true" );
-   exec( clienta, "wallet_set_delegate_trust delegate49 true" );
+   exec( clienta, "wallet_account_set_approval delegate44 true" );
+   exec( clienta, "wallet_account_set_approval delegate44 true" );
+   exec( clienta, "wallet_account_set_approval delegate45 true" );
+   exec( clienta, "wallet_account_set_approval delegate46 true" );
+   exec( clienta, "wallet_account_set_approval delegate47 true" );
+   exec( clienta, "wallet_account_set_approval delegate48 true" );
+   exec( clienta, "wallet_account_set_approval delegate49 true" );
 
    wlog( "------------------  CLIENT B  -----------------------------------" );
-   exec( clientb, "wallet_set_delegate_trust delegate63 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate64 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate65 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate66 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate67 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate68 true" );
-   exec( clientb, "wallet_set_delegate_trust delegate69 true" );
+   exec( clientb, "wallet_account_set_approval delegate63 true" );
+   exec( clientb, "wallet_account_set_approval delegate64 true" );
+   exec( clientb, "wallet_account_set_approval delegate65 true" );
+   exec( clientb, "wallet_account_set_approval delegate66 true" );
+   exec( clientb, "wallet_account_set_approval delegate67 true" );
+   exec( clientb, "wallet_account_set_approval delegate68 true" );
+   exec( clientb, "wallet_account_set_approval delegate69 true" );
    exec( clientb, "balance" );
    exec( clienta, "balance" );
    exec( clienta, "wallet_transfer 10691976.59801 XTS delegate31 delegate31 change_votes " );

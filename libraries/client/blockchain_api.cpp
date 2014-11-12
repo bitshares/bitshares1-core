@@ -178,7 +178,7 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std
       else
          asset_id = std::stoi( asset );
 
-      auto raw_feeds = _chain_db->get_feeds_for_asset(asset_id);
+      auto raw_feeds = _chain_db->get_feeds_for_asset(asset_id, asset_id_type( 0 ));
       vector<feed_entry> result_feeds;
       for( auto feed : raw_feeds )
       {
@@ -190,7 +190,7 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_for_asset(const std
          result_feeds.push_back({delegate->name, price, feed.last_update});
       }
 
-      auto omedian_price = _chain_db->get_median_delegate_price(asset_id);
+      auto omedian_price = _chain_db->get_median_delegate_price(asset_id, asset_id_type( 0 ));
       if( omedian_price )
          result_feeds.push_back({"MARKET", 0, _chain_db->now(), _chain_db->get_asset_symbol(asset_id), _chain_db->to_pretty_price_double(*omedian_price)});
 
@@ -211,7 +211,7 @@ vector<feed_entry> detail::client_impl::blockchain_get_feeds_from_delegate( cons
       {
          const double price = _chain_db->to_pretty_price_double( raw_feed.value.as<blockchain::price>() );
          const string asset_symbol = _chain_db->get_asset_symbol( raw_feed.feed.feed_id );
-         const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.feed.feed_id );
+         const auto omedian_price = _chain_db->get_median_delegate_price( raw_feed.feed.feed_id, asset_id_type( 0 ) );
          fc::optional<double> median_price;
          if( omedian_price )
             median_price = _chain_db->to_pretty_price_double( *omedian_price );

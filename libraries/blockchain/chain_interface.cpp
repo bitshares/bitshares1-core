@@ -74,18 +74,19 @@ namespace bts { namespace blockchain {
    // just like in Bitcoin
    share_type chain_interface::get_max_delegate_pay_per_block()const
    {
+       share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
+
        static const time_point_sec start_timestamp = time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
        static const uint32_t seconds_per_period = fc::days( 4 * 365 ).to_seconds(); // Ignore leap years, leap seconds, etc.
 
        const time_point_sec now = this->now();
-       FC_ASSERT( now >= start_timestamp );
-       const uint32_t elapsed_time = (now - start_timestamp).to_seconds();
-
-       const uint32_t num_full_periods = elapsed_time / seconds_per_period;
-
-       share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
-       for( uint32_t i = 0; i < num_full_periods; ++i )
-           pay_per_block /= 2;
+       if( now >= start_timestamp )
+       {
+           const uint32_t elapsed_time = (now - start_timestamp).to_seconds();
+           const uint32_t num_full_periods = elapsed_time / seconds_per_period;
+           for( uint32_t i = 0; i < num_full_periods; ++i )
+               pay_per_block /= 2;
+       }
 
        return pay_per_block;
    }

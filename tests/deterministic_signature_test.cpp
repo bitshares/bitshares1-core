@@ -2,14 +2,14 @@
 #include <boost/test/unit_test.hpp>
 
 #include <fc/crypto/elliptic.hpp>
-#include "deterministic_openssl_rand.hpp"
-
 #include <fc/crypto/sha256.hpp>
 #include <fc/time.hpp>
 #include <fc/thread/thread.hpp>
 #include <iostream>
 #include <algorithm>
 #include <fc/crypto/sha512.hpp>
+
+#include <bts/utilities/deterministic_openssl_rand.hpp>
 
 BOOST_AUTO_TEST_CASE(ecc_signatures)
 {
@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(ecc_signatures)
   BOOST_REQUIRE(first_nondeterministic_signature != second_nondeterministic_signature);
 
   // set our fake random number generator, generate two signatures
-  set_random_seed_for_testing(fc::sha512());
+  bts::utilities::set_random_seed_for_testing(fc::sha512());
 
   fc::ecc::signature first_deterministic_signature = signing_key.sign(hash_of_plaintext);
   fc::ecc::signature second_deterministic_signature = signing_key.sign(hash_of_plaintext);
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(ecc_signatures)
   BOOST_REQUIRE(first_deterministic_signature != first_nondeterministic_signature);
   BOOST_REQUIRE(second_deterministic_signature != second_nondeterministic_signature);
 
-  set_random_seed_for_testing(fc::sha512());
+  bts::utilities::set_random_seed_for_testing(fc::sha512());
   fc::ecc::signature third_deterministic_signature = signing_key.sign(hash_of_plaintext);
   fc::ecc::signature fourth_deterministic_signature = signing_key.sign(hash_of_plaintext);
   BOOST_REQUIRE(third_deterministic_signature == first_deterministic_signature);

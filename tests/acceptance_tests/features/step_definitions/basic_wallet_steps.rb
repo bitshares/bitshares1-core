@@ -47,3 +47,12 @@ Then(/^([\w]+) should have\s?(around)? ([\d,\.]+) ([A-Z]+) and ([\d,\.]+) ([A-Z]
   step "#{name} should have #{around} #{amount1} #{currency1}"
   step "#{name} should have #{around} #{amount2} #{currency2}"
 end
+
+Given(/^I'm running webserver$/) do
+  config = @current_actor.node.get_config
+  config['wallet_callback_url'] = 'http://localhost:23232/transactions/create'
+  @current_actor.node.stop
+  sleep 1.0
+  @current_actor.node.save_config(config)
+  @current_actor.node.start
+end
