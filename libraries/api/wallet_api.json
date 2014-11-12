@@ -1136,6 +1136,22 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name"    : "wallet_escrow_summary",
+         "description"    : "Lists the total asset balances for all open escrows",
+         "return_type"    : "escrow_summary_array",
+         "parameters"     : [
+         {
+            "name" : "account_name",
+            "type" : "account_name",
+            "description" : "the account to get a escrow summary for, or leave empty for all accounts",
+            "default_value" : ""
+         }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"],
+         "aliases" : ["escrow"]
+      },
+      {
          "method_name"    : "wallet_account_balance",
          "description"    : "Lists the total asset balances for the specified account",
          "return_type"    : "account_balance_summary_type",

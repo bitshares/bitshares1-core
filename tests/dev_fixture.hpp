@@ -228,12 +228,13 @@ struct chain_fixture
       auto head_num = my_client->get_chain()->get_head_block_num();
       const auto& delegates = my_client->get_wallet()->get_my_delegates( enabled_delegate_status | active_delegate_status );
       auto next_block_time = my_client->get_wallet()->get_next_producible_block_timestamp( delegates );
-      FC_ASSERT( next_block_time.valid() );
+      FC_ASSERT( next_block_time.valid(), "", ("delegates",delegates) );
       bts::blockchain::advance_time( (int32_t)((*next_block_time - bts::blockchain::now()).count()/1000000) );
       auto b = my_client->get_chain()->generate_block(*next_block_time);
       my_client->get_wallet()->sign_block( b );
       my_client->get_node()->broadcast( bts::client::block_message( b ) );
-      fc::usleep( fc::microseconds( 2000 ) );
+      idump( (b) );
+      fc::usleep( fc::microseconds( 200000 ) );
       FC_ASSERT( head_num+1 == my_client->get_chain()->get_head_block_num() );
       bts::blockchain::advance_time( 7 );
    }
