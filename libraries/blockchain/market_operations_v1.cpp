@@ -236,7 +236,7 @@ void short_operation_v1::evaluate( transaction_evaluation_state& eval_state )
       }
       else // if there is no average, there must be a median feed and the short must not be more than 10% above the feed
       {
-         auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
+         auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id, 0 );
          FC_ASSERT( median_delegate_price.valid() );
          auto feed_max_short_bid = *median_delegate_price;
          feed_max_short_bid.ratio *= 10;
@@ -282,7 +282,7 @@ void short_operation_v1::evaluate_v1( transaction_evaluation_state& eval_state )
    }
    else if( eval_state._current_state->get_head_block_num() >= BTS_V0_4_0_FORK_BLOCK_NUM )
    {
-      auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id );
+      auto median_delegate_price = eval_state._current_state->get_median_delegate_price( short_index.order_price.quote_asset_id, 0 );
       FC_ASSERT( median_delegate_price.valid() );
       auto feed_max_short_bid = *median_delegate_price;
       feed_max_short_bid.ratio *= 4;

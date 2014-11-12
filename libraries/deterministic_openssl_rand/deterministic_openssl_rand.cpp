@@ -28,7 +28,7 @@ static void _warn()
   }
 #ifndef BTS_TEST_NETWORK
   std::cerr << "This program looks like a production application, but is calling the deterministic RNG.\n"
-            << "Perhaps the compile-time options in config.hpp were misconfigured?\n"
+            << "Perhaps the compile-time options in config.hpp were misconfigured?\n";
   exit(1);
 #else
   return;
