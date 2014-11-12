@@ -3443,7 +3443,7 @@ namespace detail {
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
-             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
+             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id, asset_id_type( 0 ) );
              if( median_price )
              {
                 xts_fee += xts_fee + xts_fee;
