@@ -11,6 +11,7 @@
 #include <fc/log/console_appender.hpp>
 #include <fc/io/json.hpp>
 #include <fc/thread/thread.hpp>
+#include <bts/utilities/deterministic_openssl_rand.hpp>
 #include <bts/utilities/key_conversion.hpp>
 
 #include <fc/network/http/connection.hpp>
@@ -20,7 +21,6 @@
 
 #include <iostream>
 #include <fstream>
-#include "deterministic_openssl_rand.hpp"
 
 #include <fc/log/logger.hpp>
 #include <fc/log/file_appender.hpp>
@@ -43,7 +43,7 @@ struct chain_fixture
       sim_network = std::make_shared<bts::net::simulated_network>("dev_fixture");
 
       bts::blockchain::start_simulated_time(fc::time_point::from_iso_string( "20200101T000000" ));
-      set_random_seed_for_testing( fc::sha512() );
+      bts::utilities::set_random_seed_for_testing( fc::sha512() );
 
       //console.configure( {"",console_appender::stream::std_error,{},true} );
 
