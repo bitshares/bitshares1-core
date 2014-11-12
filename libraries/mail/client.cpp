@@ -419,7 +419,7 @@ public:
             mail_server_list successful_servers;
 
             for (mail_server_endpoint server : email.mail_servers) {
-                transmit_tasks.push_back(fc::async([&] {
+                transmit_tasks.push_back(fc::async([&, server] {
                     auto email = _processing_db.fetch(message_id);
                     tcp_socket sock;
 
@@ -518,7 +518,13 @@ public:
                 email = _processing_db.fetch(message_id);
                 if (email.status == client::failed) {
                     for (auto task_future : transmit_tasks)
-                        task_future.cancel_and_wait();
+                    {
+                        try {
+                            task_future.cancel_and_wait();
+                        } catch (...) {
+                            elog("Caught exception while canceling mail client transmitter task");
+                        }
+                    }
                     return;
                 }
                 transmit_tasks.pop_back();
