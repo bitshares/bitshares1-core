@@ -3,8 +3,10 @@ Feature: Transfer funds from one account to another
   I want to send funds to my friend
   So that I can make him happy
 
+@current
 Scenario: Alice sends 100 XTS to Bob
   Given I'm Alice
+  #And I'm running webserver
   And I received 1000 XTS from angel
   And I wait for one block
   And I print XTS balance
