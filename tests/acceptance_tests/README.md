@@ -10,7 +10,7 @@ Install Ruby:
 On Linux I recommend to use rvm to install Ruby, here is how to do this on Ubuntu:
 
 ``` bash
-  $ sudo apt-get install libgdbm-dev libncurses5-dev automake libtool bison libffi-dev
+  $ sudo apt-get install libgdbm-dev libncurses5-dev automake libtool bison libffi-dev curl
   $ curl -L https://get.rvm.io | bash -s stable
   $ source ~/.rvm/scripts/rvm
   $ echo "source ~/.rvm/scripts/rvm" >> ~/.bashrc
@@ -33,7 +33,7 @@ Now you can install all dependencies by typing 'bundle' inside bitshares_accepta
  
 Next define environment variable BTS_BUILD with path to your bitshares toolkit's build directory, e.g.:
 
-  $ export BTS_BUILD=/home/user/bitshares/bitshares_toolkit
+  $ export BTS_BUILD=/home/user/bitshares/build
   
   
 ## Usage

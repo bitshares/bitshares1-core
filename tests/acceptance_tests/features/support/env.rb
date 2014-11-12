@@ -110,7 +110,6 @@ After do |scenario|
   @pause = false
   STDOUT.puts 'shutting down testnet..'
   @testnet.shutdown
-  @testnet = nil
 end
 
 World( RSpec::Matchers )

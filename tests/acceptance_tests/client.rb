@@ -64,7 +64,11 @@ class BitSharesNode
   end
 
   def stop
-    exec 'quit'
+    @handler[:stdin].write("quit\n")
+    begin
+      Process.wait(@handler[:wait_thr].pid)
+    rescue
+    end
   end
 
   def stdout_gets

@@ -53,7 +53,6 @@ module BitShares
           pub_key, priv_key = l.split(' ')
           @delegate_node.exec 'wallet_import_private_key', priv_key, "delegate#{counter}"
           counter += 1
-          #break if counter > 10
         end
       end
 
@@ -160,9 +159,9 @@ module BitShares
 
     def shutdown
       log 'shutdown'
-      @delegate_node.exec 'quit'
-      @alice_node.exec 'quit' if @alice_node
-      @bob_node.exec 'quit' if @bob_node
+      @delegate_node.stop
+      @alice_node.stop if @alice_node
+      @bob_node.stop if @bob_node
       @running = false
     end
 
