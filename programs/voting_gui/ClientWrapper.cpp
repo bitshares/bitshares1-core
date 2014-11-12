@@ -8,6 +8,7 @@
 #include <bts/wallet/exceptions.hpp>
 #include <bts/vote/messages.hpp>
 #include <bts/rpc/rpc_client.hpp>
+#include <bts/utilities/key_conversion.hpp>
 
 #include <QGuiApplication>
 #include <QResource>
@@ -271,5 +272,23 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    ciphertext.recipient = verifier_account->active_key();
    bts::rpc::rpc_client client;
    client.connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
-   client.verifier_public_api(ciphertext);
+   try {
+      client.login("bob", "bob");
+      auto response = client.verifier_public_api(ciphertext);
+
+      if( response.type == bts::vote::exception_message_type )
+         qDebug() << fc::json::to_pretty_string(response.as<bts::vote::exception_message>()).c_str();
+      else if( response.type == bts::mail::encrypted ) {
+         auto privKey = bts::utilities::wif_to_key(_client->wallet_dump_private_key(account_name.toStdString()));
+         if( privKey )
+            response = response.as<bts::mail::encrypted_message>().decrypt(*privKey);
+      }
+
+      if( response.type == bts::vote::verification_response_message_type )
+         qDebug() << fc::json::to_pretty_string(response.as<bts::vote::identity_verification_response_message>()).c_str();
+      else
+         qDebug() << fc::json::to_pretty_string(response).c_str();
+   } catch (fc::exception& e) {
+      qDebug() << e.to_detail_string().c_str();
+   }
 }
