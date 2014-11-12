@@ -7,6 +7,7 @@ Rectangle {
    color: "#d9d9d9"
 
    property string imageDir
+   property bool enableCamera: true
 
    function mayProceed() {
       return true
@@ -90,8 +91,7 @@ Rectangle {
    }
    Camera {
       id: camera
-      cameraState: container.Stack.status === Stack.Activating || container.Stack.status === Stack.Active?
-                      Camera.ActiveState : Camera.LoadedState
+      cameraState: enableCamera? Camera.ActiveState : Camera.LoadedState
       onError: console.log("Camera error: " + errorString)
       imageCapture {
          onImageCaptured: {

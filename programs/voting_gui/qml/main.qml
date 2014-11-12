@@ -72,7 +72,9 @@ ApplicationWindow {
          right: parent.right
          bottom: parent.bottom
       }
-      initialItem: IdentificationPage{}
+      initialItem: IdentificationPage {
+         enableCamera: Stack.status === Stack.Activating || Stack.status === Stack.Active
+      }
       delegate: StackViewDelegate {
          function transitionFinished(properties)
          {
