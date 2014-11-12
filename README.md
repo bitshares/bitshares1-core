@@ -15,8 +15,12 @@ you can build you will need to fetch the submodules with the following commands:
     cmake .
     make
 
-Different platforms have different steps for handling dependencies, if you 
-would like to build on OS X see BUILD_OSX.md
+Different platforms have different steps for handling dependencies, check specific documents
+for more details:
+
+* [Ubuntu](https://github.com/janx/bitshares/blob/master/BUILD_UBUNTU.md)
+* [OSX](https://github.com/janx/bitshares/blob/master/BUILD_OSX.md)
+* [Windows](https://github.com/janx/bitshares/blob/master/BUILD_WIN32.md)
 
 Documentation
 ------------------
