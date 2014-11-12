@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'open3'
+require 'json'
 require_relative './bitshares_api.rb'
 
 class BitSharesNode
@@ -38,7 +39,7 @@ class BitSharesNode
     if @logger then @logger.info s else puts s end
   end
   
-  def start(wait=true)
+  def start(wait=false)
     log "starting node '#{@name}', http port: #{@options[:http_port]}, p2p port: #{@options[:p2p_port]} \n#{@command}"
 
     stdin, out, wait_thr = Open3.popen2e(@command)
@@ -50,7 +51,7 @@ class BitSharesNode
       else
         line = out.gets
         log line
-        break if line.include? "Starting HTTP JSON RPC server on port #{@options[:http_port]}"
+        break if line and line.include? "Starting HTTP JSON RPC server on port #{@options[:http_port]}"
       end
     end
 
@@ -60,6 +61,10 @@ class BitSharesNode
 
     return
 
+  end
+
+  def stop
+    exec 'quit'
   end
 
   def stdout_gets
@@ -82,6 +87,17 @@ class BitSharesNode
       sleep 1.0
       new_block_num = exec('info')['blockchain_head_block_num']
     end
+  end
+
+  def get_config
+    JSON.parse( IO.read("#{@options[:data_dir]}/config.json") )
+  end
+
+  def save_config(config)
+    puts "#{@options[:data_dir]}/config.json"
+    puts JSON.pretty_generate(config)
+    File.write("#{@options[:data_dir]}/config.json", JSON.pretty_generate(config))
+    puts JSON.parse( IO.read("#{@options[:data_dir]}/config.json") )
   end
 
 end
