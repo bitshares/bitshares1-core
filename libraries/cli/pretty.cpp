@@ -200,8 +200,8 @@ string pretty_blockchain_info( fc::mutable_variant_object info, cptr client )
     const auto relay_fee = info["relay_fee"].as<share_type>();
     info["relay_fee"] = client->get_chain()->to_pretty_asset( asset( relay_fee ) );
 
-    const auto max_delegate_pay_per_block = info["max_delegate_pay_per_block"].as<share_type>();
-    info["max_delegate_pay_per_block"] = client->get_chain()->to_pretty_asset( asset( max_delegate_pay_per_block ) );
+    const auto max_delegate_pay_issued_per_block = info["max_delegate_pay_issued_per_block"].as<share_type>();
+    info["max_delegate_pay_issued_per_block"] = client->get_chain()->to_pretty_asset( asset( max_delegate_pay_issued_per_block ) );
 
     const auto max_delegate_reg_fee = info["max_delegate_reg_fee"].as<share_type>();
     info["max_delegate_reg_fee"] = client->get_chain()->to_pretty_asset( asset( max_delegate_reg_fee ) );

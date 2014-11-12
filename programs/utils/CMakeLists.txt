@@ -8,7 +8,7 @@ add_executable( btc_wallet_dump bitcoin_recovery.cpp )
 target_link_libraries( btc_wallet_dump fc bts_blockchain bts_utilities bitcoin )
 
 add_executable( bts_create_key bts_create_key.cpp )
-target_link_libraries( bts_create_key fc bts_blockchain bts_utilities)
+target_link_libraries( bts_create_key fc bts_blockchain bts_utilities deterministic_openssl_rand )
 
 add_executable( bts_create_genesis bts_create_genesis.cpp )
 target_link_libraries( bts_create_genesis fc bts_blockchain bts_utilities)

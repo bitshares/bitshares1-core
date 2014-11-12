@@ -737,8 +737,16 @@ namespace bts { namespace cli {
       << " | " << std::left << std::setw(30) << "PRICE" << std::right << std::setw(23) << "QUANTITY" << std::setw(26) << "TOTAL" << "   COLLATERAL" << "\n"
       << std::string(175, '-') << "\n";
 
-    asset_id_type quote_id;
-    asset_id_type base_id;
+    const string& quote_symbol = arguments[ 0 ].as_string();
+    const string& base_symbol = arguments[ 1 ].as_string();
+
+    const oasset_record quote_asset_record = client->get_chain()->get_asset_record( quote_symbol );
+    FC_ASSERT( quote_asset_record.valid() );
+    const oasset_record base_asset_record = client->get_chain()->get_asset_record( base_symbol );
+    FC_ASSERT( base_asset_record.valid() );
+
+    const asset_id_type& quote_id = quote_asset_record->id;
+    const asset_id_type& base_id = base_asset_record->id;
 
     vector<market_order>::iterator bid_itr = bids_asks.first.begin();
     auto ask_itr = bids_asks.second.begin();
@@ -752,23 +760,6 @@ namespace bts { namespace cli {
            shorts = client->blockchain_market_list_shorts(arguments[0].as_string(), arguments[2].as_int64());
     }
 
-    if(!shorts.empty())
-    {
-      quote_id = shorts.front().get_price().quote_asset_id;
-      base_id = shorts.front().get_price().base_asset_id;
-    }
-    if(bid_itr != bids_asks.first.end())
-    {
-      quote_id = bid_itr->get_price().quote_asset_id;
-      base_id = bid_itr->get_price().base_asset_id;
-    }
-    if(ask_itr != bids_asks.second.end())
-    {
-      quote_id = ask_itr->get_price().quote_asset_id;
-      base_id = ask_itr->get_price().base_asset_id;
-    }
-
-    auto quote_asset_record = client->get_chain()->get_asset_record(quote_id);
     auto status = client->get_chain()->get_market_status(quote_id, base_id);
     price short_execution_price( 0, quote_id, base_id );
     if( status.valid() && status->current_feed_price.valid() )

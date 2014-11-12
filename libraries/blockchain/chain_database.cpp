@@ -269,6 +269,8 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
          }
 
+         static const time_point_sec sharedrop_timestamp( 1415188800 ); // 2014-11-06 00:00:00 UTC
+         static const uint32_t sharedrop_vesting_duration( fc::days( 2 * 365 ).to_seconds() ); // 2 years
          for( const auto& item : config.bts_sharedrop )
          {
             withdraw_vesting data;
@@ -287,8 +289,8 @@ namespace bts { namespace blockchain {
                 FC_CAPTURE_AND_RETHROW( (item.raw_address) )
             }
 
-            data.start_time = fc::time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
-            data.duration = fc::days( 2 * 365 ).to_seconds();
+            data.start_time = sharedrop_timestamp;
+            data.duration = sharedrop_vesting_duration;
             data.original_balance = item.balance / 1000;
 
             withdraw_condition condition( data, 0, 0 );
@@ -298,7 +300,7 @@ namespace bts { namespace blockchain {
             /* In case of redundant balances */
             auto cur = self->get_balance_record( balance_rec.id() );
             if( cur.valid() ) balance_rec.balance += cur->balance;
-            balance_rec.last_update = config.timestamp;
+            balance_rec.last_update = sharedrop_timestamp;
             const asset bal( balance_rec.balance, balance_rec.condition.asset_id );
             balance_rec.snapshot_info = snapshot_record( item.raw_address, bal.amount );
             self->store_balance_record( balance_rec );
@@ -626,32 +628,43 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
-      void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                              const pending_chain_state_ptr& pending_state,
-                                              const public_key_type& block_signee )
+#ifndef WIN32
+#warning [HARDFORK] Changes to delegate pay will hardfork BTS
+#endif
+      void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee )const
       { try {
-            oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
-            FC_ASSERT( delegate_record.valid() );
-            delegate_record = pending_state->get_account_record( delegate_record->id );
-            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
+          oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+          FC_ASSERT( base_asset_record.valid() );
 
-            const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
-            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
-            const share_type accepted_paycheck = (self->get_max_delegate_pay_per_block() * pay_rate_percent) / 100;
-            FC_ASSERT( accepted_paycheck >= 0 );
+          oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
+          FC_ASSERT( delegate_record.valid() );
+          delegate_record = pending_state->get_account_record( delegate_record->id );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
 
-            delegate_record->delegate_info->votes_for += accepted_paycheck;
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
-            delegate_record->delegate_info->total_paid += accepted_paycheck;
-            pending_state->store_account_record( *delegate_record );
+          const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
+          FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
 
-            oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
-            FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply += accepted_paycheck;
-            base_asset_record->current_share_supply -= base_asset_record->collected_fees;
-            base_asset_record->collected_fees = 0;
-            pending_state->store_asset_record( *base_asset_record );
-      } FC_CAPTURE_AND_RETHROW( (block_id)(block_signee) ) }
+          const share_type max_new_shares = self->get_max_delegate_pay_issued_per_block();
+          const share_type accepted_new_shares = (max_new_shares * pay_rate_percent) / 100;
+          FC_ASSERT( max_new_shares >= 0 && accepted_new_shares >= 0 );
+          base_asset_record->current_share_supply += accepted_new_shares;
+
+          static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
+          const share_type max_collected_fees = base_asset_record->collected_fees / blocks_per_two_weeks;
+          const share_type accepted_collected_fees = (max_collected_fees * pay_rate_percent) / 100;
+          FC_ASSERT( max_collected_fees >= 0 && accepted_collected_fees >= 0 );
+          base_asset_record->collected_fees -= max_collected_fees;
+          base_asset_record->current_share_supply -= (max_collected_fees - accepted_collected_fees);
+
+          const share_type accepted_paycheck = accepted_new_shares + accepted_collected_fees;
+          FC_ASSERT( accepted_paycheck >= 0 );
+          delegate_record->delegate_info->votes_for += accepted_paycheck;
+          delegate_record->delegate_info->pay_balance += accepted_paycheck;
+          delegate_record->delegate_info->total_paid += accepted_paycheck;
+
+          pending_state->store_account_record( *delegate_record );
+          pending_state->store_asset_record( *base_asset_record );
+      } FC_CAPTURE_AND_RETHROW( (block_signee) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
@@ -880,7 +893,7 @@ namespace bts { namespace blockchain {
             // apply any deterministic operations such as market operations before we perturb indexes
             //apply_deterministic_updates(pending_state);
 
-            pay_delegate( block_id, pending_state, block_signee );
+            pay_delegate( pending_state, block_signee );
 
             execute_markets( block_data.timestamp, pending_state );
 
@@ -3006,26 +3019,25 @@ namespace bts { namespace blockchain {
    /**
     *  Given the list of active delegates and price feeds for asset_id return the median value.
     */
-   oprice chain_database::get_median_delegate_price( const asset_id_type& asset_id, const asset_id_type& base_id )const
+   oprice chain_database::get_median_delegate_price( const asset_id_type& quote_id, const asset_id_type& base_id )const
    { try {
-      auto feed_itr = my->_feed_db.lower_bound( feed_index{asset_id} );
+      auto feed_itr = my->_feed_db.lower_bound( feed_index{quote_id} );
       vector<account_id_type> active_delegates = get_active_delegates();
-      std::sort(active_delegates.begin(), active_delegates.end());
+      std::sort( active_delegates.begin(), active_delegates.end() );
       vector<price> prices;
-      while( feed_itr.valid() && feed_itr.key().feed_id == asset_id )
+      while( feed_itr.valid() && feed_itr.key().feed_id == quote_id )
       {
          feed_index key = feed_itr.key();
-         if( std::binary_search(active_delegates.begin(), active_delegates.end(), key.delegate_id) )
+         if( std::binary_search( active_delegates.begin(), active_delegates.end(), key.delegate_id ) )
          {
             try {
                feed_record val = feed_itr.value();
                // only consider feeds updated in the past day
                if( (fc::time_point(val.last_update) + fc::days(1)) > fc::time_point(this->now()) )
                {
-                  prices.push_back( val.value.as<price>() );
-                  if( prices.back().quote_asset_id != asset_id ||
-                      prices.back().base_asset_id != base_id )
-                     prices.pop_back();
+                   const price& feed_price = val.value.as<price>();
+                   if( feed_price.quote_asset_id == quote_id && feed_price.base_asset_id == base_id )
+                       prices.push_back( feed_price );
                }
             }
             catch ( ... )
@@ -3035,15 +3047,15 @@ namespace bts { namespace blockchain {
          }
          ++feed_itr;
       }
-      if( prices.size() < BTS_BLOCKCHAIN_MIN_FEEDS )
-          return oprice();
-      if( prices.size() )
+
+      if( prices.size() >= BTS_BLOCKCHAIN_MIN_FEEDS )
       {
-        std::nth_element( prices.begin(), prices.begin() + prices.size()/2, prices.end() );
-        return prices[prices.size()/2];
+         std::nth_element( prices.begin(), prices.begin() + prices.size()/2, prices.end() );
+         return prices[prices.size()/2];
       }
+
       return oprice();
-   } FC_CAPTURE_AND_RETHROW( (asset_id)(base_id) ) }
+   } FC_CAPTURE_AND_RETHROW( (quote_id)(base_id) ) }
 
    vector<feed_record> chain_database::get_feeds_for_asset( const asset_id_type& asset_id, const asset_id_type& base_id )const
    {  try {

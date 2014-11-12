@@ -62,6 +62,42 @@ address   detail::client_impl::btc_getnewaddress( const string& real_account,
     return _wallet->create_new_address( real_account, "" );
 } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+address   detail::client_impl::btc_importprivkey( const string& real_account,
+                                                  const string& asset_symbol,
+                                                  const string& wif_privkey,
+                                                  const string& label,
+                                                  bool rescan ) const
+{ try {
+    auto pubkey = _wallet->import_wif_private_key( wif_privkey, real_account );
+    auto addr = address(pubkey);
+    _wallet->set_address_label( addr, label );
+    return addr;
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+
+std::vector<string>   detail::client_impl::btc_listaccounts( const string& real_account,
+                                                             const string& asset_symbol ) const
+{ try {
+    auto pubkeys = _wallet->get_public_keys_in_account( real_account );
+    auto accounts = std::set<string>();
+    for( auto key : pubkeys )
+    {
+        accounts.insert( _wallet->get_address_group_label( address(key) ) );
+    }
+    return std::vector<string>(accounts.begin(), accounts.end());
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+std::map<string, double>  detail::client_impl::btc_listaddressgroupings( const string& real_account,
+                                                                         const string& asset_symbol ) const
+{ try {
+    auto pubkeys = _wallet->get_public_keys_in_account( real_account );
+    auto ret = map<string, double>();
+    for( auto key : pubkeys )
+    {
+        FC_ASSERT(!"unimplemented");
+    }
+    return ret;
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
 }}} // bts::client::detail

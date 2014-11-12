@@ -62,7 +62,6 @@ namespace bts { namespace blockchain {
        optional<std::string>        name;
        optional<std::string>        description;
        optional<fc::variant>        public_data;
-       optional<account_id_type>    issuer_account_id;
        optional<share_type>         maximum_share_supply;
        optional<uint64_t>           precision;
 
@@ -103,7 +102,6 @@ FC_REFLECT( bts::blockchain::update_asset_operation,
             (name)
             (description)
             (public_data)
-            (issuer_account_id)
             (maximum_share_supply)
             (precision)
             )

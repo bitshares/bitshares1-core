@@ -6,7 +6,7 @@
 #include <fc/io/fstream.hpp>
 #include <fc/crypto/sha512.hpp>
 
-#include "deterministic_openssl_rand.hpp"
+#include <bts/utilities/deterministic_openssl_rand.hpp>
 
 // BEGIN_SERIAL_TEST does the following:
 // create tester object
@@ -20,7 +20,7 @@
                                                                        \
      fc::sha512 _hash_test_name = fc::sha512::hash( test_name,         \
                     std::char_traits<char>::length(test_name) );       \
-     set_random_seed_for_testing(_hash_test_name);                     \
+     bts::utilities::set_random_seed_for_testing(_hash_test_name);     \
                                                                        \
      {                                                                 \
         fc::ifstream expected_result_file(expected_result_filename);   \
