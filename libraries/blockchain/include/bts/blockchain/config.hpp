@@ -19,7 +19,7 @@
  *
  *  Changing these parameters will result in a hard fork.
  */
-#define BTS_ADDRESS_PREFIX                                  "BTSX"
+#define BTS_ADDRESS_PREFIX                                  "BTS"
 #define BTS_BLOCKCHAIN_SYMBOL                               "BTS"
 #define BTS_BLOCKCHAIN_NAME                                 "BitShares"
 #define BTS_BLOCKCHAIN_DESCRIPTION                          "The Future of Banking"
