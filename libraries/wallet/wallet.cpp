@@ -520,7 +520,16 @@ namespace detail {
 
    address wallet_impl::get_new_address( const string& account_name, const string& label )
    { try {
-      return address( get_new_public_key( account_name ) );
+       auto addr = address( get_new_public_key( account_name ) );
+       auto okey = _wallet_db.lookup_key( addr );
+       FC_ASSERT( okey.valid(), "Key I just created does not exist" );
+       
+       if( label != "" )
+       {
+           okey->label = label;
+           _wallet_db.store_key( *okey );
+       }
+       return addr;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
    slate_id_type wallet_impl::select_slate( signed_transaction& transaction, const asset_id_type& deposit_asset_id,
@@ -2582,8 +2591,63 @@ namespace detail {
        FC_ASSERT( is_open() );
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
-       return my->get_new_address( account_name, label );
+       auto addr = my->get_new_address( account_name, label );
+       set_address_virtual_account( addr, "" );
+       return addr;
    }
+
+    void   wallet::set_address_label( const address& addr, const string& label )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        okey->label = label;
+        my->_wallet_db.store_key( *okey );
+    }
+
+    string  wallet::get_address_label( const address& addr )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        FC_ASSERT( okey->label.valid(), "This address has no label!" );
+        return *okey->label;
+    }
+
+
+
+    void  wallet::set_address_virtual_account( const address& addr, const string& virtual_account )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        okey->virtual_account = virtual_account;
+        my->_wallet_db.store_key( *okey );
+    }
+
+    string           wallet::get_address_virtual_account( const address& addr )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        FC_ASSERT( okey->virtual_account.valid(), "This address has no virtual account!" );
+        return *okey->virtual_account;
+    }
+
+    vector<address>  wallet::get_addresses_for_virtual_account( const string& virtual_account )
+    {
+        vector<address> addrs;
+        for( auto item : my->_wallet_db.get_keys() )
+        {
+            if( item.second.virtual_account == virtual_account )
+                addrs.push_back( item.first );
+        }
+        return addrs;
+    }
 
    wallet_transaction_record wallet::transfer_asset_to_address(
            double real_amount_to_transfer,
@@ -3676,6 +3740,94 @@ namespace detail {
       if ( !okey.valid() ) return owallet_account_record();
       return my->_wallet_db.lookup_account( okey->account_address );
    } FC_CAPTURE_AND_RETHROW() }
+
+   vector<escrow_summary>   wallet::get_escrow_balances( const string& account_name )
+   {
+      vector<escrow_summary> result;
+
+      FC_ASSERT( is_open() );
+      if( !account_name.empty() ) get_account( account_name ); /* Just to check input */
+
+      map<string, vector<balance_record>> balance_records;
+      const auto pending_state = my->_blockchain->get_pending_state();
+
+      const auto scan_balance = [&]( const balance_record& record )
+      {
+          // check to see if it is a withdraw by escrow record
+          if( record.condition.type == withdraw_escrow_type )
+          {
+             auto escrow_cond = record.condition.as<withdraw_with_escrow>();
+
+             // lookup account for each key if known
+             // lookup transaction that created the balance record in the local wallet
+             // if the sender or receiver is one of our accounts and isn't filtered by account_name
+             //    then add the escrow balance to the output.
+
+
+             const auto sender_key_record = my->_wallet_db.lookup_key( escrow_cond.sender );
+             const auto receiver_key_record = my->_wallet_db.lookup_key( escrow_cond.receiver );
+             if( !((sender_key_record && sender_key_record->has_private_key()) || 
+                   (receiver_key_record && receiver_key_record->has_private_key())) )
+             {
+                return; // no private key for the sender nor receiver
+             }
+             escrow_summary sum;
+             sum.balance_id = record.id();
+             sum.balance    = record.get_spendable_balance( time_point_sec() );
+
+             if( sender_key_record )
+             {
+                const auto account_address = sender_key_record->account_address;
+                const auto account_record = my->_wallet_db.lookup_account( account_address );
+                const auto name = account_record.valid() ? account_record->name : string( account_address );
+                sum.sender_account_name = name;
+             }
+             else
+             {
+                sum.sender_account_name = "UNKNOWN";
+             }
+
+             if( receiver_key_record )
+             {
+                const auto account_address = receiver_key_record->account_address;
+                const auto account_record = my->_wallet_db.lookup_account( account_address );
+                const auto name = account_record.valid() ? account_record->name : string( account_address );
+                sum.sender_account_name = name;
+             }
+             else
+             {
+                sum.receiver_account_name = "UNKNOWN";
+             }
+
+             auto agent_account = my->_blockchain->get_account_record( escrow_cond.escrow );
+             if( agent_account )
+                sum.escrow_agent_account_name = agent_account->name;
+             else
+                sum.escrow_agent_account_name = string( escrow_cond.escrow );
+
+             sum.agreement_digest = escrow_cond.agreement_digest;
+
+             result.emplace_back(sum);
+
+             /*
+             const auto account_address = key_record->account_address;
+             const auto account_record = my->_wallet_db.lookup_account( account_address );
+             const auto name = account_record.valid() ? account_record->name : string( account_address );
+             if( !account_name.empty() && name != account_name ) return;
+
+             const auto balance_id = record.id();
+             const auto pending_record = pending_state->get_balance_record( balance_id );
+             if( !pending_record.valid() ) return;
+             if( !include_empty && pending_record->balance == 0 ) return;
+             balance_records[ name ].push_back( *pending_record );
+             */
+          }
+      };
+
+      my->_blockchain->scan_balances( scan_balance );
+
+      return result;
+   }
 
    account_balance_record_summary_type wallet::get_account_balance_records( const string& account_name, bool include_empty )const
    { try {

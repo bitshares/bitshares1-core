@@ -100,6 +100,7 @@ namespace bts { namespace client {
           fc::logging_config  logging;
           fc::ip::endpoint    delegate_server;
           vector<string>      default_delegate_peers;
+          string              wallet_callback_url;
 
           fc::optional<std::string> growl_notify_endpoint;
           fc::optional<std::string> growl_password;
@@ -199,6 +200,7 @@ FC_REFLECT( bts::client::config,
             (wallet_enabled)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers)
+            (wallet_callback_url)
             (growl_notify_endpoint)
             (growl_password)
             (growl_bitshares_client_identifier) )
