@@ -70,10 +70,6 @@ namespace bts { namespace blockchain { namespace detail {
 
           _feed_price = _db_impl.self->get_median_delegate_price( _quote_id, _base_id );
           // Market issued assets cannot match until the first time there is a median feed
-#ifndef WIN32
-#warning [BTS] Possible market hardfork
-#endif
-          //if( quote_asset->is_market_issued() )
           if( quote_asset->is_market_issued() && !base_asset->is_market_issued() )
           {
               const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
