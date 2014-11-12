@@ -252,7 +252,6 @@ struct voter_decision
    digest_type contest_id;
    vector<string> write_in_names;
    map<fc::signed_int, fc::signed_int> voter_opinions;
-   fc::ecc::compact_signature voter_signature;
    digest_type ballot_id;
    vector<fc::ecc::compact_signature> registrar_authorizations;
 
@@ -260,6 +259,12 @@ struct voter_decision
    {
       return fc::digest(*this);
    }
+};
+
+struct signed_voter_decision : public voter_decision
+{
+   fc::ecc::compact_signature voter_signature;
+
    bts::blockchain::public_key_type voter_public_key()const
    {
       return fc::ecc::public_key(voter_signature, digest());
@@ -303,4 +308,5 @@ FC_REFLECT_ENUM( bts::vote::request_status_enum,
 FC_REFLECT( bts::vote::contestant, (name)(description) )
 FC_REFLECT( bts::vote::contest, (name)(description)(tags)(contestants) )
 FC_REFLECT( bts::vote::ballot, (title)(description)(contests) )
-FC_REFLECT( bts::vote::voter_decision, (contest_id)(write_in_names)(voter_opinions)(voter_signature) )
+FC_REFLECT( bts::vote::voter_decision, (contest_id)(write_in_names)(voter_opinions) )
+FC_REFLECT_DERIVED( bts::vote::signed_voter_decision, (bts::vote::voter_decision), (voter_signature) )
