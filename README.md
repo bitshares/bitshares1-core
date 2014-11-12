@@ -7,6 +7,6 @@ Building
 Different platforms have different steps for handling dependencies, check specific documents
 for more details:
 
-* [Ubuntu](https://github.com/janx/bitshares/blob/master/BUILD_UBUNTU.md)
-* [OSX](https://github.com/janx/bitshares/blob/master/BUILD_OSX.md)
-* [Windows](https://github.com/janx/bitshares/blob/master/BUILD_WIN32.md)
+* [Ubuntu](https://github.com/BitShares/bitshares/blob/master/BUILD_UBUNTU.md)
+* [OSX](https://github.com/BitShares/bitshares/blob/master/BUILD_OSX.md)
+* [Windows](https://github.com/BitShares/bitshares/blob/master/BUILD_WIN32.md)
