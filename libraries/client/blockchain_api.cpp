@@ -279,37 +279,37 @@ variant_object client_impl::blockchain_get_info() const
 {
    auto info = fc::mutable_variant_object();
 
-   info["blockchain_id"]                = _chain_db->chain_id();
+   info["blockchain_id"]                        = _chain_db->chain_id();
 
-   info["symbol"]                       = BTS_BLOCKCHAIN_SYMBOL;
-   info["name"]                         = BTS_BLOCKCHAIN_NAME;
-   info["version"]                      = BTS_BLOCKCHAIN_VERSION;
-   info["db_version"]                   = BTS_BLOCKCHAIN_DATABASE_VERSION;
-   info["genesis_timestamp"]            = _chain_db->get_genesis_timestamp();
+   info["symbol"]                               = BTS_BLOCKCHAIN_SYMBOL;
+   info["name"]                                 = BTS_BLOCKCHAIN_NAME;
+   info["version"]                              = BTS_BLOCKCHAIN_VERSION;
+   info["db_version"]                           = BTS_BLOCKCHAIN_DATABASE_VERSION;
+   info["genesis_timestamp"]                    = _chain_db->get_genesis_timestamp();
 
-   info["block_interval"]               = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
-   info["max_block_size"]               = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
-   info["max_blockchain_size"]          = BTS_BLOCKCHAIN_MAX_SIZE;
+   info["block_interval"]                       = BTS_BLOCKCHAIN_BLOCK_INTERVAL_SEC;
+   info["max_block_size"]                       = BTS_BLOCKCHAIN_MAX_BLOCK_SIZE;
+   info["max_blockchain_size"]                  = BTS_BLOCKCHAIN_MAX_SIZE;
 
-   info["address_prefix"]               = BTS_ADDRESS_PREFIX;
-   info["relay_fee"]                    = _chain_db->get_relay_fee();
+   info["address_prefix"]                       = BTS_ADDRESS_PREFIX;
+   info["relay_fee"]                            = _chain_db->get_relay_fee();
 
-   info["delegate_num"]                 = BTS_BLOCKCHAIN_NUM_DELEGATES;
-   info["max_delegate_pay_per_block"]   = _chain_db->get_max_delegate_pay_per_block();
-   info["max_delegate_reg_fee"]         = _chain_db->get_delegate_registration_fee( 100 );
+   info["delegate_num"]                         = BTS_BLOCKCHAIN_NUM_DELEGATES;
+   info["max_delegate_pay_issued_per_block"]    = _chain_db->get_max_delegate_pay_issued_per_block();
+   info["max_delegate_reg_fee"]                 = _chain_db->get_delegate_registration_fee( 100 );
 
-   info["name_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
-   info["memo_size_max"]                = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
-   info["data_size_max"]                = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
+   info["name_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_SIZE;
+   info["memo_size_max"]                        = BTS_BLOCKCHAIN_MAX_MEMO_SIZE;
+   info["data_size_max"]                        = BTS_BLOCKCHAIN_MAX_NAME_DATA_SIZE;
 
-   info["symbol_size_max"]              = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
-   info["symbol_size_min"]              = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
-   info["asset_shares_max"]             = BTS_BLOCKCHAIN_MAX_SHARES;
-   info["short_symbol_asset_reg_fee"]   = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE );
-   info["long_symbol_asset_reg_fee"]    = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE );
+   info["symbol_size_max"]                      = BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE;
+   info["symbol_size_min"]                      = BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE;
+   info["asset_shares_max"]                     = BTS_BLOCKCHAIN_MAX_SHARES;
+   info["short_symbol_asset_reg_fee"]           = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE );
+   info["long_symbol_asset_reg_fee"]            = _chain_db->get_asset_registration_fee( BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE );
 
-   info["max_pending_queue_size"]       = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
-   info["max_trx_per_second"]           = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
+   info["max_pending_queue_size"]               = BTS_BLOCKCHAIN_MAX_PENDING_QUEUE_SIZE;
+   info["max_trx_per_second"]                   = BTS_BLOCKCHAIN_MAX_TRX_PER_SECOND;
 
    return info;
 }
