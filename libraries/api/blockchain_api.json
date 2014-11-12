@@ -754,6 +754,20 @@
         ],
         "is_const"   : true,
         "prerequisites" : ["no_prerequisites"]
+      },
+      {
+        "method_name": "blockchain_broadcast_transaction",
+        "description": "Takes a signed transaction and broadcasts it to the network.",
+        "return_type": "void",
+        "parameters"  : [
+           {
+              "name" : "trx",
+              "type" : "signed_transaction",
+              "description" : "The transaction to broadcast"
+           }
+        ],
+        "is_const"   : false,
+        "prerequisites" : ["no_prerequisites"]
       }
     ]
 }

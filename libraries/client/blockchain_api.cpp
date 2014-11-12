@@ -584,4 +584,9 @@ vector<burn_record> client_impl::blockchain_get_account_wall( const string& acco
    return _chain_db->fetch_burn_records( account );
 }
 
+void client_impl::blockchain_broadcast_transaction(const signed_transaction& trx)
+{
+   network_broadcast_transaction(trx);
+}
+
 } } } // namespace bts::client::detail
