@@ -119,7 +119,7 @@ namespace bts { namespace mail {
 
 } } // bts::mail
 
-FC_REFLECT_ENUM( bts::mail::message_type, (encrypted)(transaction_notice)(market_notice)(email) )
+FC_REFLECT_ENUM( bts::mail::message_type, (encrypted)(transaction_notice)(market_notice)(email)(user_defined) )
 FC_REFLECT( bts::mail::encrypted_message, (onetimekey)(data) )
 FC_REFLECT( bts::mail::message, (type)(recipient)(nonce)(timestamp)(data) )
 FC_REFLECT( bts::mail::attachment, (name)(data) )
