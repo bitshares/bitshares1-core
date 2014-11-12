@@ -20,4 +20,4 @@ would like to build on OS X see BUILD_OSX.md
 
 Documentation
 ------------------
-Documentation is available at the GitHub wiki: https://github.com/BitShares/bitshares_toolkit/wiki.
+Documentation is available at the GitHub wiki: https://github.com/BitShares/bitshares/wiki.
