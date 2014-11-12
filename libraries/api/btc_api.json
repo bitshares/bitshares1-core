@@ -120,12 +120,41 @@
             {
               "name" : "account",
               "type" : "string",
-              "description" : "The (virtual) account to get the balance for."
+              "description" : "The (virtual) account to get the balance for.",
+              "default_value" : ""
             }
         ],
         "is_const" : true,
         "prerequisites" : ["no_prerequisites"],
         "aliases" : []
       },
+      {
+        "method_name": "btc_getnewaddress",
+        "description": "",
+        "return_type": "address",
+        "parameters" : [
+            {
+              "name" : "real_account",
+              "type" : "string",
+              "description" : "The account whose virtual wallet to use for the BTC API command."
+            },
+            {
+              "name" : "asset",
+              "type" : "asset_symbol",
+              "description" : "Which asset to use for this command."
+            },
+            {
+              "name" : "account",
+              "type" : "string",
+              "description" : "The (virtual) account to get the balance for.",
+              "default_value" : ""
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : []
+      },
+
+
     ]
 }

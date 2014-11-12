@@ -240,7 +240,9 @@ namespace bts { namespace wallet {
          address  create_new_address( const string& account_name, const string& label);
 
          void              set_address_label( const address& addr, const string& label );
+         string            get_address_label( const address& addr );
          void              set_address_virtual_account( const address& addr, const string& virtual_account );
+         string            get_address_virtual_account( const address& addr );
          vector<address>   get_addresses_for_virtual_account( const string& virtual_account );
 
          ///@}
