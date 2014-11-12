@@ -4,6 +4,7 @@ add_library( bts_vote
              types.cpp
              messages.cpp
              identity_verifier.cpp
+             ballot_box.cpp
              ${HEADERS})
 
 target_link_libraries( bts_vote 

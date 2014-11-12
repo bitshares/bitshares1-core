@@ -1,0 +1,55 @@
+{
+   "category": "Ballot Box Server Methods",
+   "methods" : [
+      {
+         "method_name": "ballot_submit_decision",
+         "description": "Submit a decision to the blockchain.",
+         "return_type": "void",
+         "parameters" : [
+            {
+               "name" : "decision",
+               "type" : "signed_voter_decision",
+               "description" : "The decision to submit."
+            }
+         ],
+         "is_const" : false,
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_decision",
+         "description": "Submit a decision to the blockchain.",
+         "return_type": "signed_voter_decision",
+         "parameters" : [
+            {
+               "name" : "decision_id",
+               "type" : "sha256",
+               "description" : "The ID of the decision to retrieve."
+            }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_all_write_in_candidates",
+         "description": "Get a list of all write-in candidates which have been mentioned in voter decisions.",
+         "return_type": "string_array",
+         "parameters" : [],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_decisions_with_write_in",
+         "description": "Get a list of decisions which reference a particular write-in candidate.",
+         "return_type": "sha256_array",
+         "parameters" : [
+            {
+               "name" : "write_in_name",
+               "type" : "string",
+               "description" : "The write-in candidate to get decisions for."
+            }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
+      }
+   ]
+}

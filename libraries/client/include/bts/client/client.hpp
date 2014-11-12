@@ -70,6 +70,7 @@ namespace bts { namespace client {
           default_peers(vector<string>{ BTS_NET_TEST_SEED_IP, BTS_NET_TEST_SEED_IP, BTS_NET_TEST_SEED_IP }),
           mail_server_enabled(false),
           identity_verifier_enabled(false),
+          ballot_box_enabled(false),
           wallet_enabled(true),
           ignore_console(false),
           use_upnp(true),
@@ -94,6 +95,7 @@ namespace bts { namespace client {
           chain_server_config chain_server;
           bool                mail_server_enabled;
           bool                identity_verifier_enabled;
+          bool                ballot_box_enabled;
           bool                wallet_enabled;
           bool                ignore_console;
           bool                use_upnp;
@@ -199,7 +201,7 @@ FC_REFLECT( bts::client::rpc_server_config, (enable)(rpc_user)(rpc_password)(rpc
 FC_REFLECT( bts::client::chain_server_config, (enabled)(listen_port) )
 FC_REFLECT( bts::client::config,
             (rpc)(default_peers)(chain_servers)(chain_server)(mail_server_enabled)
-            (identity_verifier_enabled)(wallet_enabled)(ignore_console)(logging)
+            (identity_verifier_enabled)(ballot_box_enabled)(wallet_enabled)(ignore_console)(logging)
             (delegate_server)
             (default_delegate_peers)
             (wallet_callback_url)

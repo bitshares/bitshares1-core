@@ -625,6 +625,11 @@
           "cpp_include_file" : "fc/crypto/sha256.hpp"
       },
       {
+        "type_name" : "sha256_array",
+        "container_type": "array",
+        "contained_type": "sha256"
+      },
+      {
           "type_name" : "market_transaction",
           "cpp_return_type" : "bts::blockchain::market_transaction"
       },
@@ -738,6 +743,11 @@
       {
         "type_name" : "snapshot_record_list",
         "cpp_return_type" : "std::vector<bts::blockchain::snapshot_record>"
+      },
+      {
+        "type_name" : "signed_voter_decision",
+        "cpp_return_type" : "bts::vote::signed_voter_decision",
+        "cpp_include_file" : "bts/vote/types.hpp"
       }
     ]
 }

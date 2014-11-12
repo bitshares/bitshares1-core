@@ -1344,6 +1344,12 @@ void client::open( const path& data_dir, fc::optional<fc::path> genesis_file_pat
          my->_id_verifier->open( data_dir / "id_verifier" );
       }
 
+      if (my->_config.ballot_box_enabled)
+      {
+         my->_ballot_box = std::make_shared<bts::vote::ballot_box>();
+         my->_ballot_box->open( data_dir / "ballot_box" );
+      }
+
       //if we are using a simulated network, _p2p_node will already be set by client's constructor
       if (!my->_p2p_node)
          my->_p2p_node = std::make_shared<bts::net::node>(my->_user_agent);
