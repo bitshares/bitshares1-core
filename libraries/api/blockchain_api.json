@@ -268,6 +268,36 @@
         "aliases" : ["list_balances"]
       },
       {
+        "method_name": "blockchain_list_address_balances",
+        "description": "Lists balance records which can be claimed by signature for this address",
+        "return_type": "balance_record_map",
+        "parameters" : [
+            {
+              "name" : "addr",
+              "type" : "address",
+              "description" : "address to scan for"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["list_address_balances"]
+      },
+      {
+        "method_name": "blockchain_list_key_balances",
+        "description": "Lists balance records which can be claimed by signature for this key",
+        "return_type": "balance_record_map",
+        "parameters" : [
+            {
+              "name" : "key",
+              "type" : "public_key",
+              "description" : "Key to scan for"
+            }
+        ],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"],
+        "aliases" : ["list_key_balances"]
+      },
+      {
         "method_name": "blockchain_get_asset",
         "description": "Retrieves the record for the given asset ticker symbol or ID",
         "return_type": "optional_asset_record",

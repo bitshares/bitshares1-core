@@ -249,6 +249,32 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balanc
    return _chain_db->get_balances( first, limit );
 }
 
+map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const address& addr )const
+{
+    std::map<balance_id_type, balance_record> ret;
+    _chain_db->scan_balances( [ret, addr]( const balance_record& bal ) mutable {
+        if( bal.owner() == addr )
+            ret.insert( std::pair<balance_id_type, balance_record>(bal.id(), bal) );
+    });
+    return ret;
+}
+
+map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
+{
+    std::map<balance_id_type, balance_record> ret;
+    _chain_db->scan_balances( [ret, key]( const balance_record& bal ) mutable {
+        auto addr = bal.owner();
+        if( address(key) == addr || address(pts_address(key,false,56)) == addr ||
+                                    address(pts_address(key,true,56)) == addr ||
+                                    address(pts_address(key,false,0)) == addr ||
+                                    address(pts_address(key,true,0)) == addr )
+        {
+            ret.insert( std::pair<balance_id_type, balance_record>(bal.id(), bal) );
+        }
+    });
+    return ret;
+}
+
 vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t limit )const
 {
    return _chain_db->get_accounts( first, limit );
