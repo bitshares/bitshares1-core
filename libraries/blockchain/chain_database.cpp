@@ -2373,7 +2373,7 @@ namespace bts { namespace blockchain {
       {
           return 0;
       }
-      else if( head_num <  BTS_BLOCKCHAIN_NUM_DELEGATES )
+      else if( head_num <= BTS_BLOCKCHAIN_NUM_DELEGATES )
       {
          // what percent of the maximum total blocks that could have been produced
          // have been produced.
