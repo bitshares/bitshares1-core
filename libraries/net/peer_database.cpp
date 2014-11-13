@@ -71,6 +71,7 @@ namespace bts { namespace net {
       void erase(const fc::ip::endpoint& endpointToErase);
       void update_entry(const potential_peer_record& updatedRecord);
       potential_peer_record lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);
+      fc::optional<potential_peer_record> lookup_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);
 
       peer_database::iterator begin() const;
       peer_database::iterator end() const;
@@ -96,6 +97,18 @@ namespace bts { namespace net {
 
       for (auto iter = _leveldb.begin(); iter.valid(); ++iter)
         _potential_peer_set.insert(potential_peer_database_entry(iter.key(), iter.value()));
+#define MAXIMUM_PEERDB_SIZE 1000
+      if (_potential_peer_set.size() > MAXIMUM_PEERDB_SIZE)
+      {
+        // prune database to a reasonable size
+        auto iter = _potential_peer_set.begin();
+        std::advance(iter, MAXIMUM_PEERDB_SIZE);
+        while (iter != _potential_peer_set.end())
+        {
+          _leveldb.remove(iter->database_key);
+          iter = _potential_peer_set.erase(iter);
+        }
+      }
     }
 
     void peer_database_impl::close()
@@ -158,6 +171,14 @@ namespace bts { namespace net {
       if (iter != _potential_peer_set.get<endpoint_index>().end())
         return iter->peer_record;
       return potential_peer_record(endpointToLookup);
+    }
+
+    fc::optional<potential_peer_record> peer_database_impl::lookup_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup)
+    {
+      auto iter = _potential_peer_set.get<endpoint_index>().find(endpointToLookup);
+      if (iter != _potential_peer_set.get<endpoint_index>().end())
+        return iter->peer_record;
+      return fc::optional<potential_peer_record>();
     }
 
     peer_database::iterator peer_database_impl::begin() const
@@ -243,6 +264,11 @@ namespace bts { namespace net {
   potential_peer_record peer_database::lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup)
   {
     return my->lookup_or_create_entry_for_endpoint(endpointToLookup);
+  }
+
+  fc::optional<potential_peer_record> peer_database::lookup_entry_for_endpoint(const fc::ip::endpoint& endpoint_to_lookup)
+  {
+    return my->lookup_entry_for_endpoint(endpoint_to_lookup);
   }
 
   peer_database::iterator peer_database::begin() const
