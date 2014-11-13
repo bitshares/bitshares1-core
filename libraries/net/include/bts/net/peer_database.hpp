@@ -83,6 +83,7 @@ namespace bts { namespace net {
 
     void update_entry(const potential_peer_record& updatedRecord);
     potential_peer_record lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);
+    fc::optional<potential_peer_record> lookup_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup);
 
     std::vector<potential_peer_record> get_all()const;
 

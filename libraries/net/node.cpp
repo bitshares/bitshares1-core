@@ -786,11 +786,14 @@ namespace bts { namespace net { namespace detail {
       ilog( "cleaning up node" );
       _node_is_shutting_down = true;
 
-      for( const peer_connection_ptr& active_peer : _active_connections )
+      for (const peer_connection_ptr& active_peer : _active_connections)
       {
-        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
-        updated_peer_record.last_seen_time = fc::time_point::now();
-        _potential_peer_db.update_entry( updated_peer_record );
+        fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(*active_peer->get_remote_endpoint());
+        if (updated_peer_record)
+        {
+          updated_peer_record->last_seen_time = fc::time_point::now();
+          _potential_peer_db.update_entry(*updated_peer_record);
+        }
       }
 
       try
@@ -1542,11 +1545,11 @@ namespace bts { namespace net { namespace detail {
       {
         if (address.firewalled == bts::net::firewalled_state::not_firewalled)
         {
-          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( address.remote_endpoint );
-          if( address.last_seen_time > updated_peer_record.last_seen_time )
+          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(address.remote_endpoint);
+          if (address.last_seen_time > updated_peer_record.last_seen_time)
             new_information_received = true;
-          updated_peer_record.last_seen_time = std::max( address.last_seen_time, updated_peer_record.last_seen_time );
-          _potential_peer_db.update_entry( updated_peer_record );
+          updated_peer_record.last_seen_time = std::max(address.last_seen_time, updated_peer_record.last_seen_time);
+          _potential_peer_db.update_entry(updated_peer_record);
         }
       }
       return new_information_received;
@@ -1869,10 +1872,10 @@ namespace bts { namespace net { namespace detail {
             }
             else
             {
-              // peer is not firwalled, add it to our database
-              fc::ip::endpoint peers_inbound_endpoint( originating_peer->inbound_address, originating_peer->inbound_port );
-              potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( peers_inbound_endpoint );
-              _potential_peer_db.update_entry( updated_peer_record );
+              // peer is not firewalled, add it to our database
+              fc::ip::endpoint peers_inbound_endpoint(originating_peer->inbound_address, originating_peer->inbound_port);
+              potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(peers_inbound_endpoint);
+              _potential_peer_db.update_entry(updated_peer_record);
               originating_peer->is_firewalled = firewalled_state::not_firewalled;
             }
           }
@@ -1949,10 +1952,13 @@ namespace bts { namespace net { namespace detail {
         {
           // update our database to record that we were rejected so we won't try to connect again for a while
           // this only happens on connections we originate, so we should already know that peer is not firewalled
-          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( originating_peer->get_socket().remote_endpoint() );
-          updated_peer_record.last_connection_disposition = last_connection_rejected;
-          updated_peer_record.last_connection_attempt_time = fc::time_point::now();
-          _potential_peer_db.update_entry( updated_peer_record );
+          fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(originating_peer->get_socket().remote_endpoint());
+          if (updated_peer_record)
+          {
+            updated_peer_record->last_connection_disposition = last_connection_rejected;
+            updated_peer_record->last_connection_attempt_time = fc::time_point::now();
+            _potential_peer_db.update_entry(*updated_peer_record);
+          }
         }
 
         originating_peer->negotiation_status = peer_connection::connection_negotiation_status::peer_connection_rejected;
@@ -1974,9 +1980,12 @@ namespace bts { namespace net { namespace detail {
         reply.addresses.reserve( _active_connections.size()  );
         for( const peer_connection_ptr& active_peer : _active_connections )
         {
-          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *active_peer->get_remote_endpoint() );
-          updated_peer_record.last_seen_time = fc::time_point::now();
-          _potential_peer_db.update_entry(updated_peer_record);
+          fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(*active_peer->get_remote_endpoint());
+          if (updated_peer_record)
+          {
+            updated_peer_record->last_seen_time = fc::time_point::now();
+            _potential_peer_db.update_entry(*updated_peer_record);
+          }
 
           reply.addresses.emplace_back(address_info(*active_peer->get_remote_endpoint(),
                                                     fc::time_point::now(),
@@ -2020,9 +2029,12 @@ namespace bts { namespace net { namespace detail {
           // if( originating_peer->is_firewalled == firewalled_state::not_firewalled)
           {
             // mark the connection as successful in the database
-            potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer->get_remote_endpoint() );
-            updated_peer_record.last_connection_disposition = last_connection_succeeded;
-            _potential_peer_db.update_entry( updated_peer_record );
+            fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(*originating_peer->get_remote_endpoint());
+            if (updated_peer_record)
+            {
+              updated_peer_record->last_connection_disposition = last_connection_succeeded;
+              _potential_peer_db.update_entry(*updated_peer_record);
+            }
           }
 
           originating_peer->negotiation_status = peer_connection::connection_negotiation_status::negotiation_complete;
@@ -2588,9 +2600,12 @@ namespace bts { namespace net { namespace detail {
       // error message to store in the peer database when we closed the connection
       if (originating_peer_ptr->connection_closed_error && originating_peer_ptr->get_remote_endpoint())
       {
-        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(*originating_peer_ptr->get_remote_endpoint());
-        updated_peer_record.last_error = *originating_peer->connection_closed_error;
-        _potential_peer_db.update_entry( updated_peer_record );
+        fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(*originating_peer_ptr->get_remote_endpoint());
+        if (updated_peer_record)
+        {
+          updated_peer_record->last_error = *originating_peer->connection_closed_error;
+          _potential_peer_db.update_entry(*updated_peer_record);
+        }
       }
 
       _closing_connections.erase( originating_peer_ptr );
@@ -2602,9 +2617,12 @@ namespace bts { namespace net { namespace detail {
 
         if (originating_peer_ptr->get_remote_endpoint())
         {
-          potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *originating_peer_ptr->get_remote_endpoint() );
-          updated_peer_record.last_seen_time = fc::time_point::now();
-          _potential_peer_db.update_entry( updated_peer_record );
+          fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(*originating_peer_ptr->get_remote_endpoint());
+          if (updated_peer_record)
+          {
+            updated_peer_record->last_seen_time = fc::time_point::now();
+            _potential_peer_db.update_entry(*updated_peer_record);
+          }
         }
       }
 
@@ -3646,10 +3664,10 @@ namespace bts { namespace net { namespace detail {
       VERIFY_CORRECT_THREAD();
       // create or find the database entry for the new peer
       // if we're connecting to them, we believe they're not firewalled
-      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( remote_endpoint );
+      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(remote_endpoint);
       updated_peer_record.last_connection_disposition = last_connection_failed;
       updated_peer_record.last_connection_attempt_time = fc::time_point::now();;
-      _potential_peer_db.update_entry( updated_peer_record );
+      _potential_peer_db.update_entry(updated_peer_record);
 
       fc::oexception connect_failed_exception;
 
@@ -3913,18 +3931,18 @@ namespace bts { namespace net { namespace detail {
       _dump_node_status_task_done = fc::async([=](){ dump_node_status_task(); }, "dump_node_status_task");
     }
 
-    void node_impl::add_node( const fc::ip::endpoint& ep )
+    void node_impl::add_node(const fc::ip::endpoint& ep)
     {
       VERIFY_CORRECT_THREAD();
       // if we're connecting to them, we believe they're not firewalled
-      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( ep );
+      potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint(ep);
 
       // if we've recently connected to this peer, reset the last_connection_attempt_time to allow
       // us to immediately retry this peer
-      updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>( updated_peer_record.last_connection_attempt_time,
-                                                                                       fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout) );
-      _add_once_node_list.push_back( updated_peer_record );
-      _potential_peer_db.update_entry( updated_peer_record );
+      updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time,
+                                                                                      fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
+      _add_once_node_list.push_back(updated_peer_record);
+      _potential_peer_db.update_entry(updated_peer_record);
       trigger_p2p_network_connect_loop();
     }
 
@@ -4066,13 +4084,16 @@ namespace bts { namespace net { namespace detail {
       else
       {
         // we're the first to try to want to close the connection
-        potential_peer_record updated_peer_record = _potential_peer_db.lookup_or_create_entry_for_endpoint( *peer_to_disconnect->get_remote_endpoint() );
-        updated_peer_record.last_seen_time = fc::time_point::now();
-        if( error )
-          updated_peer_record.last_error = error;
-        else
-          updated_peer_record.last_error = fc::exception( FC_LOG_MESSAGE(info, reason_for_disconnect.c_str() ) );
-        _potential_peer_db.update_entry( updated_peer_record );
+        fc::optional<potential_peer_record> updated_peer_record = _potential_peer_db.lookup_entry_for_endpoint(*peer_to_disconnect->get_remote_endpoint());
+        if (updated_peer_record)
+        {
+          updated_peer_record->last_seen_time = fc::time_point::now();
+          if( error )
+            updated_peer_record->last_error = error;
+          else
+            updated_peer_record->last_error = fc::exception(FC_LOG_MESSAGE(info, reason_for_disconnect.c_str()));
+          _potential_peer_db.update_entry(*updated_peer_record);
+        }
 
         peer_to_disconnect->we_have_requested_close = true;
         peer_to_disconnect->connection_closed_time = fc::time_point::now();
