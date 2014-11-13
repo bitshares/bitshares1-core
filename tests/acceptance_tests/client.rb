@@ -98,10 +98,7 @@ class BitSharesNode
   end
 
   def save_config(config)
-    puts "#{@options[:data_dir]}/config.json"
-    puts JSON.pretty_generate(config)
     File.write("#{@options[:data_dir]}/config.json", JSON.pretty_generate(config))
-    puts JSON.parse( IO.read("#{@options[:data_dir]}/config.json") )
   end
 
 end
