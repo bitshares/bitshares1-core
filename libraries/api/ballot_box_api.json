@@ -17,13 +17,55 @@
       },
       {
          "method_name": "ballot_get_decision",
-         "description": "Submit a decision to the blockchain.",
+         "description": "Get a voter_decision by ID.",
          "return_type": "signed_voter_decision",
          "parameters" : [
             {
                "name" : "decision_id",
                "type" : "sha256",
                "description" : "The ID of the decision to retrieve."
+            }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_decisions_by_voter",
+         "description": "Get IDs of all decisions cast by a given voter.",
+         "return_type": "sha256_array",
+         "parameters" : [
+            {
+               "name" : "voter_address",
+               "type" : "address",
+               "description" : "The address of the voter's public key."
+            }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_decisions_by_contest",
+         "description": "Get IDs of all decisions cast in a given contest.",
+         "return_type": "sha256_array",
+         "parameters" : [
+            {
+               "name" : "contest_id",
+               "type" : "sha256",
+               "description" : "The contest ID to get decisions for."
+            }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_decisions_by_ballot",
+         "description": "Get IDs of all decisions cast referencing a given ballot.",
+         "return_type": "sha256_array",
+         "parameters" : [
+            {
+               "name" : "ballot_id",
+               "type" : "sha256",
+               "description" : "The ballot ID to get decisions for."
             }
          ],
          "is_const" : true,
@@ -60,6 +102,20 @@
                "name" : "ballot_id",
                "type" : "sha256",
                "description" : "The ballot ID to get a record for."
+            }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_ballots_by_contest",
+         "description": "Returns IDs of all ballots which contain a given contest.",
+         "return_type": "sha256_array",
+         "parameters" : [
+            {
+               "name" : "contest_id",
+               "type" : "sha256",
+               "description" : "The contest ID to get ballots for."
             }
          ],
          "is_const" : true,

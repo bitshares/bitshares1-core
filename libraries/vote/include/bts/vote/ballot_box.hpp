@@ -22,11 +22,15 @@ public:
 
    void store_new_decision(const signed_voter_decision& decision);
    signed_voter_decision get_decision(const digest_type& id);
+   vector<digest_type> get_decisions_by_voter(const address& voter);
+   vector<digest_type> get_decisions_by_contest(const digest_type& contest_id);
+   vector<digest_type> get_decisions_by_ballot(const digest_type& ballot_id);
 
    vector<string> get_all_write_ins();
    vector<digest_type> get_decisions_with_write_in(string write_in_name);
 
    ballot get_ballot(const digest_type& id);
+   vector<digest_type> get_ballots_by_contest(const digest_type& contest_id);
 };
 
 } } // namespace bts::vote

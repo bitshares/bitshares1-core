@@ -103,7 +103,7 @@ public:
       decision_db.store(id, record);
       update_index(id, record);
    }
-   void store_record(const ballot& ballot)
+   void store_record(const vote::ballot& ballot)
    {
       auto id = ballot.id();
       ballot_db.store(id, ballot);
@@ -129,6 +129,29 @@ public:
       write_in_index.clear();
    }
 
+   template<typename Index, typename Key>
+   vector<digest_type> get_decisions_by_key(const Key& key)
+   {
+      vector<digest_type> results;
+      auto range = decision_index.get<Index>().equal_range(key);
+      std::for_each(range.first, range.second, [&results](const decision_index_record& rec) {
+         results.push_back(rec.id);
+      });
+      return results;
+   }
+   vector<digest_type> get_decisions_by_voter(const address& voter)
+   {
+      return get_decisions_by_key<by_voter>(voter);
+   }
+   vector<digest_type> get_decisions_by_contest(const digest_type& contest_id)
+   {
+      return get_decisions_by_key<by_contest>(contest_id);
+   }
+   vector<digest_type> get_decisions_by_ballot(const digest_type& ballot_id)
+   {
+      return get_decisions_by_key<by_ballot>(ballot_id);
+   }
+
    vector<string> get_all_write_ins()
    {
       vector<string> results;
@@ -141,16 +164,21 @@ public:
    vector<digest_type> get_decisions_with_write_in(string write_in_name)
    {
       vector<digest_type> results;
-      for( auto itr = write_in_index.lower_bound(write_in_name);
-           itr != write_in_index.upper_bound(write_in_name);
-           ++itr )
-         results.push_back(itr->second);
+      auto range = write_in_index.equal_range(write_in_name);
+      std::for_each(range.first, range.second, [&results](const std::pair<string,digest_type>& rec) {
+         results.push_back(rec.second);
+      });
       return results;
    }
 
-   ballot get_ballot_by_id(const digest_type& id)
+   vector<digest_type> get_ballots_by_contest(const digest_type& contest_id)
    {
-      return ballot_db.fetch(id);
+      vector<digest_type> results;
+      auto range = ballot_by_contest_index.equal_range(contest_id);
+      std::for_each(range.first, range.second, [&results](const std::pair<digest_type,digest_type>& rec) {
+         results.push_back(rec.second);
+      });
+      return results;
    }
 };
 } // namespace detail
@@ -185,6 +213,21 @@ signed_voter_decision ballot_box::get_decision(const digest_type& id)
    return my->decision_db.fetch(id);
 }
 
+vector<digest_type> ballot_box::get_decisions_by_voter(const blockchain::address& voter)
+{
+   return my->get_decisions_by_voter(voter);
+}
+
+vector<digest_type> ballot_box::get_decisions_by_contest(const digest_type& contest_id)
+{
+   return my->get_decisions_by_contest(contest_id);
+}
+
+vector<digest_type> ballot_box::get_decisions_by_ballot(const digest_type& ballot_id)
+{
+   return my->get_decisions_by_ballot(ballot_id);
+}
+
 vector<string> ballot_box::get_all_write_ins()
 {
    return my->get_all_write_ins();
@@ -197,7 +240,12 @@ vector<digest_type> ballot_box::get_decisions_with_write_in(string write_in_name
 
 ballot ballot_box::get_ballot(const digest_type& id)
 {
-   return my->get_ballot_by_id(id);
+   return my->ballot_db.fetch(id);
+}
+
+vector<digest_type> ballot_box::get_ballots_by_contest(const digest_type& contest_id)
+{
+   return my->get_ballots_by_contest(contest_id);
 }
 
 } } // namespace bts::vote
