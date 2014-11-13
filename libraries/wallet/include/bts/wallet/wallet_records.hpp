@@ -110,6 +110,14 @@ namespace bts { namespace wallet {
        fc::variant                           value;
    };
 
+   /** Extra info for non-TITAN accounts.
+    */
+   struct simple_account_data
+   {
+       share_type     received_by_account;
+       address        current_address;
+   };
+
    /**
     *  Contacts are tracked by the hash of their receive key
     */
@@ -121,11 +129,12 @@ namespace bts { namespace wallet {
         */
        variant  private_data;
 
-       bool     is_my_account = false;
-       int8_t   approved = 0;
-       bool     is_favorite = false;
-       bool     block_production_enabled = false;
-       uint32_t last_used_gen_sequence = 0;
+       bool                             is_my_account = false;
+       int8_t                           approved = 0;
+       bool                             is_favorite = false;
+       bool                             block_production_enabled = false;
+       uint32_t                         last_used_gen_sequence = 0;
+       optional<simple_account_data>    simple_account;
    };
 
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
@@ -149,7 +158,7 @@ namespace bts { namespace wallet {
 
    // A public key can control a virtual bitcoind API compatible wallet
    // which tries not interact with other bts accounts or TITAN transactions.
-   struct simple_wallet_data
+   struct simple_key_data
    {
        string label = "";
        string group_label = ""; // for fake bitcoin wallet "accounts"
@@ -163,7 +172,7 @@ namespace bts { namespace wallet {
        bool                             valid_from_signature = false;
        optional<string>                 memo; // this memo is not used for anything.
 
-       optional<simple_wallet_data>     btc_data;
+       optional<simple_key_data>     btc_data;
        /** defines the generation number that was used to generate the key
         * relative to the account address.
         */

@@ -524,7 +524,7 @@ namespace detail {
        auto okey = _wallet_db.lookup_key( addr );
        FC_ASSERT( okey.valid(), "Key I just created does not exist" );
        
-       okey->btc_data = simple_wallet_data();
+       okey->btc_data = simple_key_data();
        
        if( label != "" )
        {
@@ -2616,6 +2616,19 @@ namespace detail {
        set_address_group_label( addr, "" );
        return addr;
    }
+
+
+    vector<wallet_balance_record>   wallet::get_address_balances( const address& addr )
+    {
+        auto balances = my->_wallet_db.get_balances();
+        auto ret = vector<wallet_balance_record>();
+        for( auto bal : balances )
+        {
+            if( bal.second.owner() == addr )
+                ret.push_back( bal.second ); 
+        }
+        return ret;
+    }
 
     void   wallet::set_address_label( const address& addr, const string& label )
     {
