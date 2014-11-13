@@ -45,6 +45,7 @@ public:
       vector<string> write_in_names;
       digest_type ballot_id;
    };
+   typedef ballot ballot_storage_record;
 
    level_map<digest_type, signed_voter_decision> decision_db;
    multi_index_container<
@@ -78,6 +79,9 @@ public:
    > decision_index;
    std::multimap<string, digest_type> write_in_index;
 
+   level_map<digest_type, ballot> ballot_db;
+   std::multimap<digest_type, digest_type> ballot_by_contest_index;
+
    bool databases_open = false;
 
    void update_index(const digest_type& id, const decision_storage_record& storage_record)
@@ -86,6 +90,11 @@ public:
       for( auto write_in : storage_record.write_in_names )
          write_in_index.insert(std::make_pair(write_in, id));
    }
+   void update_index(const digest_type& id, const ballot_storage_record& ballot_record)
+   {
+      for( auto contest : ballot_record.contests )
+         ballot_by_contest_index.insert(std::make_pair(contest, id));
+   }
 
    void store_record(const signed_voter_decision& decision)
    {
@@ -93,6 +102,12 @@ public:
       decision_storage_record record = decision;
       decision_db.store(id, record);
       update_index(id, record);
+   }
+   void store_record(const ballot& ballot)
+   {
+      auto id = ballot.id();
+      ballot_db.store(id, ballot);
+      update_index(id, ballot);
    }
 
    void open(fc::path data_dir)
@@ -131,6 +146,11 @@ public:
            ++itr )
          results.push_back(itr->second);
       return results;
+   }
+
+   ballot get_ballot_by_id(const digest_type& id)
+   {
+      return ballot_db.fetch(id);
    }
 };
 } // namespace detail
@@ -173,6 +193,11 @@ vector<string> ballot_box::get_all_write_ins()
 vector<digest_type> ballot_box::get_decisions_with_write_in(string write_in_name)
 {
    return my->get_decisions_with_write_in(write_in_name);
+}
+
+ballot ballot_box::get_ballot(const digest_type& id)
+{
+   return my->get_ballot_by_id(id);
 }
 
 } } // namespace bts::vote

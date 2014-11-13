@@ -748,6 +748,11 @@
         "type_name" : "signed_voter_decision",
         "cpp_return_type" : "bts::vote::signed_voter_decision",
         "cpp_include_file" : "bts/vote/types.hpp"
+      },
+      {
+        "type_name" : "ballot",
+        "cpp_return_type" : "bts::vote::ballot",
+        "cpp_include_file" : "bts/vote/types.hpp"
       }
     ]
 }

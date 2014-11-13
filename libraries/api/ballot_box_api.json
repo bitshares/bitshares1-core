@@ -50,6 +50,20 @@
          ],
          "is_const" : true,
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name": "ballot_get_ballot_by_id",
+         "description": "Returns the ballot record for a particular ballot ID.",
+         "return_type": "ballot",
+         "parameters" : [
+            {
+               "name" : "ballot_id",
+               "type" : "sha256",
+               "description" : "The ballot ID to get a record for."
+            }
+         ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_unlocked"]
       }
    ]
 }

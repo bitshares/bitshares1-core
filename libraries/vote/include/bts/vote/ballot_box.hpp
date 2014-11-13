@@ -25,6 +25,8 @@ public:
 
    vector<string> get_all_write_ins();
    vector<digest_type> get_decisions_with_write_in(string write_in_name);
+
+   ballot get_ballot(const digest_type& id);
 };
 
 } } // namespace bts::vote

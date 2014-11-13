@@ -32,4 +32,10 @@ vector<digest_type> client_impl::ballot_get_decisions_with_write_in(const std::s
    return _ballot_box->get_decisions_with_write_in(write_in_name);
 }
 
+ballot client_impl::ballot_get_ballot_by_id(const fc::sha256 &ballot_id) const
+{
+   SANITY_CHECK;
+   return _ballot_box->get_ballot(ballot_id);
+}
+
 } } } // namespace bts::client::detail
