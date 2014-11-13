@@ -334,6 +334,8 @@ namespace bts { namespace blockchain {
       for( const auto& item : r.active_key_history )
          key_to_account[address(item.second)] = r.id;
       key_to_account[address(r.owner_key)] = r.id;
+      if( r.is_delegate() )
+          key_to_account[address(r.delegate_info->signing_key)] = r.id;
    }
 
    vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
