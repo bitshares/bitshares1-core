@@ -50,7 +50,7 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          new_record.delegate_info->block_signing_key = this->active_key;
+          new_record.delegate_info->signing_key = this->active_key;
 
           const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
           eval_state.required_fees += reg_fee;
@@ -110,7 +110,7 @@ namespace bts { namespace blockchain {
           {
               current_record->delegate_info = delegate_stats();
               current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-              current_record->delegate_info->block_signing_key = current_record->active_key();
+              current_record->delegate_info->signing_key = current_record->active_key();
               const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
               eval_state.required_fees += reg_fee;
           }
@@ -171,10 +171,11 @@ namespace bts { namespace blockchain {
       // STORE LINK...
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+#ifndef WIN32
+#warning [SOFTFORK] Disable this operation until the next BTS hardfork, then remove
+#endif
    void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"Update block signing key operation is not enabled yet!" );
-
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
       if( !account_rec.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );
@@ -188,7 +189,10 @@ namespace bts { namespace blockchain {
       if( !eval_state.account_or_any_parent_has_signed( *account_rec ) )
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
-      account_rec->delegate_info->block_signing_key = this->block_signing_key;
+      account_rec->delegate_info->signing_key = this->block_signing_key;
+      account_rec->delegate_info->num_signing_key_changes++;
+      account_rec->delegate_info->last_signing_key_change_block_num = eval_state._current_state->get_head_block_num();
+      account_rec->delegate_info->next_secret_hash = optional<secret_hash_type>();
       account_rec->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_account_record( *account_rec );

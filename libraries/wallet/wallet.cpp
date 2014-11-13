@@ -524,9 +524,10 @@ namespace detail {
        auto okey = _wallet_db.lookup_key( addr );
        FC_ASSERT( okey.valid(), "Key I just created does not exist" );
        
+       okey->btc_data = simple_key_data();
        if( label != "" )
        {
-           okey->label = label;
+           okey->btc_data->label = label;
            _wallet_db.store_key( *okey );
        }
        return addr;
@@ -1603,7 +1604,7 @@ namespace detail {
 
       auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
       FC_ASSERT( delegate_record.is_delegate() && delegate_record.delegate_info.valid() );
-      auto delegate_pub_key = delegate_record.delegate_info->block_signing_key;
+      auto delegate_pub_key = delegate_record.delegate_info->signing_key;
       auto delegate_key = get_private_key( address( delegate_pub_key ) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
@@ -1718,8 +1719,9 @@ namespace detail {
       unordered_set<address> required_signatures;
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
-      FC_ASSERT( current_account.valid() && current_account->is_delegate() );
+      FC_ASSERT( current_account );
       auto payer_public_key = get_account_public_key( account_to_publish_under );
+      FC_ASSERT( my->_blockchain->is_active_delegate( current_account->id ) );
 
       auto quote_asset_record = my->_blockchain->get_asset_record( amount_asset_symbol );
       auto base_asset_record  = my->_blockchain->get_asset_record( BTS_BLOCKCHAIN_SYMBOL );
@@ -1915,6 +1917,25 @@ namespace detail {
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
+
+   wallet_transaction_record wallet::update_block_signing_key(
+           const string& authorizing_account_name,
+           const string& delegate_name,
+           const public_key_type& block_signing_key,
+           bool sign
+           )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      transaction_builder_ptr builder = create_transaction_builder();
+      builder->update_block_signing_key( authorizing_account_name, delegate_name, block_signing_key );
+      builder->finalize();
+
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
+   } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key)(sign) ) }
 
    void wallet::repair_records()
    { try {
@@ -2591,36 +2612,74 @@ namespace detail {
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
        auto addr = my->get_new_address( account_name, label );
-       set_address_virtual_account( addr, "" );
+       set_address_group_label( addr, "" );
        return addr;
    }
 
-   void   wallet::set_address_label( const address& addr, const string& label )
-   {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
-       auto okey = my->_wallet_db.lookup_key( addr );
-       FC_ASSERT( okey.valid(), "No such address." );
-       okey->label = label;
-       my->_wallet_db.store_key( *okey );
-   }
 
-    void  wallet::set_address_virtual_account( const address& addr, const string& virtual_account )
+    vector<wallet_balance_record>   wallet::get_address_balances( const address& addr )
+    {
+        auto balances = my->_wallet_db.get_balances();
+        auto ret = vector<wallet_balance_record>();
+        for( auto bal : balances )
+        {
+            if( bal.second.owner() == addr )
+                ret.push_back( bal.second ); 
+        }
+        return ret;
+    }
+
+    void   wallet::set_address_label( const address& addr, const string& label )
     {
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
         FC_ASSERT( okey.valid(), "No such address." );
-        okey->virtual_account = virtual_account;
+        FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
+        okey->btc_data->label = label;
         my->_wallet_db.store_key( *okey );
     }
 
-    vector<address>  wallet::get_addresses_for_virtual_account( const string& virtual_account )
+    string  wallet::get_address_label( const address& addr )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
+        return okey->btc_data->label;
+    }
+
+
+
+    void  wallet::set_address_group_label( const address& addr, const string& group_label )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
+        okey->btc_data->group_label = group_label;
+        my->_wallet_db.store_key( *okey );
+    }
+
+    string           wallet::get_address_group_label( const address& addr )
+    {
+        FC_ASSERT( is_open() );
+        FC_ASSERT( is_unlocked() );
+        auto okey = my->_wallet_db.lookup_key( addr );
+        FC_ASSERT( okey.valid(), "No such address." );
+        FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
+        return okey->btc_data->group_label;
+    }
+
+    vector<address>  wallet::get_addresses_for_group_label( const string& group_label )
     {
         vector<address> addrs;
         for( auto item : my->_wallet_db.get_keys() )
         {
-            if( item.second.virtual_account == virtual_account )
+            auto key = item.second;
+            if( key.btc_data.valid() && key.btc_data->group_label == group_label )
                 addrs.push_back( item.first );
         }
         return addrs;
@@ -3398,9 +3457,9 @@ namespace detail {
    asset wallet::get_transaction_fee( const asset_id_type& desired_fee_asset_id )const
    { try {
       FC_ASSERT( is_open() );
+      // TODO: support price conversion using price from blockchain
 
       asset xts_fee( BTS_WALLET_DEFAULT_TRANSACTION_FEE, 0 );
-
       try
       {
           xts_fee = my->_wallet_db.get_property( default_transaction_priority_fee ).as<asset>();
@@ -3411,23 +3470,22 @@ namespace detail {
 
       if( desired_fee_asset_id != 0 )
       {
-         const oasset_record asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
+         const auto asset_rec = my->_blockchain->get_asset_record( desired_fee_asset_id );
          FC_ASSERT( asset_rec.valid() );
          if( asset_rec->is_market_issued() )
          {
-             const oprice median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id );
-             if( median_price.valid() )
+             auto median_price = my->_blockchain->get_median_delegate_price( desired_fee_asset_id, asset_id_type( 0 ) );
+             if( median_price )
              {
                 xts_fee += xts_fee + xts_fee;
                 // fees paid in something other than XTS are discounted 50%
-                const asset alt_fees_paid = xts_fee * *median_price;
+                auto alt_fees_paid = xts_fee * *median_price;
                 return alt_fees_paid;
              }
          }
       }
-
       return xts_fee;
-   } FC_CAPTURE_AND_RETHROW( (desired_fee_asset_id) ) }
+       } FC_CAPTURE_AND_RETHROW() }
 
    bool wallet::asset_can_pay_fee(const asset_id_type& desired_fee_asset_id) const
    {
@@ -3744,7 +3802,7 @@ namespace detail {
 
              const auto sender_key_record = my->_wallet_db.lookup_key( escrow_cond.sender );
              const auto receiver_key_record = my->_wallet_db.lookup_key( escrow_cond.receiver );
-             if( !((sender_key_record && sender_key_record->has_private_key()) || 
+             if( !((sender_key_record && sender_key_record->has_private_key()) ||
                    (receiver_key_record && receiver_key_record->has_private_key())) )
              {
                 return; // no private key for the sender nor receiver
@@ -4086,7 +4144,7 @@ namespace detail {
       }
       return account_keys;
    }
-   
+
 
    map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, uint32_t limit )const
    {

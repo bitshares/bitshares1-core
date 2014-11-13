@@ -111,15 +111,6 @@ namespace bts { namespace blockchain {
       if( this->public_data.valid() )
           current_asset_record->public_data = *this->public_data;
 
-      if( this->issuer_account_id.valid() )
-      {
-          const oaccount_record new_issuer_account_record = eval_state._current_state->get_account_record( *this->issuer_account_id );
-          if( NOT new_issuer_account_record.valid() )
-              FC_CAPTURE_AND_THROW( unknown_account_id, (issuer_account_id) );
-
-          current_asset_record->issuer_account_id = *this->issuer_account_id;
-      }
-
       if( this->maximum_share_supply.valid() )
           current_asset_record->maximum_share_supply = *this->maximum_share_supply;
 

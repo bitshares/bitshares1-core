@@ -157,6 +157,15 @@ wallet_transaction_record detail::client_impl::wallet_publish_version( const str
    return record;
 }
 
+wallet_transaction_record detail::client_impl::wallet_delegate_update_block_signing_key( const string& authorizing_account_name,
+                                                                                         const string& delegate_name,
+                                                                                         const public_key_type& block_signing_key )
+{
+   const auto record = _wallet->update_block_signing_key( authorizing_account_name, delegate_name, block_signing_key );
+   network_broadcast_transaction( record.trx );
+   return record;
+}
+
 int32_t detail::client_impl::wallet_recover_accounts( int32_t accounts_to_recover, int32_t maximum_number_of_attempts )
 {
   _wallet->auto_backup( "before_account_recovery" );

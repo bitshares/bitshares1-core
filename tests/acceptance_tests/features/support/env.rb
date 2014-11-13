@@ -1,6 +1,7 @@
 require 'rspec/expectations'
 require 'logger'
 require './testnet.rb'
+require './webserver.rb'
 
 Actor = Struct.new(:node, :account) do
 end
@@ -9,12 +10,12 @@ class Helper
 
   def initialize
     @logger = Logger.new('features.log')
-    @logger.info '--------------------------------------'
+    @logger.info "\n\n____________________________________________________"
     @pause = false
   end
 
   def get_actor(name)
-    if name == 'my' or name == 'I'
+    if name == 'my' or name == 'me' or name == 'I'
       @current_actor
     elsif name == 'Alice' or name == "Alice's"
       @alice
@@ -77,6 +78,16 @@ class Helper
     n.gsub(',','').to_f
   end
 
+  def asset_amount_to_str(am)
+    asset = @testnet.delegate_node.exec 'blockchain_get_asset', am['asset_id']
+    return "#{am['amount'].to_f/asset['precision'].to_f} #{asset['symbol']}"
+  end
+
+  def print_json(json)
+    json = JSON.parse(json) if json.class == String
+    STDOUT.puts JSON.pretty_generate(json)
+  end
+
 end
 
 Before('@pause') do
@@ -94,6 +105,7 @@ Before do |scenario|
   @testnet.alice_node.wait_new_block
   @alice = Actor.new(@testnet.alice_node, 'alice')
   @bob = Actor.new(@testnet.bob_node, 'bob')
+  @transfers = []
   sleep(2)
 end
 
@@ -109,7 +121,6 @@ After do |scenario|
   @pause = false
   STDOUT.puts 'shutting down testnet..'
   @testnet.shutdown
-  @testnet = nil
 end
 
 World( RSpec::Matchers )

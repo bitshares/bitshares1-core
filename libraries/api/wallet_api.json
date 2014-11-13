@@ -1741,6 +1741,29 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_delegate_update_block_signing_key",
+         "description" : "Update a delegate's block signing and feed publishing key",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "authorizing_account_name",
+                "type" : "account_name",
+                "description" : "The account that will authorize changing the block signing key"
+            },
+            {
+                "name" : "delegate_name",
+                "type" : "account_name",
+                "description" : "The delegate account which will have its block signing key changed"
+            },
+            {
+                "name" : "block_signing_key",
+                "type" : "public_key",
+                "description" : "The new key that will be used for block signing"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_recover_accounts",
          "description" : "Attempts to recover accounts created after last backup was taken and returns number of successful recoveries. Use if you have restored from backup and are missing accounts.",
          "return_type" : "int32_t",

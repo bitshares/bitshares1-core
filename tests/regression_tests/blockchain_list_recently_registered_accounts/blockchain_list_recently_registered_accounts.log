@@ -39,12 +39,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
     "active_key_history": [[
-        "20140620T144030",
+        "2014-06-20T14:40:30",
         "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
       ]
     ],
-    "registration_date": "20140620T144030",
-    "last_update": "20140620T144030",
+    "registration_date": "2014-06-20T14:40:30",
+    "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -75,12 +75,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
     "active_key_history": [[
-        "20140620T144030",
+        "2014-06-20T14:40:30",
         "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
       ]
     ],
-    "registration_date": "20140620T144030",
-    "last_update": "20140620T144030",
+    "registration_date": "2014-06-20T14:40:30",
+    "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -100,12 +100,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM",
     "active_key_history": [[
-        "20140620T144040",
+        "2014-06-20T14:40:40",
         "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
       ]
     ],
-    "registration_date": "20140620T144040",
-    "last_update": "20140620T144040",
+    "registration_date": "2014-06-20T14:40:40",
+    "last_update": "2014-06-20T14:40:40",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -136,12 +136,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
     "active_key_history": [[
-        "20140620T144030",
+        "2014-06-20T14:40:30",
         "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
       ]
     ],
-    "registration_date": "20140620T144030",
-    "last_update": "20140620T144030",
+    "registration_date": "2014-06-20T14:40:30",
+    "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -161,12 +161,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM",
     "active_key_history": [[
-        "20140620T144040",
+        "2014-06-20T14:40:40",
         "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
       ]
     ],
-    "registration_date": "20140620T144040",
-    "last_update": "20140620T144040",
+    "registration_date": "2014-06-20T14:40:40",
+    "last_update": "2014-06-20T14:40:40",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -186,12 +186,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7",
     "active_key_history": [[
-        "20140620T144050",
+        "2014-06-20T14:40:50",
         "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
       ]
     ],
-    "registration_date": "20140620T144050",
-    "last_update": "20140620T144050",
+    "registration_date": "2014-06-20T14:40:50",
+    "last_update": "2014-06-20T14:40:50",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -270,12 +270,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
     "active_key_history": [[
-        "20140620T144030",
+        "2014-06-20T14:40:30",
         "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
       ]
     ],
-    "registration_date": "20140620T144030",
-    "last_update": "20140620T144030",
+    "registration_date": "2014-06-20T14:40:30",
+    "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -295,12 +295,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM",
     "active_key_history": [[
-        "20140620T144040",
+        "2014-06-20T14:40:40",
         "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
       ]
     ],
-    "registration_date": "20140620T144040",
-    "last_update": "20140620T144040",
+    "registration_date": "2014-06-20T14:40:40",
+    "last_update": "2014-06-20T14:40:40",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -320,12 +320,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7",
     "active_key_history": [[
-        "20140620T144050",
+        "2014-06-20T14:40:50",
         "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
       ]
     ],
-    "registration_date": "20140620T144050",
-    "last_update": "20140620T144050",
+    "registration_date": "2014-06-20T14:40:50",
+    "last_update": "2014-06-20T14:40:50",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,
@@ -345,12 +345,12 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "public_data": null,
     "owner_key": "XTS6XtfD6n2T2i3GE4BVuabQUvZRAxVLYUUTLpf7sFAqRxnA3i8Kf",
     "active_key_history": [[
-        "20140620T144100",
+        "2014-06-20T14:41:00",
         "XTS6XtfD6n2T2i3GE4BVuabQUvZRAxVLYUUTLpf7sFAqRxnA3i8Kf"
       ]
     ],
-    "registration_date": "20140620T144100",
-    "last_update": "20140620T144100",
+    "registration_date": "2014-06-20T14:41:00",
+    "last_update": "2014-06-20T14:41:00",
     "delegate_info": {
       "votes_for": 0,
       "blocks_produced": 0,

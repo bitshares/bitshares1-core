@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
 
    // Starting 2014-11-06, delegates are issued max 50 shares per block produced, and this value is halved every 4 years
    // just like in Bitcoin
-   share_type chain_interface::get_max_delegate_pay_per_block()const
+   share_type chain_interface::get_max_delegate_pay_issued_per_block()const
    {
        share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
 
@@ -81,7 +81,7 @@ namespace bts { namespace blockchain {
    share_type chain_interface::get_delegate_registration_fee( uint8_t pay_rate )const
    {
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
-       const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_per_block();
+       const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_issued_per_block();
        const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
        const share_type registration_fee = (max_pay_per_two_weeks * pay_rate) / 100;
        FC_ASSERT( registration_fee > 0 );

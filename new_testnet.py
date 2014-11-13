@@ -20,13 +20,13 @@ input_log = []
 input_log.append(">>> wallet_create default password")
 input_log.append(">>> wallet_set_automatic_backups false ")
 
-new_genesis = {
-        "timestamp": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-        "market_assets": [],
-        "names": [],
-        "balances": [],
-        "bts_sharedrop": []
-}
+new_genesis = {}
+with open("libraries/blockchain/genesis.json") as genesis:
+    new_genesis = json.load(genesis)
+
+new_genesis["timestamp"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+new_genesis["bts_sharedrop"] = []
+new_genesis["names"] = []
 
 with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
     items = json.loads(snapshot.read())
@@ -70,10 +70,6 @@ os.rename("tmp_config", "libraries/blockchain/include/bts/blockchain/config.hpp"
 #os.rename("tmp_config", "libraries/net/include/bts/net/config.hpp")
 
 old_balances = []
-with open("libraries/blockchain/genesis.json") as genesis:
-    old_balances = json.load(genesis)["balances"]
-
-new_genesis["balances"] = old_balances
 
 with open("libraries/blockchain/genesis.json", "w") as genesis:
     genesis.write(json.dumps(new_genesis, indent=4))

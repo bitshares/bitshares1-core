@@ -151,6 +151,12 @@ namespace bts { namespace wallet {
                                          const string& memo,
                                          vote_selection_method vote_method = vote_recommended,
                                          fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
+
+      transaction_builder& release_escrow( const address& escrow_account,
+                                           const address& released_by_address,
+                                           share_type     amount_to_sender,
+                                           share_type     amount_to_receiver );
+                                           
       /**
        * @brief Cancel a single order
        * @param order_id
@@ -208,6 +214,10 @@ namespace bts { namespace wallet {
       transaction_builder& submit_cover(const wallet_account_record& from_account,
                                         asset cover_amount,
                                         const order_id_type& order_id);
+
+      transaction_builder& update_block_signing_key( const string& authorizing_account_name,
+                                                     const string& delegate_name,
+                                                     const public_key_type& block_signing_key );
       /**
        * @brief Balance the books and pay the fees
        *

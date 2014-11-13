@@ -81,9 +81,8 @@ namespace bts { namespace blockchain {
             void                                        verify_header( const full_block&, const public_key_type& block_signee );
             void                                        apply_transactions( const full_block& block,
                                                                             const pending_chain_state_ptr& );
-            void                                        pay_delegate( const block_id_type& block_id,
-                                                                      const pending_chain_state_ptr&,
-                                                                      const public_key_type& block_signee );
+            void                                        pay_delegate( const pending_chain_state_ptr& pending_state,
+                                                                      const public_key_type& block_signee )const;
             void                                        save_undo_state( const block_id_type& id,
                                                                          const pending_chain_state_ptr& );
             void                                        update_head_block( const full_block& blk );

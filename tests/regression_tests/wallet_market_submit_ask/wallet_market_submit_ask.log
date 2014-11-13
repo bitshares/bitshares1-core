@@ -23,21 +23,21 @@ default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       1,999,500,098.99901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.99901 XTS     
 default (unlocked) >>> blockchain_list_assets XMO
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       1,999,500,098.99901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.99901 XTS     
 default (unlocked) >>> blockchain_list_assets XTS
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       1,999,500,098.99901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.99901 XTS     
 default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       1,999,500,098.99901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.99901 XTS     
 default (unlocked) >>> help wallet_market_submit_ask
 Usage:
 wallet_market_submit_ask <from_account_name> <sell_quantity> <sell_quantity_symbol> <ask_price> <ask_price_symbol> [allow_stupid_ask]   Used to place a request to sell a quantity of assets at a price specified in another asset
@@ -71,7 +71,7 @@ default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    DIGITAL_DEVICE1         AN ASSET                                        MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       1,999,500,098.99901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.99901 XTS     
 default (unlocked) >>> debug_wait_for_block_by_number 1 relative
 OK
 default (unlocked) >>> wallet_account_transaction_history

@@ -239,9 +239,12 @@ namespace bts { namespace wallet {
 
          address  create_new_address( const string& account_name, const string& label);
 
+
          void              set_address_label( const address& addr, const string& label );
-         void              set_address_virtual_account( const address& addr, const string& virtual_account );
-         vector<address>   get_addresses_for_virtual_account( const string& virtual_account );
+         string            get_address_label( const address& addr );
+         void              set_address_group_label( const address& addr, const string& group_label );
+         string            get_address_group_label( const address& addr );
+         vector<address>   get_addresses_for_group_label( const string& group_label );
 
          ///@}
 
@@ -362,6 +365,12 @@ namespace bts { namespace wallet {
                  const string& account_to_pay_with,
                  bool sign = true
                  );
+         wallet_transaction_record update_block_signing_key(
+                 const string& authorizing_account_name,
+                 const string& delegate_name,
+                 const public_key_type& block_signing_key,
+                 bool sign = true
+                 );
          wallet_transaction_record create_asset(
                  const string& symbol,
                  const string& asset_name,
@@ -478,6 +487,9 @@ namespace bts { namespace wallet {
          account_balance_record_summary_type get_account_balance_records( const string& account_name = "", bool include_empty = true )const;
          account_balance_id_summary_type    get_account_balance_ids( const string& account_name = "", bool include_empty = true )const;
          account_balance_summary_type       get_account_balances( const string& account_name = "", bool include_empty = true )const;
+         /* Get balances for which they key for this address can sign ("owner") */
+         vector<wallet_balance_record>      get_address_balances( const address& addr );
+
 
          account_balance_summary_type       get_account_yield( const string& account_name = "" )const;
          asset                              asset_worth( const asset& base, const string& price_in_symbol )const;

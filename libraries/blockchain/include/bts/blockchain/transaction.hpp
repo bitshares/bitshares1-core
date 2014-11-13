@@ -54,6 +54,11 @@ namespace bts { namespace blockchain {
                              const asset& amount,
                              slate_id_type delegate_id );
 
+      void release_escrow( const address& escrow_account,
+                           const address& released_by,
+                           share_type amount_to_sender,
+                           share_type amount_to_receiver );
+
       void deposit_to_escrow( fc::ecc::public_key receiver_key,
                               fc::ecc::public_key escrow_key,
                               digest_type agreement,
@@ -134,6 +139,8 @@ namespace bts { namespace blockchain {
       void publish_feed( feed_id_type feed_id,
                          account_id_type delegate_id,
                          fc::variant value );
+
+      void update_signing_key( const account_id_type& account_id, const public_key_type& block_signing_key );
 
       bool is_cancel()const;
    }; // transaction

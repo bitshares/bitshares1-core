@@ -25,7 +25,7 @@ default (unlocked) >>>  blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    TEST_XMO                CREATING AN ASSET                               MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.49901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,099.99901 XTS     
 default (unlocked) >>> wallet_market_submit_short test 100 XTS 200 XMO 2
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -46,7 +46,7 @@ default (unlocked) >>> blockchain_list_assets
 ID    SYMBOL NAME                    DESCRIPTION                                     ISSUER                          ISSUED    SUPPLY                      
 ===========================================================================================================================================================
 1     XMO    TEST_XMO                CREATING AN ASSET                               MARKET                          N/A       0.00 XMO                    
-0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       1,999,500,198.49901 XTS     
+0     XTS    BitShares XTS           BitShares Test Network                          GENESIS                         N/A       2,000,000,199.99901 XTS     
 default (unlocked) >>> wallet_account_transaction_history
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================

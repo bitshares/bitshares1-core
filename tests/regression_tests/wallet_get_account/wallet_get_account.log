@@ -18,12 +18,12 @@ default (unlocked) >>> wallet_get_account testaccount
   "public_data": null,
   "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
   "active_key_history": [[
-      "20140620T144030",
+      "2014-06-20T14:40:30",
       "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
     ]
   ],
-  "registration_date": "19700101T000000",
-  "last_update": "19700101T000000",
+  "registration_date": "1970-01-01T00:00:00",
+  "last_update": "1970-01-01T00:00:00",
   "delegate_info": null,
   "meta_data": null,
   "account_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",

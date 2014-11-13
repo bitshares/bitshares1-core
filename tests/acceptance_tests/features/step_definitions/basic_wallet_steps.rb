@@ -7,8 +7,11 @@ Given(/^(\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, curren
   actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', actor.account
 end
 
-When(/^I send ([\d,\.]+) ([A-Z]+) to (\w+)$/) do |amount, currency, account|
-  @current_actor.node.exec 'wallet_transfer', to_f(amount), currency, @current_actor.account, account.downcase
+When(/^(\w+) sends? ([\d,\.]+) ([A-Z]+) to (\w+)$/) do |from, amount, currency, to|
+  actor_from = get_actor(from)
+  actor_to = get_actor(to)
+  res = actor_from.node.exec 'wallet_transfer', to_f(amount), currency, actor_from.account, actor_to.account
+  @transfers << res['ledger_entries'].first
 end
 
 When(/^(\w+) waits? for (one|\d+) blocks?$/) do |name, blocks|
@@ -46,4 +49,22 @@ end
 Then(/^([\w]+) should have\s?(around)? ([\d,\.]+) ([A-Z]+) and ([\d,\.]+) ([A-Z]+)$/) do |name, around, amount1, currency1, amount2, currency2|
   step "#{name} should have #{around} #{amount1} #{currency1}"
   step "#{name} should have #{around} #{amount2} #{currency2}"
+end
+
+Given(/^I expect HTTP transaction callbacks$/) do
+  config = @current_actor.node.get_config
+  config['wallet_callback_url'] = 'http://localhost:23232/transactions/create'
+  @current_actor.node.stop
+  @current_actor.node.save_config(config)
+  @current_actor.node.start
+  @current_actor.node.exec 'open', 'default'
+  @current_actor.node.exec 'unlock', '9999999', '123456789'
+  @webserver = WebServer.new
+  @webserver.start
+end
+
+Then(/^transaction callback should match last transfer$/) do
+  expect(@webserver.requests.length).to be > 0
+  request = JSON.parse(@webserver.requests.last)
+  expect(request).to eq(@transfers.last)
 end
