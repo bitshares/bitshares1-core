@@ -1382,7 +1382,8 @@ namespace detail {
       FC_ASSERT( current_account.valid(),
                 "You must create an account before importing a key" );
 
-      FC_ASSERT( my->is_receive_account( account_name ) );
+      if( !my->is_receive_account( account_name ) )
+          wlog( "Importing private key into currently non-receiving account: ${x}", ("x",account_name) );
 
       auto pub_key = key.get_public_key();
       address key_address( pub_key );
