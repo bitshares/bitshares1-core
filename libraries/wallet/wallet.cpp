@@ -2613,7 +2613,6 @@ namespace detail {
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
        auto addr = my->get_new_address( account_name, label );
-       set_address_group_label( addr, "" );
        return addr;
    }
 
