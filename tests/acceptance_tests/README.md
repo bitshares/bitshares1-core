@@ -5,9 +5,9 @@ This repository holds the BitShares acceptance tests implemented on top of Ruby'
 
 ## Installation
 
-Install Ruby:
+**Install Ruby:**
 
-On Linux I recommend to use rvm to install Ruby, here is how to do this on Ubuntu:
+On **Linux** I recommend to use rvm to install Ruby, here is how to do this on Ubuntu:
 
 ``` bash
   $ sudo apt-get install libgdbm-dev libncurses5-dev automake libtool bison libffi-dev curl
@@ -18,42 +18,43 @@ On Linux I recommend to use rvm to install Ruby, here is how to do this on Ubunt
   $ rvm use 2.1.3 --default
 ```
 
-
-On OS X you can install it via brew:
-
+On **OS X** you can install it via brew:
+```bash
   $ brew install ruby
-  
-  
-After you installed Ruby, install bundler gem:
+```
 
-  $ gem install bundler
   
+**After you installed Ruby, install bundler gem:**
+```bash
+  $ gem install bundler
+```
 
 Now you can install all dependencies by typing 'bundle' inside bitshares_acceptance_tests dir.
  
 Next define environment variable BTS_BUILD with path to your bitshares toolkit's build directory, e.g.:
-
+```bash
   $ export BTS_BUILD=/home/user/bitshares/build
-  
+```
   
 ## Usage
   
 Bootstrap the test net:
-
-  $ ruby testnet.rb -- create
+```bash
+  $ ruby testnet.rb --create
+```
   
 After a couple of minutes the test net would be ready and you can run tests (features) via 'cucumber' command:
-
+```bash
   $ cucumber
-  
+```  
 Or specifying a feature to run:
-
+```bash
   $ cucumber features/market.feature
-  
+```  
 Or tag:
-
+```bash
   $ cucumber -t @current
-
+```
 
 ### Note
 
