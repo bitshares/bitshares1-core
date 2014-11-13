@@ -4,7 +4,9 @@
 #include <fc/reflect/variant.hpp>
 
 #include <boost/multi_index_container.hpp>
+#include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/member.hpp>
 
 namespace bts { namespace vote {
@@ -20,6 +22,7 @@ protected:
    struct by_voter;
    struct by_contest;
    struct by_ballot;
+   struct by_tags;
 public:
    struct decision_storage_record : public signed_voter_decision
    {
@@ -45,8 +48,6 @@ public:
       vector<string> write_in_names;
       digest_type ballot_id;
    };
-   typedef ballot ballot_storage_record;
-
    level_map<digest_type, signed_voter_decision> decision_db;
    multi_index_container<
       decision_index_record,
@@ -79,8 +80,31 @@ public:
    > decision_index;
    std::multimap<string, digest_type> write_in_index;
 
-   level_map<digest_type, ballot> ballot_db;
+   typedef ballot ballot_storage_record;
+   level_map<digest_type, ballot_storage_record> ballot_db;
    std::multimap<digest_type, digest_type> ballot_by_contest_index;
+
+   typedef contest contest_storage_record;
+   struct contest_tags_index_record {
+      string key;
+      string value;
+      digest_type contest_id;
+   };
+   level_map<digest_type, contest_storage_record> contest_db;
+   multi_index_container<
+      contest_tags_index_record,
+      indexed_by<
+         ordered_non_unique<
+            tag<by_tags>,
+            composite_key<
+               contest_tags_index_record,
+               member<contest_tags_index_record, string, &contest_tags_index_record::key>,
+               member<contest_tags_index_record, string, &contest_tags_index_record::value>
+            >
+         >
+      >
+   > contest_tags_index;
+   std::multimap<string, digest_type> contest_by_contestant_index;
 
    bool databases_open = false;
 
@@ -94,6 +118,13 @@ public:
    {
       for( auto contest : ballot_record.contests )
          ballot_by_contest_index.insert(std::make_pair(contest, id));
+   }
+   void update_index(const digest_type &id, const contest_storage_record& contest_record)
+   {
+      for( auto contestant : contest_record.contestants )
+         contest_by_contestant_index.insert(std::make_pair(contestant.name, id));
+      for( auto tag_pair : contest_record.tags )
+         contest_tags_index.insert({tag_pair.first, tag_pair.second, id});
    }
 
    void store_record(const signed_voter_decision& decision)
@@ -109,6 +140,12 @@ public:
       ballot_db.store(id, ballot);
       update_index(id, ballot);
    }
+   void store_record(const vote::contest& contest)
+   {
+      auto id = contest.id();
+      contest_db.store(id, contest);
+      update_index(id, contest);
+   }
 
    void open(fc::path data_dir)
    {
@@ -118,15 +155,45 @@ public:
       for( auto itr = decision_db.begin(); itr.valid(); ++itr )
          update_index(itr.key(), itr.value());
 
+      ballot_db.open(data_dir / "ballot_db");
+      for( auto itr = ballot_db.begin(); itr.valid(); ++itr )
+         update_index(itr.key(), itr.value());
+
+      contest_db.open(data_dir / "contest_db");
+      for( auto itr = contest_db.begin(); itr.valid(); ++itr )
+         update_index(itr.key(), itr.value());
+
       databases_open = true;
+   }
+   void clear()
+   {
+      if( databases_open )
+      {
+         for( auto itr = decision_db.begin(); itr.valid(); ++itr )
+            decision_db.remove(itr.key());
+         for( auto itr = ballot_db.begin(); itr.valid(); ++itr )
+            ballot_db.remove(itr.key());
+         for( auto itr = contest_db.begin(); itr.valid(); ++itr )
+            contest_db.remove(itr.key());
+      }
+
+      decision_index.clear();
+      write_in_index.clear();
+      ballot_by_contest_index.clear();
+      contest_by_contestant_index.clear();
+      contest_tags_index.clear();
    }
    void close()
    {
+      FC_ASSERT( databases_open, "Cannot close unopened ballot box." );
+
       databases_open = false;
 
       decision_db.close();
-      decision_index.clear();
-      write_in_index.clear();
+      ballot_db.close();
+      contest_db.close();
+
+      clear();
    }
 
    template<typename Index, typename Key>
@@ -180,6 +247,36 @@ public:
       });
       return results;
    }
+
+   vector<string> get_values_by_tag(string key)
+   {
+      vector<string> results;
+      for( auto itr = contest_tags_index.lower_bound(boost::make_tuple(key));
+           itr != contest_tags_index.upper_bound(boost::make_tuple(key));
+           itr = contest_tags_index.upper_bound(boost::make_tuple(itr->key, itr->value)))
+         results.push_back(itr->value);
+      return results;
+   }
+   vector<digest_type> get_contests_by_tags(string key, string value)
+   {
+      vector<digest_type> results;
+      auto range = contest_tags_index.get<by_tags>().equal_range(boost::make_tuple(key, value));
+      if( value.empty() )
+         range = contest_tags_index.get<by_tags>().equal_range(boost::make_tuple(key));
+      std::for_each(range.first, range.second, [&results](const contest_tags_index_record& rec) {
+         results.push_back(rec.contest_id);
+      });
+      return results;
+   }
+   vector<digest_type> get_contests_by_contestant(string contestant)
+   {
+      vector<digest_type> results;
+      auto range = contest_by_contestant_index.equal_range(contestant);
+      std::for_each(range.first, range.second, [&results](const std::pair<string, digest_type>& rec) {
+         results.push_back(rec.second);
+      });
+      return results;
+   }
 };
 } // namespace detail
 
@@ -196,6 +293,11 @@ void ballot_box::open(fc::path data_dir)
 bool ballot_box::is_open()
 {
    return my->databases_open;
+}
+
+void ballot_box::clear()
+{
+   my->clear();
 }
 
 void ballot_box::close()
@@ -243,9 +345,39 @@ ballot ballot_box::get_ballot(const digest_type& id)
    return my->ballot_db.fetch(id);
 }
 
+void ballot_box::store_ballot(const vote::ballot& ballot)
+{
+   my->store_record(ballot);
+}
+
 vector<digest_type> ballot_box::get_ballots_by_contest(const digest_type& contest_id)
 {
    return my->get_ballots_by_contest(contest_id);
+}
+
+contest ballot_box::get_contest(const digest_type& id)
+{
+   return my->contest_db.fetch(id);
+}
+
+void ballot_box::store_contest(const vote::contest& contest)
+{
+   my->store_record(contest);
+}
+
+vector<string> ballot_box::get_values_by_tag(string key)
+{
+   return my->get_values_by_tag(key);
+}
+
+vector<digest_type> ballot_box::get_contests_by_tags(string key, string value)
+{
+   return my->get_contests_by_tags(key, value);
+}
+
+vector<digest_type> ballot_box::get_contests_by_contestant(string contestant)
+{
+   return my->get_contests_by_contestant(contestant);
 }
 
 } } // namespace bts::vote

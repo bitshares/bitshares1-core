@@ -62,4 +62,28 @@ vector<digest_type> client_impl::ballot_get_ballots_by_contest(const fc::sha256&
    return _ballot_box->get_ballots_by_contest(contest_id);
 }
 
+contest client_impl::ballot_get_contest_by_id(const fc::sha256 &contest_id) const
+{
+   SANITY_CHECK;
+   return _ballot_box->get_contest(contest_id);
+}
+
+vector<string> client_impl::ballot_get_tag_values_by_key(const string &key) const
+{
+   SANITY_CHECK;
+   return _ballot_box->get_values_by_tag(key);
+}
+
+vector<digest_type> client_impl::ballot_get_contests_by_tag(const string &key, const string &value) const
+{
+   SANITY_CHECK;
+   return _ballot_box->get_contests_by_tags(key, value);
+}
+
+vector<digest_type> client_impl::ballot_get_contests_by_contestant(const string &contestant_name) const
+{
+   SANITY_CHECK;
+   return _ballot_box->get_contests_by_contestant(contestant_name);
+}
+
 } } } // namespace bts::client::detail

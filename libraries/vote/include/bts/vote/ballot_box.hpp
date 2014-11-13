@@ -18,6 +18,7 @@ public:
 
    void open(fc::path data_dir);
    bool is_open();
+   void clear();
    void close();
 
    void store_new_decision(const signed_voter_decision& decision);
@@ -30,7 +31,14 @@ public:
    vector<digest_type> get_decisions_with_write_in(string write_in_name);
 
    ballot get_ballot(const digest_type& id);
+   void store_ballot(const vote::ballot& ballot);
    vector<digest_type> get_ballots_by_contest(const digest_type& contest_id);
+
+   contest get_contest(const digest_type& id);
+   void store_contest(const vote::contest& contest);
+   vector<string> get_values_by_tag(string key);
+   vector<digest_type> get_contests_by_tags(string key, string value);
+   vector<digest_type> get_contests_by_contestant(string contestant);
 };
 
 } } // namespace bts::vote

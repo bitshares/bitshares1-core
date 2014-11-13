@@ -753,6 +753,11 @@
         "type_name" : "ballot",
         "cpp_return_type" : "bts::vote::ballot",
         "cpp_include_file" : "bts/vote/types.hpp"
+      },
+      {
+        "type_name" : "contest",
+        "cpp_return_type" : "bts::vote::contest",
+        "cpp_include_file" : "bts/vote/types.hpp"
       }
     ]
 }

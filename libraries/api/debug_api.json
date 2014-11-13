@@ -279,6 +279,20 @@
             ],
         "is_const"   : false,
         "prerequisites" : ["json_authenticated"]
+      },
+      {
+        "method_name": "debug_initialize_election",
+        "description": "",
+        "return_type": "void",
+        "parameters" : [
+            {
+               "name" : "contests",
+               "description" : "",
+               "type" : "string"
+            }
+         ],
+        "is_const"   : false,
+        "prerequisites" : ["json_authenticated"]
       }
     ]
 }
