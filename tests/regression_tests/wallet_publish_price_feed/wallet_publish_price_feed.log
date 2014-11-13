@@ -64,7 +64,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
     "price": 2,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -73,7 +73,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
     "price": 0.20000000000000001,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -82,7 +82,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate2
 [{
     "delegate_name": "delegate2",
     "price": 1,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -93,7 +93,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate4
 [{
     "delegate_name": "delegate4",
     "price": 2.5,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -104,7 +104,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate6
 [{
     "delegate_name": "delegate6",
     "price": 0.01,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -113,7 +113,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
 [{
     "delegate_name": "delegate7",
     "price": 2,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -130,7 +130,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
     "price": 2,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -139,7 +139,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
     "price": 0.20000000000000001,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -152,7 +152,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
     "price": 99999,
-    "last_update": "20140620T144050",
+    "last_update": "2014-06-20T14:40:50",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -161,7 +161,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
     "price": 2.0000000000000002e-005,
-    "last_update": "20140620T144050",
+    "last_update": "2014-06-20T14:40:50",
     "asset_symbol": "XMO",
     "median_price": null
   }

@@ -62,37 +62,37 @@ default (unlocked) >>> blockchain_get_feeds_for_asset XMO
 [{
     "delegate_name": "delegate0",
     "price": 2,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate1",
     "price": 0.20000000000000001,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate2",
     "price": 1,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate4",
     "price": 2.5,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate6",
     "price": 0.01,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   },{
     "delegate_name": "delegate7",
     "price": 2,
-    "last_update": "20140620T144040",
+    "last_update": "2014-06-20T14:40:40",
     "asset_symbol": null,
     "median_price": null
   }
