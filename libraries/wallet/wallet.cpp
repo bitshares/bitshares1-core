@@ -525,7 +525,6 @@ namespace detail {
        FC_ASSERT( okey.valid(), "Key I just created does not exist" );
        
        okey->btc_data = simple_key_data();
-       
        if( label != "" )
        {
            okey->btc_data->label = label;
@@ -1605,7 +1604,7 @@ namespace detail {
 
       auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
       FC_ASSERT( delegate_record.is_delegate() && delegate_record.delegate_info.valid() );
-      auto delegate_pub_key = delegate_record.delegate_info->block_signing_key;
+      auto delegate_pub_key = delegate_record.delegate_info->signing_key;
       auto delegate_key = get_private_key( address( delegate_pub_key ) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 
@@ -3803,7 +3802,7 @@ namespace detail {
 
              const auto sender_key_record = my->_wallet_db.lookup_key( escrow_cond.sender );
              const auto receiver_key_record = my->_wallet_db.lookup_key( escrow_cond.receiver );
-             if( !((sender_key_record && sender_key_record->has_private_key()) || 
+             if( !((sender_key_record && sender_key_record->has_private_key()) ||
                    (receiver_key_record && receiver_key_record->has_private_key())) )
              {
                 return; // no private key for the sender nor receiver
@@ -4145,7 +4144,7 @@ namespace detail {
       }
       return account_keys;
    }
-   
+
 
    map<order_id_type, market_order> wallet::get_market_orders( const string& account_name, uint32_t limit )const
    {

@@ -237,8 +237,9 @@ namespace bts { namespace blockchain {
             rec.last_update       = timestamp;
             if( name.delegate_pay_rate <= 100 )
             {
-               rec.delegate_info = delegate_stats( name.delegate_pay_rate );
-               rec.delegate_info->block_signing_key = name.owner;
+               rec.delegate_info = delegate_stats();
+               rec.delegate_info->pay_rate = name.delegate_pay_rate;
+               rec.delegate_info->signing_key = name.owner;
                delegate_ids.push_back( account_id );
             }
             self->store_account_record( rec );
@@ -719,7 +720,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( block_signee != expected_delegate.delegate_info->block_signing_key )
+            if( block_signee != expected_delegate.delegate_info->signing_key )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
@@ -746,25 +747,29 @@ namespace bts { namespace blockchain {
                                                                  const public_key_type& block_signee )
       {
           /* Update production info for signing delegate */
-          auto delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
+          account_id_type delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
+          oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
+          delegate_stats& delegate_info = *delegate_record->delegate_info;
 
-          auto delegate_record = pending_state->get_account_record( delegate_id );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+          // Required to miss a round after changing the signing key
+          if( delegate_info.last_signing_key_change_block_num > 0 )
+              FC_ASSERT( produced_block.block_num - delegate_info.last_signing_key_change_block_num >= BTS_BLOCKCHAIN_NUM_DELEGATES );
 
           /* Validate secret */
-          if( delegate_record->delegate_info->blocks_produced > 0 )
+          if( delegate_info.next_secret_hash.valid() )
           {
-              auto hash_of_previous_secret = fc::ripemd160::hash( produced_block.previous_secret );
-              FC_ASSERT( hash_of_previous_secret == delegate_record->delegate_info->next_secret_hash,
+              const secret_hash_type hash_of_previous_secret = fc::ripemd160::hash( produced_block.previous_secret );
+              FC_ASSERT( hash_of_previous_secret == *delegate_info.next_secret_hash,
                          "",
                          ("previous_secret",produced_block.previous_secret)
                          ("hash_of_previous_secret",hash_of_previous_secret)
                          ("delegate_record",delegate_record) );
           }
 
-          delegate_record->delegate_info->blocks_produced += 1;
-          delegate_record->delegate_info->next_secret_hash = produced_block.next_secret_hash;
-          delegate_record->delegate_info->last_block_num_produced = produced_block.block_num;
+          delegate_info.blocks_produced += 1;
+          delegate_info.next_secret_hash = produced_block.next_secret_hash;
+          delegate_info.last_block_num_produced = produced_block.block_num;
           pending_state->store_account_record( *delegate_record );
 
           const slot_record slot( produced_block.timestamp, delegate_id, produced_block.id() );

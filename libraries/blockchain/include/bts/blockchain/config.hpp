@@ -11,7 +11,7 @@
  *  @brief Defines global constants that determine blockchain behavior
  */
 #define BTS_BLOCKCHAIN_VERSION                              109
-#define BTS_BLOCKCHAIN_DATABASE_VERSION                     160
+#define BTS_BLOCKCHAIN_DATABASE_VERSION                     161
 
 /**
  *  The address prepended to string representation of
