@@ -510,6 +510,34 @@ transaction_builder& transaction_builder::update_block_signing_key( const string
     return *this;
 } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key) ) }
 
+transaction_builder& transaction_builder::update_asset( const string& symbol,
+                                                        const optional<string>& name,
+                                                        const optional<string>& description,
+                                                        const optional<variant>& public_data,
+                                                        const optional<double>& maximum_share_supply,
+                                                        const optional<uint64_t>& precision )
+{ try {
+    const oasset_record asset_record = _wimpl->_blockchain->get_asset_record( symbol );
+    FC_ASSERT( asset_record.valid() );
+
+    const oaccount_record issuer_account_record = _wimpl->_blockchain->get_account_record( asset_record->issuer_account_id );
+    if( !issuer_account_record.valid() )
+        FC_THROW_EXCEPTION( unknown_account, "Unknown issuer account id!" );
+
+    trx.update_asset( asset_record->id, name, description, public_data, maximum_share_supply, precision );
+    deduct_balance( issuer_account_record->active_key(), asset() );
+
+    ledger_entry entry;
+    entry.from_account = issuer_account_record->active_key();
+    entry.to_account = issuer_account_record->active_key();
+    entry.memo = "update " + symbol + " asset";
+
+    transaction_record.ledger_entries.push_back( entry );
+
+    required_signatures.insert( issuer_account_record->active_key() );
+    return *this;
+} FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision) ) }
+
 transaction_builder& transaction_builder::finalize()
 { try {
    FC_ASSERT( !trx.operations.empty(), "Cannot finalize empty transaction" );

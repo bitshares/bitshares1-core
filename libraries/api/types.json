@@ -132,9 +132,20 @@
         "default_example" : "192.168.1.5:5678"
       },
       {
+        "type_name" : "optional_string",
+        "cpp_return_type" : "fc::optional<std::string>"
+      },
+      {
+        "type_name" : "optional_double",
+        "cpp_return_type" : "fc::optional<double>"
+      },
+      {
+        "type_name" : "optional_uint64_t",
+        "cpp_return_type" : "fc::optional<uint64_t>"
+      },
+      {
         "type_name" : "optional_variant",
-        "cpp_return_type" : "fc::optional<fc::variant>",
-        "default_example" : "TODO"
+        "cpp_return_type" : "fc::optional<fc::variant>"
       },
       {
         "type_name" : "optional_variant_object",

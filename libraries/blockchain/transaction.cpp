@@ -256,8 +256,8 @@ namespace bts { namespace blockchain {
                                    const std::string& description,
                                    const fc::variant& data,
                                    account_id_type issuer_id,
-                                   share_type   max_share_supply,
-                                   int64_t      precision )
+                                   share_type max_share_supply,
+                                   uint64_t precision )
    {
       FC_ASSERT( max_share_supply > 0 );
       FC_ASSERT( max_share_supply <= BTS_BLOCKCHAIN_MAX_SHARES );
@@ -270,6 +270,16 @@ namespace bts { namespace blockchain {
       op.maximum_share_supply = max_share_supply;
       op.precision = precision;
       operations.push_back( op );
+   }
+
+   void transaction::update_asset( const asset_id_type& asset_id,
+                                   const optional<string>& name,
+                                   const optional<string>& description,
+                                   const optional<variant>& public_data,
+                                   const optional<double>& maximum_share_supply,
+                                   const optional<uint64_t>& precision )
+   {
+       operations.push_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
    }
 
    void transaction::issue( const asset& amount_to_issue )

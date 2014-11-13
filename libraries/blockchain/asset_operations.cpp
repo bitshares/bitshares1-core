@@ -4,7 +4,7 @@
 
 namespace bts { namespace blockchain {
 
-   bool create_asset_operation::is_power_of_ten( uint64_t n )
+   bool is_power_of_ten( uint64_t n )
    {
       switch( n )
       {
@@ -85,8 +85,6 @@ namespace bts { namespace blockchain {
 #endif
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"Not enabled yet!" );
-
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );

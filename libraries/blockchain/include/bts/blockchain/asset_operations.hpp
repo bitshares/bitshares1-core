@@ -6,6 +6,8 @@
 
 namespace bts { namespace blockchain {
 
+   bool is_power_of_ten( uint64_t n );
+
    /**
     *  Creates / defines an asset type but does not
     *  allocate it to anyone. Use issue_asset_operation
@@ -13,8 +15,6 @@ namespace bts { namespace blockchain {
    struct create_asset_operation
    {
        static const operation_type_enum type;
-
-       static bool is_power_of_ten( uint64_t n );
 
        /**
         * Symbols may only contain A-Z and 0-9 and up to 5

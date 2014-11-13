@@ -1134,7 +1134,7 @@
                },
                {
                   "name" : "precision",
-                  "type" : "int64_t",
+                  "type" : "uint64_t",
                   "description" : "defines where the decimal should be displayed, must be a power of 10",
                   "default_value" : 1000000
                },
@@ -1143,6 +1143,49 @@
                   "type" : "bool",
                   "description" : "creation of a new BitAsset that is created by shorting",
                   "default_value": false
+               }
+            ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_asset_update",
+         "description" : "Updates an existing user-issued asset; only the public_data can be updated if any shares of the asset exist",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the ticker symbol for the asset to update"
+               },
+               {
+                  "name" : "name",
+                  "type" : "optional_string",
+                  "description" : "the new name to give the asset; or null to keep the current name",
+                  "default_value" : null
+               },
+               {
+                  "name" : "description",
+                  "type" : "optional_string",
+                  "description" : "the new description to give the asset; or null to keep the current description",
+                  "default_value" : null
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "optional_variant",
+                  "description" : "the new public_data to give the asset; or null to keep the current public_data",
+                  "default_value" : null
+               },
+               {
+                  "name" : "maximum_share_supply",
+                  "type" : "optional_double",
+                  "description" : "the new maximum_share_supply to give the asset; or null to keep the current maximum_share_supply",
+                  "default_value" : null
+               },
+               {
+                  "name" : "precision",
+                  "type" : "optional_uint64_t",
+                  "description" : "the new precision to give the asset; or null to keep the current precision",
+                  "default_value" : null
                }
             ],
          "prerequisites" : ["wallet_unlocked"]

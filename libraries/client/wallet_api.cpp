@@ -327,11 +327,24 @@ wallet_transaction_record detail::client_impl::wallet_asset_create(
         const string& description,
         const variant& data,
         double maximum_share_supply ,
-        int64_t precision,
+        uint64_t precision,
         bool is_market_issued /* = false */ )
 {
   const auto record = _wallet->create_asset( symbol, asset_name, description, data, issuer_name,
                                              maximum_share_supply, precision, is_market_issued );
+  network_broadcast_transaction( record.trx );
+  return record;
+}
+
+wallet_transaction_record detail::client_impl::wallet_asset_update(
+        const string& symbol,
+        const optional<string>& name,
+        const optional<string>& description,
+        const optional<variant>& public_data,
+        const optional<double>& maximum_share_supply,
+        const optional<uint64_t>& precision )
+{
+  const auto record = _wallet->update_asset( symbol, name, description, public_data, maximum_share_supply, precision );
   network_broadcast_transaction( record.trx );
   return record;
 }
