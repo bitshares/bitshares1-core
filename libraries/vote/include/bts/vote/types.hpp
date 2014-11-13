@@ -190,9 +190,9 @@ struct contestant
 /**
  * @brief A contest is one of the questions on which voters may specify an opinion.
  *
- * A contest has a name and a description, and also a list of free-form tags which are used to specify details about
- * that particular contest (what type of contest is it, what district it pertains to, hints on how to render it in a
- * GUI, etc. etc.). Finally, a contest has some list of contestants which voters may specify opinions on.
+ * A contest has a description and a list of free-form tags which are used to specify details about that particular
+ * contest (what type of contest is it, what district it pertains to, hints on how to render it in a GUI, etc. etc.).
+ * Also, a contest has some list of contestants which voters may specify opinions on.
  *
  * This format of representation was chosen to provide the utmost flexibility in what can be represented unambiguously
  * on the blockchain. This is because real-world contests are often defined in off-the-cuff, unstructured ways and the
@@ -202,7 +202,6 @@ struct contestant
  */
 struct contest
 {
-   string name;
    string description;
    map<string,string> tags;
    ///Contestants are identified in decisions by their index in this vector
@@ -306,7 +305,7 @@ FC_REFLECT_TYPENAME( bts::vote::request_status_enum )
 FC_REFLECT_ENUM( bts::vote::request_status_enum,
                  (awaiting_processing)(in_processing)(accepted)(rejected) )
 FC_REFLECT( bts::vote::contestant, (name)(description) )
-FC_REFLECT( bts::vote::contest, (name)(description)(tags)(contestants) )
+FC_REFLECT( bts::vote::contest, (description)(tags)(contestants) )
 FC_REFLECT( bts::vote::ballot, (title)(description)(contests) )
 FC_REFLECT( bts::vote::voter_decision, (contest_id)(write_in_names)(voter_opinions) )
 FC_REFLECT_DERIVED( bts::vote::signed_voter_decision, (bts::vote::voter_decision), (voter_signature) )
