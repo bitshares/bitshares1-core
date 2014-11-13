@@ -1637,6 +1637,7 @@ namespace bts { namespace blockchain {
 
           if( old_rec->is_delegate() )
           {
+              my->_address_to_account_db.remove( address( old_rec->delegate_info->signing_key ) );
               auto itr = my->_delegate_vote_index_db.begin();
               while( itr.valid() )
               {
@@ -1664,12 +1665,14 @@ namespace bts { namespace blockchain {
 
           if( old_rec.valid() && old_rec->is_delegate() )
           {
+              my->_address_to_account_db.remove( address( old_rec->delegate_info->signing_key ) );
               my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(),
                                                             record_to_store.id ) );
           }
 
           if( record_to_store.is_delegate() )
           {
+              my->_address_to_account_db.store( address( record_to_store.delegate_info->signing_key ), record_to_store.id );
               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
                                                            record_to_store.id ),
                                                 0 /*dummy value*/ );

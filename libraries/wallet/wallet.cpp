@@ -1382,7 +1382,8 @@ namespace detail {
       FC_ASSERT( current_account.valid(),
                 "You must create an account before importing a key" );
 
-      FC_ASSERT( my->is_receive_account( account_name ) );
+      if( !my->is_receive_account( account_name ) )
+          wlog( "Importing private key into currently non-receiving account: ${x}", ("x",account_name) );
 
       auto pub_key = key.get_public_key();
       address key_address( pub_key );
@@ -1512,7 +1513,7 @@ namespace detail {
 
           auto delegate_record = get_account( delegate_name );
           FC_ASSERT( delegate_record.is_delegate(), "${name} is not a delegate.", ("name", delegate_name) );
-          auto key = my->_wallet_db.lookup_key( delegate_record.active_key() );
+          auto key = my->_wallet_db.lookup_key( delegate_record.delegate_info->signing_key );
           FC_ASSERT( key.valid() && key->has_private_key(), "Unable to find private key for ${name}.", ("name", delegate_name) );
           delegate_records.push_back( delegate_record );
       }
@@ -2612,7 +2613,6 @@ namespace detail {
        FC_ASSERT( is_unlocked() );
        FC_ASSERT( my->is_receive_account( account_name ) );
        auto addr = my->get_new_address( account_name, label );
-       set_address_group_label( addr, "" );
        return addr;
    }
 

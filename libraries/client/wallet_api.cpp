@@ -194,6 +194,26 @@ wallet_transaction_record detail::client_impl::wallet_transfer(
     return wallet_transfer_from(amount_to_transfer, asset_symbol, from_account_name, from_account_name,
                                 to_account_name, memo_message, selection_method);
 }
+
+wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account(
+        double amount_to_transfer,
+        const string& asset_symbol,
+        const string& from_account_name,
+        const string& to_account_name,
+        const string& memo_message,
+        const vote_selection_method& selection_method )
+{
+    auto to_key = _wallet->get_account_public_key( to_account_name );
+    return _wallet->transfer_asset_to_address(amount_to_transfer,
+                                              asset_symbol, 
+                                              from_account_name,
+                                              address(to_key), 
+                                              memo_message, 
+                                              selection_method);
+}
+
+
+
 wallet_transaction_record detail::client_impl::wallet_burn(
         double amount_to_transfer,
         const string& asset_symbol,
