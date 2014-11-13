@@ -22,6 +22,29 @@ public_key_type transaction_builder::order_key_for_account(const address& accoun
    }
    return order_key;
 }
+transaction_builder& transaction_builder::release_escrow( const address& escrow_account,
+                                                          const address& released_by_address,
+                                                          share_type     amount_to_sender,
+                                                          share_type     amount_to_receiver )
+{
+   auto escrow_record = _wimpl->_blockchain->get_balance_record( escrow_account );
+   FC_ASSERT( escrow_record.valid() );
+
+   auto escrow_condition = escrow_record->condition.as<withdraw_with_escrow>();
+
+   // fetch balance record, assert that released_by_address is a party to the contract
+   trx.release_escrow( escrow_account, released_by_address, amount_to_sender, amount_to_receiver );
+   if( released_by_address == address() )
+   {
+      required_signatures.insert( escrow_condition.sender );
+      required_signatures.insert( escrow_condition.receiver );
+   }
+   else
+   {
+      required_signatures.insert( released_by_address );
+   }
+   return *this;
+}
 
 transaction_builder& transaction_builder::update_account_registration(const wallet_account_record& account,
                                                                       optional<variant> public_data,

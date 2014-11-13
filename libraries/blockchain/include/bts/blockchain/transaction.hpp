@@ -54,6 +54,11 @@ namespace bts { namespace blockchain {
                              const asset& amount,
                              slate_id_type delegate_id );
 
+      void release_escrow( const address& escrow_account,
+                           const address& released_by,
+                           share_type amount_to_sender,
+                           share_type amount_to_receiver );
+
       void deposit_to_escrow( fc::ecc::public_key receiver_key,
                               fc::ecc::public_key escrow_key,
                               digest_type agreement,

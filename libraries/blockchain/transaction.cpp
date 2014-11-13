@@ -151,6 +151,19 @@ namespace bts { namespace blockchain {
 
       operations.push_back( op );
    }
+   void transaction::release_escrow( const address& escrow_account,
+                                     const address& released_by,
+                                     share_type amount_to_sender,
+                                     share_type amount_to_receiver )
+   {
+       release_escrow_operation op;
+       op.escrow_id          = escrow_account;
+       op.released_by        = released_by;
+       op.amount_to_receiver = amount_to_receiver;
+       op.amount_to_sender   = amount_to_sender;
+       operations.push_back(op);
+   }
+
    void transaction::deposit_to_escrow( fc::ecc::public_key receiver_key,
                                         fc::ecc::public_key escrow_key,
                                         digest_type agreement,
