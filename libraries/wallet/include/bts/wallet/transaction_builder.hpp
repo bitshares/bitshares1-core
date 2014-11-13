@@ -151,6 +151,12 @@ namespace bts { namespace wallet {
                                          const string& memo,
                                          vote_selection_method vote_method = vote_recommended,
                                          fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
+
+      transaction_builder& release_escrow( const address& escrow_account,
+                                           const address& released_by_address,
+                                           share_type     amount_to_sender,
+                                           share_type     amount_to_receiver );
+                                           
       /**
        * @brief Cancel a single order
        * @param order_id
