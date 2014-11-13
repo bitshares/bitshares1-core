@@ -171,10 +171,11 @@ namespace bts { namespace blockchain {
       // STORE LINK...
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+#ifndef WIN32
+#warning [SOFTFORK] Disable this operation until the next BTS hardfork, then remove
+#endif
    void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"Update block signing key operation is not enabled yet!" );
-
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
       if( !account_rec.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );

@@ -135,6 +135,8 @@ namespace bts { namespace blockchain {
                          account_id_type delegate_id,
                          fc::variant value );
 
+      void update_signing_key( const account_id_type& account_id, const public_key_type& block_signing_key );
+
       bool is_cancel()const;
    }; // transaction
 

@@ -208,6 +208,10 @@ namespace bts { namespace wallet {
       transaction_builder& submit_cover(const wallet_account_record& from_account,
                                         asset cover_amount,
                                         const order_id_type& order_id);
+
+      transaction_builder& update_block_signing_key( const string& authorizing_account_name,
+                                                     const string& delegate_name,
+                                                     const public_key_type& block_signing_key );
       /**
        * @brief Balance the books and pay the fees
        *

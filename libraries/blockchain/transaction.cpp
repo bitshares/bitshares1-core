@@ -283,6 +283,11 @@ namespace bts { namespace blockchain {
       operations.push_back( update_feed_operation{ feed_index{feed_id,delegate_id}, value } );
    }
 
+   void transaction::update_signing_key( const account_id_type& account_id, const public_key_type& block_signing_key )
+   {
+       operations.push_back( update_block_signing_key{ account_id, block_signing_key } );
+   }
+
    bool transaction::is_cancel()const
    {
       for( const auto& op : operations )

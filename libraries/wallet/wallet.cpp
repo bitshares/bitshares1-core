@@ -1919,6 +1919,25 @@ namespace detail {
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
 
+   wallet_transaction_record wallet::update_block_signing_key(
+           const string& authorizing_account_name,
+           const string& delegate_name,
+           const public_key_type& block_signing_key,
+           bool sign
+           )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      transaction_builder_ptr builder = create_transaction_builder();
+      builder->update_block_signing_key( authorizing_account_name, delegate_name, block_signing_key );
+      builder->finalize();
+
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
+   } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key)(sign) ) }
+
    void wallet::repair_records()
    { try {
        FC_ASSERT( is_open() );

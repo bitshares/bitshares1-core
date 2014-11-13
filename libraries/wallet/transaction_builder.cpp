@@ -160,7 +160,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
 transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::wallet::wallet_account_record& payer,
                                                         const bts::blockchain::account_record& recipient,
                                                         const bts::blockchain::account_record& escrow_agent,
-                                                        digest_type agreement, 
+                                                        digest_type agreement,
                                                         const asset& amount,
                                                         const string& memo, vote_selection_method vote_method,
                                                         fc::optional<public_key_type> memo_sender)
@@ -461,6 +461,32 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_account.name)(cover_amount)(order_id) ) }
 
+transaction_builder& transaction_builder::update_block_signing_key( const string& authorizing_account_name,
+                                                                    const string& delegate_name,
+                                                                    const public_key_type& block_signing_key )
+{ try {
+    const owallet_account_record authorizing_account_record = _wimpl->_wallet_db.lookup_account( authorizing_account_name );
+    if( !authorizing_account_record.valid() )
+        FC_THROW_EXCEPTION( unknown_account, "Unknown authorizing account name!" );
+
+    const oaccount_record delegate_record = _wimpl->_blockchain->get_account_record( delegate_name );
+    if( !delegate_record.valid() )
+        FC_THROW_EXCEPTION( unknown_account, "Unknown delegate account name!" );
+
+    trx.update_signing_key( delegate_record->id, block_signing_key );
+    deduct_balance( authorizing_account_record->account_address, asset() );
+
+    ledger_entry entry;
+    entry.from_account = authorizing_account_record->active_key();
+    entry.to_account = delegate_record->owner_key;
+    entry.memo = "update block signing key";
+
+    transaction_record.ledger_entries.push_back( entry );
+
+    required_signatures.insert( authorizing_account_record->active_key() );
+    return *this;
+} FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key) ) }
+
 transaction_builder& transaction_builder::finalize()
 { try {
    FC_ASSERT( !trx.operations.empty(), "Cannot finalize empty transaction" );
@@ -564,7 +590,7 @@ void transaction_builder::pay_fee()
 bool transaction_builder::withdraw_fee()
 {
    //At this point, we'll require XTS.
-   // for each asset type in my wallet... get transaction fee in that asset type.. 
+   // for each asset type in my wallet... get transaction fee in that asset type..
    for( auto item : outstanding_balances )
    {
       auto current_asset_id = item.first.second;
@@ -574,18 +600,18 @@ bool transaction_builder::withdraw_fee()
 
       //Am I allowed to take money from this bag holder?
       auto account_rec = _wimpl->_wallet_db.lookup_account(bag_holder);
-      if( !account_rec || !account_rec->is_my_account ) 
+      if( !account_rec || !account_rec->is_my_account )
          continue;
 
       //Does this bag holder have any money I can take?
       account_balance_summary_type balances = _wimpl->self->get_account_balances(account_rec->name);
-      if( balances.empty() ) 
+      if( balances.empty() )
          continue;
 
       //Does this bag holder have enough XTS?
       auto balance_map = balances.begin()->second;
-      if( balance_map.find(current_asset_id) == balance_map.end() || 
-          balance_map[current_asset_id] < final_fee.amount ) 
+      if( balance_map.find(current_asset_id) == balance_map.end() ||
+          balance_map[current_asset_id] < final_fee.amount )
          continue;
 
       deduct_balance(bag_holder, final_fee);

@@ -43,7 +43,7 @@ double   detail::client_impl::btc_getbalance( const string& real_account,
     auto account_balances = _wallet->get_account_balance_records( real_account );
     auto total = asset( 0, asset_rec->id );
     auto balances = account_balances[real_account];
-    for( auto bal : balances )
+    for( const auto& bal : balances )
     {
         if( bal.asset_id() != asset_rec->id )
             continue;
@@ -80,7 +80,7 @@ std::vector<string>   detail::client_impl::btc_listaccounts( const string& real_
 { try {
     auto pubkeys = _wallet->get_public_keys_in_account( real_account );
     auto accounts = std::set<string>();
-    for( auto key : pubkeys )
+    for( const auto& key : pubkeys )
     {
         accounts.insert( _wallet->get_address_group_label( address(key) ) );
     }
@@ -92,7 +92,7 @@ std::map<string, double>  detail::client_impl::btc_listaddressgroupings( const s
 { try {
     auto pubkeys = _wallet->get_public_keys_in_account( real_account );
     auto ret = map<string, double>();
-    for( auto key : pubkeys )
+    for( const auto& key : pubkeys )
     {
         FC_ASSERT(!"unimplemented");
     }
