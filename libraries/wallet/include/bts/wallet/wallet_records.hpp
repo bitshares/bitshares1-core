@@ -123,11 +123,9 @@ namespace bts { namespace wallet {
     */
    struct account_data : public bts::blockchain::account_record
    {
-       address  account_address;
-       /**
-        * Data kept locally for this account
-        */
-       variant  private_data;
+       address                          account_address; // TODO: Remove this
+
+       variant                          private_data;
 
        bool                             is_my_account = false;
        int8_t                           approved = 0;
@@ -304,13 +302,13 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::escrow_summary, 
+FC_REFLECT( bts::wallet::escrow_summary,
             (creating_transaction_id)
             (balance_id)
             (balance)
             (sender_account_name)
             (receiver_account_name)
-            (escrow_agent_account_name) 
+            (escrow_agent_account_name)
             (agreement_digest)
           )
 

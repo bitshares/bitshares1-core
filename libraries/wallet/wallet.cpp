@@ -523,7 +523,7 @@ namespace detail {
        auto addr = address( get_new_public_key( account_name ) );
        auto okey = _wallet_db.lookup_key( addr );
        FC_ASSERT( okey.valid(), "Key I just created does not exist" );
-       
+
        okey->btc_data = simple_key_data();
        if( label != "" )
        {
@@ -2643,7 +2643,7 @@ namespace detail {
         for( auto bal : balances )
         {
             if( bal.second.owner() == addr )
-                ret.push_back( bal.second ); 
+                ret.push_back( bal.second );
         }
         return ret;
     }
@@ -3660,18 +3660,8 @@ namespace detail {
 
       vector<wallet_account_record> accounts;
       accounts.reserve( accs.size() );
-      for( auto item : accs )
-      {
-         if( my->_wallet_db.has_private_key( item.second.active_address() ) )
-         {
-             item.second.is_my_account = true;
-             wlog("'is_my_account' field fell out of sync for account: {name}", ("name", item.second.name));
-             my->_wallet_db.store_account( item.second );
-         }
-         FC_ASSERT(item.second.is_my_account == my->_wallet_db.has_private_key( item.second.active_address() )
-                 , "\'is_my_account\' field fell out of sync" );
-         accounts.push_back( item.second );
-      }
+      for( const auto& item : accs )
+          accounts.push_back( item.second );
 
       std::sort( accounts.begin(), accounts.end(),
                  [](const wallet_account_record& a, const wallet_account_record& b) -> bool

@@ -444,16 +444,33 @@ namespace bts { namespace wallet {
            account_public_keys.insert( active_key );
        }
 
+#ifndef WIN32
+#warning [BTS] Repair wallet records on upgrade again
+#endif
        for( const public_key_type& account_public_key : account_public_keys )
        {
            const address account_address = address( account_public_key );
-           const owallet_key_record key_record = lookup_key( account_address );
+           owallet_key_record key_record = lookup_key( account_address );
            if( !key_record.valid() )
            {
                key_data key;
                key.account_address = account_address;
                key.public_key = account_public_key;
                store_key( key );
+           }
+           else if( key_record->has_private_key() )
+           {
+               if( !account_record->is_my_account )
+               {
+                   account_record->is_my_account = true;
+                   store_and_reload_record( *account_record );
+               }
+
+               if( key_record->account_address != account_record->account_address )
+               {
+                   key_record->account_address = account_record->account_address;
+                   store_key( *key_record );
+               }
            }
        }
    } FC_CAPTURE_AND_RETHROW( (account) ) }
@@ -508,11 +525,23 @@ namespace bts { namespace wallet {
 
        if( key_record->has_private_key() )
        {
-           owallet_account_record account_record = lookup_account( key.account_address );
-           if( account_record.valid() && !account_record->is_my_account )
+           owallet_account_record account_record = lookup_account( key.public_key );
+           if( !account_record.valid() )
+               account_record = lookup_account( key.account_address );
+
+           if( account_record.valid() )
            {
-               account_record->is_my_account = true;
-               store_account( *account_record );
+               if( key_record->account_address != account_record->account_address )
+               {
+                   key_record->account_address = account_record->account_address;
+                   store_and_reload_record( *key_record );
+               }
+
+               if( !account_record->is_my_account )
+               {
+                   account_record->is_my_account = true;
+                   store_account( *account_record );
+               }
            }
        }
    } FC_CAPTURE_AND_RETHROW( (key) ) }
