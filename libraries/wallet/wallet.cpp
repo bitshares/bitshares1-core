@@ -1730,11 +1730,10 @@ namespace detail {
       FC_ASSERT( base_asset_record.valid() );
       FC_ASSERT( quote_asset_record.valid() );
 
-      asset price_shares( amount_per_xts *  quote_asset_record->get_precision(), quote_asset_record->id );
-//      asset base_one_quantity( base_asset_record->get_precision(), 0 );
-
-     // auto quote_price_shares = price_shares / base_one_quantity;
-      feed_price quote_price_shares = price( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+      feed_price quote_price_shares;
+      const double ratio = (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision();
+      price& standard_price = quote_price_shares;
+      standard_price = price( ratio, quote_asset_record->id, base_asset_record->id );
       quote_price_shares.force_settle = force_settle;
 
       idump( (quote_price_shares) );
