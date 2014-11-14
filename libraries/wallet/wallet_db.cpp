@@ -63,22 +63,25 @@ namespace bts { namespace wallet {
 
            void load_account_record( const wallet_account_record& account_record )
            { try {
-               self->accounts[ account_record.wallet_record_index ] = account_record;
+               const int32_t& record_index = account_record.wallet_record_index;
+               self->accounts[ record_index ] = account_record;
 
                // Cache address map
-               self->address_to_account_wallet_record_index[ account_record.account_address ] = account_record.wallet_record_index;
+               self->address_to_account_wallet_record_index[ account_record.account_address ] = record_index;
                for( const auto& item : account_record.active_key_history )
                {
                    const public_key_type& active_key = item.second;
-                   self->address_to_account_wallet_record_index[ address( active_key ) ] = account_record.wallet_record_index;
+                   self->address_to_account_wallet_record_index[ address( active_key ) ] = record_index;
                }
+               if( account_record.is_delegate() && account_record.delegate_info.valid() )
+                   self->address_to_account_wallet_record_index[ account_record.delegate_info->signing_key ] = record_index;
 
                // Cache name map
-               self->name_to_account_wallet_record_index[ account_record.name ] = account_record.wallet_record_index;
+               self->name_to_account_wallet_record_index[ account_record.name ] = record_index;
 
                // Cache id map
                if( account_record.id != 0 )
-                   self->account_id_to_wallet_record_index[ account_record.id ] = account_record.wallet_record_index;
+                   self->account_id_to_wallet_record_index[ account_record.id ] = record_index;
            } FC_CAPTURE_AND_RETHROW( (account_record) ) }
 
            void load_key_record( const wallet_key_record& key_record )
@@ -426,6 +429,8 @@ namespace bts { namespace wallet {
        FC_ASSERT( account.owner_key != public_key_type() );
        FC_ASSERT( account.active_key() != public_key_type() );
        FC_ASSERT( account.account_address == address( account.owner_key ) );
+       if( account.is_delegate() )
+           FC_ASSERT( account.delegate_info.valid() && account.delegate_info->signing_key != public_key_type() );
 
        owallet_account_record account_record = lookup_account( account.account_address );
        if( !account_record.valid() )
@@ -443,6 +448,8 @@ namespace bts { namespace wallet {
            const public_key_type& active_key = active_key_item.second;
            account_public_keys.insert( active_key );
        }
+       if( account.is_delegate() )
+           account_public_keys.insert( account.delegate_info->signing_key );
 
 #ifndef WIN32
 #warning [BTS] Repair wallet records on upgrade again
@@ -614,6 +621,7 @@ namespace bts { namespace wallet {
        return one_time_private_key;
    } FC_CAPTURE_AND_RETHROW() }
 
+   // Only returns private keys corresponding to owner and active keys
    map<private_key_type, string> wallet_db::get_account_private_keys( const fc::sha512& password )const
    { try {
        map<public_key_type, string> public_keys;
@@ -896,23 +904,27 @@ namespace bts { namespace wallet {
 
    void wallet_db::remove_contact_account( const string& account_name )
    {
-      const auto opt_account = lookup_account( account_name );
-      FC_ASSERT( opt_account.valid() );
-      const auto acct = *opt_account;
-      FC_ASSERT( ! has_private_key(address(acct.owner_key)), "you can only remove contact accounts");
+       const owallet_account_record account_record = lookup_account( account_name );
+       FC_ASSERT( account_record.valid() );
+       FC_ASSERT( !account_record->is_my_account );
 
-      for( const auto& time_key_pair : acct.active_key_history )
-      {
-          keys.erase( address(time_key_pair.second) );
-          address_to_account_wallet_record_index.erase( address(time_key_pair.second) );
-      }
-      remove_item( acct.wallet_record_index );
+       const int32_t& record_index = account_record->wallet_record_index;
 
-      keys.erase( address(acct.owner_key) );
-      address_to_account_wallet_record_index.erase( address(acct.owner_key) );
-      account_id_to_wallet_record_index.erase( acct.id );
-      name_to_account_wallet_record_index.erase( account_name );
-      accounts.erase( acct.wallet_record_index );
+       accounts.erase( record_index );
+
+       address_to_account_wallet_record_index.erase( account_record->account_address );
+       for( const auto& item : account_record->active_key_history )
+       {
+           const public_key_type& active_key = item.second;
+           address_to_account_wallet_record_index.erase( address( active_key ) );
+       }
+       if( account_record->is_delegate() && account_record->delegate_info.valid() )
+           address_to_account_wallet_record_index.erase( account_record->delegate_info->signing_key );
+
+       name_to_account_wallet_record_index.erase( account_record->name );
+       account_id_to_wallet_record_index.erase( account_record->id );
+
+       // TODO: Remove key records and indexes
    }
 
    void wallet_db::rename_account(const public_key_type &old_account_key,
