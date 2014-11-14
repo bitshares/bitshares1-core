@@ -194,15 +194,15 @@ signed_transaction  client_impl::make_unsigned( const std::string& method_name,
                                                 const std::vector<fc::variants>& parameters_list,
                                                 const std::string& path ) const
 {
-    FC_ASSERT(!"unimplemented");
-    /*
-   fc::variants result;
-   for ( auto parameters : parameters_list )
-   {
-      result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
-   }
-   return result;
-   */
+    try {
+        // Taking a list of lists of parameters is a hack to get around how direct_invoke's expected
+        // argument type can't cast from a variant_object... or something like that
+       fc::variant result;
+       result = _self->get_rpc_server()->direct_invoke_method( method_name, parameters_list[0]);
+       auto rec = result.as<wallet_transaction_record>();
+       rec.trx.signatures = vector<fc::ecc::compact_signature>();
+       return rec.trx;
+    } FC_CAPTURE_AND_RETHROW()
 }
 
 

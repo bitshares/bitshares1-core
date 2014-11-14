@@ -114,7 +114,7 @@
       {
          "method_name": "make_unsigned",
          "description": "Takes any command and an array of its arguments and returns an unsigned transaction.",
-         "return_type": "transaction",
+         "return_type": "signed_transaction",
          "parameters" :
          [
              {
@@ -125,14 +125,14 @@
              {
                 "name" : "parameters_list",
                 "type" : "parameters_list",
-                "description" : "the list of list of parameters for this command, the return will be the list of execute result of corresponding parameters"
+                "description" : "the list of parameters for this command, the return will be the list of execute result of corresponding parameters"
              },
              {
                 "name" : "path",
                 "type" : "string",
                 "description" : "An optional path to write a transaction to",
                 "default_value" : ""
-             },
+             }
          ],
          "is_const"   : true,
          "prerequisites" : ["json_authenticated", "wallet_unlocked"]

@@ -204,6 +204,10 @@
          "cpp_return_type" : "fc::variants"
       },
       {
+         "type_name" : "parameter_list",
+         "cpp_return_type" : "fc::variants"
+      },
+      {
          "type_name" : "parameters_list",
          "cpp_return_type" : "std::vector<fc::variants>"
       },
