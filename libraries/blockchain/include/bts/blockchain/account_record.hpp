@@ -74,17 +74,20 @@ namespace bts { namespace blockchain {
       bool              is_null()const;
       account_record    make_null()const;
 
-      share_type        delegate_pay_balance()const;
-      bool              is_delegate()const;
-      bool              is_public_account()const
-      { return meta_data.valid() && meta_data->type == public_account; }
-      void              adjust_votes_for( share_type delta );
-      share_type        net_votes()const;
-      bool              is_retracted()const;
-      address           active_address()const;
       void              set_active_key( const time_point_sec& now, const public_key_type& new_key );
+      void              adjust_votes_for( share_type delta );
+
+      bool              is_public_account()const { return meta_data.valid() && meta_data->type == public_account; }
+
+      address           owner_address()const { return address( owner_key ); }
       public_key_type   active_key()const;
+      address           active_address()const;
+      bool              is_retracted()const;
+
+      bool              is_delegate()const;
+      share_type        net_votes()const;
       uint8_t           delegate_pay_rate()const;
+      share_type        delegate_pay_balance()const;
 
       account_id_type                        id = 0;
       std::string                            name;

@@ -65,7 +65,7 @@ transaction_builder& transaction_builder::update_account_registration(const wall
       paying_account = account;
 
    //Add paying_account to the transactions set of balance holders; he may be liable for the transaction fee.
-   deduct_balance(paying_account->account_address, asset());
+   deduct_balance(paying_account->owner_address(), asset());
 
    if( delegate_pay )
    {
@@ -86,7 +86,7 @@ transaction_builder& transaction_builder::update_account_registration(const wall
             trx.withdraw_pay(paying_account->id, fee.amount);
             working_required_signatures.insert(paying_account->active_key());
          } else
-            deduct_balance(paying_account->account_address, fee);
+            deduct_balance(paying_account->owner_address(), fee);
 
          ledger_entry entry;
          entry.from_account = paying_account->owner_key;
@@ -273,10 +273,10 @@ transaction_builder& transaction_builder::cancel_market_order(const order_id_typ
    }
 
    //Credit this account the cancel proceeds
-   credit_balance(account_record->account_address, balance);
+   credit_balance(account_record->owner_address(), balance);
    //Set order key for this account if not already set
-   if( order_keys.find(account_record->account_address) == order_keys.end() )
-      order_keys[account_record->account_address] = owner_key_record->public_key;
+   if( order_keys.find(account_record->owner_address()) == order_keys.end() )
+      order_keys[account_record->owner_address()] = owner_key_record->public_key;
 
    auto entry = ledger_entry();
    entry.from_account = owner_key_record->public_key;
@@ -300,10 +300,10 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
    asset cost = real_quantity * quote_price;
    FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
 
-   auto order_key = order_key_for_account(from_account.account_address, from_account.name);
+   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 
    //Charge this account for the bid
-   deduct_balance(from_account.account_address, cost);
+   deduct_balance(from_account.owner_address(), cost);
    trx.bid(cost, quote_price, order_key);
 
    auto entry = ledger_entry();
@@ -327,10 +327,10 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
    FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
 
-   auto order_key = order_key_for_account(from_account.account_address, from_account.name);
+   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 
    //Charge this account for the ask
-   deduct_balance(from_account.account_address, cost);
+   deduct_balance(from_account.owner_address(), cost);
    trx.ask(cost, quote_price, order_key);
 
    auto entry = ledger_entry();
@@ -362,9 +362,9 @@ transaction_builder& transaction_builder::submit_short(const wallet_account_reco
    asset cost = short_collateral_amount;
    FC_ASSERT( cost.asset_id == asset_id_type( 0 ), "You can only use the base asset as collateral!" );
 
-   auto order_key = order_key_for_account(from_account.account_address, from_account.name);
+   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
 
-   deduct_balance(from_account.account_address, cost);
+   deduct_balance(from_account.owner_address(), cost);
    trx.short_sell(cost, interest_rate, order_key, price_limit);
 
    auto entry = ledger_entry();
@@ -405,9 +405,9 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
               "Refusing to cover order belonging to ${owner} when ${from} requested the cover!",
               ("owner", account_record->name)("from", from_account.name) );
 
-   if( accounts_with_covers.find(from_account.account_address) != accounts_with_covers.end() )
+   if( accounts_with_covers.find(from_account.owner_address()) != accounts_with_covers.end() )
       FC_THROW_EXCEPTION( double_cover, "Cannot add a second cover for one account to transaction." );
-   accounts_with_covers.insert(from_account.account_address);
+   accounts_with_covers.insert(from_account.owner_address());
 
    //Check other pending transactions for other covers belonging to this account
    const auto pending = _wimpl->_blockchain->get_pending_transactions();
@@ -423,8 +423,8 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    }
 
    //Set order key for this account if not already set
-   if( order_keys.find(from_account.account_address) == order_keys.end() )
-      order_keys[from_account.account_address] = owner_key_record->public_key;
+   if( order_keys.find(from_account.owner_address()) == order_keys.end() )
+      order_keys[from_account.owner_address()] = owner_key_record->public_key;
 
    asset order_balance = order->get_balance();
    if( order_balance.amount == 0 ) FC_CAPTURE_AND_THROW( zero_amount, (order) );
@@ -457,7 +457,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    {
       //If cover consumes short position, recover the collateral
       asset collateral(*order->collateral);
-      credit_balance(from_account.account_address, collateral);
+      credit_balance(from_account.owner_address(), collateral);
 
       auto entry = ledger_entry();
       entry.from_account = owner_key_record->public_key;
@@ -468,7 +468,7 @@ transaction_builder& transaction_builder::submit_cover(const wallet_account_reco
    }
 
    //Commit the cover to transaction and charge the account.
-   deduct_balance(from_account.account_address, cover_amount);
+   deduct_balance(from_account.owner_address(), cover_amount);
    trx.cover(cover_amount, order->market_index);
 
    auto entry = ledger_entry();
@@ -497,7 +497,7 @@ transaction_builder& transaction_builder::update_block_signing_key( const string
         FC_THROW_EXCEPTION( unknown_account, "Unknown delegate account name!" );
 
     trx.update_signing_key( delegate_record->id, block_signing_key );
-    deduct_balance( authorizing_account_record->account_address, asset() );
+    deduct_balance( authorizing_account_record->owner_address(), asset() );
 
     ledger_entry entry;
     entry.from_account = authorizing_account_record->active_key();

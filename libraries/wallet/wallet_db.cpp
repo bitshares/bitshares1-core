@@ -67,14 +67,14 @@ namespace bts { namespace wallet {
                self->accounts[ record_index ] = account_record;
 
                // Cache address map
-               self->address_to_account_wallet_record_index[ account_record.account_address ] = record_index;
+               self->address_to_account_wallet_record_index[ address( account_record.owner_key ) ] = record_index;
                for( const auto& item : account_record.active_key_history )
                {
                    const public_key_type& active_key = item.second;
                    self->address_to_account_wallet_record_index[ address( active_key ) ] = record_index;
                }
                if( account_record.is_delegate() && account_record.delegate_info.valid() )
-                   self->address_to_account_wallet_record_index[ account_record.delegate_info->signing_key ] = record_index;
+                   self->address_to_account_wallet_record_index[ address( account_record.delegate_info->signing_key ) ] = record_index;
 
                // Cache name map
                self->name_to_account_wallet_record_index[ account_record.name ] = record_index;
@@ -274,7 +274,6 @@ namespace bts { namespace wallet {
        account.name = account_name;
        account.owner_key = account_public_key;
        account.set_active_key( blockchain::now(), account_public_key );
-       account.account_address = account_address;
        account.private_data = private_data;
        account.is_my_account = true;
 
@@ -340,7 +339,7 @@ namespace bts { namespace wallet {
        account_record->last_used_gen_sequence = seq_num;
 
        key_data key;
-       key.account_address = account_record->account_address;
+       key.account_address = account_record->owner_address();
        key.public_key = account_child_public_key;
        key.encrypt_private_key( password, account_child_private_key );
        key.gen_seq_number = seq_num;
@@ -365,7 +364,6 @@ namespace bts { namespace wallet {
        record = wallet_account_record();
        account_record& temp_record = *record;
        temp_record = blockchain_account_record;
-       record->account_address = account_address;
        record->private_data = private_data;
 
        store_account( *record );
@@ -428,11 +426,10 @@ namespace bts { namespace wallet {
        FC_ASSERT( account.name != string() );
        FC_ASSERT( account.owner_key != public_key_type() );
        FC_ASSERT( account.active_key() != public_key_type() );
-       FC_ASSERT( account.account_address == address( account.owner_key ) );
        if( account.is_delegate() )
            FC_ASSERT( account.delegate_info.valid() && account.delegate_info->signing_key != public_key_type() );
 
-       owallet_account_record account_record = lookup_account( account.account_address );
+       owallet_account_record account_record = lookup_account( account.owner_address() );
        if( !account_record.valid() )
            account_record = wallet_account_record();
 
@@ -473,9 +470,9 @@ namespace bts { namespace wallet {
                    store_and_reload_record( *account_record );
                }
 
-               if( key_record->account_address != account_record->account_address )
+               if( key_record->account_address != account_record->owner_address() )
                {
-                   key_record->account_address = account_record->account_address;
+                   key_record->account_address = account_record->owner_address();
                    store_key( *key_record );
                }
            }
@@ -493,8 +490,6 @@ namespace bts { namespace wallet {
 
        blockchain::account_record& temp = *account_record;
        temp = blockchain_account_record;
-
-       account_record->account_address = account_address;
 
        store_account( *account_record );
    } FC_CAPTURE_AND_RETHROW( (blockchain_account_record) ) }
@@ -538,9 +533,9 @@ namespace bts { namespace wallet {
 
            if( account_record.valid() )
            {
-               if( key_record->account_address != account_record->account_address )
+               if( key_record->account_address != account_record->owner_address() )
                {
-                   key_record->account_address = account_record->account_address;
+                   key_record->account_address = account_record->owner_address();
                    store_and_reload_record( *key_record );
                }
 
@@ -565,11 +560,11 @@ namespace bts { namespace wallet {
 
        owallet_key_record key_record = lookup_key( key_address );
        if( key_record.valid() )
-           FC_ASSERT( key_record->account_address == account_record->account_address );
+           FC_ASSERT( key_record->account_address == account_record->owner_address() );
        else
            key_record = wallet_key_record();
 
-       key_record->account_address = account_record->account_address;
+       key_record->account_address = account_record->owner_address();
        key_record->public_key = public_key;
        key_record->encrypt_private_key( password, private_key );
 
@@ -666,7 +661,7 @@ namespace bts { namespace wallet {
        for( auto iter = my->_records.begin(); iter.valid(); ++iter )
            records.push_back( iter.value() );
 
-       // Repair account_data.account_address
+       // Repair account_data.is_my_account and key_data.account_address
        for( generic_wallet_record& record : records )
        {
            try
@@ -674,7 +669,6 @@ namespace bts { namespace wallet {
                if( wallet_record_type_enum( record.type ) == account_record_type )
                {
                    wallet_account_record account_record = record.as<wallet_account_record>();
-                   account_record.account_address = address( account_record.owner_key );
                    store_account( account_record );
                }
            }
@@ -683,7 +677,8 @@ namespace bts { namespace wallet {
            }
        }
 
-       // Repair key_data.public_key when I have the private key
+       // Repair key_data.public_key when I have the private key and
+       // repair key_data.account_address and account_data.is_my_account
        for( generic_wallet_record& record : records )
        {
            try
@@ -912,14 +907,14 @@ namespace bts { namespace wallet {
 
        accounts.erase( record_index );
 
-       address_to_account_wallet_record_index.erase( account_record->account_address );
+       address_to_account_wallet_record_index.erase( address( account_record->owner_key ) );
        for( const auto& item : account_record->active_key_history )
        {
            const public_key_type& active_key = item.second;
            address_to_account_wallet_record_index.erase( address( active_key ) );
        }
        if( account_record->is_delegate() && account_record->delegate_info.valid() )
-           address_to_account_wallet_record_index.erase( account_record->delegate_info->signing_key );
+           address_to_account_wallet_record_index.erase( address( account_record->delegate_info->signing_key ) );
 
        name_to_account_wallet_record_index.erase( account_record->name );
        account_id_to_wallet_record_index.erase( account_record->id );

@@ -1071,7 +1071,7 @@ bool wallet_impl::scan_deposit( const deposit_operation& op, const vector<privat
                      if( !entry.from_account.valid() ) continue;
                      const auto account_rec = self->get_account_for_address( okey_rec->public_key );
                      if( !account_rec.valid() ) continue;
-                     const auto account_key_rec = _wallet_db.lookup_key( account_rec->account_address );
+                     const auto account_key_rec = _wallet_db.lookup_key( account_rec->owner_address() );
                      if( !account_key_rec.valid() ) continue;
                      if( !trx_rec.trx.is_cancel() ) /* cover proceeds */
                      {

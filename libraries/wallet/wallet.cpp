@@ -1173,7 +1173,7 @@ namespace detail {
       if( current_account.valid() )
       {
          wlog( "current account is valid... ${account}", ("account",*current_account) );
-         FC_ASSERT( current_account->account_address == address(key),
+         FC_ASSERT( current_account->owner_address() == address(key),
                     "Account with ${name} already exists", ("name",account_name) );
 
          if( current_registered_account.valid() )
@@ -1390,7 +1390,7 @@ namespace detail {
       current_key_record = my->_wallet_db.lookup_key( key_address );
       if( current_key_record.valid() )
       {
-         FC_ASSERT( current_key_record->account_address == current_account->account_address );
+         FC_ASSERT( current_key_record->account_address == current_account->owner_address() );
          current_key_record->encrypt_private_key( my->_wallet_password, key );
          my->_wallet_db.store_key( *current_key_record );
          return current_key_record->public_key;
@@ -2011,7 +2011,7 @@ namespace detail {
            try
            {
                const private_key_type private_key = my->_wallet_db.get_account_child_key_v1( my->_wallet_password,
-                                                                                             account_record->account_address, seq_num );
+                                                                                             account_record->owner_address(), seq_num );
                const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
                if( !key_record.valid() || !key_record->has_private_key() )
                {
@@ -3060,7 +3060,7 @@ namespace detail {
       public_key_type receiver_public_key = get_account_public_key( to_account_name );
       owallet_account_record issuer = my->_wallet_db.lookup_account( asset_record->issuer_account_id );
       FC_ASSERT( issuer.valid() );
-      owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->account_address );
+      owallet_key_record  issuer_key = my->_wallet_db.lookup_key( issuer->owner_address() );
       FC_ASSERT( issuer_key && issuer_key->has_private_key() );
       auto sender_private_key = issuer_key->decrypt_private_key( my->_wallet_password );
 
