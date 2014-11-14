@@ -312,8 +312,8 @@ namespace bts { namespace cli {
        out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() / order.get_price() );
        out << std::setw( 30 ) <<  client->get_chain()->to_pretty_asset( order.get_balance() );
        out << std::setw( 30 ) <<  std::to_string(100 * atof(order.interest_rate->ratio_string().c_str())) + " %";
-       if( order.state.short_price_limit.valid() )
-          out << std::setw( 30 ) <<  client->get_chain()->to_pretty_price( *order.state.short_price_limit );
+       if( order.state.limit_price.valid() )
+          out << std::setw( 30 ) <<  client->get_chain()->to_pretty_price( *order.state.limit_price );
        else
           out << std::setw( 30 ) <<  "NONE";
        out << std::setw( 40 ) <<  variant(order.get_id()).as_string();
@@ -766,13 +766,13 @@ namespace bts { namespace cli {
         short_execution_price = *status->current_feed_price;
 
     std::copy_if(shorts.begin(), shorts.end(), std::back_inserter(bids_asks.first), [&short_execution_price](const market_order& order) -> bool {
-        return order.state.short_price_limit && *order.state.short_price_limit < short_execution_price;
+        return order.state.limit_price && *order.state.limit_price < short_execution_price;
     });
 
     shorts.erase(std::remove_if(shorts.begin(), shorts.end(), [&short_execution_price](const market_order& short_order) -> bool {
       //Remove if the short execution price is past the price limit
-      return (short_order.state.short_price_limit.valid() ?
-                  *short_order.state.short_price_limit < short_execution_price : false);
+      return (short_order.state.limit_price.valid() ?
+                  *short_order.state.limit_price < short_execution_price : false);
     }), shorts.end());
 
     if(bids_asks.first.empty() && bids_asks.second.empty() && shorts.empty())
@@ -814,10 +814,10 @@ namespace bts { namespace cli {
 
         if (is_short_order)
         {
-          asset quantity(bid_itr->get_quote_quantity() * (*bid_itr->state.short_price_limit));
+          asset quantity(bid_itr->get_quote_quantity() * (*bid_itr->state.limit_price));
           out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_quote_quantity())
               << std::setw(20) << client->get_chain()->to_pretty_asset(quantity)
-              << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(*bid_itr->state.short_price_limit)) + " " + quote_asset_record->symbol);
+              << std::right << std::setw(30) << (fc::to_string(client->get_chain()->to_pretty_price_double(*bid_itr->state.limit_price)) + " " + quote_asset_record->symbol);
         } else {
           out << std::left << std::setw(26) << client->get_chain()->to_pretty_asset(bid_itr->get_balance())
               << std::setw(20) << client->get_chain()->to_pretty_asset(bid_itr->get_quantity())
