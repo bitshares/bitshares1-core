@@ -537,7 +537,7 @@
         "aliases" : ["burn"]
       },
       {
-         "method_name" : "wallet_create_new_address",
+         "method_name" : "wallet_address_create",
          "description" : "Creates an address which can be used for a simple (non-TITAN) transfer.",
          "return_type" : "address",
          "parameters"  : [
