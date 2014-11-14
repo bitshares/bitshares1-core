@@ -3624,8 +3624,14 @@ namespace detail {
 
       vector<wallet_account_record> accounts;
       accounts.reserve( accs.size() );
-      for( const auto& item : accs )
+      for( auto item : accs )
       {
+         if( my->_wallet_db.has_private_key( item.second.active_address() ) )
+         {
+             item.second.is_my_account = true;
+             wlog("'is_my_account' field fell out of sync for account: {name}", ("name", item.second.name));
+             my->_wallet_db.store_account( item.second );
+         }
          FC_ASSERT(item.second.is_my_account == my->_wallet_db.has_private_key( item.second.active_address() )
                  , "\'is_my_account\' field fell out of sync" );
          accounts.push_back( item.second );
