@@ -2708,19 +2708,22 @@ namespace detail {
         return addrs;
     }
 
-   wallet_transaction_record wallet::transfer_asset_to_address(
+
+   transaction_builder  wallet::builder_transfer_asset_to_address(
            double real_amount_to_transfer,
            const string& amount_to_transfer_symbol,
            const string& from_account_name,
            const address& to_address,
            const string& memo_message,
-           vote_selection_method selection_method,
-           bool sign )
+           vote_selection_method selection_method )
    { try {
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol( amount_to_transfer_symbol ) );
       FC_ASSERT( my->is_receive_account( from_account_name ) );
+
+      // TODO this doesn't properly utilize transaction builder's capabilities...
+      auto builder = create_transaction_builder();
 
       const auto asset_rec = my->_blockchain->get_asset_record( amount_to_transfer_symbol );
       FC_ASSERT( asset_rec.valid() );
@@ -2771,14 +2774,28 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
       record.extra_addresses.push_back( to_address );
+      record.trx = trx;
+      builder->transaction_record = record;
 
-      if( sign )
-      {
-          my->sign_transaction( trx, required_signatures );
-          my->cache_transaction( trx, record );
-      }
+      return *builder;
+   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
 
-      return record;
+   wallet_transaction_record wallet::transfer_asset_to_address(
+           double real_amount_to_transfer,
+           const string& amount_to_transfer_symbol,
+           const string& from_account_name,
+           const address& to_address,
+           const string& memo_message,
+           vote_selection_method selection_method )
+   { try {
+      auto builder = builder_transfer_asset_to_address( real_amount_to_transfer,
+                                                        amount_to_transfer_symbol,
+                                                        from_account_name,
+                                                        to_address,
+                                                        memo_message,
+                                                        selection_method );
+
+      return builder.sign();
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
 
    wallet_transaction_record wallet::transfer_asset_to_many_address(

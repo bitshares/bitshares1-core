@@ -190,17 +190,12 @@ fc::variants client_impl::batch( const std::string& method_name,
    return result;
 }
 
-signed_transaction  client_impl::make_unsigned( const std::string& method_name,
-                                                const fc::variants& parameter_list,
-                                                const std::string& path ) const
+
+wallet_transaction_record  client_impl::builder_finalize_and_sign( const transaction_builder& builder )const
 {
-    try {
-       fc::variant result;
-       result = _self->get_rpc_server()->direct_invoke_method( method_name, parameter_list);
-       auto rec = result.as<wallet_transaction_record>();
-       rec.trx.signatures = vector<fc::ecc::compact_signature>();
-       return rec.trx;
-    } FC_CAPTURE_AND_RETHROW()
+    auto b = builder;
+    b.finalize();
+    return b.sign();
 }
 
 

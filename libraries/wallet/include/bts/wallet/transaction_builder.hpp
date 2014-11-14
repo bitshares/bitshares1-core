@@ -33,7 +33,7 @@ namespace bts { namespace wallet {
     * Calling a Builder Function with one of its assumptions being invalid yields undefined behavior.
     */
    struct transaction_builder {
-      transaction_builder(detail::wallet_impl* wimpl)
+      transaction_builder(detail::wallet_impl* wimpl = nullptr)
           : _wimpl(wimpl)
       {}
 
@@ -47,6 +47,9 @@ namespace bts { namespace wallet {
       std::map<blockchain::address, public_key_type>                               order_keys;
       ///List of partially-completed transaction notifications; these will be completed when sign() is called
       std::vector<std::pair<mail::transaction_notice_message, public_key_type>>    notices;
+
+
+      void  set_wallet_implementation( std::unique_ptr<detail::wallet_impl>& wimpl );
 
       /**
        * @brief Look up the market transaction owner key used for a particular account
@@ -142,6 +145,25 @@ namespace bts { namespace wallet {
                                          const string& memo,
                                          vote_selection_method vote_method = vote_recommended,
                                          fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
+
+      /**
+       * @brief Transfer funds from payer to a raw address
+       * @param payer The account to charge
+       * @param to_addr The raw address to credit
+       * @param amount The amount to credit
+       * @param memo A memo for your records
+       * @param vote_method The method with which to select the delegate vote for the deposited asset
+       *
+       * This method will create a transaction notice message, which will be completed after sign() is called.
+       * TODO can we send notices to raw addresses yet?
+       */
+      transaction_builder& deposit_asset_to_address(const wallet_account_record& payer,
+                                                    const address& to_addr,
+                                                    const asset& amount,
+                                                    const string& memo,
+                                                    vote_selection_method vote_method = vote_recommended );
+
+
 
       transaction_builder& deposit_asset_with_escrow(const wallet_account_record& payer,
                                          const account_record& recipient,

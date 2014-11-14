@@ -209,8 +209,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
                                               from_account_name,
                                               address(to_key), 
                                               memo_message, 
-                                              selection_method,
-                                              true);
+                                              selection_method );
 }
 
 
@@ -247,12 +246,11 @@ wallet_transaction_record detail::client_impl::wallet_transfer_asset_to_address(
         const vote_selection_method& selection_method )
 {
     auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
-                                      asset_symbol,
-                                      from_account_name,
-                                      to_address,
-                                      memo_message,
-                                      selection_method,
-                                      true);
+                                                       asset_symbol,
+                                                       from_account_name,
+                                                       to_address,
+                                                       memo_message,
+                                                       selection_method );
     network_broadcast_transaction( record.trx );
     return record;
 
