@@ -19,6 +19,19 @@ ApplicationWindow {
       votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)})
    }
 
+   Image {
+      anchors.fill: parent
+      fillMode: Image.Tile
+      source: "qrc:/res/bg.png"
+   }
+   Image {
+      anchors.centerIn: parent
+      height: parent.height / 2
+      source: "qrc:/res/logo.png"
+      fillMode: Image.PreserveAspectFit
+      smooth: true
+      opacity: .1
+   }
    RoadMap {
       id: roadMap
       anchors {
@@ -79,7 +92,6 @@ ApplicationWindow {
          function transitionFinished(properties)
          {
             properties.exitItem.scale = 1
-            properties.exitItem.color = "#d9d9d9"
          }
 
          pushTransition: StackViewTransition {
@@ -99,12 +111,6 @@ ApplicationWindow {
             }
             PropertyAnimation {
                target: exitItem
-               property: "color"
-               from: "#d9d9d9"
-               to: Qt.darker("#d9d9d9")
-            }
-            PropertyAnimation {
-               target: exitItem
                property: "scale"
                from: 1
                to: .8
@@ -114,23 +120,16 @@ ApplicationWindow {
 
       Component {
          id: taskPage
-         Rectangle {
-            color: "#d9d9d9"
-
+         TaskPage {
             property variant currentCheckpoint
 
             Text {
                anchors.centerIn: parent
                text: parent.currentCheckpoint.title
+               color: "white"
                font.pointSize: 40
             }
          }
-      }
-
-      Rectangle {
-         anchors.fill: parent
-         color: "black"
-         z: -1
       }
    }
 }

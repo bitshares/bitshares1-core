@@ -3,6 +3,7 @@
         <file>qml/main.qml</file>
         <file>qml/RoadMap.qml</file>
         <file>qml/CheckPoint.qml</file>
+        <file>qml/TaskPage.qml</file>
         <file>qml/IdentificationPage.qml</file>
         <file>qml/VerificationPage.qml</file>
         <file>qml/PhotoButton.qml</file>

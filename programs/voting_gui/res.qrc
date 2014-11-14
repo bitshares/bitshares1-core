@@ -7,5 +7,7 @@
         <file>res/person_silhouette.png</file>
         <file>res/id_front.png</file>
         <file>res/id_back.png</file>
+        <file>res/bg.png</file>
+        <file>res/logo.png</file>
     </qresource>
 </RCC>

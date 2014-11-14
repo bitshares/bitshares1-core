@@ -2,15 +2,22 @@ import QtQuick 2.3
 import QtQuick.Layouts 1.1
 import QtMultimedia 5.0
 
-Rectangle {
+TaskPage {
    id: container
-   color: "#d9d9d9"
 
    property string imageDir
    property bool enableCamera: true
 
+   onNextClicked: {
+      if( mayProceed() ) {
+         window.nextPage()
+      } else {
+         cannotProceedAlert()
+      }
+   }
+
    function mayProceed() {
-      return true
+//      return true
       for( var i = 0; i < photoButtonRow.children.length; i++ ) {
          var button = photoButtonRow.children[i]
          if( !button.imageSet ) {
@@ -143,26 +150,6 @@ Rectangle {
          onClicked: d.startSnapshot(this)
          labelText: qsTr("Voter Registration")
          onCurrentImageChanged: window.voterRegistrationPhoto = currentImage
-      }
-   }
-
-   SimpleButton {
-      id: nextButton
-      color: "green"
-      anchors {
-         bottom: parent.bottom
-         right: parent.right
-         margins: 40
-      }
-      height: parent.height * .05
-      width: height * 4
-      text: qsTr("Next")
-      onClicked: {
-         if( mayProceed() ) {
-            window.nextPage()
-         } else {
-            cannotProceedAlert()
-         }
       }
    }
 }
