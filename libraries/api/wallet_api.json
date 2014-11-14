@@ -2060,6 +2060,24 @@
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_account_retract",
+         "description" : "Retract (permanently disable) the specified account in case of master key compromise.",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_to_retract",
+                "type" : "account_name",
+                "description" : "The name of the account to retract."
+            },
+            {
+                "name" : "pay_from_account",
+                "type" : "account_name",
+                "description" : "The account from which fees will be paid."
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
       }
     ]
 }

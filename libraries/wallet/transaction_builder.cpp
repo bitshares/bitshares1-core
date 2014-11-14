@@ -139,6 +139,9 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
       FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
    optional<public_key_type> titan_one_time_key;
 
+   if( recipient.is_retracted() )
+       FC_CAPTURE_AND_THROW( account_retracted, (recipient) );
+
    if( !memo_sender.valid() )
        memo_sender = payer.active_key();
 

@@ -337,6 +337,12 @@ namespace bts { namespace wallet {
                  bool sign = false
                  );
 
+         wallet_transaction_record retract_account(
+                 const std::string& account_to_retract,
+                 const std::string& pay_from_account,
+                 bool sign = true
+                 );
+
          wallet_transaction_record withdraw_delegate_pay(
                  const string& delegate_name,
                  double amount_to_withdraw,

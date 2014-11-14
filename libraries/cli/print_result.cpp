@@ -149,6 +149,7 @@ namespace bts { namespace cli {
     _command_to_function["wallet_transfer_from"]                = &f_wallet_transfer;
     _command_to_function["wallet_get_transaction"]              = &f_wallet_transfer;
     _command_to_function["wallet_account_register"]             = &f_wallet_transfer;
+    _command_to_function["wallet_account_retract"]              = &f_wallet_transfer;
     _command_to_function["wallet_account_update_registration"]  = &f_wallet_transfer;
     _command_to_function["wallet_account_update_active_key"]    = &f_wallet_transfer;
     _command_to_function["wallet_asset_create"]                 = &f_wallet_transfer;
