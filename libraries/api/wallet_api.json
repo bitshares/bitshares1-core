@@ -1919,6 +1919,12 @@
                 "name" : "asset_symbol",
                 "type" : "asset_symbol",
                 "description" : "the type of asset being priced"
+             },
+             {
+                "name" : "force_settle",
+                "type" : "bool",
+                "description" : "When a market dies for lack of interest vote to force all longs to settle at feed",
+                "default_value" : false
              }
          ],
          "prerequisites" : ["wallet_unlocked"]

@@ -937,9 +937,10 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 
 wallet_transaction_record client_impl::wallet_publish_price_feed( const std::string& delegate_account,
                                                                   double real_amount_per_xts,
-                                                                  const std::string& real_amount_symbol )
+                                                                  const std::string& real_amount_symbol,
+                                                                  bool  force_settle )
 {
-   const auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol );
+   const auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, force_settle );
    network_broadcast_transaction( record.trx );
    return record;
 }

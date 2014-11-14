@@ -1704,6 +1704,7 @@ namespace detail {
            const string& account_to_publish_under,
            double amount_per_xts,
            const string& amount_asset_symbol,
+           bool force_settle,
            bool sign )
    { try {
       FC_ASSERT( is_open() );
@@ -1733,7 +1734,8 @@ namespace detail {
 //      asset base_one_quantity( base_asset_record->get_precision(), 0 );
 
      // auto quote_price_shares = price_shares / base_one_quantity;
-      price quote_price_shares( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+      feed_price quote_price_shares = price( (amount_per_xts * quote_asset_record->get_precision()) / base_asset_record->get_precision(), quote_asset_record->id, base_asset_record->id );
+      quote_price_shares.force_settle = force_settle;
 
       idump( (quote_price_shares) );
       if( amount_per_xts > 0 )
