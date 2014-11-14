@@ -123,9 +123,9 @@
                 "description" : "the command name for calling"
              },
              {
-                "name" : "parameters_list",
-                "type" : "parameters_list",
-                "description" : "the list of parameters for this command, the return will be the list of execute result of corresponding parameters"
+                "name" : "parameter_list",
+                "type" : "parameter_list",
+                "description" : "the list of parameters for this command"
              },
              {
                 "name" : "path",
