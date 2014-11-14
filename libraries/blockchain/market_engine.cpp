@@ -106,13 +106,13 @@ namespace bts { namespace blockchain { namespace detail {
                 mtrx.bid_price = *_feed_price;
 
                 // Skip shorts that are over the price limit.
-                if( _current_bid->state.short_price_limit.valid() )
+                if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.short_price_limit < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset(); continue;
                   }
-                  mtrx.bid_price = std::min( *_current_bid->state.short_price_limit, mtrx.bid_price );
+                  mtrx.bid_price = std::min( *_current_bid->state.limit_price, mtrx.bid_price );
                 }
             }
 

@@ -128,8 +128,18 @@ namespace bts { namespace blockchain {
                 const price& price_per_unit,
                 const address& owner );
 
+      void relative_bid( const asset& quantity,
+                const price& price_per_unit,
+                const price& limit,
+                const address& owner );
+
       void ask( const asset& quantity,
                 const price& price_per_unit,
+                const address& owner );
+
+      void relative_ask( const asset& quantity,
+                const price& price_per_unit,
+                const price& limit,
                 const address& owner );
 
       void short_sell( const asset& quantity,

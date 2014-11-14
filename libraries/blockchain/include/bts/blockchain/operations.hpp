@@ -56,7 +56,9 @@ namespace bts { namespace blockchain {
       link_account_op_type          = 21,
       withdraw_all_op_type          = 22,
       release_escrow_op_type        = 23,
-      update_block_signing_key_type = 24
+      update_block_signing_key_type = 24,
+      relative_bid_op_type          = 25,
+      relative_ask_op_type          = 26
    };
 
    /**
@@ -135,6 +137,8 @@ FC_REFLECT_ENUM( bts::blockchain::operation_type_enum,
                  (withdraw_all_op_type)
                  (release_escrow_op_type)
                  (update_block_signing_key_type)
+                 (relative_bid_op_type)
+                 (relative_ask_op_type)
                  )
 
 FC_REFLECT( bts::blockchain::operation, (type)(data) )

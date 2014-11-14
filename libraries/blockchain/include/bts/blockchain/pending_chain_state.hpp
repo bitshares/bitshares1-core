@@ -49,11 +49,15 @@ namespace bts { namespace blockchain {
                                                                const asset_id_type& base_id )override;
          virtual oorder_record          get_bid_record( const market_index_key& )const override;
          virtual oorder_record          get_ask_record( const market_index_key& )const override;
+         virtual oorder_record          get_relative_bid_record( const market_index_key& )const override;
+         virtual oorder_record          get_relative_ask_record( const market_index_key& )const override;
          virtual oorder_record          get_short_record( const market_index_key& )const override;
          virtual ocollateral_record     get_collateral_record( const market_index_key& )const override;
 
          virtual void                   store_bid_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_ask_record( const market_index_key& key, const order_record& ) override;
+         virtual void                   store_relative_bid_record( const market_index_key& key, const order_record& ) override;
+         virtual void                   store_relative_ask_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_short_record( const market_index_key& key, const order_record& ) override;
          virtual void                   store_collateral_record( const market_index_key& key, const collateral_record& ) override;
 
@@ -133,6 +137,8 @@ namespace bts { namespace blockchain {
          map<operation_type_enum, std::deque<operation>>                recent_operations;
          map<feed_index, feed_record>                                   feeds;
          map<burn_record_key,burn_record_value>                         burns;
+         map< market_index_key, order_record>                           relative_bids;
+         map< market_index_key, order_record>                           relative_asks;
 
          std::set<std::pair<asset_id_type, asset_id_type>>              _dirty_markets;
 
@@ -146,4 +152,5 @@ namespace bts { namespace blockchain {
 // TODO: Why not reflect all members?
 FC_REFLECT( bts::blockchain::pending_chain_state,
             (assets)(slates)(accounts)(balances)(account_id_index)(symbol_id_index)(transactions)
-            (properties)(bids)(asks)(shorts)(collateral)(slots)(market_statuses)(feeds)(burns)(_dirty_markets) )
+            (properties)(bids)(asks)(shorts)(collateral)(slots)
+            (market_statuses)(feeds)(burns)(relative_bids)(relative_asks)(_dirty_markets) )

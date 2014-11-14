@@ -140,6 +140,8 @@ namespace bts { namespace blockchain {
 
           _ask_db.open( data_dir / "index/ask_db" );
           _bid_db.open( data_dir / "index/bid_db" );
+          _relative_ask_db.open( data_dir / "index/relative_ask_db" );
+          _relative_bid_db.open( data_dir / "index/relative_bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
           _feed_db.open( data_dir / "index/feed_db" );
@@ -1272,6 +1274,8 @@ namespace bts { namespace blockchain {
 
       my->_ask_db.close();
       my->_bid_db.close();
+      my->_relative_ask_db.close();
+      my->_relative_bid_db.close();
       my->_short_db.close();
       my->_collateral_db.close();
       my->_feed_db.close();
@@ -2250,6 +2254,10 @@ namespace bts { namespace blockchain {
    {
       return my->_bid_db.fetch_optional(key);
    }
+   oorder_record chain_database::get_relative_bid_record( const market_index_key&  key )const
+   {
+      return my->_relative_bid_db.fetch_optional(key);
+   }
 
    omarket_order chain_database::get_lowest_ask_record( const asset_id_type& quote_id, const asset_id_type& base_id )
    {
@@ -2269,6 +2277,11 @@ namespace bts { namespace blockchain {
    {
       return my->_ask_db.fetch_optional(key);
    }
+   oorder_record chain_database::get_relative_ask_record( const market_index_key&  key )const
+   {
+      return my->_relative_ask_db.fetch_optional(key);
+   }
+
 
    oorder_record chain_database::get_short_record( const market_index_key& key )const
    {
@@ -2287,6 +2300,13 @@ namespace bts { namespace blockchain {
       else
          my->_bid_db.store( key, order );
    }
+   void chain_database::store_relative_bid_record( const market_index_key& key, const order_record& order )
+   {
+      if( order.is_null() )
+         my->_relative_bid_db.remove( key );
+      else
+         my->_relative_bid_db.store( key, order );
+   }
 
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order )
    {
@@ -2294,6 +2314,14 @@ namespace bts { namespace blockchain {
          my->_ask_db.remove( key );
       else
          my->_ask_db.store( key, order );
+   }
+
+   void chain_database::store_relative_ask_record( const market_index_key& key, const order_record& order )
+   {
+      if( order.is_null() )
+         my->_relative_ask_db.remove( key );
+      else
+         my->_relative_ask_db.store( key, order );
    }
 
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
