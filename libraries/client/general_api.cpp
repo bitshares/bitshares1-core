@@ -190,6 +190,22 @@ fc::variants client_impl::batch( const std::string& method_name,
    return result;
 }
 
+signed_transaction  client_impl::make_unsigned( const std::string& method_name,
+                                                const std::vector<fc::variants>& parameters_list,
+                                                const std::string& path ) const
+{
+    FC_ASSERT(!"unimplemented");
+    /*
+   fc::variants result;
+   for ( auto parameters : parameters_list )
+   {
+      result.push_back( _self->get_rpc_server()->direct_invoke_method( method_name, parameters) );
+   }
+   return result;
+   */
+}
+
+
 void detail::client_impl::stop()
 {
    elog( "stop...");
