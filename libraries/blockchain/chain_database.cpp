@@ -1670,7 +1670,7 @@ namespace bts { namespace blockchain {
                                                             record_to_store.id ) );
           }
 
-          if( record_to_store.is_delegate() )
+          if( record_to_store.is_delegate() && !record_to_store.is_retracted() )
           {
               my->_address_to_account_db.store( address( record_to_store.delegate_info->signing_key ), record_to_store.id );
               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
