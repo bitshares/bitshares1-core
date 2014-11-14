@@ -774,6 +774,18 @@ wallet_transaction_record client_impl::wallet_market_submit_bid(
   network_broadcast_transaction( record.trx );
   return record;
 }
+wallet_transaction_record client_impl::wallet_market_submit_relative_bid(
+       const string& from_account,
+       const string& quantity,
+       const string& quantity_symbol,
+       const string& relative_quote_price,
+       const string& quote_symbol,
+       const string& limit_price )
+{
+  const auto record = _wallet->submit_relative_bid( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit_price, true );
+  network_broadcast_transaction( record.trx );
+  return record;
+}
 
 wallet_transaction_record client_impl::wallet_market_submit_ask(
            const string& from_account,
@@ -792,6 +804,18 @@ wallet_transaction_record client_impl::wallet_market_submit_ask(
                                      "If you're sure you want to do this, place your ask again and set allow_stupid_ask to true.");
 
   const auto record = _wallet->submit_ask( from_account, quantity, quantity_symbol, quote_price, quote_symbol, true );
+  network_broadcast_transaction( record.trx );
+  return record;
+}
+wallet_transaction_record client_impl::wallet_market_submit_relative_ask(
+           const string& from_account,
+           const string& quantity,
+           const string& quantity_symbol,
+           const string& relative_quote_price,
+           const string& quote_symbol,
+           const string& limit )
+{
+  const auto record = _wallet->submit_relative_ask( from_account, quantity, quantity_symbol, relative_quote_price, quote_symbol, limit, true );
   network_broadcast_transaction( record.trx );
   return record;
 }

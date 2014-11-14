@@ -408,6 +408,18 @@ namespace bts { namespace wallet {
                  const string& quote_symbol,
                  bool sign );
          /**
+          *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
+          *
+          *  Requires the user have 6003.4 USD
+          */
+         wallet_transaction_record submit_relative_bid(const string& from_account_name,
+                 const string& real_quantity,
+                 const string& quantity_symbol,
+                 const string& relative_price_per_unit,
+                 const string& quote_symbol,
+                 const string& limit,
+                 bool sign );
+         /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *
           *  Requires the user have 10 BTC + fees
@@ -418,6 +430,19 @@ namespace bts { namespace wallet {
                  const string& price_per_unit,
                  const string& quote_symbol,
                  bool sign );
+         /**
+          *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
+          *
+          *  Requires the user have 10 BTC + fees
+          */
+         wallet_transaction_record submit_relative_ask(const string& from_account_name,
+                 const string& real_quantity,
+                 const string& quantity_symbol,
+                 const string& relative_price_per_unit,
+                 const string& quote_symbol,
+                 const string& limit,
+                 bool sign );
+
          wallet_transaction_record submit_short(const string& from_account_name,
                                                 const string& real_quantity_xts,
                                                 const string& collateral_symbol,

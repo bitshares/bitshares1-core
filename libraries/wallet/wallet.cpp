@@ -360,7 +360,7 @@ namespace detail {
                                             const string& order_price,
                                             const string& base_symbol,
                                             const string& quote_symbol,
-                                            const string& short_price_limit)
+                                            const string& limit)
    {
       if( !is_receive_account(account_name) )
          FC_CAPTURE_AND_THROW( unknown_receive_account, (account_name) );
@@ -381,13 +381,17 @@ namespace detail {
 
       //This affects shorts only.
       oprice price_limit;
-      if( !short_price_limit.empty() && atof(short_price_limit.c_str()) > 0 )
-         price_limit = _blockchain->to_ugly_price(short_price_limit, base_symbol, quote_symbol);
+      if( !limit.empty() && atof(limit.c_str()) > 0 )
+         price_limit = _blockchain->to_ugly_price(limit, base_symbol, quote_symbol);
 
       if( order_type == bid_order )
          builder->submit_bid(self->get_account(account_name), quantity, price_arg);
       else if( order_type == ask_order )
          builder->submit_ask(self->get_account(account_name), quantity, price_arg);
+      if( order_type == relative_bid_order )
+         builder->submit_relative_bid(self->get_account(account_name), quantity, price_arg, price_limit);
+      else if( order_type == relative_ask_order )
+         builder->submit_relative_ask(self->get_account(account_name), quantity, price_arg, price_limit);
       else if( order_type == short_order )
       {
          price_arg.ratio /= 100;
@@ -3359,6 +3363,67 @@ namespace detail {
    } FC_CAPTURE_AND_RETHROW( (from_account_name)
                              (real_quantity)(quantity_symbol)
                              (quote_price)(quote_symbol)(sign) ) }
+
+
+   wallet_transaction_record wallet::submit_relative_bid(
+           const string& from_account_name,
+           const string& real_quantity,
+           const string& quantity_symbol,
+           const string& relative_quote_price,
+           const string& quote_symbol,
+           const string& limit_price,
+           bool sign )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      transaction_builder_ptr builder = create_transaction_builder();
+      my->apply_order_to_builder(relative_bid_order,
+                                 builder,
+                                 from_account_name,
+                                 real_quantity,
+                                 relative_quote_price,
+                                 quantity_symbol,
+                                 quote_symbol,
+                                 limit_price);
+      builder->finalize();
+
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)
+                             (real_quantity)(quantity_symbol)
+                             (relative_quote_price)(quote_symbol)(limit_price)(sign) ) }
+   wallet_transaction_record wallet::submit_relative_ask(
+           const string& from_account_name,
+           const string& real_quantity,
+           const string& quantity_symbol,
+           const string& relative_quote_price,
+           const string& quote_symbol,
+           const string& limit_price,
+           bool sign )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      transaction_builder_ptr builder = create_transaction_builder();
+      my->apply_order_to_builder(relative_ask_order,
+                                 builder,
+                                 from_account_name,
+                                 real_quantity,
+                                 relative_quote_price,
+                                 quantity_symbol,
+                                 quote_symbol,
+                                 limit_price);
+      builder->finalize();
+
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
+   } FC_CAPTURE_AND_RETHROW( (from_account_name)
+                             (real_quantity)(quantity_symbol)
+                             (relative_quote_price)(quote_symbol)(limit_price)(sign) ) }
+
 
    wallet_transaction_record wallet::submit_ask(
            const string& from_account_name,

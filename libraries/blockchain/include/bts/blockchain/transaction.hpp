@@ -130,7 +130,7 @@ namespace bts { namespace blockchain {
 
       void relative_bid( const asset& quantity,
                 const price& price_per_unit,
-                const price& limit,
+                const optional<price>& limit,
                 const address& owner );
 
       void ask( const asset& quantity,
@@ -139,7 +139,7 @@ namespace bts { namespace blockchain {
 
       void relative_ask( const asset& quantity,
                 const price& price_per_unit,
-                const price& limit,
+                const optional<price>& limit,
                 const address& owner );
 
       void short_sell( const asset& quantity,

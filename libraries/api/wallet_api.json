@@ -1392,6 +1392,46 @@
          "aliases" : [ "bid" ]
       },
       {
+         "method_name" : "wallet_market_submit_relative_bid",
+         "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the bid"
+            },
+            {
+               "name" : "quantity",
+               "type" : "string",
+               "description" : "the quantity of items you would like to buy"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to buy"
+            },
+            {
+               "name" : "relative_price",
+               "type" : "string",
+               "description" : "the price relative to the feed you would like to pay"
+            },
+            {
+               "name" : "base_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to pay with"
+            },
+            {
+               "name" : "limit_price",
+               "type" : "string",
+               "description" : "the limit on what you are willing to pay",
+               "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "relative_bid" ]
+      },
+      {
          "method_name" : "wallet_market_submit_ask",
          "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
          "return_type" : "transaction_record",
@@ -1430,6 +1470,46 @@
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "ask" ]
+      },
+      {
+         "method_name" : "wallet_market_submit_relative_ask",
+         "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "sell_quantity",
+               "type" : "string",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "sell_quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to sell"
+            },
+            {
+               "name" : "relative_ask_price",
+               "type" : "string",
+               "description" : "the relative price per unit sold."
+            },
+            {
+               "name" : "ask_price_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            },
+            {
+               "name" : "limit_ask_price",
+               "type" : "string",
+               "description" : "the minimum price per unit sold.",
+               "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "relative_ask" ]
       },
       {
          "method_name" : "wallet_market_submit_short",

@@ -2651,6 +2651,34 @@ namespace bts { namespace blockchain {
            }
        }
 
+       if( type == null_order || type == relative_ask_order )
+       {
+           for( auto itr = my->_relative_ask_db.begin(); itr.valid(); ++itr )
+           {
+               const auto order = market_order( relative_ask_order, itr.key(), itr.value() );
+               if( filter( order ) )
+               {
+                   orders.push_back( order );
+                   if( orders.size() >= limit )
+                       return orders;
+               }
+           }
+       }
+
+       if( type == null_order || type == relative_bid_order )
+       {
+           for( auto itr = my->_relative_bid_db.begin(); itr.valid(); ++itr )
+           {
+               const auto order = market_order( relative_bid_order, itr.key(), itr.value() );
+               if( filter( order ) )
+               {
+                   orders.push_back( order );
+                   if( orders.size() >= limit )
+                       return orders;
+               }
+           }
+       }
+
        if( type == null_order || type == short_order )
        {
            for( auto itr = my->_short_db.begin(); itr.valid(); ++itr )

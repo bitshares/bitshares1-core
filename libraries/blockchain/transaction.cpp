@@ -81,7 +81,7 @@ namespace bts { namespace blockchain {
    }
    void transaction::relative_bid( const asset& quantity,
                           const price& delta_price_per_unit,
-                          const price& limit,
+                          const optional<price>& limit,
                           const address& owner )
    {
       relative_bid_operation op;
@@ -95,7 +95,7 @@ namespace bts { namespace blockchain {
 
    void transaction::relative_ask( const asset& quantity,
                           const price& delta_price_per_unit,
-                          const price& limit,
+                          const optional<price>& limit,
                           const address& owner )
    {
       relative_ask_operation op;

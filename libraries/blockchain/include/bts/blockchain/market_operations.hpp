@@ -39,7 +39,7 @@ namespace bts { namespace blockchain {
         asset            get_amount()const { return asset( amount, bid_index.order_price.quote_asset_id ); }
         share_type       amount;
         market_index_key bid_index;
-        price            limit_price;
+        optional<price>  limit_price;
 
         void evaluate( transaction_evaluation_state& eval_state );
    };
@@ -52,7 +52,7 @@ namespace bts { namespace blockchain {
         asset             get_amount()const { return asset( amount, ask_index.order_price.base_asset_id ); }
         share_type        amount;
         market_index_key  ask_index;
-        price             limit_price;
+        optional<price>   limit_price;
 
         void evaluate( transaction_evaluation_state& eval_state );
    };

@@ -264,6 +264,12 @@ transaction_builder& transaction_builder::cancel_market_order(const order_id_typ
       case bid_order:
          trx.bid( -balance, order->market_index.order_price, owner_address );
          break;
+      case relative_ask_order:
+         trx.relative_ask( -balance, order->market_index.order_price, order->state.limit_price, owner_address );
+         break;
+      case relative_bid_order:
+         trx.relative_bid( -balance, order->market_index.order_price, order->state.limit_price, owner_address );
+         break;
       case short_order:
          trx.short_sell( -balance, order->market_index.order_price, owner_address );
          break;
@@ -320,6 +326,37 @@ transaction_builder& transaction_builder::submit_bid(const wallet_account_record
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_account.name)(real_quantity)(quote_price) ) }
 
+
+transaction_builder& transaction_builder::submit_relative_bid(const wallet_account_record& from_account,
+                                                     const asset& real_quantity,
+                                                     const price& quote_price,
+                                                     const optional<price>& limit )
+{ try {
+   validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
+
+   asset cost = real_quantity * quote_price;
+   FC_ASSERT(cost.asset_id == quote_price.quote_asset_id);
+
+   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
+
+   //Charge this account for the bid
+   deduct_balance(from_account.owner_address(), cost);
+   trx.relative_bid(cost, quote_price, limit, order_key);
+
+   auto entry = ledger_entry();
+   entry.from_account = from_account.owner_key;
+   entry.to_account = order_key;
+   entry.amount = cost;
+   entry.memo = "relative buy " + _wimpl->_blockchain->get_asset_symbol(quote_price.base_asset_id) +
+                " @ delta " + _wimpl->_blockchain->to_pretty_price(quote_price);
+
+   transaction_record.is_market = true;
+   transaction_record.ledger_entries.push_back(entry);
+
+   required_signatures.insert(order_key);
+   return *this;
+} FC_CAPTURE_AND_RETHROW( (from_account.name)(real_quantity)(quote_price) ) }
+
 transaction_builder& transaction_builder::submit_ask(const wallet_account_record& from_account,
                                                      const asset& cost,
                                                      const price& quote_price)
@@ -346,6 +383,37 @@ transaction_builder& transaction_builder::submit_ask(const wallet_account_record
    required_signatures.insert(order_key);
    return *this;
 } FC_CAPTURE_AND_RETHROW( (from_account.name)(cost)(quote_price) ) }
+
+
+transaction_builder& transaction_builder::submit_relative_ask(const wallet_account_record& from_account,
+                                                     const asset& cost,
+                                                     const price& quote_price,
+                                                     const optional<price>& limit
+                                                     )
+{ try {
+   validate_market(quote_price.quote_asset_id, quote_price.base_asset_id);
+   FC_ASSERT(cost.asset_id == quote_price.base_asset_id);
+
+   auto order_key = order_key_for_account(from_account.owner_address(), from_account.name);
+
+   //Charge this account for the ask
+   deduct_balance(from_account.owner_address(), cost);
+   trx.relative_ask(cost, quote_price, limit, order_key);
+
+   auto entry = ledger_entry();
+   entry.from_account = from_account.owner_key;
+   entry.to_account = order_key;
+   entry.amount = cost;
+   entry.memo = "relative sell " + _wimpl->_blockchain->get_asset_symbol(quote_price.base_asset_id) +
+                " @ delta " + _wimpl->_blockchain->to_pretty_price(quote_price);
+
+   transaction_record.is_market = true;
+   transaction_record.ledger_entries.push_back(entry);
+
+   required_signatures.insert(order_key);
+   return *this;
+} FC_CAPTURE_AND_RETHROW( (from_account.name)(cost)(quote_price) ) }
+
 
 transaction_builder& transaction_builder::submit_short(const wallet_account_record& from_account,
                                                        const asset& short_collateral_amount,
