@@ -1743,7 +1743,7 @@ namespace detail {
       if( amount_per_xts > 0 )
       {
          trx.publish_feed( my->_blockchain->get_asset_id( amount_asset_symbol ),
-                           current_account->id, fc::variant( quote_price_shares )  );
+                           current_account->id, fc::variant( price(quote_price_shares) )  );
       }
       else
       {
