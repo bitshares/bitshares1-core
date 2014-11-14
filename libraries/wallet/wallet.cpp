@@ -1694,8 +1694,11 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts) ) }
@@ -1773,8 +1776,11 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(amount_per_xts)(amount_asset_symbol)(sign) ) }
@@ -1845,8 +1851,11 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
@@ -1914,8 +1923,11 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_publish_under)(account_to_pay_with)(sign) ) }
@@ -2511,8 +2523,11 @@ namespace detail {
        record.ledger_entries.push_back( entry );
        record.fee = required_fees;
 
-       if( sign ) my->sign_transaction( trx, required_signatures );
-       my->cache_transaction( trx, record );
+       if( sign )
+       {
+           my->sign_transaction( trx, required_signatures );
+           my->cache_transaction( trx, record );
+       }
 
        return record;
    } FC_CAPTURE_AND_RETHROW( (delegate_name)(real_amount_to_withdraw) ) }
@@ -2602,8 +2617,11 @@ namespace detail {
       record.fee = required_fees;
       record.extra_addresses.push_back( to_account_rec->active_key() );
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    }
@@ -2750,8 +2768,11 @@ namespace detail {
       record.fee = required_fees;
       record.extra_addresses.push_back( to_address );
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
@@ -2817,8 +2838,11 @@ namespace detail {
          record.fee = required_fees;
          record.extra_addresses = to_addresses;
 
-         if( sign ) my->sign_transaction( trx, required_signatures );
-         my->cache_transaction( trx, record );
+         if( sign )
+         {
+             my->sign_transaction( trx, required_signatures );
+             my->cache_transaction( trx, record );
+         }
 
          return record;
    } FC_CAPTURE_AND_RETHROW( (amount_to_transfer_symbol)(from_account_name)(to_address_amounts)(memo_message) ) }
@@ -2900,8 +2924,11 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (account_to_register)(public_data)(pay_with_account_name)(delegate_pay_rate) ) }
@@ -2966,8 +2993,11 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (symbol)(asset_name)(description)(issuer_account_name) ) }
@@ -3054,8 +3084,11 @@ namespace detail {
       record.ledger_entries.push_back( entry );
       record.fee = required_fees;
 
-      if( sign ) my->sign_transaction( trx, required_signatures );
-      my->cache_transaction( trx, record );
+      if( sign )
+      {
+          my->sign_transaction( trx, required_signatures );
+          my->cache_transaction( trx, record );
+      }
 
       return record;
    } FC_CAPTURE_AND_RETHROW() }
@@ -3439,8 +3472,11 @@ namespace detail {
        entry.memo = "add collateral to short";
        record.ledger_entries.push_back(entry);
 
-       if( sign ) my->sign_transaction( trx, required_signatures );
-       my->cache_transaction( trx, record );
+       if( sign )
+       {
+           my->sign_transaction( trx, required_signatures );
+           my->cache_transaction( trx, record );
+       }
 
        return record;
    } FC_CAPTURE_AND_RETHROW((from_account_name)(cover_id)(real_quantity_collateral_to_add)(sign)) }
