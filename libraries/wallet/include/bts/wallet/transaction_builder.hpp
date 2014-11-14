@@ -218,6 +218,14 @@ namespace bts { namespace wallet {
       transaction_builder& update_block_signing_key( const string& authorizing_account_name,
                                                      const string& delegate_name,
                                                      const public_key_type& block_signing_key );
+
+      transaction_builder& update_asset( const string& symbol,
+                                         const optional<string>& name,
+                                         const optional<string>& description,
+                                         const optional<variant>& public_data,
+                                         const optional<double>& maximum_share_supply,
+                                         const optional<uint64_t>& precision );
+
       /**
        * @brief Balance the books and pay the fees
        *

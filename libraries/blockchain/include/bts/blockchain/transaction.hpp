@@ -109,8 +109,15 @@ namespace bts { namespace blockchain {
                          const string& description,
                          const variant& data,
                          account_id_type issuer_id,
-                         share_type   max_share_supply,
-                         int64_t      precision );
+                         share_type max_share_supply,
+                         uint64_t precision );
+
+      void update_asset( const asset_id_type& asset_id,
+                         const optional<string>& name,
+                         const optional<string>& description,
+                         const optional<variant>& public_data,
+                         const optional<double>& maximum_share_supply,
+                         const optional<uint64_t>& precision );
 
       void burn( const asset& quantity,
                  account_id_type for_or_against,

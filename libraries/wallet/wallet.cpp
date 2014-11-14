@@ -2912,11 +2912,11 @@ namespace detail {
            const variant& data,
            const string& issuer_account_name,
            double max_share_supply,
-           int64_t precision,
+           uint64_t precision,
            bool is_market_issued,
            bool sign )
    { try {
-      FC_ASSERT( create_asset_operation::is_power_of_ten( precision ) );
+      FC_ASSERT( blockchain::is_power_of_ten( precision ) );
       FC_ASSERT( is_open() );
       FC_ASSERT( is_unlocked() );
       FC_ASSERT( my->_blockchain->is_valid_symbol_name( symbol ) ); // valid length and characters
@@ -2945,7 +2945,6 @@ namespace detail {
       share_type max_share_supply_in_internal_units = max_share_supply * precision;
       if( NOT is_market_issued )
       {
-         required_signatures.insert( address( from_account_address ) );
          trx.create_asset( symbol, asset_name,
                            description, data,
                            oname_rec->id, max_share_supply_in_internal_units, precision );
@@ -2971,6 +2970,28 @@ namespace detail {
 
       return record;
    } FC_CAPTURE_AND_RETHROW( (symbol)(asset_name)(description)(issuer_account_name) ) }
+
+   wallet_transaction_record wallet::update_asset(
+           const string& symbol,
+           const optional<string>& name,
+           const optional<string>& description,
+           const optional<variant>& public_data,
+           const optional<double>& maximum_share_supply,
+           const optional<uint64_t>& precision,
+           bool sign
+           )
+   { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
+      transaction_builder_ptr builder = create_transaction_builder();
+      builder->update_asset( symbol, name, description, public_data, maximum_share_supply, precision );
+      builder->finalize();
+
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
+   } FC_CAPTURE_AND_RETHROW( (symbol)(name)(description)(public_data)(maximum_share_supply)(precision)(sign) ) }
 
    wallet_transaction_record wallet::issue_asset(
            double amount_to_issue,

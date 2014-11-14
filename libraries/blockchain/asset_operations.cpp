@@ -4,7 +4,7 @@
 
 namespace bts { namespace blockchain {
 
-   bool create_asset_operation::is_power_of_ten( uint64_t n )
+   bool is_power_of_ten( uint64_t n )
    {
       switch( n )
       {
@@ -39,6 +39,9 @@ namespace bts { namespace blockchain {
       if( current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( asset_symbol_in_use, (symbol) );
 
+      if( this->name.empty() )
+          FC_CAPTURE_AND_THROW( invalid_asset_name, (this->name) );
+
       const asset_id_type asset_id = eval_state._current_state->last_asset_id() + 1;
       current_asset_record = eval_state._current_state->get_asset_record( asset_id );
       if( current_asset_record.valid() )
@@ -52,10 +55,10 @@ namespace bts { namespace blockchain {
       }
 
       if( this->maximum_share_supply <= 0 || this->maximum_share_supply > BTS_BLOCKCHAIN_MAX_SHARES )
-          FC_CAPTURE_AND_THROW( invalid_asset_amount, (maximum_share_supply) );
+          FC_CAPTURE_AND_THROW( invalid_asset_amount, (this->maximum_share_supply) );
 
       if( NOT is_power_of_ten( this->precision ) )
-          FC_CAPTURE_AND_THROW( invalid_precision, (precision) );
+          FC_CAPTURE_AND_THROW( invalid_precision, (this->precision) );
 
       const asset reg_fee( eval_state._current_state->get_asset_registration_fee( this->symbol.size() ), 0 );
       eval_state.required_fees += reg_fee;
@@ -77,13 +80,21 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( new_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+#ifndef WIN32
+#warning [SOFTFORK] Disable this operation until the next BTS hardfork, then remove
+#endif
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
-      FC_ASSERT( !"Not enabled yet!" );
-
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );
+
+      if( current_asset_record->is_market_issued() )
+          FC_CAPTURE_AND_THROW( not_user_issued, (*current_asset_record) );
+
+      // Reject no-ops
+      FC_ASSERT( this->name.valid() || this->description.valid() || this->public_data.valid()
+                 || this->maximum_share_supply.valid() || this->precision.valid() );
 
       // Cannot update name, description, max share supply, or precision if any shares have been issued
       if( current_asset_record->current_share_supply > 0 )
@@ -103,7 +114,12 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( missing_signature, (*current_issuer_account_record) );
 
       if( this->name.valid() )
+      {
+          if( this->name->empty() )
+              FC_CAPTURE_AND_THROW( invalid_asset_name, (*this->name) );
+
           current_asset_record->name = *this->name;
+      }
 
       if( this->description.valid() )
           current_asset_record->description = *this->description;
@@ -112,10 +128,20 @@ namespace bts { namespace blockchain {
           current_asset_record->public_data = *this->public_data;
 
       if( this->maximum_share_supply.valid() )
+      {
+          if( *this->maximum_share_supply <= 0 || *this->maximum_share_supply > BTS_BLOCKCHAIN_MAX_SHARES )
+              FC_CAPTURE_AND_THROW( invalid_asset_amount, (*this->maximum_share_supply) );
+
           current_asset_record->maximum_share_supply = *this->maximum_share_supply;
+      }
 
       if( this->precision.valid() )
+      {
+          if( NOT is_power_of_ten( *this->precision ) )
+              FC_CAPTURE_AND_THROW( invalid_precision, (*this->precision) );
+
           current_asset_record->precision = *this->precision;
+      }
 
       current_asset_record->last_update = eval_state._current_state->now();
 

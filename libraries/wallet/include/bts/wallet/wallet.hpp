@@ -378,8 +378,17 @@ namespace bts { namespace wallet {
                  const variant& data,
                  const string& issuer_name,
                  double max_share_supply,
-                 int64_t precision,
+                 uint64_t precision,
                  bool is_market_issued = false,
+                 bool sign = true
+                 );
+         wallet_transaction_record update_asset(
+                 const string& symbol,
+                 const optional<string>& name,
+                 const optional<string>& description,
+                 const optional<variant>& public_data,
+                 const optional<double>& maximum_share_supply,
+                 const optional<uint64_t>& precision,
                  bool sign = true
                  );
          wallet_transaction_record issue_asset(
