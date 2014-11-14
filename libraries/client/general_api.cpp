@@ -196,8 +196,6 @@ signed_transaction  client_impl::make_unsigned( const std::string& method_name,
 {
     try {
        fc::variant result;
-       auto params = parameter_list;
-       params.push_back( variant(false) ); // sign = false
        result = _self->get_rpc_server()->direct_invoke_method( method_name, parameter_list);
        auto rec = result.as<wallet_transaction_record>();
        rec.trx.signatures = vector<fc::ecc::compact_signature>();

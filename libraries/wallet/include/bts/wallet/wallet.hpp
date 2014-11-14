@@ -278,7 +278,7 @@ namespace bts { namespace wallet {
                  const address& to_address,
                  const string& memo_message,
                  vote_selection_method selection_method,
-                 bool sign = true
+                 bool sign = false
                  );
 
          /**
@@ -290,7 +290,7 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  const unordered_map<address, double>& to_address_amounts,
                  const string& memo_message,
-                 bool sign = true
+                 bool sign = false
                  );
 
          /**
@@ -305,7 +305,7 @@ namespace bts { namespace wallet {
                  const string& to_account_name,
                  const string& public_message,
                  bool anonymous = true,
-                 bool sign = true
+                 bool sign = false
                  );
 
          /**
@@ -319,7 +319,7 @@ namespace bts { namespace wallet {
                  uint8_t delegate_pay_rate,
                  const string& pay_with_account_name,
                  bts::blockchain::account_type new_account_type = titan_account,
-                 bool sign = true
+                 bool sign = false
                  );
 
          wallet_transaction_record update_registered_account(
@@ -327,50 +327,50 @@ namespace bts { namespace wallet {
                  const string& pay_from_account,
                  optional<variant> public_data,
                  uint8_t delegate_pay_rate = -1,
-                 bool sign = true
+                 bool sign = false
                  );
 
          wallet_transaction_record update_active_key(
                  const std::string& account_to_update,
                  const std::string& pay_from_account,
                  const std::string& new_active_key,
-                 bool sign = true
+                 bool sign = false
                  );
 
          wallet_transaction_record withdraw_delegate_pay(
                  const string& delegate_name,
                  double amount_to_withdraw,
                  const string& withdraw_to_account_name,
-                 bool sign = true
+                 bool sign = false
                  );
 
          wallet_transaction_record publish_feeds(
                  const string& account,
                  map<string,double> amount_per_xts,
-                 bool sign = true
+                 bool sign = false
                  );
          wallet_transaction_record publish_price(
                  const string& account,
                  double amount_per_xts,
                  const string& amount_asset_symbol,
                  bool settle = false,
-                 bool sign = true
+                 bool sign = false
                  );
          wallet_transaction_record publish_slate(
                  const string& account_to_publish_under,
                  const string& account_to_pay_with,
-                 bool sign = true
+                 bool sign = false
                  );
          wallet_transaction_record publish_version(
                  const string& account_to_publish_under,
                  const string& account_to_pay_with,
-                 bool sign = true
+                 bool sign = false
                  );
          wallet_transaction_record update_block_signing_key(
                  const string& authorizing_account_name,
                  const string& delegate_name,
                  const public_key_type& block_signing_key,
-                 bool sign = true
+                 bool sign = false
                  );
          wallet_transaction_record create_asset(
                  const string& symbol,
@@ -380,9 +380,8 @@ namespace bts { namespace wallet {
                  const string& issuer_name,
                  double max_share_supply,
                  uint64_t precision,
-                 bool is_market_issued = false,
-                 bool sign = true
-                 );
+                 bool is_market_issued,
+                 bool sign );
          wallet_transaction_record update_asset(
                  const string& symbol,
                  const optional<string>& name,
@@ -390,15 +389,13 @@ namespace bts { namespace wallet {
                  const optional<variant>& public_data,
                  const optional<double>& maximum_share_supply,
                  const optional<uint64_t>& precision,
-                 bool sign = true
-                 );
+                 bool sign );
          wallet_transaction_record issue_asset(
                  double amount,
                  const string& symbol,
                  const string& to_account_name,
                  const string& memo_message,
-                 bool sign = true
-                 );
+                 bool sign );
          /**
           *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
           *
@@ -409,8 +406,7 @@ namespace bts { namespace wallet {
                  const string& quantity_symbol,
                  const string& price_per_unit,
                  const string& quote_symbol,
-                 bool sign = true
-                 );
+                 bool sign );
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *
@@ -421,33 +417,28 @@ namespace bts { namespace wallet {
                  const string& quantity_symbol,
                  const string& price_per_unit,
                  const string& quote_symbol,
-                 bool sign = true
-                 );
+                 bool sign );
          wallet_transaction_record submit_short(const string& from_account_name,
                                                 const string& real_quantity_xts,
                                                 const string& collateral_symbol,
                                                 const string& apr,
                                                 const string& quote_symbol,
-                                                const string& price_limit = 0,
-                                                bool sign = true
-                                                );
+                                                const string& price_limit,
+                                                bool sign );
          wallet_transaction_record cover_short(
                  const string& from_account_name,
                  const string& real_quantity_usd,
                  const string& quote_symbol,
                  const order_id_type& short_id,
-                 bool sign = true
-                 );
+                 bool sign );
          wallet_transaction_record add_collateral(
                  const string& from_account_name,
                  const order_id_type& short_id,
                  const string& real_quantity_collateral_to_add,
-                 bool sign = true
-                 );
+                 bool sign );
          wallet_transaction_record cancel_market_orders(
                  const vector<order_id_type>& order_ids,
-                 bool sign = true
-                 );
+                 bool sign );
 
          /**
           * @brief Perform arbitrarily many market operations in a single transaction
@@ -462,8 +453,7 @@ namespace bts { namespace wallet {
          wallet_transaction_record batch_market_update(
                  const vector<order_id_type>& cancel_order_ids,
                  const vector<std::pair<order_type_enum,vector<string>>>& new_orders,
-                 bool sign = true
-                 );
+                 bool sign );
 #if 0
          wallet_transaction_record create_proposal(
                  const string& delegate_account_name,
