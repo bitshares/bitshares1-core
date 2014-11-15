@@ -94,8 +94,8 @@ void detail::client_impl::wallet_unlock( uint32_t timeout, const string& passwor
   reschedule_delegate_loop();
   if( _config.wallet_callback_url.size() > 0 )
   {
-     _http_callback_signal_connection = 
-        _wallet->wallet_claimed_transaction.connect( 
+     _http_callback_signal_connection =
+        _wallet->wallet_claimed_transaction.connect(
             [=]( ledger_entry e ) { this->wallet_http_callback( _config.wallet_callback_url, e ); } );
   }
 }
@@ -205,10 +205,10 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
 {
     auto to_key = _wallet->get_account_public_key( to_account_name );
     return _wallet->transfer_asset_to_address(amount_to_transfer,
-                                              asset_symbol, 
+                                              asset_symbol,
                                               from_account_name,
-                                              address(to_key), 
-                                              memo_message, 
+                                              address(to_key),
+                                              memo_message,
                                               selection_method );
 }
 
@@ -304,7 +304,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
     transaction_builder_ptr builder = _wallet->create_transaction_builder();
 
     auto record = builder->deposit_asset_with_escrow(payer, recipient, escrow_account, agreement,
-                                                     amount, memo_message, selection_method, 
+                                                     amount, memo_message, selection_method,
                                                      sender.owner_key)
                           .finalize()
                           .sign();
@@ -485,19 +485,26 @@ void detail::client_impl::wallet_import_keyhotee(const string& firstname,
   _wallet->auto_backup( "keyhotee_import" );
 }
 
-string detail::client_impl::wallet_import_private_key(const string& wif_key_to_import,
-                                       const string& account_name,
-                                       bool create_account,
-                                       bool wallet_rescan_blockchain)
+string detail::client_impl::wallet_import_private_key( const string& wif_key_to_import,
+                                                       const string& account_name,
+                                                       bool create_account,
+                                                       bool wallet_rescan_blockchain )
 {
-  auto key = _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
-  if (wallet_rescan_blockchain)
-    _wallet->scan_chain(0);
+  optional<string> name;
+  if( !account_name.empty() )
+      name = account_name;
 
-  auto oacct = _wallet->get_account_for_address( address( key ) );
-  FC_ASSERT(oacct.valid(), "No account for a key we just imported" );
+  const public_key_type new_public_key = _wallet->import_wif_private_key( wif_key_to_import, name, create_account );
+
+  if( wallet_rescan_blockchain )
+      _wallet->scan_chain( 0 );
+
+  const owallet_account_record account_record = _wallet->get_account_for_address( address( new_public_key ) );
+  FC_ASSERT( account_record.valid(), "No account for the key we just imported!?" );
+
   _wallet->auto_backup( "key_import" );
-  return oacct->name;
+
+  return account_record->name;
 }
 
 string detail::client_impl::wallet_dump_private_key( const std::string& input )
@@ -682,7 +689,7 @@ wallet_transaction_record client_impl::wallet_account_register( const string& ac
                                                                 uint8_t delegate_pay_rate,
                                                                 const string& new_account_type )
 { try {
-    const auto record = _wallet->register_account( account_name, data, delegate_pay_rate, 
+    const auto record = _wallet->register_account( account_name, data, delegate_pay_rate,
                                                    pay_with_account, variant(new_account_type).as<account_type>(),
                                                    false );
     network_broadcast_transaction( record.trx );
@@ -978,11 +985,14 @@ wallet_transaction_record client_impl::wallet_publish_feeds( const std::string& 
    return record;
 }
 
-void client_impl::wallet_repair_records()
-{
+void client_impl::wallet_repair_records( const string& collecting_account_name )
+{ try {
    _wallet->auto_backup( "before_record_repair" );
-   return _wallet->repair_records();
-}
+   optional<string> account_name;
+   if( !collecting_account_name.empty() )
+       account_name = collecting_account_name;
+   return _wallet->repair_records( account_name );
+} FC_CAPTURE_AND_RETHROW( (collecting_account_name) ) }
 
 int32_t client_impl::wallet_regenerate_keys( const std::string& account, uint32_t number_to_regenerate )
 {

@@ -183,7 +183,7 @@ namespace bts { namespace wallet {
          /** sign a block if this wallet controls the key for the active delegate, or throw */
          void sign_block( signed_block_header& header )const;
          ///@}
-         
+
          fc::ecc::compact_signature  sign_hash(const string& signer, const fc::sha256& hash )const;
 
          /**
@@ -229,12 +229,12 @@ namespace bts { namespace wallet {
                             const string& brainkey,
                             const string& keyhoteeid );
 
-         public_key_type import_private_key( const private_key_type& key,
-                                             const string& account_name,
+         public_key_type import_private_key( const private_key_type& new_private_key,
+                                             const optional<string>& account_name,
                                              bool create_account = false );
 
          public_key_type import_wif_private_key( const string& wif_key,
-                                                 const string& account_name,
+                                                 const optional<string>& account_name,
                                                  bool create_account = false );
 
          address  create_new_address( const string& account_name, const string& label);
@@ -543,7 +543,7 @@ namespace bts { namespace wallet {
 
          void                               remove_transaction_record( const string& record_id );
 
-         void                               repair_records();
+         void                               repair_records( const optional<string>& collecting_account_name );
          uint32_t                           regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate );
          int32_t                            recover_accounts( int32_t number_of_accounts , int32_t max_number_of_attempts );
 

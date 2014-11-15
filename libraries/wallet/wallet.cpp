@@ -1333,82 +1333,87 @@ namespace detail {
     *     If account_name is not set, then lookup account with key in the blockchain
     *       add contact account using data from blockchain and then set the private key
     */
-   public_key_type wallet::import_private_key( const private_key_type& key,
-                                               const string& account_name,
+   public_key_type wallet::import_private_key( const private_key_type& new_private_key,
+                                               const optional<string>& account_name,
                                                bool create_account )
    { try {
+      if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+      if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-      FC_ASSERT( is_open() );
-      FC_ASSERT( is_unlocked() );
+      const public_key_type new_public_key = new_private_key.get_public_key();
+      const address new_address = address( new_public_key );
 
-      auto import_public_key = key.get_public_key();
-
-      owallet_key_record current_key_record = my->_wallet_db.lookup_key( import_public_key );
-      if( current_key_record.valid() )
+      // Try to associate with an existing registered account
+      const oaccount_record blockchain_account_record = my->_blockchain->get_account_record( new_address );
+      if( blockchain_account_record.valid() )
       {
-         current_key_record->encrypt_private_key( my->_wallet_password, key );
-         my->_wallet_db.store_key( *current_key_record );
-         return import_public_key;
+          if( account_name.valid() )
+          {
+              FC_ASSERT( *account_name == blockchain_account_record->name,
+                         "That key already belongs to a registered account with a different name!",
+                         ("blockchain_account_record",*blockchain_account_record)
+                         ("account_name",*account_name) );
+          }
+
+          my->_wallet_db.store_account( *blockchain_account_record );
+          my->_wallet_db.import_key( my->_wallet_password, blockchain_account_record->name, new_private_key, true );
+          return new_public_key;
       }
 
-      auto registered_account = my->_blockchain->get_account_record( import_public_key );
-      if( registered_account )
+      // Try to associate with an existing local account
+      owallet_account_record account_record = my->_wallet_db.lookup_account( new_address );
+      if( account_record.valid() )
       {
-          if( account_name.size() )
-             FC_ASSERT( account_name == registered_account->name,
-                        "Attempt to import a private key belonging to another account",
-                        ("account_with_key", registered_account->name)
-                        ("account_name",account_name) );
+          if( account_name.valid() )
+          {
+              FC_ASSERT( *account_name == account_record->name,
+                         "That key already belongs to a local account with a different name!",
+                         ("account_record",*account_record)
+                         ("account_name",*account_name) );
+          }
 
-         add_contact_account( registered_account->name, registered_account->owner_key );
-         return import_private_key( key, registered_account->name );
-      }
-      FC_ASSERT( account_name.size(), "You must specify an account name because the private key "
-                                      "does not belong to any known accounts");
-
-      if( !my->_blockchain->is_valid_account_name( account_name ) )
-          FC_THROW_EXCEPTION( invalid_name, "Invalid account name!", ("account_name",account_name) );
-
-      auto account_with_key = my->_wallet_db.lookup_account( key.get_public_key() );
-      if (account_with_key)
-      {
-          FC_ASSERT( account_name == account_with_key->name,
-                     "Attempt to import a private key belonging to another account",
-                     ("account_with_key", account_with_key->name)
-                     ("account_name",account_name) );
+          my->_wallet_db.import_key( my->_wallet_password, account_record->name, new_private_key, true );
+          return new_public_key;
       }
 
-      auto current_account = my->_wallet_db.lookup_account( account_name );
-      if( !current_account && create_account )
+      FC_ASSERT( account_name.valid(), "Unknown key! You must specify an account name!" );
+
+      // Check if key is already associated with an existing local account
+      const owallet_key_record key_record = my->_wallet_db.lookup_key( new_address );
+      if( key_record.valid() && key_record->has_private_key() )
       {
-         add_contact_account( account_name, key.get_public_key() );
-         return import_private_key( key, account_name, false );
+          account_record = my->_wallet_db.lookup_account( key_record->account_address );
+          if( account_record.valid() )
+          {
+              FC_ASSERT( *account_name == account_record->name,
+                         "That key already belongs to a local account with a different name!",
+                         ("account_record",*account_record)
+                         ("account_name",*account_name) );
+          }
+
+          my->_wallet_db.import_key( my->_wallet_password, account_record->name, new_private_key, true );
+          return new_public_key;
       }
 
-      FC_ASSERT( current_account.valid(),
-                "You must create an account before importing a key" );
-
-      if( !my->is_receive_account( account_name ) )
-          wlog( "Importing private key into currently non-receiving account: ${x}", ("x",account_name) );
-
-      auto pub_key = key.get_public_key();
-      address key_address( pub_key );
-      current_key_record = my->_wallet_db.lookup_key( key_address );
-      if( current_key_record.valid() )
+      account_record = my->_wallet_db.lookup_account( *account_name );
+      if( !account_record.valid() )
       {
-         FC_ASSERT( current_key_record->account_address == current_account->owner_address() );
-         current_key_record->encrypt_private_key( my->_wallet_password, key );
-         my->_wallet_db.store_key( *current_key_record );
-         return current_key_record->public_key;
+          FC_ASSERT( create_account,
+                     "Could not find an account with that name!",
+                     ("account_name",*account_name) );
+
+          // TODO: Replace with wallet_db.add_account
+          add_contact_account( *account_name, new_public_key );
+          account_record = my->_wallet_db.lookup_account( *account_name );
+          FC_ASSERT( account_record.valid(), "Error creating new account!" );
       }
 
-      my->_wallet_db.import_key( my->_wallet_password, current_account->name, key );
-
-      return pub_key;
-   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+      my->_wallet_db.import_key( my->_wallet_password, account_record->name, new_private_key, true );
+      return new_public_key;
+   } FC_CAPTURE_AND_RETHROW( (account_name)(create_account) ) }
 
    public_key_type wallet::import_wif_private_key( const string& wif_key,
-                                                   const string& account_name,
+                                                   const optional<string>& account_name,
                                                    bool create_account )
    { try {
       FC_ASSERT( is_open() );
@@ -1957,13 +1962,41 @@ namespace detail {
       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key)(sign) ) }
 
-   void wallet::repair_records()
+   void wallet::repair_records( const optional<string>& collecting_account_name )
    { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
        ulog( "Repairing wallet records. This may take a while..." );
        my->_wallet_db.repair_records( my->_wallet_password );
-   } FC_CAPTURE_AND_RETHROW() }
+
+       if( !collecting_account_name.valid() )
+           return;
+
+       const owallet_account_record account_record = my->_wallet_db.lookup_account( *collecting_account_name );
+       FC_ASSERT( account_record.valid(), "Cannot find a local account with that name!",
+                  ("collecting_account_name",*collecting_account_name) );
+
+       map<string, vector<balance_record>> items = get_account_balance_records();
+       for( const auto& item : items )
+       {
+           const auto& name = item.first;
+           const auto& records = item.second;
+
+           if( name.find( BTS_ADDRESS_PREFIX ) != 0 )
+               continue;
+
+           for( const auto& record : records )
+           {
+               owallet_key_record key_record = my->_wallet_db.lookup_key( record.owner() );
+               if( key_record.valid() )
+               {
+                   key_record->account_address = account_record->owner_address();
+                   my->_wallet_db.store_key( *key_record );
+               }
+           }
+       }
+   } FC_CAPTURE_AND_RETHROW( (collecting_account_name) ) }
 
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate )
    { try {
@@ -1989,12 +2022,8 @@ namespace detail {
            try
            {
                const private_key_type private_key = my->_wallet_db.get_wallet_child_key( my->_wallet_password, key_index );
-               const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
-               if( !key_record.valid() || !key_record->has_private_key() )
-               {
-                   import_private_key( private_key, account_name );
-                   ++total_regenerated_key_count;
-               }
+               import_private_key( private_key, account_name );
+               ++total_regenerated_key_count;
            }
            catch( const fc::exception& e )
            {
@@ -2018,12 +2047,8 @@ namespace detail {
            {
                const private_key_type private_key = my->_wallet_db.get_account_child_key_v1( my->_wallet_password,
                                                                                              account_record->owner_address(), seq_num );
-               const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
-               if( !key_record.valid() || !key_record->has_private_key() )
-               {
-                   import_private_key( private_key, account_name );
-                   ++total_regenerated_key_count;
-               }
+               import_private_key( private_key, account_name );
+               ++total_regenerated_key_count;
            }
            catch( const fc::exception& e )
            {
@@ -2047,12 +2072,8 @@ namespace detail {
                try
                {
                    const private_key_type private_key = my->_wallet_db.get_account_child_key( active_private_key, seq_num );
-                   const owallet_key_record key_record = my->_wallet_db.lookup_key( private_key.get_public_key() );
-                   if( !key_record.valid() || !key_record->has_private_key() )
-                   {
-                       import_private_key( private_key, account_name );
-                       ++total_regenerated_key_count;
-                   }
+                   import_private_key( private_key, account_name );
+                   ++total_regenerated_key_count;
                }
                catch( const fc::exception& e )
                {
