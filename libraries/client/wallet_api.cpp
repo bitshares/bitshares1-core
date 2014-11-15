@@ -487,19 +487,26 @@ void detail::client_impl::wallet_import_keyhotee(const string& firstname,
   _wallet->auto_backup( "keyhotee_import" );
 }
 
-string detail::client_impl::wallet_import_private_key(const string& wif_key_to_import,
-                                       const string& account_name,
-                                       bool create_account,
-                                       bool wallet_rescan_blockchain)
+string detail::client_impl::wallet_import_private_key( const string& wif_key_to_import,
+                                                       const string& account_name,
+                                                       bool create_account,
+                                                       bool wallet_rescan_blockchain )
 {
-  auto key = _wallet->import_wif_private_key(wif_key_to_import, account_name, create_account );
-  if (wallet_rescan_blockchain)
-    _wallet->scan_chain(0);
+  optional<string> name;
+  if( !account_name.empty() )
+      name = account_name;
 
-  auto oacct = _wallet->get_account_for_address( address( key ) );
-  FC_ASSERT(oacct.valid(), "No account for a key we just imported" );
+  const public_key_type new_public_key = _wallet->import_wif_private_key( wif_key_to_import, name, create_account );
+
+  if( wallet_rescan_blockchain )
+      _wallet->scan_chain( 0 );
+
+  const owallet_account_record account_record = _wallet->get_account_for_address( address( new_public_key ) );
+  FC_ASSERT( account_record.valid(), "No account for the key we just imported!?" );
+
   _wallet->auto_backup( "key_import" );
-  return oacct->name;
+
+  return account_record->name;
 }
 
 string detail::client_impl::wallet_dump_private_key( const std::string& input )

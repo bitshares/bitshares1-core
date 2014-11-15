@@ -483,8 +483,7 @@ namespace bts { namespace wallet {
    { try {
        FC_ASSERT( is_open() );
 
-       const address account_address = address( blockchain_account_record.owner_key );
-       owallet_account_record account_record = lookup_account( account_address );
+       owallet_account_record account_record = lookup_account( blockchain_account_record.owner_address() );
        if( !account_record.valid() )
            account_record = wallet_account_record();
 
@@ -548,7 +547,8 @@ namespace bts { namespace wallet {
        }
    } FC_CAPTURE_AND_RETHROW( (key) ) }
 
-   void wallet_db::import_key( const fc::sha512& password, const string& account_name, const private_key_type& private_key )
+   void wallet_db::import_key( const fc::sha512& password, const string& account_name, const private_key_type& private_key,
+                               bool move_existing )
    { try {
        FC_ASSERT( is_open() );
 
@@ -556,20 +556,19 @@ namespace bts { namespace wallet {
        FC_ASSERT( account_record.valid(), "Account name not found!" );
 
        const public_key_type public_key = private_key.get_public_key();
-       const address key_address = address( public_key );
 
-       owallet_key_record key_record = lookup_key( key_address );
-       if( key_record.valid() )
-           FC_ASSERT( key_record->account_address == account_record->owner_address() );
-       else
+       owallet_key_record key_record = lookup_key( address( public_key ) );
+       if( !key_record.valid() )
            key_record = wallet_key_record();
+       else if( !move_existing )
+           FC_ASSERT( key_record->account_address == account_record->owner_address() );
 
        key_record->account_address = account_record->owner_address();
        key_record->public_key = public_key;
        key_record->encrypt_private_key( password, private_key );
 
        store_key( *key_record );
-   } FC_CAPTURE_AND_RETHROW( (account_name) ) }
+   } FC_CAPTURE_AND_RETHROW( (account_name)(move_existing) ) }
 
    owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& record_id )const
    { try {

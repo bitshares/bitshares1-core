@@ -229,12 +229,12 @@ namespace bts { namespace wallet {
                             const string& brainkey,
                             const string& keyhoteeid );
 
-         public_key_type import_private_key( const private_key_type& key,
-                                             const string& account_name,
+         public_key_type import_private_key( const private_key_type& new_private_key,
+                                             const optional<string>& account_name,
                                              bool create_account = false );
 
          public_key_type import_wif_private_key( const string& wif_key,
-                                                 const string& account_name,
+                                                 const optional<string>& account_name,
                                                  bool create_account = false );
 
          address  create_new_address( const string& account_name, const string& label);
