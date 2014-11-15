@@ -2029,9 +2029,16 @@
       },
       {
          "method_name" : "wallet_repair_records",
-         "description" : "tries to repair any inconsistent wallet account and key records",
+         "description" : "tries to repair any inconsistent wallet account, key, and transaction records",
          "return_type" : "void",
-         "parameters"  : [],
+         "parameters"  : [
+             {
+                "name" : "collecting_account_name",
+                "type" : "account_name",
+                "description" : "collect any orphan balances into this account",
+                "default_value" : ""
+             }
+         ],
          "prerequisites" : ["wallet_unlocked"]
       },
       {

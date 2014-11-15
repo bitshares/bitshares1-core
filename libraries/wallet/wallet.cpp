@@ -1960,13 +1960,41 @@ namespace detail {
       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (authorizing_account_name)(delegate_name)(block_signing_key)(sign) ) }
 
-   void wallet::repair_records()
+   void wallet::repair_records( const optional<string>& collecting_account_name )
    { try {
-       FC_ASSERT( is_open() );
-       FC_ASSERT( is_unlocked() );
+       if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
+       if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
+
        ulog( "Repairing wallet records. This may take a while..." );
        my->_wallet_db.repair_records( my->_wallet_password );
-   } FC_CAPTURE_AND_RETHROW() }
+
+       if( !collecting_account_name.valid() )
+           return;
+
+       const owallet_account_record account_record = my->_wallet_db.lookup_account( *collecting_account_name );
+       FC_ASSERT( account_record.valid(), "Cannot find a local account with that name!",
+                  ("collecting_account_name",*collecting_account_name) );
+
+       map<string, vector<balance_record>> items = get_account_balance_records();
+       for( const auto& item : items )
+       {
+           const auto& name = item.first;
+           const auto& records = item.second;
+
+           if( name.find( BTS_ADDRESS_PREFIX ) != 0 )
+               continue;
+
+           for( const auto& record : records )
+           {
+               owallet_key_record key_record = my->_wallet_db.lookup_key( record.owner() );
+               if( key_record.valid() )
+               {
+                   key_record->account_address = account_record->owner_address();
+                   my->_wallet_db.store_key( *key_record );
+               }
+           }
+       }
+   } FC_CAPTURE_AND_RETHROW( (collecting_account_name) ) }
 
    uint32_t wallet::regenerate_keys( const string& account_name, uint32_t num_keys_to_regenerate )
    { try {
