@@ -104,13 +104,13 @@ namespace bts { namespace blockchain { namespace detail {
             {
                 FC_ASSERT( quote_asset->is_market_issued() );
                 if( !median_feed_price.valid() ) { _current_bid.reset(); continue; }
-                if( _current_bid->state.short_price_limit.valid() )
+                if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.short_price_limit < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset(); continue; // skip shorts that are over the price limit.
                   }
-                  mtrx.bid_price = std::min( *_current_bid->state.short_price_limit, _market_stat.center_price );
+                  mtrx.bid_price = std::min( *_current_bid->state.limit_price, _market_stat.center_price );
                 }
             }
 

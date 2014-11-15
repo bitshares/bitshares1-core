@@ -89,7 +89,7 @@ namespace bts { namespace blockchain {
 #warning [FUTURE HARDFORK] Until block signing keys can be changed, they must always be equal to the active key
 #endif
           if( current_record->is_delegate() )
-              current_record->delegate_info->block_signing_key = current_record->active_key();
+              current_record->delegate_info->signing_key = current_record->active_key();
       }
       else
       {

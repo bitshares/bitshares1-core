@@ -11,9 +11,8 @@
 using namespace bts::blockchain;
 using namespace bts::blockchain::detail;
 
-void chain_database_impl::pay_delegate_v1( const block_id_type& block_id,
-                                           const pending_chain_state_ptr& pending_state,
-                                           const public_key_type& block_signee )
+void chain_database_impl::pay_delegate_v1( const pending_chain_state_ptr& pending_state,
+                                           const public_key_type& block_signee )const
 { try {
       oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
       FC_ASSERT( delegate_record.valid() );
@@ -47,7 +46,7 @@ void chain_database_impl::pay_delegate_v1( const block_id_type& block_id,
       delegate_record->delegate_info->pay_balance += accepted_paycheck;
       delegate_record->delegate_info->total_paid += accepted_paycheck;
       pending_state->store_account_record( *delegate_record );
-} FC_CAPTURE_AND_RETHROW( (block_id)(block_signee) ) }
+} FC_CAPTURE_AND_RETHROW( (block_signee) ) }
 
 void chain_database_impl::execute_markets_v1( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
 { try {

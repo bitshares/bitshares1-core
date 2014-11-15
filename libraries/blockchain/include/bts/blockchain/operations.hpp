@@ -59,7 +59,7 @@ namespace bts { namespace blockchain {
       update_block_signing_key_type = 24,
 
       relative_bid_op_type          = 25,
-      relative_ask_op_type          = 26
+      relative_ask_op_type          = 26,
 
       short_op_v2_type              = 34
    };

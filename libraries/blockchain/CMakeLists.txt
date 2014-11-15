@@ -83,6 +83,7 @@ add_library( bts_blockchain
              market_engine_v6.cpp
              market_engine.cpp
              chain_database_v1.cpp
+             chain_database_v2.cpp
              chain_database.cpp
              fork_blocks.cpp
              ${generated_genesis_file}

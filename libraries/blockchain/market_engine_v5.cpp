@@ -134,14 +134,14 @@ namespace bts { namespace blockchain { namespace detail {
                 if( mtrx.ask_price < mtrx.bid_price ) // The call price has not been reached
                   break;
 
-                if( _current_bid->state.short_price_limit.valid() )
+                if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.short_price_limit < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset();
                       continue; // skip shorts that are over the price limit.
                   }
-                  mtrx.bid_price = *_current_bid->state.short_price_limit;
+                  mtrx.bid_price = *_current_bid->state.limit_price;
                 }
 
                 mtrx.ask_price = mtrx.bid_price;
@@ -238,14 +238,14 @@ namespace bts { namespace blockchain { namespace detail {
                 if( mtrx.bid_price < mtrx.ask_price ) // The ask price hasn't been reached
                   break;
 
-                if( _current_bid->state.short_price_limit.valid() )
+                if( _current_bid->state.limit_price.valid() )
                 {
-                  if( *_current_bid->state.short_price_limit < mtrx.ask_price )
+                  if( *_current_bid->state.limit_price < mtrx.ask_price )
                   {
                       _current_bid.reset();
                       continue; // skip shorts that are over the price limit.
                   }
-                  mtrx.bid_price = *_current_bid->state.short_price_limit;
+                  mtrx.bid_price = *_current_bid->state.limit_price;
                 }
 
                 // Bound collateral ratio
