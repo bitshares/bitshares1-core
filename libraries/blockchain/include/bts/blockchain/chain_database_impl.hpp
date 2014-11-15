@@ -32,7 +32,7 @@ namespace bts { namespace blockchain {
    {
       vote_del( int64_t v = 0, account_id_type del = 0 )
       :votes(v),delegate_id(del){}
-      int64_t votes;
+      int64_t votes = 0;
       account_id_type delegate_id;
       friend bool operator == ( const vote_del& a, const vote_del& b )
       {
@@ -150,18 +150,19 @@ namespace bts { namespace blockchain {
             std::map<fee_index, transaction_evaluation_state_ptr>                       _pending_fee_index;
 
             bts::db::level_map<asset_id_type, asset_record>                             _asset_db;
+            bts::db::level_map<string, asset_id_type>                                   _symbol_index_db;
+
             bts::db::level_map<balance_id_type, balance_record>                         _balance_db;
 
-            bts::db::level_map<burn_record_key, burn_record_value>                      _burn_db;
-
             bts::db::cached_level_map<account_id_type, account_record>                  _account_db;
+            bts::db::cached_level_map<string, account_id_type>                          _account_index_db;
             bts::db::cached_level_map<address, account_id_type>                         _address_to_account_db;
 
-            bts::db::cached_level_map<string, account_id_type>                          _account_index_db;
-            bts::db::level_map<string, asset_id_type>                                   _symbol_index_db;
             bts::db::cached_level_map<vote_del, int>                                    _delegate_vote_index_db;
 
             bts::db::level_map<time_point_sec, slot_record>                             _slot_record_db;
+
+            bts::db::level_map<burn_record_key, burn_record_value>                      _burn_db;
 
             bts::db::cached_level_map<market_index_key, order_record>                   _ask_db;
             bts::db::cached_level_map<market_index_key, order_record>                   _bid_db;

@@ -343,13 +343,21 @@ namespace bts { namespace blockchain {
 
    void pending_chain_state::store_account_record( const account_record& r )
    {
-      accounts[r.id] = r;
-      account_id_index[r.name] = r.id;
+      accounts[ r.id ] = r;
+      account_id_index[ r.name ] = r.id;
+      key_to_account[ address(r.owner_key) ] = r.id;
       for( const auto& item : r.active_key_history )
-         key_to_account[address(item.second)] = r.id;
-      key_to_account[address(r.owner_key)] = r.id;
+      {
+          const public_key_type& active_key = item.second;
+          if( active_key != public_key_type() )
+              key_to_account[ address( active_key ) ] = r.id;
+      }
       if( r.is_delegate() )
-          key_to_account[address(r.delegate_info->signing_key)] = r.id;
+      {
+          const public_key_type& signing_key = r.delegate_info->signing_key;
+          if( signing_key != public_key_type() )
+              key_to_account[ address( signing_key ) ] = r.id;
+      }
    }
 
    vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
