@@ -3204,6 +3204,28 @@ namespace detail {
       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (account_to_update)(pay_from_account)(sign) ) }
 
+   wallet_transaction_record wallet::retract_account(
+           const std::string& account_to_retract,
+           const std::string& pay_from_account,
+           bool sign )
+   { try {
+      FC_ASSERT( is_unlocked() );
+
+      auto account = get_account(account_to_retract);
+      owallet_account_record payer;
+      if( !pay_from_account.empty() ) payer = get_account(pay_from_account);
+
+      fc::ecc::public_key empty_pk;
+      public_key_type new_public_key(empty_pk);
+
+      auto builder = create_transaction_builder();
+      builder->update_account_registration(account, optional<variant>(), new_public_key, optional<share_type>(), payer).
+               finalize();
+      if( sign )
+         return builder->sign();
+      return builder->transaction_record;
+   } FC_CAPTURE_AND_RETHROW( (account_to_retract)(pay_from_account)(sign) ) }
+
 #if 0
    signed_transaction wallet::create_proposal( const string& delegate_account_name,
                                        const string& subject,

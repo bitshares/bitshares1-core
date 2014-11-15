@@ -727,6 +727,14 @@ wallet_transaction_record detail::client_impl::wallet_account_update_active_key(
    return record;
 }
 
+wallet_transaction_record detail::client_impl::wallet_account_retract( const std::string& account_to_update,
+                                                                       const std::string& pay_from_account )
+{
+   const auto record = _wallet->retract_account( account_to_update, pay_from_account );
+   network_broadcast_transaction( record.trx );
+   return record;
+}
+
 vector<public_key_summary> client_impl::wallet_account_list_public_keys( const string& account_name )
 {
     vector<public_key_summary> summaries;
