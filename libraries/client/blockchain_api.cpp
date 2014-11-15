@@ -255,7 +255,7 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_addres
     for( auto pair : _chain_db->get_balances( "", -1 ) )
     {
         auto bal = pair.second;
-        if( bal.owner() == addr )
+        if( bal.is_owner( addr ) )
         {
             ret.insert( std::pair<balance_id_type, balance_record>(bal.id(), bal) );
         }
@@ -269,11 +269,7 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_ba
     for( auto pair : _chain_db->get_balances( "", -1 ) )
     {
         auto bal = pair.second;
-        auto addr = bal.owner();
-        if( address(key) == addr || address(pts_address(key,false,56)) == addr ||
-                                    address(pts_address(key,true,56)) == addr ||
-                                    address(pts_address(key,false,0)) == addr ||
-                                    address(pts_address(key,true,0)) == addr )
+        if( bal.is_owner(key) )
         {
             ret.insert( std::pair<balance_id_type, balance_record>(bal.id(), bal) );
         }

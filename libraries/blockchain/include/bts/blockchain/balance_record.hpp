@@ -36,7 +36,11 @@ namespace bts { namespace blockchain {
       asset                      calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const;
 
       /** if condition is signature or by name, return the owner */
+      //deprecate owner() ?
       address                    owner()const;
+      set<address>               owners()const;
+      bool                       is_owner( const address& addr )const;
+      bool                       is_owner( const public_key_type& key )const;
 
       withdraw_condition         condition;
       share_type                 balance = 0;
