@@ -34,7 +34,6 @@ namespace bts { namespace blockchain {
    {
        for( auto addr : owners() )
        {
-           auto valid = false;
            if (addr == address(key)) return true;
            if( addr == address(pts_address(key,false,56))) return true;
            if( addr == address(pts_address(key,true,56))) return true;
