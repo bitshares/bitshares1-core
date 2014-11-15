@@ -80,9 +80,6 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( new_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [SOFTFORK] Disable this operation until the next BTS hardfork, then remove
-#endif
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );

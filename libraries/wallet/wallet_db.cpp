@@ -454,9 +454,6 @@ namespace bts { namespace wallet {
                account_public_keys.insert( account.delegate_info->signing_key );
        }
 
-#ifndef WIN32
-#warning [BTS] Repair wallet records on upgrade again
-#endif
        for( const public_key_type& account_public_key : account_public_keys )
        {
            const address account_address = address( account_public_key );
