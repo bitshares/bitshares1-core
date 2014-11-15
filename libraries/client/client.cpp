@@ -466,6 +466,7 @@ config load_config( const fc::path& datadir, bool enable_ulog )
          }
       }
 
+      std::srand( std::time( 0 ) );
       std::random_shuffle( cfg.default_peers.begin(), cfg.default_peers.end() );
       return cfg;
    } FC_RETHROW_EXCEPTIONS( warn, "unable to load config file ${cfg}", ("cfg",datadir/"config.json")) }
