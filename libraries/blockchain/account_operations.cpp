@@ -4,6 +4,8 @@
 #include <bts/blockchain/transaction_evaluation_state.hpp>
 #include <fc/time.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain {
 
    bool register_account_operation::is_delegate()const
@@ -85,11 +87,11 @@ namespace bts { namespace blockchain {
 
           current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
 
-#ifndef WIN32
-#warning [FUTURE HARDFORK] Until block signing keys can be changed, they must always be equal to the active key
-#endif
-          if( current_record->is_delegate() )
-              current_record->delegate_info->signing_key = current_record->active_key();
+          if( eval_state._current_state->get_head_block_num() < BTS_V0_4_25_FORK_BLOCK_NUM )
+          {
+              if( current_record->is_delegate() )
+                  current_record->delegate_info->signing_key = current_record->active_key();
+          }
       }
       else
       {
@@ -177,11 +179,13 @@ namespace bts { namespace blockchain {
       // STORE LINK...
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [SOFTFORK] Disable this operation until the next BTS hardfork, then remove
-#endif
    void update_block_signing_key::evaluate( transaction_evaluation_state& eval_state )
    { try {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_4_25_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM );
+
       oaccount_record account_rec = eval_state._current_state->get_account_record( this->account_id );
       if( !account_rec.valid() )
           FC_CAPTURE_AND_THROW( unknown_account_id, (account_id) );

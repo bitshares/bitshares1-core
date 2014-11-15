@@ -2,6 +2,8 @@
 #include <bts/blockchain/chain_interface.hpp>
 #include <bts/blockchain/exceptions.hpp>
 
+#include <bts/blockchain/fork_blocks.hpp>
+
 namespace bts { namespace blockchain {
 
    bool is_power_of_ten( uint64_t n )
@@ -80,11 +82,13 @@ namespace bts { namespace blockchain {
       eval_state._current_state->store_asset_record( new_record );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-#ifndef WIN32
-#warning [SOFTFORK] Disable this operation until the next BTS hardfork, then remove
-#endif
    void update_asset_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_4_25_FORK_BLOCK_NUM has passed
+#endif
+      FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM );
+
       oasset_record current_asset_record = eval_state._current_state->get_asset_record( this->asset_id );
       if( NOT current_asset_record.valid() )
           FC_CAPTURE_AND_THROW( unknown_asset_id, (asset_id) );

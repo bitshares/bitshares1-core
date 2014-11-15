@@ -638,11 +638,11 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
-#ifndef WIN32
-#warning [HARDFORK] Changes to delegate pay will hardfork BTS
-#endif
       void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee )const
       { try {
+          if( pending_state->get_head_block_num() < BTS_V0_4_25_FORK_BLOCK_NUM )
+              return pay_delegate_v2( pending_state, block_signee );
+
           oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
           FC_ASSERT( base_asset_record.valid() );
 

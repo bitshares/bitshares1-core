@@ -389,7 +389,7 @@ namespace detail {
                }
            }
 
-           if( current_version < 108 )
+           if( current_version < 109 )
            {
                const function<void( void )> repair = [&]()
                {

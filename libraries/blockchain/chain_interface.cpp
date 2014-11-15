@@ -60,11 +60,11 @@ namespace bts { namespace blockchain {
                return false;
        }
 
-#ifndef WIN32
-#warning [HARDFORK] This new restriction will hardfork BTS
-#endif
-       if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
-           return false;
+       if( get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM )
+       {
+           if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
+               return false;
+       }
 
        return true;
    } FC_CAPTURE_AND_RETHROW( (symbol) ) }
