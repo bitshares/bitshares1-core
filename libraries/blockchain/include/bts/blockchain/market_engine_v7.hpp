@@ -2,10 +2,10 @@
 
 namespace bts { namespace blockchain { namespace detail {
 
-  class market_engine
+  class market_engine_v7
   {
   public:
-    market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi );
+    market_engine_v7( pending_chain_state_ptr ps, chain_database_impl& cdi );
     /** return true if execute was successful and applied */
     bool execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp );
 
@@ -13,6 +13,9 @@ namespace bts { namespace blockchain { namespace detail {
 
     static asset get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
     static asset get_interest_owed(const asset& principle, const price& apr, uint32_t age_seconds);
+
+    static asset get_interest_paid_v1(const asset& total_amount_paid, const price& apr, uint32_t age_seconds);
+    static asset get_interest_owed_v1(const asset& principle, const price& apr, uint32_t age_seconds);
 
   private:
     void push_market_transaction( const market_transaction& mtrx );

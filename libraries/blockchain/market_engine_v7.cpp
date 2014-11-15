@@ -1,16 +1,18 @@
-#include <bts/blockchain/market_engine.hpp>
+#include <bts/blockchain/market_engine_v7.hpp>
 #include <fc/real128.hpp>
+
+#include <bts/blockchain/fork_blocks.hpp>
 
 namespace bts { namespace blockchain { namespace detail {
 
-  market_engine::market_engine( pending_chain_state_ptr ps, chain_database_impl& cdi )
+  market_engine_v7::market_engine_v7( pending_chain_state_ptr ps, chain_database_impl& cdi )
   :_pending_state(ps),_db_impl(cdi)
   {
       _pending_state = std::make_shared<pending_chain_state>( ps );
       _prior_state = ps;
   }
 
-  void market_engine::cancel_all_shorts()
+  void market_engine_v7::cancel_all_shorts()
   {
       for( auto short_itr = _db_impl._short_db.begin(); short_itr.valid(); ++short_itr )
       {
@@ -30,7 +32,7 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->apply_changes();
   }
 
-  bool market_engine::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
+  bool market_engine_v7::execute( asset_id_type quote_id, asset_id_type base_id, const fc::time_point_sec& timestamp )
   {
       try
       {
@@ -55,7 +57,6 @@ namespace bts { namespace blockchain { namespace detail {
 
           if( !_ask_itr.valid() )
           {
-            wlog( "ask iter invalid..." );
             _ask_itr = _db_impl._ask_db.begin();
           }
 
@@ -70,7 +71,7 @@ namespace bts { namespace blockchain { namespace detail {
 
           _feed_price = _db_impl.self->get_median_delegate_price( _quote_id, _base_id );
           // Market issued assets cannot match until the first time there is a median feed
-          if( quote_asset->is_market_issued() && !base_asset->is_market_issued() )
+          if( quote_asset->is_market_issued() && (!base_asset->is_market_issued() || _pending_state->get_head_block_num() < BTS_V0_4_25_FORK_BLOCK_NUM) )
           {
               const omarket_status market_stat = _pending_state->get_market_status( _quote_id, _base_id );
               if( (!market_stat.valid() || !market_stat->last_valid_feed_price.valid()) && !_feed_price.valid() )
@@ -79,11 +80,8 @@ namespace bts { namespace blockchain { namespace detail {
 
           // prime the pump, to make sure that margin calls (asks) have a bid to check against.
           get_next_bid(); get_next_ask();
-          idump( (_current_bid)(_current_ask) );
           while( get_next_bid() && get_next_ask() )
           {
-            idump( (_current_bid)(_current_ask) );
-
             // Make sure that at least one order was matched every time we enter the loop
             FC_ASSERT( _orders_filled != last_orders_filled, "We appear caught in an order matching loop!" );
             last_orders_filled = _orders_filled;
@@ -284,15 +282,11 @@ namespace bts { namespace blockchain { namespace detail {
               update_market_history( trading_volume, opening_price, closing_price, timestamp );
           }
 
-          wlog( "done matching orders" );
-          idump( (_current_bid)(_current_ask) );
-
           _pending_state->apply_changes();
           return true;
     }
     catch( const fc::exception& e )
     {
-        wlog( "error executing market ${quote} / ${base}\n ${e}", ("quote",quote_id)("base",base_id)("e",e.to_detail_string()) );
         omarket_status market_stat = _prior_state->get_market_status( _quote_id, _base_id );
         if( !market_stat.valid() ) market_stat = market_status( _quote_id, _base_id );
         market_stat->update_feed_price( _feed_price );
@@ -302,7 +296,7 @@ namespace bts { namespace blockchain { namespace detail {
     return false;
   } // execute(...)
 
-  void market_engine::push_market_transaction( const market_transaction& mtrx )
+  void market_engine_v7::push_market_transaction( const market_transaction& mtrx )
   { try {
       // If not an automatic market cancel
       if( mtrx.ask_paid.amount != 0
@@ -319,18 +313,13 @@ namespace bts { namespace blockchain { namespace detail {
           FC_ASSERT( mtrx.fees_collected.amount >= 0 );
       }
 
-      wlog( "${trx}", ("trx", fc::json::to_pretty_string( mtrx ) ) );
-
       _market_transactions.push_back(mtrx);
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-  void market_engine::cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id )
+  void market_engine_v7::cancel_current_short( market_transaction& mtrx, const asset_id_type& quote_asset_id )
   {
       FC_ASSERT( _current_bid->type == short_order );
       FC_ASSERT( mtrx.bid_type == short_order );
-
-      elog( "Canceling current short" );
-      edump( (mtrx) );
 
       // Create automatic market cancel transaction
       mtrx.ask_paid       = asset();
@@ -355,7 +344,7 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
   }
 
-  void market_engine::pay_current_short( market_transaction& mtrx, asset_record& quote_asset, asset_record& base_asset )
+  void market_engine_v7::pay_current_short( market_transaction& mtrx, asset_record& quote_asset, asset_record& base_asset )
   { try {
       FC_ASSERT( _current_bid->type == short_order );
       FC_ASSERT( mtrx.bid_type == short_order );
@@ -411,7 +400,7 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->store_short_record( _current_bid->market_index, _current_bid->state );
   } FC_CAPTURE_AND_RETHROW( (mtrx)  ) }
 
-  void market_engine::pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset )
+  void market_engine_v7::pay_current_bid( const market_transaction& mtrx, asset_record& quote_asset )
   { try {
       FC_ASSERT( _current_bid->type == bid_order );
       FC_ASSERT( mtrx.bid_type == bid_order );
@@ -439,7 +428,7 @@ namespace bts { namespace blockchain { namespace detail {
       _pending_state->store_bid_record( _current_bid->market_index, _current_bid->state );
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-  void market_engine::pay_current_cover( market_transaction& mtrx, asset_record& quote_asset )
+  void market_engine_v7::pay_current_cover( market_transaction& mtrx, asset_record& quote_asset )
   { try {
       FC_ASSERT( _current_ask->type == cover_order );
       FC_ASSERT( mtrx.ask_type == cover_order );
@@ -462,6 +451,12 @@ namespace bts { namespace blockchain { namespace detail {
       {
           // Partial cover
           interest_paid = get_interest_paid( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
+
+          if( _pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
+          {
+              interest_paid = get_interest_paid_v1( mtrx.ask_received, _current_collat_record.interest_rate, cover_age );
+          }
+
           principle_paid = mtrx.ask_received - interest_paid;
           _current_ask->state.balance -= principle_paid.amount;
       }
@@ -524,7 +519,7 @@ namespace bts { namespace blockchain { namespace detail {
                                                _current_collat_record );
   } FC_CAPTURE_AND_RETHROW( (mtrx) ) }
 
-  void market_engine::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
+  void market_engine_v7::pay_current_ask( const market_transaction& mtrx, asset_record& base_asset )
   { try {
       FC_ASSERT( _current_ask->type == ask_order );
       FC_ASSERT( mtrx.ask_type == ask_order );
@@ -552,7 +547,7 @@ namespace bts { namespace blockchain { namespace detail {
 
   } FC_CAPTURE_AND_RETHROW( (mtrx) )  } // pay_current_ask
 
-  bool market_engine::get_next_short()
+  bool market_engine_v7::get_next_short()
   {
       if( _short_itr.valid() )
       {
@@ -572,7 +567,7 @@ namespace bts { namespace blockchain { namespace detail {
       return false;
   }
 
-  bool market_engine::get_next_bid()
+  bool market_engine_v7::get_next_bid()
   { try {
       if( _current_bid && _current_bid->get_quantity().amount > 0 )
         return _current_bid.valid();
@@ -598,7 +593,7 @@ namespace bts { namespace blockchain { namespace detail {
       return _current_bid.valid();
   } FC_CAPTURE_AND_RETHROW() }
 
-  bool market_engine::get_next_ask()
+  bool market_engine_v7::get_next_ask()
   { try {
       if( _current_ask && _current_ask->state.balance > 0 )
         return _current_ask.valid();
@@ -630,8 +625,11 @@ namespace bts { namespace blockchain { namespace detail {
                 --_collateral_itr;
                 return _current_ask.valid();
             }
-            --_collateral_itr;
-            continue;
+            if( _pending_state->get_head_block_num() >= BTS_V0_4_24_FORK_BLOCK_NUM )
+            {
+                --_collateral_itr;
+                continue;
+            }
         }
         _collateral_itr.reset();
         break;
@@ -655,7 +653,7 @@ namespace bts { namespace blockchain { namespace detail {
     *  This method should not affect market execution or validation and
     *  is for historical purposes only.
     */
-  void market_engine::update_market_history( const asset& trading_volume,
+  void market_engine_v7::update_market_history( const asset& trading_volume,
                                              const price& opening_price,
                                              const price& closing_price,
                                              const fc::time_point_sec& timestamp )
@@ -725,7 +723,7 @@ namespace bts { namespace blockchain { namespace detail {
           }
   }
 
-  asset market_engine::get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds)
+  asset market_engine_v7::get_interest_paid(const asset& total_amount_paid, const price& apr, uint32_t age_seconds)
   {
       // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
       // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
@@ -744,7 +742,7 @@ namespace bts { namespace blockchain { namespace detail {
       return asset( interest_paid.to_uint64(), total_amount_paid.asset_id );
   }
 
-  asset market_engine::get_interest_owed(const asset& principle, const price& apr, uint32_t age_seconds)
+  asset market_engine_v7::get_interest_owed(const asset& principle, const price& apr, uint32_t age_seconds)
   {
       // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
       fc::real128 total_principle( principle.amount );
@@ -760,8 +758,50 @@ namespace bts { namespace blockchain { namespace detail {
       return asset( interest_owed.to_uint64(), principle.asset_id );
   }
 
-  asset market_engine::get_current_cover_debt() const
+  asset market_engine_v7::get_interest_paid_v1(const asset& total_amount_paid, const price& apr, uint32_t age_seconds)
   {
+      // TOTAL_PAID = DELTA_PRINCIPLE + DELTA_PRINCIPLE * APR * PERCENT_OF_YEAR
+      // DELTA_PRINCIPLE = TOTAL_PAID / (1 + APR*PERCENT_OF_YEAR)
+      // INTEREST_PAID  = TOTAL_PAID - DELTA_PRINCIPLE
+      fc::real128 total_paid( total_amount_paid.amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+      fc::real128 iapr = apr_n / apr_d;
+      fc::real128 age_sec(age_seconds);
+      fc::real128 sec_per_year(365 * 24 * 60 * 60);
+      fc::real128 percent_of_year = age_sec / sec_per_year;
+
+      fc::real128 delta_principle = total_paid / ( fc::real128(1) + iapr * percent_of_year );
+      fc::real128 interest_paid   = total_paid - delta_principle;
+
+      return asset( interest_paid.to_uint64(), total_amount_paid.asset_id );
+  }
+
+  asset market_engine_v7::get_interest_owed_v1(const asset& principle, const price& apr, uint32_t age_seconds)
+  {
+      // INTEREST_OWED = TOTAL_PRINCIPLE * APR * PERCENT_OF_YEAR
+      fc::real128 total_principle( principle.amount );
+      fc::real128 apr_n( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) * apr).amount );
+      fc::real128 apr_d( (asset( BTS_BLOCKCHAIN_MAX_SHARES, apr.quote_asset_id ) ).amount );
+      fc::real128 iapr = apr_n / apr_d;
+      fc::real128 age_sec(age_seconds);
+      fc::real128 sec_per_year(365 * 24 * 60 * 60);
+      fc::real128 percent_of_year = age_sec / sec_per_year;
+
+      fc::real128 interest_owed   = total_principle * iapr * percent_of_year;
+
+      return asset( interest_owed.to_uint64(), principle.asset_id );
+  }
+
+  asset market_engine_v7::get_current_cover_debt() const
+  {
+      if( _pending_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
+      {
+          return get_interest_owed_v1( _current_ask->get_balance(),
+                                       _current_collat_record.interest_rate,
+                                       get_current_cover_age() ) + _current_ask->get_balance();
+      }
+
       return get_interest_owed( _current_ask->get_balance(),
                                 _current_collat_record.interest_rate,
                                 get_current_cover_age() ) + _current_ask->get_balance();

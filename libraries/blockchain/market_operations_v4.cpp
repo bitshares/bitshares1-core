@@ -2,6 +2,7 @@
 #include <bts/blockchain/exceptions.hpp>
 #include <bts/blockchain/fork_blocks.hpp>
 #include <bts/blockchain/market_engine.hpp>
+#include <bts/blockchain/market_engine_v7.hpp>
 #include <bts/blockchain/market_operations.hpp>
 
 using namespace bts::blockchain;
@@ -46,8 +47,8 @@ void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )
 
    if( eval_state._current_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
    {
-       total_debt = detail::market_engine::get_interest_owed_v1( principle, current_cover->interest_rate,
-                                                                 elapsed_sec ) + principle;
+       total_debt = detail::market_engine_v7::get_interest_owed_v1( principle, current_cover->interest_rate,
+                                                                    elapsed_sec ) + principle;
    }
 
    asset principle_paid;
@@ -66,7 +67,7 @@ void cover_operation::evaluate_v4( transaction_evaluation_state& eval_state )
 
        if( eval_state._current_state->get_head_block_num() < BTS_V0_4_23_FORK_BLOCK_NUM )
        {
-           interest_paid = detail::market_engine::get_interest_paid_v1( delta_amount, current_cover->interest_rate, elapsed_sec );
+           interest_paid = detail::market_engine_v7::get_interest_paid_v1( delta_amount, current_cover->interest_rate, elapsed_sec );
        }
 
        principle_paid = delta_amount - interest_paid;

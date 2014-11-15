@@ -853,7 +853,7 @@ namespace bts { namespace blockchain {
 
       void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
       { try {
-        if( pending_state->get_head_block_num() <= BTS_V0_4_21_FORK_BLOCK_NUM )
+        if( pending_state->get_head_block_num() < BTS_V0_4_25_FORK_BLOCK_NUM )
            return execute_markets_v1( timestamp, pending_state );
 
         vector<market_transaction> market_transactions;
