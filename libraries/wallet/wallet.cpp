@@ -373,6 +373,8 @@ namespace detail {
         FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
       if( (order_type == bid_order || order_type == ask_order) && atof(order_price.c_str()) == 0 )
         FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
+      if( (order_type == relative_bid_order || order_type == relative_ask_order) && atof(order_price.c_str()) == 0 )
+        FC_CAPTURE_AND_THROW( invalid_price, (order_price) );
 
       price price_arg = _blockchain->to_ugly_price(order_price,
                                                    base_symbol,
@@ -3333,6 +3335,8 @@ namespace detail {
             break;
          case bid_order:
          case ask_order:
+         case relative_bid_order:
+         case relative_ask_order:
          case short_order:
             //args: account_name, quantity, base_symbol, price, quote_symbol[, price_limit (for shorts)]
             FC_ASSERT(args.size() > 4, "Incorrect number of arguments.");
