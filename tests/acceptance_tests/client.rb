@@ -64,7 +64,11 @@ class BitSharesNode
   end
 
   def stop
-    exec 'quit'
+    @handler[:stdin].write("quit\n")
+    begin
+      Process.wait(@handler[:wait_thr].pid)
+    rescue
+    end
   end
 
   def stdout_gets
@@ -94,10 +98,7 @@ class BitSharesNode
   end
 
   def save_config(config)
-    puts "#{@options[:data_dir]}/config.json"
-    puts JSON.pretty_generate(config)
     File.write("#{@options[:data_dir]}/config.json", JSON.pretty_generate(config))
-    puts JSON.parse( IO.read("#{@options[:data_dir]}/config.json") )
   end
 
 end

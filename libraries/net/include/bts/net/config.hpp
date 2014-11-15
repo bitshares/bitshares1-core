@@ -49,3 +49,11 @@
 #define BTS_NET_MAX_INVENTORY_SIZE_IN_MINUTES           2
 
 #define BTS_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING      100
+
+/**
+ * Instead of fetching all item IDs from a peer, then fetching all blocks
+ * from a peer, we will interleave them.  Fetch at least this many block IDs,
+ * then switch into block-fetching mode until the number of blocks we know about
+ * but haven't yet fetched drops below this
+ */
+#define BTS_NET_MIN_BLOCK_IDS_TO_PREFETCH               10000

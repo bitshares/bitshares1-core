@@ -537,7 +537,7 @@
         "aliases" : ["burn"]
       },
       {
-         "method_name" : "wallet_create_new_address",
+         "method_name" : "wallet_address_create",
          "description" : "Creates an address which can be used for a simple (non-TITAN) transfer.",
          "return_type" : "address",
          "parameters"  : [
@@ -637,6 +637,48 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer"]
+      },
+      {
+        "method_name": "wallet_transfer_to_public_account",
+        "description": "Sends given amount to the given account",
+        "return_type": "transaction_record",
+        "parameters" :
+          [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "sending_account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "to_account_name",
+              "type" : "receive_account_name",
+              "description" : "the account to transfer the shares to"
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
+            }
+          ],
+        "prerequisites" : ["wallet_unlocked"],
+        "aliases" : ["transfer_public"]
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",
@@ -1092,7 +1134,7 @@
                },
                {
                   "name" : "precision",
-                  "type" : "int64_t",
+                  "type" : "uint64_t",
                   "description" : "defines where the decimal should be displayed, must be a power of 10",
                   "default_value" : 1000000
                },
@@ -1101,6 +1143,49 @@
                   "type" : "bool",
                   "description" : "creation of a new BitAsset that is created by shorting",
                   "default_value": false
+               }
+            ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_asset_update",
+         "description" : "Updates an existing user-issued asset; only the public_data can be updated if any shares of the asset exist",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+               {
+                  "name" : "symbol",
+                  "type" : "asset_symbol",
+                  "description" : "the ticker symbol for the asset to update"
+               },
+               {
+                  "name" : "name",
+                  "type" : "optional_string",
+                  "description" : "the new name to give the asset; or null to keep the current name",
+                  "default_value" : null
+               },
+               {
+                  "name" : "description",
+                  "type" : "optional_string",
+                  "description" : "the new description to give the asset; or null to keep the current description",
+                  "default_value" : null
+               },
+               {
+                  "name" : "public_data",
+                  "type" : "optional_variant",
+                  "description" : "the new public_data to give the asset; or null to keep the current public_data",
+                  "default_value" : null
+               },
+               {
+                  "name" : "maximum_share_supply",
+                  "type" : "optional_double",
+                  "description" : "the new maximum_share_supply to give the asset; or null to keep the current maximum_share_supply",
+                  "default_value" : null
+               },
+               {
+                  "name" : "precision",
+                  "type" : "optional_uint64_t",
+                  "description" : "the new precision to give the asset; or null to keep the current precision",
+                  "default_value" : null
                }
             ],
          "prerequisites" : ["wallet_unlocked"]
@@ -1307,6 +1392,46 @@
          "aliases" : [ "bid" ]
       },
       {
+         "method_name" : "wallet_market_submit_relative_bid",
+         "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the bid"
+            },
+            {
+               "name" : "quantity",
+               "type" : "string",
+               "description" : "the quantity of items you would like to buy"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to buy"
+            },
+            {
+               "name" : "relative_price",
+               "type" : "string",
+               "description" : "the price relative to the feed you would like to pay"
+            },
+            {
+               "name" : "base_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to pay with"
+            },
+            {
+               "name" : "limit_price",
+               "type" : "string",
+               "description" : "the limit on what you are willing to pay",
+               "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "relative_bid" ]
+      },
+      {
          "method_name" : "wallet_market_submit_ask",
          "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
          "return_type" : "transaction_record",
@@ -1345,6 +1470,46 @@
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "ask" ]
+      },
+      {
+         "method_name" : "wallet_market_submit_relative_ask",
+         "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "sell_quantity",
+               "type" : "string",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "sell_quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to sell"
+            },
+            {
+               "name" : "relative_ask_price",
+               "type" : "string",
+               "description" : "the relative price per unit sold."
+            },
+            {
+               "name" : "ask_price_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            },
+            {
+               "name" : "limit_ask_price",
+               "type" : "string",
+               "description" : "the minimum price per unit sold.",
+               "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "relative_ask" ]
       },
       {
          "method_name" : "wallet_market_submit_short",
@@ -1741,6 +1906,29 @@
          "prerequisites" : ["wallet_unlocked"]
       },
       {
+         "method_name" : "wallet_delegate_update_block_signing_key",
+         "description" : "Update a delegate's block signing and feed publishing key",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "authorizing_account_name",
+                "type" : "account_name",
+                "description" : "The account that will authorize changing the block signing key"
+            },
+            {
+                "name" : "delegate_name",
+                "type" : "account_name",
+                "description" : "The delegate account which will have its block signing key changed"
+            },
+            {
+                "name" : "block_signing_key",
+                "type" : "public_key",
+                "description" : "The new key that will be used for block signing"
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
          "method_name" : "wallet_recover_accounts",
          "description" : "Attempts to recover accounts created after last backup was taken and returns number of successful recoveries. Use if you have restored from backup and are missing accounts.",
          "return_type" : "int32_t",
@@ -1811,6 +1999,12 @@
                 "name" : "asset_symbol",
                 "type" : "asset_symbol",
                 "description" : "the type of asset being priced"
+             },
+             {
+                "name" : "force_settle",
+                "type" : "bool",
+                "description" : "When a market dies for lack of interest vote to force all longs to settle at feed",
+                "default_value" : false
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
@@ -1835,9 +2029,16 @@
       },
       {
          "method_name" : "wallet_repair_records",
-         "description" : "tries to repair any inconsistent wallet account and key records",
+         "description" : "tries to repair any inconsistent wallet account, key, and transaction records",
          "return_type" : "void",
-         "parameters"  : [],
+         "parameters"  : [
+             {
+                "name" : "collecting_account_name",
+                "type" : "account_name",
+                "description" : "collect any orphan balances into this account",
+                "default_value" : ""
+             }
+         ],
          "prerequisites" : ["wallet_unlocked"]
       },
       {

@@ -21,8 +21,9 @@ module BitShares
       @p2p_port = 10000 + Random.rand(10000)
       @running = false
 
-      raise 'BTS_BUILD env variable is not set' unless ENV['BTS_BUILD']
+      ENV['BTS_BUILD'] = '../..' unless ENV['BTS_BUILD']
       @client_binary = ENV['BTS_BUILD'] + '/programs/client/bitshares_client'
+      raise @client_binary + ' not found, please set BTS_BUILD env variable if you are using out of source builds' unless File.exist?(@client_binary)
     end
 
     def log(s)
@@ -40,6 +41,7 @@ module BitShares
     end
 
     def full_bootstrap
+      STDOUT.puts 'first time test net bootstrap.. this may take several minutes, please be patient..'
       log '========== full bootstrap ==========='
       FileUtils.rm_rf td('delegate_wallet_backup.json')
       FileUtils.rm_rf td('alice_wallet_backup.json')
@@ -53,15 +55,10 @@ module BitShares
           pub_key, priv_key = l.split(' ')
           @delegate_node.exec 'wallet_import_private_key', priv_key, "delegate#{counter}"
           counter += 1
-          #break if counter > 10
         end
       end
 
       sleep 1.0
-
-      for i in 0..10
-        @delegate_node.exec 'wallet_delegate_set_block_production', "delegate#{i}", true
-      end
 
       balancekeys = []
       File.open('genesis.json.balancekeys') do |f|
@@ -73,9 +70,10 @@ module BitShares
       @delegate_node.exec 'wallet_import_private_key', balancekeys[0], "account0", true, true
       @delegate_node.exec 'wallet_import_private_key', balancekeys[1], "account1", true, true
 
-      for i in 0..100
-        @delegate_node.exec 'wallet_delegate_set_block_production', "delegate#{i}", true
-      end
+      # for i in 0..100
+      #   @delegate_node.exec 'wallet_delegate_set_block_production', "delegate#{i}", true
+      # end
+      @delegate_node.exec 'wallet_delegate_set_block_production', 'ALL', true
 
       @delegate_node.exec 'wallet_backup_create', td('delegate_wallet_backup.json')
 
@@ -160,9 +158,9 @@ module BitShares
 
     def shutdown
       log 'shutdown'
-      @delegate_node.exec 'quit'
-      @alice_node.exec 'quit' if @alice_node
-      @bob_node.exec 'quit' if @bob_node
+      @delegate_node.stop
+      @alice_node.stop if @alice_node
+      @bob_node.stop if @bob_node
       @running = false
     end
 

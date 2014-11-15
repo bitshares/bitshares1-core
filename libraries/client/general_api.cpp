@@ -190,6 +190,15 @@ fc::variants client_impl::batch( const std::string& method_name,
    return result;
 }
 
+
+wallet_transaction_record  client_impl::builder_finalize_and_sign( const transaction_builder& builder )const
+{
+    auto b = builder;
+    b.finalize();
+    return b.sign();
+}
+
+
 void detail::client_impl::stop()
 {
    elog( "stop...");

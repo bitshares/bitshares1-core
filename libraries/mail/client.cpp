@@ -666,7 +666,7 @@ public:
                         mutable_variant_object request;
                         request["id"] = 0;
                         request["method"] = "mail_fetch_inventory";
-                        request["params"] = vector<variant>({variant(address(account.account_address)),
+                        request["params"] = vector<variant>({variant(address(account.owner_address())),
                                                              variant(last_check_time),
                                                              variant(BTS_MAIL_CLIENT_MAX_INVENTORY_SIZE)});
 
@@ -708,7 +708,7 @@ public:
                             }
 
                             message ciphertext = response["result"].as<message>();
-                            message plaintext = _wallet->mail_open(account.account_address, ciphertext);
+                            message plaintext = _wallet->mail_open(account.owner_address(), ciphertext);
                             email_header header;
                             header.id = ciphertext.id();
                             if (plaintext.type == mail::email) {
@@ -732,7 +732,7 @@ public:
                             }
                             header.recipient = account.name;
                             header.timestamp = plaintext.timestamp;
-                            mail_archive_record record(std::move(ciphertext), header, account.account_address);
+                            mail_archive_record record(std::move(ciphertext), header, account.owner_address());
                             bool new_mail = false;
 
                             if (auto optional_record = _archive.fetch_optional(email.second)) {

@@ -79,6 +79,33 @@ namespace bts { namespace blockchain {
 
       operations.emplace_back(op);
    }
+   void transaction::relative_bid( const asset& quantity,
+                          const price& delta_price_per_unit,
+                          const optional<price>& limit,
+                          const address& owner )
+   {
+      relative_bid_operation op;
+      op.amount = quantity.amount;
+      op.bid_index.order_price = delta_price_per_unit;
+      op.bid_index.owner = owner;
+      op.limit_price = limit;
+
+      operations.emplace_back(op);
+   }
+
+   void transaction::relative_ask( const asset& quantity,
+                          const price& delta_price_per_unit,
+                          const optional<price>& limit,
+                          const address& owner )
+   {
+      relative_ask_operation op;
+      op.amount = quantity.amount;
+      op.ask_index.order_price = delta_price_per_unit;
+      op.ask_index.owner = owner;
+      op.limit_price = limit;
+
+      operations.emplace_back(op);
+   }
 
    void transaction::short_sell( const asset& quantity,
                                  const price& interest_rate,
@@ -89,7 +116,7 @@ namespace bts { namespace blockchain {
       op.amount = quantity.amount;
       op.short_index.order_price = interest_rate;
       op.short_index.owner = owner;
-      op.short_price_limit = limit_price;
+      op.limit_price = limit_price;
 
       operations.emplace_back(op);
    }
@@ -151,6 +178,19 @@ namespace bts { namespace blockchain {
 
       operations.push_back( op );
    }
+   void transaction::release_escrow( const address& escrow_account,
+                                     const address& released_by,
+                                     share_type amount_to_sender,
+                                     share_type amount_to_receiver )
+   {
+       release_escrow_operation op;
+       op.escrow_id          = escrow_account;
+       op.released_by        = released_by;
+       op.amount_to_receiver = amount_to_receiver;
+       op.amount_to_sender   = amount_to_sender;
+       operations.push_back(op);
+   }
+
    void transaction::deposit_to_escrow( fc::ecc::public_key receiver_key,
                                         fc::ecc::public_key escrow_key,
                                         digest_type agreement,
@@ -243,8 +283,8 @@ namespace bts { namespace blockchain {
                                    const std::string& description,
                                    const fc::variant& data,
                                    account_id_type issuer_id,
-                                   share_type   max_share_supply,
-                                   int64_t      precision )
+                                   share_type max_share_supply,
+                                   uint64_t precision )
    {
       FC_ASSERT( max_share_supply > 0 );
       FC_ASSERT( max_share_supply <= BTS_BLOCKCHAIN_MAX_SHARES );
@@ -257,6 +297,16 @@ namespace bts { namespace blockchain {
       op.maximum_share_supply = max_share_supply;
       op.precision = precision;
       operations.push_back( op );
+   }
+
+   void transaction::update_asset( const asset_id_type& asset_id,
+                                   const optional<string>& name,
+                                   const optional<string>& description,
+                                   const optional<variant>& public_data,
+                                   const optional<double>& maximum_share_supply,
+                                   const optional<uint64_t>& precision )
+   {
+       operations.push_back( update_asset_operation{ asset_id, name, description, public_data, maximum_share_supply, precision } );
    }
 
    void transaction::issue( const asset& amount_to_issue )
@@ -281,6 +331,11 @@ namespace bts { namespace blockchain {
                                    fc::variant value )
    {
       operations.push_back( update_feed_operation{ feed_index{feed_id,delegate_id}, value } );
+   }
+
+   void transaction::update_signing_key( const account_id_type& account_id, const public_key_type& block_signing_key )
+   {
+       operations.push_back( update_block_signing_key{ account_id, block_signing_key } );
    }
 
    bool transaction::is_cancel()const

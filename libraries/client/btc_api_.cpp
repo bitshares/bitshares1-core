@@ -43,7 +43,7 @@ double   detail::client_impl::btc_getbalance( const string& real_account,
     auto account_balances = _wallet->get_account_balance_records( real_account );
     auto total = asset( 0, asset_rec->id );
     auto balances = account_balances[real_account];
-    for( auto bal : balances )
+    for( const auto& bal : balances )
     {
         if( bal.asset_id() != asset_rec->id )
             continue;
@@ -75,12 +75,29 @@ address   detail::client_impl::btc_importprivkey( const string& real_account,
 } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
-std::vector<std::string>   detail::client_impl::btc_listaccounts( const string& real_account,
-                                                                  const string& asset_symbol ) const
+std::vector<string>   detail::client_impl::btc_listaccounts( const string& real_account,
+                                                             const string& asset_symbol ) const
 { try {
-    return std::vector<std::string>();
+    auto pubkeys = _wallet->get_public_keys_in_account( real_account );
+    auto accounts = std::set<string>();
+    for( const auto& key : pubkeys )
+    {
+        accounts.insert( _wallet->get_address_group_label( address(key) ) );
+    }
+    return std::vector<string>(accounts.begin(), accounts.end());
 } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
+std::map<string, double>  detail::client_impl::btc_listaddressgroupings( const string& real_account,
+                                                                         const string& asset_symbol ) const
+{ try {
+    auto pubkeys = _wallet->get_public_keys_in_account( real_account );
+    auto ret = map<string, double>();
+    for( const auto& key : pubkeys )
+    {
+        FC_ASSERT(!"unimplemented");
+    }
+    return ret;
+} FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
 
 }}} // bts::client::detail

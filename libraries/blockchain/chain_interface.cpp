@@ -16,21 +16,21 @@ namespace bts { namespace blockchain {
       return optional<string>();
    }
 
-   bool chain_interface::is_valid_account_name( const std::string& str )const
-   {
-      if( str.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
-      if( str.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
-      if( !isalpha(str[0]) ) return false;
-      if ( !isalnum(str[str.size()-1]) || isupper(str[str.size()-1]) ) return false;
+   bool chain_interface::is_valid_account_name( const string& name )const
+   { try {
+      if( name.size() < BTS_BLOCKCHAIN_MIN_NAME_SIZE ) return false;
+      if( name.size() > BTS_BLOCKCHAIN_MAX_NAME_SIZE ) return false;
+      if( !isalpha(name[0]) ) return false;
+      if ( !isalnum(name[name.size()-1]) || isupper(name[name.size()-1]) ) return false;
 
-      std::string subname(str);
-      std::string supername;
-      int dot = str.find('.');
-      if( dot != std::string::npos )
+      string subname(name);
+      string supername;
+      int dot = name.find('.');
+      if( dot != string::npos )
       {
-        subname = str.substr(0, dot);
+        subname = name.substr(0, dot);
         //There is definitely a remainder; we checked above that the last character is not a dot
-        supername = str.substr(dot+1);
+        supername = name.substr(dot+1);
       }
 
       if ( !isalnum(subname[subname.size()-1]) || isupper(subname[subname.size()-1]) ) return false;
@@ -44,26 +44,34 @@ namespace bts { namespace blockchain {
       if( supername.empty() )
         return true;
       return is_valid_account_name(supername);
-   }
+   } FC_CAPTURE_AND_RETHROW( (name) ) }
 
-   bool chain_interface::is_valid_symbol_name( const string& name )const
-   {
-      FC_ASSERT( name != "BTSX" );
+   bool chain_interface::is_valid_symbol_name( const string& symbol )const
+   { try {
+       FC_ASSERT( symbol != "BTSX" );
 
-      if( name.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
-         return false;
-      if( name.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE )
-         return false;
-      std::locale loc;
-      for( const auto& c : name )
-         if( !std::isalnum(c,loc) || !std::isupper(c,loc) )
-            return false;
-      return true;
-   }
+       if( symbol.size() < BTS_BLOCKCHAIN_MIN_SYMBOL_SIZE || symbol.size() > BTS_BLOCKCHAIN_MAX_SYMBOL_SIZE )
+           return false;
+
+       std::locale loc;
+       for( const auto& c : symbol )
+       {
+           if( !std::isalnum( c, loc ) || !std::isupper( c, loc ) )
+               return false;
+       }
+
+#ifndef WIN32
+#warning [HARDFORK] This new restriction will hardfork BTS
+#endif
+       if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
+           return false;
+
+       return true;
+   } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
    // Starting 2014-11-06, delegates are issued max 50 shares per block produced, and this value is halved every 4 years
    // just like in Bitcoin
-   share_type chain_interface::get_max_delegate_pay_per_block()const
+   share_type chain_interface::get_max_delegate_pay_issued_per_block()const
    {
        share_type pay_per_block = BTS_MAX_DELEGATE_PAY_PER_BLOCK;
 
@@ -88,7 +96,7 @@ namespace bts { namespace blockchain {
            return get_delegate_registration_fee_v1( pay_rate );
 
        static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
-       const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_per_block();
+       const share_type max_total_pay_per_two_weeks = blocks_per_two_weeks * get_max_delegate_pay_issued_per_block();
        const share_type max_pay_per_two_weeks = max_total_pay_per_two_weeks / BTS_BLOCKCHAIN_NUM_DELEGATES;
        const share_type registration_fee = (max_pay_per_two_weeks * pay_rate) / 100;
        FC_ASSERT( registration_fee > 0 );

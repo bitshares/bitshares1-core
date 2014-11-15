@@ -24,7 +24,7 @@ aliases: getconfig, get_config, config, blockchain_get_config
   "address_prefix": "XTS",
   "relay_fee": "0.10000 XTS",
   "delegate_num": 101,
-  "max_delegate_pay_per_block": "50.00000 XTS",
+  "max_delegate_pay_issued_per_block": "50.00000 XTS",
   "max_delegate_reg_fee": "59,881.18811 XTS",
   "name_size_max": 63,
   "memo_size_max": 19,

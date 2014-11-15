@@ -22,7 +22,7 @@ default (unlocked) >>> blockchain_get_block_transactions 2
 [[
     "0253bd2f3eef296d8a844dbed501fcd5af0ac385",{
       "trx": {
-        "expiration": "20140620T154030",
+        "expiration": "2014-06-20T15:40:30",
         "delegate_slate_id": null,
         "operations": [{
             "type": "deposit_op_type",

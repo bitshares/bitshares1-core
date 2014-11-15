@@ -396,6 +396,39 @@ namespace bts { namespace blockchain {
             eval_state._current_state->store_balance_record( *current_sender_balance );
          }
       }
+      else if( address() == this->released_by )
+      {
+         if( !eval_state.check_signature( escrow_condition.sender ) )
+             FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.sender) );
+         if( !eval_state.check_signature( escrow_condition.receiver ) )
+             FC_CAPTURE_AND_THROW( missing_signature, (escrow_condition.receiver) );
+         // get a balance record for the receiver, create it if necessary and deposit funds
+         {
+            balance_record new_balance_record( escrow_condition.receiver, 
+                                               asset( amount_to_receiver, escrow_balance_record->asset_id() ),
+                                               escrow_balance_record->delegate_slate_id() );
+            auto current_receiver_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
+
+            if( current_receiver_balance )
+               current_receiver_balance->balance += amount_to_receiver;
+            else
+               current_receiver_balance = new_balance_record;
+            eval_state._current_state->store_balance_record( *current_receiver_balance );
+         }
+         //  get a balance record for the sender, create it if necessary and deposit funds
+         {
+            balance_record new_balance_record( escrow_condition.sender, 
+                                               asset( amount_to_sender, escrow_balance_record->asset_id() ),
+                                               escrow_balance_record->delegate_slate_id() );
+            auto current_sender_balance = eval_state._current_state->get_balance_record( new_balance_record.id());
+
+            if( current_sender_balance )
+               current_sender_balance->balance += amount_to_sender;
+            else
+               current_sender_balance = new_balance_record;
+            eval_state._current_state->store_balance_record( *current_sender_balance );
+         }
+      }
       else
       {
           FC_ASSERT( !"not released by a party to the escrow transaction" );

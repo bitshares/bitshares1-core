@@ -54,6 +54,11 @@ namespace bts { namespace blockchain {
                              const asset& amount,
                              slate_id_type delegate_id );
 
+      void release_escrow( const address& escrow_account,
+                           const address& released_by,
+                           share_type amount_to_sender,
+                           share_type amount_to_receiver );
+
       void deposit_to_escrow( fc::ecc::public_key receiver_key,
                               fc::ecc::public_key escrow_key,
                               digest_type agreement,
@@ -104,8 +109,15 @@ namespace bts { namespace blockchain {
                          const string& description,
                          const variant& data,
                          account_id_type issuer_id,
-                         share_type   max_share_supply,
-                         int64_t      precision );
+                         share_type max_share_supply,
+                         uint64_t precision );
+
+      void update_asset( const asset_id_type& asset_id,
+                         const optional<string>& name,
+                         const optional<string>& description,
+                         const optional<variant>& public_data,
+                         const optional<double>& maximum_share_supply,
+                         const optional<uint64_t>& precision );
 
       void burn( const asset& quantity,
                  account_id_type for_or_against,
@@ -116,8 +128,18 @@ namespace bts { namespace blockchain {
                 const price& price_per_unit,
                 const address& owner );
 
+      void relative_bid( const asset& quantity,
+                const price& price_per_unit,
+                const optional<price>& limit,
+                const address& owner );
+
       void ask( const asset& quantity,
                 const price& price_per_unit,
+                const address& owner );
+
+      void relative_ask( const asset& quantity,
+                const price& price_per_unit,
+                const optional<price>& limit,
                 const address& owner );
 
       void short_sell( const asset& quantity,
@@ -134,6 +156,8 @@ namespace bts { namespace blockchain {
       void publish_feed( feed_id_type feed_id,
                          account_id_type delegate_id,
                          fc::variant value );
+
+      void update_signing_key( const account_id_type& account_id, const public_key_type& block_signing_key );
 
       bool is_cancel()const;
    }; // transaction

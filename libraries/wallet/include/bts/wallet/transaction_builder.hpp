@@ -33,7 +33,7 @@ namespace bts { namespace wallet {
     * Calling a Builder Function with one of its assumptions being invalid yields undefined behavior.
     */
    struct transaction_builder {
-      transaction_builder(detail::wallet_impl* wimpl)
+      transaction_builder(detail::wallet_impl* wimpl = nullptr)
           : _wimpl(wimpl)
       {}
 
@@ -47,6 +47,9 @@ namespace bts { namespace wallet {
       std::map<blockchain::address, public_key_type>                               order_keys;
       ///List of partially-completed transaction notifications; these will be completed when sign() is called
       std::vector<std::pair<mail::transaction_notice_message, public_key_type>>    notices;
+
+
+      void  set_wallet_implementation( std::unique_ptr<detail::wallet_impl>& wimpl );
 
       /**
        * @brief Look up the market transaction owner key used for a particular account
@@ -143,6 +146,25 @@ namespace bts { namespace wallet {
                                          vote_selection_method vote_method = vote_recommended,
                                          fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
 
+      /**
+       * @brief Transfer funds from payer to a raw address
+       * @param payer The account to charge
+       * @param to_addr The raw address to credit
+       * @param amount The amount to credit
+       * @param memo A memo for your records
+       * @param vote_method The method with which to select the delegate vote for the deposited asset
+       *
+       * This method will create a transaction notice message, which will be completed after sign() is called.
+       * TODO can we send notices to raw addresses yet?
+       */
+      transaction_builder& deposit_asset_to_address(const wallet_account_record& payer,
+                                                    const address& to_addr,
+                                                    const asset& amount,
+                                                    const string& memo,
+                                                    vote_selection_method vote_method = vote_recommended );
+
+
+
       transaction_builder& deposit_asset_with_escrow(const wallet_account_record& payer,
                                          const account_record& recipient,
                                          const account_record& escrow_agent,
@@ -151,6 +173,12 @@ namespace bts { namespace wallet {
                                          const string& memo,
                                          vote_selection_method vote_method = vote_recommended,
                                          fc::optional<public_key_type> memo_sender = fc::optional<public_key_type>());
+
+      transaction_builder& release_escrow( const address& escrow_account,
+                                           const address& released_by_address,
+                                           share_type     amount_to_sender,
+                                           share_type     amount_to_receiver );
+                                           
       /**
        * @brief Cancel a single order
        * @param order_id
@@ -169,6 +197,12 @@ namespace bts { namespace wallet {
       transaction_builder& submit_bid(const wallet_account_record& from_account,
                                       const asset& real_quantity,
                                       const price& quote_price);
+
+      transaction_builder& submit_relative_bid(const wallet_account_record& from_account,
+                                      const asset& real_quantity,
+                                      const price& delta_quote_price,
+                                      const optional<price>& limit
+                                      );
       /**
        * @brief Submit an ask order
        * @param from_account The account to place the ask
@@ -182,6 +216,11 @@ namespace bts { namespace wallet {
       transaction_builder& submit_ask(const wallet_account_record& from_account,
                                       const asset& cost,
                                       const price& quote_price);
+
+      transaction_builder& submit_relative_ask(const wallet_account_record& from_account,
+                                      const asset& cost,
+                                      const price& delta_quote_price,
+                                      const optional<price>& limit );
       /**
        * @brief Submit a short order
        * @param from_account The account to place the short
@@ -208,6 +247,18 @@ namespace bts { namespace wallet {
       transaction_builder& submit_cover(const wallet_account_record& from_account,
                                         asset cover_amount,
                                         const order_id_type& order_id);
+
+      transaction_builder& update_block_signing_key( const string& authorizing_account_name,
+                                                     const string& delegate_name,
+                                                     const public_key_type& block_signing_key );
+
+      transaction_builder& update_asset( const string& symbol,
+                                         const optional<string>& name,
+                                         const optional<string>& description,
+                                         const optional<variant>& public_data,
+                                         const optional<double>& maximum_share_supply,
+                                         const optional<uint64_t>& precision );
+
       /**
        * @brief Balance the books and pay the fees
        *

@@ -142,6 +142,8 @@ namespace bts { namespace blockchain {
 
           _ask_db.open( data_dir / "index/ask_db" );
           _bid_db.open( data_dir / "index/bid_db" );
+          _relative_ask_db.open( data_dir / "index/relative_ask_db" );
+          _relative_bid_db.open( data_dir / "index/relative_bid_db" );
           _short_db.open( data_dir / "index/short_db" );
           _collateral_db.open( data_dir / "index/collateral_db" );
           _feed_db.open( data_dir / "index/feed_db" );
@@ -244,8 +246,9 @@ namespace bts { namespace blockchain {
             rec.last_update       = timestamp;
             if( name.delegate_pay_rate <= 100 )
             {
-               rec.delegate_info = delegate_stats( name.delegate_pay_rate );
-               rec.delegate_info->block_signing_key = name.owner;
+               rec.delegate_info = delegate_stats();
+               rec.delegate_info->pay_rate = name.delegate_pay_rate;
+               rec.delegate_info->signing_key = name.owner;
                delegate_ids.push_back( account_id );
             }
             self->store_account_record( rec );
@@ -276,6 +279,8 @@ namespace bts { namespace blockchain {
             self->store_balance_record( initial_balance );
          }
 
+         static const time_point_sec sharedrop_timestamp( 1415188800 ); // 2014-11-06 00:00:00 UTC
+         static const uint32_t sharedrop_vesting_duration( fc::days( 2 * 365 ).to_seconds() ); // 2 years
          for( const auto& item : config.bts_sharedrop )
          {
             withdraw_vesting data;
@@ -294,8 +299,8 @@ namespace bts { namespace blockchain {
                 FC_CAPTURE_AND_RETHROW( (item.raw_address) )
             }
 
-            data.start_time = fc::time_point_sec( 1415188800 ); // 2014-11-06 00:00:00 UTC
-            data.duration = fc::days( 2 * 365 ).to_seconds();
+            data.start_time = sharedrop_timestamp;
+            data.duration = sharedrop_vesting_duration;
             data.original_balance = item.balance / 1000;
 
             withdraw_condition condition( data, 0, 0 );
@@ -305,7 +310,7 @@ namespace bts { namespace blockchain {
             /* In case of redundant balances */
             auto cur = self->get_balance_record( balance_rec.id() );
             if( cur.valid() ) balance_rec.balance += cur->balance;
-            balance_rec.last_update = config.timestamp;
+            balance_rec.last_update = sharedrop_timestamp;
             const asset bal( balance_rec.balance, balance_rec.condition.asset_id );
             balance_rec.snapshot_info = snapshot_record( item.raw_address, bal.amount );
             self->store_balance_record( balance_rec );
@@ -633,35 +638,43 @@ namespace bts { namespace blockchain {
          } FC_RETHROW_EXCEPTIONS( warn, "", ("trx_num",trx_num) )
       }
 
-      void chain_database_impl::pay_delegate( const block_id_type& block_id,
-                                              const pending_chain_state_ptr& pending_state,
-                                              const public_key_type& block_signee )
+#ifndef WIN32
+#warning [HARDFORK] Changes to delegate pay will hardfork BTS
+#endif
+      void chain_database_impl::pay_delegate( const pending_chain_state_ptr& pending_state, const public_key_type& block_signee )const
       { try {
-            if( pending_state->get_head_block_num() < BTS_V0_4_24_FORK_BLOCK_NUM )
-                return pay_delegate_v1( block_id, pending_state, block_signee );
+          oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
+          FC_ASSERT( base_asset_record.valid() );
 
-            oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
-            FC_ASSERT( delegate_record.valid() );
-            delegate_record = pending_state->get_account_record( delegate_record->id );
-            FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
+          oaccount_record delegate_record = self->get_account_record( address( block_signee ) );
+          FC_ASSERT( delegate_record.valid() );
+          delegate_record = pending_state->get_account_record( delegate_record->id );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
 
-            const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
-            FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
-            const share_type accepted_paycheck = (self->get_max_delegate_pay_per_block() * pay_rate_percent) / 100;
-            FC_ASSERT( accepted_paycheck >= 0 );
+          const uint8_t pay_rate_percent = delegate_record->delegate_info->pay_rate;
+          FC_ASSERT( pay_rate_percent >= 0 && pay_rate_percent <= 100 );
 
-            delegate_record->delegate_info->votes_for += accepted_paycheck;
-            delegate_record->delegate_info->pay_balance += accepted_paycheck;
-            delegate_record->delegate_info->total_paid += accepted_paycheck;
-            pending_state->store_account_record( *delegate_record );
+          const share_type max_new_shares = self->get_max_delegate_pay_issued_per_block();
+          const share_type accepted_new_shares = (max_new_shares * pay_rate_percent) / 100;
+          FC_ASSERT( max_new_shares >= 0 && accepted_new_shares >= 0 );
+          base_asset_record->current_share_supply += accepted_new_shares;
 
-            oasset_record base_asset_record = pending_state->get_asset_record( asset_id_type( 0 ) );
-            FC_ASSERT( base_asset_record.valid() );
-            base_asset_record->current_share_supply += accepted_paycheck;
-            base_asset_record->current_share_supply -= base_asset_record->collected_fees;
-            base_asset_record->collected_fees = 0;
-            pending_state->store_asset_record( *base_asset_record );
-      } FC_CAPTURE_AND_RETHROW( (block_id)(block_signee) ) }
+          static const uint32_t blocks_per_two_weeks = 14 * BTS_BLOCKCHAIN_BLOCKS_PER_DAY;
+          const share_type max_collected_fees = base_asset_record->collected_fees / blocks_per_two_weeks;
+          const share_type accepted_collected_fees = (max_collected_fees * pay_rate_percent) / 100;
+          FC_ASSERT( max_collected_fees >= 0 && accepted_collected_fees >= 0 );
+          base_asset_record->collected_fees -= max_collected_fees;
+          base_asset_record->current_share_supply -= (max_collected_fees - accepted_collected_fees);
+
+          const share_type accepted_paycheck = accepted_new_shares + accepted_collected_fees;
+          FC_ASSERT( accepted_paycheck >= 0 );
+          delegate_record->delegate_info->votes_for += accepted_paycheck;
+          delegate_record->delegate_info->pay_balance += accepted_paycheck;
+          delegate_record->delegate_info->total_paid += accepted_paycheck;
+
+          pending_state->store_account_record( *delegate_record );
+          pending_state->store_asset_record( *base_asset_record );
+      } FC_CAPTURE_AND_RETHROW( (block_signee) ) }
 
       void chain_database_impl::save_undo_state( const block_id_type& block_id,
                                                  const pending_chain_state_ptr& pending_state )
@@ -716,7 +729,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( block_signee != expected_delegate.delegate_info->block_signing_key )
+            if( block_signee != expected_delegate.delegate_info->signing_key )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
@@ -743,25 +756,29 @@ namespace bts { namespace blockchain {
                                                                  const public_key_type& block_signee )
       {
           /* Update production info for signing delegate */
-          auto delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
+          account_id_type delegate_id = self->get_delegate_record_for_signee( block_signee ).id;
+          oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
+          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
+          delegate_stats& delegate_info = *delegate_record->delegate_info;
 
-          auto delegate_record = pending_state->get_account_record( delegate_id );
-          FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() );
+          // Required to miss a round after changing the signing key
+          if( delegate_info.last_signing_key_change_block_num > 0 )
+              FC_ASSERT( produced_block.block_num - delegate_info.last_signing_key_change_block_num >= BTS_BLOCKCHAIN_NUM_DELEGATES );
 
           /* Validate secret */
-          if( delegate_record->delegate_info->blocks_produced > 0 )
+          if( delegate_info.next_secret_hash.valid() )
           {
-              auto hash_of_previous_secret = fc::ripemd160::hash( produced_block.previous_secret );
-              FC_ASSERT( hash_of_previous_secret == delegate_record->delegate_info->next_secret_hash,
+              const secret_hash_type hash_of_previous_secret = fc::ripemd160::hash( produced_block.previous_secret );
+              FC_ASSERT( hash_of_previous_secret == *delegate_info.next_secret_hash,
                          "",
                          ("previous_secret",produced_block.previous_secret)
                          ("hash_of_previous_secret",hash_of_previous_secret)
                          ("delegate_record",delegate_record) );
           }
 
-          delegate_record->delegate_info->blocks_produced += 1;
-          delegate_record->delegate_info->next_secret_hash = produced_block.next_secret_hash;
-          delegate_record->delegate_info->last_block_num_produced = produced_block.block_num;
+          delegate_info.blocks_produced += 1;
+          delegate_info.next_secret_hash = produced_block.next_secret_hash;
+          delegate_info.last_block_num_produced = produced_block.block_num;
           pending_state->store_account_record( *delegate_record );
 
           const slot_record slot( produced_block.timestamp, delegate_id, produced_block.id() );
@@ -893,7 +910,7 @@ namespace bts { namespace blockchain {
             // apply any deterministic operations such as market operations before we perturb indexes
             //apply_deterministic_updates(pending_state);
 
-            pay_delegate( block_id, pending_state, block_signee );
+            pay_delegate( pending_state, block_signee );
 
             if( block_data.block_num < BTS_V0_4_9_FORK_BLOCK_NUM )
                 apply_transactions( block_data, pending_state );
@@ -1331,6 +1348,8 @@ namespace bts { namespace blockchain {
 
       my->_ask_db.close();
       my->_bid_db.close();
+      my->_relative_ask_db.close();
+      my->_relative_bid_db.close();
       my->_short_db.close();
       my->_collateral_db.close();
       my->_feed_db.close();
@@ -1696,6 +1715,7 @@ namespace bts { namespace blockchain {
 
           if( old_rec->is_delegate() )
           {
+              my->_address_to_account_db.remove( address( old_rec->delegate_info->signing_key ) );
               auto itr = my->_delegate_vote_index_db.begin();
               while( itr.valid() )
               {
@@ -1723,12 +1743,14 @@ namespace bts { namespace blockchain {
 
           if( old_rec.valid() && old_rec->is_delegate() )
           {
+              my->_address_to_account_db.remove( address( old_rec->delegate_info->signing_key ) );
               my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(),
                                                             record_to_store.id ) );
           }
 
           if( record_to_store.is_delegate() )
           {
+              my->_address_to_account_db.store( address( record_to_store.delegate_info->signing_key ), record_to_store.id );
               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
                                                            record_to_store.id ),
                                                 0 /*dummy value*/ );
@@ -2307,6 +2329,10 @@ namespace bts { namespace blockchain {
    {
       return my->_bid_db.fetch_optional(key);
    }
+   oorder_record chain_database::get_relative_bid_record( const market_index_key&  key )const
+   {
+      return my->_relative_bid_db.fetch_optional(key);
+   }
 
    omarket_order chain_database::get_lowest_ask_record( const asset_id_type& quote_id, const asset_id_type& base_id )
    {
@@ -2326,6 +2352,11 @@ namespace bts { namespace blockchain {
    {
       return my->_ask_db.fetch_optional(key);
    }
+   oorder_record chain_database::get_relative_ask_record( const market_index_key&  key )const
+   {
+      return my->_relative_ask_db.fetch_optional(key);
+   }
+
 
    oorder_record chain_database::get_short_record( const market_index_key& key )const
    {
@@ -2344,6 +2375,13 @@ namespace bts { namespace blockchain {
       else
          my->_bid_db.store( key, order );
    }
+   void chain_database::store_relative_bid_record( const market_index_key& key, const order_record& order )
+   {
+      if( order.is_null() )
+         my->_relative_bid_db.remove( key );
+      else
+         my->_relative_bid_db.store( key, order );
+   }
 
    void chain_database::store_ask_record( const market_index_key& key, const order_record& order )
    {
@@ -2351,6 +2389,14 @@ namespace bts { namespace blockchain {
          my->_ask_db.remove( key );
       else
          my->_ask_db.store( key, order );
+   }
+
+   void chain_database::store_relative_ask_record( const market_index_key& key, const order_record& order )
+   {
+      if( order.is_null() )
+         my->_relative_ask_db.remove( key );
+      else
+         my->_relative_ask_db.store( key, order );
    }
 
    void chain_database::store_short_record( const market_index_key& key, const order_record& order )
@@ -2433,7 +2479,7 @@ namespace bts { namespace blockchain {
       {
           return 0;
       }
-      else if( head_num <  BTS_BLOCKCHAIN_NUM_DELEGATES )
+      else if( head_num <= BTS_BLOCKCHAIN_NUM_DELEGATES )
       {
          // what percent of the maximum total blocks that could have been produced
          // have been produced.
@@ -2671,6 +2717,34 @@ namespace bts { namespace blockchain {
            for( auto itr = my->_bid_db.begin(); itr.valid(); ++itr )
            {
                const auto order = market_order( bid_order, itr.key(), itr.value() );
+               if( filter( order ) )
+               {
+                   orders.push_back( order );
+                   if( orders.size() >= limit )
+                       return orders;
+               }
+           }
+       }
+
+       if( type == null_order || type == relative_ask_order )
+       {
+           for( auto itr = my->_relative_ask_db.begin(); itr.valid(); ++itr )
+           {
+               const auto order = market_order( relative_ask_order, itr.key(), itr.value() );
+               if( filter( order ) )
+               {
+                   orders.push_back( order );
+                   if( orders.size() >= limit )
+                       return orders;
+               }
+           }
+       }
+
+       if( type == null_order || type == relative_bid_order )
+       {
+           for( auto itr = my->_relative_bid_db.begin(); itr.valid(); ++itr )
+           {
+               const auto order = market_order( relative_bid_order, itr.key(), itr.value() );
                if( filter( order ) )
                {
                    orders.push_back( order );
