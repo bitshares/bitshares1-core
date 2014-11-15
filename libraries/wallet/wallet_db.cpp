@@ -71,10 +71,14 @@ namespace bts { namespace wallet {
                for( const auto& item : account_record.active_key_history )
                {
                    const public_key_type& active_key = item.second;
-                   self->address_to_account_wallet_record_index[ address( active_key ) ] = record_index;
+                   if( active_key != public_key_type() )
+                       self->address_to_account_wallet_record_index[ address( active_key ) ] = record_index;
                }
                if( account_record.is_delegate() && account_record.delegate_info.valid() )
-                   self->address_to_account_wallet_record_index[ address( account_record.delegate_info->signing_key ) ] = record_index;
+               {
+                   if( account_record.delegate_info->signing_key != public_key_type() )
+                       self->address_to_account_wallet_record_index[ address( account_record.delegate_info->signing_key ) ] = record_index;
+               }
 
                // Cache name map
                self->name_to_account_wallet_record_index[ account_record.name ] = record_index;
@@ -310,6 +314,7 @@ namespace bts { namespace wallet {
 
        owallet_account_record account_record = lookup_account( account_name );
        FC_ASSERT( account_record.valid(), "Account not found!" );
+       FC_ASSERT( !account_record->is_retracted(), "Account has been retracted!" );
        FC_ASSERT( account_record->is_my_account, "Not my account!" );
 
        const owallet_key_record key_record = lookup_key( address( account_record->active_key() ) );
@@ -425,9 +430,6 @@ namespace bts { namespace wallet {
        FC_ASSERT( is_open() );
        FC_ASSERT( account.name != string() );
        FC_ASSERT( account.owner_key != public_key_type() );
-       FC_ASSERT( account.active_key() != public_key_type() );
-       if( account.is_delegate() )
-           FC_ASSERT( account.delegate_info.valid() && account.delegate_info->signing_key != public_key_type() );
 
        owallet_account_record account_record = lookup_account( account.owner_address() );
        if( !account_record.valid() )
@@ -443,10 +445,14 @@ namespace bts { namespace wallet {
        for( const auto& active_key_item : account_record->active_key_history )
        {
            const public_key_type& active_key = active_key_item.second;
-           account_public_keys.insert( active_key );
+           if( active_key != public_key_type() )
+               account_public_keys.insert( active_key );
        }
-       if( account.is_delegate() )
-           account_public_keys.insert( account.delegate_info->signing_key );
+       if( account.is_delegate() && account.delegate_info.valid() )
+       {
+           if( account.delegate_info->signing_key != public_key_type() )
+               account_public_keys.insert( account.delegate_info->signing_key );
+       }
 
 #ifndef WIN32
 #warning [BTS] Repair wallet records on upgrade again
@@ -626,7 +632,8 @@ namespace bts { namespace wallet {
            for( const auto& active_key_item : account.active_key_history )
            {
                const auto& active_key = active_key_item.second;
-               public_keys[ active_key ] = account.name;
+               if( active_key != public_key_type() )
+                   public_keys[ active_key ] = account.name;
            }
        }
 
