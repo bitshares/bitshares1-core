@@ -27,9 +27,11 @@ asset market_order::get_balance()const
   asset_id_type asset_id;
   switch( order_type_enum( type ) )
   {
+     case relative_bid_order:
      case bid_order:
         asset_id = market_index.order_price.quote_asset_id;
         break;
+     case relative_ask_order:
      case ask_order:
         asset_id = market_index.order_price.base_asset_id;
         break;
@@ -39,15 +41,29 @@ asset market_order::get_balance()const
      case cover_order:
         asset_id = market_index.order_price.quote_asset_id;
         break;
-     default:
-        FC_ASSERT( false, "Not Implemented" );
+     case null_order:
+        FC_ASSERT( !"Null Order" );
   }
   return asset( state.balance, asset_id );
 }
 
-price market_order::get_price()const
+price market_order::get_price( const price& relative )const
 {
-  return market_index.order_price;
+   switch( order_type_enum(type) )
+   {
+      case relative_bid_order:
+      case relative_ask_order:
+         FC_ASSERT( relative != price() );
+         return market_index.order_price + relative;
+      case bid_order:
+      case ask_order:
+      case short_order:
+      case cover_order:
+        return market_index.order_price;
+      case null_order:
+        FC_ASSERT( !"Null Order" );
+   }
+   FC_ASSERT( !"Should not reach this line" );
 }
 
 price market_order::get_highest_cover_price()const
@@ -60,10 +76,12 @@ asset market_order::get_quantity()const
 {
   switch( order_type_enum( type ) )
   {
+     case relative_bid_order:
      case bid_order:
      { // balance is in USD  divide by price
         return get_balance() * get_price();
      }
+     case relative_ask_order:
      case ask_order:
      { // balance is in USD  divide by price
         return get_balance();
@@ -86,10 +104,12 @@ asset market_order::get_quote_quantity()const
 {
   switch( order_type_enum( type ) )
   {
+     case relative_bid_order:
      case bid_order:
      { // balance is in USD  divide by price
         return get_balance();
      }
+     case relative_ask_order:
      case ask_order:
      { // balance is in USD  divide by price
         return get_balance() * get_price();

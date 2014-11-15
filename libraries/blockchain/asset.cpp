@@ -10,6 +10,14 @@
 #define BTS_PRICE_PRECISION uint64_t(BTS_BLOCKCHAIN_MAX_SHARES*1000)
 
 namespace bts { namespace blockchain {
+  price operator +  ( const price& l, const price& r )
+  {
+     FC_ASSERT( l.quote_asset_id == r.quote_asset_id );
+     FC_ASSERT( l.base_asset_id  == r.base_asset_id );
+     price result = l;
+     result.ratio += r.ratio;
+     return l;
+  }
 
   asset::operator std::string()const
   {
