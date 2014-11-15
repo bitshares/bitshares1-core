@@ -277,8 +277,15 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  const address& to_address,
                  const string& memo_message,
-                 vote_selection_method selection_method,
-                 bool sign = false
+                 vote_selection_method selection_method
+                 );
+         transaction_builder builder_transfer_asset_to_address(
+                 double real_amount_to_transfer,
+                 const string& amount_to_transfer_symbol,
+                 const string& from_account_name,
+                 const address& to_address,
+                 const string& memo_message,
+                 vote_selection_method selection_method
                  );
 
          /**

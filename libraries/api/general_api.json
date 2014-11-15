@@ -112,26 +112,15 @@
          "prerequisites" : ["json_authenticated"]
       },
       {
-         "method_name": "make_unsigned",
-         "description": "Takes any command and an array of its arguments and returns an unsigned transaction.",
-         "return_type": "signed_transaction",
+         "method_name": "builder_finalize_and_sign",
+         "description": "Takes a transaction builder and returns a signed transaction for broadcasting",
+         "return_type": "transaction_record",
          "parameters" :
          [
              {
-                "name" : "method_name",
-                "type" : "string",
-                "description" : "the command name for calling"
-             },
-             {
-                "name" : "parameter_list",
-                "type" : "parameter_list",
-                "description" : "the list of parameters for this command"
-             },
-             {
-                "name" : "path",
-                "type" : "string",
-                "description" : "An optional path to write a transaction to",
-                "default_value" : ""
+                "name" : "builder",
+                "type" : "transaction_builder",
+                "description" : ""
              }
          ],
          "is_const"   : true,

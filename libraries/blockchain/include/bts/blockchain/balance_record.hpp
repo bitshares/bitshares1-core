@@ -30,9 +30,12 @@ namespace bts { namespace blockchain {
       balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
 
       balance_id_type            id()const { return condition.get_address(); }
+      slate_id_type              delegate_slate_id()const { return condition.delegate_slate_id; }
 
       address                    owner()const;
-      slate_id_type              delegate_slate_id()const { return condition.delegate_slate_id; }
+      set<address>               owners()const;
+      bool                       is_owner( const address& addr )const;
+      bool                       is_owner( const public_key_type& key )const;
 
       asset_id_type              asset_id()const { return condition.asset_id; }
       asset                      get_spendable_balance( const time_point_sec& at_time )const;

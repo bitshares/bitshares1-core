@@ -8,13 +8,40 @@ namespace bts { namespace blockchain {
       condition = withdraw_condition( withdraw_with_signature( owner ), balance_arg.asset_id, delegate_id );
    }
 
+   // deprecate?
    address balance_record::owner()const
    {
+       return *owners().begin();
+   }
+
+   set<address>     balance_record::owners()const
+   {
       if( condition.type == withdraw_signature_type )
-         return condition.as<withdraw_with_signature>().owner;
+         return set<address>{ condition.as<withdraw_with_signature>().owner };
       if( condition.type == withdraw_vesting_type )
-         return condition.as<withdraw_vesting>().owner;
-      return address();
+         return set<address>{ condition.as<withdraw_vesting>().owner };
+      return set<address>{address()};
+   }
+   bool             balance_record::is_owner( const address& addr )const
+   {
+       auto owners = this->owners(); // do distinct sets have the send .end() ?
+       if( owners.find( addr ) != owners.end() )
+           return true;
+       return false;
+   }
+
+   bool             balance_record::is_owner( const public_key_type& key )const
+   {
+       for( auto addr : owners() )
+       {
+           auto valid = false;
+           if (addr == address(key)) return true;
+           if( addr == address(pts_address(key,false,56))) return true;
+           if( addr == address(pts_address(key,true,56))) return true;
+           if( addr == address(pts_address(key,false,0))) return true;
+           if( addr == address(pts_address(key,true,0))) return true;
+       }
+       return false;
    }
 
    asset balance_record::get_spendable_balance( const time_point_sec& at_time )const
