@@ -136,7 +136,7 @@ namespace bts { namespace blockchain {
       static const uint8_t    type;
 
       uint32_t                required;
-      std::vector<address>    owners;
+      std::set<address>       owners;
       optional<titan_memo>    memo;
    };
 

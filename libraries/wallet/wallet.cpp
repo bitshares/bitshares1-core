@@ -2891,6 +2891,68 @@ namespace detail {
          return record;
    } FC_CAPTURE_AND_RETHROW( (amount_to_transfer_symbol)(from_account_name)(to_address_amounts)(memo_message) ) }
 
+/*  all done in builder
+   wallet_transaction_record wallet::transfer_asset_to_multisig_address(
+           const asset& amount,
+           const string& from_account_name,
+           uint32_t m,
+           const vector<address>& owners,
+           vote_selection_method selection_method,
+           bool sign )
+   { try {
+      FC_ASSERT( is_open() );
+      FC_ASSERT( is_unlocked() );
+      FC_ASSERT( my->is_receive_account( from_account_name ) );
+
+      private_key_type sender_private_key  = get_active_private_key( from_account_name );
+      public_key_type  sender_public_key   = sender_private_key.get_public_key();
+      address          sender_account_address( sender_private_key.get_public_key() );
+
+      signed_transaction     trx;
+      unordered_set<address> required_signatures;
+
+      const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
+      if( required_fees.asset_id == asset_to_transfer.asset_id )
+      {
+         my->withdraw_to_transaction( required_fees + asset_to_transfer,
+                                      from_account_name,
+                                      trx,
+                                      required_signatures );
+      }
+      else
+      {
+         my->withdraw_to_transaction( asset_to_transfer,
+                                      from_account_name,
+                                      trx,
+                                      required_signatures );
+
+         my->withdraw_to_transaction( required_fees,
+                                      from_account_name,
+                                      trx,
+                                      required_signatures );
+      }
+
+      const auto slate_id = my->select_slate( trx, asset_to_transfer.asset_id, selection_method );
+
+      trx.deposit_multisig( to_address, asset_to_transfer, slate_id);
+
+      auto entry = ledger_entry();
+      entry.from_account = sender_public_key;
+      entry.amount = asset_to_transfer;
+      entry.memo = memo_message;
+
+      auto record = wallet_transaction_record();
+      record.ledger_entries.push_back( entry );
+      record.fee = required_fees;
+      record.extra_addresses.push_back( to_address );
+
+      if( sign ) my->sign_transaction( trx, required_signatures );
+      my->cache_transaction( trx, record );
+
+      return record;
+   } FC_CAPTURE_AND_RETHROW( (real_amount_to_transfer)(amount_to_transfer_symbol)(from_account_name)(to_address)(memo_message) ) }
+   */
+
    wallet_transaction_record wallet::register_account(
            const string& account_to_register,
            const variant& public_data,

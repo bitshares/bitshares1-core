@@ -679,6 +679,50 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer_public"]
+        "is_const": true
+    },
+    {
+        "method_name": "wallet_transfer_to_multisig",
+        "description": "",
+        "return_type": "transaction_record",
+        "parameters":
+        [
+            {
+              "name": "from_name",
+              "type": "string",
+              "description": "TITAN name to withdraw from"
+            },
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+            {
+              "name": "m",
+              "type": "uint32_t",
+              "description": "Required number of signatures"
+            },
+            {
+              "name": "addresses",
+              "type": "address_list",
+              "description": "List of possible addresses for signatures"
+              "default_value" : "vote_none"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["transfer_to_multisig"],
+        "is_const": true
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",

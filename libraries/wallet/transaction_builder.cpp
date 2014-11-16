@@ -210,6 +210,33 @@ transaction_builder& transaction_builder::deposit_asset_to_address(const wallet_
        return *this;
 } FC_CAPTURE_AND_RETHROW( (to_addr)(amount)(memo) ) }
 
+transaction_builder& transaction_builder::deposit_asset_to_multisig(
+                                                    const asset& amount,
+                                                    const string& from_name,
+                                                    uint32_t m,
+                                                    const vector<address>& addresses,
+                                                    const vote_selection_method& vote_method )
+{ try {
+   if( amount.amount <= 0 )
+      FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
+
+   auto payer = _wimpl->_wallet_db.lookup_account( from_name );
+   FC_ASSERT(payer.valid(), "No such account");
+   multisig_meta_info info;
+   info.required = m;
+   info.owners = set<address>(addresses.begin(), addresses.end());
+   trx.deposit_multisig(info, amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
+
+   deduct_balance(payer->owner_key, amount);
+
+   ledger_entry entry;
+   entry.from_account = payer->owner_key;
+   entry.amount = amount;
+   transaction_record.ledger_entries.push_back(std::move(entry));
+
+   return *this;
+} FC_CAPTURE_AND_RETHROW( (from_name)(addresses)(amount) ) }
+
 
 transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::wallet::wallet_account_record& payer,
                                                         const bts::blockchain::account_record& recipient,

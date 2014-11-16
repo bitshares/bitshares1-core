@@ -179,6 +179,14 @@ namespace bts { namespace wallet {
                                            share_type     amount_to_sender,
                                            share_type     amount_to_receiver );
                                            
+
+      transaction_builder& deposit_asset_to_multisig(const asset& amount,
+                                                     const string& from_name,
+                                                     uint32_t m,
+                                                     const vector<address>& addresses,
+                                                     const vote_selection_method& vote_method = vote_none );
+
+
       /**
        * @brief Cancel a single order
        * @param order_id

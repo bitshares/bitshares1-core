@@ -20,7 +20,7 @@ namespace bts { namespace blockchain {
       static const account_type type = multisig_account;
 
       uint32_t                required;
-      std::vector<address>    owners;
+      std::set<address>       owners;
    };
 
    struct account_meta_info

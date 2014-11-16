@@ -201,7 +201,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
         const string& from_account_name,
         const string& to_account_name,
         const string& memo_message,
-        const vote_selection_method& selection_method )
+        const vote_selection_method& selection_method )const
 {
     auto to_key = _wallet->get_account_public_key( to_account_name );
     return _wallet->transfer_asset_to_address(amount_to_transfer,
@@ -284,6 +284,51 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
 
     return record;
 }
+/*
+balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
+                                        const uint32_t& N,
+                                        vector<address> addrs )const
+{
+}
+
+wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
+                                                    const string& from_name,
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const balance_id_type& to_balance )const
+{
+}
+*/
+wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
+                                                    const string& from_name,
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    uint32_t m,
+                                                    const vector<address>& addresses,
+                                                    const vote_selection_method& vote_method )const
+{
+    asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
+    auto builder = _wallet->create_transaction_builder();
+    builder->deposit_asset_to_multisig( ugly_asset, from_name, m, addresses, vote_method );
+    return builder->finalize().sign();
+}
+/*
+wallet_transaction_record  detail::client_impl::wallet_transfer_to_multisig(
+                                                    const string& from_name,
+                                                    const string& raw_amount,
+                                                    const string& symbol,
+                                                    const uint32_t& N,
+                                                    vector<string> account_names )
+{
+}
+transaction_builder   detail::client_impl::wallet_withdraw_from_multisig(
+                                               const balance_id_type& multisig,
+                                               const string& raw_amount,
+                                               const address& to_address )
+{
+}
+
+*/
 
 wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
         const string& amount_to_transfer,
