@@ -209,7 +209,8 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
                                               from_account_name,
                                               address(to_key),
                                               memo_message,
-                                              selection_method );
+                                              selection_method,
+                                              true );
 }
 
 
@@ -250,7 +251,8 @@ wallet_transaction_record detail::client_impl::wallet_transfer_asset_to_address(
                                                        from_account_name,
                                                        to_address,
                                                        memo_message,
-                                                       selection_method );
+                                                       selection_method,
+                                                       true);
     network_broadcast_transaction( record.trx );
     return record;
 
@@ -284,13 +286,15 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
 
     return record;
 }
-/*
+
 balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
-                                        const uint32_t& N,
-                                        vector<address> addrs )const
+                                        uint32_t m,
+                                        const vector<address>& addresses )const
 {
+    return _chain_db->get_multisig_balance_id( m, addresses );
 }
 
+/*
 wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
                                                     const string& from_name,
                                                     const string& amount,
@@ -299,18 +303,21 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
 {
 }
 */
-wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
+
+wallet_transaction_record detail::client_impl::wallet_multisig_deposit(
                                                     const string& from_name,
                                                     const string& amount,
                                                     const string& symbol,
                                                     uint32_t m,
                                                     const vector<address>& addresses,
-                                                    const vote_selection_method& vote_method )const
+                                                    const vote_selection_method& vote_method )
 {
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
     auto builder = _wallet->create_transaction_builder();
     builder->deposit_asset_to_multisig( ugly_asset, from_name, m, addresses, vote_method );
-    return builder->finalize().sign();
+    auto rec = builder->finalize().sign();
+    network_broadcast_transaction( rec.trx );
+    return rec;
 }
 /*
 wallet_transaction_record  detail::client_impl::wallet_transfer_to_multisig(
@@ -329,6 +336,32 @@ transaction_builder   detail::client_impl::wallet_withdraw_from_multisig(
 }
 
 */
+
+transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
+                                                    const balance_id_type& from,
+                                                    const address& to_address,
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const vote_selection_method& vote_method )const
+{
+    asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
+    auto builder = _wallet->create_transaction_builder();
+    auto fee = _wallet->get_transaction_fee();
+    builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
+    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    builder->sign();
+    return *builder;
+}
+
+
+transaction_builder detail::client_impl::wallet_builder_add_signature(
+                                            const transaction_builder& builder,
+                                            bool broadcast )
+{
+    transaction_builder b2(builder);
+    b2.sign();
+    return b2;
+}
 
 wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
         const string& amount_to_transfer,

@@ -573,7 +573,7 @@
             },
             {
               "name" : "from_account_name",
-              "type" : "sending_account_name",
+              "type" : "account_name",
               "description" : "the source account to draw the shares from"
             },
             {
@@ -682,7 +682,28 @@
         "is_const": true
     },
     {
-        "method_name": "wallet_transfer_to_multisig",
+        "method_name": "wallet_multisig_get_balance_id",
+        "description": "",
+        "return_type": "address",
+        "parameters":
+        [
+            {
+              "name": "m",
+              "type": "uint32_t",
+              "description": "Required number of signatures"
+            },
+            {
+              "name": "addresses",
+              "type": "address_list",
+              "description": "List of possible addresses for signatures"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["get_multisig_id"],
+        "is_const": true
+    },
+    {
+        "method_name": "wallet_multisig_deposit",
         "description": "",
         "return_type": "transaction_record",
         "parameters":
@@ -711,18 +732,74 @@
               "name": "addresses",
               "type": "address_list",
               "description": "List of possible addresses for signatures"
-              "default_value" : "vote_none"
             },
             {
               "name" : "vote_method",
               "type" : "vote_selection_method",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
-              "default_value" : "vote_recommended"
+              "default_value" : "vote_none"
             }
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["transfer_to_multisig"],
+    },
+    {
+        "method_name": "wallet_multisig_withdraw_start",
+        "description": "",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+              "name": "from",
+              "type": "address",
+              "description": "multisig balance ID to withdraw from"
+            },
+            {
+              "name": "to_address",
+              "type": "address",
+              "description": "address to receive funds"
+            },
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["withdraw_from_multisig"],
         "is_const": true
+      },
+      {
+        "method_name": "wallet_builder_add_signature",
+        "description": "Review a transaction and add a signature.",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+                "name": "builder",
+                "type": "transaction_builder",
+                "description": "A transaction builder object created by a wallet."
+            },
+            {
+                "name": "broadcast",
+                "type": "bool",
+                "description": "Try to broadcast this transaction?",
+                "default_value": false
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["add_signature"]
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",

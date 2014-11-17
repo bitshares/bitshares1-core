@@ -37,7 +37,17 @@ namespace bts { namespace wallet {
           : _wimpl(wimpl)
       {}
 
-      wallet_transaction_record transaction_record;
+      transaction_builder(const transaction_builder& builder, detail::wallet_impl* wimpl = nullptr)
+      {
+          required_signatures = builder.required_signatures;
+          accounts_with_covers = builder.accounts_with_covers;
+          outstanding_balances = builder.outstanding_balances;
+          order_keys = builder.order_keys;
+          transaction_record = builder.transaction_record;
+          _wimpl = wimpl;
+      }
+
+      wallet_transaction_record                                                    transaction_record;
       std::unordered_set<blockchain::address>                                      required_signatures;
       ///Set of accounts with a cover order in this transaction (only one cover allowed per account per block)
       std::unordered_set<blockchain::address>                                      accounts_with_covers;
@@ -185,6 +195,14 @@ namespace bts { namespace wallet {
                                                      uint32_t m,
                                                      const vector<address>& addresses,
                                                      const vote_selection_method& vote_method = vote_none );
+
+      transaction_builder& withdraw_from_balance(const balance_id_type& from, 
+                                                 const share_type& amount);
+      transaction_builder& deposit_to_balance(const balance_id_type& to,
+                                              const asset& amount,
+                                              const vote_selection_method& vote_method = vote_none );
+
+
 
 
       /**
