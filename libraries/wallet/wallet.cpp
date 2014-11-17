@@ -1629,6 +1629,13 @@ namespace detail {
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
    } FC_CAPTURE_AND_RETHROW( (header) ) }
 
+   std::shared_ptr<transaction_builder> wallet::create_transaction_builder()
+   { try {
+       auto builder = std::make_shared<transaction_builder>( my.get() );
+       builder->transaction_record.trx.expiration = blockchain::now() + get_transaction_expiration();
+       return builder;
+   } FC_CAPTURE_AND_RETHROW() }
+
    wallet_transaction_record wallet::publish_feeds(
            const string& account_to_publish_under,
            map<string,double> amount_per_xts, // map symbol to amount per xts
@@ -1649,6 +1656,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
@@ -1733,6 +1742,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
@@ -1819,6 +1830,8 @@ namespace detail {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
       const auto payer_public_key = get_account_public_key( paying_account );
 
       const auto slate_id = my->select_slate( trx, 0, vote_all );
@@ -1893,6 +1906,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto payer_public_key = get_account_public_key( paying_account );
 
@@ -2377,6 +2392,7 @@ namespace detail {
              if( okey_rec->account_address != sender_account_address ) continue;
 
              signed_transaction trx;
+             trx.expiration = blockchain::now() + get_transaction_expiration();
 
              auto from_balance = balance_item.second.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
 
@@ -2518,6 +2534,8 @@ namespace detail {
        signed_transaction trx;
        unordered_set<address> required_signatures;
 
+       trx.expiration = blockchain::now() + get_transaction_expiration();
+
        owallet_key_record delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
        FC_ASSERT( delegate_key && delegate_key->has_private_key() );
        const auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
@@ -2589,6 +2607,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
@@ -2772,6 +2792,8 @@ namespace detail {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
       const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
       {
@@ -2841,6 +2863,8 @@ namespace detail {
          signed_transaction     trx;
          unordered_set<address> required_signatures;
 
+         trx.expiration = blockchain::now() + get_transaction_expiration();
+
          asset total_asset_to_transfer( 0, asset_id );
          auto required_fees = get_transaction_fee();
 
@@ -2906,6 +2930,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
@@ -2974,6 +3000,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       optional<account_meta_info> meta_info;
       if( new_account_type == public_account )
@@ -3054,6 +3082,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto required_fees = get_transaction_fee();
 
@@ -3142,6 +3172,8 @@ namespace detail {
 
       signed_transaction         trx;
       unordered_set<address>     required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto required_fees = get_transaction_fee();
 
@@ -3302,6 +3334,8 @@ namespace detail {
       signed_transaction trx;
       unordered_set<address>     required_signatures;
 
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
       auto delegate_account = my->_blockchain->get_account_record( delegate_account_name );
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account_name));
 
@@ -3345,6 +3379,8 @@ namespace detail {
 
       signed_transaction trx;
       unordered_set<address>     required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto delegate_account = my->_blockchain->get_account_record( delegate_name );
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account));
@@ -3638,6 +3674,8 @@ namespace detail {
 
        signed_transaction trx;
        unordered_set<address> required_signatures;
+
+       trx.expiration = blockchain::now() + get_transaction_expiration();
        required_signatures.insert( owner_address );
 
        trx.add_collateral( collateral_to_add.amount, order->market_index );

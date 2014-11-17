@@ -1303,7 +1303,6 @@ vector<wallet_transaction_record> wallet::get_transactions( const string& transa
 
 void wallet_impl::sign_transaction( signed_transaction& transaction, const unordered_set<address>& required_signatures )const
 { try {
-   transaction.expiration = blockchain::now() + self->get_transaction_expiration();
    const auto chain_id = _blockchain->chain_id();
    for( const auto& addr : required_signatures )
        transaction.sign( self->get_private_key( addr ), chain_id );
