@@ -46,6 +46,8 @@ struct identity_record : public identity_verification_request_summary {
    string id_card_front_photo;
    string id_card_back_photo;
    string voter_registration_photo;
+
+   fc::optional<identity_verification_response> response;
 };
 
 class identity_verifier_impl {
@@ -143,7 +145,9 @@ public:
          //Record has been processed and rejected. Return a false acceptance
          //Don't bother returning an identity; we didn't fill it out anyways
          // TODO: Do we ever do partial acceptances? If so, we should return an identity after all.
+         response = *_id_db.fetch(record.id).response;
          response.accepted = false;
+         response.verified_identity = fc::optional<identity>();
          response.rejection_reason = record.rejection_reason;
          return response;
       }
@@ -224,6 +228,7 @@ public:
       }
       //Copy over the rejection reason even if the request was accepted. No harm in passing it along if the verifier
       //saw fit to set it.
+      request_record.response = response;
       request_record.rejection_reason = response.rejection_reason;
       commit_record(request_record);
    }
@@ -304,4 +309,5 @@ void identity_verifier::resolve_request(fc::microseconds request_id, const ident
 } } // namespace bts::vote
 
 FC_REFLECT_DERIVED( bts::vote::detail::identity_record, (bts::vote::identity_verification_request_summary),
-                    (owner_key)(person_photo)(id_card_front_photo)(id_card_back_photo)(voter_registration_photo) )
+                    (owner_key)(person_photo)(id_card_front_photo)(id_card_back_photo)(voter_registration_photo)
+                    (response) )
