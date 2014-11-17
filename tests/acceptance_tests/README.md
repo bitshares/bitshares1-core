@@ -10,7 +10,7 @@ This repository holds the BitShares acceptance tests implemented on top of Ruby'
 On **Linux** I recommend to use rvm to install Ruby, here is how to do this on Ubuntu:
 
 ``` bash
-  $ sudo apt-get install libgdbm-dev libncurses5-dev automake libtool bison libffi-dev curl
+  $ sudo apt-get install libgdbm-dev libncurses5-dev automake libtool bison libffi-dev curl gawk libyaml-dev libsqlite3-dev sqlite3
   $ curl -L https://get.rvm.io | bash -s stable
   $ source ~/.rvm/scripts/rvm
   $ echo "source ~/.rvm/scripts/rvm" >> ~/.bashrc
@@ -18,11 +18,18 @@ On **Linux** I recommend to use rvm to install Ruby, here is how to do this on U
   $ rvm use 2.1.3 --default
 ```
 
+If you are installing as a non-root user and the `rvm install` command prompts you for the root password, try the following command:
+
+``` bash
+    rvm autolibs read-fail
+```
+
+This will cause `rvm install` to print a list of packages you need to install as root to proceed.
+
 On **OS X** you can install it via brew:
 ```bash
   $ brew install ruby
 ```
-
 
 On **Windows** (not tested) you can use RubyInstaller http://rubyinstaller.org
 
