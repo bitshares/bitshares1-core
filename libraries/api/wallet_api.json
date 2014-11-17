@@ -678,7 +678,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["transfer_public"]
+        "aliases" : ["transfer_public"],
         "is_const": true
     },
     {
@@ -741,7 +741,7 @@
             }
         ],
         "prerequisites": ["json_authenticated"],
-        "aliases": ["transfer_to_multisig"],
+        "aliases": ["transfer_to_multisig"]
     },
     {
         "method_name": "wallet_multisig_withdraw_start",
