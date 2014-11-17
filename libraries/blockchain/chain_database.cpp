@@ -1643,13 +1643,13 @@ namespace bts { namespace blockchain {
            const public_key_type& signing_key = record_to_store.delegate_info->signing_key;
            if( signing_key != public_key_type() )
                my->_address_to_account_db.store( address( signing_key ), record_to_store.id );
-       }
 
 #ifndef WIN32
 #warning [SOFTFORK] Retracting delegate accounts should not be allowed until everyone is upgraded
 #endif
-       if( !record_to_store.is_retracted() )
-           my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(), record_to_store.id ), 0 /*dummy value*/ );
+           if( !record_to_store.is_retracted() )
+               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(), record_to_store.id ), 0 /*dummy value*/ );
+       }
    } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
    vector<operation> chain_database::get_recent_operations(operation_type_enum t)
