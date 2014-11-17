@@ -28,13 +28,13 @@ When(/^(\w+) submits? (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+) ([A-Z]+)\/(
 end
 
 #market_submit_relative_ask: (from_account_name, sell_quantity, sell_quantity_symbol, relative_ask_price, ask_price_symbol, limit_ask_price, error_handler = null) ->
-When(/^(\w+) submits? relative (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+)% of ([A-Z]+)\/([A-Z]+) feed price$/) do |name, order_type, amount, symbol, price_percent, ps1, ps2|
+When(/^(\w+) submits? relative (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+) ([A-Z]+)\/([A-Z]+) above feed price$/) do |name, order_type, amount, symbol, price_percent, ps1, ps2|
   actor = get_actor(name)
   amount = to_f(amount)
   if order_type == 'bid'
-    actor.node.exec 'wallet_market_submit_relative_bid', actor.account, amount, symbol, price_percent.to_i / 100.0, ps1
+    actor.node.exec 'wallet_market_submit_relative_bid', actor.account, amount, symbol, price_percent, ps1
   elsif order_type == 'ask'
-    actor.node.exec 'wallet_market_submit_relative_ask', actor.account, amount, symbol, price_percent.to_i / 100.0, ps1
+    actor.node.exec 'wallet_market_submit_relative_ask', actor.account, amount, symbol, price_percent, ps1
   else
     raise "Unknown order type: #{order_type}"
   end
