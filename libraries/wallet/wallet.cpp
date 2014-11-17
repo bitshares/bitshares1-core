@@ -92,6 +92,7 @@ namespace detail {
       FC_CAPTURE_AND_THROW( insufficient_funds, (required)(available)(balance_records) );
    } FC_CAPTURE_AND_RETHROW( (amount_to_withdraw)(from_account_name)(trx)(required_signatures) ) }
 
+   // TODO: What about retracted accounts?
    void wallet_impl::authorize_update(unordered_set<address>& required_signatures, oaccount_record account, bool need_owner_key )
    {
      owallet_key_record oauthority_key = _wallet_db.lookup_key(account->owner_key);
@@ -655,6 +656,7 @@ namespace detail {
           {
             oaccount_record candidate_record = _blockchain->get_account_record(approved_candidate);
             if( !candidate_record.valid() ) continue;
+            if( candidate_record->is_retracted() ) continue;
 
             if( !candidate_record->public_data.is_object()
                 || !candidate_record->public_data.get_object().contains("slate_id"))
@@ -692,8 +694,13 @@ namespace detail {
           //Remove non-delegates from for_candidates
           vector<account_id_type> delegates;
           for( const auto& id : for_candidates )
-            if( _blockchain->get_account_record(id)->is_delegate() )
+          {
+              const oaccount_record record = _blockchain->get_account_record( id );
+              if( !record.valid() ) continue;
+              if( !record->is_delegate() ) continue;
+              if( record->is_retracted() ) continue;
               delegates.push_back(id);
+          }
           for_candidates = delegates;
 
           //While I can vote for more candidates, and there are more recommendations to vote for...
@@ -1170,6 +1177,9 @@ namespace detail {
          FC_THROW_EXCEPTION( invalid_name,
                              "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
                              ("p",key)("r",current_registered_account->active_key()) );
+
+      if( current_registered_account->is_retracted() )
+          FC_CAPTURE_AND_THROW( account_retracted, (current_registered_account) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
       if( current_account.valid() )
@@ -2546,7 +2556,7 @@ namespace detail {
        auto asset_rec = my->_blockchain->get_asset_record( asset_id_type(0) );
        share_type amount_to_withdraw((share_type)(real_amount_to_withdraw * asset_rec->get_precision()));
 
-       auto delegate_account_record = my->_blockchain->get_account_record( delegate_name ); //_wallet_db.lookup_account( delegate_name );
+       auto delegate_account_record = my->_blockchain->get_account_record( delegate_name );
        FC_ASSERT( delegate_account_record.valid() );
        FC_ASSERT( delegate_account_record->is_delegate() );
 
@@ -2667,6 +2677,10 @@ namespace detail {
       }
 
       FC_ASSERT( to_account_rec.valid() );
+
+      if( to_account_rec->is_retracted() )
+          FC_CAPTURE_AND_THROW( account_retracted, (to_account_rec) );
+
       if( for_or_against == "against" )
          trx.burn( asset_to_transfer, -to_account_rec->id, public_message, message_sig );
       else
@@ -4035,7 +4049,12 @@ namespace detail {
 
       auto registered_account = my->_blockchain->get_account_record( account_name );
       if( registered_account.valid() )
+      {
+         if( registered_account->is_retracted() )
+             FC_CAPTURE_AND_THROW( account_retracted, (registered_account) );
+
          return registered_account->active_key();
+      }
 
       auto opt_account = my->_wallet_db.lookup_account( account_name );
       FC_ASSERT( opt_account.valid(), "Unable to find account '${name}'",
@@ -4145,9 +4164,16 @@ namespace detail {
 
              auto agent_account = my->_blockchain->get_account_record( escrow_cond.escrow );
              if( agent_account )
+             {
+                if( agent_account->is_retracted() )
+                   FC_CAPTURE_AND_THROW( account_retracted, (agent_account) );
+
                 sum.escrow_agent_account_name = agent_account->name;
+             }
              else
+             {
                 sum.escrow_agent_account_name = string( escrow_cond.escrow );
+             }
 
              sum.agreement_digest = escrow_cond.agreement_digest;
 
