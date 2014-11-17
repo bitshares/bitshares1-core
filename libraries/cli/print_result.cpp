@@ -728,7 +728,7 @@ namespace bts { namespace cli {
   {
     auto bids_asks = result.as<std::pair<vector<market_order>, vector<market_order>>>();
 
-    out << std::string(23, ' ') << "BIDS (* Short)"
+    out << std::string(5, ' ') << "BIDS (* Short, + Relative)"
       << std::string(39, ' ') << " | "
       << std::string(34, ' ') << "ASKS"
       << std::string(34, ' ') << "\n"
@@ -775,6 +775,12 @@ namespace bts { namespace cli {
       return (short_order.state.limit_price.valid() ?
                   *short_order.state.limit_price < short_execution_price : false);
     }), shorts.end());
+
+    std::sort( bids_asks.first.begin(), bids_asks.first.end(), [=]( const market_order& a, const market_order& b ) -> bool
+               {
+                  return a.get_price( *status->current_feed_price ) > b.get_price( *status->current_feed_price );
+               }
+             );
 
     if(bids_asks.first.empty() && bids_asks.second.empty() && shorts.empty())
     {
@@ -842,7 +848,7 @@ namespace bts { namespace cli {
         if (short_wall || is_short_order)
           out << "*";
         else if( bid_itr->type == relative_bid_order )
-          out << "~";
+          out << "+";
         else
           out << " ";
 
