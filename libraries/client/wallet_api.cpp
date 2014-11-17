@@ -252,7 +252,7 @@ wallet_transaction_record detail::client_impl::wallet_transfer_asset_to_address(
                                                        to_address,
                                                        memo_message,
                                                        selection_method,
-                                                       true);
+                                                       true );
     network_broadcast_transaction( record.trx );
     return record;
 
@@ -769,7 +769,7 @@ wallet_transaction_record client_impl::wallet_account_register( const string& ac
 { try {
     const auto record = _wallet->register_account( account_name, data, delegate_pay_rate,
                                                    pay_with_account, variant(new_account_type).as<account_type>(),
-                                                   false );
+                                                   true );
     network_broadcast_transaction( record.trx );
     return record;
 } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data)) }
@@ -800,7 +800,7 @@ wallet_transaction_record detail::client_impl::wallet_account_update_active_key(
                                                                                  const std::string& pay_from_account,
                                                                                  const std::string& new_active_key )
 {
-   const auto record = _wallet->update_active_key( account_to_update, pay_from_account, new_active_key );
+   const auto record = _wallet->update_active_key( account_to_update, pay_from_account, new_active_key, true );
    network_broadcast_transaction( record.trx );
    return record;
 }
@@ -808,7 +808,7 @@ wallet_transaction_record detail::client_impl::wallet_account_update_active_key(
 wallet_transaction_record detail::client_impl::wallet_account_retract( const std::string& account_to_update,
                                                                        const std::string& pay_from_account )
 {
-   const auto record = _wallet->retract_account( account_to_update, pay_from_account );
+   const auto record = _wallet->retract_account( account_to_update, pay_from_account, true );
    network_broadcast_transaction( record.trx );
    return record;
 }
@@ -1056,10 +1056,9 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 
 wallet_transaction_record client_impl::wallet_publish_price_feed( const std::string& delegate_account,
                                                                   double real_amount_per_xts,
-                                                                  const std::string& real_amount_symbol,
-                                                                  bool  force_settle )
+                                                                  const std::string& real_amount_symbol )
 {
-   const auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, force_settle, true );
+   const auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, false, true );
    network_broadcast_transaction( record.trx );
    return record;
 }
