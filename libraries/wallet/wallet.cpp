@@ -390,7 +390,7 @@ namespace detail {
          builder->submit_bid(self->get_account(account_name), quantity, price_arg);
       else if( order_type == ask_order )
          builder->submit_ask(self->get_account(account_name), quantity, price_arg);
-      if( order_type == relative_bid_order )
+      else if( order_type == relative_bid_order )
          builder->submit_relative_bid(self->get_account(account_name), quantity, price_arg, price_limit);
       else if( order_type == relative_ask_order )
          builder->submit_relative_ask(self->get_account(account_name), quantity, price_arg, price_limit);
