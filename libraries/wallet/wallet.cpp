@@ -3254,7 +3254,7 @@ namespace detail {
       if( delegate_pay_rate <= 100 )
           pay = delegate_pay_rate;
 
-      auto builder = create_transaction_builder();
+      transaction_builder_ptr builder = create_transaction_builder();
       builder->update_account_registration(account, public_data, optional<public_key_type>(), pay, payer).
                finalize();
       if( sign )
@@ -3286,7 +3286,7 @@ namespace detail {
         new_public_key = import_private_key( *new_private_key, account_to_update, false );
       }
 
-      auto builder = create_transaction_builder();
+      transaction_builder_ptr builder = create_transaction_builder();
       builder->update_account_registration(account, optional<variant>(), new_public_key, optional<share_type>(), payer).
                finalize();
       if( sign )
@@ -3308,7 +3308,7 @@ namespace detail {
       fc::ecc::public_key empty_pk;
       public_key_type new_public_key(empty_pk);
 
-      auto builder = create_transaction_builder();
+      transaction_builder_ptr builder = create_transaction_builder();
       builder->update_account_registration(account, optional<variant>(), new_public_key, optional<share_type>(), payer).
                finalize();
       if( sign )
@@ -3716,15 +3716,15 @@ namespace detail {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-       transaction_builder builder(my.get());
-       builder.submit_cover(get_account(from_account_name),
-                            my->_blockchain->to_ugly_asset(real_quantity_usd, quote_symbol),
-                            cover_id);
-       builder.finalize();
+       transaction_builder_ptr builder = create_transaction_builder();
+       builder->submit_cover(get_account(from_account_name),
+                             my->_blockchain->to_ugly_asset(real_quantity_usd, quote_symbol),
+                             cover_id);
+       builder->finalize();
 
        if( sign )
-          return builder.sign();
-       return builder.transaction_record;
+          return builder->sign();
+       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(cover_id)(sign) ) }
 
    void wallet::set_transaction_fee( const asset& fee )
