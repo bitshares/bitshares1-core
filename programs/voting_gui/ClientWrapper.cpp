@@ -202,6 +202,7 @@ QString ClientWrapper::create_voter_account()
 {
    try {
       string name = "voter-" + string(fc::digest(fc::time_point::now())).substr(0, 8) + ".booth.follow-my-vote";
+      qDebug() << "Creating voter account" << name.c_str();
       _client->wallet_account_create(name);
       return QString::fromStdString(name);
    } catch (fc::exception e) {
@@ -246,8 +247,6 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
 
    bts::vote::identity_verification_request* request = new bts::vote::identity_verification_request;
    request->owner = _client->wallet_get_account(account_name.toStdString()).active_key();
-
-   //Set empty properties
    request->properties.emplace_back(bts::vote::identity_property::generate("First Name"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Middle Name"));
    request->properties.emplace_back(bts::vote::identity_property::generate("Last Name"));
@@ -258,31 +257,31 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    request->properties.emplace_back(bts::vote::identity_property::generate("City"));
    request->properties.emplace_back(bts::vote::identity_property::generate("State"));
    request->properties.emplace_back(bts::vote::identity_property::generate("9-Digit ZIP"));
-
-   //Set photos
-   QFile file(window->property("userPhoto").toUrl().toLocalFile());
-   file.open(QIODevice::ReadOnly);
-   request->owner_photo = file.readAll().toBase64().data();
-   qDebug() << "User photo" << file.fileName() << "is" << bts::cli::pretty_size(request->owner_photo.size()).c_str();
-   file.close();
-   file.setFileName(window->property("idFrontPhoto").toUrl().toLocalFile());
-   file.open(QIODevice::ReadOnly);
-   request->id_front_photo = file.readAll().toBase64().data();
-   qDebug() << "ID front photo" << file.fileName() << "is" << bts::cli::pretty_size(request->id_front_photo.size()).c_str();
-   file.close();
-   file.setFileName(window->property("idBackPhoto").toUrl().toLocalFile());
-   file.open(QIODevice::ReadOnly);
-   request->id_back_photo = file.readAll().toBase64().data();
-   qDebug() << "ID back photo" << file.fileName() << "is" << bts::cli::pretty_size(request->id_back_photo.size()).c_str();
-   file.close();
-   file.setFileName(window->property("voterRegistrationPhoto").toUrl().toLocalFile());
-   file.open(QIODevice::ReadOnly);
-   request->voter_reg_photo = file.readAll().toBase64().data();
-   qDebug() << "Voter reg photo" << file.fileName() << "is" << bts::cli::pretty_size(request->voter_reg_photo.size()).c_str();
-   file.close();
+   request->owner_photo = window->property("userPhoto").toUrl().toLocalFile().toStdString();
+   request->id_front_photo = window->property("idFrontPhoto").toUrl().toLocalFile().toStdString();
+   request->id_back_photo = window->property("idBackPhoto").toUrl().toLocalFile().toStdString();
+   request->voter_reg_photo = window->property("voterRegistrationPhoto").toUrl().toLocalFile().toStdString();
 
    //Punt this whole procedure out to the bitshares thread. We don't want to block the GUI thread.
    _bitshares_thread.async([this, account_name, verifiers, callback, request]() mutable {
+      //Set photos
+      QFile file(request->owner_photo.c_str());
+      file.open(QIODevice::ReadOnly);
+      request->owner_photo = file.readAll().toBase64().data();
+      file.close();
+      file.setFileName(request->id_front_photo.c_str());
+      file.open(QIODevice::ReadOnly);
+      request->id_front_photo = file.readAll().toBase64().data();
+      file.close();
+      file.setFileName(request->id_back_photo.c_str());
+      file.open(QIODevice::ReadOnly);
+      request->id_back_photo = file.readAll().toBase64().data();
+      file.close();
+      file.setFileName(request->voter_reg_photo.c_str());
+      file.open(QIODevice::ReadOnly);
+      request->voter_reg_photo = file.readAll().toBase64().data();
+      file.close();
+
       bts::vote::identity_verification_request_message request_message;
       //Efficiently move the request into the message, then delete it. We don't want to copy or leak this thing; it's huge.
       request_message.request = std::move(*request);

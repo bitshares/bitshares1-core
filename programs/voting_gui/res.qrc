@@ -9,5 +9,7 @@
         <file>res/id_back.png</file>
         <file>res/bg.png</file>
         <file>res/logo.png</file>
+        <file>res/v.png</file>
+        <file>res/ring.png</file>
     </qresource>
 </RCC>
