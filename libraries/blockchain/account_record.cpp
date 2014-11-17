@@ -26,7 +26,7 @@ namespace bts { namespace blockchain {
 
     bool account_record::is_delegate()const
     {
-        return !!delegate_info;
+        return delegate_info.valid();
     }
 
     int64_t account_record::net_votes()const
@@ -69,6 +69,24 @@ namespace bts { namespace blockchain {
     {
         if( is_delegate() ) return delegate_info->pay_rate;
         return -1;
+    }
+
+    void account_record::set_signing_key( uint32_t block_num, const public_key_type& signing_key )
+    {
+        FC_ASSERT( is_delegate() );
+        delegate_info->signing_key_history[ block_num ] = signing_key;
+    }
+
+    public_key_type account_record::signing_key()const
+    {
+        FC_ASSERT( is_delegate() );
+        FC_ASSERT( !delegate_info->signing_key_history.empty() );
+        return delegate_info->signing_key_history.crbegin()->second;
+    }
+
+    address account_record::signing_address()const
+    {
+        return address( signing_key() );
     }
 
     public_key_type burn_record_value::signer_key()const

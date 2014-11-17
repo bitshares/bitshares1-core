@@ -1520,7 +1520,7 @@ namespace detail {
 
           auto delegate_record = get_account( delegate_name );
           FC_ASSERT( delegate_record.is_delegate(), "${name} is not a delegate.", ("name", delegate_name) );
-          auto key = my->_wallet_db.lookup_key( delegate_record.delegate_info->signing_key );
+          auto key = my->_wallet_db.lookup_key( delegate_record.signing_address() );
           FC_ASSERT( key.valid() && key->has_private_key(), "Unable to find private key for ${name}.", ("name", delegate_name) );
           delegate_records.push_back( delegate_record );
       }
@@ -1612,7 +1612,7 @@ namespace detail {
 
       auto delegate_record = my->_blockchain->get_slot_signee( header.timestamp, my->_blockchain->get_active_delegates() );
       FC_ASSERT( delegate_record.is_delegate() && delegate_record.delegate_info.valid() );
-      auto delegate_pub_key = delegate_record.delegate_info->signing_key;
+      auto delegate_pub_key = delegate_record.signing_key();
       auto delegate_key = get_private_key( address( delegate_pub_key ) );
       FC_ASSERT( delegate_pub_key == delegate_key.get_public_key() );
 

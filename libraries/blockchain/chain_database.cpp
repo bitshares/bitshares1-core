@@ -241,7 +241,7 @@ namespace bts { namespace blockchain {
             {
                rec.delegate_info = delegate_stats();
                rec.delegate_info->pay_rate = name.delegate_pay_rate;
-               rec.delegate_info->signing_key = name.owner;
+               rec.set_signing_key( 0, name.owner );
                delegate_ids.push_back( account_id );
             }
             self->store_account_record( rec );
@@ -719,7 +719,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( block_signee != expected_delegate.delegate_info->signing_key )
+            if( block_signee != expected_delegate.signing_key() )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
@@ -750,10 +750,6 @@ namespace bts { namespace blockchain {
           oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
           delegate_stats& delegate_info = *delegate_record->delegate_info;
-
-          // Required to miss a round after changing the signing key
-          if( delegate_info.last_signing_key_change_block_num > 0 )
-              FC_ASSERT( produced_block.block_num - delegate_info.last_signing_key_change_block_num >= BTS_BLOCKCHAIN_NUM_DELEGATES );
 
           /* Validate secret */
           if( delegate_info.next_secret_hash.valid() )
@@ -1608,10 +1604,7 @@ namespace bts { namespace blockchain {
        if( prev_account_record.valid() )
        {
            if( prev_account_record->is_delegate() )
-           {
-               my->_address_to_account_db.remove( address( prev_account_record->delegate_info->signing_key ) );
                my->_delegate_vote_index_db.remove( vote_del( prev_account_record->net_votes(), prev_account_record->id ) );
-           }
 
            if( record_to_store.is_null() )
            {
@@ -1622,6 +1615,14 @@ namespace bts { namespace blockchain {
                {
                    const public_key_type& active_key = item.second;
                    my->_address_to_account_db.remove( address( active_key) );
+               }
+               if( prev_account_record->is_delegate() )
+               {
+                   for( const auto& item : prev_account_record->delegate_info->signing_key_history )
+                   {
+                       const public_key_type& signing_key = item.second;
+                       my->_address_to_account_db.remove( address( signing_key) );
+                   }
                }
            }
        }
@@ -1635,14 +1636,17 @@ namespace bts { namespace blockchain {
        for( const auto& item : record_to_store.active_key_history )
        {
            const public_key_type& active_key = item.second;
-           if( active_key != public_key_type() )
-               my->_address_to_account_db.store( address( active_key ), record_to_store.id );
+           if( active_key == public_key_type() ) continue;
+           my->_address_to_account_db.store( address( active_key ), record_to_store.id );
        }
        if( record_to_store.is_delegate() )
        {
-           const public_key_type& signing_key = record_to_store.delegate_info->signing_key;
-           if( signing_key != public_key_type() )
+           for( const auto& item : record_to_store.delegate_info->signing_key_history )
+           {
+               const public_key_type& signing_key = item.second;
+               if( signing_key == public_key_type() ) continue;
                my->_address_to_account_db.store( address( signing_key ), record_to_store.id );
+           }
 
 #ifndef WIN32
 #warning [SOFTFORK] Retracting delegate accounts should not be allowed until everyone is upgraded
