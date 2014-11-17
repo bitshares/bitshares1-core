@@ -10,9 +10,8 @@ if len(sys.argv) > 1:
     ip = sys.argv[1]
 
 print "This will create a new genesis block and make changes to your config files."
-print "Continue? [y/n]"
-entry = raw_input()
-if entry != "y":
+n = raw_input("Overwrite config files? [Y/n]")
+if n != "n":
     sys.exit("Operation canceled")
 
 input_log = []
@@ -78,7 +77,8 @@ with open("testnet_setup_log.txt", "w") as log:
     for line in input_log:
         log.write(line + "\n")
 
-
-subprocess.call(["make", "-j4"])
-subprocess.call(["./programs/client/bitshares_client", "--input-log", "testnet_setup_log.txt", "--min-delegate-connection-count", "0"])
+n = raw_input("Start build? [Y/n]")
+if n != "n":
+    subprocess.call(["make", "-j4"])
+    subprocess.call(["./programs/client/bitshares_client", "--input-log", "testnet_setup_log.txt", "--min-delegate-connection-count", "0"])
 
