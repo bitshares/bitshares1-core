@@ -619,19 +619,50 @@ namespace bts { namespace blockchain { namespace detail {
       ++_orders_filled;
       _current_bid.reset();
 
+      optional<market_order> bid;
+      if( _relative_bid_itr.valid() )
+      {
+         if( _feed_price )
+         {
+            bid = market_order( relative_bid_order, _relative_bid_itr.key(), _relative_bid_itr.value() );
+            if( (bid->get_price(*_feed_price).quote_asset_id != _quote_id || bid->get_price(*_feed_price).base_asset_id != _base_id) )
+               bid.reset();
+         }
+      }
+
       if( _bid_itr.valid() )
       {
-        auto bid = market_order( bid_order, _bid_itr.key(), _bid_itr.value() );
-        if( bid.get_price().quote_asset_id == _quote_id &&
-            bid.get_price().base_asset_id == _base_id )
-        {
-            if( _feed_price.valid() && bid.get_price() < *_feed_price && get_next_short() )
-                return _current_bid.valid();
+         market_order abs_bid( bid_order, _bid_itr.key(), _bid_itr.value() );
+         if( abs_bid.get_price().quote_asset_id == _quote_id && abs_bid.get_price().base_asset_id == _base_id ) 
+         {
+            if( bid )
+            {
+               if( abs_bid.get_price() > bid->get_price( *_feed_price ) )
+                  bid = abs_bid;
+               // else bid == relative bid
+            }
+            else
+            {
+               bid = abs_bid;
+            }
+         }
+      }
 
-            _current_bid = bid;
+
+      if( bid )
+      {
+         if( bid->type == relative_bid_order ) // all relative bids take priority over shorts
+         {
+            --_relative_bid_itr;
+         }
+         else
+         {
+            if( _feed_price.valid() && bid->get_price() < *_feed_price && get_next_short() )
+                return _current_bid.valid();
             --_bid_itr;
-            return _current_bid.valid();
-        }
+         }
+         _current_bid = bid;
+         return _current_bid.valid();
       }
       get_next_short();
       return _current_bid.valid();
