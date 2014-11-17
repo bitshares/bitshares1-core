@@ -198,16 +198,16 @@ transaction_builder& transaction_builder::deposit_asset_to_address(const wallet_
    if( amount.amount <= 0 )
        FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
 
-       trx.deposit(to_addr, amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
-       deduct_balance(payer.owner_key, amount);
+   trx.deposit(to_addr, amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
+   deduct_balance(payer.owner_key, amount);
 
-       ledger_entry entry;
-       entry.from_account = payer.owner_key;
-       entry.amount = amount;
-       entry.memo = memo;
-       transaction_record.ledger_entries.push_back(std::move(entry));
+   ledger_entry entry;
+   entry.from_account = payer.owner_key;
+   entry.amount = amount;
+   entry.memo = memo;
+   transaction_record.ledger_entries.push_back(std::move(entry));
 
-       return *this;
+   return *this;
 } FC_CAPTURE_AND_RETHROW( (to_addr)(amount)(memo) ) }
 
 transaction_builder& transaction_builder::deposit_asset_to_multisig(
