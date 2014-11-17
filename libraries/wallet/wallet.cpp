@@ -530,11 +530,7 @@ namespace detail {
        auto okey = _wallet_db.lookup_key( addr );
        FC_ASSERT( okey.valid(), "Key I just created does not exist" );
 
-       okey->btc_data = simple_key_data();
-       if( label != "" )
-       {
-           okey->btc_data->label = label;
-       }
+       //okey->btc_data->label = label;
        _wallet_db.store_key( *okey );
        return addr;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
@@ -2697,55 +2693,61 @@ namespace detail {
 
     void   wallet::set_address_label( const address& addr, const string& label )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
         FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
-        okey->btc_data->label = label;
+        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
+        //okey->btc_data->label = label;
         my->_wallet_db.store_key( *okey );
     }
 
     string  wallet::get_address_label( const address& addr )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
-        return okey->btc_data->label;
+        //FC_ASSERT( okey.valid(), "No such address." );
+        //FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
+        //return okey->btc_data->label;
+        return "";
     }
 
 
 
     void  wallet::set_address_group_label( const address& addr, const string& group_label )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
         FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
-        okey->btc_data->group_label = group_label;
+        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
+        //okey->btc_data->group_label = group_label;
         my->_wallet_db.store_key( *okey );
     }
 
     string           wallet::get_address_group_label( const address& addr )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
         FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
-        return okey->btc_data->group_label;
+        //FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
+        return ""; //return okey->btc_data->group_label;
     }
 
     vector<address>  wallet::get_addresses_for_group_label( const string& group_label )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         vector<address> addrs;
         for( auto item : my->_wallet_db.get_keys() )
         {
             auto key = item.second;
-            if( key.btc_data.valid() && key.btc_data->group_label == group_label )
+            //if( key.btc_data.valid() && key.btc_data->group_label == group_label )
                 addrs.push_back( item.first );
         }
         return addrs;
