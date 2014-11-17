@@ -187,7 +187,8 @@ namespace bts { namespace blockchain {
       if( existing_record.valid() )
           FC_CAPTURE_AND_THROW( account_key_in_use, (*existing_record) );
 
-      if( !eval_state.account_or_any_parent_has_signed( *account_rec ) )
+      const public_key_type& current_signing_key = account_rec->delegate_info->signing_key;
+      if( !eval_state.check_signature( current_signing_key ) && !eval_state.account_or_any_parent_has_signed( *account_rec ) )
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
       account_rec->delegate_info->signing_key = this->block_signing_key;
