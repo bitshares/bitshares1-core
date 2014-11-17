@@ -534,8 +534,8 @@ namespace detail {
        if( label != "" )
        {
            okey->btc_data->label = label;
-           _wallet_db.store_key( *okey );
        }
+       _wallet_db.store_key( *okey );
        return addr;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
