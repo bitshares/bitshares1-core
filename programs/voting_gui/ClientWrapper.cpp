@@ -208,7 +208,7 @@ QString ClientWrapper::create_voter_account()
    return "";
 }
 
-void ClientWrapper::begin_verification(QObject* window, QString account_name, QStringList verifiers)
+void ClientWrapper::begin_verification(QObject* window, QString account_name, QStringList verifiers, QJSValue callback)
 {
    if( verifiers.size() == 0 )
    {
@@ -216,79 +216,96 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
       return;
    }
 
-   bts::vote::identity_verification_request request;
-   request.owner = _client->wallet_get_account(account_name.toStdString()).active_key();
+   bts::vote::identity_verification_request* request = new bts::vote::identity_verification_request;
+   request->owner = _client->wallet_get_account(account_name.toStdString()).active_key();
 
    //Set empty properties
-   request.properties.emplace_back(bts::vote::identity_property::generate("First Name"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("Middle Name"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("Last Name"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("Date of Birth"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("ID Number"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("Address Line 1"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("Address Line 2"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("City"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("State"));
-   request.properties.emplace_back(bts::vote::identity_property::generate("9-Digit ZIP"));
-
-   qDebug() << fc::json::to_pretty_string(request).c_str();
+   request->properties.emplace_back(bts::vote::identity_property::generate("First Name"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("Middle Name"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("Last Name"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("Date of Birth"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("ID Number"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("Address Line 1"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("Address Line 2"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("City"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("State"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("9-Digit ZIP"));
 
    //Set photos
    QFile file(window->property("userPhoto").toUrl().toLocalFile());
    file.open(QIODevice::ReadOnly);
-   request.owner_photo = file.readAll().toBase64().data();
-   qDebug() << "User photo" << file.fileName() << "is" << bts::cli::pretty_size(request.owner_photo.size()).c_str();
+   request->owner_photo = file.readAll().toBase64().data();
+   qDebug() << "User photo" << file.fileName() << "is" << bts::cli::pretty_size(request->owner_photo.size()).c_str();
    file.close();
    file.setFileName(window->property("idFrontPhoto").toUrl().toLocalFile());
    file.open(QIODevice::ReadOnly);
-   request.id_front_photo = file.readAll().toBase64().data();
-   qDebug() << "ID front photo" << file.fileName() << "is" << bts::cli::pretty_size(request.id_front_photo.size()).c_str();
+   request->id_front_photo = file.readAll().toBase64().data();
+   qDebug() << "ID front photo" << file.fileName() << "is" << bts::cli::pretty_size(request->id_front_photo.size()).c_str();
    file.close();
    file.setFileName(window->property("idBackPhoto").toUrl().toLocalFile());
    file.open(QIODevice::ReadOnly);
-   request.id_back_photo = file.readAll().toBase64().data();
-   qDebug() << "ID back photo" << file.fileName() << "is" << bts::cli::pretty_size(request.id_back_photo.size()).c_str();
+   request->id_back_photo = file.readAll().toBase64().data();
+   qDebug() << "ID back photo" << file.fileName() << "is" << bts::cli::pretty_size(request->id_back_photo.size()).c_str();
    file.close();
    file.setFileName(window->property("voterRegistrationPhoto").toUrl().toLocalFile());
    file.open(QIODevice::ReadOnly);
-   request.voter_reg_photo = file.readAll().toBase64().data();
-   qDebug() << "Voter reg photo" << file.fileName() << "is" << bts::cli::pretty_size(request.voter_reg_photo.size()).c_str();
+   request->voter_reg_photo = file.readAll().toBase64().data();
+   qDebug() << "Voter reg photo" << file.fileName() << "is" << bts::cli::pretty_size(request->voter_reg_photo.size()).c_str();
    file.close();
 
-   //Sign request
-   bts::vote::identity_verification_request_message request_message;
-   request_message.request = request;
-   request_message.signature = _client->wallet_sign_hash(account_name.toStdString(), request.digest());
+   //Punt this whole procedure out to the bitshares thread. We don't want to block the GUI thread.
+   _bitshares_thread.async([this, account_name, verifiers, callback, request]() mutable {
+      qDebug() << "Made it to the lambda.";
+      bts::vote::identity_verification_request_message request_message;
+      //Efficiently move the request into the message, then delete it. We don't want to copy or leak this thing; it's huge.
+      request_message.request = std::move(*request);
+      delete request;
+      request = nullptr;
+      //Sign request
+      request_message.signature = _client->wallet_sign_hash(account_name.toStdString(), request_message.request.digest());
+      qDebug() << "Signed request.";
 
-   auto verifier_account = _client->blockchain_get_account(verifiers[0].toStdString());
-   if( !verifier_account )
-   {
-      Q_EMIT error(QString("Could not find verifier account %1.").arg(verifiers[0]));
-      return;
-   }
-
-   bts::mail::message ciphertext = bts::mail::message(request_message).encrypt(fc::ecc::private_key::generate(),
-                                                                               verifier_account->active_key());
-   ciphertext.recipient = verifier_account->active_key();
-   bts::rpc::rpc_client client;
-   client.connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
-   try {
-      client.login("bob", "bob");
-      auto response = client.verifier_public_api(ciphertext);
-
-      if( response.type == bts::vote::exception_message_type )
-         qDebug() << fc::json::to_pretty_string(response.as<bts::vote::exception_message>()).c_str();
-      else if( response.type == bts::mail::encrypted ) {
-         auto privKey = bts::utilities::wif_to_key(_client->wallet_dump_private_key(account_name.toStdString()));
-         if( privKey )
-            response = response.as<bts::mail::encrypted_message>().decrypt(*privKey);
+      auto verifier_account = _client->blockchain_get_account(verifiers[0].toStdString());
+      if( !verifier_account )
+      {
+         Q_EMIT error(QString("Could not find verifier account %1.").arg(verifiers[0]));
+         return;
       }
 
-      if( response.type == bts::vote::verification_response_message_type )
-         qDebug() << fc::json::to_pretty_string(response.as<bts::vote::identity_verification_response_message>()).c_str();
-      else
-         qDebug() << fc::json::to_pretty_string(response).c_str();
-   } catch (fc::exception& e) {
-      qDebug() << e.to_detail_string().c_str();
-   }
+      bts::mail::message ciphertext = bts::mail::message(request_message).encrypt(fc::ecc::private_key::generate(),
+                                                                                  verifier_account->active_key());
+      qDebug() << "Encrypted request.";
+      ciphertext.recipient = verifier_account->active_key();
+      bts::rpc::rpc_client client;
+      client.connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
+      qDebug() << "Connected to verifier.";
+      try {
+         client.login("bob", "bob");
+         qDebug() << "Logged in.";
+         auto response = client.verifier_public_api(ciphertext);
+         qDebug() << "Submitted request.";
+
+         if( response.type == bts::vote::exception_message_type )
+            qDebug() << fc::json::to_pretty_string(response.as<bts::vote::exception_message>()).c_str();
+         else if( response.type == bts::mail::encrypted ) {
+            auto privKey = bts::utilities::wif_to_key(_client->wallet_dump_private_key(account_name.toStdString()));
+            if( privKey ) {
+               response = response.as<bts::mail::encrypted_message>().decrypt(*privKey);
+               qDebug() << "Decrypted response.";
+            }
+         }
+
+         if( response.type == bts::vote::verification_response_message_type ) {
+            auto response_message = response.as<bts::vote::identity_verification_response_message>();
+            qDebug() << fc::json::to_pretty_string(response_message).c_str();
+            callback.call(QJSValueList() << fc::json::to_string(response_message).c_str());
+         } else {
+            qDebug() << fc::json::to_pretty_string(response).c_str();
+            callback.call(QJSValueList() << fc::json::to_string(response).c_str());
+         }
+      } catch (fc::exception& e) {
+         qDebug() << e.to_detail_string().c_str();
+         Q_EMIT error(fc::json::to_string(e).c_str());
+      }
+   });
 }

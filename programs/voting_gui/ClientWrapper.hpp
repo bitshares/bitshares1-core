@@ -4,6 +4,7 @@
 #include <QSettings>
 #include <QTimer>
 #include <QVariant>
+#include <QJSValue>
 
 #include <bts/rpc/rpc_server.hpp>
 #include <bts/client/client.hpp>
@@ -42,7 +43,7 @@ public Q_SLOTS:
    void set_data_dir(QString data_dir);
    void confirm_and_set_approval(QString delegate_name, bool approve);
 
-   void begin_verification(QObject* window, QString account_name, QStringList verifiers);
+   void begin_verification(QObject* window, QString account_name, QStringList verifiers, QJSValue callback);
 
 Q_SIGNALS:
    void initialization_complete();

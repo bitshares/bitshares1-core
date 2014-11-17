@@ -10,6 +10,14 @@ Rectangle {
 
       console.log("Verification begins")
       var account = bitshares.create_voter_account()
-      bitshares.begin_verification(window, account, verifiers)
+      bitshares.begin_verification(window, account, verifiers, function(response) {
+         response = JSON.parse(response)
+         console.log("Verification submitted: " + response)
+      })
+   }
+
+   Connections {
+      target: bitshares
+      onError: console.log("Error from backend: " + errorString)
    }
 }
