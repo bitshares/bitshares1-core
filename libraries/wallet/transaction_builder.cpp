@@ -764,6 +764,24 @@ void transaction_builder::pay_fee()
    FC_THROW( "Unable to pay fee; no remaining balances can cover it and no account can pay it." );
 } FC_RETHROW_EXCEPTIONS( warn, "All balances: ${bals}", ("bals", outstanding_balances) ) }
 
+
+transaction_builder& transaction_builder::withdraw_from_balance(const balance_id_type& from, const share_type& amount)
+{
+    // TODO ledger entries
+    trx.withdraw( from, amount );
+    return *this;
+}
+
+transaction_builder& transaction_builder::deposit_to_balance(const balance_id_type& to,
+                                                             const asset& amount,
+                                                             const vote_selection_method& vote_method)
+{
+    // TODO ledger entries
+    trx.deposit( to, amount, vote_method );
+    return *this;
+}
+
+
 bool transaction_builder::withdraw_fee()
 {
    //At this point, we'll require XTS.
