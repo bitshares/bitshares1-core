@@ -7,20 +7,20 @@ Image {
    smooth: true
 
    property alias running: animator.running
-   
+
    Image {
       id: ring
       anchors.fill: parent
       fillMode: Image.PreserveAspectFit
       source: "qrc:/res/ring.png"
       smooth: true
-      RotationAnimator {
+      RotationAnimation {
          id: animator
          target: ring
          from: 0; to: 360
          loops: Animation.Infinite
-         running: true
          duration: 1500
+         alwaysRunToEnd: true
       }
    }
 }

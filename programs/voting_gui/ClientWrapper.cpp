@@ -229,7 +229,9 @@ void ClientWrapper::get_verification_request_status(QString account_name, QStrin
       try {
          auto client = get_rpc_client(verifiers[0]);
          auto response = client->verifier_public_api(mail);
-         process_verifier_response(response, account_name, callback);
+         QMetaObject::invokeMethod(this, "process_verifier_response", Qt::QueuedConnection,
+                                   Q_ARG(bts::mail::message, response), Q_ARG(QString, account_name),
+                                   Q_ARG(QJSValue, callback));
       } catch (fc::exception& e) {
          qDebug() << e.to_detail_string().c_str();
          Q_EMIT error(fc::json::to_string(e).c_str());
@@ -299,7 +301,9 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
       try {
          auto response = client->verifier_public_api(ciphertext);
 
-         process_verifier_response(response, account_name, callback);
+         QMetaObject::invokeMethod(this, "process_verifier_response", Qt::QueuedConnection,
+                                   Q_ARG(bts::mail::message, response), Q_ARG(QString, account_name),
+                                   Q_ARG(QJSValue, callback));
       } catch (fc::exception& e) {
          qDebug() << e.to_detail_string().c_str();
          Q_EMIT error(fc::json::to_string(e).c_str());

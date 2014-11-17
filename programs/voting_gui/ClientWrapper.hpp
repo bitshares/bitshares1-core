@@ -68,5 +68,5 @@ private:
 
    bts::blockchain::public_key_type lookup_public_key(QStringList verifiers);
    std::shared_ptr<bts::rpc::rpc_client> get_rpc_client(QString verifiers);
-   void process_verifier_response(bts::mail::message response, QString account_name, QJSValue callback);
+   Q_INVOKABLE void process_verifier_response(bts::mail::message response, QString account_name, QJSValue callback);
 };

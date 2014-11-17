@@ -6,12 +6,15 @@
 #include "ClientWrapper.hpp"
 #include "Utilities.hpp"
 
+Q_DECLARE_METATYPE(bts::mail::message);
 int main(int argc, char *argv[])
 {
    QGuiApplication app(argc, argv);
 
    ClientWrapper* client = new ClientWrapper(&app);
    client->initialize();
+
+   qRegisterMetaType<bts::mail::message>();
 
 #ifndef NDEBUG
    QQmlDebuggingEnabler enabler;
