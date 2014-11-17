@@ -12,7 +12,7 @@
 using namespace bts::wallet;
 using namespace bts::wallet::detail;
 
-void  transaction_builder::set_wallet_implementation(std::unique_ptr<detail::wallet_impl>& wimpl )
+void  transaction_builder::set_wallet_implementation(std::unique_ptr<bts::wallet::detail::wallet_impl>& wimpl)
 {
 
     _wimpl = wimpl.get();
