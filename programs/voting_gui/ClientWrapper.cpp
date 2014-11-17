@@ -7,7 +7,6 @@
 #include <bts/db/exception.hpp>
 #include <bts/wallet/exceptions.hpp>
 #include <bts/vote/messages.hpp>
-#include <bts/rpc/rpc_client.hpp>
 #include <bts/utilities/key_conversion.hpp>
 
 #include <QGuiApplication>
@@ -149,10 +148,12 @@ void ClientWrapper::initialize()
       catch (const bts::db::db_in_use_exception&)
       {
          _main_thread->async( [&]{ Q_EMIT error( tr("An instance of %1 is already running! Please close it and try again.").arg(qApp->applicationName())); });
+         qDebug() << "Startup failed because database is locked.";
       }
       catch (...)
       {
          ilog("Failure when attempting to initialize client");
+         qDebug() << "Startup failed, unknown reason.";
          if (fc::exists(fc::path(data_dir.toStdWString()) / "chain")) {
             fc::remove_all(fc::path(data_dir.toStdWString()) / "chain");
             _main_thread->async( [&]{ Q_EMIT error( tr("An error occurred while trying to start. Please try restarting the application.")); });
@@ -161,6 +162,7 @@ void ClientWrapper::initialize()
       }
    });
    _init_complete.on_complete([this](fc::exception_ptr) {
+      qDebug() << "Initialization complete.";
       Q_EMIT initialization_complete();
    });
 }
@@ -204,8 +206,34 @@ QString ClientWrapper::create_voter_account()
       return QString::fromStdString(name);
    } catch (fc::exception e) {
       qDebug("%s", e.to_detail_string().c_str());
+      Q_EMIT error(e.to_detail_string().c_str());
    }
    return "";
+}
+
+void ClientWrapper::get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback)
+{
+   qDebug() << "Checking verification request status.";
+   bts::vote::get_verification_message poll_message;
+   auto account = _client->wallet_get_account(account_name.toStdString());
+   poll_message.owner = account.active_address();
+   poll_message.owner_address_signature = _client->wallet_sign_hash(account.name, fc::digest(poll_message.owner));
+
+   _bitshares_thread.async([this, account_name, verifiers, poll_message, callback]() {
+      auto key = lookup_public_key(verifiers);
+      bts::mail::message mail = bts::mail::message(poll_message).encrypt(fc::ecc::private_key::generate(),
+                                                                         key);
+      mail.recipient = key;
+
+      try {
+         auto client = get_rpc_client(verifiers[0]);
+         auto response = client->verifier_public_api(mail);
+         process_verifier_response(response, account_name, callback);
+      } catch (fc::exception& e) {
+         qDebug() << e.to_detail_string().c_str();
+         Q_EMIT error(fc::json::to_string(e).c_str());
+      }
+   }, __FUNCTION__);
 }
 
 void ClientWrapper::begin_verification(QObject* window, QString account_name, QStringList verifiers, QJSValue callback)
@@ -255,7 +283,6 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
 
    //Punt this whole procedure out to the bitshares thread. We don't want to block the GUI thread.
    _bitshares_thread.async([this, account_name, verifiers, callback, request]() mutable {
-      qDebug() << "Made it to the lambda.";
       bts::vote::identity_verification_request_message request_message;
       //Efficiently move the request into the message, then delete it. We don't want to copy or leak this thing; it's huge.
       request_message.request = std::move(*request);
@@ -263,49 +290,64 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
       request = nullptr;
       //Sign request
       request_message.signature = _client->wallet_sign_hash(account_name.toStdString(), request_message.request.digest());
-      qDebug() << "Signed request.";
 
-      auto verifier_account = _client->blockchain_get_account(verifiers[0].toStdString());
-      if( !verifier_account )
-      {
-         Q_EMIT error(QString("Could not find verifier account %1.").arg(verifiers[0]));
-         return;
-      }
+      bts::blockchain::public_key_type verifier_key = lookup_public_key(verifiers);
 
       bts::mail::message ciphertext = bts::mail::message(request_message).encrypt(fc::ecc::private_key::generate(),
-                                                                                  verifier_account->active_key());
-      qDebug() << "Encrypted request.";
-      ciphertext.recipient = verifier_account->active_key();
-      bts::rpc::rpc_client client;
-      client.connect_to(fc::ip::endpoint(fc::ip::address("69.90.132.209"), 3000));
-      qDebug() << "Connected to verifier.";
+                                                                                  verifier_key);
+      ciphertext.recipient = verifier_key;
+      auto client = get_rpc_client(verifiers[0]);
       try {
-         client.login("bob", "bob");
-         qDebug() << "Logged in.";
-         auto response = client.verifier_public_api(ciphertext);
-         qDebug() << "Submitted request.";
+         auto response = client->verifier_public_api(ciphertext);
 
-         if( response.type == bts::vote::exception_message_type )
-            qDebug() << fc::json::to_pretty_string(response.as<bts::vote::exception_message>()).c_str();
-         else if( response.type == bts::mail::encrypted ) {
-            auto privKey = bts::utilities::wif_to_key(_client->wallet_dump_private_key(account_name.toStdString()));
-            if( privKey ) {
-               response = response.as<bts::mail::encrypted_message>().decrypt(*privKey);
-               qDebug() << "Decrypted response.";
-            }
-         }
-
-         if( response.type == bts::vote::verification_response_message_type ) {
-            auto response_message = response.as<bts::vote::identity_verification_response_message>();
-            qDebug() << fc::json::to_pretty_string(response_message).c_str();
-            callback.call(QJSValueList() << fc::json::to_string(response_message).c_str());
-         } else {
-            qDebug() << fc::json::to_pretty_string(response).c_str();
-            callback.call(QJSValueList() << fc::json::to_string(response).c_str());
-         }
+         process_verifier_response(response, account_name, callback);
       } catch (fc::exception& e) {
          qDebug() << e.to_detail_string().c_str();
          Q_EMIT error(fc::json::to_string(e).c_str());
       }
-   });
+   }, __FUNCTION__);
+}
+
+bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QStringList verifiers)
+{
+   auto verifier_account = _client->blockchain_get_account(verifiers[0].toStdString());
+   bts::blockchain::public_key_type verifier_key;
+   if( verifier_account )
+      verifier_key = verifier_account->active_key();
+   else {
+      Q_EMIT error(QString("Could not find verifier account %1.").arg(verifiers[0]));
+      verifier_key = bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy");
+   }
+
+   return verifier_key;
+}
+
+std::shared_ptr<bts::rpc::rpc_client> ClientWrapper::get_rpc_client(QString verifiers)
+{
+   auto client = std::make_shared<bts::rpc::rpc_client>();
+   client->connect_to(fc::ip::endpoint(fc::ip::address("127.0.0.1"), 3000));
+   client->login("bob", "bob");
+
+   return client;
+}
+
+void ClientWrapper::process_verifier_response(bts::mail::message response, QString account_name, QJSValue callback)
+{
+   if( response.type == bts::vote::exception_message_type )
+      qDebug() << fc::json::to_pretty_string(response.as<bts::vote::exception_message>()).c_str();
+   else if( response.type == bts::mail::encrypted ) {
+      auto privKey = bts::utilities::wif_to_key(_client->wallet_dump_private_key(account_name.toStdString()));
+      if( privKey ) {
+         response = response.as<bts::mail::encrypted_message>().decrypt(*privKey);
+      }
+   }
+
+   if( response.type == bts::vote::verification_response_message_type ) {
+      auto response_message = response.as<bts::vote::identity_verification_response_message>();
+      qDebug() << fc::json::to_pretty_string(response_message).c_str();
+      callback.call(QJSValueList() << fc::json::to_string(response_message).c_str());
+   } else {
+      qDebug() << fc::json::to_pretty_string(response).c_str();
+      callback.call(QJSValueList() << fc::json::to_string(response).c_str());
+   }
 }

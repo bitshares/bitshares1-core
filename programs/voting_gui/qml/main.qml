@@ -19,6 +19,10 @@ ApplicationWindow {
       votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)})
    }
 
+   Connections {
+      target: bitshares
+      onError: console.log("Error from backend: " + errorString)
+   }
    Image {
       anchors.fill: parent
       fillMode: Image.Tile

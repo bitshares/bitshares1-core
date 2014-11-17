@@ -7,6 +7,7 @@
 #include <QJSValue>
 
 #include <bts/rpc/rpc_server.hpp>
+#include <bts/rpc/rpc_client.hpp>
 #include <bts/client/client.hpp>
 #include <bts/net/upnp.hpp>
 
@@ -30,6 +31,7 @@ public:
    Q_INVOKABLE QString get_info();
 
    Q_INVOKABLE QString create_voter_account();
+   Q_INVOKABLE void get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback);
 
    std::shared_ptr<bts::client::client> get_client() { return _client; }
 
@@ -63,4 +65,8 @@ private:
    QTimer                               _block_interval_timer;
 
    std::shared_ptr<bts::net::upnp_service> _upnp_service;
+
+   bts::blockchain::public_key_type lookup_public_key(QStringList verifiers);
+   std::shared_ptr<bts::rpc::rpc_client> get_rpc_client(QString verifiers);
+   void process_verifier_response(bts::mail::message response, QString account_name, QJSValue callback);
 };
