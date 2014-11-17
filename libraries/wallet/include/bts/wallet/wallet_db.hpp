@@ -28,11 +28,13 @@ namespace bts { namespace wallet {
          uint32_t               get_last_wallet_child_key_index()const;
          void                   set_last_wallet_child_key_index( uint32_t key_index );
          private_key_type       get_wallet_child_key( const fc::sha512& password, uint32_t key_index )const;
-         public_key_type        generate_new_account( const fc::sha512& password, const string& account_name, const variant& private_data );
+         public_key_type        generate_new_account( const fc::sha512& password, const string& account_name,
+                                                      const variant& private_data );
 
          // Account child keys
          private_key_type       get_account_child_key( const private_key_type& active_private_key, uint32_t seq_num )const;
-         private_key_type       get_account_child_key_v1( const fc::sha512& password, const address& account_address, uint32_t seq_num )const;
+         private_key_type       get_account_child_key_v1( const fc::sha512& password, const address& account_address,
+                                                          uint32_t seq_num )const;
          private_key_type       generate_new_account_child_key( const fc::sha512& password, const string& account_name );
 
          void                   add_contact_account( const account_record& blockchain_account_record, const variant& private_data );
@@ -47,7 +49,8 @@ namespace bts { namespace wallet {
          // Key getters and setters
          owallet_key_record     lookup_key( const address& derived_address )const;
          void                   store_key( const key_data& key );
-         void                   import_key( const fc::sha512& password, const string& account_name, const private_key_type& private_key );
+         void                   import_key( const fc::sha512& password, const string& account_name,
+                                            const private_key_type& private_key, bool move_existing );
 
          // Transaction getters and setters
          owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;

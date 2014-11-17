@@ -123,18 +123,13 @@ namespace bts { namespace wallet {
     */
    struct account_data : public bts::blockchain::account_record
    {
-       address  account_address;
-       /**
-        * Data kept locally for this account
-        */
-       variant  private_data;
-
        bool                             is_my_account = false;
        int8_t                           approved = 0;
        bool                             is_favorite = false;
        bool                             block_production_enabled = false;
        uint32_t                         last_used_gen_sequence = 0;
        optional<simple_account_data>    simple_account;
+       variant                          private_data;
    };
 
    template<typename RecordTypeName, wallet_record_type_enum RecordTypeNumber>
@@ -304,13 +299,13 @@ namespace bts { namespace wallet {
 
 } } // bts::wallet
 
-FC_REFLECT( bts::wallet::escrow_summary, 
+FC_REFLECT( bts::wallet::escrow_summary,
             (creating_transaction_id)
             (balance_id)
             (balance)
             (sender_account_name)
             (receiver_account_name)
-            (escrow_agent_account_name) 
+            (escrow_agent_account_name)
             (agreement_digest)
           )
 
@@ -347,13 +342,12 @@ FC_REFLECT( bts::wallet::wallet_property,
         )
 
 FC_REFLECT_DERIVED( bts::wallet::account_data, (bts::blockchain::account_record),
-        (account_address)
-        (private_data)
         (is_my_account)
         (approved)
         (is_favorite)
         (block_production_enabled)
         (last_used_gen_sequence)
+        (private_data)
         )
 
 FC_REFLECT( bts::wallet::master_key,

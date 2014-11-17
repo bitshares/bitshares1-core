@@ -56,9 +56,6 @@ namespace bts { namespace blockchain {
                return false;
        }
 
-#ifndef WIN32
-#warning [HARDFORK] This new restriction will hardfork BTS
-#endif
        if( symbol.size() >= 3 && symbol.find( "BIT" ) == 0 )
            return false;
 

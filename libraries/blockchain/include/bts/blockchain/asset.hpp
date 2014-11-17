@@ -68,6 +68,11 @@ namespace bts { namespace blockchain {
   };
   typedef optional<price> oprice;
 
+  struct feed_price : public price
+  {
+     bool force_settle = false;
+  };
+
   inline bool operator == ( const asset& l, const asset& r ) { return l.amount == r.amount; }
   inline bool operator != ( const asset& l, const asset& r ) { return l.amount != r.amount; }
   inline bool operator <  ( const asset& l, const asset& r ) { return l.amount <  r.amount; }
@@ -79,6 +84,8 @@ namespace bts { namespace blockchain {
 
   inline bool operator == ( const price& l, const price& r ) { return l.ratio == r.ratio; }
   inline bool operator != ( const price& l, const price& r ) { return l.ratio == r.ratio; }
+  price operator +  ( const price& l, const price& r );
+
   inline bool operator <  ( const price& l, const price& r )
   {
      if( l.quote_asset_id < r.quote_asset_id ) return true;
@@ -131,3 +138,4 @@ namespace fc
 #include <fc/reflect/reflect.hpp>
 FC_REFLECT( bts::blockchain::price, (ratio)(quote_asset_id)(base_asset_id) );
 FC_REFLECT( bts::blockchain::asset, (amount)(asset_id) );
+FC_REFLECT_DERIVED( bts::blockchain::feed_price, (bts::blockchain::price), (force_settle) );

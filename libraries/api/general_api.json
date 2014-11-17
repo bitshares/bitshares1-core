@@ -112,6 +112,21 @@
          "prerequisites" : ["json_authenticated"]
       },
       {
+         "method_name": "builder_finalize_and_sign",
+         "description": "Takes a transaction builder and returns a signed transaction for broadcasting",
+         "return_type": "transaction_record",
+         "parameters" :
+         [
+             {
+                "name" : "builder",
+                "type" : "transaction_builder",
+                "description" : ""
+             }
+         ],
+         "is_const"   : true,
+         "prerequisites" : ["json_authenticated", "wallet_unlocked"]
+      },
+      {
         "method_name": "meta_help",
         "description": "Returns help information as JSON data",
         "return_type": "method_map_type",

@@ -26,17 +26,20 @@ namespace bts { namespace blockchain {
 
       balance_record( const address& owner, const asset& balance, slate_id_type delegate_id );
 
-      /** condition.get_address() */
-      balance_id_type            id()const { return condition.get_address(); }
-      asset                      get_spendable_balance( const time_point_sec& at_time )const;
       bool                       is_null()const    { return balance == 0; }
       balance_record             make_null()const  { balance_record cpy(*this); cpy.balance = 0; return cpy; }
-      asset_id_type              asset_id()const { return condition.asset_id; }
-      slate_id_type              delegate_slate_id()const { return condition.delegate_slate_id; }
-      asset                      calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const;
 
-      /** if condition is signature or by name, return the owner */
+      balance_id_type            id()const { return condition.get_address(); }
+      slate_id_type              delegate_slate_id()const { return condition.delegate_slate_id; }
+
       address                    owner()const;
+      set<address>               owners()const;
+      bool                       is_owner( const address& addr )const;
+      bool                       is_owner( const public_key_type& key )const;
+
+      asset_id_type              asset_id()const { return condition.asset_id; }
+      asset                      get_spendable_balance( const time_point_sec& at_time )const;
+      asset                      calculate_yield( fc::time_point_sec now, share_type amount, share_type yield_pool, share_type share_supply )const;
 
       withdraw_condition         condition;
       share_type                 balance = 0;

@@ -537,7 +537,7 @@
         "aliases" : ["burn"]
       },
       {
-         "method_name" : "wallet_create_new_address",
+         "method_name" : "wallet_address_create",
          "description" : "Creates an address which can be used for a simple (non-TITAN) transfer.",
          "return_type" : "address",
          "parameters"  : [
@@ -573,7 +573,7 @@
             },
             {
               "name" : "from_account_name",
-              "type" : "sending_account_name",
+              "type" : "account_name",
               "description" : "the source account to draw the shares from"
             },
             {
@@ -679,6 +679,127 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer_public"]
+        "is_const": true
+    },
+    {
+        "method_name": "wallet_multisig_get_balance_id",
+        "description": "",
+        "return_type": "address",
+        "parameters":
+        [
+            {
+              "name": "m",
+              "type": "uint32_t",
+              "description": "Required number of signatures"
+            },
+            {
+              "name": "addresses",
+              "type": "address_list",
+              "description": "List of possible addresses for signatures"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["get_multisig_id"],
+        "is_const": true
+    },
+    {
+        "method_name": "wallet_multisig_deposit",
+        "description": "",
+        "return_type": "transaction_record",
+        "parameters":
+        [
+            {
+              "name": "from_name",
+              "type": "string",
+              "description": "TITAN name to withdraw from"
+            },
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+            {
+              "name": "m",
+              "type": "uint32_t",
+              "description": "Required number of signatures"
+            },
+            {
+              "name": "addresses",
+              "type": "address_list",
+              "description": "List of possible addresses for signatures"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["transfer_to_multisig"],
+    },
+    {
+        "method_name": "wallet_multisig_withdraw_start",
+        "description": "",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+              "name": "from",
+              "type": "address",
+              "description": "multisig balance ID to withdraw from"
+            },
+            {
+              "name": "to_address",
+              "type": "address",
+              "description": "address to receive funds"
+            },
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["withdraw_from_multisig"],
+        "is_const": true
+      },
+      {
+        "method_name": "wallet_builder_add_signature",
+        "description": "Review a transaction and add a signature.",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+                "name": "builder",
+                "type": "transaction_builder",
+                "description": "A transaction builder object created by a wallet."
+            },
+            {
+                "name": "broadcast",
+                "type": "bool",
+                "description": "Try to broadcast this transaction?",
+                "default_value": false
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["add_signature"]
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",
@@ -1392,6 +1513,46 @@
          "aliases" : [ "bid" ]
       },
       {
+         "method_name" : "wallet_market_submit_relative_bid",
+         "description" : "Used to place a request to buy a quantity of assets at a price specified in another asset",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the bid"
+            },
+            {
+               "name" : "quantity",
+               "type" : "string",
+               "description" : "the quantity of items you would like to buy"
+            },
+            {
+               "name" : "quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to buy"
+            },
+            {
+               "name" : "relative_price",
+               "type" : "string",
+               "description" : "the price relative to the feed you would like to pay"
+            },
+            {
+               "name" : "base_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to pay with"
+            },
+            {
+               "name" : "limit_price",
+               "type" : "string",
+               "description" : "the limit on what you are willing to pay",
+               "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "relative_bid" ]
+      },
+      {
          "method_name" : "wallet_market_submit_ask",
          "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
          "return_type" : "transaction_record",
@@ -1430,6 +1591,46 @@
          ],
          "prerequisites" : ["wallet_unlocked"],
          "aliases" : [ "ask" ]
+      },
+      {
+         "method_name" : "wallet_market_submit_relative_ask",
+         "description" : "Used to place a request to sell a quantity of assets at a price specified in another asset",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+               "name" : "from_account_name",
+               "type" : "account_name",
+               "description" : "the account that will provide funds for the ask"
+            },
+            {
+               "name" : "sell_quantity",
+               "type" : "string",
+               "description" : "the quantity of items you would like to sell"
+            },
+            {
+               "name" : "sell_quantity_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of items you would like to sell"
+            },
+            {
+               "name" : "relative_ask_price",
+               "type" : "string",
+               "description" : "the relative price per unit sold."
+            },
+            {
+               "name" : "ask_price_symbol",
+               "type" : "asset_symbol",
+               "description" : "the type of asset you would like to be paid"
+            },
+            {
+               "name" : "limit_ask_price",
+               "type" : "string",
+               "description" : "the minimum price per unit sold.",
+               "default_value" : ""
+            }
+         ],
+         "prerequisites" : ["wallet_unlocked"],
+         "aliases" : [ "relative_ask" ]
       },
       {
          "method_name" : "wallet_market_submit_short",
@@ -1919,6 +2120,12 @@
                 "name" : "asset_symbol",
                 "type" : "asset_symbol",
                 "description" : "the type of asset being priced"
+             },
+             {
+                "name" : "force_settle",
+                "type" : "bool",
+                "description" : "When a market dies for lack of interest vote to force all longs to settle at feed",
+                "default_value" : false
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
@@ -1943,9 +2150,16 @@
       },
       {
          "method_name" : "wallet_repair_records",
-         "description" : "tries to repair any inconsistent wallet account and key records",
+         "description" : "tries to repair any inconsistent wallet account, key, and transaction records",
          "return_type" : "void",
-         "parameters"  : [],
+         "parameters"  : [
+             {
+                "name" : "collecting_account_name",
+                "type" : "account_name",
+                "description" : "collect any orphan balances into this account",
+                "default_value" : ""
+             }
+         ],
          "prerequisites" : ["wallet_unlocked"]
       },
       {
@@ -2052,6 +2266,24 @@
                 "description" : "The name of the account to pay the transaction fee, if different from account_name.",
                 "default_value" : ""
              }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_account_retract",
+         "description" : "Retract (permanently disable) the specified account in case of master key compromise.",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_to_retract",
+                "type" : "account_name",
+                "description" : "The name of the account to retract."
+            },
+            {
+                "name" : "pay_from_account",
+                "type" : "account_name",
+                "description" : "The account from which fees will be paid."
+            }
          ],
          "prerequisites" : ["wallet_unlocked"]
       }

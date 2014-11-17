@@ -17,9 +17,9 @@ namespace bts { namespace blockchain {
       withdraw_signature_type   = 1,
       withdraw_vesting_type     = 2,
       withdraw_multi_sig_type   = 3,
-      withdraw_password_type    = 4,
-      withdraw_option_type      = 5,
-      withdraw_escrow_type      = 6
+      withdraw_escrow_type      = 4,
+      withdraw_password_type    = 5,
+      withdraw_option_type      = 6
    };
 
    /**
@@ -136,7 +136,7 @@ namespace bts { namespace blockchain {
       static const uint8_t    type;
 
       uint32_t                required;
-      std::vector<address>    owners;
+      std::set<address>       owners;
       optional<titan_memo>    memo;
    };
 
