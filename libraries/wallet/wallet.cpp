@@ -390,7 +390,7 @@ namespace detail {
          builder->submit_bid(self->get_account(account_name), quantity, price_arg);
       else if( order_type == ask_order )
          builder->submit_ask(self->get_account(account_name), quantity, price_arg);
-      if( order_type == relative_bid_order )
+      else if( order_type == relative_bid_order )
          builder->submit_relative_bid(self->get_account(account_name), quantity, price_arg, price_limit);
       else if( order_type == relative_ask_order )
          builder->submit_relative_ask(self->get_account(account_name), quantity, price_arg, price_limit);
@@ -530,11 +530,7 @@ namespace detail {
        auto okey = _wallet_db.lookup_key( addr );
        FC_ASSERT( okey.valid(), "Key I just created does not exist" );
 
-       okey->btc_data = simple_key_data();
-       if( label != "" )
-       {
-           okey->btc_data->label = label;
-       }
+       //okey->btc_data->label = label;
        _wallet_db.store_key( *okey );
        return addr;
    } FC_CAPTURE_AND_RETHROW( (account_name) ) }
@@ -1629,6 +1625,13 @@ namespace detail {
       FC_ASSERT( header.validate_signee( delegate_pub_key ) );
    } FC_CAPTURE_AND_RETHROW( (header) ) }
 
+   std::shared_ptr<transaction_builder> wallet::create_transaction_builder()
+   { try {
+       auto builder = std::make_shared<transaction_builder>( my.get() );
+       builder->transaction_record.trx.expiration = blockchain::now() + get_transaction_expiration();
+       return builder;
+   } FC_CAPTURE_AND_RETHROW() }
+
    wallet_transaction_record wallet::publish_feeds(
            const string& account_to_publish_under,
            map<string,double> amount_per_xts, // map symbol to amount per xts
@@ -1649,6 +1652,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
@@ -1733,6 +1738,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto current_account = my->_blockchain->get_account_record( account_to_publish_under );
       FC_ASSERT( current_account );
@@ -1819,6 +1826,8 @@ namespace detail {
       signed_transaction     trx;
       unordered_set<address> required_signatures;
 
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
       const auto payer_public_key = get_account_public_key( paying_account );
 
       const auto slate_id = my->select_slate( trx, 0, vote_all );
@@ -1893,6 +1902,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto payer_public_key = get_account_public_key( paying_account );
 
@@ -2377,6 +2388,7 @@ namespace detail {
              if( okey_rec->account_address != sender_account_address ) continue;
 
              signed_transaction trx;
+             trx.expiration = blockchain::now() + get_transaction_expiration();
 
              auto from_balance = balance_item.second.get_spendable_balance( my->_blockchain->get_pending_state()->now() );
 
@@ -2518,6 +2530,8 @@ namespace detail {
        signed_transaction trx;
        unordered_set<address> required_signatures;
 
+       trx.expiration = blockchain::now() + get_transaction_expiration();
+
        owallet_key_record delegate_key = my->_wallet_db.lookup_key( delegate_account_record->active_key() );
        FC_ASSERT( delegate_key && delegate_key->has_private_key() );
        const auto delegate_private_key = delegate_key->decrypt_private_key( my->_wallet_password );
@@ -2589,6 +2603,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
@@ -2677,55 +2693,61 @@ namespace detail {
 
     void   wallet::set_address_label( const address& addr, const string& label )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
         FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
-        okey->btc_data->label = label;
+        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a label for a TITAN address." );
+        //okey->btc_data->label = label;
         my->_wallet_db.store_key( *okey );
     }
 
     string  wallet::get_address_label( const address& addr )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
-        FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
-        return okey->btc_data->label;
+        //FC_ASSERT( okey.valid(), "No such address." );
+        //FC_ASSERT( okey->btc_data.valid(), "This address has no label (it is a TITAN address)!" );
+        //return okey->btc_data->label;
+        return "";
     }
 
 
 
     void  wallet::set_address_group_label( const address& addr, const string& group_label )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
         FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
-        okey->btc_data->group_label = group_label;
+        //FC_ASSERT( okey->btc_data.valid(), "Trying to set a group label for a TITAN address" );
+        //okey->btc_data->group_label = group_label;
         my->_wallet_db.store_key( *okey );
     }
 
     string           wallet::get_address_group_label( const address& addr )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         FC_ASSERT( is_open() );
         FC_ASSERT( is_unlocked() );
         auto okey = my->_wallet_db.lookup_key( addr );
         FC_ASSERT( okey.valid(), "No such address." );
-        FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
-        return okey->btc_data->group_label;
+        //FC_ASSERT( okey->btc_data.valid(), "This address has no group label (it is a TITAN address)!" );
+        return ""; //return okey->btc_data->group_label;
     }
 
     vector<address>  wallet::get_addresses_for_group_label( const string& group_label )
     {
+        FC_ASSERT(!"This doesn't do anything right now.");
         vector<address> addrs;
         for( auto item : my->_wallet_db.get_keys() )
         {
             auto key = item.second;
-            if( key.btc_data.valid() && key.btc_data->group_label == group_label )
+            //if( key.btc_data.valid() && key.btc_data->group_label == group_label )
                 addrs.push_back( item.first );
         }
         return addrs;
@@ -2771,6 +2793,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
@@ -2841,6 +2865,8 @@ namespace detail {
          signed_transaction     trx;
          unordered_set<address> required_signatures;
 
+         trx.expiration = blockchain::now() + get_transaction_expiration();
+
          asset total_asset_to_transfer( 0, asset_id );
          auto required_fees = get_transaction_fee();
 
@@ -2906,6 +2932,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
@@ -2974,6 +3002,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       optional<account_meta_info> meta_info;
       if( new_account_type == public_account )
@@ -3054,6 +3084,8 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto required_fees = get_transaction_fee();
 
@@ -3143,6 +3175,8 @@ namespace detail {
       signed_transaction         trx;
       unordered_set<address>     required_signatures;
 
+      trx.expiration = blockchain::now() + get_transaction_expiration();
+
       auto required_fees = get_transaction_fee();
 
       auto asset_record = my->_blockchain->get_asset_record( symbol );
@@ -3222,7 +3256,7 @@ namespace detail {
       if( delegate_pay_rate <= 100 )
           pay = delegate_pay_rate;
 
-      auto builder = create_transaction_builder();
+      transaction_builder_ptr builder = create_transaction_builder();
       builder->update_account_registration(account, public_data, optional<public_key_type>(), pay, payer).
                finalize();
       if( sign )
@@ -3254,7 +3288,7 @@ namespace detail {
         new_public_key = import_private_key( *new_private_key, account_to_update, false );
       }
 
-      auto builder = create_transaction_builder();
+      transaction_builder_ptr builder = create_transaction_builder();
       builder->update_account_registration(account, optional<variant>(), new_public_key, optional<share_type>(), payer).
                finalize();
       if( sign )
@@ -3276,7 +3310,7 @@ namespace detail {
       fc::ecc::public_key empty_pk;
       public_key_type new_public_key(empty_pk);
 
-      auto builder = create_transaction_builder();
+      transaction_builder_ptr builder = create_transaction_builder();
       builder->update_account_registration(account, optional<variant>(), new_public_key, optional<share_type>(), payer).
                finalize();
       if( sign )
@@ -3301,6 +3335,8 @@ namespace detail {
 
       signed_transaction trx;
       unordered_set<address>     required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto delegate_account = my->_blockchain->get_account_record( delegate_account_name );
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account_name));
@@ -3345,6 +3381,8 @@ namespace detail {
 
       signed_transaction trx;
       unordered_set<address>     required_signatures;
+
+      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       auto delegate_account = my->_blockchain->get_account_record( delegate_name );
       FC_ASSERT(delegate_account.valid(), "No such account: ${acct}", ("acct", delegate_account));
@@ -3638,6 +3676,8 @@ namespace detail {
 
        signed_transaction trx;
        unordered_set<address> required_signatures;
+
+       trx.expiration = blockchain::now() + get_transaction_expiration();
        required_signatures.insert( owner_address );
 
        trx.add_collateral( collateral_to_add.amount, order->market_index );
@@ -3678,15 +3718,15 @@ namespace detail {
        if( NOT is_open()     ) FC_CAPTURE_AND_THROW( wallet_closed );
        if( NOT is_unlocked() ) FC_CAPTURE_AND_THROW( wallet_locked );
 
-       transaction_builder builder(my.get());
-       builder.submit_cover(get_account(from_account_name),
-                            my->_blockchain->to_ugly_asset(real_quantity_usd, quote_symbol),
-                            cover_id);
-       builder.finalize();
+       transaction_builder_ptr builder = create_transaction_builder();
+       builder->submit_cover(get_account(from_account_name),
+                             my->_blockchain->to_ugly_asset(real_quantity_usd, quote_symbol),
+                             cover_id);
+       builder->finalize();
 
        if( sign )
-          return builder.sign();
-       return builder.transaction_record;
+          return builder->sign();
+       return builder->transaction_record;
    } FC_CAPTURE_AND_RETHROW( (from_account_name)(real_quantity_usd)(quote_symbol)(cover_id)(sign) ) }
 
    void wallet::set_transaction_fee( const asset& fee )

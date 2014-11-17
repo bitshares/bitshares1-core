@@ -14,7 +14,6 @@ using namespace bts::wallet::detail;
 
 void  transaction_builder::set_wallet_implementation(std::unique_ptr<bts::wallet::detail::wallet_impl>& wimpl)
 {
-
     _wimpl = wimpl.get();
 }
 
@@ -678,7 +677,7 @@ transaction_builder& transaction_builder::finalize()
    pay_fee();
 
    //outstanding_balance is pair<pair<account address, asset ID>, share_type>
-   for( auto outstanding_balance : outstanding_balances )
+   for( const auto& outstanding_balance : outstanding_balances )
    {
       asset balance(outstanding_balance.second, outstanding_balance.first.second);
       string account_name = _wimpl->_wallet_db.lookup_account(outstanding_balance.first.first)->name;
@@ -695,9 +694,8 @@ transaction_builder& transaction_builder::finalize()
 wallet_transaction_record& transaction_builder::sign()
 {
    auto chain_id = _wimpl->_blockchain->chain_id();
-   trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
 
-   for( auto address : required_signatures )
+   for( const auto& address : required_signatures )
    {
       //Ignore exceptions; this function operates on a best-effort basis, and doesn't actually have to succeed.
       try {
@@ -771,7 +769,7 @@ transaction_builder& transaction_builder::withdraw_from_balance(const balance_id
     auto balance_rec = _wimpl->_blockchain->get_balance_record( from );
     FC_ASSERT( balance_rec.valid(), "No such balance!" );
     trx.withdraw( from, amount );
-    for( auto owner : balance_rec->owners() )
+    for( const auto& owner : balance_rec->owners() )
         required_signatures.insert( owner );
     return *this;
 }
@@ -791,7 +789,7 @@ bool transaction_builder::withdraw_fee()
    //At this point, we'll require XTS.
    // for each asset type in my wallet... get transaction fee in that asset type..
    ulog("iterating through outstanding balanaces...");
-   for( auto item : outstanding_balances )
+   for( const auto& item : outstanding_balances )
    {
       ulog("oustanding balance 1");
       auto current_asset_id = item.first.second;

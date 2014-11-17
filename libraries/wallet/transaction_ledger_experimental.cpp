@@ -36,7 +36,7 @@ void wallet_impl::scan_genesis_experimental( const account_balance_record_summar
     record.operation_notes[ 0 ] = "import snapshot keys";
 
     _wallet_db.experimental_transactions[ record.id ] = record;
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (account_balances) ) }
 
 void wallet_impl::scan_block_experimental( uint32_t block_num,
                                            const map<private_key_type, string>& account_keys,
@@ -50,7 +50,7 @@ void wallet_impl::scan_block_experimental( uint32_t block_num,
         scan_transaction_experimental( eval_state, block_num, block_header.timestamp,
                                        account_keys, account_balances, account_names, true );
     }
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (block_num)(account_balances)(account_names) ) }
 
 transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                                      uint32_t block_num,
@@ -75,7 +75,7 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
 
     return scan_transaction_experimental( eval_state, block_num, timestamp, account_keys,
                                           account_balances, account_names, overwrite_existing );
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (eval_state)(block_num)(timestamp)(overwrite_existing) ) }
 
 transaction_ledger_entry wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                                      uint32_t block_num,
@@ -102,7 +102,7 @@ transaction_ledger_entry wallet_impl::scan_transaction_experimental( const trans
                                    overwrite_existing || !existing_record );
 
     return record;
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (eval_state)(block_num)(timestamp)(account_balances)(account_names)(overwrite_existing) ) }
 
 void wallet_impl::scan_transaction_experimental( const transaction_evaluation_state& eval_state,
                                                  const map<private_key_type, string>& account_keys,
@@ -487,7 +487,7 @@ void wallet_impl::scan_transaction_experimental( const transaction_evaluation_st
         ulog( "wallet_transaction_record_v2:\n${rec}", ("rec",fc::json::to_pretty_string( record )) );
         _wallet_db.experimental_transactions[ record.id ] = record;
     }
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (eval_state)(account_balances)(account_names)(record)(store_record) ) }
 
 transaction_ledger_entry wallet_impl::apply_transaction_experimental( const signed_transaction& transaction )
 { try {
@@ -501,7 +501,7 @@ transaction_ledger_entry wallet_impl::apply_transaction_experimental( const sign
    }
 
    return scan_transaction_experimental( *eval_state, -1, blockchain::now(), true );
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (transaction) ) }
 
 transaction_ledger_entry wallet::scan_transaction_experimental( const string& transaction_id_prefix, bool overwrite_existing )
 { try {
@@ -521,7 +521,7 @@ transaction_ledger_entry wallet::scan_transaction_experimental( const string& tr
    const auto block = my->_blockchain->get_block_header( block_num );
 
    return my->scan_transaction_experimental( *transaction_record, block_num, block.timestamp, overwrite_existing );
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (transaction_id_prefix)(overwrite_existing) ) }
 
 void wallet::add_transaction_note_experimental( const string& transaction_id_prefix, const string& note )
 { try {
@@ -549,7 +549,7 @@ void wallet::add_transaction_note_experimental( const string& transaction_id_pre
        record.operation_notes.erase( transaction_record->trx.operations.size() );
    my->_wallet_db.experimental_transactions[ record_id ] = record;
 
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (transaction_id_prefix)(note) ) }
 
 set<pretty_transaction_experimental> wallet::transaction_history_experimental( const string& account_name )
 { try {
@@ -612,7 +612,7 @@ set<pretty_transaction_experimental> wallet::transaction_history_experimental( c
    }
 
    return history;
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (account_name) ) }
 
 pretty_transaction_experimental wallet::to_pretty_transaction_experimental( const transaction_ledger_entry& record )
 { try {
@@ -664,4 +664,4 @@ pretty_transaction_experimental wallet::to_pretty_transaction_experimental( cons
    std::sort( result.outputs.begin(), result.outputs.end(), delta_compare );
 
    return result;
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( (record) ) }
