@@ -2391,9 +2391,16 @@ namespace bts { namespace blockchain {
 
    optional<market_order> chain_database::get_market_bid( const market_index_key& key )const
    { try {
-       auto market_itr  = my->_bid_db.find(key);
-       if( market_itr.valid() )
-          return market_order { bid_order, market_itr.key(), market_itr.value() };
+       { // absolute bids
+          auto market_itr  = my->_bid_db.find(key);
+          if( market_itr.valid() )
+             return market_order { bid_order, market_itr.key(), market_itr.value() };
+       }
+       { // relative bids
+          auto market_itr  = my->_relative_bid_db.find(key);
+          if( market_itr.valid() )
+             return market_order { relative_bid_order, market_itr.key(), market_itr.value() };
+       }
 
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
@@ -2408,28 +2415,56 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_market, (quote_id)(base_id) );
 
        vector<market_order> results;
+
        //We dance around like this because the _bid_db sorts the bids backwards, so we must iterate it backwards.
-       const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-       auto market_itr = my->_bid_db.lower_bound( market_index_key( next_pair ) );
-       if( market_itr.valid() )   --market_itr;
-       else market_itr = my->_bid_db.last();
+       { // absolute bids
+          const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
+          auto market_itr = my->_bid_db.lower_bound( market_index_key( next_pair ) );
+          if( market_itr.valid() )   --market_itr;
+          else market_itr = my->_bid_db.last();
 
-       while( market_itr.valid() )
-       {
-          auto key = market_itr.key();
-          if( key.order_price.quote_asset_id == quote_id &&
-              key.order_price.base_asset_id == base_id  )
+          while( market_itr.valid() )
           {
-             results.push_back( {bid_order, key, market_itr.value()} );
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_id &&
+                 key.order_price.base_asset_id == base_id  )
+             {
+                results.push_back( {bid_order, key, market_itr.value()} );
+             }
+             else break;
+
+
+             if( results.size() == limit )
+                return results;
+
+             --market_itr;
           }
-          else break;
-
-
-          if( results.size() == limit )
-             return results;
-
-          --market_itr;
        }
+       { // relative bids
+          const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
+          auto market_itr = my->_relative_bid_db.lower_bound( market_index_key( next_pair ) );
+          if( market_itr.valid() )   --market_itr;
+          else market_itr = my->_relative_bid_db.last();
+
+          while( market_itr.valid() )
+          {
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_id &&
+                 key.order_price.base_asset_id == base_id  )
+             {
+                results.push_back( {bid_order, key, market_itr.value()} );
+             }
+             else break;
+
+
+             if( results.size() == limit )
+                return results;
+
+             --market_itr;
+          }
+       }
+
+
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
@@ -2518,9 +2553,16 @@ namespace bts { namespace blockchain {
 
    optional<market_order> chain_database::get_market_ask( const market_index_key& key )const
    { try {
-       auto market_itr  = my->_ask_db.find(key);
-       if( market_itr.valid() )
-          return market_order { ask_order, market_itr.key(), market_itr.value() };
+       { // abs asks
+          auto market_itr  = my->_ask_db.find(key);
+          if( market_itr.valid() )
+             return market_order { ask_order, market_itr.key(), market_itr.value() };
+       }
+       { // relative asks
+          auto market_itr  = my->_relative_ask_db.find(key);
+          if( market_itr.valid() )
+             return market_order { relative_ask_order, market_itr.key(), market_itr.value() };
+       }
 
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
@@ -2562,26 +2604,48 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
        vector<market_order> results;
-       auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
-       while( market_itr.valid() )
-       {
-          auto key = market_itr.key();
-          if( key.order_price.quote_asset_id == quote_asset_id &&
-              key.order_price.base_asset_id == base_asset_id  )
+       { // absolute asks
+          auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+          while( market_itr.valid() )
           {
-             results.push_back( {ask_order, key, market_itr.value()} );
-          }
-          else
-          {
-             break;
-          }
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_asset_id &&
+                 key.order_price.base_asset_id == base_asset_id  )
+             {
+                results.push_back( {ask_order, key, market_itr.value()} );
+             }
+             else
+             {
+                break;
+             }
 
-          if( results.size() == limit )
-             return results;
+             if( results.size() == limit )
+                return results;
 
-          ++market_itr;
+             ++market_itr;
+          }
        }
-       ilog( "end of db" );
+       { // relative asks
+          auto market_itr  = my->_relative_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+          while( market_itr.valid() )
+          {
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_asset_id &&
+                 key.order_price.base_asset_id == base_asset_id  )
+             {
+                results.push_back( {relative_ask_order, key, market_itr.value()} );
+             }
+             else
+             {
+                break;
+             }
+
+             if( results.size() == limit )
+                return results;
+
+             ++market_itr;
+          }
+       }
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
@@ -2963,6 +3027,15 @@ namespace bts { namespace blockchain {
                total.amount += ask.balance;
            }
        }
+       for( auto ask_itr = my->_relative_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+       {
+           const market_index_key market_index = ask_itr.key();
+           if( market_index.order_price.base_asset_id == total.asset_id )
+           {
+               const order_record ask = ask_itr.value();
+               total.amount += ask.balance;
+           }
+       }
 
        // If base asset
        if( asset_id == asset_id_type( 0 ) )
@@ -2993,6 +3066,15 @@ namespace bts { namespace blockchain {
        {
            // Add bid balances
            for( auto bid_itr = my->_bid_db.begin(); bid_itr.valid(); ++bid_itr )
+           {
+               const market_index_key market_index = bid_itr.key();
+               if( market_index.order_price.quote_asset_id == total.asset_id )
+               {
+                   const order_record bid = bid_itr.value();
+                   total.amount += bid.balance;
+               }
+           }
+           for( auto bid_itr = my->_relative_bid_db.begin(); bid_itr.valid(); ++bid_itr )
            {
                const market_index_key market_index = bid_itr.key();
                if( market_index.order_price.quote_asset_id == total.asset_id )
@@ -3233,6 +3315,14 @@ namespace bts { namespace blockchain {
 
        next_path = dir / "_bid_db.json";
        my->_bid_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_relative_ask_db.json";
+       my->_relative_ask_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_relative_bid_db.json";
+       my->_relative_bid_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
        next_path = dir / "_short_db.json";
