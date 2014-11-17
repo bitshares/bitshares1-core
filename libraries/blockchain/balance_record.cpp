@@ -20,11 +20,15 @@ namespace bts { namespace blockchain {
          return set<address>{ condition.as<withdraw_with_signature>().owner };
       if( condition.type == withdraw_vesting_type )
          return set<address>{ condition.as<withdraw_vesting>().owner };
+      if( condition.type == withdraw_multi_sig_type )
+      {
+         return condition.as<withdraw_with_multi_sig>().owners;
+      }
       return set<address>{address()};
    }
    bool             balance_record::is_owner( const address& addr )const
    {
-       auto owners = this->owners(); // do distinct sets have the send .end() ?
+       auto owners = this->owners(); // Can't make distinct calls to owners() for .find/.end
        if( owners.find( addr ) != owners.end() )
            return true;
        return false;
@@ -48,6 +52,7 @@ namespace bts { namespace blockchain {
        switch( withdraw_condition_types( condition.type ) )
        {
            case withdraw_signature_type:
+           case withdraw_multi_sig_type:
            {
                return asset( balance, condition.asset_id );
            }

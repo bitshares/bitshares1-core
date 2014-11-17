@@ -344,9 +344,10 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
 {
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
     auto builder = _wallet->create_transaction_builder();
-    builder->withdraw_from_balance( from, ugly_asset.amount );
+    auto fee = _wallet->get_transaction_fee();
+    builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
-    builder->finalize().sign();
+    builder->sign();
     return *builder;
 }
 
