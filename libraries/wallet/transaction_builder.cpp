@@ -703,7 +703,7 @@ transaction_builder& transaction_builder::finalize()
 
    trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
 
-   transaction_record.record_id = trx.permanent_id(); // TODO: This might break things
+   transaction_record.record_id = trx.permanent_id();
    transaction_record.created_time = blockchain::now();
    transaction_record.received_time = transaction_record.created_time;
 

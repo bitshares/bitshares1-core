@@ -53,7 +53,7 @@ namespace bts { namespace wallet {
                                             const private_key_type& private_key, bool move_existing );
 
          // Transaction getters and setters
-         owallet_transaction_record lookup_transaction( const transaction_id_type& record_id )const;
+         owallet_transaction_record lookup_transaction( const transaction_id_type& id )const;
          void store_transaction( const transaction_data& transaction );
 
          // Non-deterministic and not linked to any account
@@ -137,6 +137,9 @@ namespace bts { namespace wallet {
 
          // Cache to lookup keys
          unordered_map<address, address>                                btc_to_bts_address;
+
+         // Cache to lookup transactions
+         unordered_map<transaction_id_type, transaction_id_type>        id_to_transaction_record_index;
 
          void remove_item( int32_t index );
 

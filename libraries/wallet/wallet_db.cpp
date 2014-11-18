@@ -108,7 +108,14 @@ namespace bts { namespace wallet {
 
            void load_transaction_record( const wallet_transaction_record& transaction_record )
            { try {
-               self->transactions[ transaction_record.record_id ] = transaction_record;
+               const transaction_id_type& record_id = transaction_record.record_id;
+               self->transactions[ record_id ] = transaction_record;
+
+               // Cache id map
+               self->id_to_transaction_record_index[ record_id ] = record_id;
+               const transaction_id_type transaction_id = transaction_record.trx.id();
+               if( transaction_id != signed_transaction().id() )
+                   self->id_to_transaction_record_index[ transaction_id ] = record_id;
            } FC_CAPTURE_AND_RETHROW( (transaction_record) ) }
 
            void load_balance_record( const wallet_balance_record& rec )
@@ -177,17 +184,19 @@ namespace bts { namespace wallet {
       wallet_master_key.reset();
 
       accounts.clear();
-      keys.clear();
-      transactions.clear();
-      balances.clear();
-      properties.clear();
-      settings.clear();
-
       address_to_account_wallet_record_index.clear();
       name_to_account_wallet_record_index.clear();
       account_id_to_wallet_record_index.clear();
 
+      keys.clear();
       btc_to_bts_address.clear();
+
+      transactions.clear();
+      id_to_transaction_record_index.clear();
+
+      balances.clear();
+      properties.clear();
+      settings.clear();
    }
 
    bool wallet_db::is_open()const
@@ -581,17 +590,22 @@ namespace bts { namespace wallet {
        store_key( *key_record );
    } FC_CAPTURE_AND_RETHROW( (account_name)(move_existing) ) }
 
-   owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& record_id )const
+   owallet_transaction_record wallet_db::lookup_transaction( const transaction_id_type& id )const
    { try {
        FC_ASSERT( is_open() );
-       const auto id_map_iter = transactions.find( record_id );
-       if( id_map_iter != transactions.end() )
+       const auto id_map_iter = id_to_transaction_record_index.find( id );
+       if( id_map_iter != id_to_transaction_record_index.end() )
        {
-           const wallet_transaction_record& transaction_record = id_map_iter->second;
-           return transaction_record;
+           const transaction_id_type& record_id = id_map_iter->second;
+           const auto record_iter = transactions.find( record_id );
+           if( record_iter != transactions.end() )
+           {
+               const wallet_transaction_record& transaction_record = record_iter->second;
+               return transaction_record;
+           }
        }
        return owallet_transaction_record();
-   } FC_CAPTURE_AND_RETHROW( (record_id) ) }
+   } FC_CAPTURE_AND_RETHROW( (id) ) }
 
    void wallet_db::store_transaction( const transaction_data& transaction )
    { try {
@@ -700,9 +714,22 @@ namespace bts { namespace wallet {
                    if( key_record.has_private_key() )
                    {
                        const private_key_type private_key = key_record.decrypt_private_key( password );
-                       key_record.public_key = private_key.get_public_key();
-                       store_key( key_record );
+                       const public_key_type public_key = private_key.get_public_key();
+                       if( key_record.public_key != public_key )
+                       {
+                           const address key_address = key_record.get_address();
+                           keys.erase( key_address );
+                           btc_to_bts_address.erase( key_address );
+                           btc_to_bts_address.erase( address( pts_address( key_record.public_key, false, 0  ) ) );
+                           btc_to_bts_address.erase( address( pts_address( key_record.public_key, true,  0  ) ) );
+                           btc_to_bts_address.erase( address( pts_address( key_record.public_key, false, 56 ) ) );
+                           btc_to_bts_address.erase( address( pts_address( key_record.public_key, true,  56 ) ) );
+
+                           key_record.public_key = public_key;
+                           my->load_key_record( key_record );
+                       }
                    }
+                   store_key( key_record );
                }
            }
            catch( ... )
@@ -720,11 +747,17 @@ namespace bts { namespace wallet {
                    wallet_transaction_record transaction_record = record.as<wallet_transaction_record>();
                    if( transaction_record.trx.id() != signed_transaction().id()  )
                    {
-                       remove_item( transaction_record.wallet_record_index );
-                       transactions.erase( transaction_record.record_id );
-                       transaction_record.record_id = transaction_record.trx.id();
-                       store_transaction( transaction_record );
+                       const transaction_id_type record_id = transaction_record.trx.permanent_id();
+                       if( transaction_record.record_id != record_id )
+                       {
+                           transactions.erase( transaction_record.record_id );
+                           id_to_transaction_record_index.erase( transaction_record.record_id );
+
+                           transaction_record.record_id = record_id;
+                           my->load_transaction_record( transaction_record );
+                       }
                    }
+                   store_transaction( transaction_record );
                }
            }
            catch( ... )
