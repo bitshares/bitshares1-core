@@ -1,6 +1,7 @@
 include_directories( "${CMAKE_SOURCE_DIR}/libraries/fc/include" )
 
 file(GLOB HEADERS "include/bts/api/*.hpp")
+file(GLOB APIS "${CMAKE_CURRENT_SOURCE_DIR}/*_api.json")
 
 if( UNIX AND NOT APPLE )
   set(rt_library rt )
@@ -22,15 +23,7 @@ target_link_libraries( bts_api_generator fc bts_utilities leveldb ${rt_library} 
 
 
 set(json_description_files "${CMAKE_CURRENT_SOURCE_DIR}/types.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/blockchain_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/wallet_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/network_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/general_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/mail_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/verifier_api.json"
-                           "${CMAKE_CURRENT_SOURCE_DIR}/ballot_box_api.json"
-#                          "${CMAKE_CURRENT_SOURCE_DIR}/btc_api.json"  never again
-                           "${CMAKE_CURRENT_SOURCE_DIR}/debug_api.json")
+                            ${APIS})
 source_group("JSON Files" FILES ${json_description_files})
 
 set(generated_api_files "${CMAKE_CURRENT_BINARY_DIR}/include/bts/api/common_api.hpp")
