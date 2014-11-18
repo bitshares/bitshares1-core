@@ -337,18 +337,27 @@ transaction_builder   detail::client_impl::wallet_withdraw_from_multisig(
 
 */
 
-transaction_builder detail::client_impl::wallet_builder_transfer_without_signature(
+transaction_builder detail::client_impl::wallet_withdraw_from_address(
                                                     const string& amount,
                                                     const string& symbol,
-                                                    const address& from,
-                                                    const address& to_address,
-                                                    const vote_selection_method& vote_method )const
+                                                    const address& from_address,
+                                                    const string& to,
+                                                    const vote_selection_method& vote_method,
+                                                    bool sign )const
 {
+    address to_address;
+    try {
+        auto acct = _wallet->get_account( to );
+        to_address = acct.owner_address();
+    } catch (...) {
+        to_address = address( to );
+    }
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
     auto builder = _wallet->create_transaction_builder();
     auto fee = _wallet->get_transaction_fee();
-    builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
+    builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    if( sign )
     return *builder;
 }
 
