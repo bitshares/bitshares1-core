@@ -59,6 +59,7 @@ namespace bts { namespace blockchain {
    FC_DECLARE_DERIVED_EXCEPTION( unknown_parent_account_name,       bts::blockchain::evaluation_error, 32010, "unknown parent account name" );
    FC_DECLARE_DERIVED_EXCEPTION( unknown_delegate_slate,            bts::blockchain::evaluation_error, 32011, "unknown delegate slate" );
    FC_DECLARE_DERIVED_EXCEPTION( too_may_delegates_in_slate,        bts::blockchain::evaluation_error, 32012, "too many delegates in slate" );
+   FC_DECLARE_DERIVED_EXCEPTION( pay_balance_remaining,             bts::blockchain::evaluation_error, 32013, "pay balance remaining" );
 
    // TODO: account.data size
    // TODO: asset.data size
