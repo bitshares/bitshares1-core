@@ -18,16 +18,14 @@ When(/^I save multisig ID for (\d+) of (\[.*\]) as (\w+)$/) do |req, addrs, id_n
     @addresses[id_name] = id
 end
 
-When(/^I start multisig withdrawal of (\d+) (\w+) minus fee from (\w+) to (\w+) as (\w+)$/) do |amount, symbol, multi_id, addr, builder_id|
+When(/^I start multisig withdrawal of (\d+) (\w+) from (\w+) to (\w+) as (\w+)$/) do |amount, symbol, multi_id, addr, builder_id|
     builder = @current_actor.node.exec 'wallet_multisig_withdraw_start', to_f(amount) - 0.5, symbol, @addresses[multi_id], @addresses[addr]
     @addresses[builder_id] = builder
-    puts builder
 end
 
 When(/^I add signature and broadcast (\w+) expecting (failure|success)$/) do |builder_id, succeed|
     builder = @addresses[builder_id]
     if succeed == "success"
-        puts "here I am"
         @addresses[builder_id] = @current_actor.node.exec 'wallet_builder_add_signature', builder, true
     elsif succeed == "failure"
         begin
@@ -46,4 +44,19 @@ end
 Then(/^Balance with ID (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
     bal = @current_actor.node.exec 'blockchain_get_balance', @addresses[id]
     expect(bal['balance'] == to_f(amount) / 10000)
+end
+
+Then(/^Balance with owner (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
+    bals = @current_actor.node.exec 'blockchain_list_address_balances', @addresses[id]
+    expect(bals[0][1]['balance'] == to_f(amount) / 10000)
+end
+
+Then(/^Balance with key (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
+    bals = @current_actor.node.exec 'wallet_account_balance', @addresses[id]
+    expect(bals[0][1]['balance'] == to_f(amount) / 10000)
+end
+
+
+
+Then(/^I'm a happy shareholder!/) do
 end

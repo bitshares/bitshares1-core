@@ -18,8 +18,12 @@ end
 
 
 Given(/^(\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
-  actor = get_actor(name)
-  actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', actor.account
+    if name == "I" || name == "me" || name == "my" || name == "mine"
+        actor = get_actor(name)
+        actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', actor.account
+    else
+        @current_actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', name
+    end
 end
 
 When(/I switch to wallet (\w+)$/) do |name|
