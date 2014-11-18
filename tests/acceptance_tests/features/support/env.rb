@@ -15,7 +15,7 @@ class Helper
   end
 
   def get_actor(name)
-    if name == 'my' or name == 'me' or name == 'I'
+    if name == 'my' or name == 'me' or name == 'I' or name == 'mine'
       @current_actor
     elsif name == 'Alice' or name == "Alice's"
       @alice
@@ -45,9 +45,9 @@ class Helper
   end
 
   def exist_order(orders, o)
-    #puts 'exist_order'
-    #puts "order: #{o.inspect}"
-    #puts "orders: #{orders.inspect}"
+    puts 'exist_order'
+    puts "order: #{o.inspect}"
+    puts "orders: #{orders.inspect}"
     @last_order_id = nil
     orders.each do |e|
       order = e[1]

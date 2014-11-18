@@ -51,6 +51,7 @@ module BitShares
         @req.basic_auth username, password
         @options = options
         @logger = options[:logger]
+        @instance_name = options[:instance_name]
       end
 
       def log(s)
@@ -59,7 +60,7 @@ module BitShares
 
       def request(method, params = nil)
         params = params || []
-        log "request: #{method} #{params.join(' ')}"
+        log "[#{@instance_name}] request: #{method} #{params.join(' ')}"
         result = nil
         Net::HTTP.start(@uri.hostname, @uri.port) do |http|
           @req.body = { method: method, params: params, id: 0 }.to_json

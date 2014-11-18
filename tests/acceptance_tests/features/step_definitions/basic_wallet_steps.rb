@@ -18,12 +18,8 @@ end
 
 
 Given(/^(\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
-    if name == "I" || name == "me" || name == "my" || name == "mine"
-        actor = get_actor(name)
-        actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', actor.account
-    else
-        @current_actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', name
-    end
+  actor = get_actor(name)
+  actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', actor.account
 end
 
 When(/I switch to wallet (\w+)$/) do |name|
@@ -82,7 +78,7 @@ Given(/^I expect HTTP transaction callbacks$/) do
   @current_actor.node.save_config(config)
   @current_actor.node.start
   @current_actor.node.exec 'open', 'default'
-  @current_actor.node.exec 'unlock', '9999999', '123456789'
+  @current_actor.node.exec 'unlock', '9999999', 'password'
   @webserver = WebServer.new
   @webserver.start
 end

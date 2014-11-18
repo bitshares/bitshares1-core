@@ -28,13 +28,13 @@ When(/^(\w+) submits? (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+) ([A-Z]+)\/(
 end
 
 #market_submit_relative_ask: (from_account_name, sell_quantity, sell_quantity_symbol, relative_ask_price, ask_price_symbol, limit_ask_price, error_handler = null) ->
-When(/^(\w+) submits? relative (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+) ([A-Z]+)\/([A-Z]+) above feed price$/) do |name, order_type, amount, symbol, price_percent, ps1, ps2|
+When(/^(\w+) submits? relative (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+) ([A-Z]+)\/([A-Z]+) (above|below) feed price$/) do |name, order_type, amount, symbol, relative_price, ps1, ps2, above_or_below|
   actor = get_actor(name)
   amount = to_f(amount)
   if order_type == 'bid'
-    actor.node.exec 'wallet_market_submit_relative_bid', actor.account, amount, symbol, price_percent, ps1
+    actor.node.exec 'wallet_market_submit_relative_bid', actor.account, amount, symbol, relative_price, ps1
   elsif order_type == 'ask'
-    actor.node.exec 'wallet_market_submit_relative_ask', actor.account, amount, symbol, price_percent, ps1
+    actor.node.exec 'wallet_market_submit_relative_ask', actor.account, amount, symbol, relative_price, ps1
   else
     raise "Unknown order type: #{order_type}"
   end
@@ -64,4 +64,10 @@ Then(/^(\w+) should have no ([A-Z]+)\/([A-Z]+) (\w+) orders$/) do |name, symbol1
   orders = actor.node.exec 'wallet_market_order_list', symbol1, symbol2, 0
   found = exist_order_type(orders, type+'_order')
   raise 'Order exists!' if found
+end
+
+When(/^(\w+) cancels? (first|last|all) (bid|ask) orders$/) do |name, which_order, order_type|
+  actor = get_actor(name)
+  #STDOUT.puts
+
 end
