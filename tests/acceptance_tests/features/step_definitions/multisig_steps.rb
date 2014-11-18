@@ -50,16 +50,13 @@ Then(/^Balance with owner (\w+) should have (\d+) (\w+)$/) do |id, amount, symbo
     bals = @current_actor.node.exec 'blockchain_list_address_balances', @addresses[id]
     expect(bals.length > 0)
     puts bals
-    expect(bals[0][1]['balance'] == to_f(amount) / 10000)
+    expect(bals[0]['balance'] == to_f(amount) / 10000)
 end
 
 Then(/^Balance with public accountname: (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
-    addr = @current_actor.node.exec 'wallet_get_account_public_address', id
-    puts addr
-    bals = @current_actor.node.exec 'blockchain_list_address_balances', addr
-    expect(bals.length > 0)
-    puts bals
-    expect(bals[0][1]['balance'] == to_f(amount) / 10000)
+    bals = @current_actor.node.exec 'blockchain_get_account_public_balance', id
+    bal = bals[0][1][0][1] # maps as lists
+    expect(bal == to_f(amount) * 10000)
 end
 
 
