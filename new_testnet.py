@@ -79,6 +79,6 @@ with open("testnet_setup_log.txt", "w") as log:
 
 n = raw_input("Start build? [Y/n]")
 if n != "n":
-    subprocess.call(["make", "-j4"])
+    subprocess.call(["make"])
     subprocess.call(["./programs/client/bitshares_client", "--input-log", "testnet_setup_log.txt", "--min-delegate-connection-count", "0"])
 
