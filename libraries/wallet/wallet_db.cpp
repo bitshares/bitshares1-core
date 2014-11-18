@@ -71,13 +71,17 @@ namespace bts { namespace wallet {
                for( const auto& item : account_record.active_key_history )
                {
                    const public_key_type& active_key = item.second;
-                   if( active_key != public_key_type() )
-                       self->address_to_account_wallet_record_index[ address( active_key ) ] = record_index;
+                   if( active_key == public_key_type() ) continue;
+                   self->address_to_account_wallet_record_index[ address( active_key ) ] = record_index;
                }
-               if( account_record.is_delegate() && account_record.delegate_info.valid() )
+               if( account_record.is_delegate() )
                {
-                   if( account_record.delegate_info->signing_key != public_key_type() )
-                       self->address_to_account_wallet_record_index[ address( account_record.delegate_info->signing_key ) ] = record_index;
+                   for( const auto& item : account_record.delegate_info->signing_key_history )
+                   {
+                       const public_key_type& signing_key = item.second;
+                       if( signing_key == public_key_type() ) continue;
+                       self->address_to_account_wallet_record_index[ address( signing_key ) ] = record_index;
+                   }
                }
 
                // Cache name map
@@ -445,13 +449,17 @@ namespace bts { namespace wallet {
        for( const auto& active_key_item : account_record->active_key_history )
        {
            const public_key_type& active_key = active_key_item.second;
-           if( active_key != public_key_type() )
-               account_public_keys.insert( active_key );
+           if( active_key == public_key_type() ) continue;
+           account_public_keys.insert( active_key );
        }
-       if( account.is_delegate() && account.delegate_info.valid() )
+       if( account.is_delegate() )
        {
-           if( account.delegate_info->signing_key != public_key_type() )
-               account_public_keys.insert( account.delegate_info->signing_key );
+           for( const auto& item : account.delegate_info->signing_key_history )
+           {
+               const public_key_type& signing_key = item.second;
+               if( signing_key == public_key_type() ) continue;
+               account_public_keys.insert( signing_key );
+           }
        }
 
        for( const public_key_type& account_public_key : account_public_keys )
@@ -916,8 +924,14 @@ namespace bts { namespace wallet {
            const public_key_type& active_key = item.second;
            address_to_account_wallet_record_index.erase( address( active_key ) );
        }
-       if( account_record->is_delegate() && account_record->delegate_info.valid() )
-           address_to_account_wallet_record_index.erase( address( account_record->delegate_info->signing_key ) );
+       if( account_record->is_delegate() )
+       {
+           for( const auto& item : account_record->delegate_info->signing_key_history )
+           {
+               const public_key_type& signing_key = item.second;
+               address_to_account_wallet_record_index.erase( address( signing_key ) );
+           }
+       }
 
        name_to_account_wallet_record_index.erase( account_record->name );
        account_id_to_wallet_record_index.erase( account_record->id );

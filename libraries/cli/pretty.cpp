@@ -805,7 +805,7 @@ string pretty_account( const oaccount_record& record, cptr client )
     {
       const vector<account_record> delegate_records = { *record };
       out << "\n" << pretty_delegate_list( delegate_records, client ) << "\n";
-      out << "Block Signing Key: " << std::string( record->delegate_info->signing_key ) << "\n";
+      out << "Block Signing Key: " << std::string( record->signing_key() ) << "\n";
     }
     else
     {

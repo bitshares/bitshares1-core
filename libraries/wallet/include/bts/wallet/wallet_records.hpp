@@ -167,7 +167,7 @@ namespace bts { namespace wallet {
        bool                             valid_from_signature = false;
        optional<string>                 memo; // this memo is not used for anything.
 
-       optional<simple_key_data>     btc_data;
+       //optional<simple_key_data>     btc_data;
        /** defines the generation number that was used to generate the key
         * relative to the account address.
         */

@@ -17,15 +17,24 @@ end
 
 When(/^(\w+) submits? (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+) ([A-Z]+)\/([A-Z]+)$/) do |name, order_type, amount, symbol, price, ps1, ps2|
   actor = get_actor(name)
-  #actor.node.exec 'rescan'
-  data = actor.node.exec 'wallet_account_balance', actor.account
-  balance = get_balance(data, actor.account, symbol)
-  #puts "#{actor.account}'s balance: #{balance} #{symbol}"
   amount = to_f(amount)
   if order_type == 'bid'
     actor.node.exec 'wallet_market_submit_bid', actor.account, amount, symbol, price, ps1
   elsif order_type == 'ask'
     actor.node.exec 'wallet_market_submit_ask', actor.account, amount, symbol, price, ps1
+  else
+    raise "Unknown order type: #{order_type}"
+  end
+end
+
+#market_submit_relative_ask: (from_account_name, sell_quantity, sell_quantity_symbol, relative_ask_price, ask_price_symbol, limit_ask_price, error_handler = null) ->
+When(/^(\w+) submits? relative (bid|ask) for ([\d,\.]+) ([A-Z]+) at ([\d\.]+) ([A-Z]+)\/([A-Z]+) above feed price$/) do |name, order_type, amount, symbol, price_percent, ps1, ps2|
+  actor = get_actor(name)
+  amount = to_f(amount)
+  if order_type == 'bid'
+    actor.node.exec 'wallet_market_submit_relative_bid', actor.account, amount, symbol, price_percent, ps1
+  elsif order_type == 'ask'
+    actor.node.exec 'wallet_market_submit_relative_ask', actor.account, amount, symbol, price_percent, ps1
   else
     raise "Unknown order type: #{order_type}"
   end
