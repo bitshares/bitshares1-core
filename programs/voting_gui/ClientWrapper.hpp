@@ -31,7 +31,6 @@ public:
    Q_INVOKABLE QString get_info();
 
    Q_INVOKABLE QString create_voter_account();
-   Q_INVOKABLE void get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback);
 
    std::shared_ptr<bts::client::client> get_client() { return _client; }
 
@@ -43,14 +42,17 @@ public:
 
 public Q_SLOTS:
    void set_data_dir(QString data_dir);
-   void confirm_and_set_approval(QString delegate_name, bool approve);
 
    void begin_verification(QObject* window, QString account_name, QStringList verifiers, QJSValue callback);
+   void get_verification_request_status(QString account_name, QStringList verifiers, QJSValue callback);
+   void process_accepted_identity(QString account_name, QString identity, QJSValue callback);
+   void begin_registration(QString account_name, QStringList registrars);
 
 Q_SIGNALS:
    void initialization_complete();
    void state_changed();
    void status_update(QString statusString);
+   void registered();
    void error(QString errorString);
 
 private:
@@ -66,7 +68,12 @@ private:
 
    std::shared_ptr<bts::net::upnp_service> _upnp_service;
 
-   bts::blockchain::public_key_type lookup_public_key(QStringList verifiers);
-   std::shared_ptr<bts::rpc::rpc_client> get_rpc_client(QString verifiers);
+   bts::blockchain::public_key_type lookup_public_key(QString account_name);
+   std::shared_ptr<bts::rpc::rpc_client> get_rpc_client(QString account);
    Q_INVOKABLE void process_verifier_response(bts::mail::message response, QString account_name, QJSValue callback);
+   Q_INVOKABLE void notify_acceptances(int acceptance_count, QJSValue callback);
+   std::vector<bts::vote::signed_identity_property> merge_identities(const bts::vote::signed_identity& old_id,
+                                                                     bts::vote::identity new_id);
+   void purge_invalid_signatures(std::vector<bts::vote::signed_identity_property>& properties,
+                                 bts::blockchain::address owner);
 };

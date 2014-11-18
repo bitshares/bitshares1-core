@@ -16,9 +16,7 @@ int main(int argc, char *argv[])
 
    qRegisterMetaType<bts::mail::message>();
 
-#ifndef NDEBUG
    QQmlDebuggingEnabler enabler;
-#endif
 
    QQmlApplicationEngine engine;
    QQmlContext* context = engine.rootContext();

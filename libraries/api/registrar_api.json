@@ -1,0 +1,30 @@
+{
+    "category": "Voter Registration Server Methods",
+    "methods" :
+    [
+        {
+            "method_name": "registrar_demo_registration",
+            "description": "Demo usage only -- a simple registration that simply validates the signatures and signs a voter key.",
+            "return_type": "expiring_signature",
+            "parameters" : [
+                {
+                    "name" : "validated_ballot_id",
+                    "type" : "signed_identity_property",
+                    "description" : "The ballot ID provided by the ID verifiers."
+                },
+                {
+                    "name" : "identity_address",
+                    "type" : "address",
+                    "description" : "The identity owner's address."
+                },
+                {
+                    "name" : "ballot_id_signature",
+                    "type" : "compact_signature",
+                    "description" : "The voter key's signature on validated_ballot_id."
+                }
+            ],
+            "is_const" : false,
+            "prerequisites" : ["wallet_unlocked"]
+        }
+    ]
+}

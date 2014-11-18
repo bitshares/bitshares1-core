@@ -48,6 +48,11 @@ struct identity_property
 
    digest_type    id(const address& identity)const;
 
+   bool operator==(const identity_property& other)const
+   {
+      return salt == other.salt && name == other.name && value.as_string() == other.value.as_string();
+   }
+
    fc::uint128    salt;
    string         name;
    variant        value;
@@ -61,17 +66,24 @@ struct identity_property
 struct signature_data
 {
    static signature_data sign( const private_key_type& signer,
-              const digest_type& identity_property_id,
-              fc::time_point_sec valid_from,
-              fc::time_point_sec valid_until );
+                               const digest_type& identity_property_id,
+                               fc::time_point_sec valid_from,
+                               fc::time_point_sec valid_until );
 
-   /**  hash( id + valid_from + valid_until ) ) */
+   /**  hash( id + valid_from + valid_until ) */
    digest_type digest( const digest_type& id)const;
 
    /** Recovers public key of signature given identity property id.
      * Returns public_key_type() if current time is outside the validity window.
      */
    public_key_type signer( const digest_type& id )const;
+
+   /// Note that signatures are not deterministic, so the signer and dates could match, but this only returns true if
+   /// the signatures are exactly identical.
+   bool operator== (const signature_data& other)const
+   {
+      return valid_from == other.valid_from && valid_until == other.valid_until && signature == other.signature;
+   }
 
    time_point_sec valid_from;
    time_point_sec valid_until;
@@ -90,6 +102,11 @@ struct signed_identity_property : public identity_property
    signed_identity_property(const identity_property&& prop)
       : identity_property(prop){}
 
+   bool operator== (const signed_identity_property& other) const
+   {
+      return ((identity_property&)*this).operator ==(other) && verifier_signatures == other.verifier_signatures;
+   }
+
    vector<signature_data> verifier_signatures;
 };
 
@@ -99,7 +116,7 @@ struct signed_identity_property : public identity_property
 struct identity
 {
    digest_type digest()const;
-   optional<identity_property> get_property( const string& name )const;
+   optional<signed_identity_property> get_property( const string& name )const;
    void sign(const private_key_type& key, fc::time_point_sec valid_from, fc::time_point_sec valid_until);
 
    address                                   owner;

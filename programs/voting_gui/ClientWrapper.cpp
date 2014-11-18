@@ -180,24 +180,6 @@ void ClientWrapper::set_data_dir(QString data_dir)
    QSettings ("BitShares", BTS_BLOCKCHAIN_NAME).setValue("data_dir", data_dir);
 }
 
-void ClientWrapper::confirm_and_set_approval(QString delegate_name, bool approve)
-{
-   auto account = get_client()->blockchain_get_account(delegate_name.toStdString());
-   if( account.valid() && account->is_delegate() )
-   {
-      if( QMessageBox::question(nullptr,
-                                tr("Set Delegate Approval"),
-                                tr("Would you like to update approval rating of Delegate %1 to %2?")
-                                .arg(delegate_name)
-                                .arg(approve?"Approve":"Disapprove")
-                                )
-          == QMessageBox::Yes )
-         get_client()->wallet_account_set_approval(delegate_name.toStdString(), approve);
-   }
-   else
-      QMessageBox::warning(nullptr, tr("Invalid Account"), tr("Account %1 is not a delegate, so its approval cannot be set.").arg(delegate_name));
-}
-
 QString ClientWrapper::create_voter_account()
 {
    try {
@@ -221,9 +203,8 @@ void ClientWrapper::get_verification_request_status(QString account_name, QStrin
    poll_message.owner_address_signature = _client->wallet_sign_hash(account.name, fc::digest(poll_message.owner));
 
    _bitshares_thread.async([this, account_name, verifiers, poll_message, callback]() {
-      auto key = lookup_public_key(verifiers);
-      bts::mail::message mail = bts::mail::message(poll_message).encrypt(fc::ecc::private_key::generate(),
-                                                                         key);
+      auto key = lookup_public_key(verifiers[0]);
+      bts::mail::message mail = bts::mail::message(poll_message).encrypt(fc::ecc::private_key::generate(), key);
       mail.recipient = key;
 
       try {
@@ -232,6 +213,50 @@ void ClientWrapper::get_verification_request_status(QString account_name, QStrin
          QMetaObject::invokeMethod(this, "process_verifier_response", Qt::QueuedConnection,
                                    Q_ARG(bts::mail::message, response), Q_ARG(QString, account_name),
                                    Q_ARG(QJSValue, callback));
+      } catch (fc::exception& e) {
+         qDebug() << e.to_detail_string().c_str();
+         Q_EMIT error(fc::json::to_string(e).c_str());
+      }
+   }, __FUNCTION__);
+}
+
+void ClientWrapper::process_accepted_identity(QString account_name, QString identity, QJSValue callback)
+{
+   _bitshares_thread.async([this, account_name, identity, callback]() mutable {
+      try {
+         //Parse identity back to struct
+         bts::vote::identity new_id = fc::json::from_string(identity.toStdString()).as<bts::vote::identity>();
+
+         //Fetch identity from wallet
+         fc::mutable_variant_object data = _client->get_wallet()->get_account(account_name.toStdString())
+               .private_data.as<fc::mutable_variant_object>();
+         if( data.find("identity") != data.end() )
+         {
+            bts::vote::signed_identity old_id = data["identity"].as<bts::vote::signed_identity>();
+            FC_ASSERT(new_id.owner == old_id.owner, "Verifier identity has unexpected owner.");
+
+            old_id.properties = merge_identities(old_id, new_id);
+            old_id.sign_by_owner(_client->get_wallet()->get_active_private_key(account_name.toStdString()));
+            data["identity"] = old_id;
+            new_id = old_id;
+         } else {
+            FC_ASSERT(new_id.owner == _client->get_wallet()->get_account(account_name.toStdString()).owner_address(),
+                      "Verifier identity has unexpected owner.");
+
+            bts::vote::signed_identity signed_id;
+            (bts::vote::identity&)signed_id = new_id;
+            signed_id.sign_by_owner(_client->get_wallet()->get_active_private_key(account_name.toStdString()));
+            data["identity"] = signed_id;
+         }
+
+         _client->get_wallet()->update_account_private_data(account_name.toStdString(), data);
+
+         if( auto ballot_id = new_id.get_property("Ballot ID") )
+         {
+            qDebug() << "Verified ID:" << fc::json::to_pretty_string(new_id).c_str() << "\nBallot ID:" << fc::json::to_pretty_string(*ballot_id).c_str();
+            QMetaObject::invokeMethod(this, "notify_acceptances",
+                                      Q_ARG(int, ballot_id->verifier_signatures.size()), Q_ARG(QJSValue, callback));
+         }
       } catch (fc::exception& e) {
          qDebug() << e.to_detail_string().c_str();
          Q_EMIT error(fc::json::to_string(e).c_str());
@@ -259,6 +284,7 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    request->properties.emplace_back(bts::vote::identity_property::generate("City"));
    request->properties.emplace_back(bts::vote::identity_property::generate("State"));
    request->properties.emplace_back(bts::vote::identity_property::generate("9-Digit ZIP"));
+   request->properties.emplace_back(bts::vote::identity_property::generate("Ballot ID"));
    request->owner_photo = window->property("userPhoto").toUrl().toLocalFile().toStdString();
    request->id_front_photo = window->property("idFrontPhoto").toUrl().toLocalFile().toStdString();
    request->id_back_photo = window->property("idBackPhoto").toUrl().toLocalFile().toStdString();
@@ -289,10 +315,29 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
       request_message.request = std::move(*request);
       delete request;
       request = nullptr;
-      //Sign request
-      request_message.signature = _client->wallet_sign_hash(account_name.toStdString(), request_message.request.digest());
 
-      bts::blockchain::public_key_type verifier_key = lookup_public_key(verifiers);
+      //Store ID in wallet
+      try {
+         fc::mutable_variant_object data;
+         try {
+            data = _client->get_wallet()->get_account(account_name.toStdString())
+                  .private_data.as<fc::mutable_variant_object>();
+         } catch (fc::bad_cast_exception){/* If private data isn't a JSON object, it should be. Overwrite it. */}
+         bts::vote::signed_identity my_id;
+         (bts::vote::identity&)my_id = request_message.request;
+         my_id.sign_by_owner(_client->get_wallet()->get_active_private_key(account_name.toStdString()));
+         data["identity"] = std::move(my_id);
+         _client->get_wallet()->update_account_private_data(account_name.toStdString(), data);
+      } catch (fc::exception& e) {
+         qDebug() << e.to_detail_string().c_str();
+         Q_EMIT error(fc::json::to_string(e).c_str());
+      }
+
+      //Sign request
+      request_message.signature = _client->wallet_sign_hash(account_name.toStdString(),
+                                                            request_message.request.digest());
+
+      bts::blockchain::public_key_type verifier_key = lookup_public_key(verifiers[0]);
 
       bts::mail::message ciphertext = bts::mail::message(request_message).encrypt(fc::ecc::private_key::generate(),
                                                                                   verifier_key);
@@ -311,21 +356,60 @@ void ClientWrapper::begin_verification(QObject* window, QString account_name, QS
    }, __FUNCTION__);
 }
 
-bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QStringList verifiers)
+void ClientWrapper::begin_registration(QString account_name, QStringList registrars)
 {
-   auto verifier_account = _client->blockchain_get_account(verifiers[0].toStdString());
-   bts::blockchain::public_key_type verifier_key;
-   if( verifier_account )
-      verifier_key = verifier_account->active_key();
-   else {
-      Q_EMIT error(QString("Could not find verifier account %1.").arg(verifiers[0]));
-      verifier_key = bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy");
+   if( registrars.empty() )
+   {
+      Q_EMIT error("No registrars provided when asked to begin registration!");
+      return;
    }
 
-   return verifier_key;
+   _bitshares_thread.async([this, account_name, registrars]() mutable {
+      try {
+         std::shared_ptr<bts::rpc::rpc_client> client = get_rpc_client(registrars[0]);
+         bts::wallet::wallet_account_record account = _client->get_wallet()->get_account(account_name.toStdString());
+         auto identity = account.private_data.as<fc::variant_object>()["identity"].as<bts::vote::signed_identity>();
+         auto ballot_id = identity.get_property("Ballot ID");
+         FC_ASSERT(ballot_id, "Cannot begin registration because ballot ID has not been verified yet.");
+         _client->wallet_account_create("voter-key." + account.name);
+         auto signature = _client->get_wallet()->sign_hash("voter-key." + account.name, fc::digest(*ballot_id));
+
+         try {
+            auto registrar_signature = client->registrar_demo_registration(*ballot_id, identity.owner, signature);
+            auto data = account.private_data.as<fc::mutable_variant_object>();
+            data["registrar_signatures"] = std::vector<bts::vote::signature_data>({registrar_signature});
+            _client->get_wallet()->update_account_private_data(account.name, data);
+            Q_EMIT registered();
+         } catch (fc::exception& e) {
+            qDebug() << e.to_detail_string().c_str();
+            Q_EMIT error(fc::json::to_string(e).c_str());
+         }
+      } catch (fc::exception& e) {
+         qDebug() << e.to_detail_string().c_str();
+         Q_EMIT error(fc::json::to_string(e).c_str());
+      }
+   }, __FUNCTION__);
 }
 
-std::shared_ptr<bts::rpc::rpc_client> ClientWrapper::get_rpc_client(QString verifiers)
+bts::blockchain::public_key_type ClientWrapper::lookup_public_key(QString account_name)
+{
+   auto account = _client->blockchain_get_account(account_name.toStdString());
+   bts::blockchain::public_key_type account_key;
+   if( account )
+      account_key = account->active_key();
+   else {
+      if( account_name == "verifier" )
+         account_key = bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy");
+      else if( account_name == "registrar" )
+         account_key = bts::blockchain::public_key_type("XTS6pBHGAjnGrYmYKX9Ko26nQokqZf41YcX8FcuCb7zQrLQSUMnS8");
+      else
+         Q_EMIT error(QString("Could not find account %1.").arg(account_name));
+   }
+
+   return account_key;
+}
+
+std::shared_ptr<bts::rpc::rpc_client> ClientWrapper::get_rpc_client(QString account)
 {
    auto client = std::make_shared<bts::rpc::rpc_client>();
    client->connect_to(fc::ip::endpoint(fc::ip::address("127.0.0.1"), 3000));
@@ -353,4 +437,73 @@ void ClientWrapper::process_verifier_response(bts::mail::message response, QStri
       qDebug() << fc::json::to_pretty_string(response).c_str();
       callback.call(QJSValueList() << fc::json::to_string(response).c_str());
    }
+}
+
+void ClientWrapper::notify_acceptances(int acceptance_count, QJSValue callback)
+{
+   callback.call(QJSValueList() << acceptance_count);
+}
+
+std::vector<bts::vote::signed_identity_property> ClientWrapper::merge_identities(const bts::vote::signed_identity& old_id,
+                                                                                 bts::vote::identity new_id)
+{
+   auto working_properties = old_id.properties;
+
+   //Clean invalid signatures from old and new identities
+   purge_invalid_signatures(working_properties, old_id.owner);
+   purge_invalid_signatures(new_id.properties, new_id.owner);
+
+   for( const bts::vote::signed_identity_property& new_property : new_id.properties )
+   {
+      //Find iterator to property with same name, salt and value
+      auto itr = std::find_if(working_properties.begin(), working_properties.end(),
+                              [&new_property](const bts::vote::signed_identity_property& old_property) -> bool {
+         return (bts::vote::identity_property&)old_property == (bts::vote::identity_property&)new_property;
+      });
+      if( itr != working_properties.end() )
+      {
+         //This property is already in old identity. Merge signatures.
+         bts::vote::signed_identity_property& old_property = *itr;
+         for( const bts::vote::signature_data& new_signature : new_property.verifier_signatures )
+         {
+            fc::ecc::public_key new_signer = new_signature.signer(new_property.id(new_id.owner));
+            if( new_signer == fc::ecc::public_key() )
+               //Invalid signature. Skip it.
+               continue;
+            //Find iterator to signature with same signer
+            auto itr = std::find_if(old_property.verifier_signatures.begin(), old_property.verifier_signatures.end(),
+                                    [new_signer, old_property, old_id](const bts::vote::signature_data& old_signature)
+                                    -> bool {
+               return old_signature.signer(old_property.id(old_id.owner)) == new_signer;
+            });
+            if( itr != old_property.verifier_signatures.end() )
+            {
+               //This signer has signed this property before. Keep the signature which expires later.
+               if( new_signature.valid_until > itr->valid_until )
+                  *itr = new_signature;
+            } else {
+               //This signer has not signed this property. Insert the new signature.
+               old_property.verifier_signatures.push_back(new_signature);
+            }
+         }
+      } else {
+         //This property is not in old identity yet. Add it.
+         working_properties.push_back(new_property);
+      }
+   }
+
+   return working_properties;
+}
+
+void ClientWrapper::purge_invalid_signatures(std::vector<bts::vote::signed_identity_property>& properties,
+                                             bts::blockchain::address owner)
+{
+   for( bts::vote::signed_identity_property& old_property : properties)
+      old_property.verifier_signatures.erase(std::remove_if(old_property.verifier_signatures.begin(),
+                                                            old_property.verifier_signatures.end(),
+                                                            [&old_property, &owner](
+                                                               const bts::vote::signature_data& old_signature
+                                                            ) -> bool {
+         return old_signature.signer(old_property.id(owner)) == fc::ecc::public_key();
+      }), old_property.verifier_signatures.end());
 }

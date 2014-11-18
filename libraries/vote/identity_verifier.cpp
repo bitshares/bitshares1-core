@@ -151,9 +151,9 @@ public:
          response.rejection_reason = record.rejection_reason;
          return response;
       }
-      response.accepted = true;
-      response.verified_identity = record;
-      return response;
+      auto disk_record = _id_db.fetch(record.id);
+      FC_ASSERT( disk_record.response, "Internal error: request was accepted, but response was not stored." );
+      return *disk_record.response;
    }
 
    vector<identity_verification_request_summary> list_requests_by_status(request_status_enum status,
@@ -221,7 +221,7 @@ public:
          }
          //Overwrite the request's properties with the now-salted approved properties. We don't want to keep any
          //properties the verifier did not approve of, as we will later sign all properties in the record.
-         request_record.properties = std::move(response.verified_identity->properties);
+         request_record.properties = response.verified_identity->properties;
       } else {
          //Request was rejected. Remove all properties, they must not be signed.
          request_record.properties.clear();

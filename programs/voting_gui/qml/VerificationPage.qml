@@ -5,7 +5,8 @@ TaskPage {
    id: container
    state: "SUBMITTING"
 
-   property variant verifiers: ["verifier"]
+   property var verifiers: ["verifier"]
+   property var registrars: ["registrar"]
    property string account_name
 
    onBackClicked: window.previousPage()
@@ -24,8 +25,14 @@ TaskPage {
          console.log("Request rejected: " + JSON.stringify(response))
          container.state = "REJECTED"
       } else {
-         console.log("Request accepted: " + JSON.stringify(response))
-         container.state = "ACCEPTED"
+         bitshares.process_accepted_identity(account_name, JSON.stringify(response.verified_identity),
+                                             function(acceptance_count)
+                                             {
+                                                if( acceptance_count > (verifiers.length / 2) ) {
+                                                   container.state = "ACCEPTED"
+                                                   bitshares.begin_registration(account_name, registrars)
+                                                }
+                                             })
       }
    }
 
@@ -42,6 +49,13 @@ TaskPage {
          container.state = "POLLING"
          processResponse(JSON.parse(response))
       })
+   }
+
+   Connections {
+      target: bitshares
+      onRegistered: {
+         container.state = "REGISTERED"
+      }
    }
 
    Timer {
@@ -117,11 +131,13 @@ TaskPage {
          }
          PropertyChanges {
             target: spinner
-            running: false
+            running: true
          }
          PropertyChanges {
             target: statusText
-            text: qsTr("Your identity has been verified successfully. Please proceed to the next step.")
+            text: qsTr("Your identity has been verified successfully. An anonymous voting identity is now being " +
+                       "registered, which will allow you to cast your votes anonymously. You may proceed to the next " +
+                       "step while waiting for this registration.")
          }
          PropertyChanges {
             target: container
@@ -147,7 +163,26 @@ TaskPage {
             target: container
             backButtonHighlighted: true
          }
+      },
+      State {
+         name: "REGISTERED"
+         PropertyChanges {
+            target: responsePollster
+            running: false
+         }
+         PropertyChanges {
+            target: spinner
+            running: false
+         }
+         PropertyChanges {
+            target: statusText
+            text: qsTr("Your identity has been accepted and anonymously registered to vote. Please proceed to the " +
+                       "next step.")
+         }
+         PropertyChanges {
+            target: container
+            nextButtonHighlighted: true
+         }
       }
-
    ]
 }

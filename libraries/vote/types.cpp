@@ -51,12 +51,14 @@ digest_type identity::digest() const
    return fc::digest(*this);
 }
 
-optional<identity_property> identity::get_property(const string& name) const
+optional<signed_identity_property> identity::get_property(const string& name) const
 {
+   optional<signed_identity_property> result;
    for( const signed_identity_property& property : properties )
-      if( property.name == name )
-         return property;
-   return optional<identity_property>();
+      if( property.name == name &&
+          (!result || result->verifier_signatures.size() < property.verifier_signatures.size()) )
+         result = property;
+   return result;
 }
 
 void identity::sign(const blockchain::private_key_type& key,
