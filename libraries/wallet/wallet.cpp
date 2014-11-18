@@ -1178,7 +1178,7 @@ namespace detail {
                              "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
                              ("p",key)("r",current_registered_account->active_key()) );
 
-      if( current_registered_account->is_retracted() )
+      if( current_registered_account.valid() && current_registered_account->is_retracted() )
           FC_CAPTURE_AND_THROW( account_retracted, (current_registered_account) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
