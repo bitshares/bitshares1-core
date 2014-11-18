@@ -1664,9 +1664,7 @@ namespace detail {
 
    std::shared_ptr<transaction_builder> wallet::create_transaction_builder()
    { try {
-       auto builder = std::make_shared<transaction_builder>( my.get() );
-       builder->transaction_record.trx.expiration = blockchain::now() + get_transaction_expiration();
-       return builder;
+       return std::make_shared<transaction_builder>( my.get() );
    } FC_CAPTURE_AND_RETHROW() }
 
    std::shared_ptr<transaction_builder> wallet::create_transaction_builder(const transaction_builder& old_builder)

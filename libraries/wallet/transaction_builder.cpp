@@ -701,6 +701,12 @@ transaction_builder& transaction_builder::finalize()
       else _wimpl->withdraw_to_transaction(-balance, account_name, trx, required_signatures);
    }
 
+   trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
+
+   transaction_record.record_id = trx.permanent_id(); // TODO: This might break things
+   transaction_record.created_time = blockchain::now();
+   transaction_record.received_time = transaction_record.created_time;
+
    return *this;
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
