@@ -1904,6 +1904,35 @@ namespace bts { namespace blockchain {
         return balances;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
 
+    vector<balance_record> chain_database::get_balances_for_address( const address& addr )const
+    {
+        vector<balance_record> ret;
+        for( auto pair : get_balances( "", -1 ) )
+        {
+            auto bal = pair.second;
+            if( bal.is_owner( addr ) )
+            {
+                ret.push_back(bal);
+            }
+        }
+        return ret;
+    }
+
+    vector<balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
+    {
+        vector<balance_record> ret;
+        for( auto pair : get_balances( "", -1 ) )
+        {
+            auto bal = pair.second;
+            if( bal.is_owner(key) )
+            {
+                ret.push_back( bal );
+            }
+        }
+        return ret;
+    }
+
+
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t limit )const
     { try {
        std::vector<account_record> names;
