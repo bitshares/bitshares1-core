@@ -13,14 +13,25 @@ ApplicationWindow {
    property url idBackPhoto
    property url voterRegistrationPhoto
 
-   //Called by individual pages via window.nextPage()
+   QtObject {
+      id: d
+
+      property var poppedItems: []
+   }
+
+   //Called by individual pages via window.nextPage() and window.previousPage()
    function nextPage() {
-      roadMap.checkpointsComplete++
-      votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)})
+      if( d.poppedItems.length === 0 ) {
+         roadMap.checkpointsComplete++
+         votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page), "destroyOnPop": false})
+      } else {
+         votingUiStack.push(d.poppedItems.pop())
+      }
    }
    function previousPage() {
-      roadMap.checkpointsComplete--
-      votingUiStack.pop()
+      if( votingUiStack.depth <= 1 )
+         return;
+      d.poppedItems.push(votingUiStack.pop())
    }
 
    Connections {
@@ -66,22 +77,6 @@ ApplicationWindow {
          }
          ListElement {
             title: "Finished"
-         }
-      }
-
-      MouseArea {
-         anchors.fill: parent;
-         onClicked: {
-            if( parent.checkpointsComplete < parent.checkpoints.count-1 ) {
-               parent.checkpointsComplete++
-               votingUiStack.push({item: taskPage,
-                                     properties: {currentCheckpoint: roadMap.currentCheckpoint},
-                                     replace: true})
-            } else {
-               parent.checkpointsComplete = 0
-               votingUiStack.clear()
-               votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)})
-            }
          }
       }
    }

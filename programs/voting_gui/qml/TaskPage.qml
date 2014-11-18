@@ -14,7 +14,7 @@ Item {
       id: backGlow
       anchors.fill: backButton
       anchors.margins: backButton.height / 4
-      cornerRadius: parent.radius
+      cornerRadius: backButton.radius
       color: backButton.color
       glowRadius: backButton.height
       visible: backButtonHighlighted
@@ -55,7 +55,7 @@ Item {
       id: nextGlow
       anchors.fill: nextButton
       anchors.margins: nextButton.height / 4
-      cornerRadius: parent.radius
+      cornerRadius: nextButton.radius
       color: nextButton.color
       glowRadius: nextButton.height
       visible: nextButtonHighlighted
