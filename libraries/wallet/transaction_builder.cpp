@@ -220,13 +220,14 @@ transaction_builder& transaction_builder::deposit_asset_to_multisig(
       FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
 
    auto payer = _wimpl->_wallet_db.lookup_account( from_name );
+   auto fee = _wimpl->self->get_transaction_fee();
    FC_ASSERT(payer.valid(), "No such account");
    multisig_meta_info info;
    info.required = m;
    info.owners = set<address>(addresses.begin(), addresses.end());
    trx.deposit_multisig(info, amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
 
-   deduct_balance(payer->owner_key, amount);
+   deduct_balance(payer->owner_key, amount + fee);
 
    ledger_entry entry;
    entry.from_account = payer->owner_key;
@@ -706,7 +707,7 @@ wallet_transaction_record& transaction_builder::sign()
    for( auto& notice : notices )
       notice.first.trx = trx;
 
-   _wimpl->cache_transaction(trx, transaction_record);
+//   _wimpl->cache_transaction(trx, transaction_record);
    return transaction_record;
 }
 
