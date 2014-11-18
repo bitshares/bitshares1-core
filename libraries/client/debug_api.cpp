@@ -203,6 +203,8 @@ variant_object client_impl::debug_request_verification(const std::string &accoun
    ident.properties.push_back(prop);
    prop = {fc::uint128(5432), "9-Digit ZIP", variant()};
    ident.properties.push_back(prop);
+   prop = {fc::uint128(2222), "Ballot ID", variant()};
+   ident.properties.push_back(prop);
 
    identity_verification_request req;
    (identity&)req = ident;
