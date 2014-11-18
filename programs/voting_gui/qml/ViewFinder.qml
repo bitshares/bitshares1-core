@@ -145,7 +145,7 @@ Rectangle {
       Transition {
          to: "COUNTDOWN"
          SequentialAnimation {
-            ScriptAction { script: { camera.captureMode = Camera.CaptureStillImage } }
+            ScriptAction { script: { camera.captureMode = Camera.CaptureStillImage; camera.searchAndLock() } }
             PropertyAction { target: countdownText; property: "text"; value: "3" }
             PropertyAnimation { target: countdownText; property: "opacity"; from: 0; to: 1 }
 //            PauseAnimation { duration: 400 }

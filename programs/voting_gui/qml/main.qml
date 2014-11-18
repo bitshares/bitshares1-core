@@ -62,15 +62,16 @@ ApplicationWindow {
 
       checkpoints: ListModel {
          ListElement {
+            title: "Welcome"
+            page: "WelcomePage.qml"
+         }
+         ListElement {
             title: "Identification"
             page: "IdentificationPage.qml"
          }
          ListElement {
             title: "Verification"
             page: "VerificationPage.qml"
-         }
-         ListElement {
-            title: "Registration"
          }
          ListElement {
             title: "Voting"
@@ -88,9 +89,7 @@ ApplicationWindow {
          right: parent.right
          bottom: parent.bottom
       }
-      initialItem: IdentificationPage {
-         enableCamera: Stack.status === Stack.Activating || Stack.status === Stack.Active
-      }
+      initialItem: WelcomePage {}
       delegate: StackViewDelegate {
          function transitionFinished(properties)
          {

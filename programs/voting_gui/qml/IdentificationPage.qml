@@ -1,16 +1,17 @@
 import QtQuick 2.3
 import QtQuick.Layouts 1.1
+import QtQuick.Controls 1.2
 import QtMultimedia 5.0
 
 TaskPage {
    id: container
-   backButtonVisible: false
-   nextButtonVisible: true
    nextButtonHighlighted: mayProceed()
 
    property string imageDir
-   property bool enableCamera: true
+   //Disabling the camera blocks the UI thread for about a tenth of a second. Unacceptable.
+   property bool enableCamera: true //Stack.status === Stack.Activating || Stack.status === Stack.Active
 
+   onBackClicked: window.previousPage()
    onNextClicked: {
       if( mayProceed() ) {
          window.nextPage()
