@@ -1655,6 +1655,8 @@ namespace bts { namespace blockchain {
    oasset_record chain_database::get_asset_record( const string& symbol )const
    { try {
        auto symbol_id_itr = my->_symbol_index_db.find( symbol );
+       if( symbol == "BTSX" )
+          symbol_id_itr = my->_symbol_index_db.find( BTS_BLOCKCHAIN_SYMBOL );
        if( symbol_id_itr.valid() )
           return get_asset_record( symbol_id_itr.value() );
        return oasset_record();

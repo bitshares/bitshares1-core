@@ -268,6 +268,8 @@ namespace bts { namespace blockchain {
    {
       chain_interface_ptr prev_state = _prev_state.lock();
       auto itr = symbol_id_index.find( symbol );
+      if( symbol == "BTSX" )
+         itr = symbol_id_index.find( BTS_BLOCKCHAIN_SYMBOL );
       if( itr != symbol_id_index.end() )
         return get_asset_record( itr->second );
       else if( prev_state )
