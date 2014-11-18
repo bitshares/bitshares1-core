@@ -1178,7 +1178,7 @@ namespace detail {
                              "Account name is already registered under a different key! Provided: ${p}, registered: ${r}",
                              ("p",key)("r",current_registered_account->active_key()) );
 
-      if( current_registered_account->is_retracted() )
+      if( current_registered_account.valid() && current_registered_account->is_retracted() )
           FC_CAPTURE_AND_THROW( account_retracted, (current_registered_account) );
 
       auto current_account = my->_wallet_db.lookup_account( account_name );
@@ -1664,9 +1664,7 @@ namespace detail {
 
    std::shared_ptr<transaction_builder> wallet::create_transaction_builder()
    { try {
-       auto builder = std::make_shared<transaction_builder>( my.get() );
-       builder->transaction_record.trx.expiration = blockchain::now() + get_transaction_expiration();
-       return builder;
+       return std::make_shared<transaction_builder>( my.get() );
    } FC_CAPTURE_AND_RETHROW() }
 
    std::shared_ptr<transaction_builder> wallet::create_transaction_builder(const transaction_builder& old_builder)
