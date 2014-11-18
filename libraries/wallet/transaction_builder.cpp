@@ -783,24 +783,25 @@ void transaction_builder::pay_fee()
 
 
 transaction_builder& transaction_builder::withdraw_from_balance(const balance_id_type& from, const share_type& amount)
-{
+{ try {
     // TODO ledger entries
     auto obalance = _wimpl->_blockchain->get_balance_record( from );
-    if( obalance.valid(), "No such balance!" )
+    if( obalance.valid() )
     {
         trx.withdraw( from, amount );
         for( const auto& owner : obalance->owners() )
             required_signatures.insert( owner );
     } else // We go ahead and try to use this balance ID as an owner
     {
-        auto balances = _wimpl->self->get_address_balances( address(from) );
+        auto balances = _wimpl->_blockchain->get_balances_for_address( address(from) );
         FC_ASSERT( balances.size() > 0, "No balance with that ID or owner address!" );
         auto balance = balances[0];
+        trx.withdraw( balance.id(), amount );
         for(const auto& owner : balance.owners() )
             required_signatures.insert( owner );
     }
     return *this;
-}
+} FC_CAPTURE_AND_RETHROW( (from)(amount) ) }
 
 transaction_builder& transaction_builder::deposit_to_balance(const balance_id_type& to,
                                                              const asset& amount,

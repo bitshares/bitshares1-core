@@ -2879,6 +2879,8 @@ namespace detail {
       record.fee = required_fees;
       record.extra_addresses.push_back( to_address );
       record.trx = trx;
+      if( sign )
+          my->cache_transaction( trx, record );
 
       return record;
 

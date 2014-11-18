@@ -678,8 +678,7 @@
             }
           ],
         "prerequisites" : ["wallet_unlocked"],
-        "aliases" : ["transfer_public"],
-        "is_const": true
+        "aliases" : ["transfer_public"]
     },
     {
         "method_name": "wallet_multisig_get_balance_id",
