@@ -303,6 +303,19 @@ vector<asset_record> detail::client_impl::blockchain_list_assets( const string& 
    return _chain_db->get_assets( first, limit );
 }
 
+vector<price> detail::client_impl::blockchain_list_feed_prices()const
+{
+    vector<price> feed_prices;
+    const auto scan_asset = [&]( const asset_record& record )
+    {
+        const oprice median_price = _chain_db->get_median_delegate_price( record.id, asset_id_type( 0 ) );
+        if( !median_price.valid() ) return;
+        feed_prices.push_back( *median_price );
+    };
+    _chain_db->scan_assets( scan_asset );
+    return feed_prices;
+}
+
 variant_object client_impl::blockchain_get_info() const
 {
    auto info = fc::mutable_variant_object();

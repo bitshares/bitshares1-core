@@ -84,6 +84,12 @@ namespace bts { namespace blockchain {
               FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
           current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
+
+          if( current_record->is_retracted() && current_record->is_delegate() )
+          {
+              if( current_record->delegate_info->pay_balance > 0 )
+                  FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
+          }
       }
       else
       {

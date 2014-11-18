@@ -46,6 +46,10 @@
          "cpp_return_type" : "std::map<std::string,double>"
       },
       {
+         "type_name" : "price_array",
+         "cpp_return_type" : "std::vector<bts::blockchain::price>"
+      },
+      {
          "type_name" : "wallet_balance_record",
          "cpp_return_type" : "bts::wallet::wallet_balance_record"
       },

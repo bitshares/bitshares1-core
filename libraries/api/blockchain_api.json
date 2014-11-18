@@ -142,6 +142,14 @@
         "prerequisites" : ["no_prerequisites"]
       },
       {
+        "method_name": "blockchain_list_feed_prices",
+        "description": "Returns a list of all currently valid feed prices",
+        "return_type": "price_array",
+        "parameters" : [],
+        "is_const" : true,
+        "prerequisites" : ["no_prerequisites"]
+      },
+      {
         "method_name": "blockchain_get_account_wall",
         "description": "returns all burn records associated with an account",
         "return_type": "burn_records",
