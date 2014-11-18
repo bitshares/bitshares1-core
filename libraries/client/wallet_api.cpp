@@ -505,6 +505,13 @@ wallet_account_record detail::client_impl::wallet_get_account(const string& acco
   return _wallet->get_account( account_name );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
+address detail::client_impl::wallet_get_account_public_address(const string& account_name) const
+{ try {
+  auto acct = _wallet->get_account( account_name );
+  return acct.owner_address();
+} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+
 vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
                                                                                     const string& asset_symbol,
                                                                                     int32_t limit,
