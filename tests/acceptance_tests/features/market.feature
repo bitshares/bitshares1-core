@@ -52,8 +52,11 @@ Scenario: Alice shorts BitUSD with price limit, price feed moves short executes,
   When Bob submits bid for 1000 XTS at 0.01 USD/XTS
   And Bob waits for 2 blocks
   Then Bob should have around 50 USD and 1,000 XTS
+  When Bob cancels all ask orders
+  And Bob waits for 1 block
+  Then Bob should have around 50 USD and 1,000 XTS
 
-@current @pause
+
 Scenario: Alice shorts BitUSD and sells to Bob, and later Alice uses relative order to buy back Bob's BitUSD
   Given I'm Alice
   And feed price is 0.01 USD/XTS
@@ -69,8 +72,11 @@ Scenario: Alice shorts BitUSD and sells to Bob, and later Alice uses relative or
 
   And I submit ask for 10,000 XTS at 0.012 USD/XTS
   And I wait for 1 block
-  #And Bob submits relative ask for 8,000 XTS at 110% of USD/XTS feed price
   And Bob submits relative bid for 8,000 XTS at 0.001 USD/XTS above feed price
+  And Bob should have the following USD/XTS market order:
+  | Type        |  |  |
+  | bid_order   |  |  |
+
   #And Bob submits bid for 8,000 XTS at 0.012 USD/XTS
 
 
