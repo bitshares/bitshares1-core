@@ -4,6 +4,9 @@ import QtMultimedia 5.0
 
 TaskPage {
    id: container
+   backButtonVisible: false
+   nextButtonVisible: true
+   nextButtonHighlighted: mayProceed()
 
    property string imageDir
    property bool enableCamera: true

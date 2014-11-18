@@ -117,6 +117,10 @@ TaskPage {
             target: statusText
             text: qsTr("Your identity has been verified successfully. Please proceed to the next step.")
          }
+         PropertyChanges {
+            target: container
+            nextButtonHighlighted: true
+         }
       },
       State {
          name: "REJECTED"
@@ -132,6 +136,10 @@ TaskPage {
             target: statusText
             text: qsTr("The election identity officials have rejected your identity. Please return to the previous " +
                        "step, correct any problems, and resubmit your request.")
+         }
+         PropertyChanges {
+            target: container
+            backButtonHighlighted: true
          }
       }
 
