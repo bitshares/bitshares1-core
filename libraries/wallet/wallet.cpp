@@ -1636,6 +1636,13 @@ namespace detail {
        return builder;
    } FC_CAPTURE_AND_RETHROW() }
 
+   std::shared_ptr<transaction_builder> wallet::create_transaction_builder(const transaction_builder& old_builder)
+   { try {
+       auto builder = std::make_shared<transaction_builder>( old_builder, my.get() );
+       return builder;
+   } FC_CAPTURE_AND_RETHROW() }
+
+
    wallet_transaction_record wallet::publish_feeds(
            const string& account_to_publish_under,
            map<string,double> amount_per_xts, // map symbol to amount per xts
@@ -2791,8 +2798,6 @@ namespace detail {
 
       signed_transaction     trx;
       unordered_set<address> required_signatures;
-
-      trx.expiration = blockchain::now() + get_transaction_expiration();
 
       const auto required_fees = get_transaction_fee( asset_to_transfer.asset_id );
       if( required_fees.asset_id == asset_to_transfer.asset_id )
