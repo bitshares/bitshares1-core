@@ -8,6 +8,8 @@ TaskPage {
    property variant verifiers: ["verifier"]
    property string account_name
 
+   onBackClicked: window.previousPage()
+
    function processResponse(response) {
       // @disable-check M126
       if( response.response == null ) {
@@ -101,6 +103,10 @@ TaskPage {
             text: qsTr("The election identity verification officials are currently processing your information. " +
                        "When they finish, their response will be displayed here. You may proceed to the next step " +
                        "while waiting for their response.")
+         }
+         PropertyChanges {
+            target: container
+            nextButtonHighlighted: true
          }
       },
       State {

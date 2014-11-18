@@ -18,6 +18,10 @@ ApplicationWindow {
       roadMap.checkpointsComplete++
       votingUiStack.push({"item": Qt.resolvedUrl(roadMap.currentCheckpoint.page)})
    }
+   function previousPage() {
+      roadMap.checkpointsComplete--
+      votingUiStack.pop()
+   }
 
    Connections {
       target: bitshares
