@@ -1,3 +1,8 @@
+Given(/^([A-Z]+)\/([A-Z]+) market$/) do |symbol1, symbol2|
+  @market_asset1 = get_asset_by_name(symbol1)
+  @market_asset2 = get_asset_by_name(symbol2)
+end
+
 Given(/^feed price is (.+) ([A-Z]+)\/XTS$/) do |price, symbol|
   @feed_price = price.to_f
   node = @testnet.delegate_node
@@ -49,25 +54,35 @@ Then(/^Bob's balance should increase by ([\d,\.]+) USD$/) do |arg1|
   pending # express the regexp above with the code you wish you had
 end
 
-Then(/^(\w+) should have the following ([A-Z]+)\/([A-Z]+) market orders?:$/) do |name, symbol1, symbol2, orders_table|
+Then(/^(\w+) should have the following market orders?:$/) do |name, orders_table|
   actor = get_actor(name)
   orders_table.hashes.each do |o|
-    orders = actor.node.exec 'wallet_market_order_list', symbol1, symbol2, 0
+    orders = actor.node.exec 'wallet_market_order_list', @market_asset1['symbol'], @market_asset2['symbol'], -1
     found = exist_order(orders, o)
     raise "Order not found: #{o} in #{orders}" unless found
   end
 end
 
-Then(/^(\w+) should have no ([A-Z]+)\/([A-Z]+) (\w+) orders$/) do |name, symbol1, symbol2, type|
+Then(/^(\w+) should have no (\w+) orders$/) do |name, type|
   type = 'cover' if type == 'margin'
   actor = get_actor(name)
-  orders = actor.node.exec 'wallet_market_order_list', symbol1, symbol2, 0
+  orders = actor.node.exec 'wallet_market_order_list', @market_asset1['symbol'], @market_asset2['symbol'], -1
   found = exist_order_type(orders, type+'_order')
   raise 'Order exists!' if found
 end
 
-When(/^(\w+) cancels? (first|last|all) (bid|ask) orders$/) do |name, which_order, order_type|
+When(/^(\w+) cancels? (first|last|all) (bid|ask|short) orders$/) do |name, selector, order_type|
+  order_type = order_type + '_order'
   actor = get_actor(name)
-  #STDOUT.puts
-
+  orders = actor.node.exec 'wallet_market_order_list', @market_asset1['symbol'], @market_asset2['symbol'], -1
+  raise 'No orders to cancel' if orders.empty?
+  if selector == 'all'
+    orders.each do |order|
+      actor.node.exec('wallet_market_cancel_order', order[0]) if order[1]['type'] == order_type
+    end
+  elsif selector == 'first'
+    actor.node.exec('wallet_market_cancel_order', orders.first[0]) if orders.first[1]['type'] == order_type
+  elsif selector == 'last'
+    actor.node.exec('wallet_market_cancel_order', orders.last[0]) if orders.last[1]['type'] == order_type
+  end
 end
