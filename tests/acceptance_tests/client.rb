@@ -107,8 +107,8 @@ if $0 == __FILE__
   client_binary = "#{ENV['BTS_BUILD']}/programs/client/bitshares_client"
   client_node = BitSharesNode.new client_binary, data_dir: "tmp/client_a", genesis: "test_genesis.json", http_port: 5680, delegate: false
   client_node.start
-  client_node.exec 'create', 'default', '123456789'
-  client_node.exec 'unlock', '9999999', '123456789'
+  client_node.exec 'create', 'default', 'password'
+  client_node.exec 'unlock', '9999999', 'password'
   puts "client node is up and running on port 5680"
   STDIN.getc
 end

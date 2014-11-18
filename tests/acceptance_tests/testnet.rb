@@ -46,8 +46,8 @@ module BitShares
       FileUtils.rm_rf td('delegate_wallet_backup.json')
       FileUtils.rm_rf td('alice_wallet_backup.json')
       FileUtils.rm_rf td('bob_wallet_backup.json')
-      @delegate_node.exec 'wallet_create', 'default', '123456789'
-      @delegate_node.exec 'wallet_unlock', '9999999', '123456789'
+      @delegate_node.exec 'wallet_create', 'default', 'password'
+      @delegate_node.exec 'wallet_unlock', '9999999', 'password'
 
       File.open('genesis.json.keypairs') do |f|
         counter = 0
@@ -86,9 +86,9 @@ module BitShares
 
     def quick_bootstrap
       log '========== quick bootstrap ==========='
-      @delegate_node.exec 'wallet_backup_restore', td('delegate_wallet_backup.json'), 'default', '123456789'
-      @alice_node.exec 'wallet_backup_restore', td('alice_wallet_backup.json'), 'default', '123456789'
-      @bob_node.exec 'wallet_backup_restore', td('bob_wallet_backup.json'), 'default', '123456789'
+      @delegate_node.exec 'wallet_backup_restore', td('delegate_wallet_backup.json'), 'default', 'password'
+      @alice_node.exec 'wallet_backup_restore', td('alice_wallet_backup.json'), 'default', 'password'
+      @bob_node.exec 'wallet_backup_restore', td('bob_wallet_backup.json'), 'default', 'password'
     end
 
     def wait_nodes(nodes)
@@ -146,10 +146,10 @@ module BitShares
       if quick
         quick_bootstrap
       else
-        @alice_node.exec 'wallet_create', 'default', '123456789'
-        @alice_node.exec 'wallet_unlock', '9999999', '123456789'
-        @bob_node.exec 'wallet_create', 'default', '123456789'
-        @bob_node.exec 'wallet_unlock', '9999999', '123456789'
+        @alice_node.exec 'wallet_create', 'default', 'password'
+        @alice_node.exec 'wallet_unlock', '9999999', 'password'
+        @bob_node.exec 'wallet_create', 'default', 'password'
+        @bob_node.exec 'wallet_unlock', '9999999', 'password'
         full_bootstrap
       end
 
