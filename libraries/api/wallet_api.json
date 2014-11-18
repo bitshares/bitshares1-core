@@ -709,11 +709,6 @@
         "parameters":
         [
             {
-              "name": "from_name",
-              "type": "string",
-              "description": "TITAN name to withdraw from"
-            },
-            {
               "name": "amount",
               "type": "string",
               "description": "how much to transfer"
@@ -722,6 +717,11 @@
               "name": "symbol",
               "type": "string",
               "description": "which asset"
+            },
+            {
+              "name": "from_name",
+              "type": "string",
+              "description": "TITAN name to withdraw from"
             },
             {
               "name": "m",
@@ -750,16 +750,6 @@
         "parameters":
         [
             {
-              "name": "from",
-              "type": "address",
-              "description": "multisig balance ID to withdraw from"
-            },
-            {
-              "name": "to_address",
-              "type": "address",
-              "description": "address to receive funds"
-            },
-            {
               "name": "amount",
               "type": "string",
               "description": "how much to transfer"
@@ -768,6 +758,17 @@
               "name": "symbol",
               "type": "string",
               "description": "which asset"
+            },
+
+            {
+              "name": "from",
+              "type": "address",
+              "description": "multisig balance ID to withdraw from"
+            },
+            {
+              "name": "to_address",
+              "type": "address",
+              "description": "address to receive funds"
             },
             {
               "name" : "vote_method",
@@ -800,6 +801,43 @@
         ],
         "prerequisites": ["json_authenticated"],
         "aliases": ["add_signature"]
+      },
+      {
+        "method_name": "wallet_builder_transfer_without_signature",
+        "description": "Review a transaction and add a signature.",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+                "name": "amount",
+                "type": "string",
+                "description": ""
+            },
+            {
+                "name": "symbol",
+                "type": "string",
+                "description": ""
+            },
+            {
+                "name": "from",
+                "type": "address",
+                "description": "Address to withdraw from"
+            },
+            {
+                "name": "to",
+                "type": "address",
+                "description": "Address to deposit to",
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["transfer_unsigned"],
+        "is_const": true
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",

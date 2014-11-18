@@ -305,9 +305,9 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
 */
 
 wallet_transaction_record detail::client_impl::wallet_multisig_deposit(
-                                                    const string& from_name,
                                                     const string& amount,
                                                     const string& symbol,
+                                                    const string& from_name,
                                                     uint32_t m,
                                                     const vector<address>& addresses,
                                                     const vote_selection_method& vote_method )
@@ -337,11 +337,26 @@ transaction_builder   detail::client_impl::wallet_withdraw_from_multisig(
 
 */
 
-transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
-                                                    const balance_id_type& from,
-                                                    const address& to_address,
+transaction_builder detail::client_impl::wallet_builder_transfer_without_signature(
                                                     const string& amount,
                                                     const string& symbol,
+                                                    const address& from,
+                                                    const address& to_address,
+                                                    const vote_selection_method& vote_method )const
+{
+    asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
+    auto builder = _wallet->create_transaction_builder();
+    auto fee = _wallet->get_transaction_fee();
+    builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
+    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    return *builder;
+}
+
+transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const balance_id_type& from,
+                                                    const address& to_address,
                                                     const vote_selection_method& vote_method )const
 {
     asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
@@ -358,9 +373,11 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
                                             const transaction_builder& builder,
                                             bool broadcast )
 {
-    transaction_builder b2(builder);
-    b2.sign();
-    return b2;
+    auto b2 = _wallet->create_transaction_builder( builder );
+    b2->sign();
+    if( broadcast )
+        network_broadcast_transaction( b2->transaction_record.trx );
+    return *b2;
 }
 
 wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
