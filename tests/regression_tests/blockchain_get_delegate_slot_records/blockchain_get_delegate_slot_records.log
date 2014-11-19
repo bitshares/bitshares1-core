@@ -34,28 +34,28 @@ default (unlocked) >>> blockchain_get_delegate_slot_records delegate42 1
 [{
     "start_time": "2014-06-20T14:40:30",
     "block_producer_id": 43,
-    "block_id": "4a4bf707dcfc303f674db2c891b947e46757485f"
+    "block_id": "be65bf3271baf68ace61084830450d2291be0189"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate43 1
 [{
     "start_time": "2014-06-20T14:40:40",
     "block_producer_id": 44,
-    "block_id": "f2082c1b9dc749e64b5a3f419119c270d89b3bde"
+    "block_id": "e817eae0dff2956511c0b81976c8de4afd0da65d"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate44 -1
 [{
     "start_time": "2014-06-20T14:40:50",
     "block_producer_id": 45,
-    "block_id": "01d1b34a03ef93dfe251f163a395cc022a051e53"
+    "block_id": "280bd61b247aa16d526a1be1208df0989c0676e0"
   }
 ]
 default (unlocked) >>> blockchain_get_delegate_slot_records delegate45 4
 [{
     "start_time": "2014-06-20T14:41:00",
     "block_producer_id": 46,
-    "block_id": "78e044b6901002cfc7b887562b75f0fff6d35a59"
+    "block_id": "b4b4011639e77a14b7ac6ee1e8972ad7fef6fd6b"
   }
 ]
 default (unlocked) >>> quit

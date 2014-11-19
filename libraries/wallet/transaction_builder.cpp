@@ -5,8 +5,6 @@
 #include <bts/blockchain/market_engine.hpp>
 #include <bts/blockchain/time.hpp>
 
-#include <bts/cli/pretty.hpp>
-
 #include <fc/crypto/sha256.hpp>
 
 using namespace bts::wallet;
@@ -140,16 +138,20 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
                                                         const string& memo, vote_selection_method vote_method,
                                                         fc::optional<public_key_type> memo_sender)
 { try {
-   if( amount.amount <= 0 )
-      FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
-   optional<public_key_type> titan_one_time_key;
-
    if( recipient.is_retracted() )
        FC_CAPTURE_AND_THROW( account_retracted, (recipient) );
+
+   if( amount.amount <= 0 )
+      FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
+
+   // Don't automatically truncate memos as long as users still depend on them via deposit ops rather than mail
+   if( memo.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+       FC_CAPTURE_AND_THROW( memo_too_long, (memo) );
 
    if( !memo_sender.valid() )
        memo_sender = payer.active_key();
 
+   optional<public_key_type> titan_one_time_key;
    if( recipient.is_public_account() )
    {
       trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
@@ -159,7 +161,7 @@ transaction_builder& transaction_builder::deposit_asset(const bts::wallet::walle
       trx.deposit_to_account(recipient.active_key(),
                              amount,
                              _wimpl->self->get_private_key(*memo_sender),
-                             cli::pretty_shorten(memo, BTS_BLOCKCHAIN_MAX_MEMO_SIZE),
+                             memo,
                              _wimpl->select_slate(trx, amount.asset_id, vote_method),
                              *memo_sender,
                              one_time_key,
@@ -220,13 +222,14 @@ transaction_builder& transaction_builder::deposit_asset_to_multisig(
       FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
 
    auto payer = _wimpl->_wallet_db.lookup_account( from_name );
+   auto fee = _wimpl->self->get_transaction_fee();
    FC_ASSERT(payer.valid(), "No such account");
    multisig_meta_info info;
    info.required = m;
    info.owners = set<address>(addresses.begin(), addresses.end());
    trx.deposit_multisig(info, amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
 
-   deduct_balance(payer->owner_key, amount);
+   deduct_balance(payer->owner_key, amount + fee);
 
    ledger_entry entry;
    entry.from_account = payer->owner_key;
@@ -245,13 +248,23 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
                                                         const string& memo, vote_selection_method vote_method,
                                                         fc::optional<public_key_type> memo_sender)
 { try {
+   if( recipient.is_retracted() )
+       FC_CAPTURE_AND_THROW( account_retracted, (recipient) );
+
+   if( escrow_agent.is_retracted() )
+       FC_CAPTURE_AND_THROW( account_retracted, (escrow_agent) );
+
    if( amount.amount <= 0 )
       FC_THROW_EXCEPTION( invalid_asset_amount, "Cannot deposit a negative amount!" );
-   optional<public_key_type> titan_one_time_key;
+
+   // Don't automatically truncate memos as long as users still depend on them via deposit ops rather than mail
+   if( memo.size() > BTS_BLOCKCHAIN_MAX_MEMO_SIZE )
+       FC_CAPTURE_AND_THROW( memo_too_long, (memo) );
 
    if( !memo_sender.valid() )
        memo_sender = payer.active_key();
 
+   optional<public_key_type> titan_one_time_key;
    if( recipient.is_public_account() )
    {
       trx.deposit(recipient.active_key(), amount, _wimpl->select_slate(trx, amount.asset_id, vote_method));
@@ -263,7 +276,7 @@ transaction_builder& transaction_builder::deposit_asset_with_escrow(const bts::w
                              agreement,
                              amount,
                              _wimpl->self->get_private_key(*memo_sender),
-                             cli::pretty_shorten(memo, BTS_BLOCKCHAIN_MAX_MEMO_SIZE),
+                             memo,
                              _wimpl->select_slate(trx, amount.asset_id, vote_method),
                              *memo_sender,
                              one_time_key,
@@ -688,6 +701,12 @@ transaction_builder& transaction_builder::finalize()
       else _wimpl->withdraw_to_transaction(-balance, account_name, trx, required_signatures);
    }
 
+   trx.expiration = blockchain::now() + _wimpl->self->get_transaction_expiration();
+
+   transaction_record.record_id = trx.permanent_id();
+   transaction_record.created_time = blockchain::now();
+   transaction_record.received_time = transaction_record.created_time;
+
    return *this;
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
@@ -706,7 +725,7 @@ wallet_transaction_record& transaction_builder::sign()
    for( auto& notice : notices )
       notice.first.trx = trx;
 
-   _wimpl->cache_transaction(trx, transaction_record);
+//   _wimpl->cache_transaction(trx, transaction_record);
    return transaction_record;
 }
 
@@ -764,15 +783,25 @@ void transaction_builder::pay_fee()
 
 
 transaction_builder& transaction_builder::withdraw_from_balance(const balance_id_type& from, const share_type& amount)
-{
+{ try {
     // TODO ledger entries
-    auto balance_rec = _wimpl->_blockchain->get_balance_record( from );
-    FC_ASSERT( balance_rec.valid(), "No such balance!" );
-    trx.withdraw( from, amount );
-    for( const auto& owner : balance_rec->owners() )
-        required_signatures.insert( owner );
+    auto obalance = _wimpl->_blockchain->get_balance_record( from );
+    if( obalance.valid() )
+    {
+        trx.withdraw( from, amount );
+        for( const auto& owner : obalance->owners() )
+            required_signatures.insert( owner );
+    } else // We go ahead and try to use this balance ID as an owner
+    {
+        auto balances = _wimpl->_blockchain->get_balances_for_address( address(from) );
+        FC_ASSERT( balances.size() > 0, "No balance with that ID or owner address!" );
+        auto balance = balances[0];
+        trx.withdraw( balance.id(), amount );
+        for(const auto& owner : balance.owners() )
+            required_signatures.insert( owner );
+    }
     return *this;
-}
+} FC_CAPTURE_AND_RETHROW( (from)(amount) ) }
 
 transaction_builder& transaction_builder::deposit_to_balance(const balance_id_type& to,
                                                              const asset& amount,
@@ -788,10 +817,8 @@ bool transaction_builder::withdraw_fee()
 {
    //At this point, we'll require XTS.
    // for each asset type in my wallet... get transaction fee in that asset type..
-   ulog("iterating through outstanding balanaces...");
    for( const auto& item : outstanding_balances )
    {
-      ulog("oustanding balance 1");
       auto current_asset_id = item.first.second;
       asset final_fee = _wimpl->self->get_transaction_fee(current_asset_id);
 
@@ -802,24 +829,20 @@ bool transaction_builder::withdraw_fee()
       if( !account_rec || !account_rec->is_my_account )
          continue;
 
-      ulog("oustanding balance 2");
       //Does this bag holder have any money I can take?
       account_balance_summary_type balances = _wimpl->self->get_account_balances(account_rec->name);
       if( balances.empty() )
          continue;
 
-      ulog("oustanding balance 3");
       //Does this bag holder have enough XTS?
       auto balance_map = balances.begin()->second;
       if( balance_map.find(current_asset_id) == balance_map.end() ||
           balance_map[current_asset_id] < final_fee.amount )
          continue;
 
-      ulog("oustanding balance 4");
       deduct_balance(bag_holder, final_fee);
       transaction_record.fee = final_fee;
       return true;
    }
-   ulog("done iterating");
    return false;
 }

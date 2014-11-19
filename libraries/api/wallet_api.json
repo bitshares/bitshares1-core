@@ -679,7 +679,6 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer_public"]
-        "is_const": true
     },
     {
         "method_name": "wallet_multisig_get_balance_id",
@@ -709,11 +708,6 @@
         "parameters":
         [
             {
-              "name": "from_name",
-              "type": "string",
-              "description": "TITAN name to withdraw from"
-            },
-            {
               "name": "amount",
               "type": "string",
               "description": "how much to transfer"
@@ -722,6 +716,11 @@
               "name": "symbol",
               "type": "string",
               "description": "which asset"
+            },
+            {
+              "name": "from_name",
+              "type": "string",
+              "description": "TITAN name to withdraw from"
             },
             {
               "name": "m",
@@ -741,7 +740,51 @@
             }
         ],
         "prerequisites": ["json_authenticated"],
-        "aliases": ["transfer_to_multisig"],
+        "aliases": ["transfer_to_multisig"]
+    },
+    {
+        "method_name": "wallet_withdraw_from_address",
+        "description": "",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+
+            {
+              "name": "from_address",
+              "type": "address",
+              "description": "the balance address to withdraw from"
+            },
+            {
+              "name": "to",
+              "type": "string",
+              "description": "address or account to receive funds"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["withdraw_from_address"],
+        "is_const": true
     },
     {
         "method_name": "wallet_multisig_withdraw_start",
@@ -749,6 +792,17 @@
         "return_type": "transaction_builder",
         "parameters":
         [
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+
             {
               "name": "from",
               "type": "address",
@@ -760,16 +814,6 @@
               "description": "address to receive funds"
             },
             {
-              "name": "amount",
-              "type": "string",
-              "description": "how much to transfer"
-            },
-            {
-              "name": "symbol",
-              "type": "string",
-              "description": "which asset"
-            },
-            {
               "name" : "vote_method",
               "type" : "vote_selection_method",
               "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
@@ -779,8 +823,8 @@
         "prerequisites": ["json_authenticated"],
         "aliases": ["withdraw_from_multisig"],
         "is_const": true
-      },
-      {
+    },
+    {
         "method_name": "wallet_builder_add_signature",
         "description": "Review a transaction and add a signature.",
         "return_type": "transaction_builder",
@@ -1178,6 +1222,20 @@
                   "name" : "account_name",
                   "type" : "account_name",
                   "description" : "the name of the account to retrieve"
+               }
+            ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_get_account_public_address",
+         "description" : "Get the account record for a given name",
+         "return_type" : "address",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the account whose public address you want"
                }
             ],
          "is_const" : true,

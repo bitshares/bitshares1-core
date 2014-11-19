@@ -55,14 +55,6 @@ namespace bts { namespace blockchain {
       void evaluate( transaction_evaluation_state& eval_state );
    };
 
-   /**
-    *  Updates the key used for signing blocks for a given
-    *  delegate.  Must be signed by one of:
-    *
-    *  1) Owner Key
-    *  2) Active Key
-    *  3) Current Block Signing Key
-    */
    struct update_block_signing_key
    {
       static const operation_type_enum  type;

@@ -349,14 +349,17 @@ namespace bts { namespace blockchain {
       for( const auto& item : r.active_key_history )
       {
           const public_key_type& active_key = item.second;
-          if( active_key != public_key_type() )
-              key_to_account[ address( active_key ) ] = r.id;
+          if( active_key == public_key_type() ) continue;
+          key_to_account[ address( active_key ) ] = r.id;
       }
       if( r.is_delegate() )
       {
-          const public_key_type& signing_key = r.delegate_info->signing_key;
-          if( signing_key != public_key_type() )
+          for( const auto& item : r.delegate_info->signing_key_history )
+          {
+              const public_key_type& signing_key = item.second;
+              if( signing_key == public_key_type() ) continue;
               key_to_account[ address( signing_key ) ] = r.id;
+          }
       }
    }
 

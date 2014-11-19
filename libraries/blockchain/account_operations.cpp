@@ -50,7 +50,7 @@ namespace bts { namespace blockchain {
       {
           new_record.delegate_info = delegate_stats();
           new_record.delegate_info->pay_rate = this->delegate_pay_rate;
-          new_record.delegate_info->signing_key = this->active_key;
+          new_record.set_signing_key( eval_state._current_state->get_head_block_num(), this->active_key );
 
           const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
           eval_state.required_fees += reg_fee;
@@ -84,6 +84,12 @@ namespace bts { namespace blockchain {
               FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
           current_record->set_active_key( eval_state._current_state->now(), *this->active_key );
+
+          if( current_record->is_retracted() && current_record->is_delegate() )
+          {
+              if( current_record->delegate_info->pay_balance > 0 )
+                  FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
+          }
       }
       else
       {
@@ -110,7 +116,8 @@ namespace bts { namespace blockchain {
           {
               current_record->delegate_info = delegate_stats();
               current_record->delegate_info->pay_rate = this->delegate_pay_rate;
-              current_record->delegate_info->signing_key = current_record->active_key();
+              current_record->set_signing_key( eval_state._current_state->get_head_block_num(), current_record->active_key() );
+
               const asset reg_fee( eval_state._current_state->get_delegate_registration_fee( this->delegate_pay_rate ), 0 );
               eval_state.required_fees += reg_fee;
           }
@@ -187,13 +194,10 @@ namespace bts { namespace blockchain {
       if( existing_record.valid() )
           FC_CAPTURE_AND_THROW( account_key_in_use, (*existing_record) );
 
-      if( !eval_state.account_or_any_parent_has_signed( *account_rec ) )
+      if( !eval_state.check_signature( account_rec->signing_address() ) && !eval_state.account_or_any_parent_has_signed( *account_rec ) )
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );
 
-      account_rec->delegate_info->signing_key = this->block_signing_key;
-      account_rec->delegate_info->num_signing_key_changes++;
-      account_rec->delegate_info->last_signing_key_change_block_num = eval_state._current_state->get_head_block_num();
-      account_rec->delegate_info->next_secret_hash = optional<secret_hash_type>();
+      account_rec->set_signing_key( eval_state._current_state->get_head_block_num(), this->block_signing_key );
       account_rec->last_update = eval_state._current_state->now();
 
       eval_state._current_state->store_account_record( *account_rec );

@@ -78,6 +78,7 @@ const std::vector<private_key_type> import_wallet( const std::string& type, cons
 
         return import_bitcoin_wallet( filename, password );
     }
+#if 0
     else if( type == "armory" )
     {
         for( const auto& addr : armory_addresses )
@@ -85,6 +86,7 @@ const std::vector<private_key_type> import_wallet( const std::string& type, cons
 
         return import_armory_wallet( filename, password );
     }
+#endif
     else if( type == "electrum" )
     {
         for( const auto& addr : electrum_addresses )
@@ -92,6 +94,7 @@ const std::vector<private_key_type> import_wallet( const std::string& type, cons
 
         return import_electrum_wallet( filename, password );
     }
+#if 0
     else if( type == "multibit" )
     {
         for( const auto& addr : multibit_addresses )
@@ -99,6 +102,7 @@ const std::vector<private_key_type> import_wallet( const std::string& type, cons
 
         return import_multibit_wallet( filename, password );
     }
+#endif
 
     return std::vector<private_key_type>();
 }

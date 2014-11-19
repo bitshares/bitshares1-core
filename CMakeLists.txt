@@ -96,27 +96,48 @@ if( WIN32 )
 
     SET(TCL_LIBS "${TCL_LIBS}${TCL_LIB_PATH}/${TCL_LIB_NAME}g${TCL_LIB_EXT}")
     SET(TCL_LIBRARY ${TCL_LIBS})
-else( WIN32 )
-    # Apple AND Linux Options Here
-    find_package( ZLIB REQUIRED )
 
-    #set( LEVEL_DB_DIR "${CMAKE_SOURCE_DIR}/libraries/leveldb" )
-    #include( ExternalProject )
-    #ExternalProject_Add( LevelDB
-    #PREFIX "${LEVEL_DB_DIR}"
-    #SOURCE_DIR "${LEVEL_DB_DIR}"
-    #BUILD_IN_SOURCE 1
-    #CONFIGURE_COMMAND ""
-    #BUILD_COMMAND "$(MAKE)"
-    #INSTALL_COMMAND ""
-    #)
-    #include_directories( "${LEVEL_DB_DIR}" "${LEVEL_DB_DIR}/include" )
-    #add_library( leveldb STATIC IMPORTED )
-    #add_dependencies( leveldb LevelDB )
-    #set_property(TARGET leveldb PROPERTY IMPORTED_LOCATION "${LEVEL_DB_DIR}/libleveldb.a" )
+else( WIN32 ) # Apple AND Linux
 
-    set( LEVEL_DB_DIR vendor/leveldb-1.12.0 )
-    add_subdirectory( "${LEVEL_DB_DIR}"    )
+    set( LEVEL_DB_DIR "${CMAKE_SOURCE_DIR}/libraries/leveldb" )
+
+    file( GLOB LEVEL_DB_SOURCES
+          "${LEVEL_DB_DIR}/db/*.cc"
+          "${LEVEL_DB_DIR}/port/port_posix.cc"
+          "${LEVEL_DB_DIR}/helpers/memenv/memenv.cc"
+          "${LEVEL_DB_DIR}/table/*.cc"
+          "${LEVEL_DB_DIR}/util/*.cc"
+          )
+    foreach( filename ${LEVEL_DB_SOURCES} )
+        if( ${filename} MATCHES ".*_test.cc" OR ${filename} MATCHES ".*_bench.cc" OR ${filename} MATCHES ".*_main.cc" )
+            list( REMOVE_ITEM LEVEL_DB_SOURCES ${filename} )
+        endif()
+    endforeach()
+
+    add_library( leveldb ${LEVEL_DB_SOURCES} )
+    target_include_directories( leveldb PUBLIC "${LEVEL_DB_DIR}" "${LEVEL_DB_DIR}/include" )
+
+    find_package( Gperftools QUIET )
+    if( GPERFTOOLS_FOUND )
+        message( STATUS "Found gperftools; compiling LevelDB with TCMalloc")
+    else()
+        message( STATUS "Could not find gperftools; compiling LevelDB without TCMalloc")
+    endif()
+
+    add_definitions( -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT )
+    if( APPLE )
+        add_definitions( -DOS_MACOSX )
+        if( GPERFTOOLS_FOUND )
+            target_link_libraries( leveldb tcmalloc )
+        endif()
+    else() # Linux
+        add_definitions( -DOS_LINUX -DCYGWIN )
+        if( GPERFTOOLS_FOUND )
+            target_link_libraries( leveldb pthread tcmalloc )
+        else()
+            target_link_libraries( leveldb pthread )
+        endif()
+    endif()
 
     find_library(READLINE_LIBRARIES NAMES readline)
     find_path(READLINE_INCLUDE_DIR readline/readline.h)
@@ -131,7 +152,7 @@ else( WIN32 )
     else( APPLE )
         # Linux Specific Options Here
         message( STATUS "Configuring BitShares on Linux" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall -Wstack-usage=6144" )
         set( rt_library rt )
         set( pthread_library pthread)
         set( crypto_library crypto)
@@ -139,6 +160,10 @@ else( WIN32 )
           set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
         endif ( FULL_STATIC_BUILD )
     endif( APPLE )
+
+    if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-memcmp" )
+    endif()
 
     if( "${CMAKE_GENERATOR}" STREQUAL "Ninja" )
         if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )

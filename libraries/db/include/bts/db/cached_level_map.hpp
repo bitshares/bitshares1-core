@@ -1,8 +1,7 @@
 #pragma once
 #include <bts/db/level_map.hpp>
-#include <map>
-#include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
+#include <map>
 
 namespace bts { namespace db {
 
@@ -10,49 +9,51 @@ namespace bts { namespace db {
    class cached_level_map
    {
       public:
-         void open( const fc::path& dir, bool create = true, bool flush_on_store = true )
-         {
-           _flush_on_store = flush_on_store;
-           _db.open( dir, create );
-           for( auto itr = _db.begin(); itr.valid(); ++itr )
-              _cache[itr.key()]  = itr.value();
-         }
+        void open( const fc::path& dir, bool create = true, bool flush_on_store = true, bool sync_on_flush = false )
+        {
+          _db.open( dir, create );
+          for( auto itr = _db.begin(); itr.valid(); ++itr )
+             _cache[ itr.key() ]  = itr.value();
+          _flush_on_store = flush_on_store;
+          _sync_on_flush = sync_on_flush;
+        }
 
-         void close()
-         {
-            if(_pending_flush.valid() )
-               _pending_flush.wait();
-            else
-               flush();
-            _cache.clear();
-            _dirty.clear();
-            _dirty_remove.clear();
-            _db.close();
-         }
+        void close()
+        {
+           if(_pending_flush.valid() )
+              _pending_flush.wait();
+           else
+              flush();
+           _cache.clear();
+           _dirty.clear();
+           _dirty_remove.clear();
+           _db.close();
+        }
 
-         bool get_flush_on_store()
-         {
-            return _flush_on_store;
-         }
-         void set_flush_on_store( bool should_flush )
-         {
-            if( should_flush )
-               flush();
-            _flush_on_store = should_flush;
-         }
+        bool get_flush_on_store()
+        {
+           return _flush_on_store;
+        }
 
-         void flush()
-         {
-            typename level_map<Key, Value>::write_batch batch = _db.create_batch();
-            for( const auto& item : _dirty )
-              batch.store(item, _cache[item]);
-            for( const auto& item : _dirty_remove )
-              batch.remove(item);
-            batch.commit();
+        void set_flush_on_store( bool should_flush )
+        {
+           if( should_flush )
+              flush();
+           _flush_on_store = should_flush;
+        }
 
-            _dirty.clear();
-            _dirty_remove.clear();
-         }
+        void flush()
+        {
+           typename level_map<Key, Value>::write_batch batch = _db.create_batch( _sync_on_flush );
+           for( const auto& item : _dirty )
+             batch.store(item, _cache[item]);
+           for( const auto& item : _dirty_remove )
+             batch.remove(item);
+           batch.commit();
+
+           _dirty.clear();
+           _dirty_remove.clear();
+        }
 
         fc::optional<Value> fetch_optional( const Key& k )
         {
@@ -77,7 +78,7 @@ namespace bts { namespace db {
                  _dirty_remove.erase(key);
                  if( !_pending_flush.valid() || _pending_flush.ready() )
                     _pending_flush = fc::async( [this](){ flush(); }, "cached_level_map::flush" );
-                _db.store( key, value );
+                _db.store( key, value, _sync_on_flush );
              } else {
                  _dirty.insert(key);
                  _dirty_remove.erase(key);
@@ -105,7 +106,7 @@ namespace bts { namespace db {
            _cache.erase(key);
            if( _flush_on_store )
            {
-              _db.remove(key);
+              _db.remove( key, _sync_on_flush );
               _dirty.erase(key);
            } else {
               _dirty_remove.insert(key);
@@ -136,6 +137,7 @@ namespace bts { namespace db {
                    --_it;
                 return *this;
              }
+
              iterator  operator--(int) {
                 auto backup = *this;
                 operator--();
@@ -154,10 +156,12 @@ namespace bts { namespace db {
              typename CacheType::const_iterator _begin;
              typename CacheType::const_iterator _end;
         };
+
         iterator begin()const
         {
            return iterator( _cache.begin(), _cache.begin(), _cache.end() );
         }
+
         iterator last()
         {
            if( _cache.empty() )
@@ -169,6 +173,7 @@ namespace bts { namespace db {
         {
            return iterator( _cache.find(key), _cache.begin(), _cache.end() );
         }
+
         iterator lower_bound( const Key& key )
         {
            return iterator( _cache.lower_bound(key), _cache.begin(), _cache.end() );
@@ -190,7 +195,8 @@ namespace bts { namespace db {
         std::set<Key>            _dirty;
         std::set<Key>            _dirty_remove;
         level_map<Key,Value>     _db;
-        bool                     _flush_on_store;
+        bool                     _flush_on_store = true;
+        bool                     _sync_on_flush = false;
         fc::future<void>         _pending_flush;
    };
 

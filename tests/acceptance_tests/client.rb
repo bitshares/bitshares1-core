@@ -57,7 +57,7 @@ class BitSharesNode
 
     sleep 1.0
     
-    @rpc_instance = BitShares::API::Rpc.new(@options[:http_port], 'user', 'pass', ignore_errors: false, logger: @logger)
+    @rpc_instance = BitShares::API::Rpc.new(@options[:http_port], 'user', 'pass', ignore_errors: false, logger: @logger, instance_name: @name)
 
     return
 
@@ -101,14 +101,32 @@ class BitSharesNode
     File.write("#{@options[:data_dir]}/config.json", JSON.pretty_generate(config))
   end
 
+  def interactive_mode
+    STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' to exit"
+    ignore_errors = @rpc_instance.ignore_errors
+    @rpc_instance.ignore_errors = true
+    while true
+      STDOUT.print '> '
+      command = STDIN.gets
+      command.chomp!
+      break if command == 'exit'
+      next if command.empty?
+      params = command.split(' ')
+      method = params.shift
+      res = @rpc_instance.request(method, params)
+      STDOUT.puts JSON.pretty_generate(res) if res and not res.empty?
+    end
+    @rpc_instance.ignore_errors = ignore_errors
+  end
+
 end
 
 if $0 == __FILE__
   client_binary = "#{ENV['BTS_BUILD']}/programs/client/bitshares_client"
   client_node = BitSharesNode.new client_binary, data_dir: "tmp/client_a", genesis: "test_genesis.json", http_port: 5680, delegate: false
   client_node.start
-  client_node.exec 'create', 'default', '123456789'
-  client_node.exec 'unlock', '9999999', '123456789'
+  client_node.exec 'create', 'default', 'password'
+  client_node.exec 'unlock', '9999999', 'password'
   puts "client node is up and running on port 5680"
   STDIN.getc
 end
