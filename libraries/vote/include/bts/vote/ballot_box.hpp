@@ -23,6 +23,7 @@ public:
 
    void store_new_decision(const signed_voter_decision& decision);
    cast_decision get_decision(const digest_type& id);
+   vector<digest_type> list_decisions(const digest_type& skip_to_id, uint32_t limit);
    vector<digest_type> get_decisions_by_voter(const address& voter);
    vector<digest_type> get_decisions_by_contest(const digest_type& contest_id);
    vector<digest_type> get_decisions_by_ballot(const digest_type& ballot_id);
@@ -30,12 +31,14 @@ public:
    vector<string> get_all_write_ins();
    vector<digest_type> get_decisions_with_write_in(string write_in_name);
 
-   ballot get_ballot(const digest_type& id);
    void store_ballot(const vote::ballot& ballot);
+   ballot get_ballot(const digest_type& id);
+   vector<digest_type> list_ballots(const digest_type& skip_to_id, uint32_t limit);
    vector<digest_type> get_ballots_by_contest(const digest_type& contest_id);
 
-   contest get_contest(const digest_type& id);
    void store_contest(const vote::contest& contest);
+   contest get_contest(const digest_type& id);
+   vector<digest_type> list_contests(const digest_type& skip_to_id, uint32_t limit);
    vector<string> get_values_by_tag(string key);
    vector<digest_type> get_contests_by_tags(string key, string value);
    vector<digest_type> get_contests_by_contestant(string contestant);

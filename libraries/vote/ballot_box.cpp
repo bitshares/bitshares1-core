@@ -240,6 +240,23 @@ public:
       });
       return results;
    }
+   vector<digest_type> list_decisions(const digest_type& skip_to_id, uint32_t limit)
+   {
+      vector<digest_type> results;
+      auto& index = decision_index.get<by_id>();
+      auto itr = index.begin();
+      if( skip_to_id != digest_type() )
+      {
+         itr = index.find(skip_to_id);
+         if( itr != index.end() )
+            ++itr;
+      }
+
+      while( results.size() < limit && itr != index.end() )
+         results.emplace_back(itr++->id);
+
+      return results;
+   }
    vector<digest_type> get_decisions_by_voter(const address& voter)
    {
       return get_decisions_by_key<by_voter>(voter);
@@ -269,6 +286,27 @@ public:
       std::for_each(range.first, range.second, [&results](const std::pair<string,digest_type>& rec) {
          results.push_back(rec.second);
       });
+      return results;
+   }
+
+   template<typename LevelDB>
+   vector<digest_type> list_leveldb(LevelDB& db, const digest_type& skip_to_id, uint32_t limit)
+   {
+      vector<digest_type> results;
+      auto itr = db.begin();
+      if( skip_to_id != digest_type() )
+      {
+         itr = db.find(skip_to_id);
+         if( itr.valid() )
+            ++itr;
+      }
+
+      while( results.size() < limit && itr.valid() )
+      {
+         results.emplace_back(itr.key());
+         ++itr;
+      }
+
       return results;
    }
 
@@ -349,6 +387,11 @@ cast_decision ballot_box::get_decision(const digest_type& id)
    return my->decision_db.fetch(id);
 }
 
+vector<digest_type> ballot_box::list_decisions(const digest_type& skip_to_id, uint32_t limit)
+{
+   return my->list_decisions(skip_to_id, limit);
+}
+
 vector<digest_type> ballot_box::get_decisions_by_voter(const blockchain::address& voter)
 {
    return my->get_decisions_by_voter(voter);
@@ -379,6 +422,11 @@ ballot ballot_box::get_ballot(const digest_type& id)
    return my->ballot_db.fetch(id);
 }
 
+vector<digest_type> ballot_box::list_ballots(const digest_type& skip_to_id, uint32_t limit)
+{
+   return my->list_leveldb(my->ballot_db, skip_to_id, limit);
+}
+
 void ballot_box::store_ballot(const vote::ballot& ballot)
 {
    my->store_record(ballot);
@@ -392,6 +440,11 @@ vector<digest_type> ballot_box::get_ballots_by_contest(const digest_type& contes
 contest ballot_box::get_contest(const digest_type& id)
 {
    return my->contest_db.fetch(id);
+}
+
+vector<digest_type> ballot_box::list_contests(const digest_type& skip_to_id, uint32_t limit)
+{
+   return my->list_leveldb(my->contest_db, skip_to_id, limit);
 }
 
 void ballot_box::store_contest(const vote::contest& contest)

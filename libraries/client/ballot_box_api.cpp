@@ -6,7 +6,8 @@
 namespace bts { namespace client { namespace detail {
 using namespace bts::vote;
 
-#define SANITY_CHECK FC_ASSERT( _ballot_box, "Ballot Box must be enabled before using its API!" )
+#define SANITY_CHECK FC_ASSERT( _ballot_box && _ballot_box->is_open(), \
+                                "Ballot Box must be enabled before using its API!" )
 
 void client_impl::ballot_submit_decision(const signed_voter_decision& decision)
 {
@@ -18,6 +19,12 @@ cast_decision client_impl::ballot_get_decision(const fc::sha256& decision_id) co
 {
    SANITY_CHECK;
    return _ballot_box->get_decision(decision_id);
+}
+
+vector<digest_type> client_impl::ballot_list_decisions(const fc::sha256 &skip_until_id, uint32_t limit) const
+{
+   SANITY_CHECK;
+   return _ballot_box->list_decisions(skip_until_id, limit);
 }
 
 vector<digest_type> client_impl::ballot_get_decisions_by_voter(const address& voter_address) const
@@ -56,6 +63,12 @@ ballot client_impl::ballot_get_ballot_by_id(const fc::sha256& ballot_id) const
    return _ballot_box->get_ballot(ballot_id);
 }
 
+vector<digest_type> client_impl::ballot_list_ballots(const fc::sha256 &skip_until_id, uint32_t limit) const
+{
+   SANITY_CHECK;
+   return _ballot_box->list_ballots(skip_until_id, limit);
+}
+
 vector<digest_type> client_impl::ballot_get_ballots_by_contest(const fc::sha256& contest_id) const
 {
    SANITY_CHECK;
@@ -66,6 +79,12 @@ contest client_impl::ballot_get_contest_by_id(const fc::sha256 &contest_id) cons
 {
    SANITY_CHECK;
    return _ballot_box->get_contest(contest_id);
+}
+
+vector<digest_type> client_impl::ballot_list_contests(const fc::sha256 &skip_until_id, uint32_t limit) const
+{
+   SANITY_CHECK;
+   return _ballot_box->list_contests(skip_until_id, limit);
 }
 
 vector<string> client_impl::ballot_get_tag_values_by_key(const string &key) const
