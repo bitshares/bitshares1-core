@@ -81,7 +81,7 @@ And open http://localhost:5690 (or 5691/5692) in your browser.
 
 ### Troubleshooting
 
-All rpc calls are dumped to features.log, so if something went wrong examine features.log - this may give you some idea.
+All rpc calls are dumped to tmp/lastrun.log, so if something went wrong examine lastrun.log - this may give you some idea.
 
 Also you can always start from scratch by removing ./tmp dir
 

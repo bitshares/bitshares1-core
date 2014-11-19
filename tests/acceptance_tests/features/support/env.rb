@@ -1,3 +1,4 @@
+require 'io/console'
 require 'rspec/expectations'
 require 'logger'
 require './testnet.rb'
@@ -9,8 +10,8 @@ end
 class Helper
 
   def initialize
-    @logger = Logger.new('features.log')
-    @logger.info "\n\n____________________________________________________"
+    FileUtils.rm_rf('tmp/lastrun.log')
+    @logger = Logger.new('tmp/lastrun.log')
     @pause = false
   end
 
@@ -140,12 +141,32 @@ end
 
 After do |scenario|
   if @pause
-    STDOUT.puts '@pause: use the following urls to access the nodes:'
-    STDOUT.puts "delegate node: #{@testnet.delegate_node.url}"
-    STDOUT.puts "alice node: #{@testnet.alice_node.url}"
-    STDOUT.puts "bob node: #{@testnet.bob_node.url}"
-    STDOUT.puts 'press any key to shutdown testnet and continue..'
-    STDIN.getc
+    while true
+      STDOUT.puts '@pause: use the following urls to access the nodes via browser:'
+      STDOUT.puts "- delegate node: #{@testnet.delegate_node.url}"
+      STDOUT.puts "- alice node: #{@testnet.alice_node.url}"
+      STDOUT.puts "- bob node: #{@testnet.bob_node.url}"
+      STDOUT.puts 'or press [d],[a] or [b] to have console access'
+      STDOUT.puts 'or press any other key to shutdown testnet and continue..'
+      c = ''
+      begin
+        STDIN.echo = false
+        STDIN.raw!
+        c = STDIN.getc
+      ensure
+        STDIN.echo = true
+        STDIN.cooked!
+      end
+      if c == 'd'
+        @testnet.delegate_node.interactive_mode
+      elsif c == 'a'
+        @testnet.alice_node.interactive_mode
+      elsif c == 'b'
+        @testnet.bob_node.interactive_mode
+      else
+        break
+      end
+    end
   end
   @pause = false
   STDOUT.puts 'shutting down testnet..'
