@@ -52,6 +52,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
+Block Signing Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
@@ -73,8 +74,9 @@ Parameters:
 Returns:
   transaction_record
 default (unlocked) >>> wallet_account_update_active_key test test 5KgPRATnTBkT4nfNAy9AHrDDmCQxEQPkSwCgtm8cpSyZnGHrnJn
-Command failed with exception: key belongs to other account (20032)
-Key already belongs to another account!
+Command failed with exception: Assert Exception (10)
+*account_name == blockchain_account_record->name: That key already belongs to a registered account with a different name!
+
 
 
 
@@ -99,6 +101,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
+Block Signing Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
 default (unlocked) >>> wallet_account_update_active_key test test
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -120,5 +123,5 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 102   test                            0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
-default (unlocked) >>> 
+Block Signing Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
 default (unlocked) >>> quit
