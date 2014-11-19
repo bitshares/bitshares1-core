@@ -1600,57 +1600,134 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_account_record( const account_record& record_to_store )
    { try {
-       const oaccount_record prev_account_record = get_account_record( record_to_store.id );
-       if( prev_account_record.valid() )
+       const auto remove_record = [ this ]( const account_record& record )
        {
-           if( prev_account_record->is_delegate() )
-               my->_delegate_vote_index_db.remove( vote_del( prev_account_record->net_votes(), prev_account_record->id ) );
-
-           if( record_to_store.is_null() )
+           my->_account_db.remove( record.id );
+           my->_account_index_db.remove( record.name );
+           my->_address_to_account_db.remove( record.owner_address() );
+           if( !record.is_retracted() )
+               my->_address_to_account_db.remove( record.active_address() );
+           if( record.is_delegate() )
            {
-               my->_account_db.remove( prev_account_record->id );
-               my->_account_index_db.remove( prev_account_record->name );
-               my->_address_to_account_db.remove( prev_account_record->owner_address() );
-               for( const auto& item : prev_account_record->active_key_history )
-               {
-                   const public_key_type& active_key = item.second;
-                   my->_address_to_account_db.remove( address( active_key) );
-               }
-               if( prev_account_record->is_delegate() )
-               {
-                   for( const auto& item : prev_account_record->delegate_info->signing_key_history )
-                   {
-                       const public_key_type& signing_key = item.second;
-                       my->_address_to_account_db.remove( address( signing_key) );
-                   }
-               }
+               my->_address_to_account_db.remove( record.signing_address() );
+               if( !record.is_retracted() )
+                   my->_delegate_vote_index_db.remove( vote_del( record.net_votes(), record.id ) );
            }
-       }
+       };
 
-       if( record_to_store.is_null() )
+       const auto store_record = [ this ]( const account_record& record )
+       {
+           my->_account_db.store( record.id, record );
+           my->_account_index_db.store( record.name, record.id );
+           my->_address_to_account_db.store( record.owner_address(), record.id );
+           if( !record.is_retracted() )
+               my->_address_to_account_db.store( record.active_address(), record.id );
+           if( record.is_delegate() )
+           {
+               my->_address_to_account_db.store( record.signing_address(), record.id );
+               if( !record.is_retracted() )
+                   my->_delegate_vote_index_db.store( vote_del( record.net_votes(), record.id ), 0 /*dummy value*/ );
+           }
+       };
+
+       const auto index_active_keys = [ this ]( const account_record& prev_record, const account_record& new_record )
+       {
+           if( prev_record.is_retracted() && new_record.is_retracted() )
+               return;
+
+           if( !prev_record.is_retracted() && new_record.is_retracted() )
+               return my->_address_to_account_db.remove( prev_record.active_address() );
+
+           if( prev_record.is_retracted() && !new_record.is_retracted() )
+               return my->_address_to_account_db.store( new_record.active_address(), new_record.id );
+
+           const address& prev_active_address = prev_record.active_address();
+           const address& new_active_address = new_record.active_address();
+           if( prev_active_address != new_active_address )
+           {
+               my->_address_to_account_db.remove( prev_active_address );
+               my->_address_to_account_db.store( new_active_address, new_record.id );
+           }
+       };
+
+       const auto index_signing_keys = [ this ]( const account_record& prev_record, const account_record& new_record )
+       {
+           if( !prev_record.is_delegate() && !new_record.is_delegate() )
+               return;
+
+           if( prev_record.is_delegate() && !new_record.is_delegate() )
+               return my->_address_to_account_db.remove( prev_record.signing_address() );
+
+           if( !prev_record.is_delegate() && new_record.is_delegate() )
+               return my->_address_to_account_db.store( new_record.signing_address(), new_record.id );
+
+           const address& prev_signing_address = prev_record.signing_address();
+           const address& new_signing_address = new_record.signing_address();
+           if( prev_signing_address != new_signing_address )
+           {
+               my->_address_to_account_db.remove( prev_signing_address );
+               my->_address_to_account_db.store( new_signing_address, new_record.id );
+           }
+       };
+
+       const auto index_votes = [ this ]( const account_record& prev_record, const account_record& new_record )
+       {
+           if( !prev_record.is_delegate() && !new_record.is_delegate() )
+               return;
+
+           if( prev_record.is_delegate() && !new_record.is_delegate() )
+           {
+               if( !prev_record.is_retracted() )
+                   my->_delegate_vote_index_db.remove( vote_del( prev_record.net_votes(), prev_record.id ) );
+               return;
+           }
+
+           if( !prev_record.is_delegate() && new_record.is_delegate() )
+           {
+               if( !new_record.is_retracted() )
+                   my->_delegate_vote_index_db.store( vote_del( new_record.net_votes(), new_record.id ), 0 /*dummy value*/ );
+               return;
+           }
+
+           const share_type& prev_votes = prev_record.net_votes();
+           const share_type& new_votes = new_record.net_votes();
+           if( prev_votes != new_votes )
+           {
+               if( !prev_record.is_retracted() )
+                   my->_delegate_vote_index_db.remove( vote_del( prev_votes, prev_record.id ) );
+               if( !new_record.is_retracted() )
+                   my->_delegate_vote_index_db.store( vote_del( new_votes, new_record.id ), 0 /*dummy value*/ );
+           }
+       };
+
+       const oaccount_record prev_account_record = get_account_record( record_to_store.id );
+       if( !prev_account_record.valid() && record_to_store.is_null() )
            return;
 
-       my->_account_db.store( record_to_store.id, record_to_store );
-       my->_account_index_db.store( record_to_store.name, record_to_store.id );
-       my->_address_to_account_db.store( record_to_store.owner_address(), record_to_store.id );
-       for( const auto& item : record_to_store.active_key_history )
-       {
-           const public_key_type& active_key = item.second;
-           if( active_key == public_key_type() ) continue;
-           my->_address_to_account_db.store( address( active_key ), record_to_store.id );
-       }
-       if( record_to_store.is_delegate() )
-       {
-           for( const auto& item : record_to_store.delegate_info->signing_key_history )
-           {
-               const public_key_type& signing_key = item.second;
-               if( signing_key == public_key_type() ) continue;
-               my->_address_to_account_db.store( address( signing_key ), record_to_store.id );
-           }
+       if( prev_account_record.valid() && record_to_store.is_null() )
+           return remove_record( *prev_account_record );
 
-           if( !record_to_store.is_retracted() )
-               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(), record_to_store.id ), 0 /*dummy value*/ );
+       if( !prev_account_record.valid() && !record_to_store.is_null() )
+           return store_record( record_to_store );
+
+       // Common case: updating an existing record
+       my->_account_db.store( record_to_store.id, record_to_store );
+
+       if( prev_account_record->name != record_to_store.name )
+       {
+           my->_account_index_db.remove( prev_account_record->name );
+           my->_account_index_db.store( record_to_store.name, record_to_store.id );
        }
+
+       if( prev_account_record->owner_key != record_to_store.owner_key )
+       {
+           my->_address_to_account_db.remove( prev_account_record->owner_address() );
+           my->_address_to_account_db.store( record_to_store.owner_address(), record_to_store.id );
+       }
+
+       index_active_keys( *prev_account_record, record_to_store );
+       index_signing_keys( *prev_account_record, record_to_store );
+       index_votes( *prev_account_record, record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
    vector<operation> chain_database::get_recent_operations(operation_type_enum t)

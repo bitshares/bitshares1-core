@@ -345,22 +345,11 @@ namespace bts { namespace blockchain {
    {
       accounts[ r.id ] = r;
       account_id_index[ r.name ] = r.id;
-      key_to_account[ address(r.owner_key) ] = r.id;
-      for( const auto& item : r.active_key_history )
-      {
-          const public_key_type& active_key = item.second;
-          if( active_key == public_key_type() ) continue;
-          key_to_account[ address( active_key ) ] = r.id;
-      }
+      key_to_account[ r.owner_address() ] = r.id;
+      if( !r.is_retracted() )
+          key_to_account[ r.active_address() ] = r.id;
       if( r.is_delegate() )
-      {
-          for( const auto& item : r.delegate_info->signing_key_history )
-          {
-              const public_key_type& signing_key = item.second;
-              if( signing_key == public_key_type() ) continue;
-              key_to_account[ address( signing_key ) ] = r.id;
-          }
-      }
+          key_to_account[ r.signing_address() ] = r.id;
    }
 
    vector<operation> pending_chain_state::get_recent_operations(operation_type_enum t)
