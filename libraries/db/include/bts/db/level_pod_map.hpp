@@ -1,13 +1,15 @@
 #pragma once
-#include <bts/db/exception.hpp>
-#include <leveldb/db.h>
-#include <leveldb/comparator.h>
-#include <fc/filesystem.hpp>
-#include <fc/reflect/reflect.hpp>
-#include <fc/io/raw.hpp>
-#include <fc/exception/exception.hpp>
 
+#include <leveldb/cache.h>
+#include <leveldb/comparator.h>
+#include <leveldb/db.h>
+
+#include <bts/db/exception.hpp>
 #include <bts/db/upgrade_leveldb.hpp>
+
+#include <fc/filesystem.hpp>
+#include <fc/io/raw.hpp>
+#include <fc/reflect/reflect.hpp>
 
 namespace bts { namespace db {
 
@@ -15,51 +17,54 @@ namespace bts { namespace db {
 
   /**
    *  @brief implements a high-level API on top of Level DB that stores items using fc::raw / reflection
-   *
-   *
    *  @note Key must be a POD type
    */
   template<typename Key, typename Value>
   class level_pod_map
   {
      public:
-        void open( const fc::path& dir, bool create = true )
+        void open( const fc::path& dir, bool create = true, size_t cache_size = 0 )
         { try {
            ldb::Options opts;
            opts.comparator = &_comparer;
            opts.create_if_missing = create;
-           /*
+           opts.max_open_files = 64;
+           opts.compression = leveldb::kNoCompression;
+
+           if( cache_size > 0 )
+           {
+               opts.write_buffer_size = cache_size / 4; // up to two write buffers may be held in memory simultaneously
+               _cache.reset( leveldb::NewLRUCache( cache_size / 2 ) );
+               opts.block_cache = _cache.get();
+           }
+
            if( ldb::kMajorVersion > 1 || ( leveldb::kMajorVersion == 1 && leveldb::kMinorVersion >= 16 ) )
            {
                // LevelDB versions before 1.16 consider short writes to be corruption. Only trigger error
                // on corruption in later versions.
                opts.paranoid_checks = true;
            }
-           opts.max_open_files = 64;
 
            _read_options.verify_checksums = true;
            _iter_options.verify_checksums = true;
            _iter_options.fill_cache = false;
            _sync_options.sync = true;
-           */
 
-           /// \warning Given path must exist to succeed toNativeAnsiPath
-           fc::create_directories(dir);
-
-           std::string ldb_path = dir.to_native_ansi_path();
+           // Given path must exist to succeed toNativeAnsiPath
+           fc::create_directories( dir );
+           std::string ldbPath = dir.to_native_ansi_path();
 
            ldb::DB* ndb = nullptr;
-           auto ntrxstat = ldb::DB::Open( opts, ldb_path.c_str(), &ndb );
+           auto ntrxstat = ldb::DB::Open( opts, ldbPath.c_str(), &ndb );
            if( !ntrxstat.ok() )
            {
-               FC_THROW_EXCEPTION( db_in_use_exception, "Unable to open database ${db}\n\t${msg}", 
-                    ("db",dir)
-                    ("msg",ntrxstat.ToString()) 
-                    );
+               FC_THROW_EXCEPTION( db_in_use_exception, "Unable to open database ${db}\n\t${msg}",
+                                   ("db",dir)("msg",ntrxstat.ToString()) );
            }
-           _db.reset(ndb);
-           try_upgrade_db(dir,ndb, fc::get_typename<Value>::name(),sizeof(Value));
-        } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+           _db.reset( ndb );
+
+           try_upgrade_db( dir, ndb, fc::get_typename<Value>::name(), sizeof( Value ) );
+        } FC_CAPTURE_AND_RETHROW( (dir)(create)(cache_size) ) }
 
         bool is_open()const
         {
@@ -86,7 +91,7 @@ namespace bts { namespace db {
 
            ldb::Slice key_slice( (char*)&key, sizeof(key) );
            std::string value;
-           auto status = _db->Get( ldb::ReadOptions(), key_slice, &value );
+           auto status = _db->Get( _read_options, key_slice, &value );
            if( status.IsNotFound() )
            {
              FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",key) );
@@ -105,9 +110,9 @@ namespace bts { namespace db {
         {
            public:
              iterator(){}
-             bool valid()const 
+             bool valid()const
              {
-                return _it && _it->Valid(); 
+                return _it && _it->Valid();
              }
 
              Key key()const
@@ -126,7 +131,7 @@ namespace bts { namespace db {
 
              iterator& operator++() { _it->Next(); return *this; }
              iterator& operator--() { _it->Prev(); return *this; }
-           
+
            protected:
              friend class level_pod_map;
              iterator( ldb::Iterator* it )
@@ -134,11 +139,11 @@ namespace bts { namespace db {
 
              std::shared_ptr<ldb::Iterator> _it;
         };
-        iterator begin() 
+        iterator begin()
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->SeekToFirst();
 
            if( itr._it->status().IsNotFound() )
@@ -157,15 +162,14 @@ namespace bts { namespace db {
            return iterator();
         } FC_RETHROW_EXCEPTIONS( warn, "error seeking to first" ) }
 
-
         iterator find( const Key& key )
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
            ldb::Slice key_slice( (char*)&key, sizeof(key) );
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->Seek( key_slice );
-           if( itr.valid() && itr.key() == key ) 
+           if( itr.valid() && itr.key() == key )
            {
               return itr;
            }
@@ -177,21 +181,20 @@ namespace bts { namespace db {
            FC_ASSERT( is_open(), "Database is not open!" );
 
            ldb::Slice key_slice( (char*)&key, sizeof(key) );
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->Seek( key_slice );
-           if( itr.valid()  ) 
+           if( itr.valid()  )
            {
               return itr;
            }
            return iterator();
         } FC_RETHROW_EXCEPTIONS( warn, "error finding ${key}", ("key",key) ) }
 
-
         bool last( Key& k )
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
-           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
+           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( _iter_options ) );
            FC_ASSERT( it != nullptr );
            it->SeekToLast();
            if( !it->Valid() )
@@ -207,7 +210,7 @@ namespace bts { namespace db {
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
-           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
+           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( _iter_options ) );
            FC_ASSERT( it != nullptr );
            it->SeekToLast();
            if( !it->Valid() )
@@ -229,8 +232,8 @@ namespace bts { namespace db {
            ldb::Slice ks( (char*)&k, sizeof(k) );
            auto vec = fc::raw::pack(v);
            ldb::Slice vs( vec.data(), vec.size() );
-           
-           auto status = _db->Put( ldb::WriteOptions(), ks, vs );
+
+           auto status = _db->Put( sync ? _sync_options : _write_options, ks, vs );
            if( !status.ok() )
            {
                FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
@@ -242,8 +245,7 @@ namespace bts { namespace db {
            FC_ASSERT( is_open(), "Database is not open!" );
 
            ldb::Slice ks( (char*)&k, sizeof(k) );
-            auto status = _db->Delete( ldb::WriteOptions(), ks );
-
+           auto status = _db->Delete( sync ? _sync_options : _write_options, ks );
            if( status.IsNotFound() )
            {
              FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
@@ -261,8 +263,8 @@ namespace bts { namespace db {
             int Compare( const leveldb::Slice& a, const leveldb::Slice& b )const
             {
                FC_ASSERT( (a.size() == sizeof(Key)) && (b.size() == sizeof( Key )) );
-               Key* ak = (Key*)a.data();        
-               Key* bk = (Key*)b.data();        
+               Key* ak = (Key*)a.data();
+               Key* bk = (Key*)b.data();
                if( *ak  < *bk ) return -1;
                if( *ak == *bk ) return 0;
                return 1;
@@ -274,13 +276,13 @@ namespace bts { namespace db {
         };
 
         std::unique_ptr<leveldb::DB>    _db;
+        std::unique_ptr<leveldb::Cache> _cache;
         key_compare                     _comparer;
-        /*
+
         ldb::ReadOptions                _read_options;
         ldb::ReadOptions                _iter_options;
         ldb::WriteOptions               _write_options;
         ldb::WriteOptions               _sync_options;
-        */
   };
 
 } } // bts::db
