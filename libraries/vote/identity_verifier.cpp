@@ -111,12 +111,15 @@ public:
 
    optional<identity_verification_response> store_new_request(identity_record rec)
    {
-      if( _id_summary_db.get<by_owner>().find(rec.owner) != _id_summary_db.get<by_owner>().end() )
-         //If this owner has already started the verification process, just return the status.
-         return check_pending_identity(rec.owner);
 
-      _id_summary_db.insert(rec);
-      _id_db.store(rec.id, rec);
+      if( _id_summary_db.get<by_owner>().find(rec.owner) != _id_summary_db.get<by_owner>().end() &&
+          _id_summary_db.get<by_owner>().find(rec.owner)->status == accepted )
+      {
+         //If this owner has already completed the verification process, just return the status.
+         return check_pending_identity(rec.owner);
+      }
+
+      commit_record(rec);
 
       return optional<identity_verification_response>();
    }
