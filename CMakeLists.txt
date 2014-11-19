@@ -131,7 +131,7 @@ else( WIN32 )
     else( APPLE )
         # Linux Specific Options Here
         message( STATUS "Configuring BitShares on Linux" )
-        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
+        set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall -Wstack-usage=6144" )
         set( rt_library rt )
         set( pthread_library pthread)
         set( crypto_library crypto)

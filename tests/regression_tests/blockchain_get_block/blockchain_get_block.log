@@ -21,8 +21,8 @@ default (unlocked) >>> blockchain_get_block 1
   "timestamp": "2014-06-20T14:40:30",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
   "next_secret_hash": "7c3d613b3c7407fb30be265bc5c8085cbd81c772",
-  "previous_secret": "6e973a51ba12669f79fda33547ad6878689fa11a",
-  "delegate_signature": "20385151cfea10d2faf4ccc3431afd1cd2af2b4042734d1da1841fe62df4e84e5a28820d384df4a184b756a08ea99cca360790db055a15682a119e9043dea14e58",
+  "previous_secret": "0000000000000000000000000000000000000000",
+  "delegate_signature": "20385151cfea10d2faf4ccc3431afd1cd2af2b4042734d1da1841fe62df4e84e5af0e6e384572ec123c5a6a4d5afc405cb13b34c43e6fc12c64b31128385473539",
   "user_transaction_ids": []
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -31,13 +31,13 @@ default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> blockchain_get_block 2
 {
-  "previous": "4a4bf707dcfc303f674db2c891b947e46757485f",
+  "previous": "be65bf3271baf68ace61084830450d2291be0189",
   "block_num": 2,
   "timestamp": "2014-06-20T14:40:50",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "3deafd5fdd94f4bd47da1d7f668bb5becba174e8",
-  "previous_secret": "13a578918b8ec128128f58d43f8f2c5f1000fb03",
-  "delegate_signature": "201aa5a8312a52af80cdb1d876c62023ff91d434ed35487a69cb047513ff613b23f79a8db7076d120c96431490352ea5e58706e384c373266bd6faf1024b2f5a72",
+  "next_secret_hash": "2849d01b92b6a0f9f6599c22315b58cba614a4a8",
+  "previous_secret": "0000000000000000000000000000000000000000",
+  "delegate_signature": "201aa5a8312a52af80cdb1d876c62023ff91d434ed35487a69cb047513ff613b2330a20577ac835d4974c9cd76fa09e74d36d1860f14ddb7b56d09138b27c20b64",
   "user_transaction_ids": []
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -46,13 +46,13 @@ default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> blockchain_get_block 3
 {
-  "previous": "e7c8daa087bac232475f14d8ac604699b76b1b2e",
+  "previous": "d89ddde123fffbaa71f09d28347f8a2f68e299e7",
   "block_num": 3,
   "timestamp": "2014-06-20T14:41:00",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "ad4871e93705772fb0f8f5fada3e8b7ee26481b6",
-  "previous_secret": "e8bcd23f82654bd5253381000021d218007fb869",
-  "delegate_signature": "1f9466129b87592faa524519aaf04dcdf992bda62c65c8ea30ae789937177cd91e596813017de31a7bb757f7c198b3be3a0abb6e7863ef00c9a5548e7b5e4bba40",
+  "next_secret_hash": "a6185d295868817c6940f0d0784ad2efbcabf836",
+  "previous_secret": "0000000000000000000000000000000000000000",
+  "delegate_signature": "1f9466129b87592faa524519aaf04dcdf992bda62c65c8ea30ae789937177cd91e5f7775a13434f115b35c96c527318e5cf6767846bf0f01a8f17ac559250ab3dd",
   "user_transaction_ids": []
 }
 default (unlocked) >>> debug_advance_time 1 blocks
@@ -61,13 +61,13 @@ default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> blockchain_get_block 4
 {
-  "previous": "3c287c092f6a2f8c3633badc2401fd9c0d5f7e46",
+  "previous": "d27436aa99e1fa46f044891c318c418253fea103",
   "block_num": 4,
   "timestamp": "2014-06-20T14:41:10",
   "transaction_digest": "c8cf12fe3180ed901a58a0697a522f1217de72d04529bd255627a4ad6164f0f0",
-  "next_secret_hash": "94ee266e6cf8aa2bc70d431b70f44fd299c08db7",
-  "previous_secret": "e8a59ca090b1f6423e37322f8d2a110c611a8fb5",
-  "delegate_signature": "1f2b4503925f1656d010053986a88f7ac4b2229637bd2841baff4a85e2d3ccd1e1665418d5df7726ae8d2f6c5f3725fd8a6c8ae50655a4f6f37072c73c12ad1123",
+  "next_secret_hash": "fcf56e0f23d2df4d50d803a9206f419b2f5e0f38",
+  "previous_secret": "0000000000000000000000000000000000000000",
+  "delegate_signature": "1f2b4503925f1656d010053986a88f7ac4b2229637bd2841baff4a85e2d3ccd1e1dbd9ecd465b321b26b5566048240d0ff2e4fad52a9704f341070082b1108e12a",
   "user_transaction_ids": []
 }
 default (unlocked) >>> quit
