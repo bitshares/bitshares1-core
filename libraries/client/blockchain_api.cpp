@@ -248,33 +248,25 @@ map<balance_id_type, balance_record> detail::client_impl::blockchain_list_balanc
 {
    return _chain_db->get_balances( first, limit );
 }
+account_balance_summary_type detail::client_impl::blockchain_get_account_public_balance( const string& account_name ) const
+{ try {
+  auto acct = _wallet->get_account( account_name );
+  map<asset_id_type, share_type> balances;
+  for( auto bal : _chain_db->get_balances_for_address( acct.owner_address() ) )
+      balances[bal.asset_id()] = bal.balance;
+  account_balance_summary_type ret;
+  ret[account_name] = balances;
+  return ret;
+} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
 
-map<balance_id_type, balance_record> detail::client_impl::blockchain_list_address_balances( const address& addr )const
+vector<balance_record> detail::client_impl::blockchain_list_address_balances( const address& addr )const
 {
-    std::map<balance_id_type, balance_record> ret;
-    for( auto pair : _chain_db->get_balances( "", -1 ) )
-    {
-        auto bal = pair.second;
-        if( bal.is_owner( addr ) )
-        {
-            ret.insert( std::pair<balance_id_type, balance_record>(bal.id(), bal) );
-        }
-    }
-    return ret;
+    return _chain_db->get_balances_for_address( addr );
 }
 
-map<balance_id_type, balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
+vector<balance_record> detail::client_impl::blockchain_list_key_balances( const public_key_type& key )const
 {
-    std::map<balance_id_type, balance_record> ret;
-    for( auto pair : _chain_db->get_balances( "", -1 ) )
-    {
-        auto bal = pair.second;
-        if( bal.is_owner(key) )
-        {
-            ret.insert( std::pair<balance_id_type, balance_record>(bal.id(), bal) );
-        }
-    }
-    return ret;
+    return _chain_db->get_balances_for_key( key );
 }
 
 vector<account_record> detail::client_impl::blockchain_list_accounts( const string& first, int32_t limit )const

@@ -23,22 +23,9 @@ When(/^I start multisig withdrawal of (\d+) (\w+) from (\w+) to (\w+) as (\w+)$/
     @addresses[builder_id] = builder
 end
 
-When(/^I add signature and broadcast (\w+) expecting (failure|success)$/) do |builder_id, succeed|
+When(/^I add signature and broadcast (\w+)$/) do |builder_id|
     builder = @addresses[builder_id]
-    if succeed == "success"
-        @addresses[builder_id] = @current_actor.node.exec 'wallet_builder_add_signature', builder, true
-    elsif succeed == "failure"
-        begin
-            @current_actor.node.exec 'wallet_builder_add_signature', builder, true
-        rescue
-            puts "Successfully failed"
-        else
-            raise Error, "Expected this transaction to fail"
-        end
-    else
-        raise Error, "Unknown option"
-    end
-
+    @addresses[builder_id] = @current_actor.node.exec 'wallet_builder_add_signature', builder, true
 end
 
 Then(/^Balance with ID (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
@@ -48,12 +35,15 @@ end
 
 Then(/^Balance with owner (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
     bals = @current_actor.node.exec 'blockchain_list_address_balances', @addresses[id]
-    expect(bals[0][1]['balance'] == to_f(amount) / 10000)
+    expect(bals.length > 0)
+    puts bals
+    expect(bals[0]['balance'] == to_f(amount) / 10000)
 end
 
-Then(/^Balance with key (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
-    bals = @current_actor.node.exec 'wallet_account_balance', @addresses[id]
-    expect(bals[0][1]['balance'] == to_f(amount) / 10000)
+Then(/^Balance with public accountname: (\w+) should have (\d+) (\w+)$/) do |id, amount, symbol|
+    bals = @current_actor.node.exec 'blockchain_get_account_public_balance', id
+    bal = bals[0][1][0][1] # maps as lists
+    expect(bal == to_f(amount) * 10000)
 end
 
 

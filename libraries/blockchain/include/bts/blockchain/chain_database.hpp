@@ -200,6 +200,8 @@ namespace bts { namespace blockchain {
          map<balance_id_type, balance_record>  get_balances( const string& first,
                                                              uint32_t limit )const;
 
+         vector<balance_record> get_balances_for_address( const address& addr )const;
+         vector<balance_record> get_balances_for_key( const public_key_type& key )const;
          vector<account_record>  get_accounts( const string& first,
                                                uint32_t limit )const;
 

@@ -58,7 +58,7 @@ Or you can specify a feature to run:
   $ cucumber features/market.feature
 ```  
 
-Or tag (this can be any word that starts with @ sing placed before scenario), e.g.:
+Or tag (this can be any word that starts with @ sing and placed before scenario), e.g.:
 ```bash
   $ cucumber -t @current
 ```
@@ -84,3 +84,9 @@ And open http://localhost:5690 (or 5691/5692) in your browser.
 All rpc calls are dumped to features.log, so if something went wrong examine features.log - this may give you some idea.
 
 Also you can always start from scratch by removing ./tmp dir
+
+If something happens during network bootstrap stage try to remove tmp directory and bootstrap the test net manuannly running this command:
+
+```bash
+  $ ruby testnet.rb --create
+```

@@ -278,7 +278,7 @@
       {
         "method_name": "blockchain_list_address_balances",
         "description": "Lists balance records which can be claimed by signature for this address",
-        "return_type": "balance_record_map",
+        "return_type": "balance_record_list",
         "parameters" : [
             {
               "name" : "addr",
@@ -291,9 +291,23 @@
         "aliases" : ["list_address_balances"]
       },
       {
+         "method_name" : "blockchain_get_account_public_balance",
+         "description" : "Get the account record for a given name",
+         "return_type" : "account_balance_summary_type",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the account whose public address you want"
+               }
+            ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"]
+      },
+      {
         "method_name": "blockchain_list_key_balances",
         "description": "Lists balance records which can be claimed by signature for this key",
-        "return_type": "balance_record_map",
+        "return_type": "balance_record_list",
         "parameters" : [
             {
               "name" : "key",

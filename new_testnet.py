@@ -12,7 +12,7 @@ if len(sys.argv) > 1:
 print "This will create a new genesis block and make changes to your config files."
 n = raw_input("Overwrite config files? [Y/n]")
 if n == "n":
-    sys.exit("Operation canceled")
+    sys.exit(0)
 
 input_log = []
 

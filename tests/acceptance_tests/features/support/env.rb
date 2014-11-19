@@ -15,7 +15,7 @@ class Helper
   end
 
   def get_actor(name)
-    if name == 'my' or name == 'me' or name == 'I'
+    if name == 'my' or name == 'me' or name == 'I' or name == 'mine'
       @current_actor
     elsif name == 'Alice' or name == "Alice's"
       @alice
@@ -26,8 +26,16 @@ class Helper
     end
   end
 
-  def get_asset_by_name(currency)
-    return @testnet.delegate_node.exec 'blockchain_get_asset', currency
+  def get_asset_by_name(symbol)
+    return @market_asset1 if @market_asset1 and @market_asset1['symbol'] == symbol
+    return @market_asset2 if @market_asset2 and @market_asset2['symbol'] == symbol
+    return @testnet.delegate_node.exec 'blockchain_get_asset', symbol
+  end
+
+  def get_asset_by_id(id)
+    return @market_asset1 if @market_asset1 and @market_asset1['id'].to_i == id
+    return @market_asset2 if @market_asset2 and @market_asset2['id'].to_i == id
+    return @testnet.delegate_node.exec 'blockchain_get_asset', id
   end
 
   def get_balance(data, account, currency)
@@ -44,18 +52,39 @@ class Helper
     return 0
   end
 
+  #{"type"=>"ask_order", "market_index"=>{"order_price"=>{"ratio"=>"0.002", "quote_asset_id"=>7, "base_asset_id"=>0}, "owner"=>"XTSJA72rtoSYfbWvEDm4zZKve5ucNqhKRrCP"}, "state"=>{"balance"=>2000000000, "limit_price"=>nil, "last_update"=>"2014-11-18T22:34:50"}, "collateral"=>nil, "interest_rate"=>nil, "expiration"=>nil}
+  def parse_order(o)
+    res = {}
+    order_price = o['market_index']['order_price']
+    ratio = order_price['ratio'].to_f
+    quote_asset = get_asset_by_id(order_price['quote_asset_id'])
+    base_asset = get_asset_by_id(order_price['base_asset_id'])
+    res[:price] = ratio * (base_asset['precision'].to_f / quote_asset['precision'].to_f)
+    res[:balance] = o['state']['balance'].to_f / base_asset['precision'].to_f
+    return res
+  end
+
   def exist_order(orders, o)
-    #puts 'exist_order'
-    #puts "order: #{o.inspect}"
-    #puts "orders: #{orders.inspect}"
+    # puts 'exist_order'
+    # puts "order: #{o.inspect}"
+    # puts "orders: #{orders.inspect}"
     @last_order_id = nil
     orders.each do |e|
       order = e[1]
-      if order['type'] == o['Type'] and
-        (o['Collateral'] and order['collateral'].to_f/100000.0 == o['Collateral'].to_f) and
-        (o['Interest Rate'] and order['interest_rate']['ratio'].to_f * 100.0 == o['Interest Rate'].to_f)
-        @last_order_id = e[0]
-        return true
+      next unless order['type'] == o['Type']
+      if order['type'] == 'cover_order'
+        if order['collateral'].to_f/100000.0 == o['Collateral'].to_f and
+           order['interest_rate']['ratio'].to_f * 100.0 == o['Interest Rate'].to_f
+          @last_order_id = e[0]
+          return true
+        end
+      end
+      if order['type'] == 'ask_order' or order['type'] == 'bid_order'
+        po = parse_order(order)
+        if po[:balance] == o['Balance'].to_f and po[:price] == o['Price'].to_f
+          @last_order_id = e[0]
+          return true
+        end
       end
     end
     return false
