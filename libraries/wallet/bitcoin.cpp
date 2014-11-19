@@ -2,10 +2,10 @@
 #include <bts/wallet/wallet.hpp>
 #include <bts/wallet/wallet_impl.hpp>
 
-#include <bts/bitcoin/armory.hpp>
+//#include <bts/bitcoin/armory.hpp>
 #include <bts/bitcoin/bitcoin.hpp>
 #include <bts/bitcoin/electrum.hpp>
-#include <bts/bitcoin/multibit.hpp>
+//#include <bts/bitcoin/multibit.hpp>
 
 #include <bts/keyhotee/import_keyhotee_id.hpp>
 
@@ -33,6 +33,7 @@ uint32_t wallet::import_bitcoin_wallet(
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
 
+#if 0
 uint32_t wallet::import_multibit_wallet(
         const path& wallet_dat,
         const string& wallet_dat_passphrase,
@@ -54,6 +55,7 @@ uint32_t wallet::import_multibit_wallet(
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
+#endif
 
 uint32_t wallet::import_electrum_wallet(
         const path& wallet_dat,
@@ -77,6 +79,7 @@ uint32_t wallet::import_electrum_wallet(
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
 
+#if 0
 uint32_t wallet::import_armory_wallet(
         const path& wallet_dat,
         const string& wallet_dat_passphrase,
@@ -98,6 +101,7 @@ uint32_t wallet::import_armory_wallet(
    ulog( "Successfully imported ${x} keys from ${file}", ("x",keys.size())("file",wallet_dat.filename()) );
    return keys.size();
 } FC_CAPTURE_AND_RETHROW( (wallet_dat)(account_name) ) }
+#endif
 
 void wallet::import_keyhotee( const std::string& firstname,
                              const std::string& middlename,
