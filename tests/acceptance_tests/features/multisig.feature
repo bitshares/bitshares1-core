@@ -27,12 +27,12 @@ Feature: Deposit to and withdraw from multi-signature account
         When I switch to wallet wallet1
         And I make an address normal_address for account1
         And I start multisig withdrawal of 99 XTS from multi1 to normal_address as builder1
-        And I add signature and broadcast builder1 expecting failure
+        And I add signature and broadcast builder1
         And I wait for one block
         Then Balance with ID multi1 should have 100 XTS
 
         When I switch to wallet wallet2
-        And I add signature and broadcast builder1 expecting success
+        And I add signature and broadcast builder1
         And I wait for one block
         Then Balance with ID multi1 should have 0 XTS
         And Balance with owner normal_address should have 99 XTS

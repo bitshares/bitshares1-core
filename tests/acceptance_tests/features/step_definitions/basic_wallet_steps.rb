@@ -16,6 +16,9 @@ Given(/I ma[d|k]e an address (\w+) for (\w+)$/) do |addrname, acct|
     @addresses[addrname] = addr
 end
 
+Given(/^account (\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
+  @current_actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', name
+end
 
 Given(/^(\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
   actor = get_actor(name)
