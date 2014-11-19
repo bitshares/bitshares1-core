@@ -18,6 +18,7 @@ Image {
          id: animator
          target: ring
          from: 0; to: 360
+         property: "rotation"
          loops: Animation.Infinite
          duration: 1500
          alwaysRunToEnd: true
