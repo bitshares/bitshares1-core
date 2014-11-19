@@ -1,5 +1,6 @@
 import QtQuick 2.3
 import QtQuick.Layouts 1.1
+import QtQuick.Controls 1.2
 
 TaskPage {
    id: container
@@ -35,20 +36,30 @@ TaskPage {
                                              })
       }
    }
-
-   Component.onCompleted: {
+   function startVerification() {
       if( !bitshares.initialized ) {
          console.log("Cannot verify account; backend is not yet initialized.")
          return;
       }
 
-      console.log("Verification begins")
-      account_name = bitshares.create_voter_account()
+      if( account_name == "" ) {
+         console.log("Verification begins")
+         account_name = bitshares.create_voter_account()
+      } else {
+         console.log("Resubmitting verification request.")
+      }
+
       bitshares.begin_verification(window, account_name, verifiers, function(response) {
          console.log("Verification submitted: " + response)
          container.state = "POLLING"
          processResponse(JSON.parse(response))
       })
+   }
+
+   Stack.onStatusChanged: {
+      if( Stack.status === Stack.Active ) {
+         startVerification()
+      }
    }
 
    Connections {
