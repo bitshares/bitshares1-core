@@ -64,6 +64,8 @@ namespace bts { namespace blockchain {
     */
    void relative_bid_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      FC_ASSERT( !"Not supported yet!" );
+
       if( this->bid_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (bid_index.order_price) );
 
@@ -170,6 +172,8 @@ namespace bts { namespace blockchain {
     */
    void relative_ask_operation::evaluate( transaction_evaluation_state& eval_state )
    { try {
+      FC_ASSERT( !"Not supported yet!" );
+
       if( this->ask_index.order_price == price() )
          FC_CAPTURE_AND_THROW( zero_price, (ask_index.order_price) );
 
