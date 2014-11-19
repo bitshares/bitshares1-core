@@ -15,23 +15,23 @@ OK
 default (unlocked) >>> debug_wait_for_block_by_number 1
 OK
 default (unlocked) >>> blockchain_get_block_hash 1
-"4a4bf707dcfc303f674db2c891b947e46757485f"
+"be65bf3271baf68ace61084830450d2291be0189"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 2
 OK
 default (unlocked) >>> blockchain_get_block_hash 2
-"e7c8daa087bac232475f14d8ac604699b76b1b2e"
+"d89ddde123fffbaa71f09d28347f8a2f68e299e7"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 3
 OK
 default (unlocked) >>> blockchain_get_block_hash 3
-"3c287c092f6a2f8c3633badc2401fd9c0d5f7e46"
+"d27436aa99e1fa46f044891c318c418253fea103"
 default (unlocked) >>> debug_advance_time 1 blocks
 OK
 default (unlocked) >>> debug_wait_for_block_by_number 4
 OK
 default (unlocked) >>> blockchain_get_block_hash 4
-"4b97875d439df0d00c21ab015dc0a63a167aa004"
+"12e514714fd740c370f8005d4ef87a6fa0098b9d"
 default (unlocked) >>> quit

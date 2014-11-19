@@ -176,8 +176,6 @@ namespace bts { namespace blockchain {
 
          case withdraw_multi_sig_type:
          {
-            FC_ASSERT( !"Not supported yet!" );
-
             auto multi_sig = current_balance_record->condition.as<withdraw_with_multi_sig>();
             uint32_t valid_signatures = 0;
             for( auto sig : multi_sig.owners )

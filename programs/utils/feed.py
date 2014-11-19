@@ -36,7 +36,7 @@ while True:
     bitstamp_data = json.load(urllib2.urlopen(req))
     usd_per_btc = float(bitstamp_data["last"])
 
-    url = 'http://data.bter.com/api/1/ticker/btsx_btc'
+    url = 'http://data.bter.com/api/1/ticker/bts_btc'
     req = urllib2.Request(url, headers=hdr)
     btsx_data = json.load(urllib2.urlopen(req))
     btc_per_btsx = float(btsx_data["last"])

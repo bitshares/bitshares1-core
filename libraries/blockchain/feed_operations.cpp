@@ -17,7 +17,7 @@ namespace bts { namespace blockchain {
       if( !account_record->is_delegate() )
           FC_CAPTURE_AND_THROW( not_a_delegate, (*account_record) );
 
-      if( !eval_state.check_signature( account_record->delegate_info->signing_key )
+      if( !eval_state.check_signature( account_record->signing_address() )
           && !eval_state.account_or_any_parent_has_signed( *account_record ) )
       {
           FC_CAPTURE_AND_THROW( missing_signature, (*this) );

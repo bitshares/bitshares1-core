@@ -204,12 +204,15 @@ wallet_transaction_record detail::client_impl::wallet_transfer_to_public_account
         const vote_selection_method& selection_method )
 {
     auto to_key = _wallet->get_account_public_key( to_account_name );
-    return _wallet->transfer_asset_to_address(amount_to_transfer,
-                                              asset_symbol,
-                                              from_account_name,
-                                              address(to_key),
-                                              memo_message,
-                                              selection_method );
+    auto record =  _wallet->transfer_asset_to_address(amount_to_transfer,
+                                                      asset_symbol,
+                                                      from_account_name,
+                                                      address(to_key),
+                                                      memo_message,
+                                                      selection_method,
+                                                      true );
+    network_broadcast_transaction( record.trx );
+    return record;
 }
 
 
@@ -250,7 +253,8 @@ wallet_transaction_record detail::client_impl::wallet_transfer_asset_to_address(
                                                        from_account_name,
                                                        to_address,
                                                        memo_message,
-                                                       selection_method );
+                                                       selection_method,
+                                                       true );
     network_broadcast_transaction( record.trx );
     return record;
 
@@ -283,6 +287,121 @@ wallet_transaction_record detail::client_impl::wallet_transfer_from(
                                              recipient.owner_key);
 
     return record;
+}
+
+balance_id_type detail::client_impl::wallet_multisig_get_balance_id(
+                                        uint32_t m,
+                                        const vector<address>& addresses )const
+{
+    return _chain_db->get_multisig_balance_id( m, addresses );
+}
+
+/*
+wallet_transaction_record detail::client_impl::wallet_transfer_to_multisig(
+                                                    const string& from_name,
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const balance_id_type& to_balance )const
+{
+}
+*/
+
+wallet_transaction_record detail::client_impl::wallet_multisig_deposit(
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const string& from_name,
+                                                    uint32_t m,
+                                                    const vector<address>& addresses,
+                                                    const vote_selection_method& vote_method )
+{
+    asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
+    auto builder = _wallet->create_transaction_builder();
+    builder->deposit_asset_to_multisig( ugly_asset, from_name, m, addresses, vote_method );
+    auto rec = builder->finalize().sign();
+    network_broadcast_transaction( rec.trx );
+    return rec;
+}
+/*
+wallet_transaction_record  detail::client_impl::wallet_transfer_to_multisig(
+                                                    const string& from_name,
+                                                    const string& raw_amount,
+                                                    const string& symbol,
+                                                    const uint32_t& N,
+                                                    vector<string> account_names )
+{
+}
+transaction_builder   detail::client_impl::wallet_withdraw_from_multisig(
+                                               const balance_id_type& multisig,
+                                               const string& raw_amount,
+                                               const address& to_address )
+{
+}
+
+*/
+
+transaction_builder detail::client_impl::wallet_withdraw_from_address(
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const address& from_address,
+                                                    const string& to,
+                                                    const vote_selection_method& vote_method,
+                                                    bool sign )const
+{
+    address to_address;
+    try {
+        auto acct = _wallet->get_account( to );
+        to_address = acct.owner_address();
+    } catch (...) {
+        to_address = address( to );
+    }
+    asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
+    auto builder = _wallet->create_transaction_builder();
+    auto fee = _wallet->get_transaction_fee();
+    builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
+    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    if( sign )
+    {
+        builder->transaction_record.trx.expiration = _chain_db->now() + _wallet->get_transaction_expiration();
+        builder->sign();
+    }
+    return *builder;
+}
+
+transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const balance_id_type& from,
+                                                    const address& to_address,
+                                                    const vote_selection_method& vote_method )const
+{
+    asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
+    auto builder = _wallet->create_transaction_builder();
+    auto fee = _wallet->get_transaction_fee();
+    builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
+    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    //builder->sign();
+    return *builder;
+}
+
+
+transaction_builder detail::client_impl::wallet_builder_add_signature(
+                                            const transaction_builder& builder,
+                                            bool broadcast )
+{
+    auto b2 = _wallet->create_transaction_builder( builder );
+    if( b2->transaction_record.trx.expiration == fc::time_point_sec(0) )
+        b2->transaction_record.trx.expiration = _chain_db->now() + _wallet->get_transaction_expiration();
+    b2->sign();
+    if( broadcast )
+    {
+        try {
+            network_broadcast_transaction( b2->transaction_record.trx );
+        }
+        catch(...) {
+            ulog("Transaction was invalid!");
+        }
+    }
+    return *b2;
 }
 
 wallet_transaction_record detail::client_impl::wallet_transfer_from_with_escrow(
@@ -400,6 +519,13 @@ wallet_account_record detail::client_impl::wallet_get_account(const string& acco
 { try {
   return _wallet->get_account( account_name );
 } FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
+address detail::client_impl::wallet_get_account_public_address(const string& account_name) const
+{ try {
+  auto acct = _wallet->get_account( account_name );
+  return acct.owner_address();
+} FC_RETHROW_EXCEPTIONS( warn, "", ("account_name",account_name) ) }
+
 
 vector<pretty_transaction> detail::client_impl::wallet_account_transaction_history( const string& account_name,
                                                                                     const string& asset_symbol,
@@ -691,7 +817,7 @@ wallet_transaction_record client_impl::wallet_account_register( const string& ac
 { try {
     const auto record = _wallet->register_account( account_name, data, delegate_pay_rate,
                                                    pay_with_account, variant(new_account_type).as<account_type>(),
-                                                   false );
+                                                   true );
     network_broadcast_transaction( record.trx );
     return record;
 } FC_RETHROW_EXCEPTIONS(warn, "", ("account_name", account_name)("data", data)) }
@@ -722,7 +848,15 @@ wallet_transaction_record detail::client_impl::wallet_account_update_active_key(
                                                                                  const std::string& pay_from_account,
                                                                                  const std::string& new_active_key )
 {
-   const auto record = _wallet->update_active_key( account_to_update, pay_from_account, new_active_key );
+   const auto record = _wallet->update_active_key( account_to_update, pay_from_account, new_active_key, true );
+   network_broadcast_transaction( record.trx );
+   return record;
+}
+
+wallet_transaction_record detail::client_impl::wallet_account_retract( const std::string& account_to_update,
+                                                                       const std::string& pay_from_account )
+{
+   const auto record = _wallet->retract_account( account_to_update, pay_from_account, true );
    network_broadcast_transaction( record.trx );
    return record;
 }
@@ -970,10 +1104,9 @@ fc::variant client_impl::wallet_login_finish(const public_key_type &server_key,
 
 wallet_transaction_record client_impl::wallet_publish_price_feed( const std::string& delegate_account,
                                                                   double real_amount_per_xts,
-                                                                  const std::string& real_amount_symbol,
-                                                                  bool  force_settle )
+                                                                  const std::string& real_amount_symbol )
 {
-   const auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, force_settle, true );
+   const auto record = _wallet->publish_price( delegate_account, real_amount_per_xts, real_amount_symbol, false, true );
    network_broadcast_transaction( record.trx );
    return record;
 }

@@ -20,7 +20,7 @@ namespace bts { namespace blockchain {
       static const account_type type = multisig_account;
 
       uint32_t                required;
-      std::vector<address>    owners;
+      std::set<address>       owners;
    };
 
    struct account_meta_info
@@ -48,24 +48,20 @@ namespace bts { namespace blockchain {
 
    struct delegate_stats
    {
-      share_type                    votes_for = 0;
+      share_type                        votes_for = 0;
 
-      uint8_t                       pay_rate = 0;
-      public_key_type               signing_key;
+      uint8_t                           pay_rate = 0;
+      map<uint32_t, public_key_type>    signing_key_history;
 
-      uint32_t                      num_signing_key_changes = 0;
-      uint32_t                      last_signing_key_change_block_num = 0;
+      uint32_t                          last_block_num_produced = 0;
+      optional<secret_hash_type>        next_secret_hash;
 
-      uint32_t                      last_block_num_produced = 0;
-      optional<secret_hash_type>    next_secret_hash;
+      share_type                        pay_balance = 0;
+      share_type                        total_paid = 0;
+      share_type                        total_burned = 0;
 
-      share_type                    pay_balance = 0;
-      share_type                    total_paid = 0;
-      share_type                    total_burned = 0;
-
-      uint32_t                      blocks_produced = 0;
-      uint32_t                      blocks_missed = 0;
-
+      uint32_t                          blocks_produced = 0;
+      uint32_t                          blocks_missed = 0;
    };
    typedef fc::optional<delegate_stats> odelegate_stats;
 
@@ -74,20 +70,25 @@ namespace bts { namespace blockchain {
       bool              is_null()const;
       account_record    make_null()const;
 
-      void              set_active_key( const time_point_sec& now, const public_key_type& new_key );
-      void              adjust_votes_for( share_type delta );
-
-      bool              is_public_account()const { return meta_data.valid() && meta_data->type == public_account; }
-
       address           owner_address()const { return address( owner_key ); }
+
+      void              set_active_key( const time_point_sec& now, const public_key_type& new_key );
       public_key_type   active_key()const;
       address           active_address()const;
       bool              is_retracted()const;
 
       bool              is_delegate()const;
-      share_type        net_votes()const;
       uint8_t           delegate_pay_rate()const;
+      void              adjust_votes_for( share_type delta );
+      share_type        net_votes()const;
       share_type        delegate_pay_balance()const;
+
+      void              set_signing_key( uint32_t block_num, const public_key_type& signing_key );
+      public_key_type   signing_key()const;
+      address           signing_address()const;
+
+      bool              is_public_account()const { return meta_data.valid() && meta_data->type == public_account; }
+
 
       account_id_type                        id = 0;
       std::string                            name;
@@ -151,9 +152,7 @@ FC_REFLECT( bts::blockchain::account_meta_info,
 FC_REFLECT( bts::blockchain::delegate_stats,
             (votes_for)
             (pay_rate)
-            (signing_key)
-            (num_signing_key_changes)
-            (last_signing_key_change_block_num)
+            (signing_key_history)
             (last_block_num_produced)
             (next_secret_hash)
             (pay_balance)

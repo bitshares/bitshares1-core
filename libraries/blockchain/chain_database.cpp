@@ -248,7 +248,7 @@ namespace bts { namespace blockchain {
             {
                rec.delegate_info = delegate_stats();
                rec.delegate_info->pay_rate = name.delegate_pay_rate;
-               rec.delegate_info->signing_key = name.owner;
+               rec.set_signing_key( 0, name.owner );
                delegate_ids.push_back( account_id );
             }
             self->store_account_record( rec );
@@ -729,7 +729,7 @@ namespace bts { namespace blockchain {
             // signing delegate:
             auto expected_delegate = self->get_slot_signee( block_data.timestamp, self->get_active_delegates() );
 
-            if( block_signee != expected_delegate.delegate_info->signing_key )
+            if( block_signee != expected_delegate.signing_key() )
                FC_CAPTURE_AND_THROW( invalid_delegate_signee, (expected_delegate.id) );
       } FC_CAPTURE_AND_RETHROW( (block_data) ) }
 
@@ -760,10 +760,6 @@ namespace bts { namespace blockchain {
           oaccount_record delegate_record = pending_state->get_account_record( delegate_id );
           FC_ASSERT( delegate_record.valid() && delegate_record->is_delegate() && delegate_record->delegate_info.valid() );
           delegate_stats& delegate_info = *delegate_record->delegate_info;
-
-          // Required to miss a round after changing the signing key
-          if( delegate_info.last_signing_key_change_block_num > 0 )
-              FC_ASSERT( produced_block.block_num - delegate_info.last_signing_key_change_block_num >= BTS_BLOCKCHAIN_NUM_DELEGATES );
 
           /* Validate secret */
           if( delegate_info.next_secret_hash.valid() )
@@ -833,22 +829,22 @@ namespace bts { namespace blockchain {
       void chain_database_impl::update_active_delegate_list( const full_block& block_data,
                                                              const pending_chain_state_ptr& pending_state )
       {
-          if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES == 0 )
+          if( block_data.block_num % BTS_BLOCKCHAIN_NUM_DELEGATES != 0 )
+              return;
+
+          auto active_del = self->next_round_active_delegates();
+          const size_t num_del = active_del.size();
+
+          // Perform a random shuffle of the sorted delegate list.
+          fc::sha256 rand_seed = fc::sha256::hash( pending_state->get_current_random_seed() );
+          for( uint32_t i = 0; i < num_del; ++i )
           {
-             // perform a random shuffle of the sorted delegate list.
-
-             auto active_del = self->next_round_active_delegates();
-             auto rand_seed = fc::sha256::hash( pending_state->get_current_random_seed() );
-             size_t num_del = active_del.size();
-             for( uint32_t i = 0; i < num_del; ++i )
-             {
-                for( uint32_t x = 0; x < 4 && i < num_del; ++x, ++i )
-                   std::swap( active_del[i], active_del[rand_seed._hash[x]%num_del] );
-                rand_seed = fc::sha256::hash(rand_seed);
-             }
-
-             pending_state->set_active_delegates( active_del );
+             for( uint32_t x = 0; x < 4 && i < num_del; ++x, ++i )
+                std::swap( active_del[ i ], active_del[ rand_seed._hash[ x ] % num_del ] );
+             rand_seed = fc::sha256::hash( rand_seed );
           }
+
+          pending_state->set_active_delegates( active_del );
       }
 
       void chain_database_impl::execute_markets( const fc::time_point_sec& timestamp, const pending_chain_state_ptr& pending_state )
@@ -1113,9 +1109,6 @@ namespace bts { namespace blockchain {
        return get_delegates_by_vote( 0, BTS_BLOCKCHAIN_NUM_DELEGATES );
    }
 
-   /**
-    *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
-    */
    std::vector<account_id_type> chain_database::get_delegates_by_vote( uint32_t first, uint32_t count )const
    { try {
       auto del_vote_itr = my->_delegate_vote_index_db.begin();
@@ -1126,24 +1119,6 @@ namespace bts { namespace blockchain {
       {
          if( pos >= first )
             sorted_delegates.push_back( del_vote_itr.key().delegate_id );
-         ++pos;
-         ++del_vote_itr;
-      }
-      return sorted_delegates;
-   } FC_RETHROW_EXCEPTIONS( warn, "" ) }
-
-   /**
-    *  @return the top BTS_BLOCKCHAIN_NUM_DELEGATES by vote
-    */
-   std::vector<account_record> chain_database::get_delegate_records_by_vote(uint32_t first, uint32_t count )const
-   { try {
-      auto del_vote_itr = my->_delegate_vote_index_db.begin();
-      std::vector<account_record> sorted_delegates;
-      uint32_t pos = 0;
-      while( sorted_delegates.size() < count && del_vote_itr.valid() )
-      {
-         if( pos >= first )
-            sorted_delegates.push_back( *get_account_record(del_vote_itr.value()) );
          ++pos;
          ++del_vote_itr;
       }
@@ -1704,61 +1679,61 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_account_record( const account_record& record_to_store )
    { try {
-       oaccount_record old_rec = get_account_record( record_to_store.id );
-
-       if( record_to_store.is_null() && old_rec)
+       const oaccount_record prev_account_record = get_account_record( record_to_store.id );
+       if( prev_account_record.valid() )
        {
-          my->_account_db.remove( record_to_store.id );
-          my->_account_index_db.remove( record_to_store.name );
+           if( prev_account_record->is_delegate() )
+               my->_delegate_vote_index_db.remove( vote_del( prev_account_record->net_votes(), prev_account_record->id ) );
 
-          my->_address_to_account_db.remove( address( record_to_store.owner_key ) );
-          for( const auto& item : old_rec->active_key_history )
-             my->_address_to_account_db.remove( address(item.second) );
-
-          if( old_rec->is_delegate() )
-          {
-              my->_address_to_account_db.remove( address( old_rec->delegate_info->signing_key ) );
-              auto itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
-              my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(),
-                                                            record_to_store.id ) );
-              itr = my->_delegate_vote_index_db.begin();
-              while( itr.valid() )
-              {
-                  ++itr;
-              }
-          }
+           if( record_to_store.is_null() )
+           {
+               my->_account_db.remove( prev_account_record->id );
+               my->_account_index_db.remove( prev_account_record->name );
+               my->_address_to_account_db.remove( prev_account_record->owner_address() );
+               for( const auto& item : prev_account_record->active_key_history )
+               {
+                   const public_key_type& active_key = item.second;
+                   my->_address_to_account_db.remove( address( active_key) );
+               }
+               if( prev_account_record->is_delegate() )
+               {
+                   for( const auto& item : prev_account_record->delegate_info->signing_key_history )
+                   {
+                       const public_key_type& signing_key = item.second;
+                       my->_address_to_account_db.remove( address( signing_key) );
+                   }
+               }
+           }
        }
-       else if( !record_to_store.is_null() )
+
+       if( record_to_store.is_null() )
+           return;
+
+       my->_account_db.store( record_to_store.id, record_to_store );
+       my->_account_index_db.store( record_to_store.name, record_to_store.id );
+       my->_address_to_account_db.store( record_to_store.owner_address(), record_to_store.id );
+       for( const auto& item : record_to_store.active_key_history )
        {
-          my->_account_db.store( record_to_store.id, record_to_store );
-          my->_account_index_db.store( record_to_store.name, record_to_store.id );
-
-          my->_address_to_account_db.store( address( record_to_store.owner_key ), record_to_store.id );
-          for( const auto& item : record_to_store.active_key_history )
-          { // re-index all keys for this record
-             my->_address_to_account_db.store( address(item.second), record_to_store.id );
-          }
-
-          if( old_rec.valid() && old_rec->is_delegate() )
-          {
-              my->_address_to_account_db.remove( address( old_rec->delegate_info->signing_key ) );
-              my->_delegate_vote_index_db.remove( vote_del( old_rec->net_votes(),
-                                                            record_to_store.id ) );
-          }
-
-          if( record_to_store.is_delegate() )
-          {
-              my->_address_to_account_db.store( address( record_to_store.delegate_info->signing_key ), record_to_store.id );
-              my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(),
-                                                           record_to_store.id ),
-                                                0 /*dummy value*/ );
-          }
+           const public_key_type& active_key = item.second;
+           if( active_key == public_key_type() ) continue;
+           my->_address_to_account_db.store( address( active_key ), record_to_store.id );
        }
-     } FC_RETHROW_EXCEPTIONS( warn, "", ("record", record_to_store) ) }
+       if( record_to_store.is_delegate() )
+       {
+           for( const auto& item : record_to_store.delegate_info->signing_key_history )
+           {
+               const public_key_type& signing_key = item.second;
+               if( signing_key == public_key_type() ) continue;
+               my->_address_to_account_db.store( address( signing_key ), record_to_store.id );
+           }
+
+#ifndef WIN32
+#warning [SOFTFORK] Retracting delegate accounts should not be allowed until everyone is upgraded
+#endif
+           if( !record_to_store.is_retracted() )
+               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(), record_to_store.id ), 0 /*dummy value*/ );
+       }
+   } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
    vector<operation> chain_database::get_recent_operations(operation_type_enum t)
    {
@@ -2008,6 +1983,35 @@ namespace bts { namespace blockchain {
         }
         return balances;
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
+
+    vector<balance_record> chain_database::get_balances_for_address( const address& addr )const
+    {
+        vector<balance_record> ret;
+        for( auto pair : get_balances( "", -1 ) )
+        {
+            auto bal = pair.second;
+            if( bal.is_owner( addr ) )
+            {
+                ret.push_back(bal);
+            }
+        }
+        return ret;
+    }
+
+    vector<balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
+    {
+        vector<balance_record> ret;
+        for( auto pair : get_balances( "", -1 ) )
+        {
+            auto bal = pair.second;
+            if( bal.is_owner(key) )
+            {
+                ret.push_back( bal );
+            }
+        }
+        return ret;
+    }
+
 
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t limit )const
     { try {
@@ -2500,9 +2504,16 @@ namespace bts { namespace blockchain {
 
    optional<market_order> chain_database::get_market_bid( const market_index_key& key )const
    { try {
-       auto market_itr  = my->_bid_db.find(key);
-       if( market_itr.valid() )
-          return market_order { bid_order, market_itr.key(), market_itr.value() };
+       { // absolute bids
+          auto market_itr  = my->_bid_db.find(key);
+          if( market_itr.valid() )
+             return market_order { bid_order, market_itr.key(), market_itr.value() };
+       }
+       { // relative bids
+          auto market_itr  = my->_relative_bid_db.find(key);
+          if( market_itr.valid() )
+             return market_order { relative_bid_order, market_itr.key(), market_itr.value() };
+       }
 
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
@@ -2517,28 +2528,56 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_market, (quote_id)(base_id) );
 
        vector<market_order> results;
+
        //We dance around like this because the _bid_db sorts the bids backwards, so we must iterate it backwards.
-       const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
-       auto market_itr = my->_bid_db.lower_bound( market_index_key( next_pair ) );
-       if( market_itr.valid() )   --market_itr;
-       else market_itr = my->_bid_db.last();
+       { // absolute bids
+          const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
+          auto market_itr = my->_bid_db.lower_bound( market_index_key( next_pair ) );
+          if( market_itr.valid() )   --market_itr;
+          else market_itr = my->_bid_db.last();
 
-       while( market_itr.valid() )
-       {
-          auto key = market_itr.key();
-          if( key.order_price.quote_asset_id == quote_id &&
-              key.order_price.base_asset_id == base_id  )
+          while( market_itr.valid() )
           {
-             results.push_back( {bid_order, key, market_itr.value()} );
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_id &&
+                 key.order_price.base_asset_id == base_id  )
+             {
+                results.push_back( {bid_order, key, market_itr.value()} );
+             }
+             else break;
+
+
+             if( results.size() == limit )
+                return results;
+
+             --market_itr;
           }
-          else break;
-
-
-          if( results.size() == limit )
-             return results;
-
-          --market_itr;
        }
+       { // relative bids
+          const price next_pair = (base_id+1 == quote_id) ? price( 0, quote_id+1, 0 ) : price( 0, quote_id, base_id+1 );
+          auto market_itr = my->_relative_bid_db.lower_bound( market_index_key( next_pair ) );
+          if( market_itr.valid() )   --market_itr;
+          else market_itr = my->_relative_bid_db.last();
+
+          while( market_itr.valid() )
+          {
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_id &&
+                 key.order_price.base_asset_id == base_id  )
+             {
+                results.push_back( {bid_order, key, market_itr.value()} );
+             }
+             else break;
+
+
+             if( results.size() == limit )
+                return results;
+
+             --market_itr;
+          }
+       }
+
+
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
@@ -2627,9 +2666,16 @@ namespace bts { namespace blockchain {
 
    optional<market_order> chain_database::get_market_ask( const market_index_key& key )const
    { try {
-       auto market_itr  = my->_ask_db.find(key);
-       if( market_itr.valid() )
-          return market_order { ask_order, market_itr.key(), market_itr.value() };
+       { // abs asks
+          auto market_itr  = my->_ask_db.find(key);
+          if( market_itr.valid() )
+             return market_order { ask_order, market_itr.key(), market_itr.value() };
+       }
+       { // relative asks
+          auto market_itr  = my->_relative_ask_db.find(key);
+          if( market_itr.valid() )
+             return market_order { relative_ask_order, market_itr.key(), market_itr.value() };
+       }
 
        return optional<market_order>();
    } FC_CAPTURE_AND_RETHROW( (key) ) }
@@ -2671,26 +2717,48 @@ namespace bts { namespace blockchain {
           FC_CAPTURE_AND_THROW( invalid_market, (quote_asset_id)(base_asset_id) );
 
        vector<market_order> results;
-       auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
-       while( market_itr.valid() )
-       {
-          auto key = market_itr.key();
-          if( key.order_price.quote_asset_id == quote_asset_id &&
-              key.order_price.base_asset_id == base_asset_id  )
+       { // absolute asks
+          auto market_itr  = my->_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+          while( market_itr.valid() )
           {
-             results.push_back( {ask_order, key, market_itr.value()} );
-          }
-          else
-          {
-             break;
-          }
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_asset_id &&
+                 key.order_price.base_asset_id == base_asset_id  )
+             {
+                results.push_back( {ask_order, key, market_itr.value()} );
+             }
+             else
+             {
+                break;
+             }
 
-          if( results.size() == limit )
-             return results;
+             if( results.size() == limit )
+                return results;
 
-          ++market_itr;
+             ++market_itr;
+          }
        }
-       ilog( "end of db" );
+       { // relative asks
+          auto market_itr  = my->_relative_ask_db.lower_bound( market_index_key( price( 0, quote_asset_id, base_asset_id ) ) );
+          while( market_itr.valid() )
+          {
+             auto key = market_itr.key();
+             if( key.order_price.quote_asset_id == quote_asset_id &&
+                 key.order_price.base_asset_id == base_asset_id  )
+             {
+                results.push_back( {relative_ask_order, key, market_itr.value()} );
+             }
+             else
+             {
+                break;
+             }
+
+             if( results.size() == limit )
+                return results;
+
+             ++market_itr;
+          }
+       }
        return results;
    } FC_CAPTURE_AND_RETHROW( (quote_symbol)(base_symbol)(limit) ) }
 
@@ -3072,6 +3140,15 @@ namespace bts { namespace blockchain {
                total.amount += ask.balance;
            }
        }
+       for( auto ask_itr = my->_relative_ask_db.begin(); ask_itr.valid(); ++ask_itr )
+       {
+           const market_index_key market_index = ask_itr.key();
+           if( market_index.order_price.base_asset_id == total.asset_id )
+           {
+               const order_record ask = ask_itr.value();
+               total.amount += ask.balance;
+           }
+       }
 
        // If base asset
        if( asset_id == asset_id_type( 0 ) )
@@ -3102,6 +3179,15 @@ namespace bts { namespace blockchain {
        {
            // Add bid balances
            for( auto bid_itr = my->_bid_db.begin(); bid_itr.valid(); ++bid_itr )
+           {
+               const market_index_key market_index = bid_itr.key();
+               if( market_index.order_price.quote_asset_id == total.asset_id )
+               {
+                   const order_record bid = bid_itr.value();
+                   total.amount += bid.balance;
+               }
+           }
+           for( auto bid_itr = my->_relative_bid_db.begin(); bid_itr.valid(); ++bid_itr )
            {
                const market_index_key market_index = bid_itr.key();
                if( market_index.order_price.quote_asset_id == total.asset_id )
@@ -3342,6 +3428,14 @@ namespace bts { namespace blockchain {
 
        next_path = dir / "_bid_db.json";
        my->_bid_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_relative_ask_db.json";
+       my->_relative_ask_db.export_to_json( next_path );
+       ulog( "Dumped ${p}", ("p",next_path) );
+
+       next_path = dir / "_relative_bid_db.json";
+       my->_relative_bid_db.export_to_json( next_path );
        ulog( "Dumped ${p}", ("p",next_path) );
 
        next_path = dir / "_short_db.json";

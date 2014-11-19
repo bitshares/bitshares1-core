@@ -10,10 +10,9 @@ if len(sys.argv) > 1:
     ip = sys.argv[1]
 
 print "This will create a new genesis block and make changes to your config files."
-print "Continue? [y/n]"
-entry = raw_input()
-if entry != "y":
-    sys.exit("Operation canceled")
+n = raw_input("Overwrite config files? [Y/n]")
+if n == "n":
+    sys.exit(0)
 
 input_log = []
 
@@ -25,13 +24,15 @@ with open("libraries/blockchain/genesis.json") as genesis:
     new_genesis = json.load(genesis)
 
 new_genesis["timestamp"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-new_genesis["bts_sharedrop"] = []
 new_genesis["names"] = []
 
-with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
-    items = json.loads(snapshot.read())
-    for item in items:
-        new_genesis["bts_sharedrop"].append(item)
+try:
+    with open("libraries/blockchain/bts-sharedrop.json") as snapshot:
+        items = json.loads(snapshot.read())
+        for item in items:
+            new_genesis["bts_sharedrop"].append(item)
+except Exception:
+    pass
 
 for i in range(101):
     keys = json.loads(subprocess.check_output(["./programs/utils/bts_create_key"]))
@@ -78,7 +79,8 @@ with open("testnet_setup_log.txt", "w") as log:
     for line in input_log:
         log.write(line + "\n")
 
-
-subprocess.call(["make", "-j4"])
-subprocess.call(["./programs/client/bitshares_client", "--input-log", "testnet_setup_log.txt", "--min-delegate-connection-count", "0"])
+n = raw_input("Start build? [Y/n]")
+if n != "n":
+    subprocess.call(["make", "-j2"])
+    subprocess.call(["./programs/client/bitshares_client", "--input-log", "testnet_setup_log.txt", "--min-delegate-connection-count", "0"])
 

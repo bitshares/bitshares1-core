@@ -573,7 +573,7 @@
             },
             {
               "name" : "from_account_name",
-              "type" : "sending_account_name",
+              "type" : "account_name",
               "description" : "the source account to draw the shares from"
             },
             {
@@ -679,6 +679,171 @@
           ],
         "prerequisites" : ["wallet_unlocked"],
         "aliases" : ["transfer_public"]
+    },
+    {
+        "method_name": "wallet_multisig_get_balance_id",
+        "description": "",
+        "return_type": "address",
+        "parameters":
+        [
+            {
+              "name": "m",
+              "type": "uint32_t",
+              "description": "Required number of signatures"
+            },
+            {
+              "name": "addresses",
+              "type": "address_list",
+              "description": "List of possible addresses for signatures"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["get_multisig_id"],
+        "is_const": true
+    },
+    {
+        "method_name": "wallet_multisig_deposit",
+        "description": "",
+        "return_type": "transaction_record",
+        "parameters":
+        [
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+            {
+              "name": "from_name",
+              "type": "string",
+              "description": "TITAN name to withdraw from"
+            },
+            {
+              "name": "m",
+              "type": "uint32_t",
+              "description": "Required number of signatures"
+            },
+            {
+              "name": "addresses",
+              "type": "address_list",
+              "description": "List of possible addresses for signatures"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["transfer_to_multisig"]
+    },
+    {
+        "method_name": "wallet_withdraw_from_address",
+        "description": "",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+
+            {
+              "name": "from_address",
+              "type": "address",
+              "description": "the balance address to withdraw from"
+            },
+            {
+              "name": "to",
+              "type": "string",
+              "description": "address or account to receive funds"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["withdraw_from_address"],
+        "is_const": true
+    },
+    {
+        "method_name": "wallet_multisig_withdraw_start",
+        "description": "",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+
+            {
+              "name": "from",
+              "type": "address",
+              "description": "multisig balance ID to withdraw from"
+            },
+            {
+              "name": "to_address",
+              "type": "address",
+              "description": "address to receive funds"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["withdraw_from_multisig"],
+        "is_const": true
+    },
+    {
+        "method_name": "wallet_builder_add_signature",
+        "description": "Review a transaction and add a signature.",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+                "name": "builder",
+                "type": "transaction_builder",
+                "description": "A transaction builder object created by a wallet."
+            },
+            {
+                "name": "broadcast",
+                "type": "bool",
+                "description": "Try to broadcast this transaction?",
+                "default_value": false
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["add_signature"]
       },
       {
         "method_name": "wallet_transfer_from_with_escrow",
@@ -1057,6 +1222,20 @@
                   "name" : "account_name",
                   "type" : "account_name",
                   "description" : "the name of the account to retrieve"
+               }
+            ],
+         "is_const" : true,
+         "prerequisites" : ["wallet_open"]
+      },
+      {
+         "method_name" : "wallet_get_account_public_address",
+         "description" : "Get the account record for a given name",
+         "return_type" : "address",
+         "parameters"  : [
+               {
+                  "name" : "account_name",
+                  "type" : "account_name",
+                  "description" : "the name of the account whose public address you want"
                }
             ],
          "is_const" : true,
@@ -1999,12 +2178,6 @@
                 "name" : "asset_symbol",
                 "type" : "asset_symbol",
                 "description" : "the type of asset being priced"
-             },
-             {
-                "name" : "force_settle",
-                "type" : "bool",
-                "description" : "When a market dies for lack of interest vote to force all longs to settle at feed",
-                "default_value" : false
              }
          ],
          "prerequisites" : ["wallet_unlocked"]
@@ -2145,6 +2318,24 @@
                 "description" : "The name of the account to pay the transaction fee, if different from account_name.",
                 "default_value" : ""
              }
+         ],
+         "prerequisites" : ["wallet_unlocked"]
+      },
+      {
+         "method_name" : "wallet_account_retract",
+         "description" : "Retract (permanently disable) the specified account in case of master key compromise.",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+                "name" : "account_to_retract",
+                "type" : "account_name",
+                "description" : "The name of the account to retract."
+            },
+            {
+                "name" : "pay_from_account",
+                "type" : "account_name",
+                "description" : "The account from which fees will be paid."
+            }
          ],
          "prerequisites" : ["wallet_unlocked"]
       }

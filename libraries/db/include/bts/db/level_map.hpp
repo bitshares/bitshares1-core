@@ -1,20 +1,17 @@
 #pragma once
-#include <bts/db/exception.hpp>
-#include <leveldb/db.h>
-#include <leveldb/comparator.h>
+
 #include <leveldb/cache.h>
+#include <leveldb/comparator.h>
+#include <leveldb/db.h>
 #include <leveldb/write_batch.h>
 
-#include <fc/filesystem.hpp>
-
-#include <fc/reflect/reflect.hpp>
-#include <fc/io/raw.hpp>
-#include <fc/exception/exception.hpp>
-
-#include <fc/log/logger.hpp>
-
+#include <bts/db/exception.hpp>
 #include <bts/db/upgrade_leveldb.hpp>
+
+#include <fc/filesystem.hpp>
 #include <fc/io/json.hpp>
+#include <fc/io/raw.hpp>
+#include <fc/reflect/reflect.hpp>
 
 #include <fstream>
 
@@ -24,7 +21,6 @@ namespace bts { namespace db {
 
   /**
    *  @brief implements a high-level API on top of Level DB that stores items using fc::raw / reflection
-   *
    */
   template<typename Key, typename Value>
   class level_map
@@ -35,29 +31,30 @@ namespace bts { namespace db {
            ldb::Options opts;
            opts.comparator = &_comparer;
            opts.create_if_missing = create;
+           opts.max_open_files = 64;
+           opts.compression = leveldb::kNoCompression;
 
-           if (cache_size) {
-               _cache.reset(leveldb::NewLRUCache(cache_size));
+           if( cache_size > 0 )
+           {
+               opts.write_buffer_size = cache_size / 4; // up to two write buffers may be held in memory simultaneously
+               _cache.reset( leveldb::NewLRUCache( cache_size / 2 ) );
                opts.block_cache = _cache.get();
            }
-           /*
+
            if( ldb::kMajorVersion > 1 || ( leveldb::kMajorVersion == 1 && leveldb::kMinorVersion >= 16 ) )
            {
                // LevelDB versions before 1.16 consider short writes to be corruption. Only trigger error
                // on corruption in later versions.
                opts.paranoid_checks = true;
            }
-           opts.max_open_files = 64;
 
            _read_options.verify_checksums = true;
            _iter_options.verify_checksums = true;
            _iter_options.fill_cache = false;
            _sync_options.sync = true;
-           */
 
-           /// \warning Given path must exist to succeed toNativeAnsiPath
-           fc::create_directories(dir);
-
+           // Given path must exist to succeed toNativeAnsiPath
+           fc::create_directories( dir );
            std::string ldbPath = dir.to_native_ansi_path();
 
            ldb::DB* ndb = nullptr;
@@ -65,13 +62,12 @@ namespace bts { namespace db {
            if( !ntrxstat.ok() )
            {
                FC_THROW_EXCEPTION( db_in_use_exception, "Unable to open database ${db}\n\t${msg}",
-                    ("db",dir)
-                    ("msg",ntrxstat.ToString())
-                    );
+                                   ("db",dir)("msg",ntrxstat.ToString()) );
            }
-           _db.reset(ndb);
-           try_upgrade_db( dir,ndb, fc::get_typename<Value>::name(),sizeof(Value) );
-        } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+           _db.reset( ndb );
+
+           try_upgrade_db( dir, ndb, fc::get_typename<Value>::name(), sizeof( Value ) );
+        } FC_CAPTURE_AND_RETHROW( (dir)(create)(cache_size) ) }
 
         bool is_open()const
         {
@@ -100,7 +96,7 @@ namespace bts { namespace db {
            std::vector<char> kslice = fc::raw::pack( k );
            ldb::Slice ks( kslice.data(), kslice.size() );
            std::string value;
-           auto status = _db->Get( ldb::ReadOptions(), ks, &value );
+           auto status = _db->Get( _read_options, ks, &value );
            if( status.IsNotFound() )
            {
              FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
@@ -155,7 +151,7 @@ namespace bts { namespace db {
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->SeekToFirst();
 
            if( itr._it->status().IsNotFound() )
@@ -199,7 +195,7 @@ namespace bts { namespace db {
               key_slice = ldb::Slice( kslice.data(), kslice.size() );
            }
 
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->Seek( key_slice );
            if( itr.valid() && itr.key() == key )
            {
@@ -215,7 +211,7 @@ namespace bts { namespace db {
            std::vector<char> kslice = fc::raw::pack( key );
            ldb::Slice key_slice( kslice.data(), kslice.size() );
 
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->Seek( key_slice );
            return itr;
         } FC_RETHROW_EXCEPTIONS( warn, "error finding ${key}", ("key",key) ) }
@@ -224,7 +220,7 @@ namespace bts { namespace db {
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
-           iterator itr( _db->NewIterator( ldb::ReadOptions() ) );
+           iterator itr( _db->NewIterator( _iter_options ) );
            itr._it->SeekToLast();
            return itr;
         } FC_RETHROW_EXCEPTIONS( warn, "error finding last" ) }
@@ -233,7 +229,7 @@ namespace bts { namespace db {
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
-           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
+           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( _iter_options ) );
            FC_ASSERT( it != nullptr );
            it->SeekToLast();
            if( !it->Valid() )
@@ -249,7 +245,7 @@ namespace bts { namespace db {
         { try {
            FC_ASSERT( is_open(), "Database is not open!" );
 
-           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( ldb::ReadOptions() ) );
+           std::unique_ptr<ldb::Iterator> it( _db->NewIterator( _iter_options ) );
            FC_ASSERT( it != nullptr );
            it->SeekToLast();
            if( !it->Valid() )
@@ -275,75 +271,76 @@ namespace bts { namespace db {
          */
         class write_batch
         {
-        private:
-          leveldb::WriteBatch _batch;
-          level_map* _map;
+            private:
+                leveldb::WriteBatch   _batch;
+                level_map*            _map = nullptr;
+                leveldb::WriteOptions _write_options;
 
-          friend class level_map;
-          write_batch(level_map* map) :
-            _map(map)
-          {
-          }
-        public:
-          ~write_batch()
-          {
-            try
-            {
-              commit();
-            }
-            catch (const fc::canceled_exception&)
-            {
-              throw;
-            }
-            catch (const fc::exception&)
-            {
-              // we're in a destructor, nothing we can do...
-            }
-          }
+                friend class level_map;
+                write_batch( level_map* map, bool sync = false ) : _map(map)
+                {
+                    _write_options.sync = sync;
+                }
+            public:
+                ~write_batch()
+                {
+                  try
+                  {
+                    commit();
+                  }
+                  catch (const fc::canceled_exception&)
+                  {
+                    throw;
+                  }
+                  catch (const fc::exception&)
+                  {
+                    // we're in a destructor, nothing we can do...
+                  }
+                }
 
-          void commit()
-          {
-            try
-            {
-              FC_ASSERT(_map->is_open(), "Database is not open!");
+                void commit()
+                {
+                  try
+                  {
+                    FC_ASSERT(_map->is_open(), "Database is not open!");
 
-              ldb::Status status = _map->_db->Write(ldb::WriteOptions(), &_batch);
-              if (status.IsNotFound())
-                FC_THROW_EXCEPTION(fc::key_not_found_exception, "unable to find key while applying batch");
-              if (!status.ok())
-                FC_THROW_EXCEPTION(db_exception, "database error while applying batch: ${msg}", ("msg", status.ToString()));
-              _batch.Clear();
-            }
-            FC_RETHROW_EXCEPTIONS(warn, "error applying batch");
-          }
+                    ldb::Status status = _map->_db->Write( _write_options, &_batch );
+                    if (status.IsNotFound())
+                      FC_THROW_EXCEPTION(fc::key_not_found_exception, "unable to find key while applying batch");
+                    if (!status.ok())
+                      FC_THROW_EXCEPTION(db_exception, "database error while applying batch: ${msg}", ("msg", status.ToString()));
+                    _batch.Clear();
+                  }
+                  FC_RETHROW_EXCEPTIONS(warn, "error applying batch");
+                }
 
-          void abort()
-          {
-            _batch.Clear();
-          }
+                void abort()
+                {
+                  _batch.Clear();
+                }
 
-          void store(const Key& k, const Value& v)
-          {
-            std::vector<char> kslice = fc::raw::pack(k);
-            ldb::Slice ks(kslice.data(), kslice.size());
+                void store( const Key& k, const Value& v )
+                {
+                  std::vector<char> kslice = fc::raw::pack(k);
+                  ldb::Slice ks(kslice.data(), kslice.size());
 
-            auto vec = fc::raw::pack(v);
-            ldb::Slice vs(vec.data(), vec.size());
+                  auto vec = fc::raw::pack(v);
+                  ldb::Slice vs(vec.data(), vec.size());
 
-            _batch.Put(ks, vs);
-          }
+                  _batch.Put(ks, vs);
+                }
 
-          void remove(const Key& k, bool sync = false)
-          {
-            std::vector<char> kslice = fc::raw::pack(k);
-            ldb::Slice ks(kslice.data(), kslice.size());
-            _batch.Delete(ks);
-          }
+                void remove( const Key& k )
+                {
+                  std::vector<char> kslice = fc::raw::pack(k);
+                  ldb::Slice ks(kslice.data(), kslice.size());
+                  _batch.Delete(ks);
+                }
         };
 
-        write_batch create_batch()
+        write_batch create_batch( bool sync = false )
         {
-          return write_batch(this);
+           return write_batch( this, sync );
         }
 
         void store(const Key& k, const Value& v, bool sync = false)
@@ -356,7 +353,7 @@ namespace bts { namespace db {
            auto vec = fc::raw::pack(v);
            ldb::Slice vs( vec.data(), vec.size() );
 
-           auto status = _db->Put( ldb::WriteOptions(), ks, vs );
+           auto status = _db->Put( sync ? _sync_options : _write_options, ks, vs );
            if( !status.ok() )
            {
                FC_THROW_EXCEPTION( db_exception, "database error: ${msg}", ("msg", status.ToString() ) );
@@ -369,7 +366,7 @@ namespace bts { namespace db {
 
            std::vector<char> kslice = fc::raw::pack( k );
            ldb::Slice ks( kslice.data(), kslice.size() );
-           auto status = _db->Delete( ldb::WriteOptions(), ks );
+           auto status = _db->Delete( sync ? _sync_options : _write_options, ks );
            if( status.IsNotFound() )
            {
              FC_THROW_EXCEPTION( fc::key_not_found_exception, "unable to find key ${key}", ("key",k) );
@@ -437,12 +434,11 @@ namespace bts { namespace db {
         std::unique_ptr<leveldb::DB>    _db;
         std::unique_ptr<leveldb::Cache> _cache;
         key_compare                     _comparer;
-        /*
+
         ldb::ReadOptions                _read_options;
         ldb::ReadOptions                _iter_options;
         ldb::WriteOptions               _write_options;
         ldb::WriteOptions               _sync_options;
-        */
   };
 
 } } // bts::db

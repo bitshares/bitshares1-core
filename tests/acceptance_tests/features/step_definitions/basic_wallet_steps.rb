@@ -2,9 +2,32 @@ Given(/^I'm (\w+)$/) do |name|
   @current_actor = get_actor(name)
 end
 
+Given(/I made a wallet (\w+)$/) do |name|
+    @current_actor.node.exec 'wallet_create', name, 'password'
+end
+
+Given(/I made an account (\w+)$/) do |name|
+    @current_actor.node.exec 'wallet_account_create', name
+end
+
+Given(/I ma[d|k]e an address (\w+) for (\w+)$/) do |addrname, acct|
+    addr = @current_actor.node.exec 'wallet_address_create', acct
+    @addresses ||= {}
+    @addresses[addrname] = addr
+end
+
+Given(/^account (\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
+  @current_actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', name
+end
+
 Given(/^(\w+) received ([\d,\.]+) ([A-Z]+) from angel/) do |name, amount, currency|
   actor = get_actor(name)
   actor.node.exec 'wallet_transfer', to_f(amount), currency, 'angel', actor.account
+end
+
+When(/I switch to wallet (\w+)$/) do |name|
+    @current_actor.node.exec 'wallet_open', name
+    @current_actor.node.exec 'wallet_unlock', '999999', 'password'
 end
 
 When(/^(\w+) sends? ([\d,\.]+) ([A-Z]+) to (\w+)$/) do |from, amount, currency, to|
@@ -58,7 +81,7 @@ Given(/^I expect HTTP transaction callbacks$/) do
   @current_actor.node.save_config(config)
   @current_actor.node.start
   @current_actor.node.exec 'open', 'default'
-  @current_actor.node.exec 'unlock', '9999999', '123456789'
+  @current_actor.node.exec 'unlock', '9999999', 'password'
   @webserver = WebServer.new
   @webserver.start
 end

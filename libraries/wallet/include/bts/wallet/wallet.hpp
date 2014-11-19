@@ -197,11 +197,6 @@ namespace bts { namespace wallet {
          vector<wallet_account_record> list_unregistered_accounts()const;
          vector<wallet_account_record> list_my_accounts()const;
 
-         std::shared_ptr<transaction_builder> create_transaction_builder()
-         {
-            return std::make_shared<transaction_builder>(my.get());
-         }
-
          uint32_t import_bitcoin_wallet(
                  const path& wallet_dat,
                  const string& wallet_dat_passphrase,
@@ -252,20 +247,27 @@ namespace bts { namespace wallet {
           *  Transaction Generation Methods
           */
          ///@{
+
+         std::shared_ptr<transaction_builder> create_transaction_builder();
+         std::shared_ptr<transaction_builder> create_transaction_builder(const transaction_builder& old_builder);
+
+
+
+
          /**
           *  Multi-Part transfers provide additional security by not combining inputs, but they
           *  show up to the user as multiple unique transfers.  This is an advanced feature
           *  that should probably have some user interface support to merge these transfers
           *  into one logical transfer.
           */
-         vector<signed_transaction> multipart_transfer( double real_amount_to_transfer,
-                                                         const string& amount_to_transfer_symbol,
-                                                         const string& from_account_name,
-                                                         const string& to_account_name,
-                                                         const string& memo_message,
-                                                         bool sign );
-
-
+         vector<signed_transaction> multipart_transfer(
+                 double real_amount_to_transfer,
+                 const string& amount_to_transfer_symbol,
+                 const string& from_account_name,
+                 const string& to_account_name,
+                 const string& memo_message,
+                 bool sign
+                 );
          /**
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output. The only different aspect with transfer_asset is that
@@ -277,8 +279,10 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  const address& to_address,
                  const string& memo_message,
-                 vote_selection_method selection_method
+                 vote_selection_method selection_method,
+                 bool sign
                  );
+         /*
          transaction_builder builder_transfer_asset_to_address(
                  double real_amount_to_transfer,
                  const string& amount_to_transfer_symbol,
@@ -287,6 +291,7 @@ namespace bts { namespace wallet {
                  const string& memo_message,
                  vote_selection_method selection_method
                  );
+         */
 
          /**
           * This transfer works like a bitcoin sendmany transaction combining multiple inputs
@@ -297,9 +302,8 @@ namespace bts { namespace wallet {
                  const string& from_account_name,
                  const unordered_map<address, double>& to_address_amounts,
                  const string& memo_message,
-                 bool sign = false
+                 bool sign
                  );
-
          /**
           *  This transfer works like a bitcoin transaction combining multiple inputs
           *  and producing a single output.
@@ -311,10 +315,9 @@ namespace bts { namespace wallet {
                  const string& for_or_against,
                  const string& to_account_name,
                  const string& public_message,
-                 bool anonymous = true,
-                 bool sign = false
+                 bool anonymous,
+                 bool sign
                  );
-
          /**
           * if the active_key is null then the active key will be made the same as the master key.
           * if the name already exists then it will be updated if this wallet controls the active key
@@ -325,59 +328,60 @@ namespace bts { namespace wallet {
                  const variant& json_data,
                  uint8_t delegate_pay_rate,
                  const string& pay_with_account_name,
-                 bts::blockchain::account_type new_account_type = titan_account,
-                 bool sign = false
+                 bts::blockchain::account_type new_account_type,
+                 bool sign
                  );
-
          wallet_transaction_record update_registered_account(
                  const string& account_name,
                  const string& pay_from_account,
                  optional<variant> public_data,
-                 uint8_t delegate_pay_rate = -1,
-                 bool sign = false
+                 uint8_t delegate_pay_rate,
+                 bool sign
                  );
-
          wallet_transaction_record update_active_key(
                  const std::string& account_to_update,
                  const std::string& pay_from_account,
                  const std::string& new_active_key,
-                 bool sign = false
+                 bool sign
                  );
-
+         wallet_transaction_record retract_account(
+                 const std::string& account_to_retract,
+                 const std::string& pay_from_account,
+                 bool sign
+                 );
          wallet_transaction_record withdraw_delegate_pay(
                  const string& delegate_name,
                  double amount_to_withdraw,
                  const string& withdraw_to_account_name,
-                 bool sign = false
+                 bool sign
                  );
-
          wallet_transaction_record publish_feeds(
                  const string& account,
                  map<string,double> amount_per_xts,
-                 bool sign = false
+                 bool sign
                  );
          wallet_transaction_record publish_price(
                  const string& account,
                  double amount_per_xts,
                  const string& amount_asset_symbol,
-                 bool settle = false,
-                 bool sign = false
+                 bool settle,
+                 bool sign
                  );
          wallet_transaction_record publish_slate(
                  const string& account_to_publish_under,
                  const string& account_to_pay_with,
-                 bool sign = false
+                 bool sign
                  );
          wallet_transaction_record publish_version(
                  const string& account_to_publish_under,
                  const string& account_to_pay_with,
-                 bool sign = false
+                 bool sign
                  );
          wallet_transaction_record update_block_signing_key(
                  const string& authorizing_account_name,
                  const string& delegate_name,
                  const public_key_type& block_signing_key,
-                 bool sign = false
+                 bool sign
                  );
          wallet_transaction_record create_asset(
                  const string& symbol,
@@ -388,7 +392,8 @@ namespace bts { namespace wallet {
                  double max_share_supply,
                  uint64_t precision,
                  bool is_market_issued,
-                 bool sign );
+                 bool sign
+                 );
          wallet_transaction_record update_asset(
                  const string& symbol,
                  const optional<string>& name,
@@ -396,13 +401,15 @@ namespace bts { namespace wallet {
                  const optional<variant>& public_data,
                  const optional<double>& maximum_share_supply,
                  const optional<uint64_t>& precision,
-                 bool sign );
+                 bool sign
+                 );
          wallet_transaction_record issue_asset(
                  double amount,
                  const string& symbol,
                  const string& to_account_name,
                  const string& memo_message,
-                 bool sign );
+                 bool sign
+                 );
          /**
           *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
           *
@@ -413,7 +420,8 @@ namespace bts { namespace wallet {
                  const string& quantity_symbol,
                  const string& price_per_unit,
                  const string& quote_symbol,
-                 bool sign );
+                 bool sign
+                 );
          /**
           *  ie: submit_bid( 10 BTC at 600.34 USD per BTC )
           *
@@ -425,7 +433,8 @@ namespace bts { namespace wallet {
                  const string& relative_price_per_unit,
                  const string& quote_symbol,
                  const string& limit,
-                 bool sign );
+                 bool sign
+                 );
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *
@@ -436,7 +445,8 @@ namespace bts { namespace wallet {
                  const string& quantity_symbol,
                  const string& price_per_unit,
                  const string& quote_symbol,
-                 bool sign );
+                 bool sign
+                 );
          /**
           *  ie: submit_ask( 10 BTC at 600.34 USD per BTC )
           *
@@ -448,30 +458,34 @@ namespace bts { namespace wallet {
                  const string& relative_price_per_unit,
                  const string& quote_symbol,
                  const string& limit,
-                 bool sign );
-
-         wallet_transaction_record submit_short(const string& from_account_name,
-                                                const string& real_quantity_xts,
-                                                const string& collateral_symbol,
-                                                const string& apr,
-                                                const string& quote_symbol,
-                                                const string& price_limit,
-                                                bool sign );
+                 bool sign
+                 );
+         wallet_transaction_record submit_short(
+                 const string& from_account_name,
+                 const string& real_quantity_xts,
+                 const string& collateral_symbol,
+                 const string& apr,
+                 const string& quote_symbol,
+                 const string& price_limit,
+                 bool sign
+                 );
          wallet_transaction_record cover_short(
                  const string& from_account_name,
                  const string& real_quantity_usd,
                  const string& quote_symbol,
                  const order_id_type& short_id,
-                 bool sign );
+                 bool sign
+                 );
          wallet_transaction_record add_collateral(
                  const string& from_account_name,
                  const order_id_type& short_id,
                  const string& real_quantity_collateral_to_add,
-                 bool sign );
+                 bool sign
+                 );
          wallet_transaction_record cancel_market_orders(
                  const vector<order_id_type>& order_ids,
-                 bool sign );
-
+                 bool sign
+                 );
          /**
           * @brief Perform arbitrarily many market operations in a single transaction
           * @param cancel_order_ids List of order IDs to cancel in the transaction
@@ -485,7 +499,8 @@ namespace bts { namespace wallet {
          wallet_transaction_record batch_market_update(
                  const vector<order_id_type>& cancel_order_ids,
                  const vector<std::pair<order_type_enum,vector<string>>>& new_orders,
-                 bool sign );
+                 bool sign
+                 );
 #if 0
          wallet_transaction_record create_proposal(
                  const string& delegate_account_name,
@@ -493,14 +508,14 @@ namespace bts { namespace wallet {
                  const string& body,
                  const string& proposal_type,
                  const variant& data,
-                 bool sign = true
+                 bool sign
                  );
          wallet_transaction_record vote_proposal(
                  const string& delegate_account_name,
                  proposal_id_type proposal_id,
                  proposal_vote::vote_type vote,
-                 const string& message = string(),
-                 bool sign = tru
+                 const string& message,
+                 bool sign
                  );
 #endif
          ///@} Transaction Generation Methods

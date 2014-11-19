@@ -3,7 +3,6 @@ Feature: Transfer funds from one account to another
   I want to send funds to my friend
   So that I can make him happy
 
-@current
 Scenario: Alice sends 100 XTS to Bob
   Given I'm Alice
   And I expect HTTP transaction callbacks

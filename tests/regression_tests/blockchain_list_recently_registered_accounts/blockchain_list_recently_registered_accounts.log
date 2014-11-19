@@ -47,15 +47,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 100,
+      "signing_key_history": [[
+          1,
+          "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   }
@@ -83,15 +87,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 100,
+      "signing_key_history": [[
+          1,
+          "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   },{
@@ -108,15 +116,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:40",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 90,
+      "signing_key_history": [[
+          2,
+          "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   }
@@ -144,15 +156,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 100,
+      "signing_key_history": [[
+          1,
+          "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   },{
@@ -169,15 +185,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:40",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 90,
+      "signing_key_history": [[
+          2,
+          "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   },{
@@ -194,15 +214,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:50",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 10,
+      "signing_key_history": [[
+          3,
+          "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   }
@@ -227,6 +251,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 102   testaccount1                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
+Block Signing Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
 default (unlocked) >>> blockchain_get_account testaccount2
 Name: testaccount2
 Registered: <d-ign></d-ign>
@@ -239,6 +264,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 103   testaccount2                    0.00000000 %   0        0        N/A           90 %     0.00000 XTS         NONE                    
 
+Block Signing Key: XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM
 default (unlocked) >>> blockchain_get_account testaccount3
 Name: testaccount3
 Registered: <d-ign></d-ign>
@@ -251,6 +277,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 104   testaccount3                    0.00000000 %   0        0        N/A           10 %     0.00000 XTS         NONE                    
 
+Block Signing Key: XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7
 default (unlocked) >>> blockchain_get_account testaccount4
 Name: testaccount4
 Registered: <d-ign></d-ign>
@@ -263,6 +290,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 105   testaccount4                    0.00000000 %   0        0        N/A           100 %    0.00000 XTS         NONE                    
 
+Block Signing Key: XTS6XtfD6n2T2i3GE4BVuabQUvZRAxVLYUUTLpf7sFAqRxnA3i8Kf
 default (unlocked) >>> blockchain_list_recently_registered_accounts
 [{
     "id": 102,
@@ -278,15 +306,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:30",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 100,
+      "signing_key_history": [[
+          1,
+          "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   },{
@@ -303,15 +335,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:40",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 90,
+      "signing_key_history": [[
+          2,
+          "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS56gEKGQjqxWuEF7umuaaFbPTYQ1kP9LWRQHsyoojVmWML1yoNM"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   },{
@@ -328,15 +364,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:40:50",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 10,
+      "signing_key_history": [[
+          3,
+          "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS6Cew5rd9JffKPMP1puWnm4bZBUsSYmGWN1xRQGqQQhQTHV8JG7"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   },{
@@ -353,15 +393,19 @@ default (unlocked) >>> blockchain_list_recently_registered_accounts
     "last_update": "2014-06-20T14:41:00",
     "delegate_info": {
       "votes_for": 0,
-      "blocks_produced": 0,
-      "blocks_missed": 0,
-      "next_secret_hash": "0000000000000000000000000000000000000000",
-      "last_block_num_produced": 0,
       "pay_rate": 100,
+      "signing_key_history": [[
+          4,
+          "XTS6XtfD6n2T2i3GE4BVuabQUvZRAxVLYUUTLpf7sFAqRxnA3i8Kf"
+        ]
+      ],
+      "last_block_num_produced": 0,
+      "next_secret_hash": null,
       "pay_balance": 0,
       "total_paid": 0,
       "total_burned": 0,
-      "block_signing_key": "XTS6XtfD6n2T2i3GE4BVuabQUvZRAxVLYUUTLpf7sFAqRxnA3i8Kf"
+      "blocks_produced": 0,
+      "blocks_missed": 0
     },
     "meta_data": null
   }

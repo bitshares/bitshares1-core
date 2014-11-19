@@ -34,6 +34,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 102   test                            0.00000000 %   0        0        N/A           1 %      0.00000 XTS         NONE                    
 
+Block Signing Key: XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================
