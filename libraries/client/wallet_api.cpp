@@ -379,7 +379,7 @@ transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
     auto fee = _wallet->get_transaction_fee();
     builder->withdraw_from_balance( from, ugly_asset.amount + fee.amount );
     builder->deposit_to_balance( to_address, ugly_asset, vote_method );
-    builder->sign();
+    //builder->sign();
     return *builder;
 }
 
@@ -389,11 +389,16 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
                                             bool broadcast )
 {
     auto b2 = _wallet->create_transaction_builder( builder );
-    if( b2->transaction_record.trx.expiration == fc::time_point_sec() )
+    if( b2->transaction_record.trx.expiration == fc::time_point_sec(0) )
         b2->transaction_record.trx.expiration = _chain_db->now() + _wallet->get_transaction_expiration();
     b2->sign();
     if( broadcast )
-        network_broadcast_transaction( b2->transaction_record.trx );
+    {
+        try
+            network_broadcast_transaction( b2->transaction_record.trx );
+        catch(...)
+            ulog("Transaction was invalid!");
+    }
     return *b2;
 }
 
