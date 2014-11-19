@@ -89,6 +89,11 @@ namespace bts { namespace blockchain {
 
           if( current_record->is_retracted() && current_record->is_delegate() )
           {
+#ifndef WIN32
+#warning [SOFTFORK] Remove this check after BTS_V0_4_25_FORK_BLOCK_NUM has passed
+#endif
+              FC_ASSERT( eval_state._current_state->get_head_block_num() >= BTS_V0_4_25_FORK_BLOCK_NUM );
+
               if( current_record->delegate_info->pay_balance > 0 )
                   FC_CAPTURE_AND_THROW( pay_balance_remaining, (*current_record) );
           }
