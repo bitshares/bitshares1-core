@@ -2,6 +2,7 @@
 
 require 'open3'
 require 'json'
+require 'readline'
 require_relative './bitshares_api.rb'
 
 class BitSharesNode
@@ -105,16 +106,17 @@ class BitSharesNode
     STDOUT.puts "\nentering node '#{@name}' interactive mode, enter 'exit' to exit"
     ignore_errors = @rpc_instance.ignore_errors
     @rpc_instance.ignore_errors = true
-    while true
-      STDOUT.print '> '
-      command = STDIN.gets
+    while command = Readline.readline('> ', true)
+      #STDOUT.print '> '
+      #command = STDIN.gets
+      break if command.nil?
       command.chomp!
       break if command == 'exit'
       next if command.empty?
-      params = command.split(' ')
-      method = params.shift
-      res = @rpc_instance.request(method, params)
-      STDOUT.puts JSON.pretty_generate(res) if res and not res.empty?
+      #params = command.split(' ')
+      #method = params.shift
+      res = @rpc_instance.request('execute_command_line', [command])
+      STDOUT.puts res if res and not res.empty?
     end
     @rpc_instance.ignore_errors = ignore_errors
   end
