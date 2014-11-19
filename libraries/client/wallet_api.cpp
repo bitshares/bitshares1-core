@@ -394,10 +394,12 @@ transaction_builder detail::client_impl::wallet_builder_add_signature(
     b2->sign();
     if( broadcast )
     {
-        try
+        try {
             network_broadcast_transaction( b2->transaction_record.trx );
-        catch(...)
+        }
+        catch(...) {
             ulog("Transaction was invalid!");
+        }
     }
     return *b2;
 }
