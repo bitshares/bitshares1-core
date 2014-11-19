@@ -14,7 +14,7 @@ void client_impl::ballot_submit_decision(const signed_voter_decision& decision)
    _ballot_box->store_new_decision(decision);
 }
 
-signed_voter_decision client_impl::ballot_get_decision(const fc::sha256& decision_id) const
+cast_decision client_impl::ballot_get_decision(const fc::sha256& decision_id) const
 {
    SANITY_CHECK;
    return _ballot_box->get_decision(decision_id);

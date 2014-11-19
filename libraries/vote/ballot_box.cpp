@@ -26,9 +26,18 @@ protected:
 public:
    struct decision_storage_record : public signed_voter_decision
    {
-      decision_storage_record(const signed_voter_decision& = signed_voter_decision()){}
+      decision_storage_record(const signed_voter_decision& s = signed_voter_decision())
+         : signed_voter_decision(s)
+      {}
+
+      operator cast_decision()
+      {
+         return {digest(), contest_id, ballot_id, write_in_names, voter_opinions, voter_key, timestamp, authoritative};
+      }
 
       bts::blockchain::public_key_type voter_key = voter_public_key();
+      fc::time_point timestamp = fc::time_point::now();
+      bool authoritative;
    };
    struct decision_index_record
    {
@@ -48,7 +57,7 @@ public:
       vector<string> write_in_names;
       digest_type ballot_id;
    };
-   level_map<digest_type, signed_voter_decision> decision_db;
+   level_map<digest_type, decision_storage_record> decision_db;
    multi_index_container<
       decision_index_record,
       indexed_by<
@@ -108,6 +117,30 @@ public:
 
    bool databases_open = false;
 
+   void check_authority(decision_storage_record& decision)
+   {
+      decision.authoritative = false;
+
+      try {
+         //FIXME: Need a real way to know this
+         const std::unordered_set<address> recognized_registrars = {
+            public_key_type("XTS6pBHGAjnGrYmYKX9Ko26nQokqZf41YcX8FcuCb7zQrLQSUMnS8")
+         };
+         std::unordered_set<address> signatories;
+         std::vector<address> recognized_signatories;
+
+         auto ballot = ballot_db.fetch_optional(decision.ballot_id);
+         if( ballot )
+            for( const auto& signature : decision.registrar_authorizations )
+               signatories.insert(ballot->get_authorizing_registrar(decision.ballot_id, signature, decision.voter_key));
+         std::set_intersection(recognized_registrars.begin(), recognized_registrars.end(),
+                               signatories.begin(), signatories.end(),
+                               std::back_inserter(recognized_signatories));
+
+         decision.authoritative = recognized_signatories.size() > recognized_registrars.size() / 2;
+      } catch (...){}
+   }
+
    void update_index(const digest_type& id, const decision_storage_record& storage_record)
    {
       decision_index.insert(decision_index_record(id, storage_record));
@@ -130,7 +163,8 @@ public:
    void store_record(const signed_voter_decision& decision)
    {
       auto id = decision.digest();
-      decision_storage_record record = decision;
+      decision_storage_record record(decision);
+      check_authority(record);
       decision_db.store(id, record);
       update_index(id, record);
    }
@@ -310,7 +344,7 @@ void ballot_box::store_new_decision(const signed_voter_decision& decision)
    my->store_record(decision);
 }
 
-signed_voter_decision ballot_box::get_decision(const digest_type& id)
+cast_decision ballot_box::get_decision(const digest_type& id)
 {
    return my->decision_db.fetch(id);
 }
@@ -384,4 +418,4 @@ vector<digest_type> ballot_box::get_contests_by_contestant(string contestant)
 
 FC_REFLECT_DERIVED( bts::vote::detail::ballot_box_impl::decision_storage_record,
                     (bts::vote::voter_decision),
-                    (voter_key) )
+                    (voter_key)(timestamp)(authoritative) )

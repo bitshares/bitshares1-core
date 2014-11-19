@@ -22,7 +22,7 @@ public:
    void close();
 
    void store_new_decision(const signed_voter_decision& decision);
-   signed_voter_decision get_decision(const digest_type& id);
+   cast_decision get_decision(const digest_type& id);
    vector<digest_type> get_decisions_by_voter(const address& voter);
    vector<digest_type> get_decisions_by_contest(const digest_type& contest_id);
    vector<digest_type> get_decisions_by_ballot(const digest_type& ballot_id);

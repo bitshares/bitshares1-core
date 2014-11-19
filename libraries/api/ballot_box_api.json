@@ -18,7 +18,7 @@
       {
          "method_name": "ballot_get_decision",
          "description": "Get a voter_decision by ID.",
-         "return_type": "signed_voter_decision",
+         "return_type": "cast_decision",
          "parameters" : [
             {
                "name" : "decision_id",

@@ -277,6 +277,26 @@ struct voter_decision
    }
 };
 
+/**
+ * @brief A cast_decision is a voter_decision as returned by the ballot box API.
+ *
+ * The voting booth creates signed_voter_decision structs and submits them to be counted. When indexed off of the
+ * blockchain, however, there is more data which should be recorded about a decision, such as its timestamp. This extra
+ * data is made available via the cast_decision structure. Furthermore, some data from the signed_voter_decision is no
+ * longer necessary, such as the signatures.
+ */
+struct cast_decision
+{
+   digest_type decision_id;
+   digest_type contest_id;
+   digest_type ballot_id;
+   vector<string> write_in_names;
+   map<fc::signed_int, fc::signed_int> voter_opinions;
+   bts::blockchain::address voter_id;
+   fc::time_point timestamp;
+   bool authoritative;
+};
+
 struct signed_voter_decision : public voter_decision
 {
    fc::ecc::compact_signature voter_signature;
@@ -326,3 +346,5 @@ FC_REFLECT( bts::vote::contest, (description)(tags)(contestants) )
 FC_REFLECT( bts::vote::ballot, (title)(description)(contests) )
 FC_REFLECT( bts::vote::voter_decision, (contest_id)(write_in_names)(voter_opinions) )
 FC_REFLECT_DERIVED( bts::vote::signed_voter_decision, (bts::vote::voter_decision), (voter_signature) )
+FC_REFLECT( bts::vote::cast_decision, (decision_id)(contest_id)(ballot_id)(write_in_names)(voter_opinions)(voter_id)
+            (timestamp)(authoritative) )
