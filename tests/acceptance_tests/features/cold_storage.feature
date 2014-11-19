@@ -30,7 +30,7 @@ Feature: Deposit and withdraw to and from addresses using a transaction builder 
         And I wait for one block
         Then Balance with public accountname: newaccount should have 9 XTS
 
-    Scenario: Transfer from cold storage to another address with an airgap. It fails until I switch to offline wallet!
+    Scenario: Transfer from cold storage to another address with an airgap. It fails unless I get a signature from the offline wallet!
         When I switch to wallet default
         And I do transfer 10 XTS from accountname: onlineaccount to address: coldstorage
 
