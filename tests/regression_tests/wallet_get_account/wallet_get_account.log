@@ -18,20 +18,19 @@ default (unlocked) >>> wallet_get_account testaccount
   "public_data": null,
   "owner_key": "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt",
   "active_key_history": [[
-      "2014-06-20T14:40:30",
+      "20140620T144030",
       "XTS6nLGSU7AJwvY8WmgQ6y2kmqhwyT6DWKo4bPvBohXnWZR4hUXZt"
     ]
   ],
-  "registration_date": "1970-01-01T00:00:00",
-  "last_update": "1970-01-01T00:00:00",
+  "registration_date": "19700101T000000",
+  "last_update": "19700101T000000",
   "delegate_info": null,
   "meta_data": null,
-  "account_address": "XTSEz7eoMUssHQBeeH5xLr38Rg8RSJXYBebN",
-  "private_data": null,
   "is_my_account": true,
   "approved": 0,
   "is_favorite": false,
   "block_production_enabled": false,
-  "last_used_gen_sequence": 0
+  "last_used_gen_sequence": 0,
+  "private_data": null
 }
 default (unlocked) >>> quit

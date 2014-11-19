@@ -21,6 +21,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 43    delegate42                      0.00000250 %   1        0        100.00 %      100 %    50.00000 XTS        1                       
 
+Block Signing Key: XTS6rPKwuYBhyU2wtqC4AuxQp1EGGP5To3uVz5qTj2S4w59mQViDv
 default (unlocked) >>> blockchain_get_account delegate43 
 Name: delegate43
 Registered: Genesis (Keyhotee Founder)
@@ -33,6 +34,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 44    delegate43                      0.00000250 %   1        0        100.00 %      100 %    50.00000 XTS        2                       
 
+Block Signing Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
 default (unlocked) >>> wallet_delegate_withdraw_pay delegate43 test 30 "withdraw"
 TIMESTAMP           BLOCK     FROM                TO                  AMOUNT                  MEMO                                        FEE                 ID      
 ======================================================================================================================================================================
@@ -57,6 +59,7 @@ ID    NAME (* next in line)           APPROVAL       PRODUCED MISSED   RELIABILI
 ==========================================================================================================================================
 44    delegate43                      0.00000097 %   1        0        100.00 %      100 %    19.50000 XTS        2                       
 
+Block Signing Key: XTS5bDtcH3tnLrcWPFdcjpEWaTZBiJLPRtvBVu5oKS6gHhh6tzd5F
 default (unlocked) >>> balance test
 ACCOUNT                         BALANCE                     
 ============================================================

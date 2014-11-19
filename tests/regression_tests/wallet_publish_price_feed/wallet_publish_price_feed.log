@@ -8,13 +8,14 @@ default (unlocked) >>> debug_wait 2
 OK
 default (unlocked) >>> help wallet_publish_price_feed
 Usage:
-wallet_publish_price_feed <delegate_account> <price> <asset_symbol>                                   publishes a price feed for BitAssets, only active delegates may do this
+wallet_publish_price_feed <delegate_account> <price> <asset_symbol> [force_settle]                    publishes a price feed for BitAssets, only active delegates may do this
 publishes a price feed for BitAssets, only active delegates may do this
 
 Parameters:
   delegate_account (account_name, required): the delegate to publish the price under
   price (real_amount, required): the number of this asset per XTS
   asset_symbol (asset_symbol, required): the type of asset being priced
+  force_settle (bool, optional, defaults to false): When a market dies for lack of interest vote to force all longs to settle at feed
 
 Returns:
   transaction_record
@@ -64,7 +65,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
     "price": 2,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -73,7 +74,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
     "price": 0.20000000000000001,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -82,7 +83,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate2
 [{
     "delegate_name": "delegate2",
     "price": 1,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -93,7 +94,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate4
 [{
     "delegate_name": "delegate4",
     "price": 2.5,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -104,7 +105,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate6
 [{
     "delegate_name": "delegate6",
     "price": 0.01,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -113,7 +114,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate7
 [{
     "delegate_name": "delegate7",
     "price": 2,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -130,7 +131,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
     "price": 2,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -139,7 +140,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
     "price": 0.20000000000000001,
-    "last_update": "2014-06-20T14:40:40",
+    "last_update": "20140620T144040",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -152,7 +153,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate0
 [{
     "delegate_name": "delegate0",
     "price": 99999,
-    "last_update": "2014-06-20T14:40:50",
+    "last_update": "20140620T144050",
     "asset_symbol": "XMO",
     "median_price": null
   }
@@ -161,7 +162,7 @@ default (unlocked) >>> blockchain_get_feeds_from_delegate delegate1
 [{
     "delegate_name": "delegate1",
     "price": 2.0000000000000002e-005,
-    "last_update": "2014-06-20T14:40:50",
+    "last_update": "20140620T144050",
     "asset_symbol": "XMO",
     "median_price": null
   }
