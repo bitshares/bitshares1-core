@@ -8,7 +8,7 @@
 namespace bts { namespace client { namespace detail {
 using namespace bts::vote;
 
-signature_data client_impl::registrar_demo_registration(const signed_identity_property& validated_ballot_id,
+expiring_signature client_impl::registrar_demo_registration(const signed_identity_property& validated_ballot_id,
                                                         const address& identity_address,
                                                         const fc::ecc::compact_signature& ballot_id_signature)
 {
@@ -17,14 +17,14 @@ signature_data client_impl::registrar_demo_registration(const signed_identity_pr
    auto voter_key = fc::ecc::public_key(ballot_id_signature, property_id);
 
    std::unordered_set<address> signatories;
-   const std::unordered_set<address> recognized_signatories = {
+   const std::unordered_set<address> recognized_verifiers = {
       bts::blockchain::public_key_type("XTS6LNgKuUmEH18TxXWDEeqMtYYQBBXWfE1ZDdSx95jjCJvnwnoGy")
    };
-   std::vector<address> valid_signatories;
+   std::vector<address> recognized_signatories;
 
    fc::time_point_sec from_time;
    fc::time_point_sec expiration_time;
-   for( const signature_data& signature : validated_ballot_id.verifier_signatures )
+   for( const expiring_signature& signature : validated_ballot_id.verifier_signatures )
    {
       if( from_time == fc::time_point_sec() || from_time < signature.valid_from )
          from_time = signature.valid_from;
@@ -33,13 +33,14 @@ signature_data client_impl::registrar_demo_registration(const signed_identity_pr
       signatories.insert(signature.signer(property_id));
    }
    std::set_intersection(signatories.begin(), signatories.end(),
-                         recognized_signatories.begin(), recognized_signatories.end(),
-                         std::back_inserter(valid_signatories));
-   FC_ASSERT(valid_signatories.size() > recognized_signatories.size() / 2,
+                         recognized_verifiers.begin(), recognized_verifiers.end(),
+                         std::back_inserter(recognized_signatories));
+   FC_ASSERT(recognized_signatories.size() > recognized_verifiers.size() / 2,
              "Ballot ID must be verfied by strictly more than half of the recognized verifiers!");
 
-   return signature_data::sign(_wallet->get_active_private_key("registrar"), fc::digest(voter_key),
-                               from_time, expiration_time);
+   return ballot::authorize_voter(validated_ballot_id.value.as<digest_type>(),
+                                  _wallet->get_active_private_key("registrar"),
+                                  voter_key, from_time, expiration_time);
 #else
    FC_THROW("OI! This is a demo function, you clodpole! You can't call this in production!");
 #endif

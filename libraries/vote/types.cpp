@@ -17,19 +17,19 @@ digest_type identity_property::id(const blockchain::address& identity)const
    return fc::digest(*this);
 }
 
-signature_data signature_data::sign(const blockchain::private_key_type& signer,
-                                    const digest_type& identity_property_id,
+expiring_signature expiring_signature::sign(const blockchain::private_key_type& signer,
+                                    const digest_type& digest,
                                     fc::time_point_sec valid_from,
                                     fc::time_point_sec valid_until)
 {
-   signature_data data;
+   expiring_signature data;
    data.valid_from = valid_from;
    data.valid_until = valid_until;
-   data.signature = signer.sign_compact(data.digest(identity_property_id));
+   data.signature = signer.sign_compact(data.digest(digest));
    return data;
 }
 
-digest_type signature_data::digest(const digest_type &id) const
+digest_type expiring_signature::digest(const digest_type &id) const
 {
    digest_type::encoder enc;
    fc::raw::pack(enc, id);
@@ -38,7 +38,7 @@ digest_type signature_data::digest(const digest_type &id) const
    return enc.result();
 }
 
-public_key_type signature_data::signer(const digest_type &id) const
+public_key_type expiring_signature::signer(const digest_type &id) const
 {
    fc::time_point_sec now = fc::time_point::now();
    if( now < valid_from || now > valid_until )
@@ -66,7 +66,7 @@ void identity::sign(const blockchain::private_key_type& key,
                     fc::time_point_sec valid_until)
 {
    for( signed_identity_property& property : properties )
-      property.verifier_signatures.push_back(signature_data::sign(key, property.id(owner), valid_from, valid_until));
+      property.verifier_signatures.push_back(expiring_signature::sign(key, property.id(owner), valid_from, valid_until));
 }
 
 digest_type identity_verification_request::digest() const
@@ -74,23 +74,26 @@ digest_type identity_verification_request::digest() const
    return fc::digest(*this);
 }
 
-fc::ecc::compact_signature ballot::authorize_voter(const blockchain::public_key_type& voter_public_key,
-                                                   const fc::ecc::private_key& registrar_private_key) const
+expiring_signature ballot::authorize_voter(const digest_type& ballot_id,
+                                       const fc::ecc::private_key& registrar_private_key,
+                                       const blockchain::public_key_type& voter_public_key,
+                                       fc::time_point_sec valid_from, fc::time_point_sec valid_until)
 {
    fc::sha256::encoder enc;
    fc::raw::pack(enc, voter_public_key);
-   fc::raw::pack(enc, id());
-   return registrar_private_key.sign_compact(enc.result());
+   fc::raw::pack(enc, ballot_id);
+   return expiring_signature::sign(registrar_private_key, enc.result(), valid_from, valid_until);
 }
 
 bts::blockchain::public_key_type ballot::get_authorizing_registrar(
-      const fc::ecc::compact_signature& authorization,
-      const bts::blockchain::public_key_type& voter_public_key) const
+      const digest_type& ballot_id,
+      const expiring_signature& authorization,
+      const bts::blockchain::public_key_type& voter_public_key)
 {
    fc::sha256::encoder enc;
    fc::raw::pack(enc, voter_public_key);
-   fc::raw::pack(enc, id());
-   return fc::ecc::public_key(authorization, enc.result());
+   fc::raw::pack(enc, ballot_id);
+   return authorization.signer(enc.result());
 }
 
 } } // namespace bts::vote

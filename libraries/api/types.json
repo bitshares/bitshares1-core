@@ -791,7 +791,7 @@
       },
       {
         "type_name" : "expiring_signature",
-        "cpp_return_type" : "bts::vote::signature_data",
+        "cpp_return_type" : "bts::vote::expiring_signature",
         "cpp_include_file" : "bts/vote/types.hpp"
       }
     ]

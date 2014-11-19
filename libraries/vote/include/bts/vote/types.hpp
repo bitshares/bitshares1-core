@@ -60,13 +60,13 @@ struct identity_property
 
 /**
  *  When someone signs a document that signature is only valid for
- *  a limited time range.  Absent a blockchain to retract a signature the
+ *  a limited time range. Absent a blockchain to retract a signature the
  *  time range prevents a need for renewal.
  */
-struct signature_data
+struct expiring_signature
 {
-   static signature_data sign( const private_key_type& signer,
-                               const digest_type& identity_property_id,
+   static expiring_signature sign( const private_key_type& signer,
+                               const digest_type& digest,
                                fc::time_point_sec valid_from,
                                fc::time_point_sec valid_until );
 
@@ -80,7 +80,7 @@ struct signature_data
 
    /// Note that signatures are not deterministic, so the signer and dates could match, but this only returns true if
    /// the signatures are exactly identical.
-   bool operator== (const signature_data& other)const
+   bool operator== (const expiring_signature& other)const
    {
       return valid_from == other.valid_from && valid_until == other.valid_until && signature == other.signature;
    }
@@ -107,7 +107,7 @@ struct signed_identity_property : public identity_property
       return ((identity_property&)*this).operator ==(other) && verifier_signatures == other.verifier_signatures;
    }
 
-   vector<signature_data> verifier_signatures;
+   vector<expiring_signature> verifier_signatures;
 };
 
 /**
@@ -245,10 +245,13 @@ struct ballot
    {
       return fc::digest(*this);
    }
-   compact_signature authorize_voter(const public_key_type& voter_public_key,
-                                     const fc::ecc::private_key& registrar_private_key)const;
-   public_key_type get_authorizing_registrar(const compact_signature& authorization,
-                                             const public_key_type& voter_public_key)const;
+   static expiring_signature authorize_voter(const digest_type& ballot_id,
+                                         const fc::ecc::private_key& registrar_private_key,
+                                         const public_key_type& voter_public_key,
+                                         fc::time_point_sec valid_from, fc::time_point_sec valid_until);
+   static public_key_type get_authorizing_registrar(const digest_type& ballot_id,
+                                                    const expiring_signature& authorization,
+                                                    const public_key_type& voter_public_key);
 };
 
 /**
@@ -269,7 +272,7 @@ struct voter_decision
    vector<string> write_in_names;
    map<fc::signed_int, fc::signed_int> voter_opinions;
    digest_type ballot_id;
-   vector<fc::ecc::compact_signature> registrar_authorizations;
+   vector<expiring_signature> registrar_authorizations;
 
    digest_type digest()const
    {
@@ -318,7 +321,7 @@ struct wallet_state
 //     map<registrar_id, token_data>  token_state; // blinded/unblinded tokens generated for this registrar.
 
      // signature of registrars on voter_id_public_key
-     vector<compact_signature>  registrars;
+     vector<expiring_signature>  registrars;
 
      // trx history
      vector<voter_decision>   decisions;
@@ -326,7 +329,7 @@ struct wallet_state
 
 } } // bts::vote
 
-FC_REFLECT( bts::vote::signature_data, (valid_from)(valid_until)(signature) )
+FC_REFLECT( bts::vote::expiring_signature, (valid_from)(valid_until)(signature) )
 FC_REFLECT( bts::vote::identity_property, (salt)(name)(value) )
 FC_REFLECT_DERIVED( bts::vote::signed_identity_property, (bts::vote::identity_property), (verifier_signatures) )
 FC_REFLECT( bts::vote::identity, (owner)(properties) )

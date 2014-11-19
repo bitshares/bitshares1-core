@@ -111,15 +111,16 @@ public:
 
    optional<identity_verification_response> store_new_request(identity_record rec)
    {
-
-      if( _id_summary_db.get<by_owner>().find(rec.owner) != _id_summary_db.get<by_owner>().end() &&
-          _id_summary_db.get<by_owner>().find(rec.owner)->status == accepted )
+      auto itr = _id_summary_db.get<by_owner>().find(rec.owner);
+      if( itr != _id_summary_db.get<by_owner>().end() && itr->status == accepted )
       {
          //If this owner has already completed the verification process, just return the status.
          return check_pending_identity(rec.owner);
       }
 
-      commit_record(rec);
+      //Only record the new request if it's at least a minute older than the old one
+      if( rec.id - itr->id >= fc::minutes(1) )
+         commit_record(rec);
 
       return optional<identity_verification_response>();
    }
