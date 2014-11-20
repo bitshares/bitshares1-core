@@ -432,4 +432,4 @@ fc::variant identity_verifier::fetch_record(fc::microseconds record_id) const
 
 FC_REFLECT_DERIVED( bts::vote::detail::identity_record, (bts::vote::identity_verification_request_summary),
                     (owner_key)(person_photo)(id_card_front_photo)(id_card_back_photo)(voter_registration_photo)
-                    (response) )
+                    (response)(conflicting_ids) )
