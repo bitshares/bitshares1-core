@@ -1093,12 +1093,33 @@ namespace bts { namespace blockchain {
 
              my->open_database( data_dir );
 
-             // TODO: This was causing sync failures after re-indexing
-             //For the duration of reindexing, we allow certain databases to postpone flushing until we finish.
-             //my->_account_db.set_flush_on_store( false );
-             //my->_address_to_account_db.set_flush_on_store( false );
-             //my->_account_index_db.set_flush_on_store( false );
-             //my->_delegate_vote_index_db.set_flush_on_store( false );
+             const auto set_db_cache_write_through = [ this ]( bool write_through )
+             {
+                 my->_property_db.set_write_through( write_through );
+                 my->_slate_db.set_write_through( write_through );
+
+                 my->_account_db.set_write_through( write_through );
+                 my->_account_index_db.set_write_through( write_through );
+                 my->_address_to_account_db.set_write_through( write_through );
+                 my->_delegate_vote_index_db.set_write_through( write_through );
+
+                 my->_asset_db.set_write_through( write_through );
+                 my->_symbol_index_db.set_write_through( write_through );
+
+                 my->_ask_db.set_write_through( write_through );
+                 my->_bid_db.set_write_through( write_through );
+                 my->_relative_ask_db.set_write_through( write_through );
+                 my->_relative_bid_db.set_write_through( write_through );
+                 my->_short_db.set_write_through( write_through );
+                 my->_collateral_db.set_write_through( write_through );
+
+                 my->_feed_db.set_write_through( write_through );
+                 my->_market_status_db.set_write_through( write_through );
+                 my->_market_transactions_db.set_write_through( write_through );
+             };
+
+             // For the duration of reindexing, we allow certain databases to postpone flushing until we finish
+             set_db_cache_write_through( false );
 
              my->initialize_genesis( genesis_file );
 
@@ -1152,12 +1173,8 @@ namespace bts { namespace blockchain {
                  }
              }
 
-             // TODO: See above
-             //Re-enable flushing on all databases we disabled it on above
-             //my->_account_db.set_flush_on_store( true );
-             //my->_address_to_account_db.set_flush_on_store( true );
-             //my->_account_index_db.set_flush_on_store( true );
-             //my->_delegate_vote_index_db.set_flush_on_store( true );
+             // Re-enable flushing on all cached databases we disabled it on above
+             set_db_cache_write_through( true );
 
              id_to_data_orig.close();
              fc::remove_all( data_dir / "raw_chain/id_to_data_orig" );
