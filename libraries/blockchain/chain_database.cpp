@@ -1910,7 +1910,7 @@ namespace bts { namespace blockchain {
         for( auto pair : get_balances( "", -1 ) )
         {
             auto bal = pair.second;
-            if( bal.is_owner( addr ) )
+            if( bal.is_owner( addr ) || addr == bal.id() )
             {
                 ret.push_back(bal);
             }

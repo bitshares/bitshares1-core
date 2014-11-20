@@ -234,13 +234,43 @@ wallet_transaction_record detail::client_impl::wallet_burn(
 }
 
 
-address  detail::client_impl::wallet_address_create( const string& account_name, const string& label )
+string  detail::client_impl::wallet_address_create( const string& account_name,
+                                                    const string& label,
+                                                    int legacy_network_byte )
+{ try {
+    auto pubkey = _wallet->get_new_public_key( account_name );
+    if( legacy_network_byte == -1 )
+        return string( address(pubkey) );
+    else if (legacy_network_byte == 0 || legacy_network_byte == 56)
+        return string( pts_address( pubkey, legacy_network_byte ) );
+    else
+        FC_ASSERT(!"Unsupported network byte");
+} FC_CAPTURE_AND_RETHROW( (account_name)(label)(legacy_network_byte) ) }
+
+
+wallet_transaction_record detail::client_impl::wallet_transfer_to_legacy_address(
+        double amount_to_transfer,
+        const string& asset_symbol,
+        const string& from_account_name,
+        const pts_address& to_address,
+        const string& memo_message,
+        const vote_selection_method& selection_method )
 {
-    return _wallet->create_new_address( account_name, label );
+    auto record =  _wallet->transfer_asset_to_address( amount_to_transfer,
+                                                       asset_symbol,
+                                                       from_account_name,
+                                                       address( to_address ),
+                                                       memo_message,
+                                                       selection_method,
+                                                       true );
+    network_broadcast_transaction( record.trx );
+    return record;
+
 }
 
 
-wallet_transaction_record detail::client_impl::wallet_transfer_asset_to_address(
+
+wallet_transaction_record detail::client_impl::wallet_transfer_to_address(
         double amount_to_transfer,
         const string& asset_symbol,
         const string& from_account_name,
@@ -366,6 +396,38 @@ transaction_builder detail::client_impl::wallet_withdraw_from_address(
     }
     return *builder;
 }
+
+
+
+transaction_builder detail::client_impl::wallet_withdraw_from_legacy_address(
+                                                    const string& amount,
+                                                    const string& symbol,
+                                                    const pts_address& from_address,
+                                                    const string& to,
+                                                    const vote_selection_method& vote_method,
+                                                    bool sign )const
+{
+    address to_address;
+    try {
+        auto acct = _wallet->get_account( to );
+        to_address = acct.owner_address();
+    } catch (...) {
+        to_address = address( to );
+    }
+    asset ugly_asset = _chain_db->to_ugly_asset(amount, symbol);
+    auto builder = _wallet->create_transaction_builder();
+    auto fee = _wallet->get_transaction_fee();
+    builder->withdraw_from_balance( from_address, ugly_asset.amount + fee.amount );
+    builder->deposit_to_balance( to_address, ugly_asset, vote_method );
+    if( sign )
+    {
+        builder->transaction_record.trx.expiration = _chain_db->now() + _wallet->get_transaction_expiration();
+        builder->sign();
+    }
+    return *builder;
+}
+
+
 
 transaction_builder detail::client_impl::wallet_multisig_withdraw_start(
                                                     const string& amount,

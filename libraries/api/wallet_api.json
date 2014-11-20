@@ -539,7 +539,7 @@
       {
          "method_name" : "wallet_address_create",
          "description" : "Creates an address which can be used for a simple (non-TITAN) transfer.",
-         "return_type" : "address",
+         "return_type" : "string",
          "parameters"  : [
             {
               "name" : "account_name",
@@ -551,13 +551,60 @@
               "type" : "string",
               "description" : "",
               "default_value" : ""
+            },
+            {
+              "name" : "legacy_network_byte",
+              "type" : "int32_t",
+              "description" : "If not -1, use this as the network byte for a BTC-style address.",
+              "default_value" : -1
             }
          ],
          "prerequisites" : ["wallet_open"],
          "aliases": ["new_address"]
       },
       {
-         "method_name" : "wallet_transfer_asset_to_address",
+         "method_name" : "wallet_transfer_to_legacy_address",
+         "description" : "Do a simple (non-TITAN) transfer to a BTC-style address",
+         "return_type" : "transaction_record",
+         "parameters"  : [
+            {
+              "name" : "amount_to_transfer",
+              "type" : "real_amount",
+              "description" : "the amount of shares to transfer"
+            },
+            {
+              "name" : "asset_symbol",
+              "type" : "asset_symbol",
+              "description" : "the asset to transfer"
+            },
+            {
+              "name" : "from_account_name",
+              "type" : "account_name",
+              "description" : "the source account to draw the shares from"
+            },
+            {
+              "name" : "to_address",
+              "type" : "legacy_address",
+              "description" : "the address to transfer to"
+            },
+            {
+              "name" : "memo_message",
+              "type" : "string",
+              "description" : "a memo to store with the transaction",
+              "default_value" : ""
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_recommended"
+            }
+         ],
+         "prerequisites" : ["wallet_open"]
+      },
+
+      {
+         "method_name" : "wallet_transfer_to_address",
          "description" : "Do a simple (non-TITAN) transfer to an address",
          "return_type" : "transaction_record",
          "parameters"  : [
@@ -786,6 +833,51 @@
         "aliases": ["withdraw_from_address"],
         "is_const": true
     },
+    {
+        "method_name": "wallet_withdraw_from_legacy_address",
+        "description": "",
+        "return_type": "transaction_builder",
+        "parameters":
+        [
+            {
+              "name": "amount",
+              "type": "string",
+              "description": "how much to transfer"
+            },
+            {
+              "name": "symbol",
+              "type": "string",
+              "description": "which asset"
+            },
+
+            {
+              "name": "from_address",
+              "type": "legacy_address",
+              "description": "the balance address to withdraw from"
+            },
+            {
+              "name": "to",
+              "type": "string",
+              "description": "address or account to receive funds"
+            },
+            {
+              "name" : "vote_method",
+              "type" : "vote_selection_method",
+              "description" : "enumeration [vote_none | vote_all | vote_random | vote_recommended] ",
+              "default_value" : "vote_none"
+            },
+            {
+                "name": "sign_and_broadcast",
+                "type": "bool",
+                "description": "",
+                "default_value": true
+            }
+        ],
+        "prerequisites": ["json_authenticated"],
+        "aliases": ["withdraw_from_legacy_address"],
+        "is_const": true
+    },
+
     {
         "method_name": "wallet_multisig_withdraw_start",
         "description": "",
