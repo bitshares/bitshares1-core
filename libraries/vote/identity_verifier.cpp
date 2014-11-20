@@ -321,10 +321,18 @@ public:
          return;
       }
 
+      //Concatenate first, middle and last names; remove all non-alphabetical characters, and make completely upper-case
+      string normalized_name = first_name->value.as_string()
+            + middle_name->value.as_string()
+            + last_name->value.as_string();
+      normalized_name.erase(std::remove_if(normalized_name.begin(), normalized_name.end(), [](char c) {
+         return !isalpha(c);
+      }), normalized_name.end());
+      for( char& c : normalized_name )
+         c = toupper(c);
+
       identity_uniqueness_record unique_record = {id_number->value.as_string(),
-                                                  first_name->value.as_string()
-                                                  + middle_name->value.as_string()
-                                                  + last_name->value.as_string(),
+                                                  normalized_name,
                                                   dob->value.as_string()};
 
       if( !skip_soft_checks )
