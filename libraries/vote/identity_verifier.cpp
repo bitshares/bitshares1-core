@@ -332,7 +332,8 @@ public:
 
       identity_uniqueness_record unique_record = {id_number->value.as_string(),
                                                   normalized_name,
-                                                  dob->value.as_string()};
+                                                  dob->value.as_string(),
+                                                  record.id};
 
       if( !skip_soft_checks )
       {
