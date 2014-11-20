@@ -159,8 +159,8 @@ public:
          return check_pending_identity(rec.owner);
       }
 
-      //Only record the new request if it's at least a minute older than the old one
-      if( rec.id - itr->id >= fc::minutes(1) )
+      //Only record the new request if it's at least 30 seconds older than the old one
+      if( rec.id - itr->id >= fc::seconds(30) )
          commit_record(rec);
 
       return optional<identity_verification_response>();
