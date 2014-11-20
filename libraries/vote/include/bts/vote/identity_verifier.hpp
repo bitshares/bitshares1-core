@@ -119,18 +119,32 @@ public:
     * @brief Mark request as resolved and set its response.
     * @param request_id Timestamp of the request to resolve. This uniquely identifies the request.
     * @param response Response to the request
+    * @param skip_soft_checks If true, soft uniqueness checks will be skipped.
     *
     * This will mark the request as resolved, store the decision, and allow a client to retrieve the resolution. Note
     * that ALL properties present in the response will be regarded as verified and will be signed. This means that it
     * is the responsibility of the caller to ensure that no properties are passed in response.verified_identity which
     * are not approved of.
     *
+    * If the response is marked as being accepted, it will still be required to pass a series of soft and hard
+    * uniqueness checks before it will be returned to the user. If a soft uniqueness check fails, the record will be
+    * marked as needs_further_review and its list of conflicting_ids will be populated with the conflicting records.
+    * If a hard uniqueness check fails, the record will automatically be rejected as a duplicate identity.
+    *
     * @throws fc::key_not_found_exception If request_id does not match any known request
     * @throws fc::exception If response.accepted == true, but response.verified_identity == null
     * @throws fc::exception If response.accepted == true, but response.expiration_date == null
     * @throws fc::exception If response.verified_identity contains a property that was not in the request
     */
-   void resolve_request(fc::microseconds request_id, const identity_verification_response& response);
+   void resolve_request(fc::microseconds request_id, const identity_verification_response& response,
+                        bool skip_soft_checks);
+
+   /**
+    * @brief Get all data known about a particular record.
+    * @param record_id The record ID to get information on
+    * @return Object containing all known information on the specified record.
+    */
+   fc::variant fetch_record(fc::microseconds record_id) const;
 };
 
 typedef std::shared_ptr<identity_verifier> identity_verifier_ptr;

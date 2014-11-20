@@ -93,9 +93,29 @@
                     "name" : "response",
                     "type" : "verification_response",
                     "description" : "The decision on the verification request."
+                },
+                {
+                    "name" : "skip_soft_checks",
+                    "type" : "bool",
+                    "description" : "If true, soft uniqueness checks will be skipped.",
+                    "default_value" : "false"
                 }
             ],
             "is_const" : false,
+            "prerequisites" : ["json_authenticated"]
+        },
+        {
+            "method_name": "verifier_review_record",
+            "description": "Get all data available on a particular record.",
+            "return_type": "variant",
+            "parameters" : [
+                {
+                    "name" : "request_id",
+                    "type" : "microseconds",
+                    "description" : "The ID (timestamp) of the record to review."
+                }
+            ],
+            "is_const" : true,
             "prerequisites" : ["json_authenticated"]
         }
     ]

@@ -10,6 +10,8 @@
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 
+#include <iostream>
+
 #define SANITY_CHECK\
     FC_ASSERT( is_open(), "ID Verifier is not open. Is the ID verifier server enabled in the config?" )
 
@@ -48,13 +50,23 @@ struct identity_record : public identity_verification_request_summary {
    string voter_registration_photo;
 
    fc::optional<identity_verification_response> response;
+
+   vector<fc::microseconds> conflicting_ids;
+};
+struct identity_uniqueness_record {
+   string id_number;
+   string name;
+   string date_of_birth;
+   fc::microseconds id;
 };
 
 class identity_verifier_impl {
 protected:
    //Dummy types to tag multi_index_container indices
-   struct by_owner{};
-   struct by_status{};
+   struct by_owner;
+   struct by_status;
+   struct by_id;
+   struct by_name_dob;
 public:
    boost::multi_index_container<
       identity_verification_request_summary,
@@ -79,6 +91,23 @@ public:
          >
       >
    > _id_summary_db;
+   boost::multi_index_container<
+      identity_uniqueness_record,
+      indexed_by<
+         hashed_unique<
+            tag<by_id>,
+            member<identity_uniqueness_record, string, &identity_uniqueness_record::id_number>
+         >,
+         hashed_non_unique<
+            tag<by_name_dob>,
+            composite_key<
+               identity_uniqueness_record,
+               member<identity_uniqueness_record, string, &identity_uniqueness_record::name>,
+               member<identity_uniqueness_record, string, &identity_uniqueness_record::date_of_birth>
+            >
+         >
+      >
+   > _id_unique_db;
    bts::db::level_map<fc::microseconds, identity_record> _id_db;
 
    void open(const fc::path& data_dir)
@@ -97,6 +126,18 @@ public:
             update_record_status(rec.id, awaiting_processing);
          else
             _id_summary_db.insert(rec);
+
+         //Put all accepted records through post-processing again, to populate the uniqueness DB
+         if( rec.status == accepted )
+         {
+            postprocess_accepted_record(rec, true);
+            if( rec.status != accepted ) {
+               elog("CRITICAL: Record from verifier database was marked as accepted but failed post-processing: ${r}",
+                    ("r", rec));
+               std::cerr << "CRITICAL: Record from verifier database was marked as accepted but failed post-processing:\n"
+                    << fc::json::to_pretty_string(rec);
+            }
+         }
       }
    }
    void close()
@@ -207,9 +248,10 @@ public:
 
       return update_record_status(request_summary_vector[0].id, in_processing);
    }
-   void resolve_request(fc::microseconds id, identity_verification_response response)
+   void resolve_request(fc::microseconds id, identity_verification_response response, bool skip_soft_checks)
    {
-      //We need to further update the record; don't bother to commit it just yet. We'll do it just once at the end.
+      //We need to further update the record; don't commit it yet. We'll do it just once at the end. If we fail midway
+      //through processing a record, we don't want to have commited it.
       identity_record request_record = update_record_status(id, response.accepted? accepted : rejected, false);
       if( response.accepted )
       {
@@ -229,12 +271,81 @@ public:
       } else {
          //Request was rejected. Remove all properties, they must not be signed.
          request_record.properties.clear();
+         response.verified_identity = decltype(response.verified_identity)();
       }
       //Copy over the rejection reason even if the request was accepted. No harm in passing it along if the verifier
       //saw fit to set it.
       request_record.response = response;
       request_record.rejection_reason = response.rejection_reason;
+
+      if( request_record.status == accepted )
+         postprocess_accepted_record(request_record, skip_soft_checks);
+
       commit_record(request_record);
+   }
+
+   bool soft_uniqueness_checks(const identity_uniqueness_record& unique_record, identity_record& record)
+   {
+      bool passes = true;
+      record.conflicting_ids.clear();
+
+      auto& name_dob_index = _id_unique_db.get<by_name_dob>();
+      auto itr = name_dob_index.find(boost::make_tuple(unique_record.name, unique_record.date_of_birth));
+      if( itr != name_dob_index.end() )
+      {
+         passes = false;
+         auto range = name_dob_index.equal_range(boost::make_tuple(unique_record.name, unique_record.date_of_birth));
+         std::for_each(range.first, range.second, [&record](const identity_uniqueness_record& rec) {
+            record.conflicting_ids.emplace_back(rec.id);
+         });
+      }
+
+      return passes;
+   }
+
+   //Insert into uniqueness database. Mark for further review if a soft uniqueness contraint fails, or reject if a hard
+   //uniqueness contraint fails.
+   void postprocess_accepted_record(identity_record& record, bool skip_soft_checks)
+   {
+      auto first_name = record.get_property("First Name");
+      auto middle_name = record.get_property("Middle Name");
+      auto last_name = record.get_property("Last Name");
+      auto dob = record.get_property("Date of Birth");
+      auto id_number = record.get_property("ID Number");
+
+      if( !(first_name && middle_name && last_name && dob && id_number) )
+      {
+         record.status = needs_further_review;
+         record.rejection_reason = ("A required field was not provided. Required fields are all name fields, date of "
+                                    "birth, and ID Number. Complete these fields and resubmit as an accepted identity.");
+         return;
+      }
+
+      identity_uniqueness_record unique_record = {id_number->value.as_string(),
+                                                  first_name->value.as_string()
+                                                  + middle_name->value.as_string()
+                                                  + last_name->value.as_string(),
+                                                  dob->value.as_string()};
+
+      if( !skip_soft_checks )
+      {
+         bool soft_checks_passed = soft_uniqueness_checks(unique_record, record);
+         if( !soft_checks_passed )
+         {
+            record.status = needs_further_review;
+            record.rejection_reason = ("One or more soft-uniqueness checks failed. Please review all conflicting "
+                                       "records and resubmit if the identity should be accepted anyways.");
+            return;
+         }
+      }
+
+      //Hard uniqueness checks are enforced by the container. Attempt insertion, and reject if it fails.
+      if( !_id_unique_db.insert(unique_record).second )
+      {
+         record.status = rejected;
+         record.rejection_reason = ("This identity has already been verified, and cannot be verified again.");
+         return;
+      }
    }
 };
 } // namespace detail
@@ -304,10 +415,17 @@ fc::optional<identity_verification_request> identity_verifier::take_next_request
    return my->take_next_request();
 }
 
-void identity_verifier::resolve_request(fc::microseconds request_id, const identity_verification_response& response)
+void identity_verifier::resolve_request(fc::microseconds request_id, const identity_verification_response& response,
+                                        bool skip_soft_checks)
 {
    SANITY_CHECK;
-   my->resolve_request(request_id, response);
+   my->resolve_request(request_id, response, skip_soft_checks);
+}
+
+fc::variant identity_verifier::fetch_record(fc::microseconds record_id) const
+{
+   SANITY_CHECK;
+   return fc::variant(my->fetch_request_by_id(record_id));
 }
 
 } } // namespace bts::vote

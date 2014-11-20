@@ -28,7 +28,8 @@ enum request_status_enum {
    awaiting_processing,
    in_processing,
    accepted,
-   rejected
+   rejected,
+   needs_further_review
 };
 
 /**
@@ -343,7 +344,7 @@ FC_REFLECT( bts::vote::identity_verification_response, (accepted)
             (owner_photo_valid)(id_front_photo_valid)(id_back_photo_valid)(voter_reg_photo_valid))
 FC_REFLECT_TYPENAME( bts::vote::request_status_enum )
 FC_REFLECT_ENUM( bts::vote::request_status_enum,
-                 (awaiting_processing)(in_processing)(accepted)(rejected) )
+                 (awaiting_processing)(in_processing)(accepted)(rejected)(needs_further_review) )
 FC_REFLECT( bts::vote::contestant, (name)(description) )
 FC_REFLECT( bts::vote::contest, (description)(tags)(contestants) )
 FC_REFLECT( bts::vote::ballot, (title)(description)(contests) )

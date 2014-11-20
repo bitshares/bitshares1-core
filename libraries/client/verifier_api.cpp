@@ -109,9 +109,16 @@ optional<identity_verification_request> client_impl::verifier_take_next_request(
 }
 
 void client_impl::verifier_resolve_request(const fc::microseconds &request_id,
-                                           const identity_verification_response &response)
+                                           const identity_verification_response &response,
+                                           bool skip_soft_checks)
 {
    SANITY_CHECK;
-   _id_verifier->resolve_request(request_id, response);
+   _id_verifier->resolve_request(request_id, response, skip_soft_checks);
+}
+
+fc::variant client_impl::verifier_review_record(const fc::microseconds &request_id) const
+{
+   SANITY_CHECK;
+   return _id_verifier->fetch_record(request_id);
 }
 } } } // namespace bts::client::detail
