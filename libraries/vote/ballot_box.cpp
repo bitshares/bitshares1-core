@@ -129,16 +129,24 @@ public:
          std::unordered_set<address> signatories;
          std::vector<address> recognized_signatories;
 
+         //The decision references a ballot ID and a contest ID. We need to lookup that ballot and verify that the
+         //contest is on it. If so, we need to check the registrar signatures authorize the voter to vote on the ballot
          auto ballot = ballot_db.fetch_optional(decision.ballot_id);
-         if( ballot )
+         if( ballot && std::find(ballot->contests.begin(),
+                                 ballot->contests.end(),
+                                 decision.contest_id) != ballot->contests.end() )
             for( const auto& signature : decision.registrar_authorizations )
                signatories.insert(ballot->get_authorizing_registrar(decision.ballot_id, signature, decision.voter_key));
+
          std::set_intersection(recognized_registrars.begin(), recognized_registrars.end(),
                                signatories.begin(), signatories.end(),
                                std::back_inserter(recognized_signatories));
 
          decision.authoritative = recognized_signatories.size() > recognized_registrars.size() / 2;
-      } catch (...){}
+      } catch (...){
+         /* In case of error in here, we just declare the decision non-authoritative. */
+         elog("Error while checking authority of decision ${d}", ("d", decision));
+      }
    }
 
    void update_index(const digest_type& id, const decision_storage_record& storage_record)
