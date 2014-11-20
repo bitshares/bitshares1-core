@@ -97,8 +97,6 @@ Scenario: Alice shorts BitUSD and sells to Bob, and later Alice uses relative or
   #  Then I should have around 20 USD
   #  And I should have no USD/XTS margin orders
 
-
-@current @pause
 Scenario: Alice shorts BitUSD, Bob shorts BitBTC, then they can trade USD vs BTC
   Given I'm Alice
   And delegates publish price feeds:
