@@ -126,7 +126,7 @@ namespace bts { namespace blockchain {
             share_type                                                                  _relay_fee;
 
             bts::db::cached_level_map<uint32_t, std::vector<market_transaction>>        _market_transactions_db;
-            bts::db::level_map<slate_id_type, delegate_slate>                           _slate_db;
+            bts::db::cached_level_map<slate_id_type, delegate_slate>                    _slate_db;
             bts::db::level_map<uint32_t, std::vector<block_id_type>>                    _fork_number_db;
             bts::db::level_map<block_id_type,block_fork_data>                           _fork_db;
             bts::db::cached_level_map<uint32_t, fc::variant>                            _property_db;
@@ -154,8 +154,8 @@ namespace bts { namespace blockchain {
             bts::db::level_map<transaction_id_type, signed_transaction>                 _pending_transaction_db;
             std::map<fee_index, transaction_evaluation_state_ptr>                       _pending_fee_index;
 
-            bts::db::level_map<asset_id_type, asset_record>                             _asset_db;
-            bts::db::level_map<string, asset_id_type>                                   _symbol_index_db;
+            bts::db::cached_level_map<asset_id_type, asset_record>                      _asset_db;
+            bts::db::cached_level_map<string, asset_id_type>                            _symbol_index_db;
 
             bts::db::level_map<balance_id_type, balance_record>                         _balance_db;
 
@@ -177,7 +177,7 @@ namespace bts { namespace blockchain {
             bts::db::cached_level_map<market_index_key, collateral_record>              _collateral_db;
             bts::db::cached_level_map<feed_index, feed_record>                          _feed_db;
 
-            bts::db::level_map<std::pair<asset_id_type,asset_id_type>, market_status>   _market_status_db;
+            bts::db::cached_level_map<std::pair<asset_id_type,asset_id_type>, market_status> _market_status_db;
             bts::db::level_map<market_history_key, market_history_record>               _market_history_db;
 
             std::map<operation_type_enum, std::deque<operation>>                        _recent_operations;

@@ -1170,12 +1170,33 @@ namespace bts { namespace blockchain {
 
              my->open_database( data_dir );
 
-             // TODO: This was causing sync failures after re-indexing
-             //For the duration of reindexing, we allow certain databases to postpone flushing until we finish.
-             //my->_account_db.set_flush_on_store( false );
-             //my->_address_to_account_db.set_flush_on_store( false );
-             //my->_account_index_db.set_flush_on_store( false );
-             //my->_delegate_vote_index_db.set_flush_on_store( false );
+             const auto set_db_cache_write_through = [ this ]( bool write_through )
+             {
+                 my->_property_db.set_write_through( write_through );
+                 my->_slate_db.set_write_through( write_through );
+
+                 my->_account_db.set_write_through( write_through );
+                 my->_account_index_db.set_write_through( write_through );
+                 my->_address_to_account_db.set_write_through( write_through );
+                 my->_delegate_vote_index_db.set_write_through( write_through );
+
+                 my->_asset_db.set_write_through( write_through );
+                 my->_symbol_index_db.set_write_through( write_through );
+
+                 my->_ask_db.set_write_through( write_through );
+                 my->_bid_db.set_write_through( write_through );
+                 my->_relative_ask_db.set_write_through( write_through );
+                 my->_relative_bid_db.set_write_through( write_through );
+                 my->_short_db.set_write_through( write_through );
+                 my->_collateral_db.set_write_through( write_through );
+
+                 my->_feed_db.set_write_through( write_through );
+                 my->_market_status_db.set_write_through( write_through );
+                 my->_market_transactions_db.set_write_through( write_through );
+             };
+
+             // For the duration of reindexing, we allow certain databases to postpone flushing until we finish
+             set_db_cache_write_through( false );
 
              my->initialize_genesis( genesis_file );
 
@@ -1229,12 +1250,8 @@ namespace bts { namespace blockchain {
                  }
              }
 
-             // TODO: See above
-             //Re-enable flushing on all databases we disabled it on above
-             //my->_account_db.set_flush_on_store( true );
-             //my->_address_to_account_db.set_flush_on_store( true );
-             //my->_account_index_db.set_flush_on_store( true );
-             //my->_delegate_vote_index_db.set_flush_on_store( true );
+             // Re-enable flushing on all cached databases we disabled it on above
+             set_db_cache_write_through( true );
 
              id_to_data_orig.close();
              fc::remove_all( data_dir / "raw_chain/id_to_data_orig" );
@@ -1679,57 +1696,134 @@ namespace bts { namespace blockchain {
 
    void chain_database::store_account_record( const account_record& record_to_store )
    { try {
-       const oaccount_record prev_account_record = get_account_record( record_to_store.id );
-       if( prev_account_record.valid() )
+       const auto remove_record = [ this ]( const account_record& record )
        {
-           if( prev_account_record->is_delegate() )
-               my->_delegate_vote_index_db.remove( vote_del( prev_account_record->net_votes(), prev_account_record->id ) );
-
-           if( record_to_store.is_null() )
+           my->_account_db.remove( record.id );
+           my->_account_index_db.remove( record.name );
+           my->_address_to_account_db.remove( record.owner_address() );
+           if( !record.is_retracted() )
+               my->_address_to_account_db.remove( record.active_address() );
+           if( record.is_delegate() )
            {
-               my->_account_db.remove( prev_account_record->id );
-               my->_account_index_db.remove( prev_account_record->name );
-               my->_address_to_account_db.remove( prev_account_record->owner_address() );
-               for( const auto& item : prev_account_record->active_key_history )
-               {
-                   const public_key_type& active_key = item.second;
-                   my->_address_to_account_db.remove( address( active_key) );
-               }
-               if( prev_account_record->is_delegate() )
-               {
-                   for( const auto& item : prev_account_record->delegate_info->signing_key_history )
-                   {
-                       const public_key_type& signing_key = item.second;
-                       my->_address_to_account_db.remove( address( signing_key) );
-                   }
-               }
+               my->_address_to_account_db.remove( record.signing_address() );
+               if( !record.is_retracted() )
+                   my->_delegate_vote_index_db.remove( vote_del( record.net_votes(), record.id ) );
            }
-       }
+       };
 
-       if( record_to_store.is_null() )
+       const auto store_record = [ this ]( const account_record& record )
+       {
+           my->_account_db.store( record.id, record );
+           my->_account_index_db.store( record.name, record.id );
+           my->_address_to_account_db.store( record.owner_address(), record.id );
+           if( !record.is_retracted() )
+               my->_address_to_account_db.store( record.active_address(), record.id );
+           if( record.is_delegate() )
+           {
+               my->_address_to_account_db.store( record.signing_address(), record.id );
+               if( !record.is_retracted() )
+                   my->_delegate_vote_index_db.store( vote_del( record.net_votes(), record.id ), 0 /*dummy value*/ );
+           }
+       };
+
+       const auto index_active_keys = [ this ]( const account_record& prev_record, const account_record& new_record )
+       {
+           if( prev_record.is_retracted() && new_record.is_retracted() )
+               return;
+
+           if( !prev_record.is_retracted() && new_record.is_retracted() )
+               return my->_address_to_account_db.remove( prev_record.active_address() );
+
+           if( prev_record.is_retracted() && !new_record.is_retracted() )
+               return my->_address_to_account_db.store( new_record.active_address(), new_record.id );
+
+           const address& prev_active_address = prev_record.active_address();
+           const address& new_active_address = new_record.active_address();
+           if( prev_active_address != new_active_address )
+           {
+               my->_address_to_account_db.remove( prev_active_address );
+               my->_address_to_account_db.store( new_active_address, new_record.id );
+           }
+       };
+
+       const auto index_signing_keys = [ this ]( const account_record& prev_record, const account_record& new_record )
+       {
+           if( !prev_record.is_delegate() && !new_record.is_delegate() )
+               return;
+
+           if( prev_record.is_delegate() && !new_record.is_delegate() )
+               return my->_address_to_account_db.remove( prev_record.signing_address() );
+
+           if( !prev_record.is_delegate() && new_record.is_delegate() )
+               return my->_address_to_account_db.store( new_record.signing_address(), new_record.id );
+
+           const address& prev_signing_address = prev_record.signing_address();
+           const address& new_signing_address = new_record.signing_address();
+           if( prev_signing_address != new_signing_address )
+           {
+               my->_address_to_account_db.remove( prev_signing_address );
+               my->_address_to_account_db.store( new_signing_address, new_record.id );
+           }
+       };
+
+       const auto index_votes = [ this ]( const account_record& prev_record, const account_record& new_record )
+       {
+           if( !prev_record.is_delegate() && !new_record.is_delegate() )
+               return;
+
+           if( prev_record.is_delegate() && !new_record.is_delegate() )
+           {
+               if( !prev_record.is_retracted() )
+                   my->_delegate_vote_index_db.remove( vote_del( prev_record.net_votes(), prev_record.id ) );
+               return;
+           }
+
+           if( !prev_record.is_delegate() && new_record.is_delegate() )
+           {
+               if( !new_record.is_retracted() )
+                   my->_delegate_vote_index_db.store( vote_del( new_record.net_votes(), new_record.id ), 0 /*dummy value*/ );
+               return;
+           }
+
+           const share_type& prev_votes = prev_record.net_votes();
+           const share_type& new_votes = new_record.net_votes();
+           if( prev_votes != new_votes )
+           {
+               if( !prev_record.is_retracted() )
+                   my->_delegate_vote_index_db.remove( vote_del( prev_votes, prev_record.id ) );
+               if( !new_record.is_retracted() )
+                   my->_delegate_vote_index_db.store( vote_del( new_votes, new_record.id ), 0 /*dummy value*/ );
+           }
+       };
+
+       const oaccount_record prev_account_record = get_account_record( record_to_store.id );
+       if( !prev_account_record.valid() && record_to_store.is_null() )
            return;
 
-       my->_account_db.store( record_to_store.id, record_to_store );
-       my->_account_index_db.store( record_to_store.name, record_to_store.id );
-       my->_address_to_account_db.store( record_to_store.owner_address(), record_to_store.id );
-       for( const auto& item : record_to_store.active_key_history )
-       {
-           const public_key_type& active_key = item.second;
-           if( active_key == public_key_type() ) continue;
-           my->_address_to_account_db.store( address( active_key ), record_to_store.id );
-       }
-       if( record_to_store.is_delegate() )
-       {
-           for( const auto& item : record_to_store.delegate_info->signing_key_history )
-           {
-               const public_key_type& signing_key = item.second;
-               if( signing_key == public_key_type() ) continue;
-               my->_address_to_account_db.store( address( signing_key ), record_to_store.id );
-           }
+       if( prev_account_record.valid() && record_to_store.is_null() )
+           return remove_record( *prev_account_record );
 
-           if( !record_to_store.is_retracted() )
-               my->_delegate_vote_index_db.store( vote_del( record_to_store.net_votes(), record_to_store.id ), 0 /*dummy value*/ );
+       if( !prev_account_record.valid() && !record_to_store.is_null() )
+           return store_record( record_to_store );
+
+       // Common case: updating an existing record
+       my->_account_db.store( record_to_store.id, record_to_store );
+
+       if( prev_account_record->name != record_to_store.name )
+       {
+           my->_account_index_db.remove( prev_account_record->name );
+           my->_account_index_db.store( record_to_store.name, record_to_store.id );
        }
+
+       if( prev_account_record->owner_key != record_to_store.owner_key )
+       {
+           my->_address_to_account_db.remove( prev_account_record->owner_address() );
+           my->_address_to_account_db.store( record_to_store.owner_address(), record_to_store.id );
+       }
+
+       index_active_keys( *prev_account_record, record_to_store );
+       index_signing_keys( *prev_account_record, record_to_store );
+       index_votes( *prev_account_record, record_to_store );
    } FC_CAPTURE_AND_RETHROW( (record_to_store) ) }
 
    vector<operation> chain_database::get_recent_operations(operation_type_enum t)
@@ -1789,7 +1883,7 @@ namespace bts { namespace blockchain {
       }
    } FC_CAPTURE_AND_RETHROW( (record_id)(record_to_store) ) }
 
-   void chain_database::scan_assets( function<void( const asset_record& )> callback )
+   void chain_database::scan_assets( function<void( const asset_record& )> callback )const
    {
         auto asset_itr = my->_asset_db.begin();
         while( asset_itr.valid() )
@@ -1799,7 +1893,7 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void chain_database::scan_balances( function<void( const balance_record& )> callback )
+   void chain_database::scan_balances( function<void( const balance_record& )> callback )const
    {
         auto balances = my->_balance_db.begin();
         while( balances.valid() )
@@ -1809,7 +1903,7 @@ namespace bts { namespace blockchain {
         }
    }
 
-   void chain_database::scan_accounts( function<void( const account_record& )> callback )
+   void chain_database::scan_accounts( function<void( const account_record& )> callback )const
    {
         auto name_itr = my->_account_db.begin();
         while( name_itr.valid() )
@@ -1982,33 +2076,28 @@ namespace bts { namespace blockchain {
     } FC_RETHROW_EXCEPTIONS( warn, "", ("first",first)("limit",limit) )  }
 
     vector<balance_record> chain_database::get_balances_for_address( const address& addr )const
-    {
+   { try {
         vector<balance_record> ret;
-        for( auto pair : get_balances( "", -1 ) )
+        const auto scan_balance = [ &addr, &ret ]( const balance_record& record )
         {
-            auto bal = pair.second;
-            if( bal.is_owner( addr ) )
-            {
-                ret.push_back(bal);
-            }
-        }
+            if( record.is_owner( addr ) || addr == record.id() )
+                ret.push_back( record );
+        };
+        scan_balances( scan_balance );
         return ret;
-    }
+   } FC_CAPTURE_AND_RETHROW( (addr) ) }
 
     vector<balance_record> chain_database::get_balances_for_key( const public_key_type& key )const
-    {
+   { try {
         vector<balance_record> ret;
-        for( auto pair : get_balances( "", -1 ) )
+        const auto scan_balance = [ &key, &ret ]( const balance_record& record )
         {
-            auto bal = pair.second;
-            if( bal.is_owner(key) )
-            {
-                ret.push_back( bal );
-            }
-        }
+            if( record.is_owner( key ) )
+                ret.push_back( record );
+        };
+        scan_balances( scan_balance );
         return ret;
-    }
-
+   } FC_CAPTURE_AND_RETHROW( (key) ) }
 
     std::vector<account_record> chain_database::get_accounts( const string& first, uint32_t limit )const
     { try {
