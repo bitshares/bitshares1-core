@@ -521,8 +521,10 @@ public:
                     {
                         try {
                             task_future.cancel_and_wait();
+                        } catch (const fc::exception& e) {
+                            elog("Caught exception while canceling mail client transmitter task: ${x}", ("x",e.to_detail_string()) );
                         } catch (...) {
-                            elog("Caught exception while canceling mail client transmitter task");
+                            elog("Caught unknown exception while canceling mail client transmitter task");
                         }
                     }
                     return;
